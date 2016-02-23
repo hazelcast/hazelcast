@@ -16,9 +16,11 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.impl.DirectMemoryBits;
+
 import java.io.DataInput;
 import java.io.IOException;
-import java.io.UTFDataFormatException;
 import java.nio.charset.Charset;
 
 /**
@@ -69,265 +71,124 @@ public final class Bits {
 
     /**
      * A reusable instance of the UTF-8 charset
-     * */
+     */
     public static final Charset UTF_8 = Charset.forName("UTF-8");
     /**
      * A reusable instance of the ISO Latin-1 charset
-     * */
+     */
     public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     private Bits() {
     }
 
     public static char readChar(byte[] buffer, int pos, boolean bigEndian) {
-        return bigEndian ? readCharB(buffer, pos) : readCharL(buffer, pos);
+        return DirectMemoryBits.readChar(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static char readCharB(byte[] buffer, int pos) {
-        int byte1 = buffer[pos] & 0xFF;
-        int byte0 = buffer[pos + 1] & 0xFF;
-        return (char) ((byte1 << 8) + byte0);
+        return DirectMemoryBits.readCharB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static char readCharL(byte[] buffer, int pos) {
-        int byte1 = buffer[pos] & 0xFF;
-        int byte0 = buffer[pos + 1] & 0xFF;
-        return (char) ((byte0 << 8) + byte1);
+        return DirectMemoryBits.readCharL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeChar(byte[] buffer, int pos, char v, boolean bigEndian) {
-        if (bigEndian) {
-            writeCharB(buffer, pos, v);
-        } else {
-            writeCharL(buffer, pos, v);
-        }
+        DirectMemoryBits.writeChar(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
     }
 
     public static void writeCharB(byte[] buffer, int pos, char v) {
-        buffer[pos] = (byte) ((v >>> 8) & 0xFF);
-        buffer[pos + 1] = (byte) ((v) & 0xFF);
+        DirectMemoryBits.writeCharB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeCharL(byte[] buffer, int pos, char v) {
-        buffer[pos] = (byte) ((v) & 0xFF);
-        buffer[pos + 1] = (byte) ((v >>> 8) & 0xFF);
+        DirectMemoryBits.writeCharL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static short readShort(byte[] buffer, int pos, boolean bigEndian) {
-        return bigEndian ? readShortB(buffer, pos) : readShortL(buffer, pos);
+        return DirectMemoryBits.readShort(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static short readShortB(byte[] buffer, int pos) {
-        int byte1 = buffer[pos] & 0xFF;
-        int byte0 = buffer[pos + 1] & 0xFF;
-        return (short) ((byte1 << 8) + byte0);
+        return DirectMemoryBits.readShortB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static short readShortL(byte[] buffer, int pos) {
-        int byte1 = buffer[pos] & 0xFF;
-        int byte0 = buffer[pos + 1] & 0xFF;
-        return (short) ((byte0 << 8) + byte1);
+        return DirectMemoryBits.readShortL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeShort(byte[] buffer, int pos, short v, boolean bigEndian) {
-        if (bigEndian) {
-            writeShortB(buffer, pos, v);
-        } else {
-            writeShortL(buffer, pos, v);
-        }
+        DirectMemoryBits.writeShort(buffer, pos, v, bigEndian);
     }
 
     public static void writeShortB(byte[] buffer, int pos, short v) {
-        buffer[pos] = (byte) ((v >>> 8) & 0xFF);
-        buffer[pos + 1] = (byte) ((v) & 0xFF);
+        DirectMemoryBits.writeShortB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeShortL(byte[] buffer, int pos, short v) {
-        buffer[pos] = (byte) ((v) & 0xFF);
-        buffer[pos + 1] = (byte) ((v >>> 8) & 0xFF);
+        DirectMemoryBits.writeShortL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static int readInt(byte[] buffer, int pos, boolean bigEndian) {
-        if (bigEndian) {
-            return readIntB(buffer, pos);
-        } else {
-            return readIntL(buffer, pos);
-        }
+        return DirectMemoryBits.readInt(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static int readIntB(byte[] buffer, int pos) {
-        int byte3 = (buffer[pos] & 0xFF) << 24;
-        int byte2 = (buffer[pos + 1] & 0xFF) << 16;
-        int byte1 = (buffer[pos + 2] & 0xFF) << 8;
-        int byte0 = buffer[pos + 3] & 0xFF;
-        return byte3 + byte2 + byte1 + byte0;
+        return DirectMemoryBits.readIntB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static int readIntL(byte[] buffer, int pos) {
-        int byte3 = buffer[pos] & 0xFF;
-        int byte2 = (buffer[pos + 1] & 0xFF) << 8;
-        int byte1 = (buffer[pos + 2] & 0xFF) << 16;
-        int byte0 = (buffer[pos + 3] & 0xFF) << 24;
-        return byte3 + byte2 + byte1 + byte0;
+        return DirectMemoryBits.readIntL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeInt(byte[] buffer, int pos, int v, boolean bigEndian) {
-        if (bigEndian) {
-            writeIntB(buffer, pos, v);
-        } else {
-            writeIntL(buffer, pos, v);
-        }
+        DirectMemoryBits.writeInt(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
     }
 
     public static void writeIntB(byte[] buffer, int pos, int v) {
-        buffer[pos] = (byte) ((v >>> 24) & 0xFF);
-        buffer[pos + 1] = (byte) ((v >>> 16) & 0xFF);
-        buffer[pos + 2] = (byte) ((v >>> 8) & 0xFF);
-        buffer[pos + 3] = (byte) ((v) & 0xFF);
+        DirectMemoryBits.writeIntB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeIntL(byte[] buffer, int pos, int v) {
-        buffer[pos] = (byte) ((v) & 0xFF);
-        buffer[pos + 1] = (byte) ((v >>> 8) & 0xFF);
-        buffer[pos + 2] = (byte) ((v >>> 16) & 0xFF);
-        buffer[pos + 3] = (byte) ((v >>> 24) & 0xFF);
+        DirectMemoryBits.writeIntL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static long readLong(byte[] buffer, int pos, boolean bigEndian) {
-        if (bigEndian) {
-            return readLongB(buffer, pos);
-        } else {
-            return readLongL(buffer, pos);
-        }
+        return DirectMemoryBits.readLong(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static long readLongB(byte[] buffer, int pos) {
-        long byte7 = (long) buffer[pos] << 56;
-        long byte6 = (long) (buffer[pos + 1] & 0xFF) << 48;
-        long byte5 = (long) (buffer[pos + 2] & 0xFF) << 40;
-        long byte4 = (long) (buffer[pos + 3] & 0xFF) << 32;
-        long byte3 = (long) (buffer[pos + 4] & 0xFF) << 24;
-        long byte2 = (long) (buffer[pos + 5] & 0xFF) << 16;
-        long byte1 = (long) (buffer[pos + 6] & 0xFF) << 8;
-        long byte0 = (long) (buffer[pos + 7] & 0xFF);
-        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+        return DirectMemoryBits.readLongB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static long readLongL(byte[] buffer, int pos) {
-        long byte7 = (long) (buffer[pos] & 0xFF);
-        long byte6 = (long) (buffer[pos + 1] & 0xFF) << 8;
-        long byte5 = (long) (buffer[pos + 2] & 0xFF) << 16;
-        long byte4 = (long) (buffer[pos + 3] & 0xFF) << 24;
-        long byte3 = (long) (buffer[pos + 4] & 0xFF) << 32;
-        long byte2 = (long) (buffer[pos + 5] & 0xFF) << 40;
-        long byte1 = (long) (buffer[pos + 6] & 0xFF) << 48;
-        long byte0 = (long) (buffer[pos + 7] & 0xFF) << 56;
-        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+        return DirectMemoryBits.readLongL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeLong(byte[] buffer, int pos, long v, boolean bigEndian) {
-        if (bigEndian) {
-            writeLongB(buffer, pos, v);
-        } else {
-            writeLongL(buffer, pos, v);
-        }
+        DirectMemoryBits.writeLong(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
     }
 
     public static void writeLongB(byte[] buffer, int pos, long v) {
-        buffer[pos] = (byte) (v >>> 56);
-        buffer[pos + 1] = (byte) (v >>> 48);
-        buffer[pos + 2] = (byte) (v >>> 40);
-        buffer[pos + 3] = (byte) (v >>> 32);
-        buffer[pos + 4] = (byte) (v >>> 24);
-        buffer[pos + 5] = (byte) (v >>> 16);
-        buffer[pos + 6] = (byte) (v >>> 8);
-        buffer[pos + 7] = (byte) (v);
+        DirectMemoryBits.writeLongB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeLongL(byte[] buffer, int pos, long v) {
-        buffer[pos] = (byte) (v);
-        buffer[pos + 1] = (byte) (v >>> 8);
-        buffer[pos + 2] = (byte) (v >>> 16);
-        buffer[pos + 3] = (byte) (v >>> 24);
-        buffer[pos + 4] = (byte) (v >>> 32);
-        buffer[pos + 5] = (byte) (v >>> 40);
-        buffer[pos + 6] = (byte) (v >>> 48);
-        buffer[pos + 7] = (byte) (v >>> 56);
+        DirectMemoryBits.writeLongL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static int writeUtf8Char(byte[] buffer, int pos, int c) {
-        if (c <= 0x007F) {
-            buffer[pos] = (byte) c;
-            return 1;
-        } else if (c > 0x07FF) {
-            buffer[pos] = (byte) (0xE0 | c >> 12 & 0x0F);
-            buffer[pos + 1] = (byte) (0x80 | c >> 6 & 0x3F);
-            buffer[pos + 2] = (byte) (0x80 | c & 0x3F);
-            return 3;
-        } else {
-            buffer[pos] = (byte) (0xC0 | c >> 6 & 0x1F);
-            buffer[pos + 1] = (byte) (0x80 | c & 0x3F);
-            return 2;
-        }
+        return DirectMemoryBits.writeUtf8Char(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, c);
     }
 
     public static int readUtf8Char(byte[] buffer, int pos, char[] dst, int dstPos)
             throws IOException {
-        int b = buffer[pos] & 0xFF;
-        switch (b >> 4) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                dst[dstPos] = (char) b;
-                return 1;
-            case 12:
-            case 13:
-                int first = (b & 0x1F) << 6;
-                int second = buffer[pos + 1] & 0x3F;
-                dst[dstPos] = (char) (first | second);
-                return 2;
-            case 14:
-                int first2 = (b & 0x0F) << 12;
-                int second2 = (buffer[pos + 1] & 0x3F) << 6;
-                int third2 = buffer[pos + 2] & 0x3F;
-                dst[dstPos] = (char) (first2 | second2 | third2);
-                return 3;
-            default:
-                throw new UTFDataFormatException("Malformed byte sequence");
-        }
+        return DirectMemoryBits.readUtf8Char(buffer, pos, dst, dstPos);
     }
 
     public static char readUtf8Char(DataInput in, byte firstByte)
             throws IOException {
-        int b = firstByte & 0xFF;
-        switch (b >> 4) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                return (char) b;
-            case 12:
-            case 13:
-                int first = (b & 0x1F) << 6;
-                int second = in.readByte() & 0x3F;
-                return (char) (first | second);
-            case 14:
-                int first2 = (b & 0x0F) << 12;
-                int second2 = (in.readByte() & 0x3F) << 6;
-                int third2 = in.readByte() & 0x3F;
-                return (char) (first2 | second2 | third2);
-            default:
-                throw new UTFDataFormatException("Malformed byte sequence");
-        }
+        return DirectMemoryBits.readUtf8Char(in, firstByte);
     }
 
     /**

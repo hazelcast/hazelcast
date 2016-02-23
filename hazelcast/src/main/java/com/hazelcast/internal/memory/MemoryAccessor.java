@@ -18,29 +18,30 @@ package com.hazelcast.internal.memory;
 
 import java.lang.reflect.Field;
 
+import static com.hazelcast.internal.memory.MemoryAccessorType.HEAP_BYTE_ARRAY;
 import static com.hazelcast.internal.memory.MemoryAccessorType.STANDARD;
 
 /**
  * <p>
  * Contract point for direct memory access operations.
  * </p>
- *
+ * <p>
  * <p>
  * A few notes on this contract point:
  * <ul>
- *      <li>
- *        Addresses are not required to be a native memory addresses.
- *        It depends on the actual {@link MemoryAccessor} implementation.
- *      </li>
- *      <li>
- *        {@link MemoryAccessor} implementations can be retrieved
- *        via {@link MemoryAccessorProvider} by specifying {@link MemoryAccessorType}.
- *      </li>
- *      <li>
- *        The default {@link MemoryAccessor} implementation
- *        can be accessed via {@link #MEM} field of this interface
- *        and its availability state can be checked via {@link #MEM_AVAILABLE} field.
- *      </li>
+ * <li>
+ * Addresses are not required to be a native memory addresses.
+ * It depends on the actual {@link MemoryAccessor} implementation.
+ * </li>
+ * <li>
+ * {@link MemoryAccessor} implementations can be retrieved
+ * via {@link MemoryAccessorProvider} by specifying {@link MemoryAccessorType}.
+ * </li>
+ * <li>
+ * The default {@link MemoryAccessor} implementation
+ * can be accessed via {@link #MEM} field of this interface
+ * and its availability state can be checked via {@link #MEM_AVAILABLE} field.
+ * </li>
  * </ul>
  * </p>
  *
@@ -60,6 +61,12 @@ public interface MemoryAccessor {
      * platforms which do not support it.
      */
     MemoryAccessor AMEM = MemoryAccessorProvider.getMemoryAccessor(STANDARD);
+
+
+    /**
+     * The instance of {@link MemoryAccessor} which  handles data in specified heap-byteBuffer (byte[] buffer).
+     */
+    MemoryAccessor HEAP_BYTE_ARRAY_MEM = MemoryAccessorProvider.getMemoryAccessor(HEAP_BYTE_ARRAY);
 
     /**
      * If this constant is {@code true}, then {@link #MEM} refers to a usable {@code MemoryAccessor}
@@ -205,36 +212,37 @@ public interface MemoryAccessor {
      * Copies memory from given source address to given destination address
      * as given size.
      *
-     * @param srcAddress    the source address to be copied from
-     * @param destAddress   the destination address to be copied to
-     * @param bytes         the number of bytes to be copied
+     * @param srcAddress  the source address to be copied from
+     * @param destAddress the destination address to be copied to
+     * @param bytes       the number of bytes to be copied
      */
     void copyMemory(long srcAddress, long destAddress, long bytes);
 
     /**
      * Copies memory from given source object by given source offset
      * to given destination object by given destination offset as given size.
-     *
      * <p>
-     *  NOTE:
-     *      Destination object can only be <tt>byte[]</tt> or <tt>null</tt>.
-     *      But source object can be any object or <tt>null</tt>.
+     * <p>
+     * NOTE:
+     * Destination object can only be <tt>byte[]</tt> or <tt>null</tt>.
+     * But source object can be any object or <tt>null</tt>.
      * </p>
-     * @param srcObj        the source object to be copied from
-     * @param srcOffset     the source offset relative to object itself to be copied from
-     * @param destObj       the destination object to be copied to
-     * @param destOffset    the destination offset relative to object itself to be copied to
-     * @param bytes         the number of bytes to be copied
+     *
+     * @param srcObj     the source object to be copied from
+     * @param srcOffset  the source offset relative to object itself to be copied from
+     * @param destObj    the destination object to be copied to
+     * @param destOffset the destination offset relative to object itself to be copied to
+     * @param bytes      the number of bytes to be copied
      */
     void copyMemory(Object srcObj, long srcOffset, Object destObj, long destOffset, long bytes);
 
     /**
      * Sets memory with given value from specified address as given size.
      *
-     * @param address   the start address of the memory region
-     *                  which will be set with given value
-     * @param bytes     the number of bytes to be set
-     * @param value     the value to be set
+     * @param address the start address of the memory region
+     *                which will be set with given value
+     * @param bytes   the number of bytes to be set
+     * @param value   the value to be set
      */
     void setMemory(long address, long bytes, byte value);
 
@@ -251,8 +259,8 @@ public interface MemoryAccessor {
     /**
      * Reads the boolean value from given object by its offset.
      *
-     * @param o         the object where boolean value will be read from
-     * @param offset    the offset of boolean field relative to object itself
+     * @param o      the object where boolean value will be read from
+     * @param offset the offset of boolean field relative to object itself
      * @return the read value
      */
     boolean getBoolean(Object o, long offset);
@@ -260,8 +268,8 @@ public interface MemoryAccessor {
     /**
      * Reads the boolean value as volatile from given object by its offset.
      *
-     * @param o         the object where boolean value will be read from
-     * @param offset    the offset of boolean field relative to object itself
+     * @param o      the object where boolean value will be read from
+     * @param offset the offset of boolean field relative to object itself
      * @return the read value
      */
     boolean getBooleanVolatile(Object o, long offset);
@@ -271,26 +279,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given boolean value to given address.
      *
-     * @param address   the address where boolean value will be written to
-     * @param x         the boolean value to be written
+     * @param address the address where boolean value will be written to
+     * @param x       the boolean value to be written
      */
     void putBoolean(long address, boolean x);
 
     /**
      * Writes the boolean value to given object by its offset.
      *
-     * @param o         the object where boolean value will be written to
-     * @param offset    the offset of boolean field relative to object itself
-     * @param x         the boolean value to be written
+     * @param o      the object where boolean value will be written to
+     * @param offset the offset of boolean field relative to object itself
+     * @param x      the boolean value to be written
      */
     void putBoolean(Object o, long offset, boolean x);
 
     /**
      * Writes the boolean value as volatile to given object by its offset.
      *
-     * @param o         the object where boolean value will be written to
-     * @param offset    the offset of boolean field relative to object itself
-     * @param x         the boolean value to be written
+     * @param o      the object where boolean value will be written to
+     * @param offset the offset of boolean field relative to object itself
+     * @param x      the boolean value to be written
      */
     void putBooleanVolatile(Object o, long offset, boolean x);
 
@@ -307,8 +315,8 @@ public interface MemoryAccessor {
     /**
      * Reads the byte value from given object by its offset.
      *
-     * @param o         the object where byte value will be read from
-     * @param offset    the offset of byte field relative to object itself
+     * @param o      the object where byte value will be read from
+     * @param offset the offset of byte field relative to object itself
      * @return the read value
      */
     byte getByte(Object o, long offset);
@@ -316,8 +324,8 @@ public interface MemoryAccessor {
     /**
      * Reads the byte value as volatile from given object by its offset.
      *
-     * @param o         the object where byte value will be read from
-     * @param offset    the offset of byte field relative to object itself
+     * @param o      the object where byte value will be read from
+     * @param offset the offset of byte field relative to object itself
      * @return the read value
      */
     byte getByteVolatile(Object o, long offset);
@@ -327,26 +335,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given byte value to given address.
      *
-     * @param address   the address where byte value will be written to
-     * @param x         the byte value to be written
+     * @param address the address where byte value will be written to
+     * @param x       the byte value to be written
      */
     void putByte(long address, byte x);
 
     /**
      * Writes the byte value to given object by its offset.
      *
-     * @param o         the object where byte value will be written to
-     * @param offset    the offset of byte field relative to object itself
-     * @param x         the byte value to be written
+     * @param o      the object where byte value will be written to
+     * @param offset the offset of byte field relative to object itself
+     * @param x      the byte value to be written
      */
     void putByte(Object o, long offset, byte x);
 
     /**
      * Writes the byte value as volatile to given object by its offset.
      *
-     * @param o         the object where byte value will be written to
-     * @param offset    the offset of byte field relative to object itself
-     * @param x         the byte value to be written
+     * @param o      the object where byte value will be written to
+     * @param offset the offset of byte field relative to object itself
+     * @param x      the byte value to be written
      */
     void putByteVolatile(Object o, long offset, byte x);
 
@@ -363,8 +371,8 @@ public interface MemoryAccessor {
     /**
      * Reads the char value from given object by its offset.
      *
-     * @param o         the object where char value will be read from
-     * @param offset    the offset of char field relative to object itself
+     * @param o      the object where char value will be read from
+     * @param offset the offset of char field relative to object itself
      * @return the read value
      */
     char getChar(Object o, long offset);
@@ -372,8 +380,8 @@ public interface MemoryAccessor {
     /**
      * Reads the char value as volatile from given object by its offset.
      *
-     * @param o         the object where char value will be read from
-     * @param offset    the offset of char field relative to object itself
+     * @param o      the object where char value will be read from
+     * @param offset the offset of char field relative to object itself
      * @return the read value
      */
     char getCharVolatile(Object o, long offset);
@@ -383,26 +391,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given char value to given address.
      *
-     * @param address   the address where char value will be written to
-     * @param x         the char value to be written
+     * @param address the address where char value will be written to
+     * @param x       the char value to be written
      */
     void putChar(long address, char x);
 
     /**
      * Writes the char value to given object by its offset.
      *
-     * @param o         the object where char value will be written to
-     * @param offset    the offset of char field relative to object itself
-     * @param x         the char value to be written
+     * @param o      the object where char value will be written to
+     * @param offset the offset of char field relative to object itself
+     * @param x      the char value to be written
      */
     void putChar(Object o, long offset, char x);
 
     /**
      * Writes the char value as volatile to given object by its offset.
      *
-     * @param o         the object where char value will be written to
-     * @param offset    the offset of char field relative to object itself
-     * @param x         the char value to be written
+     * @param o      the object where char value will be written to
+     * @param offset the offset of char field relative to object itself
+     * @param x      the char value to be written
      */
     void putCharVolatile(Object o, long offset, char x);
 
@@ -419,8 +427,8 @@ public interface MemoryAccessor {
     /**
      * Reads the short value from given object by its offset.
      *
-     * @param o         the object where short value will be read from
-     * @param offset    the offset of short field relative to object itself
+     * @param o      the object where short value will be read from
+     * @param offset the offset of short field relative to object itself
      * @return the read value
      */
     short getShort(Object o, long offset);
@@ -428,8 +436,8 @@ public interface MemoryAccessor {
     /**
      * Reads the short value as volatile from given object by its offset.
      *
-     * @param o         the object where short value will be read from
-     * @param offset    the offset of short field relative to object itself
+     * @param o      the object where short value will be read from
+     * @param offset the offset of short field relative to object itself
      * @return the read value
      */
     short getShortVolatile(Object o, long offset);
@@ -439,26 +447,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given short value to given address.
      *
-     * @param address   the address where short value will be written to
-     * @param x         the short value to be written
+     * @param address the address where short value will be written to
+     * @param x       the short value to be written
      */
     void putShort(long address, short x);
 
     /**
      * Writes the short value to given object by its offset.
      *
-     * @param o         the object where short value will be written to
-     * @param offset    the offset of short field relative to object itself
-     * @param x         the short value to be written
+     * @param o      the object where short value will be written to
+     * @param offset the offset of short field relative to object itself
+     * @param x      the short value to be written
      */
     void putShort(Object o, long offset, short x);
 
     /**
      * Writes the short value as volatile to given object by its offset.
      *
-     * @param o         the object where short value will be written to
-     * @param offset    the offset of short field relative to object itself
-     * @param x         the short value to be written
+     * @param o      the object where short value will be written to
+     * @param offset the offset of short field relative to object itself
+     * @param x      the short value to be written
      */
     void putShortVolatile(Object o, long offset, short x);
 
@@ -475,8 +483,8 @@ public interface MemoryAccessor {
     /**
      * Reads the int value from given object by its offset.
      *
-     * @param o         the object where int value will be read from
-     * @param offset    the offset of int field relative to object itself
+     * @param o      the object where int value will be read from
+     * @param offset the offset of int field relative to object itself
      * @return the read value
      */
     int getInt(Object o, long offset);
@@ -484,8 +492,8 @@ public interface MemoryAccessor {
     /**
      * Reads the int value as volatile from given object by its offset.
      *
-     * @param o         the object where int value will be read from
-     * @param offset    the offset of int field relative to object itself
+     * @param o      the object where int value will be read from
+     * @param offset the offset of int field relative to object itself
      * @return the read value
      */
     int getIntVolatile(Object o, long offset);
@@ -495,26 +503,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given int value to given address.
      *
-     * @param address   the address where int value will be written to
-     * @param x         the int value to be written
+     * @param address the address where int value will be written to
+     * @param x       the int value to be written
      */
     void putInt(long address, int x);
 
     /**
      * Writes the int value to given object by its offset.
      *
-     * @param o         the object where int value will be written to
-     * @param offset    the offset of int field relative to object itself
-     * @param x         the int value to be written
+     * @param o      the object where int value will be written to
+     * @param offset the offset of int field relative to object itself
+     * @param x      the int value to be written
      */
     void putInt(Object o, long offset, int x);
 
     /**
      * Writes the int value as volatile to given object by its offset.
      *
-     * @param o         the object where int value will be written to
-     * @param offset    the offset of int field relative to object itself
-     * @param x         the int value to be written
+     * @param o      the object where int value will be written to
+     * @param offset the offset of int field relative to object itself
+     * @param x      the int value to be written
      */
     void putIntVolatile(Object o, long offset, int x);
 
@@ -531,8 +539,8 @@ public interface MemoryAccessor {
     /**
      * Reads the float value from given object by its offset.
      *
-     * @param o         the object where float value will be read from
-     * @param offset    the offset of float field relative to object itself
+     * @param o      the object where float value will be read from
+     * @param offset the offset of float field relative to object itself
      * @return the read value
      */
     float getFloat(Object o, long offset);
@@ -540,8 +548,8 @@ public interface MemoryAccessor {
     /**
      * Reads the float value as volatile from given object by its offset.
      *
-     * @param o         the object where float value will be read from
-     * @param offset    the offset of float field relative to object itself
+     * @param o      the object where float value will be read from
+     * @param offset the offset of float field relative to object itself
      * @return the read value
      */
     float getFloatVolatile(Object o, long offset);
@@ -551,26 +559,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given float value to given address.
      *
-     * @param address   the address where float value will be written to
-     * @param x         the float value to be written
+     * @param address the address where float value will be written to
+     * @param x       the float value to be written
      */
     void putFloat(long address, float x);
 
     /**
      * Writes the float value to given object by its offset.
      *
-     * @param o         the object where float value will be written to
-     * @param offset    the offset of float field relative to object itself
-     * @param x         the float value to be written
+     * @param o      the object where float value will be written to
+     * @param offset the offset of float field relative to object itself
+     * @param x      the float value to be written
      */
     void putFloat(Object o, long offset, float x);
 
     /**
      * Writes the float value as volatile to given object by its offset.
      *
-     * @param o         the object where float value will be written to
-     * @param offset    the offset of float field relative to object itself
-     * @param x         the float value to be written
+     * @param o      the object where float value will be written to
+     * @param offset the offset of float field relative to object itself
+     * @param x      the float value to be written
      */
     void putFloatVolatile(Object o, long offset, float x);
 
@@ -587,8 +595,8 @@ public interface MemoryAccessor {
     /**
      * Reads the long value from given object by its offset.
      *
-     * @param o         the object where long value will be read from
-     * @param offset    the offset of long field relative to object itself
+     * @param o      the object where long value will be read from
+     * @param offset the offset of long field relative to object itself
      * @return the read value
      */
     long getLong(Object o, long offset);
@@ -596,8 +604,8 @@ public interface MemoryAccessor {
     /**
      * Reads the long value as volatile from given object by its offset.
      *
-     * @param o         the object where long value will be read from
-     * @param offset    the offset of long field relative to object itself
+     * @param o      the object where long value will be read from
+     * @param offset the offset of long field relative to object itself
      * @return the read value
      */
     long getLongVolatile(Object o, long offset);
@@ -607,26 +615,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given long value to given address.
      *
-     * @param address   the address where long value will be written to
-     * @param x         the long value to be written
+     * @param address the address where long value will be written to
+     * @param x       the long value to be written
      */
     void putLong(long address, long x);
 
     /**
      * Writes the long value to given object by its offset.
      *
-     * @param o         the object where long value will be written to
-     * @param offset    the offset of long field relative to object itself
-     * @param x         the long value to be written
+     * @param o      the object where long value will be written to
+     * @param offset the offset of long field relative to object itself
+     * @param x      the long value to be written
      */
     void putLong(Object o, long offset, long x);
 
     /**
      * Writes the long value as volatile to given object by its offset.
      *
-     * @param o         the object where long value will be written to
-     * @param offset    the offset of long field relative to object itself
-     * @param x         the long value to be written
+     * @param o      the object where long value will be written to
+     * @param offset the offset of long field relative to object itself
+     * @param x      the long value to be written
      */
     void putLongVolatile(Object o, long offset, long x);
 
@@ -643,8 +651,8 @@ public interface MemoryAccessor {
     /**
      * Reads the double value from given object by its offset.
      *
-     * @param o         the object where double value will be read from
-     * @param offset    the offset of double field relative to object itself
+     * @param o      the object where double value will be read from
+     * @param offset the offset of double field relative to object itself
      * @return the read value
      */
     double getDouble(Object o, long offset);
@@ -652,8 +660,8 @@ public interface MemoryAccessor {
     /**
      * Reads the double value as volatile from given object by its offset.
      *
-     * @param o         the object where double value will be read from
-     * @param offset    the offset of double field relative to object itself
+     * @param o      the object where double value will be read from
+     * @param offset the offset of double field relative to object itself
      * @return the read value
      */
     double getDoubleVolatile(Object o, long offset);
@@ -663,26 +671,26 @@ public interface MemoryAccessor {
     /**
      * Writes the given double value to given address.
      *
-     * @param address   the address where double value will be written to
-     * @param x         the double value to be written
+     * @param address the address where double value will be written to
+     * @param x       the double value to be written
      */
     void putDouble(long address, double x);
 
     /**
      * Writes the double value to given object by its offset.
      *
-     * @param o         the object where double value will be written to
-     * @param offset    the offset of double field relative to object itself
-     * @param x         the double value to be written
+     * @param o      the object where double value will be written to
+     * @param offset the offset of double field relative to object itself
+     * @param x      the double value to be written
      */
     void putDouble(Object o, long offset, double x);
 
     /**
      * Writes the double value as volatile to given object by its offset.
      *
-     * @param o         the object where double value will be written to
-     * @param offset    the offset of double field relative to object itself
-     * @param x         the double value to be written
+     * @param o      the object where double value will be written to
+     * @param offset the offset of double field relative to object itself
+     * @param x      the double value to be written
      */
     void putDoubleVolatile(Object o, long offset, double x);
 
@@ -691,8 +699,8 @@ public interface MemoryAccessor {
     /**
      * Gets the referenced object from given owner object by its offset.
      *
-     * @param o         the owner object where the referenced object will be read from
-     * @param offset    the offset of the referenced object field relative to owner object itself
+     * @param o      the owner object where the referenced object will be read from
+     * @param offset the offset of the referenced object field relative to owner object itself
      * @return the retrieved referenced object
      */
     Object getObject(Object o, long offset);
@@ -700,8 +708,8 @@ public interface MemoryAccessor {
     /**
      * Gets the referenced object from given owner object as volatile by its offset.
      *
-     * @param o         the owner object where the referenced object will be read from
-     * @param offset    the offset of the referenced object field relative to owner object itself
+     * @param o      the owner object where the referenced object will be read from
+     * @param offset the offset of the referenced object field relative to owner object itself
      * @return the retrieved referenced object
      */
     Object getObjectVolatile(Object o, long offset);
@@ -711,18 +719,18 @@ public interface MemoryAccessor {
     /**
      * Puts the referenced object to given owner object by its offset.
      *
-     * @param o         the owner object where the referenced object will be written to
-     * @param offset    the offset of the referenced object field relative to owner object itself
-     * @param x         the referenced object to be written
+     * @param o      the owner object where the referenced object will be written to
+     * @param offset the offset of the referenced object field relative to owner object itself
+     * @param x      the referenced object to be written
      */
     void putObject(Object o, long offset, Object x);
 
     /**
      * Puts the referenced object to given owner object as volatile by its offset.
      *
-     * @param o         the owner object where the referenced object will be written to
-     * @param offset    the offset of the referenced object field relative to owner object itself
-     * @param x         the referenced object to be written
+     * @param o      the owner object where the referenced object will be written to
+     * @param offset the offset of the referenced object field relative to owner object itself
+     * @param x      the referenced object to be written
      */
     void putObjectVolatile(Object o, long offset, Object x);
 
@@ -733,10 +741,10 @@ public interface MemoryAccessor {
      * based by given object with given offset
      * if and only if its current value equals to specified expected value.
      *
-     * @param o         the object where int value will be written to
-     * @param offset    the offset of int field relative to object itself
-     * @param expected  the expected current int value to be set new int value
-     * @param x         the int value to be written
+     * @param o        the object where int value will be written to
+     * @param offset   the offset of int field relative to object itself
+     * @param expected the expected current int value to be set new int value
+     * @param x        the int value to be written
      * @return
      */
     boolean compareAndSwapInt(Object o, long offset, int expected, int x);
@@ -746,10 +754,10 @@ public interface MemoryAccessor {
      * based by given object with given offset
      * if and only if its current value equals to specified expected value.
      *
-     * @param o         the object where long value will be written to
-     * @param offset    the offset of long field relative to object itself
-     * @param expected  the expected current long value to be set new long value
-     * @param x         the long value to be written
+     * @param o        the object where long value will be written to
+     * @param offset   the offset of long field relative to object itself
+     * @param expected the expected current long value to be set new long value
+     * @param x        the long value to be written
      * @return <tt>true</tt> if CAS is successful, <tt>false</tt> otherwise
      */
     boolean compareAndSwapLong(Object o, long offset, long expected, long x);
@@ -759,10 +767,10 @@ public interface MemoryAccessor {
      * based by given owner object at given offset
      * if and only if its current object is the specified object.
      *
-     * @param o         the owner object where the referenced object will be written to
-     * @param offset    the offset of the referenced object field relative to owner object itself
-     * @param expected  the expected current referenced object to be set new referenced object
-     * @param x         the referenced object to be written
+     * @param o        the owner object where the referenced object will be written to
+     * @param offset   the offset of the referenced object field relative to owner object itself
+     * @param expected the expected current referenced object to be set new referenced object
+     * @param x        the referenced object to be written
      * @return <tt>true</tt> if CAS is successful, <tt>false</tt> otherwise
      */
     boolean compareAndSwapObject(Object o, long offset, Object expected, Object x);
@@ -773,9 +781,9 @@ public interface MemoryAccessor {
      * Puts given int value as ordered to CPU write buffer
      * based by given object at given offset.
      *
-     * @param o         the object where int value will be written to
-     * @param offset    the offset of int field relative to object itself
-     * @param x         the int value to be written
+     * @param o      the object where int value will be written to
+     * @param offset the offset of int field relative to object itself
+     * @param x      the int value to be written
      */
     void putOrderedInt(Object o, long offset, int x);
 
@@ -783,9 +791,9 @@ public interface MemoryAccessor {
      * Puts given long value as ordered to CPU write buffer
      * based by given object at given offset.
      *
-     * @param o         the object where long value will be written to
-     * @param offset    the offset of long field relative to object itself
-     * @param x         the long value to be written
+     * @param o      the object where long value will be written to
+     * @param offset the offset of long field relative to object itself
+     * @param x      the long value to be written
      */
     void putOrderedLong(Object o, long offset, long x);
 
@@ -793,9 +801,9 @@ public interface MemoryAccessor {
      * Puts given referenced object as ordered to CPU write buffer
      * based by given owner object at given offset.
      *
-     * @param o         the owner object where the referenced object will be written to
-     * @param offset    the offset of the referenced object field relative to owner object itself
-     * @param x         the referenced object to be written
+     * @param o      the owner object where the referenced object will be written to
+     * @param offset the offset of the referenced object field relative to owner object itself
+     * @param x      the referenced object to be written
      */
     void putOrderedObject(Object o, long offset, Object x);
 
