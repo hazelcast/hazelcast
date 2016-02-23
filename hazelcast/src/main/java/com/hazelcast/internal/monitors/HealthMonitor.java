@@ -67,8 +67,8 @@ public class HealthMonitor {
     private final ILogger logger;
     private final Node node;
     private final HealthMonitorLevel monitorLevel;
-    private final int thresholdPercentageMemory;
-    private final int thresholdPercentageCPU;
+    private final int thresholdMemoryPercentage;
+    private final int thresholdCPUPercentage;
     private final MetricsRegistry metricRegistry;
     private final HealthMonitorThread monitorThread;
 
@@ -77,10 +77,10 @@ public class HealthMonitor {
         this.logger = node.getLogger(HealthMonitor.class);
         this.metricRegistry = node.nodeEngine.getMetricsRegistry();
         this.monitorLevel = getHealthMonitorLevel();
-        this.thresholdPercentageMemory
-                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_PERCENTAGE_MEMORY);
-        this.thresholdPercentageCPU
-                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_PERCENTAGE_CPU);
+        this.thresholdMemoryPercentage
+                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
+        this.thresholdCPUPercentage
+                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
         this.healthMetrics = new HealthMetrics();
     }
@@ -279,15 +279,15 @@ public class HealthMonitor {
         }
 
         public boolean exceedsThreshold() {
-            if (memoryUsedOfMaxPercentage > thresholdPercentageMemory) {
+            if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
                 return true;
             }
 
-            if (osProcessCpuLoad.read() > thresholdPercentageCPU) {
+            if (osProcessCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
 
-            if (osSystemCpuLoad.read() > thresholdPercentageCPU) {
+            if (osSystemCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
 
