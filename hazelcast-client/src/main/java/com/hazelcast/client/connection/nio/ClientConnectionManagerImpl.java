@@ -423,7 +423,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
                 try {
                     initializeConnection(remoteAddress, authenticator);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     LOGGER.finest(e);
                 } finally {
                     connectionsInProgress.remove(target);
