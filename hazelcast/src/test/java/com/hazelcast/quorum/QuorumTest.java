@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
@@ -37,6 +38,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -226,7 +228,21 @@ public class QuorumTest extends HazelcastTestSupport {
         }
     }
 
-    private static class RecordingQuorumFunction implements QuorumFunction {
+    @Test
+    public void givenQuorumFunctionConfigured_whenImplementsHazelcastInstanceAware_thenHazelcastInjectsItsInstance() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        String quorumName = randomString();
+        QuorumConfig quorumConfig = new QuorumConfig(quorumName, true);
+        quorumConfig.setQuorumFunctionClassName(HazelcastInstanceAwareQuorumFunction.class.getName());
+
+        Config config = new Config();
+        config.addQuorumConfig(quorumConfig);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        assertEquals(instance, HazelcastInstanceAwareQuorumFunction.instance);
+    }
+
+    public static class RecordingQuorumFunction implements QuorumFunction {
         private volatile boolean wasCalled;
 
         @Override
@@ -235,6 +251,20 @@ public class QuorumTest extends HazelcastTestSupport {
             return false;
         }
 
+    }
+
+    private static class HazelcastInstanceAwareQuorumFunction implements QuorumFunction, HazelcastInstanceAware {
+        private static volatile HazelcastInstance instance;
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public boolean apply(Collection<Member> members) {
+            return false;
+        }
     }
 
 }
