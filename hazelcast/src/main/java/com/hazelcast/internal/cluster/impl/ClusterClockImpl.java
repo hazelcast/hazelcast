@@ -28,7 +28,7 @@ public class ClusterClockImpl implements ClusterClock {
 
     private final ILogger logger;
 
-    private volatile long clusterTimeDiff = Long.MAX_VALUE;
+    private volatile long clusterTimeDiff;
     private volatile long clusterStartTime = Long.MIN_VALUE;
 
     public ClusterClockImpl(ILogger logger) {
@@ -38,25 +38,24 @@ public class ClusterClockImpl implements ClusterClock {
     @Probe(name = "clusterTime")
     @Override
     public long getClusterTime() {
-        return Clock.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
+        return Clock.currentTimeMillis() + clusterTimeDiff;
     }
 
     public void setMasterTime(long masterTime) {
         long diff = masterTime - Clock.currentTimeMillis();
+        setClusterTimeDiff(diff);
+    }
+
+    void setClusterTimeDiff(long diff) {
         if (logger.isFinestEnabled()) {
             logger.finest("Setting cluster time diff to " + diff + "ms.");
         }
         this.clusterTimeDiff = diff;
     }
 
-    void reset() {
-        this.clusterTimeDiff = Long.MAX_VALUE;
-    }
-
     @Probe(name = "clusterTimeDiff", level = MANDATORY)
-    @Override
-    public long getClusterTimeDiff() {
-        return (clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff;
+    long getClusterTimeDiff() {
+        return clusterTimeDiff;
     }
 
     @Probe(name = "clusterUpTime")

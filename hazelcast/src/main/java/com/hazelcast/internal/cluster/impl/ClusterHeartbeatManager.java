@@ -62,7 +62,7 @@ import static java.lang.String.format;
  */
 public class ClusterHeartbeatManager {
 
-    private static final long HEARTBEAT_LOG_THRESHOLD = 10000L;
+    private static final long CLOCK_JUMP_THRESHOLD = 10000L;
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
     private static final int MAX_PING_RETRY_COUNT = 5;
 
@@ -138,15 +138,21 @@ public class ClusterHeartbeatManager {
     public void onHeartbeat(MemberImpl member, long timestamp) {
         if (member != null) {
             long clusterTime = clusterClock.getClusterTime();
-            if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
-                logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)",
+            if (logger.isFineEnabled()) {
+                logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
                         member, new Date(clusterTime), new Date(timestamp)));
+            }
+
+            if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
+                logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
+                        new Date(clusterTime), new Date(timestamp)));
                 return;
             }
+
             if (isMaster(member)) {
                 clusterClock.setMasterTime(timestamp);
             }
-            heartbeatTimes.put(member, timestamp);
+            heartbeatTimes.put(member, clusterClock.getClusterTime());
         }
     }
 
@@ -162,7 +168,7 @@ public class ClusterHeartbeatManager {
                                 member, new Date(clusterTime), new Date(timestamp)));
                 return;
             }
-            masterConfirmationTimes.put(member, Clock.currentTimeMillis());
+            masterConfirmationTimes.put(member, clusterTime);
         }
     }
 
@@ -171,45 +177,65 @@ public class ClusterHeartbeatManager {
             return;
         }
 
-        long now = Clock.currentTimeMillis();
+        checkClockDrift(heartbeatIntervalMillis);
 
+        final long clusterTime = clusterClock.getClusterTime();
+        if (node.isMaster()) {
+            heartBeatWhenMaster(clusterTime);
+        } else {
+            heartBeatWhenSlave(clusterTime);
+        }
+    }
+
+    private void checkClockDrift(long intervalMillis) {
+        long now = Clock.currentTimeMillis();
         // compensate for any abrupt jumps forward in the system clock
-        long clockJump = 0L;
         if (lastHeartBeat != 0L) {
-            clockJump = now - lastHeartBeat - heartbeatIntervalMillis;
-            if (Math.abs(clockJump) > HEARTBEAT_LOG_THRESHOLD) {
+            long clockJump = now - lastHeartBeat - intervalMillis;
+            long absoluteClockJump = Math.abs(clockJump);
+
+            if (absoluteClockJump > CLOCK_JUMP_THRESHOLD) {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
                 logger.info(format("System clock apparently jumped from %s to %s since last heartbeat (%+d ms)",
                         sdf.format(new Date(lastHeartBeat)), sdf.format(new Date(now)), clockJump));
-            }
-            clockJump = Math.max(0L, clockJump);
 
-            if (clockJump >= maxNoMasterConfirmationMillis / 2) {
+                // adjust cluster clock due to clock drift
+                clusterClock.setClusterTimeDiff(clusterClock.getClusterTimeDiff() - clockJump);
+            }
+
+            if (absoluteClockJump >= maxNoMasterConfirmationMillis / 2) {
                 logger.warning(format("Resetting master confirmation timestamps because of huge system clock jump!"
                         + " Clock-Jump: %d ms, Master-Confirmation-Timeout: %d ms", clockJump, maxNoMasterConfirmationMillis));
                 resetMemberMasterConfirmations();
             }
+            if (absoluteClockJump >= maxNoHeartbeatMillis / 2) {
+                logger.warning(format("Resetting heartbeat timestamps because of huge system clock jump!"
+                        + " Clock-Jump: %d ms, Heartbeat-Timeout: %d ms", clockJump, maxNoHeartbeatMillis));
+                resetHeartbeats();
+            }
         }
         lastHeartBeat = now;
-
-        if (node.isMaster()) {
-            heartBeatMaster(now, clockJump);
-        } else {
-            heartBeatSlave(now, clockJump);
-        }
     }
 
-    private void heartBeatMaster(long now, long clockJump) {
+    /**
+     * Sends heartbeat to each of cluster members.
+     * Checks whether a member is failed to send heartbeat or master-confirmation in time
+     * (see {@link #maxNoHeartbeatMillis} and {@link #maxNoMasterConfirmationMillis})
+     * and removes that member from cluster.
+     * <p></p>
+     * This method is only called on master member.
+     */
+    private void heartBeatWhenMaster(long now) {
         Collection<MemberImpl> members = clusterService.getMemberImpls();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
                     logIfConnectionToEndpointIsMissing(now, member);
-                    if (removeMemberIfNotHeartBeating(now - clockJump, member)) {
+                    if (removeMemberIfNotHeartBeating(now, member)) {
                         continue;
                     }
 
-                    if (removeMemberIfMasterConfirmationExpired(now - clockJump, member)) {
+                    if (removeMemberIfMasterConfirmationExpired(now, member)) {
                         continue;
                     }
 
@@ -226,7 +252,8 @@ public class ClusterHeartbeatManager {
         long heartbeatTime = getHeartbeatTime(member);
         if ((now - heartbeatTime) > maxNoHeartbeatMillis) {
             logger.warning(format("Removing %s because it has not sent any heartbeats for %d ms."
-                    + " Last heartbeat time was %s", member, maxNoHeartbeatMillis, new Date(heartbeatTime)));
+                    + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
+                    new Date(now), new Date(heartbeatTime)));
             clusterService.removeAddress(member.getAddress());
             return true;
         }
@@ -250,7 +277,14 @@ public class ClusterHeartbeatManager {
         return false;
     }
 
-    private void heartBeatSlave(long now, long clockJump) {
+    /**
+     * Sends heartbeat to each of cluster members.
+     * Checks whether master member is failed to send heartbeat (see {@link #maxNoHeartbeatMillis})
+     * and removes that master member from cluster, if it fails on heartbeat.
+     * <p></p>
+     * This method is called on NON-master members.
+     */
+    private void heartBeatWhenSlave(long now) {
         Collection<MemberImpl> members = clusterService.getMemberImpls();
 
         for (MemberImpl member : members) {
@@ -259,7 +293,7 @@ public class ClusterHeartbeatManager {
                     logIfConnectionToEndpointIsMissing(now, member);
 
                     if (isMaster(member)) {
-                        if (removeMemberIfNotHeartBeating(now - clockJump, member)) {
+                        if (removeMemberIfNotHeartBeating(now, member)) {
                             continue;
                         }
                     }
@@ -377,11 +411,20 @@ public class ClusterHeartbeatManager {
         }
     }
 
-    // will be called just before this node becomes the master
+    // Called just before this node becomes the master
+    // and when system clock jump is detected
     void resetMemberMasterConfirmations() {
-        long now = Clock.currentTimeMillis();
+        long now = clusterClock.getClusterTime();
         for (MemberImpl member : clusterService.getMemberImpls()) {
             masterConfirmationTimes.put(member, now);
+        }
+    }
+
+    // Called when system clock jump is detected
+    private void resetHeartbeats() {
+        long now = clusterClock.getClusterTime();
+        for (MemberImpl member : clusterService.getMemberImpls()) {
+            heartbeatTimes.put(member, now);
         }
     }
 
