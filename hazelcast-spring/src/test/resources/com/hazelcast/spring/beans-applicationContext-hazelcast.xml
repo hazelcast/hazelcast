@@ -49,6 +49,11 @@
                 </hz:interfaces>
             </hz:network>
             <hz:map name="map1" backup-count="${backup.count}" statistics-enabled="${boolean.false}"/>
+            <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"
+                                          min-block-size="10"
+                                          page-size="20">
+                <hz:size unit="MEGABYTES" value="${native.memory.size}"/>
+            </hz:native-memory>
         </hz:config>
     </hz:hazelcast>
 
