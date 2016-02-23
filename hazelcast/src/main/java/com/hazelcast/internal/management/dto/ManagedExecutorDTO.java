@@ -18,7 +18,7 @@ package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getInt;

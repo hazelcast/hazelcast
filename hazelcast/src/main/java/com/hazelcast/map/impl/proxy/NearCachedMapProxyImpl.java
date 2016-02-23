@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.Collection;
 import java.util.Iterator;

@@ -45,7 +45,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;

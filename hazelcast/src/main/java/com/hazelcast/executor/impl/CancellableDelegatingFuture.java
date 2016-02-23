@@ -22,7 +22,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.executor.DelegatingFuture;
+import com.hazelcast.internal.util.executor.DelegatingFuture;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;

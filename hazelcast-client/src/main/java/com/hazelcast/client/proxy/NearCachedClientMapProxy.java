@@ -38,7 +38,7 @@ import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.MapUtil;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.Collection;
 import java.util.Iterator;

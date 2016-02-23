@@ -23,7 +23,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
-import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.internal.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
 import java.util.Arrays;

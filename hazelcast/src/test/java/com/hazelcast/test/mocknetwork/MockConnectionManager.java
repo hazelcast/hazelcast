@@ -28,7 +28,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Set;

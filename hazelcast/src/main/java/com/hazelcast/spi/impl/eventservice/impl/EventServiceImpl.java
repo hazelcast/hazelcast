@@ -41,7 +41,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.internal.util.executor.StripedExecutor;
 
 import java.io.Closeable;
 import java.io.IOException;

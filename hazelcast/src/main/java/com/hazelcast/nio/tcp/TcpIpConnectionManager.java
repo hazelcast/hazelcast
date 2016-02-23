@@ -36,7 +36,7 @@ import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.internal.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.net.Socket;

@@ -1,4 +1,4 @@
-package com.hazelcast.util.executor;
+package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
