@@ -85,46 +85,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    @Test
-    public void testInitialMemberListener() throws InterruptedException {
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-
-        final ClientConfig clientConfig = new ClientConfig();
-        final CountDownLatch latch1 = new CountDownLatch(1);
-        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new StaticMemberListener(latch1)));
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        assertTrue("Before starting", latch1.await(5, TimeUnit.SECONDS));
-
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        client.getCluster().addMembershipListener(new StaticMemberListener(latch2));
-
-        assertTrue("After starting", latch2.await(5, TimeUnit.SECONDS));
-    }
-
-    private static class StaticMemberListener implements MembershipListener, InitialMembershipListener {
-
-        final CountDownLatch latch;
-
-        StaticMemberListener(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        public void init(InitialMembershipEvent event) {
-            latch.countDown();
-        }
-
-        public void memberAdded(MembershipEvent membershipEvent) {
-        }
-
-        public void memberRemoved(MembershipEvent membershipEvent) {
-        }
-
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
-    }
-
     /**
      * Test for issues #267 and #493
      */
@@ -315,33 +275,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    /**
-     * add membership listener
-     */
-    @Test
-    public void testIssue1181() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        hazelcastFactory.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
-            public void init(InitialMembershipEvent event) {
-                for (int i = 0; i < event.getMembers().size(); i++) {
-                    latch.countDown();
-                }
-            }
-
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
-
-            public void memberRemoved(MembershipEvent membershipEvent) {
-            }
-
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            }
-        }));
-        hazelcastFactory.newHazelcastClient(clientConfig);
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-    }
 
     @Test
     public void testInterceptor() throws InterruptedException {

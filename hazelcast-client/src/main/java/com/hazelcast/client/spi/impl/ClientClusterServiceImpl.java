@@ -50,6 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -171,14 +172,6 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         return id;
     }
 
-    private void initMembershipListeners() {
-        synchronized (initialMembershipListenerMutex) {
-            for (MembershipListener listener : listeners.values()) {
-                initMembershipListener(listener);
-            }
-        }
-    }
-
     private void initMembershipListener(MembershipListener listener) {
         if (listener instanceof InitialMembershipListener) {
             Cluster cluster = client.getCluster();
@@ -201,14 +194,25 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     public void start() throws Exception {
         init();
         connectToCluster();
-        initMembershipListeners();
     }
 
     private ClientConfig getClientConfig() {
         return client.getClientConfig();
     }
 
-    void handleMembershipEvent(final MembershipEvent event) {
+    void handleInitialMembershipEvent(InitialMembershipEvent event) {
+        synchronized (initialMembershipListenerMutex) {
+            Set<Member> initialMembers = event.getMembers();
+            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>();
+            for (Member initialMember : initialMembers) {
+                newMap.put(initialMember.getAddress(), initialMember);
+            }
+            members.set(Collections.unmodifiableMap(newMap));
+            fireInitialMembershipEvent(event);
+        }
+    }
+
+    void handleMembershipEvent(MembershipEvent event) {
         synchronized (initialMembershipListenerMutex) {
             Member member = event.getMember();
             if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
@@ -222,6 +226,12 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
             }
 
             fireMembershipEvent(event);
+        }
+    }
+
+    private void fireInitialMembershipEvent(InitialMembershipEvent event) {
+        for (MembershipListener listener : listeners.values()) {
+            ((InitialMembershipListener) listener).init(event);
         }
     }
 
