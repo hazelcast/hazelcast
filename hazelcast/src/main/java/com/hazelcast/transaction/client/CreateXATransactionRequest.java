@@ -50,7 +50,7 @@ public class CreateXATransactionRequest extends CallableClientRequest implements
     public Object call() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         XAService xaService = getService();
-        TransactionContext context = xaService.newXATransactionContext(xid, timeout, true);
+        TransactionContext context = xaService.newXATransactionContext(xid, endpoint.getUuid(), timeout, true);
         TransactionAccessor.getTransaction(context).begin();
         endpoint.setTransactionContext(context);
         return context.getTxnId();
