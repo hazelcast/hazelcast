@@ -115,10 +115,10 @@ public class TopicConfig {
      * @return The updated TopicConfig
      */
     public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
-    	if (this.multiThreadingEnabled && globalOrderingEnabled) {
+        if (this.multiThreadingEnabled && globalOrderingEnabled) {
             throw new IllegalArgumentException("Global ordering can not be enabled when multi-threading is used.");
-    	}
-    	this.globalOrderingEnabled = globalOrderingEnabled;
+        }
+        this.globalOrderingEnabled = globalOrderingEnabled;
         return this;
     }
 
@@ -147,10 +147,10 @@ public class TopicConfig {
      * @return The updated TopicConfig
      */
     public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
-    	if (this.globalOrderingEnabled && multiThreadingEnabled) {
+        if (this.globalOrderingEnabled && multiThreadingEnabled) {
             throw new IllegalArgumentException("Multi-threading can not be enabled when global ordering is used.");
-    	}
-    	this.multiThreadingEnabled = multiThreadingEnabled;
+        }
+        this.multiThreadingEnabled = multiThreadingEnabled;
         return this;
     }
 
@@ -228,8 +228,8 @@ public class TopicConfig {
     }
 
     public String toString() {
-        return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled 
-                + ", multiThreadingEnabled=" + multiThreadingEnabled + ", statisticsEnabled=" 
+        return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled
+                + ", multiThreadingEnabled=" + multiThreadingEnabled + ", statisticsEnabled="
                 + statisticsEnabled + "]";
     }
 }
