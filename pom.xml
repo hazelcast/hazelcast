@@ -33,6 +33,14 @@
         <module>hazelcast-jet-language</module>
     </modules>
 
+    <repositories>
+        <repository>
+            <id>snapshot-repository</id>
+            <name>Maven2 Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
+
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -87,19 +95,6 @@
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
-
-        <jsr107.api.version>1.0.0</jsr107.api.version>
-        <CacheManagerImpl>com.hazelcast.cache.HazelcastCacheManager</CacheManagerImpl>
-        <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
-        <CacheEntryImpl>com.hazelcast.cache.impl.CacheEntry</CacheEntryImpl>
-        <javax.management.builder.initial>com.hazelcast.cache.impl.TCKMBeanServerBuilder
-        </javax.management.builder.initial>
-        <org.jsr107.tck.management.agentId>TCKMbeanServer</org.jsr107.tck.management.agentId>
-        <javax.cache.annotation.CacheInvocationContext>javax.cache.annotation.impl.cdi.CdiCacheKeyInvocationContextImpl
-        </javax.cache.annotation.CacheInvocationContext>
-
-        <h2.version>1.3.160</h2.version>
-        <atomikos.version>3.9.3</atomikos.version>
     </properties>
 
     <licenses>
@@ -228,6 +223,17 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
                 <version>${maven.animal.sniffer.plugin.version}</version>
@@ -331,9 +337,7 @@
                     <perCoreThreadCount>true</perCoreThreadCount>
 
                     <argLine>
-                        -Xms6G -Xmx6G -Xss4096K -XX:MaxPermSize=1024M -XX:NewSize=3G -XX:MaxNewSize=3G
-                        -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:ParallelGCThreads=8 -XX:SurvivorRatio=1
-                        -XX:+PrintTenuringDistribution
+                        -verbose:gc -Xmx4G
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
@@ -434,9 +438,7 @@
             <id>test-coverage</id>
             <properties>
                 <argLine>
-                    -Xms6G -Xmx6G -Xss4096K -XX:MaxPermSize=1024M -XX:NewSize=3G -XX:MaxNewSize=3G
-                    -XX:+UseParallelGC -XX:+UseParallelOldGC -XX:ParallelGCThreads=8 -XX:SurvivorRatio=1
-                    -XX:+PrintTenuringDistribution
+                    -verbose:gc -Xmx4G
                     -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
