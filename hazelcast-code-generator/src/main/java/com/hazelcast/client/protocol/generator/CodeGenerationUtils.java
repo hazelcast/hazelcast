@@ -47,6 +47,7 @@ public final class CodeGenerationUtils {
         put("int","number");
         put("java.util.List", "any");
         put("java.util.Set", "any");
+        put("long", "number");
     }};
 
     private static final Map<String, String> JAVA_TO_CSHARP_TYPES = new HashMap<String, String>() {{

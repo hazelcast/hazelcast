@@ -1,7 +1,6 @@
 import {ClientMessage} from '../ClientMessage';
 import {BitsUtil} from '../BitsUtil';
-import {Utils} from './Utils';
-import {CustomCodec} from './CustomCodec';
+import {Data} from '../serialization/Data';
 import {${model.parentName}MessageType} from './${model.parentName}MessageType';
 
 var REQUEST_TYPE = ${model.parentName}MessageType.${model.parentName?upper_case}_${model.name?upper_case};
@@ -11,10 +10,6 @@ var RETRYABLE = <#if model.retryable == 1>true<#else>false</#if>;
 <#--************************ REQUEST ********************************************************-->
 
 export class ${model.className}{
-
-constructor() {
-}
-
 
 
 
@@ -29,8 +24,7 @@ static calculateSize(<#list model.requestParams as param>${util.convertToNodeTyp
 
 static encodeRequest(<#list model.requestParams as param>${util.convertToNodeType(param.name)} : ${util.getNodeTsType(param.type)}<#if param_has_next>, </#if></#list>){
     // Encode request into clientMessage
-    var payloadSize : number;
-    var clientMessage = ClientMessage.newClientMessage(payloadSize=this.calculateSize(<#list model.requestParams as param>${util.convertToNodeType(param.name)}<#if param_has_next>, </#if></#list>));
+    var clientMessage = ClientMessage.newClientMessage(this.calculateSize(<#list model.requestParams as param>${util.convertToNodeType(param.name)}<#if param_has_next>, </#if></#list>));
     clientMessage.setMessageType(REQUEST_TYPE);
     clientMessage.setRetryable(RETRYABLE);
 <#list model.requestParams as p>
@@ -41,9 +35,9 @@ static encodeRequest(<#list model.requestParams as param>${util.convertToNodeTyp
 }
 
 <#--************************ RESPONSE ********************************************************-->
-static decodeResponse(clientMessage : ClientMessage){
+static decodeResponse(clientMessage : ClientMessage,  toObjectFunction: (data: Data) => any){
     // Decode response from client message
-    var parameters :any ;
+    var parameters :any = {};
 <#list model.responseParams as p>
 <@getterText varName=util.convertToNodeType(p.name) type=p.type isNullable=p.nullable/>
 </#list>
@@ -60,8 +54,8 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     <#list model.events as event>
     if ( messageType === EVENT_${event.name?upper_case} && handleEvent${util.capitalizeFirstLetter(event.name?lower_case)} !== null) {
         <#list event.eventParams as p>
-        var ${util.convertToNodeType(p.name)} : ${util.getNodeTsType(p.type)};
-<@getterText varName=util.convertToNodeType(p.name) type=p.type isNullable=p.nullable isEvent=true/>
+     var ${util.convertToNodeType(p.name)} : ${util.getNodeTsType(p.type)};
+    <@getterText varName=util.convertToNodeType(p.name) type=p.type isNullable=p.nullable isEvent=true/>
         </#list>
         handleEvent${util.convertToNodeType(event.name?lower_case)}(<#list event.eventParams as param>${util.convertToNodeType(param.name)}<#if param_has_next>, </#if></#list>);
     }
@@ -100,11 +94,11 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
         <#if util.isPrimitive(type)>
     dataSize += BitsUtil.${type?upper_case}_SIZE_IN_BYTES;
         <#else >
-    dataSize += Utils.calculateSize${util.capitalizeFirstLetter(util.getNodeType(type)?lower_case)}(${varName});
+    dataSize += BitsUtil.calculateSize${util.capitalizeFirstLetter(util.getNodeType(type)?lower_case)}(${varName});
         </#if>
         <#break >
     <#case "CUSTOM">
-    dataSize += Utils.calculateSize${util.capitalizeFirstLetter(util.getNodeType(type)?lower_case)}(${varName});
+    dataSize += BitsUtil.calculateSize${util.capitalizeFirstLetter(util.getNodeType(type)?lower_case)}(${varName});
         <#break >
     <#case "COLLECTION">
     dataSize += BitsUtil.INT_SIZE_IN_BYTES;
@@ -156,7 +150,7 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     ${util.getTypeCodec(type)?split(".")?last}.encode(clientMessage, ${varName});
     </#if>
     <#if cat == "COLLECTION">
-    clientMessage.appendInt32(len(${varName}))
+    clientMessage.appendInt32(len(${varName}));
         <#local itemType= util.getGenericType(type)>
         <#local itemTypeVar= varName + "Item">
     for( ${itemTypeVar} in ${varName}) {
@@ -174,7 +168,7 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     <#if cat == "MAP">
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
-    clientMessage.appendInt32(len(${varName}))
+    clientMessage.appendInt32(len(${varName}));
     for( entry in ${varName}){
     <@setterTextInternal varName="entry.key"  type=keyType />
     <@setterTextInternal varName="entry.val"  type=valueType />
@@ -200,7 +194,7 @@ if(clientMessage.readBoolean() === true){
     <#case "OTHER">
         <#switch varType>
             <#case util.DATA_FULL_NAME>
-    <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = clientMessage.readBuffer();
+    <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = toObjectFunction(clientMessage.readBuffer());
                 <#break >
             <#case "java.lang.Integer">
     <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = clientMessage.readInt32();
@@ -228,14 +222,14 @@ if(clientMessage.readBoolean() === true){
     <#local itemVariableName= "${varName}Item">
     <#local sizeVariableName= "${varName}Size">
     <#local indexVariableName= "${varName}Index">
-    ${sizeVariableName} = clientMessage.readInt32()
+    ${sizeVariableName} = clientMessage.readInt32();
     ${varName} = [];
     for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
                             <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true />
         ${varName}.push(${itemVariableName})
     }
 <#if !isEvent>
-    parameters['${varName}'] = ${varName}
+    parameters['${varName}'] = ${varName};
 </#if>
         <#break >
     <#case "MAP">
@@ -251,6 +245,6 @@ if(clientMessage.readBoolean() === true){
             <@getterTextInternal varName=keyVariableName varType=keyType isEvent=true />
             <@getterTextInternal varName=valVariableName varType=valueType isEvent=true />
         ${varName}[${keyVariableName}] = ${valVariableName}
-        <#if !isEvent>parameters['${varName}'] = ${varName}</#if>
+        <#if !isEvent>parameters['${varName}'] = ${varName};</#if>
 </#switch>
 </#macro>

@@ -38,11 +38,11 @@
             <ports>0</ports>
         </outbound-ports>
         <join>
-            <multicast enabled="true">
+            <multicast enabled="false">
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
             </multicast>
-            <tcp-ip enabled="false">
+            <tcp-ip enabled="true">
                 <interface>127.0.0.1</interface>
                 <member-list>
                     <member>127.0.0.1</member>
