@@ -41,7 +41,6 @@ public final class HashUtil {
      * Returns the MurmurHash3_x86_32 hash.
      */
     public static int MurmurHash3_x86_32(byte[] data, int offset, int len, int seed) {
-
         int c1 = 0xcc9e2d51;
         int c2 = 0x1b873593;
 
@@ -50,7 +49,10 @@ public final class HashUtil {
 
         for (int i = offset; i < roundedEnd; i += 4) {
             // little endian load order
-            int k1 = (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8) | ((data[i + 2] & 0xff) << 16) | (data[i + 3] << 24);
+            int k1 = (data[i] & 0xff)
+                    | ((data[i + 1] & 0xff) << 8)
+                    | ((data[i + 2] & 0xff) << 16)
+                    | (data[i + 3] << 24);
             k1 *= c1;
             k1 = (k1 << 15) | (k1 >>> 17);  // ROTL32(k1,15);
             k1 *= c2;
@@ -92,7 +94,6 @@ public final class HashUtil {
      * Returns the MurmurHash3_x86_32 hash.
      */
     public static int MurmurHash3_x86_32_direct(long address, int offset, int len, int seed) {
-
         int c1 = 0xcc9e2d51;
         int c2 = 0x1b873593;
 
@@ -103,10 +104,10 @@ public final class HashUtil {
         for (int i = offset; i < roundedEnd; i += 4) {
             // little endian load order
             int k1 = LITTLE_ENDIAN ? unsafe.getInt(address + i)
-                    : (unsafe.getByte(address + i + 3) & 0xff)
-                    | ((unsafe.getByte(address + i + 2) & 0xff) << 8)
-                    | ((unsafe.getByte(address + i + 1) & 0xff) << 16)
-                    | (unsafe.getByte(address + i) << 24);
+                    : (unsafe.getByte(address + i) & 0xff)
+                    | ((unsafe.getByte(address + i + 1) & 0xff) << 8)
+                    | ((unsafe.getByte(address + i + 2) & 0xff) << 16)
+                    | (unsafe.getByte(address + i + 3) << 24);
             k1 *= c1;
             k1 = (k1 << 15) | (k1 >>> 17);  // ROTL32(k1,15);
             k1 *= c2;
