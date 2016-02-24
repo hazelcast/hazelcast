@@ -17,6 +17,7 @@
 package com.hazelcast.internal.memory;
 
 import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
+import com.hazelcast.internal.memory.impl.ByteBufferMemoryAccessor;
 import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
 
 import java.util.EnumMap;
@@ -48,6 +49,9 @@ public final class MemoryAccessorProvider {
                 MEMORY_ACCESSOR_MAP.put(MemoryAccessorType.PLATFORM_AWARE, alignmentAwareMemoryAccessor);
             }
         }
+
+        ByteBufferMemoryAccessor byteBufferMemoryAccessor = new ByteBufferMemoryAccessor();
+        MEMORY_ACCESSOR_MAP.put(MemoryAccessorType.HEAP_BYTE_ARRAY, byteBufferMemoryAccessor);
     }
 
     private MemoryAccessorProvider() {

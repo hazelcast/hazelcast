@@ -49,6 +49,13 @@ public enum MemoryAccessorType {
      *
      * @see com.hazelcast.internal.memory.impl.PlatformAwareMemoryAccessor
      */
-    PLATFORM_AWARE;
+    PLATFORM_AWARE,
 
+
+    /**
+     * Represents the heap-byte {@link MemoryAccessor} which  data in specified heap-byteBuffer (byte[] buffer).
+     *
+     * @see com.hazelcast.internal.memory.impl.ByteBufferMemoryAccessor
+     */
+    HEAP_BYTE_ARRAY;
 }

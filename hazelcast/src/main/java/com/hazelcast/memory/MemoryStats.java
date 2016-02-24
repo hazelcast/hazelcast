@@ -88,7 +88,7 @@ public interface MemoryStats {
      *
      * @return the maximum amount of native memory in bytes.
      */
-    long getMaxNativeMemory();
+    long getMaxMemory();
 
     /**
      * Returns the amount of native memory in bytes that is committed for
@@ -96,21 +96,21 @@ public interface MemoryStats {
      *
      * @return the amount of committed native memory in bytes.
      */
-    long getCommittedNativeMemory();
+    long getCommittedMemory();
 
     /**
      * Returns the amount of used native memory in current HazelcastInstance in bytes.
      *
      * @return the amount of used native memory in bytes
      */
-    long getUsedNativeMemory();
+    long getUsedMemory();
 
     /**
      * Returns the amount of free native memory in current HazelcastInstance in bytes.
      *
      * @return the amount of free native memory in bytes
      */
-    long getFreeNativeMemory();
+    long getFreeMemory();
 
     /**
      * Returns the garbage collector statistics for the JVM

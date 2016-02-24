@@ -16,16 +16,20 @@
 
 package com.hazelcast.internal.memory.impl;
 
-import sun.misc.Unsafe;
+import com.hazelcast.internal.memory.MemoryAccessor;
+
+import java.io.DataInput;
+import java.io.IOException;
+import java.io.UTFDataFormatException;
 
 /**
  * Utility class to read/write bits to given location (by base object/offset or native memory address)
  * by specified byte order (little/big endian).
  */
 public final class DirectMemoryBits {
+    private static final MemoryAccessor BYTE_ARRAY_MEMORY_ACCESSOR = MemoryAccessor.HEAP_BYTE_ARRAY_MEM;
+    private static final MemoryAccessor STANDARD_MEMORY_ACCESSOR = MemoryAccessor.AMEM;
 
-    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
-    private static final int BYTE_ARRAY_BASE_OFFSET = UNSAFE != null ? UNSAFE.arrayBaseOffset(byte[].class) : -1;
 
     private DirectMemoryBits() {
     }
@@ -37,7 +41,7 @@ public final class DirectMemoryBits {
     }
 
     public static char readChar(byte[] buffer, int pos, boolean bigEndian) {
-        return readChar(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readChar(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static char readChar(Object base, long offset, boolean bigEndian) {
@@ -48,15 +52,31 @@ public final class DirectMemoryBits {
         }
     }
 
+    public static char readChar(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
+        if (bigEndian) {
+            return readCharB(memoryAccessor, base, offset);
+        } else {
+            return readCharL(memoryAccessor, base, offset);
+        }
+    }
+
     public static char readCharB(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
-        return (char) ((byte1 << 8) + byte0);
+        return readCharB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static char readCharL(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
+        return readCharL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static char readCharB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
+        return (char) ((byte1 << 8) + byte0);
+    }
+
+    public static char readCharL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
         return (char) ((byte0 << 8) + byte1);
     }
 
@@ -65,25 +85,37 @@ public final class DirectMemoryBits {
     }
 
     public static void writeChar(byte[] buffer, int pos, char v, boolean bigEndian) {
-        writeChar(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeChar(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeChar(Object base, long offset, char v, boolean bigEndian) {
+        writeChar(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeChar(MemoryAccessor memoryAccessor, Object base, long offset, char v, boolean bigEndian) {
         if (bigEndian) {
-            writeCharB(base, offset, v);
+            writeCharB(memoryAccessor, base, offset, v);
         } else {
-            writeCharL(base, offset, v);
+            writeCharL(memoryAccessor, base, offset, v);
         }
     }
 
+    public static void writeCharB(MemoryAccessor memoryAccessor, Object base, long offset, char v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+    }
+
+    public static void writeCharL(MemoryAccessor memoryAccessor, Object base, long offset, char v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
+    }
+
     public static void writeCharB(Object base, long offset, char v) {
-        UNSAFE.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+        writeCharB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeCharL(Object base, long offset, char v) {
-        UNSAFE.putByte(base, offset, (byte) ((v) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
+        writeCharL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     //////////////////////////////////////////////////////////////////
@@ -93,26 +125,38 @@ public final class DirectMemoryBits {
     }
 
     public static short readShort(byte[] buffer, int pos, boolean bigEndian) {
-        return readShort(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readShort(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static short readShort(Object base, long offset, boolean bigEndian) {
+        return readShort(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static short readShort(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readShortB(base, offset);
+            return readShortB(memoryAccessor, base, offset);
         } else {
-            return readShortL(base, offset);
+            return readShortL(memoryAccessor, base, offset);
         }
     }
 
     public static short readShortB(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
-        return (short) ((byte1 << 8) + byte0);
+        return readShortB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static short readShortL(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
+        return readShortL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static short readShortB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
+        return (short) ((byte1 << 8) + byte0);
+    }
+
+    public static short readShortL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
         return (short) ((byte0 << 8) + byte1);
     }
 
@@ -121,7 +165,7 @@ public final class DirectMemoryBits {
     }
 
     public static void writeShort(byte[] buffer, int pos, short v, boolean bigEndian) {
-        writeShort(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeShort(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeShort(Object base, long offset, short v, boolean bigEndian) {
@@ -132,14 +176,30 @@ public final class DirectMemoryBits {
         }
     }
 
+    public static void writeShort(MemoryAccessor memoryAccessor, Object base, long offset, short v, boolean bigEndian) {
+        if (bigEndian) {
+            writeShortB(memoryAccessor, base, offset, v);
+        } else {
+            writeShortL(memoryAccessor, base, offset, v);
+        }
+    }
+
     public static void writeShortB(Object base, long offset, short v) {
-        UNSAFE.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+        writeShortB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeShortL(Object base, long offset, short v) {
-        UNSAFE.putByte(base, offset, (byte) ((v) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
+        writeShortL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeShortB(MemoryAccessor memoryAccessor, Object base, long offset, short v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+    }
+
+    public static void writeShortL(MemoryAccessor memoryAccessor, Object base, long offset, short v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -149,30 +209,42 @@ public final class DirectMemoryBits {
     }
 
     public static int readInt(byte[] buffer, int pos, boolean bigEndian) {
-        return readInt(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readInt(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static int readInt(Object base, long offset, boolean bigEndian) {
+        return readInt(MemoryAccessor.AMEM, base, offset, bigEndian);
+    }
+
+    public static int readInt(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readIntB(base, offset);
+            return readIntB(memoryAccessor, base, offset);
         } else {
-            return readIntL(base, offset);
+            return readIntL(memoryAccessor, base, offset);
         }
     }
 
     public static int readIntB(Object base, long offset) {
-        int byte3 = (UNSAFE.getByte(base, offset) & 0xFF) << 24;
-        int byte2 = (UNSAFE.getByte(base, offset + 1) & 0xFF) << 16;
-        int byte1 = (UNSAFE.getByte(base, offset + 2) & 0xFF) << 8;
-        int byte0 = UNSAFE.getByte(base, offset + 3) & 0xFF;
-        return byte3 + byte2 + byte1 + byte0;
+        return readIntB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static int readIntL(Object base, long offset) {
-        int byte3 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte2 = (UNSAFE.getByte(base, offset + 1) & 0xFF) << 8;
-        int byte1 = (UNSAFE.getByte(base, offset + 2) & 0xFF) << 16;
-        int byte0 = (UNSAFE.getByte(base, offset + 3) & 0xFF) << 24;
+        return readIntL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static int readIntB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte3 = (memoryAccessor.getByte(base, offset) & 0xFF) << 24;
+        int byte2 = (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 16;
+        int byte1 = (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 8;
+        int byte0 = memoryAccessor.getByte(base, offset + 3) & 0xFF;
+        return byte3 + byte2 + byte1 + byte0;
+    }
+
+    public static int readIntL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte3 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte2 = (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 8;
+        int byte1 = (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 16;
+        int byte0 = (memoryAccessor.getByte(base, offset + 3) & 0xFF) << 24;
         return byte3 + byte2 + byte1 + byte0;
     }
 
@@ -181,29 +253,41 @@ public final class DirectMemoryBits {
     }
 
     public static void writeInt(byte[] buffer, int pos, int v, boolean bigEndian) {
-        writeInt(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeInt(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeInt(Object base, long offset, int v, boolean bigEndian) {
+        writeInt(MemoryAccessor.AMEM, base, offset, v, bigEndian);
+    }
+
+    public static void writeInt(MemoryAccessor memoryAccessor, Object base, long offset, int v, boolean bigEndian) {
         if (bigEndian) {
-            writeIntB(base, offset, v);
+            writeIntB(memoryAccessor, base, offset, v);
         } else {
-            writeIntL(base, offset, v);
+            writeIntL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeIntB(Object base, long offset, int v) {
-        UNSAFE.putByte(base, offset, (byte) ((v >>> 24) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 16) & 0xFF));
-        UNSAFE.putByte(base, offset + 2, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 3, (byte) ((v) & 0xFF));
+        writeIntB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeIntL(Object base, long offset, int v) {
-        UNSAFE.putByte(base, offset, (byte) ((v) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 2, (byte) ((v >>> 16) & 0xFF));
-        UNSAFE.putByte(base, offset + 3, (byte) ((v >>> 24) & 0xFF));
+        writeIntL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeIntB(MemoryAccessor memoryAccessor, Object base, long offset, int v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v >>> 24) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 16) & 0xFF));
+        memoryAccessor.putByte(base, offset + 2, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 3, (byte) ((v) & 0xFF));
+    }
+
+    public static void writeIntL(MemoryAccessor memoryAccessor, Object base, long offset, int v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 2, (byte) ((v >>> 16) & 0xFF));
+        memoryAccessor.putByte(base, offset + 3, (byte) ((v >>> 24) & 0xFF));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -213,23 +297,35 @@ public final class DirectMemoryBits {
     }
 
     public static float readFloat(byte[] buffer, int pos, boolean bigEndian) {
-        return readFloat(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readFloat(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static float readFloat(Object base, long offset, boolean bigEndian) {
+        return readFloat(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static float readFloat(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readFloatB(base, offset);
+            return readFloatB(memoryAccessor, base, offset);
         } else {
-            return readFloatL(base, offset);
+            return readFloatL(memoryAccessor, base, offset);
         }
     }
 
     public static float readFloatB(Object base, long offset) {
-        return Float.intBitsToFloat(readIntB(base, offset));
+        return readFloatB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static float readFloatL(Object base, long offset) {
-        return Float.intBitsToFloat(readIntL(base, offset));
+        return readFloatL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static float readFloatB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Float.intBitsToFloat(readIntB(memoryAccessor, base, offset));
+    }
+
+    public static float readFloatL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Float.intBitsToFloat(readIntL(memoryAccessor, base, offset));
     }
 
     public static void writeFloat(long address, float v, boolean bigEndian) {
@@ -237,23 +333,35 @@ public final class DirectMemoryBits {
     }
 
     public static void writeFloat(byte[] buffer, int pos, float v, boolean bigEndian) {
-        writeFloat(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeFloat(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeFloat(Object base, long offset, float v, boolean bigEndian) {
+        writeFloat(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeFloat(MemoryAccessor memoryAccessor, Object base, long offset, float v, boolean bigEndian) {
         if (bigEndian) {
-            writeFloatB(base, offset, v);
+            writeFloatB(memoryAccessor, base, offset, v);
         } else {
-            writeFloatL(base, offset, v);
+            writeFloatL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeFloatB(Object base, long offset, float v) {
-        writeIntB(base, offset, Float.floatToRawIntBits(v));
+        writeFloatB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeFloatL(Object base, long offset, float v) {
-        writeIntL(base, offset, Float.floatToRawIntBits(v));
+        writeFloatL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeFloatB(MemoryAccessor memoryAccessor, Object base, long offset, float v) {
+        writeIntB(memoryAccessor, base, offset, Float.floatToRawIntBits(v));
+    }
+
+    public static void writeFloatL(MemoryAccessor memoryAccessor, Object base, long offset, float v) {
+        writeIntL(memoryAccessor, base, offset, Float.floatToRawIntBits(v));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -263,77 +371,103 @@ public final class DirectMemoryBits {
     }
 
     public static long readLong(byte[] buffer, int pos, boolean bigEndian) {
-        return readLong(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readLong(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static long readLong(Object base, long offset, boolean bigEndian) {
+        return readLong(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static long readLong(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readLongB(base, offset);
+            return readLongB(memoryAccessor, base, offset);
         } else {
-            return readLongL(base, offset);
+            return readLongL(memoryAccessor, base, offset);
         }
     }
 
     public static long readLongB(Object base, long offset) {
-        long byte7 = (long) UNSAFE.getByte(base, offset) << 56;
-        long byte6 = (long) (UNSAFE.getByte(base, offset + 1) & 0xFF) << 48;
-        long byte5 = (long) (UNSAFE.getByte(base, offset + 2) & 0xFF) << 40;
-        long byte4 = (long) (UNSAFE.getByte(base, offset + 3) & 0xFF) << 32;
-        long byte3 = (long) (UNSAFE.getByte(base, offset + 4) & 0xFF) << 24;
-        long byte2 = (long) (UNSAFE.getByte(base, offset + 5) & 0xFF) << 16;
-        long byte1 = (long) (UNSAFE.getByte(base, offset + 6) & 0xFF) << 8;
-        long byte0 = (long) (UNSAFE.getByte(base, offset + 7) & 0xFF);
-        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+        return readLongB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static long readLongL(Object base, long offset) {
-        long byte7 = (long) (UNSAFE.getByte(base, offset) & 0xFF);
-        long byte6 = (long) (UNSAFE.getByte(base, offset + 1) & 0xFF) << 8;
-        long byte5 = (long) (UNSAFE.getByte(base, offset + 2) & 0xFF) << 16;
-        long byte4 = (long) (UNSAFE.getByte(base, offset + 3) & 0xFF) << 24;
-        long byte3 = (long) (UNSAFE.getByte(base, offset + 4) & 0xFF) << 32;
-        long byte2 = (long) (UNSAFE.getByte(base, offset + 5) & 0xFF) << 40;
-        long byte1 = (long) (UNSAFE.getByte(base, offset + 6) & 0xFF) << 48;
-        long byte0 = (long) (UNSAFE.getByte(base, offset + 7) & 0xFF) << 56;
+        return readLongL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static long readLongB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        long byte7 = (long) memoryAccessor.getByte(base, offset) << 56;
+        long byte6 = (long) (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 48;
+        long byte5 = (long) (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 40;
+        long byte4 = (long) (memoryAccessor.getByte(base, offset + 3) & 0xFF) << 32;
+        long byte3 = (long) (memoryAccessor.getByte(base, offset + 4) & 0xFF) << 24;
+        long byte2 = (long) (memoryAccessor.getByte(base, offset + 5) & 0xFF) << 16;
+        long byte1 = (long) (memoryAccessor.getByte(base, offset + 6) & 0xFF) << 8;
+        long byte0 = (long) (memoryAccessor.getByte(base, offset + 7) & 0xFF);
         return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
     }
+
+    public static long readLongL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        long byte7 = (long) (memoryAccessor.getByte(base, offset) & 0xFF);
+        long byte6 = (long) (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 8;
+        long byte5 = (long) (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 16;
+        long byte4 = (long) (memoryAccessor.getByte(base, offset + 3) & 0xFF) << 24;
+        long byte3 = (long) (memoryAccessor.getByte(base, offset + 4) & 0xFF) << 32;
+        long byte2 = (long) (memoryAccessor.getByte(base, offset + 5) & 0xFF) << 40;
+        long byte1 = (long) (memoryAccessor.getByte(base, offset + 6) & 0xFF) << 48;
+        long byte0 = (long) (memoryAccessor.getByte(base, offset + 7) & 0xFF) << 56;
+        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
 
     public static void writeLong(long address, long v, boolean bigEndian) {
         writeLong(null, address, v, bigEndian);
     }
 
     public static void writeLong(byte[] buffer, int pos, long v, boolean bigEndian) {
-        writeLong(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeLong(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeLong(Object base, long offset, long v, boolean bigEndian) {
+        writeLong(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeLong(MemoryAccessor memoryAccessor, Object base, long offset, long v, boolean bigEndian) {
         if (bigEndian) {
-            writeLongB(base, offset, v);
+            writeLongB(memoryAccessor, base, offset, v);
         } else {
-            writeLongL(base, offset, v);
+            writeLongL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeLongB(Object base, long offset, long v) {
-        UNSAFE.putByte(base, offset, (byte) (v >>> 56));
-        UNSAFE.putByte(base, offset + 1, (byte) (v >>> 48));
-        UNSAFE.putByte(base, offset + 2, (byte) (v >>> 40));
-        UNSAFE.putByte(base, offset + 3, (byte) (v >>> 32));
-        UNSAFE.putByte(base, offset + 4, (byte) (v >>> 24));
-        UNSAFE.putByte(base, offset + 5, (byte) (v >>> 16));
-        UNSAFE.putByte(base, offset + 6, (byte) (v >>> 8));
-        UNSAFE.putByte(base, offset + 7, (byte) (v));
+        writeLongB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeLongL(Object base, long offset, long v) {
-        UNSAFE.putByte(base, offset, (byte) (v));
-        UNSAFE.putByte(base, offset + 1, (byte) (v >>> 8));
-        UNSAFE.putByte(base, offset + 2, (byte) (v >>> 16));
-        UNSAFE.putByte(base, offset + 3, (byte) (v >>> 24));
-        UNSAFE.putByte(base, offset + 4, (byte) (v >>> 32));
-        UNSAFE.putByte(base, offset + 5, (byte) (v >>> 40));
-        UNSAFE.putByte(base, offset + 6, (byte) (v >>> 48));
-        UNSAFE.putByte(base, offset + 7, (byte) (v >>> 56));
+        writeLongL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeLongB(MemoryAccessor memoryAccessor, Object base, long offset, long v) {
+        memoryAccessor.putByte(base, offset, (byte) (v >>> 56));
+        memoryAccessor.putByte(base, offset + 1, (byte) (v >>> 48));
+        memoryAccessor.putByte(base, offset + 2, (byte) (v >>> 40));
+        memoryAccessor.putByte(base, offset + 3, (byte) (v >>> 32));
+        memoryAccessor.putByte(base, offset + 4, (byte) (v >>> 24));
+        memoryAccessor.putByte(base, offset + 5, (byte) (v >>> 16));
+        memoryAccessor.putByte(base, offset + 6, (byte) (v >>> 8));
+        memoryAccessor.putByte(base, offset + 7, (byte) (v));
+    }
+
+    public static void writeLongL(MemoryAccessor memoryAccessor, Object base, long offset, long v) {
+        memoryAccessor.putByte(base, offset, (byte) (v));
+        memoryAccessor.putByte(base, offset + 1, (byte) (v >>> 8));
+        memoryAccessor.putByte(base, offset + 2, (byte) (v >>> 16));
+        memoryAccessor.putByte(base, offset + 3, (byte) (v >>> 24));
+        memoryAccessor.putByte(base, offset + 4, (byte) (v >>> 32));
+        memoryAccessor.putByte(base, offset + 5, (byte) (v >>> 40));
+        memoryAccessor.putByte(base, offset + 6, (byte) (v >>> 48));
+        memoryAccessor.putByte(base, offset + 7, (byte) (v >>> 56));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -343,47 +477,73 @@ public final class DirectMemoryBits {
     }
 
     public static double readDouble(byte[] buffer, int pos, boolean bigEndian) {
-        return readDouble(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readDouble(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static double readDouble(Object base, long offset, boolean bigEndian) {
+        return readDouble(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static double readDouble(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readDoubleB(base, offset);
+            return readDoubleB(memoryAccessor, base, offset);
         } else {
-            return readDoubleL(base, offset);
+            return readDoubleL(memoryAccessor, base, offset);
         }
     }
 
     public static double readDoubleB(Object base, long offset) {
-        return Double.longBitsToDouble(readLongB(base, offset));
+        return readDoubleB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static double readDoubleL(Object base, long offset) {
-        return Double.longBitsToDouble(readLongL(base, offset));
+        return readDoubleL(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
+
+    public static double readDoubleB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Double.longBitsToDouble(readLongB(memoryAccessor, base, offset));
+    }
+
+    public static double readDoubleL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Double.longBitsToDouble(readLongL(memoryAccessor, base, offset));
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
 
     public static void writeDouble(long address, double v, boolean bigEndian) {
         writeDouble(null, address, v, bigEndian);
     }
 
     public static void writeDouble(byte[] buffer, int pos, double v, boolean bigEndian) {
-        writeDouble(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeDouble(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeDouble(Object base, long offset, double v, boolean bigEndian) {
+        writeDouble(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeDouble(MemoryAccessor memoryAccessor, Object base, long offset, double v, boolean bigEndian) {
         if (bigEndian) {
-            writeDoubleB(base, offset, v);
+            writeDoubleB(memoryAccessor, base, offset, v);
         } else {
-            writeDoubleL(base, offset, v);
+            writeDoubleL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeDoubleB(Object base, long offset, double v) {
-        writeLongB(base, offset, Double.doubleToRawLongBits(v));
+        writeLongB(STANDARD_MEMORY_ACCESSOR, base, offset, Double.doubleToRawLongBits(v));
     }
 
     public static void writeDoubleL(Object base, long offset, double v) {
-        writeLongL(base, offset, Double.doubleToRawLongBits(v));
+        writeLongL(STANDARD_MEMORY_ACCESSOR, base, offset, Double.doubleToRawLongBits(v));
+    }
+
+    public static void writeDoubleB(MemoryAccessor memoryAccessor, Object base, long offset, double v) {
+        writeLongB(memoryAccessor, base, offset, Double.doubleToRawLongBits(v));
+    }
+
+    public static void writeDoubleL(MemoryAccessor memoryAccessor, Object base, long offset, double v) {
+        writeLongL(memoryAccessor, base, offset, Double.doubleToRawLongBits(v));
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -393,53 +553,79 @@ public final class DirectMemoryBits {
     }
 
     public static char readCharVolatile(byte[] buffer, int pos, boolean bigEndian) {
-        return readCharVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readCharVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static char readCharVolatile(Object base, long offset, boolean bigEndian) {
+        return readCharVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static char readCharVolatile(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readCharVolatileB(base, offset);
+            return readCharVolatileB(memoryAccessor, base, offset);
         } else {
-            return readCharVolatileL(base, offset);
+            return readCharVolatileL(memoryAccessor, base, offset);
         }
     }
 
     public static char readCharVolatileB(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
-        return (char) ((byte1 << 8) + byte0);
+        return readCharVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static char readCharVolatileL(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
+        return readCharVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static char readCharVolatileB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
+        return (char) ((byte1 << 8) + byte0);
+    }
+
+    public static char readCharVolatileL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
         return (char) ((byte0 << 8) + byte1);
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////
 
     public static void writeCharVolatile(long address, char v, boolean bigEndian) {
         writeCharVolatile(null, address, v, bigEndian);
     }
 
     public static void writeCharVolatile(byte[] buffer, int pos, char v, boolean bigEndian) {
-        writeCharVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeCharVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeCharVolatile(Object base, long offset, char v, boolean bigEndian) {
+        writeCharVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeCharVolatile(MemoryAccessor memoryAccessor, Object base, long offset, char v, boolean bigEndian) {
         if (bigEndian) {
-            writeCharVolatileB(base, offset, v);
+            writeCharVolatileB(memoryAccessor, base, offset, v);
         } else {
-            writeCharVolatileL(base, offset, v);
+            writeCharVolatileL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeCharVolatileB(Object base, long offset, char v) {
-        UNSAFE.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+        writeCharVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeCharVolatileL(Object base, long offset, char v) {
-        UNSAFE.putByte(base, offset, (byte) ((v) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
+        writeCharVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeCharVolatileB(MemoryAccessor memoryAccessor, Object base, long offset, char v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+    }
+
+    public static void writeCharVolatileL(MemoryAccessor memoryAccessor, Object base, long offset, char v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -449,35 +635,49 @@ public final class DirectMemoryBits {
     }
 
     public static short readShortVolatile(byte[] buffer, int pos, boolean bigEndian) {
-        return readShortVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readShortVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static short readShortVolatile(Object base, long offset, boolean bigEndian) {
+        return readShortVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static short readShortVolatile(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readShortVolatileB(base, offset);
+            return readShortVolatileB(memoryAccessor, base, offset);
         } else {
-            return readShortVolatileL(base, offset);
+            return readShortVolatileL(memoryAccessor, base, offset);
         }
     }
 
     public static short readShortVolatileB(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
-        return (short) ((byte1 << 8) + byte0);
+        return readShortVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static short readShortVolatileL(Object base, long offset) {
-        int byte1 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte0 = UNSAFE.getByte(base, offset + 1) & 0xFF;
+        return readShortVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static short readShortVolatileB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
+        return (short) ((byte1 << 8) + byte0);
+    }
+
+    public static short readShortVolatileL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte1 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte0 = memoryAccessor.getByte(base, offset + 1) & 0xFF;
         return (short) ((byte0 << 8) + byte1);
     }
+
+    //////////////////////////////////////////////////////////////////
 
     public static void writeShortVolatile(long address, short v, boolean bigEndian) {
         writeShortVolatile(null, address, v, bigEndian);
     }
 
     public static void writeShortVolatile(byte[] buffer, int pos, short v, boolean bigEndian) {
-        writeShortVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeShortVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeShortVolatile(Object base, long offset, short v, boolean bigEndian) {
@@ -488,14 +688,30 @@ public final class DirectMemoryBits {
         }
     }
 
+    public static void writeShortVolatile(MemoryAccessor memoryAccessor, Object base, long offset, short v, boolean bigEndian) {
+        if (bigEndian) {
+            writeShortVolatileB(memoryAccessor, base, offset, v);
+        } else {
+            writeShortVolatileL(memoryAccessor, base, offset, v);
+        }
+    }
+
     public static void writeShortVolatileB(Object base, long offset, short v) {
-        UNSAFE.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+        writeShortVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeShortVolatileL(Object base, long offset, short v) {
-        UNSAFE.putByte(base, offset, (byte) ((v) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
+        writeShortVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeShortVolatileB(MemoryAccessor memoryAccessor, Object base, long offset, short v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v) & 0xFF));
+    }
+
+    public static void writeShortVolatileL(MemoryAccessor memoryAccessor, Object base, long offset, short v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -505,61 +721,87 @@ public final class DirectMemoryBits {
     }
 
     public static int readIntVolatile(byte[] buffer, int pos, boolean bigEndian) {
-        return readIntVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readIntVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static int readIntVolatile(Object base, long offset, boolean bigEndian) {
+        return readIntVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static int readIntVolatile(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readIntVolatileB(base, offset);
+            return readIntVolatileB(memoryAccessor, base, offset);
         } else {
-            return readIntVolatileL(base, offset);
+            return readIntVolatileL(memoryAccessor, base, offset);
         }
     }
 
     public static int readIntVolatileB(Object base, long offset) {
-        int byte3 = (UNSAFE.getByte(base, offset) & 0xFF) << 24;
-        int byte2 = (UNSAFE.getByte(base, offset + 1) & 0xFF) << 16;
-        int byte1 = (UNSAFE.getByte(base, offset + 2) & 0xFF) << 8;
-        int byte0 = UNSAFE.getByte(base, offset + 3) & 0xFF;
-        return byte3 + byte2 + byte1 + byte0;
+        return readIntVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static int readIntVolatileL(Object base, long offset) {
-        int byte3 = UNSAFE.getByte(base, offset) & 0xFF;
-        int byte2 = (UNSAFE.getByte(base, offset + 1) & 0xFF) << 8;
-        int byte1 = (UNSAFE.getByte(base, offset + 2) & 0xFF) << 16;
-        int byte0 = (UNSAFE.getByte(base, offset + 3) & 0xFF) << 24;
+        return readIntVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static int readIntVolatileB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte3 = (memoryAccessor.getByte(base, offset) & 0xFF) << 24;
+        int byte2 = (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 16;
+        int byte1 = (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 8;
+        int byte0 = memoryAccessor.getByte(base, offset + 3) & 0xFF;
         return byte3 + byte2 + byte1 + byte0;
     }
+
+    public static int readIntVolatileL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        int byte3 = memoryAccessor.getByte(base, offset) & 0xFF;
+        int byte2 = (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 8;
+        int byte1 = (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 16;
+        int byte0 = (memoryAccessor.getByte(base, offset + 3) & 0xFF) << 24;
+        return byte3 + byte2 + byte1 + byte0;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static void writeIntVolatile(long address, int v, boolean bigEndian) {
         writeIntVolatile(null, address, v, bigEndian);
     }
 
     public static void writeIntVolatile(byte[] buffer, int pos, int v, boolean bigEndian) {
-        writeIntVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeIntVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeIntVolatile(Object base, long offset, int v, boolean bigEndian) {
+        writeIntVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeIntVolatile(MemoryAccessor memoryAccessor, Object base, long offset, int v, boolean bigEndian) {
         if (bigEndian) {
-            writeIntVolatileB(base, offset, v);
+            writeIntVolatileB(memoryAccessor, base, offset, v);
         } else {
-            writeIntVolatileL(base, offset, v);
+            writeIntVolatileL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeIntVolatileB(Object base, long offset, int v) {
-        UNSAFE.putByte(base, offset, (byte) ((v >>> 24) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 16) & 0xFF));
-        UNSAFE.putByte(base, offset + 2, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 3, (byte) ((v) & 0xFF));
+        writeIntVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeIntVolatileL(Object base, long offset, int v) {
-        UNSAFE.putByte(base, offset, (byte) ((v) & 0xFF));
-        UNSAFE.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
-        UNSAFE.putByte(base, offset + 2, (byte) ((v >>> 16) & 0xFF));
-        UNSAFE.putByte(base, offset + 3, (byte) ((v >>> 24) & 0xFF));
+        writeIntVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeIntVolatileB(MemoryAccessor memoryAccessor, Object base, long offset, int v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v >>> 24) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 16) & 0xFF));
+        memoryAccessor.putByte(base, offset + 2, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 3, (byte) ((v) & 0xFF));
+    }
+
+    public static void writeIntVolatileL(MemoryAccessor memoryAccessor, Object base, long offset, int v) {
+        memoryAccessor.putByte(base, offset, (byte) ((v) & 0xFF));
+        memoryAccessor.putByte(base, offset + 1, (byte) ((v >>> 8) & 0xFF));
+        memoryAccessor.putByte(base, offset + 2, (byte) ((v >>> 16) & 0xFF));
+        memoryAccessor.putByte(base, offset + 3, (byte) ((v >>> 24) & 0xFF));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -569,47 +811,73 @@ public final class DirectMemoryBits {
     }
 
     public static float readFloatVolatile(byte[] buffer, int pos, boolean bigEndian) {
-        return readFloatVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readFloatVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static float readFloatVolatile(Object base, long offset, boolean bigEndian) {
+        return readFloatVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static float readFloatVolatile(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readFloatVolatileB(base, offset);
+            return readFloatVolatileB(memoryAccessor, base, offset);
         } else {
-            return readFloatVolatileL(base, offset);
+            return readFloatVolatileL(memoryAccessor, base, offset);
         }
     }
 
     public static float readFloatVolatileB(Object base, long offset) {
-        return Float.intBitsToFloat(readIntVolatileB(base, offset));
+        return readFloatVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static float readFloatVolatileL(Object base, long offset) {
-        return Float.intBitsToFloat(readIntVolatileL(base, offset));
+        return readFloatVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
+
+    public static float readFloatVolatileB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Float.intBitsToFloat(readIntVolatileB(memoryAccessor, base, offset));
+    }
+
+    public static float readFloatVolatileL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Float.intBitsToFloat(readIntVolatileL(memoryAccessor, base, offset));
+    }
+
+    //////////////////////////////////////////////////////////////////
 
     public static void writeFloatVolatile(long address, float v, boolean bigEndian) {
         writeFloatVolatile(null, address, v, bigEndian);
     }
 
     public static void writeFloatVolatile(byte[] buffer, int pos, float v, boolean bigEndian) {
-        writeFloatVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeFloatVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeFloatVolatile(Object base, long offset, float v, boolean bigEndian) {
+        writeFloatVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeFloatVolatile(MemoryAccessor memoryAccessor, Object base, long offset, float v, boolean bigEndian) {
         if (bigEndian) {
-            writeFloatVolatileB(base, offset, v);
+            writeFloatVolatileB(memoryAccessor, base, offset, v);
         } else {
-            writeFloatVolatileL(base, offset, v);
+            writeFloatVolatileL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeFloatVolatileB(Object base, long offset, float v) {
-        writeIntVolatileB(base, offset, Float.floatToRawIntBits(v));
+        writeFloatVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset, Float.floatToRawIntBits(v));
     }
 
     public static void writeFloatVolatileL(Object base, long offset, float v) {
-        writeIntVolatileL(base, offset, Float.floatToRawIntBits(v));
+        writeFloatVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset, Float.floatToRawIntBits(v));
+    }
+
+    public static void writeFloatVolatileB(MemoryAccessor memoryAccessor, Object base, long offset, float v) {
+        writeIntVolatileB(memoryAccessor, base, offset, Float.floatToRawIntBits(v));
+    }
+
+    public static void writeFloatVolatileL(MemoryAccessor memoryAccessor, Object base, long offset, float v) {
+        writeIntVolatileL(memoryAccessor, base, offset, Float.floatToRawIntBits(v));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -619,77 +887,103 @@ public final class DirectMemoryBits {
     }
 
     public static long readLongVolatile(byte[] buffer, int pos, boolean bigEndian) {
-        return readLongVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readLongVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static long readLongVolatile(Object base, long offset, boolean bigEndian) {
+        return readLongVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static long readLongVolatile(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readLongVolatileB(base, offset);
+            return readLongVolatileB(memoryAccessor, base, offset);
         } else {
-            return readLongVolatileL(base, offset);
+            return readLongVolatileL(memoryAccessor, base, offset);
         }
     }
 
     public static long readLongVolatileB(Object base, long offset) {
-        long byte7 = (long) UNSAFE.getByte(base, offset) << 56;
-        long byte6 = (long) (UNSAFE.getByte(base, offset + 1) & 0xFF) << 48;
-        long byte5 = (long) (UNSAFE.getByte(base, offset + 2) & 0xFF) << 40;
-        long byte4 = (long) (UNSAFE.getByte(base, offset + 3) & 0xFF) << 32;
-        long byte3 = (long) (UNSAFE.getByte(base, offset + 4) & 0xFF) << 24;
-        long byte2 = (long) (UNSAFE.getByte(base, offset + 5) & 0xFF) << 16;
-        long byte1 = (long) (UNSAFE.getByte(base, offset + 6) & 0xFF) << 8;
-        long byte0 = (long) (UNSAFE.getByte(base, offset + 7) & 0xFF);
-        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+        return readLongVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static long readLongVolatileL(Object base, long offset) {
-        long byte7 = (long) (UNSAFE.getByte(base, offset) & 0xFF);
-        long byte6 = (long) (UNSAFE.getByte(base, offset + 1) & 0xFF) << 8;
-        long byte5 = (long) (UNSAFE.getByte(base, offset + 2) & 0xFF) << 16;
-        long byte4 = (long) (UNSAFE.getByte(base, offset + 3) & 0xFF) << 24;
-        long byte3 = (long) (UNSAFE.getByte(base, offset + 4) & 0xFF) << 32;
-        long byte2 = (long) (UNSAFE.getByte(base, offset + 5) & 0xFF) << 40;
-        long byte1 = (long) (UNSAFE.getByte(base, offset + 6) & 0xFF) << 48;
-        long byte0 = (long) (UNSAFE.getByte(base, offset + 7) & 0xFF) << 56;
+        return readLongVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset);
+    }
+
+    public static long readLongVolatileB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        long byte7 = (long) memoryAccessor.getByte(base, offset) << 56;
+        long byte6 = (long) (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 48;
+        long byte5 = (long) (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 40;
+        long byte4 = (long) (memoryAccessor.getByte(base, offset + 3) & 0xFF) << 32;
+        long byte3 = (long) (memoryAccessor.getByte(base, offset + 4) & 0xFF) << 24;
+        long byte2 = (long) (memoryAccessor.getByte(base, offset + 5) & 0xFF) << 16;
+        long byte1 = (long) (memoryAccessor.getByte(base, offset + 6) & 0xFF) << 8;
+        long byte0 = (long) (memoryAccessor.getByte(base, offset + 7) & 0xFF);
         return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
     }
+
+    public static long readLongVolatileL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        long byte7 = (long) (memoryAccessor.getByte(base, offset) & 0xFF);
+        long byte6 = (long) (memoryAccessor.getByte(base, offset + 1) & 0xFF) << 8;
+        long byte5 = (long) (memoryAccessor.getByte(base, offset + 2) & 0xFF) << 16;
+        long byte4 = (long) (memoryAccessor.getByte(base, offset + 3) & 0xFF) << 24;
+        long byte3 = (long) (memoryAccessor.getByte(base, offset + 4) & 0xFF) << 32;
+        long byte2 = (long) (memoryAccessor.getByte(base, offset + 5) & 0xFF) << 40;
+        long byte1 = (long) (memoryAccessor.getByte(base, offset + 6) & 0xFF) << 48;
+        long byte0 = (long) (memoryAccessor.getByte(base, offset + 7) & 0xFF) << 56;
+        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static void writeLongVolatile(long address, long v, boolean bigEndian) {
         writeLongVolatile(null, address, v, bigEndian);
     }
 
     public static void writeLongVolatile(byte[] buffer, int pos, long v, boolean bigEndian) {
-        writeLongVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeLongVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeLongVolatile(Object base, long offset, long v, boolean bigEndian) {
+        writeLongVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeLongVolatile(MemoryAccessor memoryAccessor, Object base, long offset, long v, boolean bigEndian) {
         if (bigEndian) {
-            writeLongVolatileB(base, offset, v);
+            writeLongVolatileB(memoryAccessor, base, offset, v);
         } else {
-            writeLongVolatileL(base, offset, v);
+            writeLongVolatileL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeLongVolatileB(Object base, long offset, long v) {
-        UNSAFE.putByte(base, offset, (byte) (v >>> 56));
-        UNSAFE.putByte(base, offset + 1, (byte) (v >>> 48));
-        UNSAFE.putByte(base, offset + 2, (byte) (v >>> 40));
-        UNSAFE.putByte(base, offset + 3, (byte) (v >>> 32));
-        UNSAFE.putByte(base, offset + 4, (byte) (v >>> 24));
-        UNSAFE.putByte(base, offset + 5, (byte) (v >>> 16));
-        UNSAFE.putByte(base, offset + 6, (byte) (v >>> 8));
-        UNSAFE.putByte(base, offset + 7, (byte) (v));
+        writeLongVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeLongVolatileL(Object base, long offset, long v) {
-        UNSAFE.putByte(base, offset, (byte) (v));
-        UNSAFE.putByte(base, offset + 1, (byte) (v >>> 8));
-        UNSAFE.putByte(base, offset + 2, (byte) (v >>> 16));
-        UNSAFE.putByte(base, offset + 3, (byte) (v >>> 24));
-        UNSAFE.putByte(base, offset + 4, (byte) (v >>> 32));
-        UNSAFE.putByte(base, offset + 5, (byte) (v >>> 40));
-        UNSAFE.putByte(base, offset + 6, (byte) (v >>> 48));
-        UNSAFE.putByte(base, offset + 7, (byte) (v >>> 56));
+        writeLongVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
+    }
+
+    public static void writeLongVolatileB(MemoryAccessor memoryAccessor, Object base, long offset, long v) {
+        memoryAccessor.putByte(base, offset, (byte) (v >>> 56));
+        memoryAccessor.putByte(base, offset + 1, (byte) (v >>> 48));
+        memoryAccessor.putByte(base, offset + 2, (byte) (v >>> 40));
+        memoryAccessor.putByte(base, offset + 3, (byte) (v >>> 32));
+        memoryAccessor.putByte(base, offset + 4, (byte) (v >>> 24));
+        memoryAccessor.putByte(base, offset + 5, (byte) (v >>> 16));
+        memoryAccessor.putByte(base, offset + 6, (byte) (v >>> 8));
+        memoryAccessor.putByte(base, offset + 7, (byte) (v));
+    }
+
+    public static void writeLongVolatileL(MemoryAccessor memoryAccessor, Object base, long offset, long v) {
+        memoryAccessor.putByte(base, offset, (byte) (v));
+        memoryAccessor.putByte(base, offset + 1, (byte) (v >>> 8));
+        memoryAccessor.putByte(base, offset + 2, (byte) (v >>> 16));
+        memoryAccessor.putByte(base, offset + 3, (byte) (v >>> 24));
+        memoryAccessor.putByte(base, offset + 4, (byte) (v >>> 32));
+        memoryAccessor.putByte(base, offset + 5, (byte) (v >>> 40));
+        memoryAccessor.putByte(base, offset + 6, (byte) (v >>> 48));
+        memoryAccessor.putByte(base, offset + 7, (byte) (v >>> 56));
     }
 
     //////////////////////////////////////////////////////////////////
@@ -699,47 +993,158 @@ public final class DirectMemoryBits {
     }
 
     public static double readDoubleVolatile(byte[] buffer, int pos, boolean bigEndian) {
-        return readDoubleVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), bigEndian);
+        return readDoubleVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, bigEndian);
     }
 
     public static double readDoubleVolatile(Object base, long offset, boolean bigEndian) {
+        return readDoubleVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, bigEndian);
+    }
+
+    public static double readDoubleVolatile(MemoryAccessor memoryAccessor, Object base, long offset, boolean bigEndian) {
         if (bigEndian) {
-            return readDoubleVolatileB(base, offset);
+            return readDoubleVolatileB(memoryAccessor, base, offset);
         } else {
-            return readDoubleVolatileL(base, offset);
+            return readDoubleVolatileL(memoryAccessor, base, offset);
         }
     }
 
     public static double readDoubleVolatileB(Object base, long offset) {
-        return Double.longBitsToDouble(readLongVolatileB(base, offset));
+        return readDoubleVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
 
     public static double readDoubleVolatileL(Object base, long offset) {
-        return Double.longBitsToDouble(readLongVolatileL(base, offset));
+        return readDoubleVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset);
     }
+
+    public static double readDoubleVolatileB(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Double.longBitsToDouble(readLongVolatileB(memoryAccessor, base, offset));
+    }
+
+    public static double readDoubleVolatileL(MemoryAccessor memoryAccessor, Object base, long offset) {
+        return Double.longBitsToDouble(readLongVolatileL(memoryAccessor, base, offset));
+    }
+
+    //////////////////////////////////////////////////////////////////
 
     public static void writeDoubleVolatile(long address, double v, boolean bigEndian) {
         writeDoubleVolatile(null, address, v, bigEndian);
     }
 
     public static void writeDoubleVolatile(byte[] buffer, int pos, double v, boolean bigEndian) {
-        writeDoubleVolatile(buffer, (long) (BYTE_ARRAY_BASE_OFFSET + pos), v, bigEndian);
+        writeDoubleVolatile(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, v, bigEndian);
     }
 
     public static void writeDoubleVolatile(Object base, long offset, double v, boolean bigEndian) {
+        writeDoubleVolatile(STANDARD_MEMORY_ACCESSOR, base, offset, v, bigEndian);
+    }
+
+    public static void writeDoubleVolatile(MemoryAccessor memoryAccessor, Object base, long offset, double v, boolean bigEndian) {
         if (bigEndian) {
-            writeDoubleVolatileB(base, offset, v);
+            writeDoubleVolatileB(memoryAccessor, base, offset, v);
         } else {
-            writeDoubleVolatileL(base, offset, v);
+            writeDoubleVolatileL(memoryAccessor, base, offset, v);
         }
     }
 
     public static void writeDoubleVolatileB(Object base, long offset, double v) {
-        writeLongVolatileB(base, offset, Double.doubleToRawLongBits(v));
+        writeDoubleVolatileB(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
     public static void writeDoubleVolatileL(Object base, long offset, double v) {
-        writeLongVolatileL(base, offset, Double.doubleToRawLongBits(v));
+        writeDoubleVolatileL(STANDARD_MEMORY_ACCESSOR, base, offset, v);
     }
 
+    public static void writeDoubleVolatileB(MemoryAccessor memoryAccessor, Object base, long offset, double v) {
+        writeLongVolatileB(memoryAccessor, base, offset, Double.doubleToRawLongBits(v));
+    }
+
+    public static void writeDoubleVolatileL(MemoryAccessor memoryAccessor, Object base, long offset, double v) {
+        writeLongVolatileL(memoryAccessor, base, offset, Double.doubleToRawLongBits(v));
+    }
+
+
+    //////////////////////////////////////////////////////////////////
+
+    public static int writeUtf8Char(byte[] buffer, int pos, int c) {
+        return writeUtf8Char(BYTE_ARRAY_MEMORY_ACCESSOR, buffer, pos, c);
+    }
+
+    public static int writeUtf8Char(long bufferPointer, long pos, int c) {
+        return writeUtf8Char(STANDARD_MEMORY_ACCESSOR, null, bufferPointer + pos, c);
+    }
+
+    public static int writeUtf8Char(MemoryAccessor memoryAccessor, Object base, long pos, int c) {
+        if (c <= 0x007F) {
+            memoryAccessor.putByte(base, pos, (byte) c);
+            return 1;
+        } else if (c > 0x07FF) {
+            memoryAccessor.putByte(base, pos, (byte) (0xE0 | c >> 12 & 0x0F));
+            memoryAccessor.putByte(base, pos + 1, (byte) (0x80 | c >> 6 & 0x3F));
+            memoryAccessor.putByte(base, pos + 2, (byte) (0x80 | c & 0x3F));
+            return 3;
+        } else {
+            memoryAccessor.putByte(base, pos, (byte) (0xC0 | c >> 6 & 0x1F));
+            memoryAccessor.putByte(base, pos + 1, (byte) (0x80 | c & 0x3F));
+            return 2;
+        }
+    }
+
+    public static char readUtf8Char(DataInput in, byte firstByte)
+            throws IOException {
+        int b = firstByte & 0xFF;
+        switch (b >> 4) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                return (char) b;
+            case 12:
+            case 13:
+                int first = (b & 0x1F) << 6;
+                int second = in.readByte() & 0x3F;
+                return (char) (first | second);
+            case 14:
+                int first2 = (b & 0x0F) << 12;
+                int second2 = (in.readByte() & 0x3F) << 6;
+                int third2 = in.readByte() & 0x3F;
+                return (char) (first2 | second2 | third2);
+            default:
+                throw new UTFDataFormatException("Malformed byte sequence");
+        }
+    }
+
+    public static int readUtf8Char(byte[] buffer, int pos, char[] dst, int dstPos)
+            throws IOException {
+        int b = buffer[pos] & 0xFF;
+        switch (b >> 4) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                dst[dstPos] = (char) b;
+                return 1;
+            case 12:
+            case 13:
+                int first = (b & 0x1F) << 6;
+                int second = buffer[pos + 1] & 0x3F;
+                dst[dstPos] = (char) (first | second);
+                return 2;
+            case 14:
+                int first2 = (b & 0x0F) << 12;
+                int second2 = (buffer[pos + 1] & 0x3F) << 6;
+                int third2 = buffer[pos + 2] & 0x3F;
+                dst[dstPos] = (char) (first2 | second2 | third2);
+                return 3;
+            default:
+                throw new UTFDataFormatException("Malformed byte sequence");
+        }
+    }
 }
