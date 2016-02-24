@@ -21,6 +21,10 @@ import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class GetAccumulatorsOperation extends AbstractJetApplicationRequestOperation {
+
+    public GetAccumulatorsOperation() {
+    }
+
     public GetAccumulatorsOperation(String name) {
         super(name);
     }

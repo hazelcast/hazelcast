@@ -54,15 +54,9 @@ public class HazelcastSourceTap extends SourceTap {
             int partitionId = HazelcastListPartitionReader.getPartitionId(containerDescriptor.getNodeEngine(), this.name);
             IPartition partition = containerDescriptor.getNodeEngine().getPartitionService().getPartition(partitionId);
 
-            if ((partition != null) && (partition.isLocal())) {
+            if (partition != null && partition.isLocal()) {
                 readers.add(HazelcastReaderFactory.getReader(
                         this.tapType, this.name, containerDescriptor, partitionId, tupleFactory, vertex
-                        )
-                );
-            } else {
-                readers.add(
-                        HazelcastReaderFactory.getReader(
-                                this.tapType, this.name, containerDescriptor, -1, tupleFactory, vertex
                         )
                 );
             }
