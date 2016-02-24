@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -101,10 +102,10 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 paramFrom = to;
                 paramTo = oldFrom;
             }
-            Set<Comparable> values = recordMap.keySet();
-            for (Comparable value : values) {
+            for (Map.Entry<Comparable, ConcurrentMap<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
+                Comparable value = recordMapEntry.getKey();
                 if (value.compareTo(paramFrom) <= 0 && value.compareTo(paramTo) >= 0) {
-                    ConcurrentMap<Data, QueryableEntry> records = recordMap.get(value);
+                    ConcurrentMap<Data, QueryableEntry> records = recordMapEntry.getValue();
                     if (records != null) {
                         results.addResultSet(records);
                     }
@@ -121,8 +122,8 @@ public class UnsortedIndexStore extends BaseIndexStore {
         takeReadLock();
         try {
             MultiResultSet results = createMultiResultSet();
-            Set<Comparable> values = recordMap.keySet();
-            for (Comparable value : values) {
+            for (Map.Entry<Comparable, ConcurrentMap<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
+                Comparable value = recordMapEntry.getKey();
                 boolean valid;
                 int result = searchedValue.compareTo(value);
                 switch (comparisonType) {
@@ -145,7 +146,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                         throw new IllegalStateException("Unrecognized comparisonType: " + comparisonType);
                 }
                 if (valid) {
-                    ConcurrentMap<Data, QueryableEntry> records = recordMap.get(value);
+                    ConcurrentMap<Data, QueryableEntry> records = recordMapEntry.getValue();
                     if (records != null) {
                         results.addResultSet(records);
                     }

@@ -97,9 +97,10 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
 
         Map<String, Data> data = new HashMap<String, Data>();
         int partitionId = event.getPartitionId();
-        for (String name : containers.keySet()) {
+        for (Map.Entry<String, AtomicReferenceContainer> containerEntry : containers.entrySet()) {
+            String name = containerEntry.getKey();
             if (partitionId == getPartitionId(name)) {
-                AtomicReferenceContainer atomicReferenceContainer = containers.get(name);
+                AtomicReferenceContainer atomicReferenceContainer = containerEntry.getValue();
                 Data value = atomicReferenceContainer.get();
                 data.put(name, value);
             }

@@ -126,13 +126,15 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 }
             };
 
-            for (MapContainer mapContainer : recordMap.keySet()) {
-                String mapName = mapContainer.getName();
-                Collection<Record> recordList = recordMap.get(mapContainer);
-                String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
+            for (Map.Entry<MapContainer, Collection<Record>> recordMapEntry : recordMap.entrySet()) {
+                MapContainer mapContainer = recordMapEntry.getKey();
+                Collection<Record> recordList = recordMapEntry.getValue();
 
-                // todo number of records may be high.
-                // todo below can be optimized a many records can be send in single invocation
+                String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
+                String mapName = mapContainer.getName();
+
+                // TODO: number of records may be high
+                // TODO: below can be optimized a many records can be send in single invocation
                 final MapMergePolicy finalMergePolicy
                         = mapServiceContext.getMergePolicyProvider().getMergePolicy(mergePolicyName);
                 MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);

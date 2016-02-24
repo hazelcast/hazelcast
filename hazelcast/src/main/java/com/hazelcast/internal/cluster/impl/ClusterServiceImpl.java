@@ -665,6 +665,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return null;
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT")
     private void setMembersRef(Map<Address, MemberImpl> memberMap) {
         memberMap = unmodifiableMap(memberMap);
         // make values(), keySet() and entrySet() to be cached
