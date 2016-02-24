@@ -112,12 +112,12 @@ public class TopicAddMessageListenerMessageTask
 
         boolean isMultithreaded = nodeEngine.getConfig().getTopicConfig(parameters.name).isMultiThreadingEnabled();
         if (isMultithreaded) {
-        	int key = rand.nextInt();
-        	int partitionId = hashToIndex(key, nodeEngine.getPartitionService().getPartitionCount());
-        	eventMessage.setPartitionId(partitionId);
-        	sendClientMessage(eventMessage);
+            int key = rand.nextInt();
+            int partitionId = hashToIndex(key, nodeEngine.getPartitionService().getPartitionCount());
+            eventMessage.setPartitionId(partitionId);
+            sendClientMessage(eventMessage);
         } else {
-        	sendClientMessage(partitionKey, eventMessage);
+            sendClientMessage(partitionKey, eventMessage);
         }
     }
 }

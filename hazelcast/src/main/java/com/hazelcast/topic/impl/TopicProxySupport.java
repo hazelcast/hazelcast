@@ -37,7 +37,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     private final TopicService topicService;
     private final LocalTopicStatsImpl topicStats;
     private final Member localMember;
-    private boolean multithreaded = false;
+    private boolean multithreaded;
 
     public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
