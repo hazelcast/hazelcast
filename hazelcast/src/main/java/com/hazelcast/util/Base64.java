@@ -44,7 +44,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
         "checkstyle:cyclomaticcomplexity",
         "checkstyle:methodlength",
         "checkstyle:returncount",
-        "checkstyle:innerassignment" })
+        "checkstyle:innerassignment"})
 public final class Base64 {
 
     private static final int BASELENGTH = 255;

@@ -123,7 +123,7 @@ public class AsyncResponsePacketHandler implements PacketHandler {
             }
         }
 
-        @SuppressFBWarnings({"VO_VOLATILE_INCREMENT" })
+        @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
         private void process(Packet responsePacket) {
             processedResponses++;
             try {

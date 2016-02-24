@@ -141,7 +141,7 @@ final class PerformanceLog {
         return new BufferedWriter(new OutputStreamWriter(fos, encoder));
     }
 
-    @SuppressFBWarnings({"RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" })
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void rollover() {
         closeResource(bufferedWriter);
         bufferedWriter = null;

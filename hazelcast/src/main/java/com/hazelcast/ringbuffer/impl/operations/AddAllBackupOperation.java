@@ -34,7 +34,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
     public AddAllBackupOperation() {
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public AddAllBackupOperation(String name, Data[] items) {
         super(name);
         this.items = items;

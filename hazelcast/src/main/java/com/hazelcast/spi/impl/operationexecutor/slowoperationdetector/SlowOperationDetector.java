@@ -70,7 +70,7 @@ public final class SlowOperationDetector {
 
     private boolean isFirstLog = true;
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP2" })
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public SlowOperationDetector(LoggingService loggingServices,
                                  OperationRunner[] genericOperationRunners,
                                  OperationRunner[] partitionOperationRunners,

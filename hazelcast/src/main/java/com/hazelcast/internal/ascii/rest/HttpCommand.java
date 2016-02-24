@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-@SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT" })
+@SuppressFBWarnings({"EI_EXPOSE_REP", "MS_MUTABLE_ARRAY", "MS_PKGPROTECT"})
 public abstract class HttpCommand extends AbstractTextCommand {
 
     public static final String HEADER_CONTENT_TYPE = "content-type: ";

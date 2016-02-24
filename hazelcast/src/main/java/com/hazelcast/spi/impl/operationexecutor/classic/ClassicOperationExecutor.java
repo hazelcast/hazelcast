@@ -191,13 +191,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return threads;
     }
 
-    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;
     }
 
-    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;

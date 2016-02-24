@@ -66,12 +66,12 @@
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
-        <maven.failsafe.plugin.version>2.14</maven.failsafe.plugin.version>
-        <maven.findbugs.plugin.version>3.0.0</maven.findbugs.plugin.version>
-        <maven.checkstyle.plugin.version>2.12</maven.checkstyle.plugin.version>
+        <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
+        <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
         <maven.sonar.plugin.version>2.6</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.4.201502262128</maven.jacoco.plugin.version>
-        <maven.cobertura.plugin.version>2.0</maven.cobertura.plugin.version>
+        <maven.failsafe.plugin.version>2.17</maven.failsafe.plugin.version>
+        <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
         <log4j.version>1.2.12</log4j.version>
         <log4j2.version>2.0.1</log4j2.version>
@@ -395,7 +395,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>2.0</version>
+                        <version>${maven.cobertura.plugin.version}</version>
                         <configuration>
                             <instrumentation>
                                 <ignores/>

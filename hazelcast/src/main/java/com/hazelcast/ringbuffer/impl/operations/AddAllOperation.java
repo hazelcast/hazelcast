@@ -42,7 +42,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
     public AddAllOperation() {
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public AddAllOperation(String name, Data[] items, OverflowPolicy overflowPolicy) {
         super(name);
         this.items = items;

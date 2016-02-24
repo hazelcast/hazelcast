@@ -76,7 +76,7 @@ public class ReadResultSetImpl<E> extends AbstractList<E>
         return size >= minSize;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Data[] getDataItems() {
         return items;
     }
