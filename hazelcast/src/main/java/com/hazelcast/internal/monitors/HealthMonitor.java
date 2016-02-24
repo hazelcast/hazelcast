@@ -48,12 +48,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p/>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
+ * <p/>
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_PERCENTAGE_MEMORY}
+ * Threshold: Percentage of max memory currently in use
+ * <p/>
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_PERCENTAGE_CPU}
+ * Threshold: CPU system/process load
  */
 public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
-    private static final double THRESHOLD_PERCENTAGE = 70;
+    private static final double THRESHOLD_PERCENTAGE_INVOCATIONS = 70;
     private static final double THRESHOLD_INVOCATIONS = 1000;
 
     final HealthMetrics healthMetrics;
@@ -61,6 +67,8 @@ public class HealthMonitor {
     private final ILogger logger;
     private final Node node;
     private final HealthMonitorLevel monitorLevel;
+    private final int thresholdMemoryPercentage;
+    private final int thresholdCPUPercentage;
     private final MetricsRegistry metricRegistry;
     private final HealthMonitorThread monitorThread;
 
@@ -69,6 +77,10 @@ public class HealthMonitor {
         this.logger = node.getLogger(HealthMonitor.class);
         this.metricRegistry = node.nodeEngine.getMetricsRegistry();
         this.monitorLevel = getHealthMonitorLevel();
+        this.thresholdMemoryPercentage
+                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
+        this.thresholdCPUPercentage
+                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
         this.healthMetrics = new HealthMetrics();
     }
@@ -267,19 +279,19 @@ public class HealthMonitor {
         }
 
         public boolean exceedsThreshold() {
-            if (memoryUsedOfMaxPercentage > THRESHOLD_PERCENTAGE) {
+            if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
                 return true;
             }
 
-            if (osProcessCpuLoad.read() > THRESHOLD_PERCENTAGE) {
+            if (osProcessCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
 
-            if (osSystemCpuLoad.read() > THRESHOLD_PERCENTAGE) {
+            if (osSystemCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
 
-            if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE) {
+            if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE_INVOCATIONS) {
                 return true;
             }
 
