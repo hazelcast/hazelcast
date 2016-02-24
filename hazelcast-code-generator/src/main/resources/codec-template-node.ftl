@@ -1,5 +1,7 @@
-import {ClientMessage} from '../ClientMessage';
+/* tslint:disable */
+import ClientMessage = require('../ClientMessage');
 import {BitsUtil} from '../BitsUtil';
+import Address = require('../Address');
 import {Data} from '../serialization/Data';
 import {${model.parentName}MessageType} from './${model.parentName}MessageType';
 
@@ -13,7 +15,7 @@ export class ${model.className}{
 
 
 
-static calculateSize(<#list model.requestParams as param>${util.convertToNodeType(param.name)} : ${util.getNodeTsType(param.type)} <#if param_has_next>, </#if></#list>){
+static calculateSize(<#list model.requestParams as param>${util.convertToNodeType(param.name)} : ${util.getNodeTsType(param.type)} <#if param_has_next> , </#if></#list>){
     // Calculates the request payload size
     var dataSize : number = 0;
 <#list model.requestParams as p>
@@ -48,16 +50,16 @@ static decodeResponse(clientMessage : ClientMessage,  toObjectFunction: (data: D
 
 <#--************************ EVENTS ********************************************************-->
 <#if model.events?has_content>
-static handle(clientMessage : ClientMessage, <#list model.events as event>handleEvent${util.capitalizeFirstLetter(event.name?lower_case)}<#if event_has_next>, </#if></#list>){
+static handle(clientMessage : ClientMessage, <#list model.events as event>handleEvent${util.capitalizeFirstLetter(event.name?lower_case)} : any<#if event_has_next>, </#if></#list> ,toObjectFunction: (data: Data) => any){
 
     var messageType = clientMessage.getMessageType();
     <#list model.events as event>
-    if ( messageType === EVENT_${event.name?upper_case} && handleEvent${util.capitalizeFirstLetter(event.name?lower_case)} !== null) {
+    if ( messageType === BitsUtil.EVENT_${event.name?upper_case} && handleEvent${util.capitalizeFirstLetter(event.name?lower_case)} !== null) {
         <#list event.eventParams as p>
      var ${util.convertToNodeType(p.name)} : ${util.getNodeTsType(p.type)};
-    <@getterText varName=util.convertToNodeType(p.name) type=p.type isNullable=p.nullable isEvent=true/>
+     <@getterText varName=util.convertToNodeType(p.name) type=p.type isNullable=p.nullable isEvent=true isDefined=true />
         </#list>
-        handleEvent${util.convertToNodeType(event.name?lower_case)}(<#list event.eventParams as param>${util.convertToNodeType(param.name)}<#if param_has_next>, </#if></#list>);
+        handleEvent${util.capitalizeFirstLetter(util.convertToNodeType(event.name?lower_case))}(<#list event.eventParams as param>${util.convertToNodeType(param.name)}<#if param_has_next>, </#if></#list>);
     }
     </#list>
 }
@@ -104,7 +106,7 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     dataSize += BitsUtil.INT_SIZE_IN_BYTES;
         <#local genericType= util.getGenericType(type)>
         <#local n= varName>
-    for( ${varName}Item in ${varName}){
+    for( var ${varName}Item in ${varName}){
         <@sizeTextInternal varName="${n}Item"  type=genericType />
     }
         <#break >
@@ -112,7 +114,7 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     data_size += BitsUtil.INT_SIZE_IN_BYTES
         <#local genericType= util.getArrayType(type)>
         <#local n= varName>
-    for( ${varName}Item in ${varName}){
+    for(var ${varName}Item in ${varName}){
         <@sizeTextInternal varName="${n}Item"  type=genericType />
     }
         <#break >
@@ -120,7 +122,7 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
         <#local n= varName>
-    for( entry in ${varName}){
+    for(var entry in ${varName}){
         <@sizeTextInternal varName="entry.key"  type=keyType />
         <@sizeTextInternal varName="entry.val"  type=valueType />
     }
@@ -150,26 +152,26 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     ${util.getTypeCodec(type)?split(".")?last}.encode(clientMessage, ${varName});
     </#if>
     <#if cat == "COLLECTION">
-    clientMessage.appendInt32(len(${varName}));
+    clientMessage.appendInt32(${varName}.length);
         <#local itemType= util.getGenericType(type)>
         <#local itemTypeVar= varName + "Item">
-    for( ${itemTypeVar} in ${varName}) {
+    for(var ${itemTypeVar} in ${varName}) {
     <@setterTextInternal varName=itemTypeVar type=itemType />
     }
     </#if>
     <#if cat == "ARRAY">
-    clientMessage.appendInt32(len(${varName}));
+    clientMessage.appendInt32(${varName}.length);
         <#local itemType= util.getArrayType(type)>
         <#local itemTypeVar= varName + "Item">
-    for( ${itemTypeVar} in ${varName}){
+    for(var ${itemTypeVar} in ${varName}){
     <@setterTextInternal varName=itemTypeVar  type=itemType />
     }
     </#if>
     <#if cat == "MAP">
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
-    clientMessage.appendInt32(len(${varName}));
-    for( entry in ${varName}){
+    clientMessage.appendInt32(${varName}.length);
+    for(var entry in ${varName}){
     <@setterTextInternal varName="entry.key"  type=keyType />
     <@setterTextInternal varName="entry.val"  type=valueType />
     }
@@ -177,24 +179,24 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
 </#macro>
 
 <#--GETTER NULL CHECK MACRO -->
-<#macro getterText varName type isNullable=false isEvent=false >
+<#macro getterText varName type isNullable=false isEvent=false isDefined=false >
 <#if isNullable>
 
-if(clientMessage.readBoolean() === true){
-<@getterTextInternal varName=varName varType=type isEvent=isEvent />
+if(clientMessage.readBoolean() !== true){
+<@getterTextInternal varName=varName varType=type isEvent=isEvent isDefined=isDefined />
 }
 <#else>
-<@getterTextInternal varName=varName varType=type isEvent=isEvent />
+<@getterTextInternal varName=varName varType=type isEvent=isEvent isDefined=isDefined />
 </#if>
 </#macro>
 
-<#macro getterTextInternal varName varType isEvent >
+<#macro getterTextInternal varName varType isEvent isDefined=false >
 <#local cat= util.getTypeCategory(varType)>
 <#switch cat>
     <#case "OTHER">
         <#switch varType>
             <#case util.DATA_FULL_NAME>
-    <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = toObjectFunction(clientMessage.readBuffer());
+    <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = toObjectFunction(clientMessage.readData());
                 <#break >
             <#case "java.lang.Integer">
     <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = clientMessage.readInt32();
@@ -222,10 +224,13 @@ if(clientMessage.readBoolean() === true){
     <#local itemVariableName= "${varName}Item">
     <#local sizeVariableName= "${varName}Size">
     <#local indexVariableName= "${varName}Index">
-    ${sizeVariableName} = clientMessage.readInt32();
-    ${varName} = [];
+    var ${sizeVariableName} = clientMessage.readInt32();
+    <#if !isDefined>
+    var ${varName} : any = [];
+    <#else>${varName} = [];
+    </#if>
     for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
-                            <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true />
+                            var <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true />
         ${varName}.push(${itemVariableName})
     }
 <#if !isEvent>
@@ -239,7 +244,7 @@ if(clientMessage.readBoolean() === true){
         <#local valueType = util.getSecondGenericParameterType(varType)>
         <#local keyVariableName= "${varName}Key">
         <#local valVariableName= "${varName}Val">
-    ${sizeVariableName} = clientMessage.readInt()
+    var ${sizeVariableName} = clientMessage.readInt();
     ${varName} = {}
     for ${indexVariableName} in xrange(0,${sizeVariableName}):
             <@getterTextInternal varName=keyVariableName varType=keyType isEvent=true />

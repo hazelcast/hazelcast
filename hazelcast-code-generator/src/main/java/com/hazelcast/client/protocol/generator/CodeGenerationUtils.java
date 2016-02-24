@@ -30,21 +30,23 @@ public final class CodeGenerationUtils {
     public static final String DATA_FULL_NAME = "com.hazelcast.nio.serialization.Data";
 
     private static final Map<String, String> JAVA_TO_NODE_TYPES = new HashMap<String, String>() {{
-        put(DATA_FULL_NAME, "buffer");
+        put(DATA_FULL_NAME, "data");
         put("java.lang.String", "string");
         put("java.lang.Integer", "int32");
         put("boolean", "boolean");
         put("int","int32");
+        put("com.hazelcast.nio.Address", "Address");
         put("java.util.List", "list");
         put("java.util.Set", "set");
     }};
 
     private static final Map<String, String> JAVA_TO_TS_TYPES = new HashMap<String, String>() {{
-        put(DATA_FULL_NAME, "Buffer");
+        put(DATA_FULL_NAME, "Data");
         put("java.lang.String", "string");
         put("java.lang.Integer", "number");
         put("boolean", "boolean");
         put("int","number");
+        put("com.hazelcast.nio.Address", "Address");
         put("java.util.List", "any");
         put("java.util.Set", "any");
         put("long", "number");
