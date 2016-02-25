@@ -16,7 +16,7 @@
   -->
 
 <!--
-This is a full example hazelcast.xml including all the configuration elements and attributes of Hazelcast.
+This is a full example hazelcast.xml that includes all the configuration elements and attributes of Hazelcast.
 To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
 Please see the schema to learn how to configure Hazelcast at 
 https://hazelcast.com/schema/config/hazelcast-config-3.6.xsd or the Reference Manual at 
@@ -29,17 +29,17 @@ https://hazelcast.org/documentation/.
     You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
     You can import as many XML files as you want and hence compose your Hazelcast configuration
     out of those XML files. If you want to use the <import> element, it should be placed at the top of your
-    Hazelcast XML file right after the <hazelcast> element. It has the required attribute "resource".
+    Hazelcast XML file right after the <hazelcast> element, and it should have the required attribute "resource".
     
     Below is an example where the configuration files you want to include are located at your 
     Hazelcast working directory:
     <import resource="your-configuration-file.xml"/>
     
-    Below are examples showing that you can also give a classpath or filesystem location:
+    Below are examples showing a classpath or filesystem location:
     <import resource="file:///etc/hazelcast/your-configuration-file-1.xml"/> 
     <import resource="classpath:your-configuration-file-2.xml"/> 
     
-    Below is an example showing that you can use property placeholders:
+    Below is an example showing property placeholders:
     <import resource="${environment}-your-configuration-file.xml"/>
     
 -->    
@@ -47,7 +47,7 @@ https://hazelcast.org/documentation/.
 <!--
     Specifies the name and password for a cluster group you create.
     Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to 
-    create a simple security and they are also used for the WAN Replication feature. 
+    create a simple security . They are also used for the WAN Replication feature. 
 -->
     <group>
         <name>dev</name>
@@ -56,8 +56,8 @@ https://hazelcast.org/documentation/.
 <!--
     ===== HAZELCAST LICENSE CONFIGURATION =====
     
-    If you have an Enterprise or Enterprise HD license, you should type it here.
-    Note that you can also set your license key programmatically; please refer to 
+    If you have an Enterprise or Enterprise HD license, you can enter it here.
+    You can also set your license key programmatically; please refer to 
     http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#setting-the-license-key
 -->    
     <license-key>Your Hazelcast Enterprise or Enterprise HD License Key</license-key>
@@ -73,7 +73,7 @@ https://hazelcast.org/documentation/.
     The value for the element <management-center> is the URL where you deploy the Management Center.
     It has two optional attributes:
     * enabled: 
-	Set to true to be able to use the Management Center. Its default is false.
+	Set to true to be able to use the Management Center. Its default value is false.
     * update-interval: 
 	The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster. 
 	Its default value is 3 seconds. Hazelcast's Open Source edition provides the Management Center with monitoring 
@@ -82,8 +82,9 @@ https://hazelcast.org/documentation/.
 -->        
     <management-center enabled="true" update-interval="2">http://localhost:8080/mancenter</management-center>
 <!--
-    Let's you to add properties to some of the Hazelcast elements used to configure some of the Hazelcast modules. 
-    You can define the name and value of your property using the sub-element <property>.
+    The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of 
+    the Hazelcast modules. 
+    You can define the name and value of these properties using the sub-element <property>.
     You can use <properties> for the following Hazelcast configuration elements:
     * <discovery-strategy>
     * <map-store>
@@ -100,8 +101,8 @@ https://hazelcast.org/documentation/.
 <!--
     ===== HAZELCAST WAN REPLICATION CONFIGURATION ===== 
     
-    This feature is available only in Hazelcast Enterprise.
-    Configuration element's name is <wan-replication>. It has two attributes:
+    The WAN replication feature is available only in Hazelcast Enterprise.
+    The configuration element's name is <wan-replication>. It has two attributes:
     * name: 
 	Name of your WAN Replication. This name is referenced in IMap or ICache configuration when you add WAN 
 	Replication for these data structures (using the element <wan-replication-ref> in the configuration of 
@@ -110,53 +111,53 @@ https://hazelcast.org/documentation/.
 	This attribute is valid when you use `WanBatchReplication` as the WAN Replication implementation. When
 	set to true, only the latest events (based on key) are selected and sent to the target cluster in a batch.
     
-    It has the following sub-elements:
+    The <wan-replication> element has the following sub-elements:
     * <target-cluster>: 
 	Specifies the target cluster to which the events will be replicated. It has the group-name and
 	group-password attributes. These attributes correspond to the <name> and <password> sub-elements, 
 	respectively, defined in the target cluster's <group> element. Please see the <group> configuration 
 	description in this XML.
     * <replication-impl>: 
-	Name of the class implementation for WAN Replication. There are two values:
+	Name of the class implementation for WAN Replication. This name can have two values:
     	- WanNoDelayReplication: 
-		It sends replication events to the target cluster as soon as they are generated.
+		Sends replication events to the target cluster as soon as they are generated.
     	- WanBatchReplication: 
-		It waits until a batch size is reached or a delay time is passed.
+		Waits until a batch size is reached or a delay time is passed.
 		Please see the <batch-size> and <batch-max-delay-millis> configuration descriptions below.
     * <end-points>: 
-	IP addresses of the target cluster members for which the WAN replication is implemented. These addresses
-	are given using the <address> sub-elements.
+	IP addresses of the target cluster members for which the WAN replication is implemented. You give these 
+	addresses using the <address> sub-elements.
     * <batch-size>: 
-	This element is valid when you use `WanBatchReplication` as the WAN Replication implementation. It is 
-	used to change the maximum size of events that are sent to the target cluster in a single batch. The batch of 
-	events is not send until this size is reached. Its default is 500.
+	This element is valid when you set <replication-impl> (the WAN Replication implementation) to 
+	`WanBatchReplication`. It changes the maximum size of events that are sent to the target cluster in a 
+	single batch. The batch of events is not sent until this size is reached. Its default value is 500.
     * <batch-max-delay-millis>: 
-	This element is valid when you use `WanBatchReplication` as the WAN Replication implementation. If the 
-	number of events generated does not reach the <batch-size>, they are sent to the target cluster after a 
-	certain amount of time is passed. You can set this duration in milliseconds using this element. Its default
-	is 1000 milliseconds.
+	This element is valid when you set <replication-impl> (the WAN Replication implementation) to 
+	`WanBatchReplication`. If the number of events generated does not reach the <batch-size>, they are sent to the 
+	target cluster after a certain amount of time is passed. You can set this time in milliseconds using this 
+	element. Its default value is 1000 milliseconds.
     * <response-timeout-millis>: 
 	After a replication event is sent to the target cluster, the source member waits for a confirmation 
-	that tells the event has reached the target. If confirmation is not received for a period of 
-	<response-timeout-millis>, the event is resent to the target cluster. Its default is 60000 milliseconds.
+	that says the event has reached the target. If confirmation is not received for a period of 
+	<response-timeout-millis>, the event is resent to the target cluster. The default value is 60000 milliseconds.
     * <queue-capacity>: 
-	Size of the queue of events. Its default value is 10000. You might exceed the queue size so that the 
-	oldest, not yet replicated, updates might get lost. Therefore, if you have a large rate of 
+	Size of the queue of events. Its default value is 10000. If you exceed this queue size, then the 
+	oldest, not yet replicated updates might get lost. Therefore, if you have a large rate of 
 	put/update/remove operations, you should increase <queue-capacity>.
     * <queue-full-behavior>: 
-	Policy to be applied when WAN Replication event queues are full. There are two values:
+	Policy to be applied when WAN Replication event queues are full. You can set it to the following values:
 	- DISCARD_AFTER_MUTATION: 
 		The new WAN events generated are dropped and not replicated to the target cluster.
 	- THROW_EXCEPTION: 
-		The WAN queue size is checked before each supported mutating operation If one the queues of target 
+		The WAN queue size is checked before each supported mutating operation. If one of the queues of the target 
 		cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
     * <acknowledge-type>: 
-	Acknowledgment type for each target cluster when the events are replicated. There are two values:
+	Acknowledgment type for each target cluster when the events are replicated. You can set it to the following values:
 	- ACK_ON_RECEIPT: 
-		Means that events are received by the target cluster successfully. It does not guarantee that 
+		Guarantees that events are received by the target cluster. It does not guarantee that 
 		the received event is actually applied, but it is faster.
 	- ACK_ON_OPERATION_COMPLETE: 
-		This option guarantees that the event is received by the target cluster and it is applied. 
+		Guarantees that the event is both received and applied by the target cluster. 
 		It is more time consuming, but it is the best way if you have strong consistency requirements.
 -->        
     <wan-replication name="my-wan-cluster-batch" snapshot-enabled="false">
@@ -179,11 +180,11 @@ https://hazelcast.org/documentation/.
 <!--
     ===== HAZELCAST NETWORK CONFIGURATION =====
     
-    Configuration to build your Hazelcast's network; includes port, interface, discovery mechanism, SSL, 
-    encryption, etc. configurations. Configuration element's name is <network>. 
+    The configuration to build your Hazelcast's network includes configuration for port, interface, discovery 
+    mechanism, SSL, encryption, etc. The configuration element's name is <network>. 
     It has the following sub-elements:
     * <public address>:  
-	This optional element overrides the public address of a member and it is useful when 
+	This optional element overrides the public address of a member. It is useful when 
 	you have a private cloud. Normally, a member selects its socket address as its public address. But behind a NAT, 
 	two members may not be able to see/access each other. In this case, you can set their public addresses to their 
 	defined addresses on NAT. The value should be given in the format "host IP address:port number".
@@ -192,16 +193,16 @@ https://hazelcast.org/documentation/.
 	its default value is 5701. It has the following attributes:
 	- port-count: 
 		By default, Hazelcast will try 100 ports to bind (i.e. the ports between 5701 and 5801). You can 
-		choose to change the port count in the cases like having large instances on a single machine or 
-		willing to have only a few ports to be assigned. It is optional and its default value is 100.
+		change the port count in such cases as having large instances on a single machine or you are
+		willing to have only a few ports assigned. port-count is optional and its default value is 100.
 	- auto-increment:
 		By default, Hazelcast tries to find a port by automatically incrementing the port numbers. If you 
-		don't want this (you want to use a specific port), set this attribute's value to false. If it is 
-		set to false, the port-count attribute is ignored. It is optional and its default value is true.
+		don't want this (for example, you want to use a specific port), set auto-increment to false. If it is 
+		set to false, the port-count attribute is ignored. auto-increment is optional and its default value is true.
 		Examples:
-		Below example looks for ports between 5701 and 5721, incrementing the ports starting from 5701.	
+		The example below looks for ports between 5701 and 5721, incrementing the ports starting from 5701.	
 		<port port-count="20">5701</port>
-		Below example forces Hazelcast to use only the port 5701.
+		The example below forces Hazelcast to use only the port 5701.
 		<port auto-increment="false">5701</port>
     * <outbound-ports>:
 	By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation. But security 
@@ -217,14 +218,14 @@ https://hazelcast.org/documentation/.
 	If you set this to true, Hazelcast will use the same port when you restart a member right after you 
 	shut it down. It is optional and its default value is false.
     * <join>:
-	This configuration lets you to choose a discovery mechanism that Hazelcast will use to form a cluster. 
+	This configuration lets you choose a discovery mechanism that Hazelcast will use to form a cluster. 
 	Hazelcast can find members by multicast, TCP/IP lists and in the clouds supported by jclouds API. 
 	The following are the elements of <join>:
 	- <multicast>:
 		Set its "enabled" attribute to true for discovery by multicast. It has the following sub-elements
 		to fine tune the multicast discovery.
 		- <multicast-group>:
-			Specifies multicast group IP address when you want to create clusters within 
+			Specifies the multicast group IP address when you want to create clusters within 
 			the same network. Its default value is 224.2.2.3.
 		- <multicast-port>: 
 			Specifies the multicast socket port that the Hazelcast member listens to and 
@@ -245,7 +246,7 @@ https://hazelcast.org/documentation/.
 		Set its "enabled" attribute to true for discovery by TCP/IP. It has the following sub-elements
 		to fine tune the multicast discovery.
 		- <required-member>:
-			IP address of the required member. Cluster will only formed if the member with this 
+			IP address of the required member. Cluster will only be formed if the member with this 
 			IP address is found.
 		- <member>:
 			IP address(es) of one or more well known members. Once members are connected to these 
@@ -258,11 +259,11 @@ https://hazelcast.org/documentation/.
 			cluster. Its default value is 5.
 	- <discovery-strategies>:
 		Set its "enabled" attribute to true for discovery in a jclouds backed cloud. You also need to set the
-		value of "hazelcast.discovery.enabled" property to true. See the description of <properties> element
+		value of "hazelcast.discovery.enabled" property to true. See the description of the <properties> element
 		to learn how to do this.
 		You can define multiple discovery strategies using the <discovery-strategy> sub-element and its 
 		properties. Please refer to 
-		http://docs.hazelcast.org/docs/3.6/manual/html-single/index.html#discovering-members-with-jclouds
+		http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#discovering-members-with-jclouds
 		to see the properties you can use.
 		The following is an example for EC2 cloud.
 		<discovery-strategies>
@@ -276,12 +277,12 @@ https://hazelcast.org/documentation/.
 		</discovery-strategies>
     * <interfaces>:
 	Specifies which network interfaces Hazelcast should use. You need to set its "enabled" attribute
-	to true to be able use your defined interfaces. You can define multiple interfaces
+	to true to be able to use your defined interfaces. You can define multiple interfaces
 	using its <interface> sub-element. By default, it is disabled.
     * <ssl>:
-	Lets you to configure SSL using the SSL context factory. This feature is available only in Hazelcast
-	Enterprise. To be able to use it, the encryption should NOT be enabled and you should first implement 
-	the your SSLContextFactory class. Its configuration contains the factory class and SSL properties. 
+	Lets you configure SSL using the SSL context factory. This feature is available only in Hazelcast
+	Enterprise. To be able to use it, encryption should NOT be enabled and you should first implement 
+	your SSLContextFactory class. Its configuration contains the factory class and SSL properties. 
 	By default, it is disabled. The following is an example:
 	<ssl enabled="true">
 		<factory-class-name>
@@ -296,7 +297,7 @@ https://hazelcast.org/documentation/.
 		</properties>
 	</ssl>
     * <socket-interceptor>:
-	Lets you to add custom hooks to join and perform connection procedures (like identity checking using 
+	Lets you add custom hooks to join and perform connection procedures (like identity checking using 
 	Kerberos, etc.). This feature is available only in Hazelcast Enterprise. To be able to use it, you 
 	should first implement the MemberSocketInterceptor (for members joining to a cluster) or 
 	SocketInterceptor (for clients connecting to a member) class. Its configuration contains the class you 
@@ -311,7 +312,7 @@ https://hazelcast.org/documentation/.
 		</properties>
 	</socket-interceptor>
     * <symmetric-encryption>:
-	Lets you to encrypt the entire socket level communication among all Hazelcast members.
+	Lets you encrypt the entire socket level communication among all Hazelcast members.
 	This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption 
 	properties and the same configuration must be placed to all members. By default, it is disabled. 
 	The following is an example:
@@ -387,7 +388,7 @@ https://hazelcast.org/documentation/.
 	started operations count, completed operations count, and cancelled operations count. Its default 
 	value is true.
     * <pool-size>: 
-	The number of executor threads per member for the executor. Its default is 8.
+	The number of executor threads per member for the executor. Its default value is 8.
     * <queue-capacity>: 
 	Task queue capacity of the executor. Its default value is 0, meaning Integer.MAX_VALUE.
 -->
@@ -406,7 +407,7 @@ https://hazelcast.org/documentation/.
 	When you enable it, you can retrieve queue statistics. Its default value is true.
     * <max-size>: 
 	Maximum size of the queue. When a JVM's local queue size reaches the maximum, all put/offer operations 
-	will be blocked until the queue size of the JVM goes down below this maximum. Its default value is 0, 
+	will be blocked until the queue size of the JVM goes below this maximum. Its default value is 0, 
 	meaning Integer.MAX_VALUE.
     * <backup-count>:
 	Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Queue 
@@ -428,8 +429,8 @@ https://hazelcast.org/documentation/.
 	QueueStore interface and then configure it using this element. It includes your implemented class name 
 	and the following property configurations:
 	- binary: 
-		If you do not reach the queue store from an external application, you might prefer that the items 
-		be inserted in binary form. Set this property to true and skip the deserialization step, which is a 
+		If you do not reach the queue store from an external application, you might prefer to insert the items 
+		in binary form. To do so, set this property to true and skip the deserialization step, which is a 
 		performance optimization. Its default value is false.
 	- memory-limit:
 		Number of items after which Hazelcast will store items only to datastore. For example, 
@@ -479,11 +480,11 @@ https://hazelcast.org/documentation/.
     	When you enable it, you can retrieve map entry statistics such as creation time, expiration time,  
     	number of hits, key, value, etc. Its default value is true.
     * <optimize-queries>:
-	It is deprecated as of Hazelcast 3.6. Use <cache-deserialized-values> element instead. When  
-	<optimize-queries> and <cache-deserialized-values> are used at the same time Hazelcast will do its 
+	It is deprecated as of Hazelcast 3.6. Use the <cache-deserialized-values> element instead. When  
+	<optimize-queries> and <cache-deserialized-values> are used at the same time, Hazelcast will do its 
 	best to detect possible conflicts. Conflict detection is done on best-effort basis and you should not 
 	rely on it. If true, it increases the speed of query processes in the map. It only works when 
-	<in-memory-format> is set as BINARY and performs a pre-caching on the entries queried. Its default 
+	<in-memory-format> is set to BINARY and performs a pre-caching on the entries queried. Its default 
 	value is false.
     * <cache-deserialized-values>:
 	Controls caching of deserialized values. Caching makes the query evaluation faster, but it costs memory.
@@ -497,7 +498,7 @@ https://hazelcast.org/documentation/.
     	to 0 if you do not want your entries to be backed up. The maximum value for the backup count is 6.
     	Its default value is 1.
     * <async-backup-count>:
-	Count of asynchronous backups. Unlike the synchronous backup process, asynchronous backup process does not
+	Number of asynchronous backups. Unlike the synchronous backup process, asynchronous backup process does not
 	block the map operations. Its default value is 0, meaning there will be no asynchronous backups.
     * <time-to-live-seconds>:
 	Maximum time in seconds for each entry to stay in the map. If it is not 0, entries that are older than 
@@ -528,12 +529,12 @@ https://hazelcast.org/documentation/.
 	- PER_PARTITION:
 		Maximum number of map entries within each partition.
 	- USED_HEAP_SIZE: 
-		Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when in-memory 
-		format is set to OBJECT.
+		Maximum used heap size in megabytes per map for each Hazelcast instance. It does not work when
+		<in-memory-format> is set to OBJECT.
 	- USED_HEAP_PERCENTAGE: 
 		Maximum used heap size percentage per map for each Hazelcast instance. If, for example, JVM is 
 		configured to have 1000 MB and this value is 10, then the map entries will be evicted when used heap size 
-		exceeds 100 MB. It does not work when in-memory format is set to OBJECT.
+		exceeds 100 MB. It does not work when <in-memory-format> is set to OBJECT.
 	- FREE_HEAP_SIZE: 
 		Minimum free heap size in megabytes for each Hazelcast instance.
 	- FREE_HEAP_PERCENTAGE: 
@@ -552,7 +553,7 @@ https://hazelcast.org/documentation/.
 		Minimum free native memory size percentage for each Hazelcast instance. It is available only in 
 		Hazelcast Enterprise HD.
     * <eviction-percentage>:
-	When max-size is reached, the specified percentage of the map will be evicted. For example, if set to 25, 
+	When <max-size> is reached, the specified percentage of the map will be evicted. For example, if set to 25, 
 	25% of the entries will be evicted. Valid values are integers between 0 and 100. Its default value is 25.
     * <min-eviction-check-millis>:
 	Specifies the frequency of the eviction process, i.e. minimum time in milliseconds which should elapse before 
@@ -578,14 +579,14 @@ https://hazelcast.org/documentation/.
 	Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
 	sub-element.
 	- <fsync>:
-		Set as true if the writing to disk should be followed by an fsync() system call. Its default value is false.
+		Set to true if the writing to disk should be followed by an fsync() system call. Its default value is false.
     * <map-store>:
 	Configuration options when you want to load/store the map entries from/to a persistent data store such as a 
 	relational database. Before configuring <map-store>, you need to implement Hazelcast's MapStore or MapLoader 
 	interfaces.
 	It has the following attributes:
 	- enabled:
-		Set as true to enable the map store functionality for your map. Its default value is true.
+		Set to true to enable the map store functionality for your map. Its default value is true.
 	- initial-mode: 
 		Sets the initial entry loading mode. Available values are as follows:
 	 	- LAZY: The loading is asynchronous. It is the default mode.
@@ -598,11 +599,11 @@ https://hazelcast.org/documentation/.
 		Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
 		Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
 	- <write-batch-size>:
-		Used to create batches when writing to map store. In default mode, all map entries will be tried 
+		Used to create batches when writing to map store. In default mode, all map entries will try 
 		to be written in one go. To create batches, the minimum meaningful value is 2. For values smaller than 2, 
 		it works as in default mode. Its default value is 1.
 	- <write-coalescing>:
-		It is meaningful if you are using write behind in MapStore. When it is set as true,
+		It is meaningful if you are using write behind in MapStore. When it is set to true,
 		only the latest store operation on a key during the write-delay-seconds will be
 		reflected to MapStore. Its default value is true.
 	- <properties>:
@@ -616,7 +617,7 @@ https://hazelcast.org/documentation/.
 	It has the following sub-elements:
     	- <max-size>:
     		Maximum size of the near cache. When this is reached, near cache is evicted based on the policy defined.
-		Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
+			Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Its default value is 0.
     	- <time-to-live-seconds>:
     		Maximum number of seconds for each entry to stay in the near cache. Entries that are older than this 
     		period are automatically evicted from the near cache. Any integer between 0 and Integer.MAX_VALUE. 
@@ -688,8 +689,8 @@ https://hazelcast.org/documentation/.
     * <indexes>:
 	You can define indexes for your map using this element's <index> sub-elements. Each <index> has 
 	only the boolean "ordered" attribute. For example, if you will have a ranged query for a field of a map 
-	entry, then this attribute should be set as true. But, if the field has a boolean value, then it should 
-	be set as false. Its default is false.
+	entry, then this attribute should be set to true. But if the field has a boolean value, then it should 
+	be set to false. Its default value is false.
     * <attributes>:
 	You can define attributes that may be referenced in predicates, queries and indexes using this element's 
 	<attribute> sub-elements. Each <attribute> has only the "extractor" attribute which you should define beforehand
@@ -906,7 +907,7 @@ https://hazelcast.org/documentation/.
 	value is false.
     * <cache-loader-factory>:
 	Fully qualified class name of the javax.cache.configuration.Factory implementation providing a 
-	javax.cache.integration.CacheLoader instance to the cache. Provide this class name using its "class-name"
+	javax.cache.integration.CacheLoader instance to the cache. Provide this class name by using its "class-name"
 	attribute.
     * <cache-writer-factory>:
 	Fully qualified class name of the javax.cache.configuration.Factory implementation providing a 
@@ -946,7 +947,7 @@ https://hazelcast.org/documentation/.
 	Number of synchronous backups. If it is 1, for example, then all entries of the cache are copied to 
 	one other instance as synchronous for fail-safety. Its default value is 1.
     * <async-backup-count>:
-    	Number of asynchronous backups. If it is 1, for example, then all entries of the cache are copied to 
+    	Number of asynchronous backups. For example, if it is 1, then all entries of the cache are copied to 
     	one other instance as asynchronous for fail-safety. The sum of <backup-count> and <async-backup-count> 
     	cannot be larger than 6. Its default value is 0.
     * <eviction>:
@@ -981,13 +982,13 @@ https://hazelcast.org/documentation/.
 		When enabled, an incoming event to a member is forwarded to target cluster of that member. Its
 		default value is true.
     * <quorum-ref>:
-	Adds the quorum for this cache which you configure using the <quorum> element. You should set the 
-	<quorum-ref>'s value as the <quorum>'s name.     
+    	Adds the quorum for this cache which you configure using the <quorum> element. You should set the 
+    	<quorum-ref>'s value as the <quorum>'s name.     
     * <partition-lost-listeners>:
     	Adds the partition lost listeners that you created by implementing Hazelcast's PartitionLostListener interface. 
     * <merge-policy>:
-	The following are the built-in merge policies for cache. You can either use their full class names or constant 
-	names (given in parentheses).
+    	The following are the built-in merge policies for cache. You can either use their full class names or constant 
+    	names (given in parentheses).
 	- com.hazelcast.cache.merge.PassThroughCacheMergePolicy (PASS_THROUGH)
 	- com.hazelcast.cache.merge.PutIfAbsentCacheMergePolicy (PUT_IF_ABSENT)
 	- com.hazelcast.cache.merge.HigherHitsCacheMergePolicy (HIGHER_HITS)
@@ -1055,7 +1056,7 @@ https://hazelcast.org/documentation/.
 	Maximum size of the list (item count). Its default value is 0, meaning Integer.MAX_VALUE.
     * <backup-count>:
 	Number of synchronous backups. List is a non-partitioned data structure, so all entries of a 
-	List reside in one partition. If it is set as 1, there will be 1 backup of that List in another 
+	List reside in one partition. If it is set to 1, there will be 1 backup of that List in another 
 	member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
     * <async-backup-count>:
 	Number of asynchronous backups. Its default value is 0.
@@ -1084,7 +1085,7 @@ https://hazelcast.org/documentation/.
 	Maximum size of the set (item count). Its default value is 0, meaning Integer.MAX_VALUE.
     * <backup-count>:
 	Number of synchronous backups. Set is a non-partitioned data structure, so all entries of a 
-	Set reside in one partition. If it is set as 1, there will be 1 backup of that Set in another 
+	Set reside in one partition. If it is set to 1, there will be 1 backup of that Set in another 
 	member in the cluster. When it is 2, 2 members will have the backup. Its default value is 1.
     * <async-backup-count>:
 	Number of asynchronous backups. Its default value is 0.
@@ -1107,7 +1108,7 @@ https://hazelcast.org/documentation/.
     can specify the name of your topic. This attribute's default value is "default".
     It has the following sub-elements:
     * <global-ordering-enabled>:
-	When it is set as true, all cluster members that listen to a topic will receive the messages in the 
+	When it is set to true, all cluster members that listen to a topic will receive the messages in the 
 	same order they were published by all members. This way, Hazelcast guarantees that all members will 
 	see the in the same order. Its default value is false.
     * <statistics-enabled>: 
@@ -1137,8 +1138,8 @@ https://hazelcast.org/documentation/.
     * <topic-overload-policy>:
 	Policy to handle an overloaded topic. Its default value is BLOCK. Available values are as follows:
 	- DISCARD_OLDEST:
-		A message that has not expired can be overwritten. No matter the retention period set, the overwrite
-     		will just overwrite the message.
+		A message that has not expired can be overwritten. It does not matter if the retention period is set,
+     	the overwrite will just overwrite the message.
 	- DISCARD_NEWEST:
 		Message that was to be published is discarded.
 	- BLOCK:
@@ -1165,7 +1166,7 @@ https://hazelcast.org/documentation/.
     * <max-thread-size>: 
 	Maximum thread pool size of the JobTracker. Its default value is 0.
     * <queue-size>:
-    	Maximum number of tasks that are able to wait to be processed. A value of 0 means an unbounded queue. 
+    	Maximum number of tasks that can wait to be processed. A value of 0 means an unbounded queue. 
     	Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate 
     	chunks might be lost. Its default value is 0.
     * <retry-count>:
@@ -1205,7 +1206,7 @@ https://hazelcast.org/documentation/.
     	The thread count to which the concurrent access is limited. For example, if you set
 	it to 3, concurrent access to the object is limited to 3 threads.
     * <backup-count>:
-    	Number of synchronous backups. For example, if it is set as 1, all permits of the semaphore 
+    	Number of synchronous backups. For example, if it is set to 1, all permits of the semaphore 
     	are copied to one other member for fail-safety. Its default value is 1.
     * <async-backup-count>:
 	Number of asynchronous backups. Its default value is 0.
@@ -1230,7 +1231,7 @@ https://hazelcast.org/documentation/.
 	this value and are not updated for this period  are automatically evicted from the Ringbuffer. 
 	Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Its default value is 0.
     * <backup-count>:
-    	Number of synchronous backups. For example, if it is set as 1, then the Ringbuffer items 
+    	Number of synchronous backups. For example, if it is set to 1, then the Ringbuffer items 
     	are copied to one other member for fail-safety. Its default value is 1.
     * <async-backup-count>:
 	Number of asynchronous backups. Its default value is 0.
@@ -1267,7 +1268,7 @@ https://hazelcast.org/documentation/.
     It has the following sub-elements:
     * <portable-version>:
     	Version of the portable serialization. Portable version is used to differentiate two
-	same classes that have changes such as a new field or a new field type.
+		of the same classes that have changes such as a new field or a new field type.
     * <use-native-byte-order>:
     	Set as true if you want to use the native byte order of the underlying platform. Its default value is false.
     * <byte-order>:
@@ -1300,7 +1301,7 @@ https://hazelcast.org/documentation/.
     	it as true, the Java serialization step will be handled by the global serializer, not by the Java Serializable or
     	Externalizable.
     * <check-class-def-errors>:
-    	If set as true, serialization system will check the class definitions error at the start of serialization process
+    	If set to true, serialization system will check the class definitions error at the start of serialization process
     	and throw a Serialization Exception with the error definition.
 -->
     <serialization>
@@ -1395,7 +1396,7 @@ https://hazelcast.org/documentation/.
     This feature is available only in Hazelcast Enterprise. Configuration element's name is <security>. 
     It has the following attributes and sub-elements:
     * enabled:
-    	Set as true to enable Hazelcast's security features.
+    	Set to true to enable Hazelcast's security features.
     * <member-credentials-factory>:
     	Specifies the name and properties of your class that you developed by implementing Hazelcast's Credentials 
     	interface.
@@ -1542,7 +1543,7 @@ https://hazelcast.org/documentation/.
     <hot-restart-persistence>. It has the required attribute "enabled" to specify whether this feature will be enabled
     on your cluster. This part is the feature's configuration itself and you define the general specifications for 
     the feature. However, note that <map> and <cache> have a sub-element called <hot-restart> with which you should 
-    enable its usage on those data structures. Keep in mind that Hot Restart feature is currently supported for 
+    enable its usage on those data structures. Keep in mind that the Hot Restart feature is currently supported for 
     Hazelcast's map and cache data structures.
     It has the following sub-elements:
     * <base-dir>:
