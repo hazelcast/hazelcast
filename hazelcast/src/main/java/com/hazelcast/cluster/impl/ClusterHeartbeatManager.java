@@ -85,6 +85,7 @@ public class ClusterHeartbeatManager {
 
     @Probe(name = "lastHeartBeat")
     private volatile long lastHeartBeat;
+    private volatile long lastClusterTimeDiff;
 
     public ClusterHeartbeatManager(Node node, ClusterServiceImpl clusterService) {
         this.node = node;
@@ -199,8 +200,14 @@ public class ClusterHeartbeatManager {
                 logger.info(format("System clock apparently jumped from %s to %s since last heartbeat (%+d ms)",
                         sdf.format(new Date(lastHeartBeat)), sdf.format(new Date(now)), clockJump));
 
-                // adjust cluster clock due to clock drift
-                clusterClock.setClusterTimeDiff(clusterClock.getClusterTimeDiff() - clockJump);
+                // We only set cluster clock, if clock jumps more than threshold.
+                // If the last cluster-time diff we've seen is significantly different than what we read now,
+                // that means, it's already adjusted by master heartbeat. Then don't update the cluster time again.
+                long currentClusterTimeDiff = clusterClock.getClusterTimeDiff();
+                if (Math.abs(lastClusterTimeDiff - currentClusterTimeDiff) < CLOCK_JUMP_THRESHOLD) {
+                    // adjust cluster clock due to clock drift
+                    clusterClock.setClusterTimeDiff(currentClusterTimeDiff - clockJump);
+                }
             }
 
             if (absoluteClockJump >= maxNoMasterConfirmationMillis / 2) {
@@ -214,6 +221,7 @@ public class ClusterHeartbeatManager {
                 resetHeartbeats();
             }
         }
+        lastClusterTimeDiff = clusterClock.getClusterTimeDiff();
         lastHeartBeat = now;
     }
 
