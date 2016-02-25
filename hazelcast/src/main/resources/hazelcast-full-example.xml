@@ -339,9 +339,13 @@ https://hazelcast.org/documentation/.
                 <interface>127.0.0.1</interface>
             </tcp-ip>
             <discovery-strategies>
-              <discovery-strategy>
-              	...
-              </discovery-strategy>
+		<discovery-strategy class="com.hazelcast.jclouds.JCloudsDiscoveryStrategy" enabled="true">
+			<properties>
+				<property name="provider">google-compute-engine</property>
+				<property name="identity">GCE_IDENTITY</property>
+				<property name="credential">GCE_CREDENTIAL</property>
+			</properties>
+		</discovery-strategy>
             </discovery-strategies>
         </join>
         <interfaces enabled="true">
