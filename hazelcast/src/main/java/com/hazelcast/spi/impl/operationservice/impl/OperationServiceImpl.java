@@ -263,9 +263,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     public void handle(Packet packet) throws Exception {
         checkNotNull(packet, "packet can't be null");
-        checkTrue(packet.isHeaderSet(Packet.HEADER_OP), "Packet.HEADER_OP should be set!");
+        checkTrue(packet.isFlagSet(Packet.FLAG_OP), "Packet.FLAG_OP should be set!");
 
-        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+        if (packet.isFlagSet(Packet.FLAG_RESPONSE)) {
             responsePacketExecutor.handle(packet);
         } else {
             operationExecutor.execute(packet);
@@ -399,10 +399,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
         Packet packet = new Packet(bytes, partitionId);
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
 
         if (op instanceof UrgentSystemOperation) {
-            packet.setHeader(Packet.HEADER_URGENT);
+            packet.setFlag(Packet.FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();
@@ -422,11 +422,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         byte[] bytes = serializationService.toBytes(response);
         Packet packet = new Packet(bytes, -1);
-        packet.setHeader(Packet.HEADER_OP);
-        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setFlag(Packet.FLAG_OP);
+        packet.setFlag(Packet.FLAG_RESPONSE);
 
         if (response.isUrgent()) {
-            packet.setHeader(Packet.HEADER_URGENT);
+            packet.setFlag(Packet.FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();

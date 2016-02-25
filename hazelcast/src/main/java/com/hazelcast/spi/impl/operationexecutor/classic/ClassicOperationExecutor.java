@@ -374,8 +374,8 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private void checkOpPacket(Packet packet) {
-        if (!packet.isHeaderSet(Packet.HEADER_OP)) {
-            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.HEADER_OP set");
+        if (!packet.isFlagSet(Packet.FLAG_OP)) {
+            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.FLAG_OP set");
         }
     }
 

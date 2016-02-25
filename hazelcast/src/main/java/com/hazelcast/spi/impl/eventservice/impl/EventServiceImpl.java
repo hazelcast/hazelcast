@@ -394,7 +394,7 @@ public class EventServiceImpl implements InternalEventService {
             }
         } else {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey);
-            packet.setHeader(Packet.HEADER_EVENT);
+            packet.setFlag(Packet.FLAG_EVENT);
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {

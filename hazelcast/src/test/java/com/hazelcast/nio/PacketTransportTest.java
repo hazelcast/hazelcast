@@ -95,7 +95,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     }
 
     private void assertPacketEquals(Packet originalPacket, Packet clonedPacket) {
-        assertEquals(originalPacket.getHeader(), clonedPacket.getHeader());
+        assertEquals(originalPacket.getFlags(), clonedPacket.getFlags());
         assertArrayEquals(originalPacket.toByteArray(), clonedPacket.toByteArray());
     }
 }

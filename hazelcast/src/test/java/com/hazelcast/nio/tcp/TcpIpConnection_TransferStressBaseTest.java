@@ -211,7 +211,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
             DummyPayload payload = payloads[random.nextInt(payloads.length)];
             Packet packet = new Packet(serializationService.toBytes(payload));
             if (payload.isUrgent()) {
-                packet.setHeader(Packet.HEADER_URGENT);
+                packet.setFlag(Packet.FLAG_URGENT);
             }
             return packet;
         }

@@ -47,7 +47,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenOperationPacket() throws Exception {
         Packet packet = new Packet();
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
 
         packetDispatcher.dispatch(packet);
 
@@ -60,7 +60,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenWanReplicationPacket() throws Exception {
         Packet packet = new Packet();
-        packet.setHeader(Packet.HEADER_WAN_REPLICATION);
+        packet.setFlag(Packet.FLAG_WAN_REPLICATION);
 
         packetDispatcher.dispatch(packet);
 
@@ -73,7 +73,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenEventPacket() throws Exception {
         Packet packet = new Packet();
-        packet.setHeader(Packet.HEADER_EVENT);
+        packet.setFlag(Packet.FLAG_EVENT);
 
         packetDispatcher.dispatch(packet);
 
@@ -86,7 +86,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenBindPacket() throws Exception {
         Packet packet = new Packet();
-        packet.setHeader(Packet.HEADER_BIND);
+        packet.setFlag(Packet.FLAG_BIND);
 
         packetDispatcher.dispatch(packet);
 
@@ -113,7 +113,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenProblemHandlingPacket_thenSwallowed() throws Exception {
         Packet packet = new Packet();
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
 
         Mockito.doThrow(new ExpectedRuntimeException()).when(operationPacketHandler).handle(packet);
 

@@ -228,7 +228,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public void handle(Packet packet) throws Exception {
-        assert packet.isHeaderSet(Packet.HEADER_BIND);
+        assert packet.isFlagSet(Packet.FLAG_BIND);
 
         BindMessage bind = ioService.getSerializationService().toObject(packet);
         bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
@@ -322,7 +322,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes);
-        packet.setHeader(Packet.HEADER_BIND);
+        packet.setFlag(Packet.FLAG_BIND);
         connection.write(packet);
         //now you can send anything...
     }
