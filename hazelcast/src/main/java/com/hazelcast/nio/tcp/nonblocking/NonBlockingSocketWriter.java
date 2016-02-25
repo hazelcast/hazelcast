@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
@@ -26,8 +27,6 @@ import com.hazelcast.nio.tcp.NewClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
-import com.hazelcast.internal.util.counters.SwCounter;
-
 import java.io.IOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -37,16 +36,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.stringToBytes;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 
 /**
@@ -327,11 +325,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
             return;
         }
 
-        if (writeHandler == null) {
-            logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
-            createWriterHandler(CLUSTER);
-        }
-
         fillOutputBuffer();
 
         if (dirtyOutputBuffer()) {
@@ -468,7 +461,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     /**
      * Triggers the migration when executed by setting the SocketWriter.newOwner field. When the handle method completes, it
      * checks if this field if set, if so, the migration starts.
-     *
+     * <p/>
      * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
      */
     private class StartMigrationTask extends TaskFrame {
