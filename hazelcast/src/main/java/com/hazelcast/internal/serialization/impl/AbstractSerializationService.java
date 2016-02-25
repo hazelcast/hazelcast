@@ -454,18 +454,18 @@ public abstract class AbstractSerializationService implements SerializationServi
         object = object == null ? NULL : object;
 
         Class<?> type = object.getClass();
-        if (type == Long.class) {
-            return longSerializerAdapter;
-        } else if (type == Integer.class) {
-            return intSerializerAdapter;
-        } else if (type == Double.class) {
-            return doubleSerializerAdapter;
-        } else if (type == Float.class) {
-            return floatSerializerAdapter;
-        } else if (type == Byte.class) {
-            return byteSerializerAdapter;
-        }
-
+//        if (type == Long.class) {
+//            return longSerializerAdapter;
+//        } else if (type == Integer.class) {
+//            return intSerializerAdapter;
+//        } else if (type == Double.class) {
+//            return doubleSerializerAdapter;
+//        } else if (type == Float.class) {
+//            return floatSerializerAdapter;
+//        } else if (type == Byte.class) {
+//            return byteSerializerAdapter;
+//        }
+//
         SerializerAdapter serializer = serializersByType.get(type);
         if (serializer == null) {
             serializer = lookupSerializer(type);
