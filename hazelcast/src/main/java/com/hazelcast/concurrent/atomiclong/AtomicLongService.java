@@ -100,9 +100,10 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
         Map<String, Long> data = new HashMap<String, Long>();
         int partitionId = event.getPartitionId();
-        for (String name : containers.keySet()) {
+        for (Map.Entry<String, AtomicLongContainer> containerEntry : containers.entrySet()) {
+            String name = containerEntry.getKey();
             if (partitionId == getPartitionId(name)) {
-                AtomicLongContainer container = containers.get(name);
+                AtomicLongContainer container = containerEntry.getValue();
                 data.put(name, container.get());
             }
         }

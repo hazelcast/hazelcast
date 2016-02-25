@@ -62,7 +62,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
@@ -395,7 +394,6 @@ public class ClientCacheProxy<K, V>
                                                          boolean isRegister) {
         final Collection<Member> members = clientContext.getClusterService().getMemberList();
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-        final Collection<Future> futures = new ArrayList<Future>();
         for (Member member : members) {
             try {
                 final Address address = member.getAddress();
@@ -403,8 +401,7 @@ public class ClientCacheProxy<K, V>
                 final ClientMessage request =
                         CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister, address);
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
-                final Future future = invocation.invoke();
-                futures.add(future);
+                invocation.invoke();
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
             }
