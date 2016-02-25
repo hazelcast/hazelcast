@@ -18,9 +18,9 @@ package com.hazelcast.memory;
 
 /**
  * Memory statistics for the JVM which current HazelcastInstance belongs to.
- * <p/>
+ * <p>
  * Shows total physical/free OS memory, max/committed/used/free heap memory
- * and max/committed/used/free native memory.
+ * and max/committed/used/free  memory.
  *
  * @see com.hazelcast.memory.GarbageCollectorStats
  */
@@ -35,7 +35,7 @@ public interface MemoryStats {
 
     /**
      * Returns free physical memory available in OS.
-     * <p/>
+     * <p>
      * Some operating systems have cached memory regions in which they store hot cached resources like files.
      * Cached memory is used for allocations when required. So although this cached region is
      * assumed as free, operating systems generally report this region as used not free.
@@ -48,7 +48,6 @@ public interface MemoryStats {
      * Returns the maximum amount of memory that the JVM will attempt to use in bytes.
      *
      * @return the maximum amount of memory in bytes.
-     *
      * @see Runtime#maxMemory()
      */
     long getMaxHeap();
@@ -58,7 +57,6 @@ public interface MemoryStats {
      * the Java virtual machine to use.
      *
      * @return the amount of committed memory in bytes.
-     *
      * @see Runtime#totalMemory()
      * @see java.lang.management.MemoryUsage#getCommitted()
      */
@@ -68,7 +66,6 @@ public interface MemoryStats {
      * Returns the amount of used memory in the JVM in bytes.
      *
      * @return the amount of used memory in bytes
-     *
      * @see java.lang.management.MemoryUsage#getUsed()
      */
     long getUsedHeap();
@@ -77,45 +74,44 @@ public interface MemoryStats {
      * Returns the amount of free memory in the JVM in bytes.
      *
      * @return the amount of free memory in bytes
-     *
      * @see Runtime#freeMemory()
      */
     long getFreeHeap();
 
     /**
-     * Returns the maximum amount of native memory that current HazelcastInstance
+     * Returns the maximum amount of  memory that current HazelcastInstance
      * will attempt to use in bytes.
      *
-     * @return the maximum amount of native memory in bytes.
+     * @return the maximum amount of  memory in bytes.
      */
-    long getMaxNativeMemory();
+    long getMaxMemory();
 
     /**
-     * Returns the amount of native memory in bytes that is committed for
+     * Returns the amount of  memory in bytes that is committed for
      * current HazelcastInstance to use.
      *
-     * @return the amount of committed native memory in bytes.
+     * @return the amount of committed  memory in bytes.
      */
-    long getCommittedNativeMemory();
+    long getCommittedMemory();
 
     /**
-     * Returns the amount of used native memory in current HazelcastInstance in bytes.
+     * Returns the amount of used  memory in current HazelcastInstance in bytes.
      *
-     * @return the amount of used native memory in bytes
+     * @return the amount of used  memory in bytes
      */
-    long getUsedNativeMemory();
+    long getUsedMemory();
 
     /**
-     * Returns the amount of free native memory in current HazelcastInstance in bytes.
+     * Returns the amount of free  memory in current HazelcastInstance in bytes.
      *
-     * @return the amount of free native memory in bytes
+     * @return the amount of free  memory in bytes
      */
-    long getFreeNativeMemory();
+    long getFreeMemory();
 
     /**
      * Returns the garbage collector statistics for the JVM
+     *
      * @return GC statistics
      */
     GarbageCollectorStats getGCStats();
-
 }
