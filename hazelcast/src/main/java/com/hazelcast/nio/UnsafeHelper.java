@@ -23,6 +23,8 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import static com.hazelcast.util.QuickMath.normalize;
+
 /**
  * Unsafe accessor.
  * <p/>
@@ -128,15 +130,19 @@ public final class UnsafeHelper {
         try {
             // test if unsafe has required methods...
             if (unsafe != null) {
-                byte[] buffer = new byte[8];
-                unsafe.putChar(buffer, BYTE_ARRAY_BASE_OFFSET, '0');
-                unsafe.putBoolean(buffer, BYTE_ARRAY_BASE_OFFSET, false);
-                unsafe.putShort(buffer, BYTE_ARRAY_BASE_OFFSET, (short) 1);
-                unsafe.putInt(buffer, BYTE_ARRAY_BASE_OFFSET, 2);
-                unsafe.putFloat(buffer, BYTE_ARRAY_BASE_OFFSET, 3f);
-                unsafe.putLong(buffer, BYTE_ARRAY_BASE_OFFSET, 4L);
-                unsafe.putDouble(buffer, BYTE_ARRAY_BASE_OFFSET, 5d);
-                unsafe.copyMemory(new byte[8], BYTE_ARRAY_BASE_OFFSET, buffer, BYTE_ARRAY_BASE_OFFSET, buffer.length);
+                long arrayBaseOffset = unsafe.arrayBaseOffset(byte[].class);
+                byte[] buffer = new byte[(int) arrayBaseOffset + (2 * Bits.LONG_SIZE_IN_BYTES)];
+                unsafe.putByte(buffer, arrayBaseOffset, (byte) 0x00);
+                unsafe.putBoolean(buffer, arrayBaseOffset, false);
+                unsafe.putChar(buffer, normalize(arrayBaseOffset, Bits.CHAR_SIZE_IN_BYTES), '0');
+                unsafe.putShort(buffer, normalize(arrayBaseOffset, Bits.SHORT_SIZE_IN_BYTES), (short) 1);
+                unsafe.putInt(buffer, normalize(arrayBaseOffset, Bits.INT_SIZE_IN_BYTES), 2);
+                unsafe.putFloat(buffer, normalize(arrayBaseOffset, Bits.FLOAT_SIZE_IN_BYTES),  3f);
+                unsafe.putLong(buffer, normalize(arrayBaseOffset, Bits.LONG_SIZE_IN_BYTES), 4L);
+                unsafe.putDouble(buffer, normalize(arrayBaseOffset, Bits.DOUBLE_SIZE_IN_BYTES), 5d);
+                unsafe.copyMemory(new byte[buffer.length], arrayBaseOffset,
+                                  buffer, arrayBaseOffset,
+                                  buffer.length);
 
                 unsafeAvailable = true;
             }
@@ -188,7 +194,7 @@ public final class UnsafeHelper {
         return UNSAFE_EXPLICITLY_ENABLED.equals(mode);
     }
 
-    private static boolean isUnalignedAccessAllowed() {
+    static boolean isUnalignedAccessAllowed() {
         // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
         // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
         String arch = System.getProperty("os.arch");

@@ -57,7 +57,7 @@ public final class MemoryAccessorProvider {
     private MemoryAccessorProvider() {
     }
 
-    static boolean isUnalignedAccessAllowed() {
+    public static boolean isUnalignedAccessAllowed() {
         // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
         // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
         String arch = System.getProperty("os.arch");

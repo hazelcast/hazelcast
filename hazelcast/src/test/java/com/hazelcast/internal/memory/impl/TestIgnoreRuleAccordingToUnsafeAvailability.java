@@ -11,27 +11,17 @@ public class TestIgnoreRuleAccordingToUnsafeAvailability implements TestRule {
     private static final ILogger LOGGER = Logger.getLogger(TestIgnoreRuleAccordingToUnsafeAvailability.class);
 
     @Override
-    public Statement apply(Statement base, Description description) {
-        if(UnsafeUtil.UNSAFE_AVAILABLE) {
+    public Statement apply(Statement base, final Description description) {
+        if (UnsafeUtil.UNSAFE_AVAILABLE) {
             return base;
         } else {
-            return new IgnoreStatement(description);
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    LOGGER.finest("Ignoring `" + description.getClassName() + "` because Unsafe is not available");
+                }
+            };
         }
-    }
-
-    private static class IgnoreStatement extends Statement {
-
-        private final Description description;
-
-        IgnoreStatement(Description description) {
-            this.description = description;
-        }
-
-        @Override
-        public void evaluate() {
-            LOGGER.finest("Ignoring `" + description.getClassName() + "` because Unsafe is not available");
-        }
-
     }
 
 }
