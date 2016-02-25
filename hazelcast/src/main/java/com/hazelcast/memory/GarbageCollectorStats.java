@@ -22,7 +22,7 @@ package com.hazelcast.memory;
  * <p/>
  * Shows major/minor collection counts and consumed CPU times.
  *
- * @see com.hazelcast.memory.MemoryStats
+ * @see JVMMemoryStats
  */
 public interface GarbageCollectorStats {
 

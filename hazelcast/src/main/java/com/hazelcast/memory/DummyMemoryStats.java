@@ -17,31 +17,31 @@
 package com.hazelcast.memory;
 
 /**
- * Memory statistics for abstract MemoryManager
+ * Some dummy implementation which always return zero bytes
  */
-public interface MemoryStats {
-    /**
-     * @return - total memory available for MemoryManager
-     */
-    long getTotal();
+public class DummyMemoryStats implements MemoryStats {
+    @Override
+    public long getTotal() {
+        return 0;
+    }
 
-    /**
-     * @return - amount of free memory to allocate
-     */
-    long getFree();
+    @Override
+    public long getFree() {
+        return 0;
+    }
 
-    /**
-     * @return - maximal amount of memory which can be allocated
-     */
-    long getMax();
+    @Override
+    public long getMax() {
+        return 0;
+    }
 
-    /**
-     * @return -amount of memory which has been commited
-     */
-    long getCommitted();
+    @Override
+    public long getCommitted() {
+        return 0;
+    }
 
-    /**
-     * @return - amount of memory which has been used
-     */
-    long getUsed();
+    @Override
+    public long getUsed() {
+        return 0;
+    }
 }

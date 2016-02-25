@@ -17,7 +17,7 @@
 package com.hazelcast.internal.memory;
 
 import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
-import com.hazelcast.internal.memory.impl.ByteBufferMemoryAccessor;
+import com.hazelcast.internal.memory.impl.AlignmentUtil;
 import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
 
 import java.util.EnumMap;
@@ -32,7 +32,7 @@ public final class MemoryAccessorProvider {
             = new EnumMap<MemoryAccessorType, MemoryAccessor>(MemoryAccessorType.class);
 
     static {
-        final boolean unalignedAccessAllowed = isUnalignedAccessAllowed();
+        final boolean unalignedAccessAllowed = AlignmentUtil.isUnalignedAccessAllowed();
 
         if (StandardMemoryAccessor.isAvailable()) {
             StandardMemoryAccessor standardMemoryAccessor = new StandardMemoryAccessor();
@@ -49,20 +49,9 @@ public final class MemoryAccessorProvider {
                 MEMORY_ACCESSOR_MAP.put(MemoryAccessorType.PLATFORM_AWARE, alignmentAwareMemoryAccessor);
             }
         }
-
-        ByteBufferMemoryAccessor byteBufferMemoryAccessor = new ByteBufferMemoryAccessor();
-        MEMORY_ACCESSOR_MAP.put(MemoryAccessorType.HEAP_BYTE_ARRAY, byteBufferMemoryAccessor);
     }
 
     private MemoryAccessorProvider() {
-    }
-
-    public static boolean isUnalignedAccessAllowed() {
-        // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
-        // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
-        String arch = System.getProperty("os.arch");
-        // list of architectures copied from OpenJDK - java.nio.Bits::unaligned
-        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64") || arch.equals("x86_64");
     }
 
     /**
@@ -78,5 +67,4 @@ public final class MemoryAccessorProvider {
     public static MemoryAccessor getDefaultMemoryAccessor() {
         return MEMORY_ACCESSOR_MAP.get(MemoryAccessorType.PLATFORM_AWARE);
     }
-
 }

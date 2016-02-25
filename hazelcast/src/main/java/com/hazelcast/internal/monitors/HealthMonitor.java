@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.memory.JVMMemoryStats;
 
 import java.util.logging.Level;
 
@@ -37,21 +37,21 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry} to provides some clues
  * about the internal Hazelcast state.
- * <p/>
+ * <p>
  * Health monitor can be configured with system properties.
- * <p/>
+ * <p>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
  * This property can be one of the following:
  * {@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints.
  * {@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default).
  * {@link HealthMonitorLevel#OFF}    => does not print anything.
- * <p/>
+ * <p>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
- * <p/>
+ * <p>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
  * Threshold: Percentage of max memory currently in use
- * <p/>
+ * <p>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
  * Threshold: CPU system/process load
  */
@@ -59,7 +59,6 @@ public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
-    private static final int PERCENTAGE_INT_MULTIPLIER = 100;
     private static final double THRESHOLD_PERCENTAGE_INVOCATIONS = 70;
     private static final double THRESHOLD_INVOCATIONS = 1000;
 
@@ -427,30 +426,19 @@ public class HealthMonitor {
         }
 
         private void renderNativeMemory() {
-            MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
-            if (memoryStats.getMaxNativeMemory() <= 0L) {
+            JVMMemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
+            if (memoryStats.getNativeMemoryStats().getMax() <= 0L) {
                 return;
             }
 
-            final long usedNative = memoryStats.getUsedNativeMemory();
             sb.append("native.memory.used=")
-              .append(numberToUnit(usedNative)).append(", ");
+                    .append(numberToUnit(memoryStats.getNativeMemoryStats().getUsed())).append(", ");
             sb.append("native.memory.free=")
-                    .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+                    .append(numberToUnit(memoryStats.getNativeMemoryStats().getFree())).append(", ");
             sb.append("native.memory.total=")
-                    .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+                    .append(numberToUnit(memoryStats.getNativeMemoryStats().getCommitted())).append(", ");
             sb.append("native.memory.max=")
-                    .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
-            final long maxMeta = memoryStats.getMaxMetadata();
-            if (maxMeta > 0) {
-                final long usedMeta = memoryStats.getUsedMetadata();
-                sb.append("native.memory.meta.used=")
-                  .append(numberToUnit(usedMeta)).append(", ");
-                sb.append("native.memory.meta.free=")
-                  .append(numberToUnit(maxMeta - usedMeta)).append(", ");
-                sb.append("native.memory.meta.percentage=")
-                  .append(numberToUnit((PERCENTAGE_INT_MULTIPLIER * usedMeta) / (usedNative + usedMeta))).append(", ");
-            }
+                    .append(numberToUnit(memoryStats.getNativeMemoryStats().getMax())).append(", ");
         }
 
         private void renderExecutors() {

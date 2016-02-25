@@ -1,6 +1,7 @@
 package com.hazelcast.internal.memory;
 
 import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
+import com.hazelcast.internal.memory.impl.AlignmentUtil;
 import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -49,7 +50,7 @@ public class MemoryAccessorProviderTest extends UnsafeDependentMemoryAccessorTes
 
     @Test
     public void test_getMemoryAccessor_platformAware() {
-        if (MemoryAccessorProvider.isUnalignedAccessAllowed()) {
+        if (AlignmentUtil.isUnalignedAccessAllowed()) {
             checkStandardMemoryAccessorAvailable();
         } else {
             checkAlignmentAwareMemoryAccessorAvailable();

@@ -30,7 +30,8 @@
               files="SerializerHook\.java$"/>
 
     <!-- ConsoleApp -->
-    <suppress checks="MethodCountCheck|FileLengthCheck|ClassFanOutComplexityCheck" files="com/hazelcast/console/ConsoleApp"/>
+    <suppress checks="MethodCountCheck|FileLengthCheck|ClassFanOutComplexityCheck"
+              files="com/hazelcast/console/ConsoleApp"/>
     <suppress checks="MethodCountCheck|FileLengthCheck" files="com/hazelcast/client/console/ClientConsoleApp"/>
 
     <!-- Cache -->
@@ -64,14 +65,17 @@
     <suppress checks="MethodCount|FileLengthCheck" files="com/hazelcast/core/IMap"/>
 
     <!-- Config -->
-    <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling" files="com/hazelcast/config/AbstractXmlConfigHelper"/>
+    <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
+              files="com/hazelcast/config/AbstractXmlConfigHelper"/>
     <suppress checks="ExecutableStatementCount" files="com/hazelcast/config/CacheConfig"/>
     <suppress checks="MethodCount" files="com/hazelcast/config/CacheSimpleConfig"/>
-    <suppress checks="MethodCount|ClassDataAbstractionCoupling|ClassFanOutComplexity" files="com/hazelcast/config/Config"/>
+    <suppress checks="MethodCount|ClassDataAbstractionCoupling|ClassFanOutComplexity"
+              files="com/hazelcast/config/Config"/>
     <suppress checks="FanOutComplexity" files="com/hazelcast/config/ConfigXmlGenerator"/>
     <!-- couldn't change structure because of API -->
-    <suppress checks="MethodCount|CyclomaticComplexity|NPathComplexity|BooleanExpressionComplexity|ExecutableStatementCount"
-              files="com/hazelcast/config/MapConfig"/>
+    <suppress
+            checks="MethodCount|CyclomaticComplexity|NPathComplexity|BooleanExpressionComplexity|ExecutableStatementCount"
+            files="com/hazelcast/config/MapConfig"/>
     <suppress checks="MethodCount" files="com/hazelcast/config/SerializationConfig"/>
     <suppress checks="MethodCount|MethodLength|FileLengthCheck" files="com/hazelcast/config/XmlConfigBuilder"/>
     <suppress checks="CyclomaticComplexity|ClassFanOutComplexity|ClassDataAbstractionCoupling"
@@ -90,8 +94,8 @@
     <!-- Memory -->
     <suppress checks="MagicNumber|IllegalImport" files="com.hazelcast.internal.memory.impl.UnsafeUtil"/>
     <suppress checks="MethodCount|IllegalImport" files="com.hazelcast.internal.memory.*MemoryAccessor"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor"/>
-    <suppress checks="MethodCount|MagicNumber|IllegalImport" files="com.hazelcast.internal.memory.impl.DirectMemoryBits"/>
+    <suppress checks="IllegalImport"
+              files="com.hazelcast.internal.memory.impl.UnsafeBasedMemoryAccessStrategy"/>
 
     <!-- OSGI -->
     <suppress checks="MethodCount" files="com/hazelcast/osgi/impl/HazelcastOSGiInstanceImpl"/>
@@ -144,7 +148,8 @@
     <suppress checks="MethodCount|MethodLength|CyclomaticComplexity|NPathComplexity"
               files="com/hazelcast/monitor/impl/LocalMapStatsImpl"/>
     <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/monitor/impl/LocalQueueStatsImpl"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity|MethodCount" files="com/hazelcast/monitor/impl/MemberStateImpl"/>
+    <suppress checks="CyclomaticComplexity|NPathComplexity|MethodCount"
+              files="com/hazelcast/monitor/impl/MemberStateImpl"/>
     <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/monitor/TimedMemberState"/>
 
     <!-- Query -->
@@ -159,7 +164,8 @@
     <suppress checks="JavadocType" files="com/hazelcast/instance/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/instance/"/>
     <suppress checks="ConstantName" files="com/hazelcast/instance/GroupProperties"/>
-    <suppress checks="MethodCount|ClassFanOutComplexity|VisibilityModifier" files="com/hazelcast/instance/HazelcastInstanceImpl"/>
+    <suppress checks="MethodCount|ClassFanOutComplexity|VisibilityModifier"
+              files="com/hazelcast/instance/HazelcastInstanceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/instance/HazelcastInstanceProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/instance/MemberImpl"/>
     <suppress checks="" files="com/hazelcast/instance/Node"/>

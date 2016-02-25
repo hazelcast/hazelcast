@@ -21,7 +21,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteOrder;
 
-import static com.hazelcast.internal.memory.MemoryAccessor.MEM;
+import static com.hazelcast.internal.memory.MemoryAccessStrategy.MEM;
 
 /**
  * Supports regular, byte ordered, access to an underlying buffer.
