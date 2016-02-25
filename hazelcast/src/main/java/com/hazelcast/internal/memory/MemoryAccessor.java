@@ -23,26 +23,11 @@ import static com.hazelcast.internal.memory.MemoryAccessorType.STANDARD;
 
 /**
  * <p>
- * Contract point for direct memory access operations.
- * </p>
- * <p>
- * <p>
- * A few notes on this contract point:
- * <ul>
- * <li>
- * Addresses are not required to be a native memory addresses.
- * It depends on the actual {@link MemoryAccessor} implementation.
- * </li>
- * <li>
- * {@link MemoryAccessor} implementations can be retrieved
- * via {@link MemoryAccessorProvider} by specifying {@link MemoryAccessorType}.
- * </li>
- * <li>
- * The default {@link MemoryAccessor} implementation
- * can be accessed via {@link #MEM} field of this interface
- * and its availability state can be checked via {@link #MEM_AVAILABLE} field.
- * </li>
- * </ul>
+ * Abstraction over an address space of readable and writable bytes. A distinguished
+ * special case is the native address space of the underlying CPU, to which the two
+ * constants, {@link #MEM} and {@link #AMEM}, are devoted. These and other kinds of
+ * memory accessor can be retrieved from a {@link MemoryAccessorProvider} by specifying
+ * the desired {@link MemoryAccessorType}.
  * </p>
  *
  * @see MemoryAccessorType
@@ -51,14 +36,14 @@ import static com.hazelcast.internal.memory.MemoryAccessorType.STANDARD;
 public interface MemoryAccessor {
 
     /**
-     * The default {@link MemoryAccessor} instance.
+     * A {@link MemoryAccessor} that accesses the underlying CPU's native address space.
      */
     MemoryAccessor MEM = MemoryAccessorProvider.getDefaultMemoryAccessor();
 
     /**
-     * The instance of {@link MemoryAccessor} which correctly handles only aligned memory access.
-     * Requesting unaligned memory access from this instance will result in low-level JVM crash on
-     * platforms which do not support it.
+     * Like {@link #MEM}, but an instance specialized for aligned memory access. Requesting
+     * unaligned memory access from this instance will result in low-level JVM crash on platforms
+     * which do not support it.
      */
     MemoryAccessor AMEM = MemoryAccessorProvider.getMemoryAccessor(STANDARD);
 
