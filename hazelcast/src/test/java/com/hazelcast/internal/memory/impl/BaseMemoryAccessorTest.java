@@ -125,6 +125,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_copyMemory_whenUnaligned() {
         do_test_copyMemory(false);
     }
@@ -177,6 +178,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_setMemory_whenUnaligned() {
         do_test_setMemory(false);
     }
@@ -273,6 +275,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putGetChar_whenUnaligned() {
         do_test_putGetChar(false);
     }
@@ -315,6 +318,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putGetShort_whenUnaligned() {
         do_test_putGetShort(false);
     }
@@ -357,6 +361,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putGetInt_whenUnaligned() {
         do_test_putGetInt(false);
     }
@@ -399,6 +404,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putGetFloat_whenUnaligned() {
         do_test_putGetFloat(false);
     }
@@ -441,6 +447,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putGetLong_whenUnaligned() {
         do_test_putGetLong(false);
     }
@@ -483,6 +490,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putGetDouble_whenUnaligned() {
         do_test_putGetDouble(false);
     }
@@ -548,6 +556,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_compareAndSwapInt_whenUnaligned() {
         do_test_compareAndSwapInt(false);
     }
@@ -590,6 +599,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_compareAndSwapLong_whenUnaligned() {
         do_test_compareAndSwapLong(false);
     }
@@ -655,6 +665,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putOrderedInt_whenUnaligned() {
         do_test_putOrderedInt(false);
     }
@@ -689,6 +700,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
+    @RequiresUnalignedMemoryAccessSupport
     public void test_putOrderedLong_whenUnaligned() {
         do_test_putOrderedLong(false);
     }

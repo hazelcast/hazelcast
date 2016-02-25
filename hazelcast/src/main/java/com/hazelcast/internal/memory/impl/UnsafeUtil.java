@@ -39,7 +39,7 @@ final class UnsafeUtil {
     static final Unsafe UNSAFE;
 
     /**
-     * If this constant is {@code true}, then {@link UNSAFE} refers to a usable {@code Unsafe}
+     * If this constant is {@code true}, then {@link Unsafe} refers to a usable {@code Unsafe}
      * instance.
      */
     static final boolean UNSAFE_AVAILABLE;
