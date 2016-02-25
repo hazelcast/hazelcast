@@ -713,7 +713,7 @@ https://hazelcast.org/documentation/.
         <in-memory-format>BINARY</in-memory-format>
         <statistics-enabled>true</statistics-enabled>
         <optimize-queries>true</optimize-queries>
-        <cache-deserialized-values>INDEX_ONLY</cache-deserialized-values>
+        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <time-to-live-seconds>0</time-to-live-seconds>
