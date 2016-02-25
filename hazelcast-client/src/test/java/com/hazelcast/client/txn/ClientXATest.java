@@ -98,6 +98,25 @@ public class ClientXATest {
     }
 
     @Test
+    public void testWhenLockedOutOfTransaction() throws Exception {
+        Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap("map");
+        map.put("key", "value");
+        HazelcastXAResource xaResource = client.getXAResource();
+
+        tm.begin();
+        Transaction transaction = tm.getTransaction();
+        transaction.enlistResource(xaResource);
+        TransactionContext context = xaResource.getTransactionContext();
+        TransactionalMap<Object, Object> transactionalMap = context.getMap("map");
+        if (map.tryLock("key")) {
+            transactionalMap.remove("key");
+        }
+        tm.commit();
+    }
+
+    @Test
     public void testRollback() throws Exception {
         Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
