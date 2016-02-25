@@ -282,50 +282,7 @@ public abstract class Operation implements DataSerializable {
         operationResponseHandler.sendResponse(this, value);
     }
 
-    /**
-     * This method is deprecated since Hazelcast 3.6. Make use of the
-     * {@link #getOperationResponseHandler()}
-     */
-    @Deprecated
-    public final ResponseHandler getResponseHandler() {
-        if (responseHandler == null) {
-            return null;
-        }
-
-        if (responseHandler instanceof ResponseHandlerAdapter) {
-            ResponseHandlerAdapter adapter = (ResponseHandlerAdapter) responseHandler;
-            return adapter.responseHandler;
-        }
-
-        return new ResponseHandler() {
-            @Override
-            public void sendResponse(Object obj) {
-                responseHandler.sendResponse(Operation.this, obj);
-            }
-
-            @Override
-            public boolean isLocal() {
-                return responseHandler.isLocal();
-            }
-        };
-    }
-
-    /**
-     * This method is deprecated since Hazelcast 3.6. Make use of the
-     * {@link #setOperationResponseHandler(OperationResponseHandler)}
-     */
-    @Deprecated
-    public final Operation setResponseHandler(final ResponseHandler responseHandler) {
-        if (responseHandler == null) {
-            this.responseHandler = null;
-            return this;
-        }
-
-        this.responseHandler = new ResponseHandlerAdapter(responseHandler);
-        return this;
-    }
-
-    /**
+     /**
      * Gets the time in milliseconds since this invocation started.
      *
      * For more information, see {@link ClusterClock#getClusterTime()}.
@@ -594,23 +551,5 @@ public abstract class Operation implements DataSerializable {
         toString(sb);
         sb.append('}');
         return sb.toString();
-    }
-
-    private static class ResponseHandlerAdapter implements OperationResponseHandler {
-        private final ResponseHandler responseHandler;
-
-        public ResponseHandlerAdapter(ResponseHandler responseHandler) {
-            this.responseHandler = responseHandler;
-        }
-
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-            responseHandler.sendResponse(obj);
-        }
-
-        @Override
-        public boolean isLocal() {
-            return responseHandler.isLocal();
-        }
     }
 }
