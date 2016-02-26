@@ -172,7 +172,7 @@ public abstract class HazelcastTestSupport {
         ConnectionManager connectionManager = getConnectionManager(local);
 
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
         packet.setConn(connectionManager.getConnection(getAddress(remote)));
         return packet;
     }

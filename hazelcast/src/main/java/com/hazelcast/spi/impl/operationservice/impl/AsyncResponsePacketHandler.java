@@ -27,8 +27,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
-import static com.hazelcast.nio.Packet.HEADER_OP;
-import static com.hazelcast.nio.Packet.HEADER_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -68,8 +68,8 @@ public class AsyncResponsePacketHandler implements PacketHandler {
     @Override
     public void handle(Packet packet) {
         checkNotNull(packet, "packet can't be null");
-        checkTrue(packet.isHeaderSet(HEADER_OP), "HEADER_OP should be set");
-        checkTrue(packet.isHeaderSet(HEADER_RESPONSE), "HEADER_RESPONSE should be set");
+        checkTrue(packet.isFlagSet(FLAG_OP), "FLAG_OP should be set");
+        checkTrue(packet.isFlagSet(FLAG_RESPONSE), "FLAG_RESPONSE should be set");
 
         workQueue.add(packet);
     }

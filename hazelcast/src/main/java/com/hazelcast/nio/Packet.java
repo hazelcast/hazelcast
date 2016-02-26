@@ -36,16 +36,16 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
 
-    public static final int HEADER_OP = 0;
-    public static final int HEADER_RESPONSE = 1;
-    public static final int HEADER_EVENT = 2;
-    public static final int HEADER_WAN_REPLICATION = 3;
-    public static final int HEADER_URGENT = 4;
-    public static final int HEADER_BIND = 5;
+    public static final int FLAG_OP = 0;
+    public static final int FLAG_RESPONSE = 1;
+    public static final int FLAG_EVENT = 2;
+    public static final int FLAG_WAN_REPLICATION = 3;
+    public static final int FLAG_URGENT = 4;
+    public static final int FLAG_BIND = 5;
 
-    private static final int HEAD_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
+    private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
-    private short header;
+    private short flags;
     private int partitionId;
     private transient Connection conn;
 
@@ -53,7 +53,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private int valueOffset;
     private int size;
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
-    private boolean headComplete;
+    private boolean headerComplete;
 
     public Packet() {
     }
@@ -88,22 +88,22 @@ public final class Packet extends HeapData implements OutboundFrame {
         this.conn = conn;
     }
 
-    public void setHeader(int bit) {
-        header |= 1 << bit;
+    public void setFlag(int bit) {
+        flags |= 1 << bit;
     }
 
-    public boolean isHeaderSet(int bit) {
-        return (header & 1 << bit) != 0;
+    public boolean isFlagSet(int bit) {
+        return (flags & 1 << bit) != 0;
     }
 
     /**
-     * Returns the header of the Packet. The header is used to figure out what the content is of this Packet before
+     * Returns the flags of the Packet. The flags is used to figure out what the content is of this Packet before
      * the actual payload needs to be processed.
      *
-     * @return the header.
+     * @return the flags.
      */
-    public short getHeader() {
-        return header;
+    public short getFlags() {
+        return flags;
     }
 
     /**
@@ -116,34 +116,34 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public void reset() {
-        headComplete = false;
+        headerComplete = false;
     }
 
     @Override
     public boolean isUrgent() {
-        return isHeaderSet(HEADER_URGENT);
+        return isFlagSet(FLAG_URGENT);
     }
 
     public boolean writeTo(ByteBuffer dst) {
-        if (!headComplete) {
-            if (dst.remaining() < HEAD_SIZE) {
+        if (!headerComplete) {
+            if (dst.remaining() < HEADER_SIZE) {
                 return false;
             }
 
             dst.put(VERSION);
-            dst.putShort(header);
+            dst.putShort(flags);
             dst.putInt(partitionId);
             size = totalSize();
             dst.putInt(size);
-            headComplete = true;
+            headerComplete = true;
         }
 
         return writeValue(dst);
     }
 
     public boolean readFrom(ByteBuffer src) {
-        if (!headComplete) {
-            if (src.remaining() < HEAD_SIZE) {
+        if (!headerComplete) {
+            if (src.remaining() < HEADER_SIZE) {
                 return false;
             }
 
@@ -153,10 +153,10 @@ public final class Packet extends HeapData implements OutboundFrame {
                         + VERSION + ", Incoming -> " + version);
             }
 
-            header = src.getShort();
+            flags = src.getShort();
             partitionId = src.getInt();
             size = src.getInt();
-            headComplete = true;
+            headerComplete = true;
         }
 
         return readValue(src);
@@ -233,8 +233,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @return the size of the packet.
      */
     public int packetSize() {
-        // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
-        return (payload != null ? totalSize() : 0) + HEAD_SIZE;
+        return (payload != null ? totalSize() : 0) + HEADER_SIZE;
     }
 
     @Override
@@ -252,7 +251,7 @@ public final class Packet extends HeapData implements OutboundFrame {
             return false;
         }
 
-        if (header != packet.header) {
+        if (flags != packet.flags) {
             return false;
         }
         return partitionId == packet.partitionId;
@@ -261,7 +260,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) header;
+        result = 31 * result + (int) flags;
         result = 31 * result + partitionId;
         return result;
     }
@@ -269,10 +268,10 @@ public final class Packet extends HeapData implements OutboundFrame {
     @Override
     public String toString() {
         return "Packet{"
-                + "header=" + header
-                + ", isResponse=" + isHeaderSet(Packet.HEADER_RESPONSE)
-                + ", isOperation=" + isHeaderSet(Packet.HEADER_OP)
-                + ", isEvent=" + isHeaderSet(Packet.HEADER_EVENT)
+                + "flags=" + flags
+                + ", isResponse=" + isFlagSet(Packet.FLAG_RESPONSE)
+                + ", isOperation=" + isFlagSet(Packet.FLAG_OP)
+                + ", isEvent=" + isFlagSet(Packet.FLAG_EVENT)
                 + ", partitionId=" + partitionId
                 + ", conn=" + conn
                 + '}';
