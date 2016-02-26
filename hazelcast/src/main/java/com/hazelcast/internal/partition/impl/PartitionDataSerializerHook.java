@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;

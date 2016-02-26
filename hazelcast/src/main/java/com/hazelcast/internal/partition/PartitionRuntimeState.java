@@ -17,13 +17,13 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.PartitionDataSerializerHook;
 
 import java.io.IOException;
 import java.util.ArrayList;
