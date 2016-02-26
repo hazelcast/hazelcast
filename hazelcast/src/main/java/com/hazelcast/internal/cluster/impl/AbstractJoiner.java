@@ -17,13 +17,13 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.operations.JoinCheckOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
@@ -62,8 +62,8 @@ public abstract class AbstractJoiner implements Joiner {
     protected final ILogger logger;
 
     // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
-    final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
-    final ClusterJoinManager clusterJoinManager;
+    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
+    protected final ClusterJoinManager clusterJoinManager;
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
@@ -172,11 +172,11 @@ public abstract class AbstractJoiner implements Joiner {
         }
     }
 
-    final long getMaxJoinMillis() {
+    protected final long getMaxJoinMillis() {
         return node.getGroupProperties().getMillis(GroupProperty.MAX_JOIN_SECONDS);
     }
 
-    final long getMaxJoinTimeToMasterNode() {
+    protected final long getMaxJoinTimeToMasterNode() {
         // max join time to found master node,
         // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
         // hence we add 10 seconds more
@@ -186,7 +186,7 @@ public abstract class AbstractJoiner implements Joiner {
 
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:returncount",
             "checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
-    boolean shouldMerge(JoinMessage joinMessage) {
+    protected boolean shouldMerge(JoinMessage joinMessage) {
         if (joinMessage == null) {
             return false;
         }
@@ -278,7 +278,7 @@ public abstract class AbstractJoiner implements Joiner {
         return false;
     }
 
-    JoinMessage sendSplitBrainJoinMessage(Address target) {
+    protected JoinMessage sendSplitBrainJoinMessage(Address target) {
         if (logger.isFinestEnabled()) {
             logger.finest(node.getThisAddress() + " is connecting to " + target);
         }
@@ -320,7 +320,7 @@ public abstract class AbstractJoiner implements Joiner {
         tryCount.set(0);
     }
 
-    void startClusterMerge(final Address targetAddress) {
+    protected void startClusterMerge(final Address targetAddress) {
         ClusterServiceImpl clusterService = node.clusterService;
 
         if (!prepareClusterState(clusterService)) {
@@ -385,7 +385,7 @@ public abstract class AbstractJoiner implements Joiner {
         return true;
     }
 
-    Address getTargetAddress() {
+    protected Address getTargetAddress() {
         final Address target = targetAddress;
         targetAddress = null;
         return target;

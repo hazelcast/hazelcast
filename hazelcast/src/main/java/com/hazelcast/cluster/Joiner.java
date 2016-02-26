@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.cluster;
+package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
 
+/**
+ * This interface is deprecated and will be removed in 3.8. Look for the {@link com.hazelcast.spi.discovery}
+ * module as alternative.
+ */
+@Deprecated
 public interface Joiner {
 
     void join();

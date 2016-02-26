@@ -17,7 +17,7 @@
 
 package com.hazelcast.test.mocknetwork;
 
-import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;

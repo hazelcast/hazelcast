@@ -1,7 +1,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;

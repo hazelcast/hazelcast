@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.cluster.impl;
+package com.hazelcast.cluster.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InterfacesConfig;
@@ -22,6 +22,9 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.AbstractJoiner;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.operations.MasterClaimOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -43,6 +46,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
+/**
+ * @deprecated this class is deprecated since 3.7 and will be (re)moved in 3.8.
+ */
 public class TcpIpJoiner extends AbstractJoiner {
 
     private static final long JOIN_RETRY_WAIT_TIME = 1000L;
