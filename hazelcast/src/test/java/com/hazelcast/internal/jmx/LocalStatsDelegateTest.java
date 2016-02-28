@@ -1,4 +1,4 @@
-package com.hazelcast.jmx;
+package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
