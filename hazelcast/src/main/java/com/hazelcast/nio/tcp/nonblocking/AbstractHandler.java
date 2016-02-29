@@ -53,6 +53,7 @@ public abstract class AbstractHandler implements MigratableHandler {
     public AbstractHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, int initialOps) {
         this.connection = connection;
         this.ioThread = ioThread;
+        this.ioThreadId = ioThread.id;
         this.selector = ioThread.getSelector();
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
