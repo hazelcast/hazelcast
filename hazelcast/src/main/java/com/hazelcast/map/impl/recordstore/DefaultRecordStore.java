@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.recordstore;
 
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.concurrent.impl.lock.LockService;
+import com.hazelcast.concurrent.impl.lock.LockStore;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.core.EntryView;

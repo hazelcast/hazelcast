@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.ConditionBeforeAwaitCodec;
 import com.hazelcast.client.impl.protocol.codec.ConditionSignalAllCodec;
 import com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.impl.lock.LockService;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;

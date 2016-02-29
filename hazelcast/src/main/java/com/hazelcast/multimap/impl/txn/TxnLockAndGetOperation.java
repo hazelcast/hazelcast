@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.concurrent.impl.lock.LockWaitNotifyKey;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;

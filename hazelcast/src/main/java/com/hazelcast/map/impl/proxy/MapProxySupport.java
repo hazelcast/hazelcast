@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.concurrent.lock.LockProxySupport;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.impl.lock.LockProxySupport;
+import com.hazelcast.concurrent.impl.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;

@@ -81,11 +81,11 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/concurrent/"/>
     <suppress checks="JavadocType" files="com/hazelcast/concurrent/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/concurrent/"/>
-    <suppress checks="MethodCount" files="com/hazelcast/concurrent/atomiclong/AtomicLongProxy"/>
-    <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockServiceImpl"/>
-    <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockResourceImpl"/>
-    <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockStoreImpl"/>
-    <suppress checks="Todo" files="com/hazelcast/concurrent/lock/ConditionImpl"/>
+    <suppress checks="MethodCount" files="com/hazelcast/concurrent/impl/atomiclong/AtomicLongProxy"/>
+    <suppress checks="MethodCount" files="com/hazelcast/concurrent/impl/lock/LockServiceImpl"/>
+    <suppress checks="MethodCount" files="com/hazelcast/concurrent/impl/lock/LockResourceImpl"/>
+    <suppress checks="MethodCount" files="com/hazelcast/concurrent/impl/lock/LockStoreImpl"/>
+    <suppress checks="Todo" files="com/hazelcast/concurrent/impl/lock/ConditionImpl"/>
 
     <!-- Memory -->
     <suppress checks="MagicNumber|IllegalImport" files="com.hazelcast.internal.memory.impl.UnsafeUtil"/>

@@ -1,7 +1,7 @@
 package com.hazelcast.client.atomicreference;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceAbstractTest;
+import com.hazelcast.concurrent.impl.atomicreference.AtomicReferenceAbstractTest;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
