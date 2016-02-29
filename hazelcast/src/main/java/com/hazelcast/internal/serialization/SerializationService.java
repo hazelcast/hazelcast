@@ -34,7 +34,6 @@ public interface SerializationService {
 
     <B extends Data> B toData(Object obj);
 
-
     <B extends Data> B toData(Object obj, PartitioningStrategy strategy);
 
     byte[] toBytes(Object obj);

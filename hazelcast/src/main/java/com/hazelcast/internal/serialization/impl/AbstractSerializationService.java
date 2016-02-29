@@ -45,11 +45,8 @@ import com.hazelcast.nio.serialization.Serializer;
 import java.io.Externalizable;
 import java.io.Serializable;
 import java.nio.ByteOrder;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -112,7 +109,7 @@ public abstract class AbstractSerializationService implements SerializationServi
         this.outputBufferSize = initialOutputBufferSize;
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory);
         this.nullSerializerAdapter = new SerializerAdapter(new ConstantSerializers.NullSerializer());
-   }
+    }
 
     //region Serialization Service
     @Override
@@ -156,6 +153,15 @@ public abstract class AbstractSerializationService implements SerializationServi
     }
 
     @Override
+    public final <T> T toObject(final Object object) {
+        if (object.getClass() != HeapData.class && object.getClass() != Packet.class) {
+            return (T) object;
+        }
+
+        return toObject(object);
+    }
+
+    @Override
     public <T> T toObject(Data data) {
         if (isNullData(data)) {
             return null;
@@ -164,61 +170,19 @@ public abstract class AbstractSerializationService implements SerializationServi
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataInput in = pool.takeInputBuffer(data);
         try {
-             int typeId = data.getType();
-             SerializerAdapter serializer = serializerFor(typeId);
-//            if (serializer == null) {
-//                if (active) {
-//                    throw newHazelcastSerializationException(typeId);
-//                }
-//                throw new HazelcastInstanceNotActiveException();
-//            }
+            int typeId = data.getType();
+            SerializerAdapter serializer = serializerFor(typeId);
+            if (serializer == null) {
+                if (active) {
+                    throw newHazelcastSerializationException(typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
+            }
 
             Object obj = serializer.read(in);
-//            if (managedContext != null) {
-//                obj = managedContext.initialize(obj);
-//            }
-            return (T) obj;
-        } catch (Throwable e) {
-            throw handleException(e);
-        } finally {
-            pool.returnInputBuffer(in);
-        }
-    }
-
-    @Override
-    public final <T> T toObject(final Object object) {
-        if (object.getClass() != HeapData.class && object.getClass()!= Packet.class) {
-            return (T) object;
-        }
-
-       return toObject(object);
-    }
-
-    public final <T> T toObject(final Object object, BufferPool pool) {
-        if (object.getClass() != HeapData.class) {
-            return (T) object;
-        }
-
-        Data data = (Data) object;
-        if (isNullData(data)) {
-            return null;
-        }
-
-        BufferObjectDataInput in = pool.takeInputBuffer(data);
-        try {
-            final int typeId = data.getType();
-            final SerializerAdapter serializer = serializerFor(typeId);
-//            if (serializer == null) {
-//                if (active) {
-//                    throw newHazelcastSerializationException(typeId);
-//                }
-//                throw new HazelcastInstanceNotActiveException();
-//            }
-
-            Object obj = serializer.read(in);
-//            if (managedContext != null) {
-//                obj = managedContext.initialize(obj);
-//            }
+            if (managedContext != null) {
+                obj = managedContext.initialize(obj);
+            }
             return (T) obj;
         } catch (Throwable e) {
             throw handleException(e);
