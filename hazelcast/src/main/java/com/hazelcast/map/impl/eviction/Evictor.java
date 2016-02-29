@@ -21,31 +21,23 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 /**
  * Evicts a {@link RecordStore}.
  *
- * When the {@link RecordStore} needs to be evicted according to {@link EvictionChecker#checkEvictionPossible},
+ * When the {@link RecordStore} needs to be evicted according to {@link Evictor#checkEvictable},
  * {@link Evictor} removes records from {@link RecordStore}.
  */
 public interface Evictor {
 
     /**
-     * Find size to evict from a record-store.
+     * Evict supplied record-store.
      *
      * @param recordStore the recordStore
-     * @return removal size.
      */
-    int findRemovalSize(RecordStore recordStore);
+    void evict(RecordStore recordStore);
 
     /**
-     * Remove supplied number of elements from record-store.
+     * Check whether the supplied record-store needs eviction.
      *
-     * @param removalSize supplied size to remove.
      * @param recordStore the recordStore
+     * @return {@code true} if eviction is required, {@code false} otherwise.
      */
-    void removeSize(int removalSize, RecordStore recordStore);
-
-    /**
-     * Get eviction checker for this {@link Evictor}
-     *
-     * @return the {@link EvictionChecker}
-     */
-    EvictionChecker getEvictionChecker();
+    boolean checkEvictable(RecordStore recordStore);
 }

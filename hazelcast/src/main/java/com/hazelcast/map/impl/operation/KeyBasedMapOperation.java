@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -108,8 +107,7 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
     }
 
     protected void evict() {
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
+        recordStore.evictEntries();
     }
 
     @Override

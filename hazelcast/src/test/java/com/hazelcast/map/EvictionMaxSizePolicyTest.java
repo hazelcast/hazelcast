@@ -7,13 +7,15 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.SizeEstimator;
-import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
+import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
+import com.hazelcast.map.impl.eviction.policies.MapEvictionPolicy;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -38,6 +40,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.map.impl.eviction.policies.MapEvictionPolicies.getMapEvictionPolicy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -241,7 +244,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        EvictionCheckerImpl evictionChecker = new EvictionCheckerImpl(mapServiceContext);
+        EvictionChecker evictionChecker = new EvictionChecker(mapServiceContext);
         MemoryInfoAccessor memoryInfoAccessor = new MemoryInfoAccessor() {
             @Override
             public long getTotalMemory() {
@@ -260,9 +263,27 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         };
 
         evictionChecker.setMemoryInfoAccessor(memoryInfoAccessor);
-        Evictor evictor = new EvictorImpl(evictionChecker, mapServiceContext);
+
+        MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
+        MapEvictionPolicy evictionPolicy = getMapEvictionPolicy(mapContainer.getMapConfig().getEvictionPolicy());
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+
+        Evictor evictor = new TestEvictor(evictionChecker, evictionPolicy, partitionService);
         mapServiceContext.getMapContainer(map.getName()).setEvictor(evictor);
     }
+
+    private static final class TestEvictor extends EvictorImpl {
+
+        public TestEvictor(EvictionChecker evictionChecker, MapEvictionPolicy evictionPolicy, IPartitionService partitionService) {
+            super(evictionChecker, evictionPolicy, partitionService);
+        }
+
+        @Override
+        public boolean checkEvictable(RecordStore recordStore) {
+            return evictionChecker.checkEvictable(recordStore);
+        }
+    }
+
 
     void setMockRuntimeMemoryInfoAccessor(Collection<IMap> maps, final long totalMemory,
                                           final long freeMemory, final long maxMemory) {

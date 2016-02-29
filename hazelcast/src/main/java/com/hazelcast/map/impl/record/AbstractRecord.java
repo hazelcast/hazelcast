@@ -28,17 +28,14 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     protected Data key;
     protected long version;
-    /**
-     * evictionCriteriaNumber may be used for LRU or LFU eviction depending on configuration.
-     */
-    protected long evictionCriteriaNumber;
     protected long ttl;
-    protected volatile long lastAccessTime;
-    protected volatile long lastUpdateTime;
     protected long creationTime;
 
+    protected volatile long lastAccessTime;
+    protected volatile long lastUpdateTime;
+    protected volatile long hits;
+
     AbstractRecord() {
-        version = 0L;
     }
 
     @Override
@@ -49,16 +46,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public final void setVersion(long version) {
         this.version = version;
-    }
-
-    @Override
-    public long getEvictionCriteriaNumber() {
-        return evictionCriteriaNumber;
-    }
-
-    @Override
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-        this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
     @Override
@@ -102,6 +89,16 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
+    public long getHits() {
+        return hits;
+    }
+
+    @Override
+    public void setHits(long hits) {
+        this.hits = hits;
+    }
+
+    @Override
     public long getCost() {
         final int objectReferenceInBytes = 4;
         final int numberOfLongs = 6;
@@ -112,8 +109,11 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public void onUpdate() {
+    public void onUpdate(long now) {
+        onAccess(now);
+
         version++;
+        lastUpdateTime = now;
     }
 
     @Override
@@ -122,8 +122,9 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public void onAccess() {
-
+    public void onAccess(long now) {
+        hits++;
+        lastAccessTime = now;
     }
 
     @Override

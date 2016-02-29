@@ -24,11 +24,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.config.EvictionPolicy.NONE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -94,9 +95,9 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapService mapService = (MapService) mapProxy.getService();
         MapServiceContext mapServiceContext = (MapServiceContext) mapService.getMapServiceContext();
-        PartitionContainer container = mapServiceContext.getPartitionContainer(0);
-        DefaultRecordStore recordStore = (DefaultRecordStore) container.getExistingRecordStore(map.getName());
-        return recordStore.isEvictionEnabled();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
+        EvictionPolicy evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
+        return evictionPolicy != NONE;
     }
 
     private MapConfig createMapConfig() {

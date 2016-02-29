@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -56,7 +55,6 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
 
     @Override
     public void run() {
-        long now = Clock.currentTimeMillis();
         int partitionId = getPartitionId();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapEventPublisher eventPublisher = mapServiceContext.getMapEventPublisher();
@@ -73,7 +71,7 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
                 eventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
 
-            recordStore.evictEntries(now);
+            recordStore.evictEntries();
         }
     }
 

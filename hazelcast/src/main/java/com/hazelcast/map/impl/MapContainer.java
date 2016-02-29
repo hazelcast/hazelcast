@@ -23,9 +23,9 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
-import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
+import com.hazelcast.map.impl.eviction.policies.MapEvictionPolicy;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
@@ -34,6 +34,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -46,6 +47,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
+import static com.hazelcast.map.impl.eviction.policies.MapEvictionPolicies.getMapEvictionPolicy;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
@@ -102,18 +104,21 @@ public class MapContainer {
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         initWanReplication(nodeEngine);
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
-        this.mapStoreContext = createMapStoreContext(this);
-        this.mapStoreContext.start();
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
         this.indexes = new Indexes(serializationService, extractors);
-        this.evictor = createEvictor(mapServiceContext);
+        this.evictor = createEvictor(mapConfig, mapServiceContext);
         this.memberNearCacheInvalidationEnabled = isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
+        this.mapStoreContext = createMapStoreContext(this);
+        this.mapStoreContext.start();
     }
 
     // this method is overridden.
-    Evictor createEvictor(MapServiceContext mapServiceContext) {
-        EvictionChecker evictionChecker = new EvictionCheckerImpl(mapServiceContext);
-        return new EvictorImpl(evictionChecker, mapServiceContext);
+    Evictor createEvictor(MapConfig mapConfig, MapServiceContext mapServiceContext) {
+        EvictionChecker evictionChecker = new EvictionChecker(mapServiceContext);
+        MapEvictionPolicy evictionPolicy = getMapEvictionPolicy(mapConfig.getEvictionPolicy());
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+
+        return new EvictorImpl(evictionChecker, evictionPolicy, partitionService);
     }
 
     // overridden in different context.

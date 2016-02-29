@@ -26,6 +26,7 @@ import com.hazelcast.spi.RemoteService;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
+import static com.hazelcast.map.impl.MapConfigValidator.checkMapConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
@@ -46,7 +47,7 @@ class MapRemoteService implements RemoteService {
     @Override
     public DistributedObject createDistributedObject(String name) {
         MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
-        checkInMemoryFormat(mapConfig.getInMemoryFormat());
+        checkMapConfig(mapConfig);
 
         if (mapConfig.isNearCacheEnabled()) {
             checkInMemoryFormat(mapConfig.getNearCacheConfig().getInMemoryFormat());

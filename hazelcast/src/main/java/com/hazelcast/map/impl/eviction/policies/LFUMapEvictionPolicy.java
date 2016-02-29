@@ -14,32 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.record;
+package com.hazelcast.map.impl.eviction.policies;
 
-class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
+import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.eviction.AbstractMapEvictionPolicy;
 
-    private volatile Object value;
-
-    ObjectRecordWithStats() {
-    }
-
-    ObjectRecordWithStats(Object value) {
-        super();
-        this.value = value;
-    }
+/**
+ * LFU {@link MapEvictionPolicy} implementation.
+ */
+public class LFUMapEvictionPolicy extends AbstractMapEvictionPolicy {
 
     @Override
-    public Object getValue() {
-        return value;
-    }
-
-    @Override
-    public void setValue(Object value) {
-        this.value = value;
-    }
-
-    @Override
-    public long getCost() {
-        return 0L;
+    public boolean compare(EntryView selected, EntryView candidate) {
+        return candidate.getHits() < selected.getHits();
     }
 }

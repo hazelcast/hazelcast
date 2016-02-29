@@ -44,7 +44,7 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
 
         @Override
         public Evictable getEvictable() {
-            return getValue();
+            return (Evictable) getValue();
         }
 
     }

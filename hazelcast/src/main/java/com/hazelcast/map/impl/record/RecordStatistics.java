@@ -28,15 +28,9 @@ public interface RecordStatistics extends DataSerializable {
      */
     RecordStatistics EMPTY_STATS = new EmptyRecordStatistics();
 
-    int getHits();
-
-    void setHits(int hits);
-
     long getExpirationTime();
 
     void setExpirationTime(long expirationTime);
-
-    void access();
 
     void store();
 

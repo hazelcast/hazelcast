@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.recordstore;
 
 
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.core.EntryView;
@@ -69,7 +68,6 @@ import static java.util.Collections.emptyList;
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected final ILogger logger;
-    protected final LockStore lockStore;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
     // loadingFutures are modified by partition threads and could be accessed by query threads
@@ -81,7 +79,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         this.logger = logger;
         this.keyLoader = keyLoader;
-        this.lockStore = createLockStore();
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
     }
 
@@ -254,7 +251,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 indexes.removeEntryIndex(key, value);
             }
         }
-        resetAccessSequenceNumber();
         mapDataStore.reset();
 
         if (onShutdown) {
@@ -356,7 +352,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (!backup) {
                 saveIndex(record, null);
             }
-            evictEntries(Clock.currentTimeMillis());
+            evictEntries();
         }
         return record;
     }
@@ -394,7 +390,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapDataStore.removeAll(keys);
         mapDataStore.reset();
         removeIndex(clearableRecords);
-        resetAccessSequenceNumber();
         return removeRecords(clearableRecords);
     }
 
@@ -446,7 +441,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     @Override
     public void reset() {
-        resetAccessSequenceNumber();
         mapDataStore.reset();
         storage.clear();
     }
@@ -474,7 +468,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Collection<Record> evictableRecords = getNotLockedRecords();
         flush(evictableRecords, backup);
         removeIndex(evictableRecords);
-        resetAccessSequenceNumber();
         return removeRecords(evictableRecords);
     }
 
@@ -602,7 +595,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             final Record record = getRecordOrNull(key, now, false);
             if (record != null) {
                 addMapEntrySet(key, record.getValue(), mapEntries);
-                accessRecord(record);
+                accessRecord(record, now);
                 iterator.remove();
             }
         }
@@ -824,7 +817,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         final long now = getNow();
 
-        if (shouldEvict(now)) {
+        if (shouldEvict()) {
             return null;
         }
         markRecordStoreExpirable(ttl);

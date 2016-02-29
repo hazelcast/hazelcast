@@ -52,18 +52,16 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
 
-    protected final RecordFactory recordFactory;
     protected final String name;
+    protected final LockStore lockStore;
+    protected final RecordFactory recordFactory;
     protected final MapContainer mapContainer;
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
-
     protected final MapDataStore<Data, Object> mapDataStore;
-
     protected final MapStoreContext mapStoreContext;
-
-    protected final int partitionId;
     protected final InMemoryFormat inMemoryFormat;
+    protected final int partitionId;
 
     protected Storage<Data, Record> storage;
 
@@ -78,6 +76,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapStoreContext = mapContainer.getMapStoreContext();
         MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
         this.mapDataStore = mapStoreManager.getMapDataStore(name, partitionId);
+        this.lockStore = createLockStore();
     }
 
     @Override
@@ -102,7 +101,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
-        return new StorageImpl(recordFactory, memoryFormat);
+        return new StorageImpl(recordFactory, memoryFormat, serializationService);
     }
 
     @Override
@@ -124,20 +123,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return Clock.currentTimeMillis();
     }
 
-    protected void accessRecord(Record record, long now) {
-        record.setLastAccessTime(now);
-        record.onAccess();
-    }
-
-    protected void accessRecord(Record record) {
-        final long now = getNow();
-        accessRecord(record, now);
-    }
-
     protected void updateRecord(Data key, Record record, Object value, long now) {
-        accessRecord(record, now);
-        record.setLastUpdateTime(now);
-        record.onUpdate();
+        record.onUpdate(now);
         storage.updateRecordValue(key, record, value);
     }
 
