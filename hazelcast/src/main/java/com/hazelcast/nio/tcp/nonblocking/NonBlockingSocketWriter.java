@@ -57,20 +57,20 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     private static final long TIMEOUT = 3;
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "out.writeQueueSize")
+    @Probe(name = "writeQueueSize")
     public final Queue<OutboundFrame> writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "out.priorityWriteQueueSize")
+    @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    @Probe(name = "out.eventCount")
+    @Probe(name = "eventCount")
     private final SwCounter eventCount = newSwCounter();
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private ByteBuffer outputBuffer;
-    @Probe(name = "out.bytesWritten")
+    @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "out.normalFramesWritten")
+    @Probe(name = "normalFramesWritten")
     private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = "out.priorityFramesWritten")
+    @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
     private final MetricsRegistry metricsRegistry;
 
@@ -89,16 +89,16 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
         // sensors
         this.metricsRegistry = metricsRegistry;
-        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
     }
 
-    @Probe(name = "out.interestedOps", level = DEBUG)
+    @Probe(name = "interestedOps", level = DEBUG)
     private long interestOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(name = "out.readyOps", level = DEBUG)
+    @Probe(name = "readyOps", level = DEBUG)
     private long readyOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();
@@ -119,12 +119,12 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         return writeHandler;
     }
 
-    @Probe(name = "out.writeQueuePendingBytes", level = DEBUG)
+    @Probe(name = "writeQueuePendingBytes", level = DEBUG)
     public long bytesPending() {
         return bytesPending(writeQueue);
     }
 
-    @Probe(name = "out.priorityWriteQueuePendingBytes", level = DEBUG)
+    @Probe(name = "priorityWriteQueuePendingBytes", level = DEBUG)
     public long priorityBytesPending() {
         return bytesPending(urgentWriteQueue);
     }
@@ -139,12 +139,12 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         return bytesPending;
     }
 
-    @Probe(name = "out.idleTimeMs", level = DEBUG)
+    @Probe(name = "idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
         return max(System.currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe(name = "out.isScheduled", level = DEBUG)
+    @Probe(name = "isScheduled", level = DEBUG)
     private long isScheduled() {
         return scheduled.get() ? 1 : 0;
     }

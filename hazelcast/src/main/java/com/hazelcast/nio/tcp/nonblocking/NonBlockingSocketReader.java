@@ -53,13 +53,13 @@ import static com.hazelcast.util.StringUtil.bytesToString;
  */
 public final class NonBlockingSocketReader extends AbstractHandler implements SocketReader {
 
-    @Probe(name = "in.eventCount")
+    @Probe(name = "eventCount")
     private final SwCounter eventCount = newSwCounter();
-    @Probe(name = "in.bytesRead")
+    @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
-    @Probe(name = "in.normalFramesRead")
+    @Probe(name = "normalFramesRead")
     private final SwCounter normalFramesRead = newSwCounter();
-    @Probe(name = "in.priorityFramesRead")
+    @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
     private final MetricsRegistry metricRegistry;
 
@@ -74,21 +74,21 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
         super(connection, ioThread, SelectionKey.OP_READ);
         this.ioThread = ioThread;
         this.metricRegistry = metricsRegistry;
-        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
     }
 
-    @Probe(name = "in.idleTimeMs", level = DEBUG)
+    @Probe(name = "idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
         return Math.max(System.currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Probe(name = "in.interestedOps", level = DEBUG)
+    @Probe(name = "interestedOps", level = DEBUG)
     private long interestOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(name = "in.readyOps", level = DEBUG)
+    @Probe(name = "readyOps", level = DEBUG)
     private long readyOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();

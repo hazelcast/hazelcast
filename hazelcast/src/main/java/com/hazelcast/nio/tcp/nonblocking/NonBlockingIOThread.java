@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -39,6 +40,11 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     // WARNING: This value has significant effect on idle CPU usage!
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
+
+    // this field is set during construction and is meant for the probes so that the read/write handler can
+    // indicate which thread they are currently bound to.
+    @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
+    int id;
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
