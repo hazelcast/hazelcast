@@ -419,14 +419,14 @@ public class ClientMapLockTest {
     public void testLockTTLExpires_usingIsLocked() throws Exception {
         final IMap map = client.getMap(randomString());
         final String key = "key";
-        map.lock(key, 3, TimeUnit.SECONDS);
+        map.lock(key, 2, TimeUnit.SECONDS);
 
-        final boolean isLockedBeforeSleep = map.isLocked(key);
-        sleepSeconds(4);
-        final boolean isLockedAfterSleep = map.isLocked(key);
-
-        assertTrue(isLockedBeforeSleep);
-        assertFalse(isLockedAfterSleep);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(map.isLocked(key));
+            }
+        }, 10);
     }
 
     @Test
