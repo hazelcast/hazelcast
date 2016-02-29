@@ -40,7 +40,7 @@ public class VerySlowProcessor implements TupleContainerProcessor<Object, Object
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
         for (Tuple<Object, Object> t : inputStream) {
-            LockSupport.parkNanos(1000L);
+            LockSupport.parkNanos(100_000L);
             outputStream.consume(t);
         }
 

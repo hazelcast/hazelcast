@@ -306,7 +306,7 @@
                     <perCoreThreadCount>true</perCoreThreadCount>
 
                     <argLine>
-                        -verbose:gc -Xmx6G
+                        -verbose:gc -Xmx8G
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
@@ -407,7 +407,7 @@
             <id>test-coverage</id>
             <properties>
                 <argLine>
-                    -verbose:gc -Xmx6G
+                    -verbose:gc -Xmx8G
                     -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none

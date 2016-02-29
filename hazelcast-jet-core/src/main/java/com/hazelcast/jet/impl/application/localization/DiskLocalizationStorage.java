@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 
 
 public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
@@ -42,6 +43,13 @@ public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
         super(applicationContext.getJetApplicationConfig());
 
         String containerDir = this.jetConfig.getLocalizationDirectory();
+        if (containerDir == null) {
+            try {
+                containerDir = Files.createTempDirectory("hazelcast-jet-").toString();
+            } catch (IOException e) {
+                throw JetUtil.reThrow(e);
+            }
+        }
 
         File dir;
         String postFix = "";
