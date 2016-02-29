@@ -113,9 +113,19 @@ public interface MemoryStats {
     long getFreeNativeMemory();
 
     /**
+     * Returns the amount of native memory reserved for metadata. This memory
+     * is separate and not accounted for by the {@code ...NativeMemory} statistics.
+     */
+    long getMaxMetadata();
+
+    /**
+     * @return amount of used metadata memory
+     */
+    long getUsedMetadata();
+
+    /**
      * Returns the garbage collector statistics for the JVM
      * @return GC statistics
      */
     GarbageCollectorStats getGCStats();
-
 }

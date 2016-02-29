@@ -40,6 +40,10 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     private long freeNativeMemory;
 
+    private long maxMetadata;
+
+    private long usedMetadata;
+
     private long maxHeap;
 
     private long committedHeap;
@@ -58,6 +62,8 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         setCommittedNativeMemory(memoryStats.getCommittedNativeMemory());
         setUsedNativeMemory(memoryStats.getUsedNativeMemory());
         setFreeNativeMemory(memoryStats.getFreeNativeMemory());
+        setMaxMetadata(memoryStats.getMaxMetadata());
+        setUsedMetadata(memoryStats.getUsedMetadata());
         setMaxHeap(memoryStats.getMaxHeap());
         setCommittedHeap(memoryStats.getCommittedHeap());
         setUsedHeap(memoryStats.getUsedHeap());
@@ -116,6 +122,24 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     public void setFreeNativeMemory(long freeNativeMemory) {
         this.freeNativeMemory = freeNativeMemory;
+    }
+
+    @Override
+    public long getMaxMetadata() {
+        return maxMetadata;
+    }
+
+    public void setMaxMetadata(long maxMetadata) {
+        this.maxMetadata = maxMetadata;
+    }
+
+    @Override
+    public long getUsedMetadata() {
+        return usedMetadata;
+    }
+
+    public void setUsedMetadata(long usedMetadata) {
+        this.usedMetadata = usedMetadata;
     }
 
     @Override
@@ -210,6 +234,8 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
                 + ", maxNativeMemory=" + maxNativeMemory
                 + ", committedNativeMemory=" + committedNativeMemory
                 + ", usedNativeMemory=" + usedNativeMemory
+                + ", maxMetadata=" + maxMetadata
+                + ", usedUsedMetadata=" + usedMetadata
                 + ", maxHeap=" + maxHeap
                 + ", committedHeap=" + committedHeap
                 + ", usedHeap=" + usedHeap
