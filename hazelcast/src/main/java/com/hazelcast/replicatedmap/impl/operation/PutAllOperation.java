@@ -81,7 +81,7 @@ public class PutAllOperation extends AbstractOperation {
         Collection<Member> members = getNodeEngine().getClusterService().getMembers();
         for (Member member : members) {
             Address address = member.getAddress();
-            if (address.equals(getCallerAddress()) || address.equals(getNodeEngine().getThisAddress())) {
+            if (address.equals(getNodeEngine().getThisAddress())) {
                 continue;
             }
             ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, 0, response,
