@@ -18,10 +18,12 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.HashMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,6 +35,31 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(value = {QuickTest.class, ParallelTest.class})
 public class ReplicatedMapReadYourWritesTest extends ReplicatedMapBaseTest {
+
+    @Test
+    public void testReadYourWritesBySize() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
+        final ReplicatedMap<Integer, Integer> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<Integer, Integer> map2 = instance2.getReplicatedMap("default");
+
+
+        HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+        final int count = 100;
+        for (int i = 0; i < count; i++) {
+            map.put(i, i);
+        }
+        map1.putAll(map);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(count, map1.size());
+                assertEquals(count, map2.size());
+            }
+        }, 15);
+    }
 
     @Test
     public void testReadYourWritesByGet() throws Exception {
