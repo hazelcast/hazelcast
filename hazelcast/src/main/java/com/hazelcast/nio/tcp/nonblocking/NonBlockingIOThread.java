@@ -46,6 +46,8 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private final SwCounter eventCount = newSwCounter();
     @Probe
     private final SwCounter selectorIOExceptionCount = newSwCounter();
+    @Probe
+    private final SwCounter completedTaskCount = newSwCounter();
 
     private final ILogger logger;
 
@@ -231,6 +233,8 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void executeTask(Runnable task) {
+        completedTaskCount.inc();
+
         NonBlockingIOThread target = getTargetIoThread(task);
         if (target == this) {
             task.run();
