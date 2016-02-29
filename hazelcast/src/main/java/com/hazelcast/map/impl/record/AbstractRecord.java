@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
 
@@ -33,6 +34,9 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     protected volatile long lastAccessTime;
     protected volatile long lastUpdateTime;
+
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "Record can be accessed by only its own partition thread.")
     protected volatile long hits;
 
     AbstractRecord() {

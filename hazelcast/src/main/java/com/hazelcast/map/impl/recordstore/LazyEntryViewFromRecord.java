@@ -25,7 +25,7 @@ import com.hazelcast.util.SampleableConcurrentHashMap;
 
 /**
  * Internally used {@link EntryView} implementation for sampling based eviction specific purposes.
- *
+ * <p/>
  * Mainly :
  * - Wraps a {@link Record} and reaches all {@link EntryView} specific info over it
  * - Lazily de-serializes key and value.
@@ -111,5 +111,74 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
 
     public Record getRecord() {
         return record;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof EntryView)) {
+            return false;
+        }
+
+        EntryView that = (EntryView) o;
+
+        return getKey().equals(that.getKey())
+                && getValue().equals(that.getValue())
+                && getVersion() == that.getVersion()
+                && getCost() == that.getCost()
+                && getCreationTime() == that.getCreationTime()
+                && getExpirationTime() == that.getExpirationTime()
+                && getHits() == that.getHits()
+                && getLastAccessTime() == that.getLastAccessTime()
+                && getLastStoredTime() == that.getLastStoredTime()
+                && getLastUpdateTime() == that.getLastUpdateTime()
+                && getTtl() == that.getTtl();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + getKey().hashCode();
+        result = 31 * result + getValue().hashCode();
+
+        long cost = getCost();
+        long creationTime = getCreationTime();
+        long expirationTime = getExpirationTime();
+        long hits = getHits();
+        long lastAccessTime = getLastAccessTime();
+        long lastStoredTime = getLastStoredTime();
+        long lastUpdateTime = getLastUpdateTime();
+        long version = getVersion();
+        long ttl = getTtl();
+
+        result = 31 * result + (int) (cost ^ (cost >>> 32));
+        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
+        result = 31 * result + (int) (hits ^ (hits >>> 32));
+        result = 31 * result + (int) (lastAccessTime ^ (lastAccessTime >>> 32));
+        result = 31 * result + (int) (lastStoredTime ^ (lastStoredTime >>> 32));
+        result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
+        result = 31 * result + (int) (version ^ (version >>> 32));
+        result = 31 * result + (int) (ttl ^ (ttl >>> 32));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "EntryView{key=" + getKey()
+                + ", value=" + getValue()
+                + ", cost=" + getCost()
+                + ", version=" + getVersion()
+                + ", creationTime=" + getCreationTime()
+                + ", expirationTime=" + getExpirationTime()
+                + ", hits=" + getHits()
+                + ", lastAccessTime=" + getLastAccessTime()
+                + ", lastStoredTime=" + getLastStoredTime()
+                + ", lastUpdateTime=" + getLastUpdateTime()
+                + ", ttl=" + getTtl()
+                +'}';
     }
 }

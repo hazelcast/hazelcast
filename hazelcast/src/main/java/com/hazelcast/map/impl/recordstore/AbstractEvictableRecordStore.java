@@ -180,7 +180,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (!isExpired(record, now, backup)) {
             return record;
         }
-        final Object value = record.getValue();
         evict(key, backup);
         if (!backup) {
             doPostEvictionOperations(record, backup);
