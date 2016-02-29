@@ -20,18 +20,19 @@ import com.hazelcast.cache.CacheIteratorAbstractTest;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.RunParallel;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
 
-
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastTestRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@RunParallel
 public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -42,7 +43,6 @@ public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
         HazelcastInstance hazelcastInstance = factory.newHazelcastClient();
         return HazelcastClientCachingProvider.createCachingProvider(hazelcastInstance);
     }
-
 
     @After
     public void tear() {

@@ -45,7 +45,11 @@ public class ClusterWideIterator<K, V>
     private final CacheProxy<K, V> cacheProxy;
 
     public ClusterWideIterator(CacheProxy<K, V> cache) {
-        super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount());
+        this(cache, DEFAULT_FETCH_SIZE);
+    }
+
+    public ClusterWideIterator(CacheProxy<K, V> cache, int fetchSize) {
+        super(cache, cache.getNodeEngine().getPartitionService().getPartitionCount(), fetchSize);
         this.cacheProxy = cache;
         this.serializationService = cache.getNodeEngine().getSerializationService();
         advance();

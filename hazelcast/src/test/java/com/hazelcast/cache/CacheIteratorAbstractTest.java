@@ -21,18 +21,41 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runners.Parameterized;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
 
 public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
 
+    private static final int CONFIGURED_FETCH_SIZE = 25;
+
     private CachingProvider cachingProvider;
+
+    @Parameterized.Parameters(name = "configureFetchSize:{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][] {
+                {false},
+                {true}
+        });
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean configureFetchSize;
+
+    protected Iterator getIterator(Cache cache) {
+        if (configureFetchSize) {
+            return ((ICache) cache).iterator(CONFIGURED_FETCH_SIZE);
+        } else {
+            return cache.iterator();
+        }
+    }
 
     @Before
     public void init() {
@@ -65,7 +88,7 @@ public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
 
         int[] keys = new int[size];
         int k = 0;
-        Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
+        Iterator<Cache.Entry<Integer, Integer>> iter = getIterator(cache);
         while (iter.hasNext()) {
             Cache.Entry<Integer, Integer> e = iter.next();
             int key = e.getKey();
@@ -89,7 +112,7 @@ public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
             cache.put(i, i);
         }
 
-        Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
+        Iterator<Cache.Entry<Integer, Integer>> iter = getIterator(cache);
         while (iter.hasNext()) {
             iter.next();
             iter.remove();
@@ -105,7 +128,7 @@ public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
             cache.put(i, i);
         }
 
-        Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
+        Iterator<Cache.Entry<Integer, Integer>> iter = getIterator(cache);
         if (iter.hasNext()) {
             iter.remove();
         }
