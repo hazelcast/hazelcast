@@ -77,6 +77,16 @@ public class DefaultMemoryStats implements MemoryStats {
     }
 
     @Override
+    public long getMaxMetadata() {
+        return 0;
+    }
+
+    @Override
+    public long getUsedMetadata() {
+        return 0;
+    }
+
+    @Override
     public GarbageCollectorStats getGCStats() {
         GCStatsSupport.fill(gcStats);
         return gcStats;

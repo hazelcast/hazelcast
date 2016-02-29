@@ -49,16 +49,17 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_PERCENTAGE_MEMORY}
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
  * Threshold: Percentage of max memory currently in use
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_PERCENTAGE_CPU}
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
  * Threshold: CPU system/process load
  */
 public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
+    private static final int PERCENTAGE_INT_MULTIPLIER = 100;
     private static final double THRESHOLD_PERCENTAGE_INVOCATIONS = 70;
     private static final double THRESHOLD_INVOCATIONS = 1000;
 
@@ -431,14 +432,25 @@ public class HealthMonitor {
                 return;
             }
 
+            final long usedNative = memoryStats.getUsedNativeMemory();
             sb.append("native.memory.used=")
-                    .append(numberToUnit(memoryStats.getUsedNativeMemory())).append(", ");
+              .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
                     .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
             sb.append("native.memory.total=")
                     .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
             sb.append("native.memory.max=")
                     .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
+            final long maxMeta = memoryStats.getMaxMetadata();
+            if (maxMeta > 0) {
+                final long usedMeta = memoryStats.getUsedMetadata();
+                sb.append("native.memory.meta.used=")
+                  .append(numberToUnit(usedMeta)).append(", ");
+                sb.append("native.memory.meta.free=")
+                  .append(numberToUnit(maxMeta - usedMeta)).append(", ");
+                sb.append("native.memory.meta.percentage=")
+                  .append(numberToUnit((PERCENTAGE_INT_MULTIPLIER * usedMeta) / (usedNative + usedMeta))).append(", ");
+            }
         }
 
         private void renderExecutors() {
