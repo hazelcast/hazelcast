@@ -1,5 +1,6 @@
 /* tslint:disable */
 import ClientMessage = require('../ClientMessage');
+import ImmutableLazyDataList = require('./ImmutableLazyDataList');
 import {BitsUtil} from '../BitsUtil';
 import Address = require('../Address');
 import {Data} from '../serialization/Data';
@@ -37,7 +38,8 @@ static encodeRequest(<#list model.requestParams as param>${util.convertToNodeTyp
 }
 
 <#--************************ RESPONSE ********************************************************-->
-static decodeResponse(clientMessage : ClientMessage,  toObjectFunction: (data: Data) => any){
+<#if model.responseParams?has_content>
+static decodeResponse(clientMessage : ClientMessage,  toObjectFunction: (data: Data) => any = null){
     // Decode response from client message
     var parameters :any = {};
 <#list model.responseParams as p>
@@ -46,11 +48,13 @@ static decodeResponse(clientMessage : ClientMessage,  toObjectFunction: (data: D
     return parameters;
 
 }
-
+<#else>
+// Empty decodeResponse(ClientMessage), this message has no parameters to decode
+</#if>
 
 <#--************************ EVENTS ********************************************************-->
 <#if model.events?has_content>
-static handle(clientMessage : ClientMessage, <#list model.events as event>handleEvent${util.capitalizeFirstLetter(event.name?lower_case)} : any<#if event_has_next>, </#if></#list> ,toObjectFunction: (data: Data) => any){
+static handle(clientMessage : ClientMessage, <#list model.events as event>handleEvent${util.capitalizeFirstLetter(event.name?lower_case)} : any<#if event_has_next>, </#if></#list> ,toObjectFunction: (data: Data) => any = null){
 
     var messageType = clientMessage.getMessageType();
     <#list model.events as event>
@@ -190,7 +194,7 @@ if(clientMessage.readBoolean() !== true){
 </#if>
 </#macro>
 
-<#macro getterTextInternal varName varType isEvent isDefined=false >
+<#macro getterTextInternal varName varType isEvent isDefined=false isCollection=false>
 <#local cat= util.getTypeCategory(varType)>
 <#switch cat>
     <#case "OTHER">
@@ -230,11 +234,11 @@ if(clientMessage.readBoolean() !== true){
     <#else>${varName} = [];
     </#if>
     for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
-                            var <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true />
+                            var <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true isCollection=true/>
         ${varName}.push(${itemVariableName})
     }
-<#if !isEvent>
-    parameters['${varName}'] = ${varName};
+<#if !isEvent || isCollection>
+    parameters['${varName}'] = new ImmutableLazyDataList(${varName}, toObjectFunction);
 </#if>
         <#break >
     <#case "MAP">
