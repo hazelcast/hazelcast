@@ -124,6 +124,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                     oomeHandler,
                     inputSelectNow
             );
+            thread.id = i;
             inputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();
@@ -136,6 +137,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                     ioService.getLogger(NonBlockingIOThread.class.getName()),
                     oomeHandler,
                     outputSelectNow);
+            thread.id = i;
             outputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();

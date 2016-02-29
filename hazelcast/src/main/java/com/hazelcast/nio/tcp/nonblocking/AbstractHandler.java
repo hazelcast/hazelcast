@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
@@ -39,6 +41,14 @@ public abstract class AbstractHandler implements MigratableHandler {
     protected NonBlockingIOThread ioThread;
     protected SelectionKey selectionKey;
     private final int initialOps;
+
+    // shows the id of the ioThread that is currently owning the handler
+    @Probe
+    private volatile int ioThreadId;
+
+    // counts the number of migrations that have happened so far.
+    @Probe
+    private SwCounter migrationCount = SwCounter.newSwCounter();
 
     public AbstractHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, int initialOps) {
         this.connection = connection;
@@ -110,8 +120,11 @@ public abstract class AbstractHandler implements MigratableHandler {
             return;
         }
 
+        migrationCount.inc();
+
         unregisterOp(initialOps);
         ioThread = newOwner;
+        ioThreadId = ioThread.id;
         selectionKey.cancel();
         selectionKey = null;
         selector = null;
