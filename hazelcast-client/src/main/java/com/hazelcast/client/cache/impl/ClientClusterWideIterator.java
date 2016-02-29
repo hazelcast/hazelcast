@@ -48,7 +48,11 @@ public class ClientClusterWideIterator<K, V>
     private ClientContext context;
 
     public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context) {
-        super(cacheProxy, context.getPartitionService().getPartitionCount());
+        this(cacheProxy, context, DEFAULT_FETCH_SIZE);
+    }
+
+    public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context, int fetchSize) {
+        super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize);
         this.cacheProxy = cacheProxy;
         this.context = context;
         advance();

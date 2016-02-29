@@ -345,6 +345,12 @@ public class CacheProxy<K, V>
     }
 
     @Override
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        ensureOpen();
+        return new ClusterWideIterator<K, V>(this, fetchSize);
+    }
+
+    @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
         checkNotNull(listener, "CachePartitionLostListener can't be null");
         final InternalCachePartitionLostListenerAdapter listenerAdapter =

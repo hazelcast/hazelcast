@@ -19,7 +19,9 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.ICompletableFuture;
 
+import javax.cache.Cache;
 import javax.cache.expiry.ExpiryPolicy;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -972,5 +974,33 @@ public interface ICache<K, V>
      * @throws java.lang.NullPointerException if the given ID is null.
      */
     boolean removePartitionLostListener(String id);
+
+    /**
+     * <p>
+     * Creates and returns a cluster wide iterator
+     * to iterate on all entries owned by this cache.
+     * </p>
+     * <p>
+     * The ordering of iteration over entries is undefined.
+     * </p>
+     * <p>
+     * During iteration, any entries that are
+     * <ul>
+     * <li>Read will have their appropriate CacheEntryReadListeners notified</li>
+     * <li>Removed will have their appropriate CacheEntryRemoveListeners notified</li>
+     * </ul>
+     * </p>
+     * {@link java.util.Iterator#next()} may return null if the entry is no
+     * longer present, has expired or has been evicted.
+     *
+     * @param fetchSize size for fetching keys in bulk.
+     *                  This size can be though as page size for iteration.
+     *                  But notice that at every fetch, only keys are retrieved not values.
+     *                  Values are retrieved on each iterate.
+     *
+     * @see #iterator()
+     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     */
+    Iterator<Cache.Entry<K, V>> iterator(int fetchSize);
 
 }

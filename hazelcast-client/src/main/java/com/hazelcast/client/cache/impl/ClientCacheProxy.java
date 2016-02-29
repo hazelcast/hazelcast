@@ -415,6 +415,12 @@ public class ClientCacheProxy<K, V>
     }
 
     @Override
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        ensureOpen();
+        return new ClientClusterWideIterator<K, V>(this, clientContext, fetchSize);
+    }
+
+    @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
         EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
         return clientContext.getListenerService().registerListener(createPartitionLostListenerCodec(), handler);
