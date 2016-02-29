@@ -924,7 +924,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         entryView.setLastStoredTime(dataEntryView.getLastStoredTime());
         entryView.setLastUpdateTime(dataEntryView.getLastUpdateTime());
         entryView.setVersion(dataEntryView.getVersion());
-        entryView.setEvictionCriteriaNumber(dataEntryView.getEvictionCriteriaNumber());
+        entryView.setHits(dataEntryView.getHits());
         entryView.setTtl(dataEntryView.getTtl());
         //TODO putCache
         return entryView;

@@ -104,7 +104,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     /**
      * Entry to define keys and values for sampling.
      */
-    public class SamplingEntry extends SimpleEntry<K, V> {
+    public static class SamplingEntry<K, V> extends SimpleEntry<K, V> {
 
         public SamplingEntry(K key, V value) {
             super(key, value);

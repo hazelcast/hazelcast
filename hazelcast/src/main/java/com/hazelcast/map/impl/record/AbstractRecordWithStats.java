@@ -24,7 +24,6 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     protected RecordStatistics recordStatistics;
 
     protected AbstractRecordWithStats() {
-        super();
         this.recordStatistics = new RecordStatisticsImpl();
     }
 
@@ -39,19 +38,8 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     }
 
     @Override
-    public final void onAccess() {
-        super.onAccess();
-        this.recordStatistics.access();
-    }
-
-    @Override
     public final void onStore() {
-        this.recordStatistics.store();
-    }
-
-    @Override
-    public final void onUpdate() {
-        super.onUpdate();
+        recordStatistics.store();
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+
 import java.io.IOException;
 
 import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
@@ -29,11 +30,11 @@ import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
 public class RecordInfo implements DataSerializable {
     protected RecordStatistics statistics;
     protected long version;
-    protected long evictionCriteriaNumber;
     protected long ttl;
     protected long creationTime;
     protected long lastAccessTime;
     protected long lastUpdateTime;
+    protected long hits;
 
     public RecordInfo() {
     }
@@ -41,7 +42,7 @@ public class RecordInfo implements DataSerializable {
     public RecordInfo(RecordInfo recordInfo) {
         this.statistics = recordInfo.statistics;
         this.version = recordInfo.version;
-        this.evictionCriteriaNumber = recordInfo.evictionCriteriaNumber;
+        this.hits = recordInfo.hits;
         this.ttl = recordInfo.ttl;
         this.creationTime = recordInfo.creationTime;
         this.lastAccessTime = recordInfo.lastAccessTime;
@@ -64,12 +65,12 @@ public class RecordInfo implements DataSerializable {
         this.version = version;
     }
 
-    public long getEvictionCriteriaNumber() {
-        return evictionCriteriaNumber;
+    public long getHits() {
+        return hits;
     }
 
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-        this.evictionCriteriaNumber = evictionCriteriaNumber;
+    public void setHits(long hits) {
+        this.hits = hits;
     }
 
     public long getTtl() {
@@ -113,7 +114,7 @@ public class RecordInfo implements DataSerializable {
             out.writeBoolean(false);
         }
         out.writeLong(version);
-        out.writeLong(evictionCriteriaNumber);
+        out.writeLong(hits);
         out.writeLong(ttl);
         out.writeLong(creationTime);
         out.writeLong(lastAccessTime);
@@ -129,7 +130,7 @@ public class RecordInfo implements DataSerializable {
             statistics.readData(in);
         }
         version = in.readLong();
-        evictionCriteriaNumber = in.readLong();
+        hits = in.readLong();
         ttl = in.readLong();
         creationTime = in.readLong();
         lastAccessTime = in.readLong();
@@ -141,7 +142,7 @@ public class RecordInfo implements DataSerializable {
         return "RecordInfo{"
                 + "statistics=" + statistics
                 + ", version=" + version
-                + ", evictionCriteriaNumber=" + evictionCriteriaNumber
+                + ", hits=" + hits
                 + ", ttl=" + ttl
                 + ", creationTime=" + creationTime
                 + ", lastAccessTime=" + lastAccessTime

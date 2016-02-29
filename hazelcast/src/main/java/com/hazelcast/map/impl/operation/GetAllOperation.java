@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,8 +71,7 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
         if (recordStore == null) {
             return;
         }
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
+        recordStore.evictEntries();
     }
 
     @Override

@@ -25,6 +25,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -72,6 +73,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         long amount = 5L;
 
         Config config = new Config();
+        config.setProperty(GroupProperty.PARTITION_COUNT,"1");
         MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setEvictionPolicy(EvictionPolicy.LFU);
         mapConfig.setMinEvictionCheckMillis(0);
@@ -91,15 +93,16 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         // This `get` will trigger load from map-loader but since eviction kicks in, entry will get removed
         // We should be able to get the value loaded from store but index should be removed
         Trade trade = map.get(randomString());
+        map.get(randomString());
 
         // THEN
-        assertEquals(0, map.size());
+        assertEquals(1, map.size());
         assertEquals(5L, (long) trade.amount);
         assertEquals(currency, trade.currency);
 
         Index index = getIndexOfAttributeForMap(instance, name, attributeName);
         Set<QueryableEntry> dollars = index.getRecords(currency);
-        assertEquals(0, dollars.size());
+        assertEquals(1, dollars.size());
     }
 
     @Test

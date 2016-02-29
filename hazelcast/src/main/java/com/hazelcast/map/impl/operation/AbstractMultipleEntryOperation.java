@@ -276,8 +276,7 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     }
 
     protected void evict() {
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
+        recordStore.evictEntries();
     }
 
     public void setWanEventList(List<WanEventWrapper> wanEventList) {

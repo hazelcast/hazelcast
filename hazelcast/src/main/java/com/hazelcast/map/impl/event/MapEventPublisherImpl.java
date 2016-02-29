@@ -193,7 +193,6 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
         // below, order of ifs are important.
         // QueryEventFilter is instance of EntryEventFilter.
-        // SyntheticEventFilter wraps an event filter.
         if (filter instanceof EventListenerFilter) {
             if (!filter.eval(eventType.getType())) {
                 return false;

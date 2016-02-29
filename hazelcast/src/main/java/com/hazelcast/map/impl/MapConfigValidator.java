@@ -17,13 +17,20 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
+import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 
 /**
  * Validates map configuration.
  */
 public final class MapConfigValidator {
+
+    private static final ILogger LOGGER = Logger.getLogger(MapConfig.class);
 
     private MapConfigValidator() {
     }
@@ -38,6 +45,26 @@ public final class MapConfigValidator {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only. "
                     + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }
+    }
 
+    /**
+     * Checks preconditions to create a map proxy.
+     *
+     * @param mapConfig the mapConfig
+     */
+    public static void checkMapConfig(MapConfig mapConfig) {
+        checkInMemoryFormat(mapConfig.getInMemoryFormat());
+
+        logIgnoredConfig(mapConfig);
+    }
+
+    private static void logIgnoredConfig(MapConfig mapConfig) {
+        if (DEFAULT_MIN_EVICTION_CHECK_MILLIS != mapConfig.getMinEvictionCheckMillis()
+                || DEFAULT_EVICTION_PERCENTAGE != mapConfig.getEvictionPercentage()) {
+
+            LOGGER.warning("As of version 3.7, `minEvictionCheckMillis` and `evictionPercentage` "
+                    + "are deprecated due to the eviction mechanism change. New eviction mechanism "
+                    + "uses a probabilistic algorithm based on sampling. Please see documentation for further details");
+        }
     }
 }

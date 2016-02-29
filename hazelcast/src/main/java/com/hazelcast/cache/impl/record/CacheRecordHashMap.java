@@ -122,7 +122,7 @@ public class CacheRecordHashMap
 
         @Override
         public Evictable getEvictable() {
-            return getValue();
+            return (Evictable) getValue();
         }
 
     }

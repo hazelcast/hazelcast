@@ -38,9 +38,9 @@ public interface Record<V> {
 
     void setStatistics(RecordStatistics stats);
 
-    void onAccess();
+    void onAccess(long now);
 
-    void onUpdate();
+    void onUpdate(long now);
 
     void onStore();
 
@@ -49,10 +49,6 @@ public interface Record<V> {
     long getVersion();
 
     void setVersion(long version);
-
-    void setEvictionCriteriaNumber(long evictionCriteriaNumber);
-
-    long getEvictionCriteriaNumber();
 
     /**
      * Get current cache value or null.
@@ -90,6 +86,10 @@ public interface Record<V> {
     long getCreationTime();
 
     void setCreationTime(long creationTime);
+
+    long getHits();
+
+    void setHits(long hits);
 
     /**
      * Only used for Hot Restart, HDRecord

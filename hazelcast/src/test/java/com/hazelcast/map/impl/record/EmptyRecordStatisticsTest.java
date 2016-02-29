@@ -17,17 +17,6 @@ public class EmptyRecordStatisticsTest extends HazelcastTestSupport {
     EmptyRecordStatistics emptyRecordStatistics = new EmptyRecordStatistics();
 
     @Test
-    public void testGetHits() throws Exception {
-        assertEquals(0, emptyRecordStatistics.getHits());
-    }
-
-    @Test
-    public void testSetHits() throws Exception {
-        emptyRecordStatistics.setHits(1);
-        assertEquals(0, emptyRecordStatistics.getHits());
-    }
-
-    @Test
     public void testGetExpirationTime() throws Exception {
         assertEquals(0, emptyRecordStatistics.getExpirationTime());
     }

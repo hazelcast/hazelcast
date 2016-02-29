@@ -23,7 +23,6 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
     protected volatile Data value;
 
     DataRecordWithStats() {
-        super();
     }
 
     DataRecordWithStats(Data value) {

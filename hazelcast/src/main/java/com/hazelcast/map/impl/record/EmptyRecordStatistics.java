@@ -30,27 +30,12 @@ public class EmptyRecordStatistics implements RecordStatistics {
     }
 
     @Override
-    public int getHits() {
-        return 0;
-    }
-
-    @Override
-    public void setHits(int hits) {
-
-    }
-
-    @Override
     public long getExpirationTime() {
         return 0;
     }
 
     @Override
     public void setExpirationTime(long expirationTime) {
-
-    }
-
-    @Override
-    public void access() {
 
     }
 

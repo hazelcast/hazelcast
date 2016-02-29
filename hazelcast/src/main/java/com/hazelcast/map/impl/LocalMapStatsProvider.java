@@ -21,7 +21,6 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordStatistics;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -135,7 +134,7 @@ public class LocalMapStatsProvider {
             Record record = iterator.next();
             Data key = record.getKey();
 
-            hits += getHits(record);
+            hits += record.getHits();
             lockedEntryCount += isLocked(key, recordStore);
             lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
             lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
@@ -150,11 +149,6 @@ public class LocalMapStatsProvider {
 
         stats.setLastAccessTime(lastAccessTime);
         stats.setLastUpdateTime(lastUpdateTime);
-    }
-
-    protected long getHits(Record record) {
-        RecordStatistics stats = record.getStatistics();
-        return stats.getHits();
     }
 
     /**

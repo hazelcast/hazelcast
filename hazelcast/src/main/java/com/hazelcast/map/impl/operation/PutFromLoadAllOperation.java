@@ -47,6 +47,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     private List<Data> keyValueSequence;
     private List<Data> invalidationKeys;
+    private transient RecordStore recordStore;
 
     public PutFromLoadAllOperation() {
         keyValueSequence = Collections.emptyList();
@@ -60,7 +61,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     @Override
     public void run() throws Exception {
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
+        recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
         List<Data> keyValueSequence = this.keyValueSequence;
@@ -123,6 +124,11 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         invalidateNearCache(invalidationKeys);
 
         super.afterRun();
+        evict();
+    }
+
+    protected void evict() {
+        recordStore.evictEntries();
     }
 
     @Override

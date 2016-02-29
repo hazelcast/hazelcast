@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.record.AbstractRecord;
 import com.hazelcast.map.impl.record.Record;
@@ -24,8 +25,6 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
 
@@ -34,18 +33,18 @@ import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
  *
  * @param <R> the value type to be put in this storage.
  */
-class StorageImpl<R extends Record> implements Storage<Data, R> {
+public class StorageImpl<R extends Record> implements Storage<Data, R> {
 
     private final RecordFactory<R> recordFactory;
-    // Concurrency level is 1 since at most one thread can write at a time.
-    private final ConcurrentMap<Data, R> records = new ConcurrentHashMap<Data, R>(1000, 0.75f, 1);
+    private final StorageSCHM<R> records;
 
     // not final for testing purposes.
     private SizeEstimator sizeEstimator;
 
-    StorageImpl(RecordFactory<R> recordFactory, InMemoryFormat inMemoryFormat) {
+    StorageImpl(RecordFactory<R> recordFactory, InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.recordFactory = recordFactory;
         this.sizeEstimator = createMapSizeEstimator(inMemoryFormat);
+        this.records = new StorageSCHM<R>(serializationService);
     }
 
     @Override
@@ -142,6 +141,10 @@ class StorageImpl<R extends Record> implements Storage<Data, R> {
     @Override
     public void disposeDeferredBlocks() {
         // NOP intentionally.
+    }
+
+    public Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount) {
+        return records.getRandomSamples(sampleCount);
     }
 
 }

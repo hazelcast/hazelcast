@@ -212,6 +212,10 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         return keySet;
     }
 
+    public boolean hasLock() {
+        return !locks.isEmpty();
+    }
+
     void scheduleEviction(Data key, int version, long leaseTime) {
         entryTaskScheduler.schedule(leaseTime, key, version);
     }
