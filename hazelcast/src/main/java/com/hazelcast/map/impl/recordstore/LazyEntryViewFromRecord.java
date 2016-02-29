@@ -179,6 +179,6 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
                 + ", lastStoredTime=" + getLastStoredTime()
                 + ", lastUpdateTime=" + getLastUpdateTime()
                 + ", ttl=" + getTtl()
-                +'}';
+                + '}';
     }
 }
