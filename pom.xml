@@ -407,7 +407,7 @@
             <id>test-coverage</id>
             <properties>
                 <argLine>
-                    -verbose:gc -Xmx4G
+                    -verbose:gc -Xmx3G
                     -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
