@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.eviction.policies;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.eviction.AbstractMapEvictionPolicy;
 
 /**
  * LRU {@link MapEvictionPolicy} implementation.

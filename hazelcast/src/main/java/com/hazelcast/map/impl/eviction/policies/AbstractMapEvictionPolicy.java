@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.eviction;
+package com.hazelcast.map.impl.eviction.policies;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.eviction.policies.MapEvictionPolicy;
 
 /**
  * Contains common methods to implement {@link MapEvictionPolicy}
