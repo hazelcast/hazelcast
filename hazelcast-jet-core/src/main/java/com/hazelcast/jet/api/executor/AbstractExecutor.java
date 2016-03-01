@@ -23,7 +23,7 @@ public interface AbstractExecutor {
     /**
      * Name of the executor;
      *
-     * @return
+     * @return the name of the executor
      */
     String getName();
 
@@ -35,7 +35,7 @@ public interface AbstractExecutor {
     /**
      * Synchronously shutdown executor;
      *
-     * @throws Exception
+     * @throws Exception if exception during shutdown
      */
     void shutdown() throws Exception;
 }

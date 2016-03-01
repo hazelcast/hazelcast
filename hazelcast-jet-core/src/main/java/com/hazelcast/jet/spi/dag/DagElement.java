@@ -20,7 +20,7 @@ import java.io.Serializable;
 
 /**
  * Represents abstract element of Direct acyclic graph:
- * <p/>
+ *
  * <pre>
  *     Vertex
  *     Edge

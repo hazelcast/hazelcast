@@ -21,9 +21,9 @@ import java.io.Serializable;
 
 /**
  * Represents state of the abstract state-machine
- * <p/>
+ *
  * Examples:
- * <p/>
+ *
  * <pre>
  *     JET-application;
  *     JET-container;

@@ -28,7 +28,7 @@ public interface ConsumerOutputStream<T> extends Consumer<T> {
      * Consumes all objects from inputStream;
      *
      * @param inputStream - corresponding inputStream;
-     * @throws Exception
+     * @throws Exception if any exception
      */
     void consumeStream(ProducerInputStream<T> inputStream) throws Exception;
 
@@ -45,7 +45,7 @@ public interface ConsumerOutputStream<T> extends Consumer<T> {
      *
      * @param object - object to consume;
      * @return - always true for this type of consumer;
-     * @throws Exception
+     * @throws Exception if any exception
      */
     boolean consume(T object) throws Exception;
 }

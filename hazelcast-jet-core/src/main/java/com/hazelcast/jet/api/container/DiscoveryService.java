@@ -25,9 +25,9 @@ import java.util.Map;
 
 /**
  * Abstract discovery-service interface;
- * <p/>
+ *
  * The goal is to find JET-nodes;
- * <p/>
+ *
  * After discovery it created corresponding writers and readers;
  */
 public interface DiscoveryService {

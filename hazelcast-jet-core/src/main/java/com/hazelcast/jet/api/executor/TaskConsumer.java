@@ -18,9 +18,9 @@ package com.hazelcast.jet.api.executor;
 
 /**
  * Represents abstract entry which can consume any task;
- * <p/>
+ *
  * Examples:
- * <p/>
+ *
  * <pre>
  *      Execution working processors;
  *      State-machine working processors;

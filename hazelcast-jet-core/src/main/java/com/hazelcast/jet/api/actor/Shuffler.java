@@ -29,8 +29,8 @@ public interface Shuffler {
 
     /**
      * Check if last buffer has been flushed
-     * * @return true if last data has been flushed
-     * false - if last data hasn't been flushed
+     * @return true if last data has been flushed
+     *         false - if last data hasn't been flushed
      */
     boolean isFlushed();
 }

@@ -27,7 +27,7 @@ public interface StateMachineRequestProcessor<SI extends StateMachineEvent> {
      *
      * @param event   - corresponding input event;
      * @param payLoad - arguments payLoad;
-     * @throws Exception
+     * @throws Exception if any exception
      */
     void processRequest(SI event, Object payLoad) throws Exception;
 }

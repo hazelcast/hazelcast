@@ -20,10 +20,10 @@ import com.hazelcast.jet.spi.dag.DagElement;
 
 /**
  * Represents interface for the abstract tap;
- * <p/>
+ *
  * Tap is some source of target pool with data;
  * Examples:
- * <p/>
+ *
  * <pre>
  *     HDFS,
  *     Hazelcast-Imap,

@@ -20,13 +20,13 @@ import com.hazelcast.core.PartitioningStrategy;
 
 /**
  * Represents abstract calculation strategy;
- * <p/>
+ *
  * It wraps 2 notions:
  * <pre>
  *          PartitioningStrategy
  *          HashingStrategy
  *      </pre>
- * <p/>
+ *
  * See corresponding JavaDocs for
  * {@link com.hazelcast.core.PartitioningStrategy},
  * {@link com.hazelcast.jet.spi.strategy.HashingStrategy}

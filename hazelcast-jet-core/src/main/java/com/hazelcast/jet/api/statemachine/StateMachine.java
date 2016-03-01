@@ -20,21 +20,21 @@ import java.util.concurrent.Future;
 
 /**
  * Represents abstract state-machine;
- * <p/>
+ *
  * State-machines are used to provide consistency of main JET's objects and operations;
- * <p/>
+ *
  * All main operations under main objects are performed via state-machine's transition;
- * <p/>
+ *
  * For example if we ned to start container it will work like:
- * <p/>
+ *
  * <pre>
- *      START__EVENT ->
+ *      START__EVENT -&gt;
  *      CONTAINER_STATE_MACHINE
- *              -> Execution of request processor (here we can start container)
- *              -> transition to the next state
- *              -> output
+ *              -&gt; Execution of request processor (here we can start container)
+ *              -&gt; transition to the next state
+ *              -&gt; output
  * </pre>
- * <p/>
+ *
  * Transition matrix lets to prevent appearance of inconsistent state, for example
  * execution of the application before DAG has been submit;
  *

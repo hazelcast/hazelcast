@@ -22,7 +22,7 @@ import com.hazelcast.jet.api.data.io.ProducerInputStream;
 /**
  * Processor to execute inside task
  * It performs tasks' work:
- * <p/>
+ *
  * <pre>
  *     1) Reading from producers
  *     2) Writing to consumers
@@ -34,7 +34,7 @@ public interface TaskProcessor {
      * Execute main processor's operation;
      *
      * @return true - if last processing execution was success, false otherwise;
-     * @throws Exception;
+     * @throws Exception if any exception
      */
     boolean process() throws Exception;
 
@@ -43,7 +43,7 @@ public interface TaskProcessor {
      *
      * @param inputStream - next chunk of data;
      * @return true - if last processing execution was success, false otherwise;
-     * @throws Exception;
+     * @throws Exception if any exception
      */
     boolean onChunk(ProducerInputStream<Object> inputStream) throws Exception;
 

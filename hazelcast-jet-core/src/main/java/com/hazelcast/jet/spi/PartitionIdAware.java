@@ -18,9 +18,9 @@ package com.hazelcast.jet.spi;
 
 /**
  * Something which knows about partitionId;
- * <p/>
+ *
  * Examples:
- * <p/>
+ *
  * <pre>
  *     Tuple
  * </pre>

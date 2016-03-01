@@ -24,12 +24,12 @@ import java.nio.channels.SocketChannel;
 
 /**
  * Represents abstract task to read from network socket;
- * <p/>
+ *
  * The architecture is following:
- * <p/>
- * <p/>
+ *
+ *
  * <pre>
- *  SocketChannel (JetAddress)  -> SocketReader -> Consumer(ringBuffer)
+ *  SocketChannel (JetAddress)  -&gt; SocketReader -&gt; Consumer(ringBuffer)
  * </pre>
  */
 public interface SocketReader extends NetworkTask {

@@ -21,11 +21,11 @@ import com.hazelcast.jet.impl.hazelcast.JetPacket;
 
 /**
  * Represents abstract task to write to network socket
- * <p/>
+ *
  * The architecture is following:
- * <p/>
+ *
  * <pre>
- *  Producer(ringBuffer)  -> SocketWriter -> SocketChannel (JetAddress)
+ *  Producer(ringBuffer)  -&gt; SocketWriter -&gt; SocketChannel (JetAddress)
  *  </pre>
  */
 public interface SocketWriter extends NetworkTask {

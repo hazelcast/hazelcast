@@ -40,7 +40,7 @@ public interface TupleContainerProcessor<KeyInput, ValueInput, KeyOutPut, ValueO
      * @param sourceName       - name of the source where data come from (Vertex or Tap);
      * @param processorContext - context of processor;
      * @return - true - if next chunk should be read, false if next iteration will be with the same inputStream;
-     * @throws Exception
+     * @throws Exception if any exception
      */
     boolean process(ProducerInputStream<Tuple<KeyInput, ValueInput>> inputStream,
                     ConsumerOutputStream<Tuple<KeyOutPut, ValueOutPut>> outputStream,
@@ -54,7 +54,7 @@ public interface TupleContainerProcessor<KeyInput, ValueInput, KeyOutPut, ValueO
      * @param outputStream     - outputSteam where data should be written;
      * @param processorContext - context of processor;
      * @return - true if finalization is finished, false if this method should be invoked again;
-     * @throws Exception
+     * @throws Exception if any exception
      */
     boolean finalizeProcessor(ConsumerOutputStream<Tuple<KeyOutPut, ValueOutPut>> outputStream,
                               ProcessorContext processorContext) throws Exception;

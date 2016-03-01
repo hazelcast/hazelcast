@@ -47,7 +47,8 @@ public abstract class ProcessorDescriptor implements Serializable {
     /**
      * Creates builder to construct instance of ProcessorDescriptor;
      *
-     * @param clazz - class of the corresponding ContainerProcessorFactory;
+     * @param clazz - class of the corresponding ContainerProcessorFactory
+     * @param args - arguments to be passed to the factory constructor
      * @return - corresponding builder;
      */
     public static Builder builder(Class<? extends ContainerProcessorFactory> clazz, Object... args) {

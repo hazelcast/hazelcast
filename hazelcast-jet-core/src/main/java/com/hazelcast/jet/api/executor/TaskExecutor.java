@@ -18,7 +18,7 @@ package com.hazelcast.jet.api.executor;
 
 /**
  * Represents abstract tasks executor;
- * <p/>
+ *
  * Examples:
  * <pre>
  *     Processing executor;

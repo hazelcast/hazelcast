@@ -55,6 +55,8 @@ public interface ContainerListener {
 
     /**
      * Will be invoked on container's execution failure;
+     *
+     * @param error the error that was encountered during container execution
      */
     void onContainerExecutionFailure(Throwable error);
 }
