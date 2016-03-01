@@ -1,5 +1,6 @@
 package com.hazelcast.partition;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -12,8 +13,12 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,17 +37,29 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest {
+public class PartitionLostListenerTest extends HazelcastTestSupport {
 
-    @Override
-    public int getNodeCount() {
-        return 2;
+
+    private TestHazelcastInstanceFactory factory;
+
+    private HazelcastInstance[] instances;
+
+    @Before
+    public void init() {
+        factory = createHazelcastInstanceFactory(3);
+        instances = new HazelcastInstance[2];
+        instances[0] = factory.newHazelcastInstance();
+        instances[1] = factory.newHazelcastInstance();
+    }
+
+    @After
+    public void after() {
+        factory.terminateAll();
     }
 
     @Test
     public void test_partitionLostListenerInvoked() {
-        List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp(1);
-        HazelcastInstance instance = instances.get(0);
+        HazelcastInstance instance = instances[0];
 
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         instance.getPartitionService().addPartitionLostListener(listener);
@@ -53,26 +70,36 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         partitionService.onPartitionLost(internalEvent);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                List<PartitionLostEvent> events = listener.getEvents();
-                assertEquals(1, events.size());
+        assertEventEventually(listener, internalEvent);
+    }
 
-                PartitionLostEvent event = events.get(0);
-                assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
-                assertEquals(internalEvent.getLostReplicaIndex(), event.getLostBackupCount());
-            }
-        });
+    @Test
+    public void test_allPartitionLostListenersInvoked() {
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
+
+        final EventCollectingPartitionLostListener listener1 = new EventCollectingPartitionLostListener();
+        final EventCollectingPartitionLostListener listener2 = new EventCollectingPartitionLostListener();
+        instance1.getPartitionService().addPartitionLostListener(listener1);
+        instance2.getPartitionService().addPartitionLostListener(listener2);
+
+        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
+
+        NodeEngineImpl nodeEngine = getNode(instance1).getNodeEngine();
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+        partitionService.onPartitionLost(internalEvent);
+
+        assertEventEventually(listener1, internalEvent);
+        assertEventEventually(listener2, internalEvent);
     }
 
     @Test
     public void test_partitionLostListenerInvoked_whenNodeCrashed() {
-        List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
+        HazelcastInstance survivingInstance = instances[0];
+        HazelcastInstance terminatingInstance = instances[1];
 
-        HazelcastInstance survivingInstance = instances.get(0);
-        HazelcastInstance terminatingInstance = instances.get(1);
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
 
         final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         survivingInstance.getPartitionService().addPartitionLostListener(listener);
@@ -107,6 +134,31 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
     }
 
     @Test
+    public void test_partitionLostListenerInvoked_whenAllPartitionReplicasCrashed() {
+        HazelcastInstance lite = factory.newHazelcastInstance(new Config().setLiteMember(true));
+
+        warmUpPartitions(instances);
+        warmUpPartitions(lite);
+        waitAllForSafeState(instances);
+        waitInstanceForSafeState(lite);
+
+        final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
+        lite.getPartitionService().addPartitionLostListener(listener);
+
+        instances[0].getLifecycleService().terminate();
+        instances[1].getLifecycleService().terminate();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                List<PartitionLostEvent> events = listener.getEvents();
+                assertFalse(events.isEmpty());
+            }
+        });
+    }
+
+    @Test
     public void test_internalPartitionLostEvent_serialization() throws IOException {
         Address address = new Address();
         IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 2, address);
@@ -134,5 +186,20 @@ public class PartitionLostListenerTest extends AbstractPartitionLostListenerTest
     @Test
     public void test_internalPartitionLostEvent_toString() {
         assertNotNull(new IPartitionLostEvent().toString());
+    }
+
+    private void assertEventEventually(final EventCollectingPartitionLostListener listener, final IPartitionLostEvent internalEvent) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                List<PartitionLostEvent> events = listener.getEvents();
+                assertEquals(1, events.size());
+
+                PartitionLostEvent event = events.get(0);
+                assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
+                assertEquals(internalEvent.getLostReplicaIndex(), event.getLostBackupCount());
+            }
+        });
     }
 }

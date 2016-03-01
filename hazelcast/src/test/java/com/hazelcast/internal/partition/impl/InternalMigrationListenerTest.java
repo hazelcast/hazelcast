@@ -1,11 +1,10 @@
-package com.hazelcast.partition.impl;
+package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -51,14 +49,20 @@ public class InternalMigrationListenerTest
         final int hz2PartitionId = hz2PartitionIds.get(0);
 
         final List<MigrationProgressNotification> notifications = listener.getNotifications();
-        assertEquals(3, notifications.size());
-        assertEquals(MigrationProgressEvent.START, notifications.get(0).event);
-        assertEquals(hz2PartitionId, notifications.get(0).migrationInfo.getPartitionId());
-        assertEquals(MigrationProgressEvent.COMPLETE, notifications.get(1).event);
-        assertEquals(hz2PartitionId, notifications.get(1).migrationInfo.getPartitionId());
-        assertTrue(notifications.get(1).success);
-        assertEquals(MigrationProgressEvent.COMMIT, notifications.get(2).event);
-        assertEquals(hz2PartitionId, notifications.get(2).migrationInfo.getPartitionId());
+
+        int partition0Events = 0, partition1Events = 0;
+        assertEquals(6, notifications.size());
+
+        for (MigrationProgressNotification n : notifications) {
+            if ( n.migrationInfo.getPartitionId() == 0) {
+                partition0Events++;
+            } else {
+                partition1Events++;
+            }
+        }
+
+        assertEquals(3, partition0Events);
+        assertEquals(3, partition1Events);
     }
 
     enum MigrationProgressEvent {
@@ -91,6 +95,15 @@ public class InternalMigrationListenerTest
             this.success = success;
         }
 
+        @Override
+        public String toString() {
+            return "MigrationProgressNotification{" +
+                    "event=" + event +
+                    ", participant=" + participant +
+                    ", migrationInfo=" + migrationInfo +
+                    ", success=" + success +
+                    '}';
+        }
     }
 
     static class InternalMigrationListenerImpl

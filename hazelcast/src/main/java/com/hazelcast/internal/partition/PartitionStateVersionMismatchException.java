@@ -16,22 +16,23 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.core.HazelcastException;
 
 /**
- * Used to indicate the reason behind an update on the partition talbe
+ * Thrown when local partition-state version doesn't match the version
+ * of master member while running a migration/replication operation.
  */
-@PrivateApi
-public enum PartitionReplicaChangeReason {
+public class PartitionStateVersionMismatchException extends HazelcastException {
 
-    /*
-        Used for initial partition assignments and migrations
-     */
-    ASSIGNMENT,
+    public PartitionStateVersionMismatchException() {
+    }
 
-    /*
-        Used when a replica node is shifted up in the partition table
-     */
-    MEMBER_REMOVED
+    public PartitionStateVersionMismatchException(String message) {
+        super(message);
+    }
 
+    public PartitionStateVersionMismatchException(int masterVersion, int localVersion) {
+        this("Local partition state version is not equal to master's version!"
+                + " Local: " + localVersion + ", Master: " + masterVersion);
+    }
 }

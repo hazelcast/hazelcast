@@ -500,9 +500,8 @@ public class ClusterJoinManager {
                 int count = members.size() - 1 + setJoins.size();
                 List<Future> calls = new ArrayList<Future>(count);
                 PartitionRuntimeState partitionState = null;
-                // TODO BASRI we need a more understandable check here
-                if (node.partitionService.getMigrationPauseCount() == 1) {
-                    partitionState = node.partitionService.createPartitionState();;
+                if (!node.partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
+                    partitionState = node.partitionService.createPartitionState();
                 }
                 for (MemberInfo member : setJoins) {
                     long startTime = clusterClock.getClusterStartTime();

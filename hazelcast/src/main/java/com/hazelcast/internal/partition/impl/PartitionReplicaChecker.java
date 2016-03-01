@@ -233,7 +233,7 @@ public class PartitionReplicaChecker {
 
     private Operation createReplicaSyncStateOperation(long replicaVersion, int partitionId) {
         final Operation op = new IsReplicaVersionSync(replicaVersion);
-        op.setService(this);
+        op.setService(partitionService);
         op.setNodeEngine(nodeEngine);
         op.setOperationResponseHandler(createErrorLoggingResponseHandler(node.getLogger(IsReplicaVersionSync.class)));
         op.setPartitionId(partitionId);
@@ -298,7 +298,7 @@ public class PartitionReplicaChecker {
                     if (replicaAddress != null) {
                         if (checkClusterStateForReplicaSync(replicaAddress)) {
                             SyncReplicaVersion op = new SyncReplicaVersion(i, callback);
-                            op.setService(this);
+                            op.setService(partitionService);
                             op.setNodeEngine(nodeEngine);
                             op.setOperationResponseHandler(responseHandler);
                             op.setPartitionId(partition.getPartitionId());

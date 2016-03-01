@@ -14,20 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.partition.impl;
+package com.hazelcast.spi.partition;
 
-import com.hazelcast.internal.partition.PartitionListener;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-/**
- * TODO: Javadoc Pending...
- *
- */
-final class PartitionListenerNode {
-    final PartitionListener listener;
-    final PartitionListenerNode next;
+public enum MigrationEndpoint {
 
-    PartitionListenerNode(PartitionListener listener, PartitionListenerNode next) {
-        this.listener = listener;
-        this.next = next;
+    SOURCE(0), DESTINATION(1);
+
+    private final byte code;
+
+    MigrationEndpoint(int code) {
+        this.code = (byte) code;
+    }
+
+    public static void writeTo(MigrationEndpoint endpoint, DataOutput out) throws IOException {
+        out.writeByte(endpoint.code);
+    }
+
+    public static MigrationEndpoint readFrom(DataInput in) throws IOException {
+        byte code = in.readByte();
+        return code == 0 ? SOURCE : DESTINATION;
     }
 }

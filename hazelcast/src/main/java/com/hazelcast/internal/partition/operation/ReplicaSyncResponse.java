@@ -20,6 +20,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -91,14 +92,15 @@ public class ReplicaSyncResponse extends Operation
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
         if (replicaIndex == currentReplicaIndex) {
-            partitionService.getReplicaManager().finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
+            replicaManager.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
         } else {
-            partitionService.getReplicaManager().clearReplicaSyncRequest(partitionId, replicaIndex);
+            replicaManager.clearReplicaSyncRequest(partitionId, replicaIndex);
             if (currentReplicaIndex < 0) {
-                partitionService.clearPartitionReplicaVersions(partitionId);
+                replicaManager.clearPartitionReplicaVersions(partitionId);
             } else if (currentReplicaIndex > 0) {
-                partitionService.getReplicaManager().triggerPartitionReplicaSync(partitionId, currentReplicaIndex, 0);
+                replicaManager.triggerPartitionReplicaSync(partitionId, currentReplicaIndex, 0);
             }
         }
     }

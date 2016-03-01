@@ -17,17 +17,17 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationManager;
+import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -130,8 +130,11 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private void afterMigrate() {
         if (success) {
-            InternalPartitionService partitionService = getService();
-            partitionService.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions, 1);
+            InternalPartitionServiceImpl partitionService = getService();
+            PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+            int destinationNewReplicaIndex = migrationInfo.getDestinationNewReplicaIndex();
+            int replicaOffset = destinationNewReplicaIndex <= 1 ? 1 : destinationNewReplicaIndex;
+            replicaManager.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions, replicaOffset);
             if (getLogger().isFinestEnabled()) {
                 getLogger().finest("ReplicaVersions are set after migration. partitionId="
                         + migrationInfo.getPartitionId() + " replicaVersions=" + Arrays.toString(replicaVersions));
@@ -178,10 +181,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private void runMigrationTask(Operation op) throws Exception {
         MigrationAwareService service = op.getService();
-        PartitionMigrationEvent event =
-                new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getType(),
-                        migrationInfo.getPartitionId(), migrationInfo.getReplicaIndex(),
-                        migrationInfo.getKeepReplicaIndex());
+        PartitionMigrationEvent event = new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
+                migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
+                migrationInfo.getDestinationNewReplicaIndex());
         service.beforeMigration(event);
         op.beforeRun();
         op.run();

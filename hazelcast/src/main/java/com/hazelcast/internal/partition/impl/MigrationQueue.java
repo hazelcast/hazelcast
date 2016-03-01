@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -27,8 +26,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Manages migration tasks and migration status flag for {@link InternalPartitionServiceImpl} safely. Once a migration task
- * is added to the queue, queue has to be notified via {@link MigrationQueue#afterTaskCompletion(MigrationRunnable)} after its execution.
+ * Manages migration tasks and migration status flag for {@link InternalPartitionServiceImpl} safely.
+ * Once a migration task is added to the queue, queue has to be notified
+ * via {@link MigrationQueue#afterTaskCompletion(MigrationRunnable)} after its execution.
  */
 class MigrationQueue {
 
@@ -51,10 +51,6 @@ class MigrationQueue {
         return queue.poll(timeout, unit);
     }
 
-    public MigrationRunnable peek() {
-        return queue.peek();
-    }
-
     public void clear() {
         List<MigrationRunnable> sink = new ArrayList<MigrationRunnable>();
         queue.drainTo(sink);
@@ -69,12 +65,6 @@ class MigrationQueue {
             if (migrateTaskCount.decrementAndGet() < 0) {
                 throw new IllegalStateException();
             }
-        }
-    }
-
-    public void invalidatePendingMigrations(Address removedAddress) {
-        for (MigrationRunnable runnable : queue) {
-            runnable.invalidate(removedAddress);
         }
     }
 

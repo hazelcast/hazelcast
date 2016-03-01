@@ -19,34 +19,22 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationEvent.MigrationStatus;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.PartitionReplicaChangeReason;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -56,9 +44,7 @@ import static com.hazelcast.core.MigrationEvent.MigrationStatus.COMPLETED;
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
-import static com.hazelcast.internal.partition.PartitionReplicaChangeReason.MEMBER_REMOVED;
-import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
+import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 
 // Runs locally when the node becomes owner of a partition
 //
@@ -69,15 +55,13 @@ public final class PromoteFromBackupOperation
         extends AbstractOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
-    private final PartitionReplicaChangeReason reason;
-
-    private final Address oldAddress;
+    // this is the replica index of the partition owner before the promotion.
+    private final int currentReplicaIndex;
 
     private ILogger logger;
 
-    public PromoteFromBackupOperation(PartitionReplicaChangeReason reason, Address oldAddress) {
-        this.reason = reason;
-        this.oldAddress = oldAddress;
+    public PromoteFromBackupOperation(int currentReplicaIndex) {
+        this.currentReplicaIndex = currentReplicaIndex;
     }
 
     void initLogger() {
@@ -94,8 +78,8 @@ public final class PromoteFromBackupOperation
     @Override
     public void run()
             throws Exception {
-        handleLostBackups();
-        promoteFromBackups();
+        shiftUpReplicaVersions();
+        migrateServices();
     }
 
     @Override
@@ -105,107 +89,52 @@ public final class PromoteFromBackupOperation
     }
 
     private void sendMigrationEvent(final MigrationStatus status) {
-        if (reason != MEMBER_REMOVED) {
-            return;
-        }
         final int partitionId = getPartitionId();
         final NodeEngine nodeEngine = getNodeEngine();
         final Member localMember = nodeEngine.getLocalMember();
-        final MemberImpl deadMember = new MemberImpl(oldAddress, false);
-        final MigrationEvent event = new MigrationEvent(partitionId, deadMember, localMember, status);
+        final MigrationEvent event = new MigrationEvent(partitionId, null, localMember, status);
 
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, MIGRATION_EVENT_TOPIC);
         eventService.publishEvent(SERVICE_NAME, registrations, event, partitionId);
     }
 
-    void handleLostBackups() {
+    private void shiftUpReplicaVersions() {
         final int partitionId = getPartitionId();
         try {
-            final InternalPartitionService partitionService = getService();
+            final InternalPartitionServiceImpl partitionService = getService();
             // returns the internal array itself, not the copy
             final long[] versions = partitionService.getPartitionReplicaVersions(partitionId);
 
-            if (reason == MEMBER_REMOVED) {
-                final int lostReplicaIndex = getLostReplicaIndex(versions);
-                if (lostReplicaIndex > 0) {
-                    overwriteLostReplicaVersionsWithFirstAvailableVersion(partitionId, versions, lostReplicaIndex);
-                }
+            final int lostReplicaIndex = currentReplicaIndex - 1;
 
-                sendPartitionLostEvent(partitionId, lostReplicaIndex);
-            } else {
-                resetSyncWaitingVersions(partitionId, versions);
+            if (currentReplicaIndex > 1) {
+                final long[] versionsCopy = Arrays.copyOf(versions, versions.length);
+                final long version = versions[lostReplicaIndex];
+                Arrays.fill(versions, 0, lostReplicaIndex, version);
+
+                if (logger.isFinestEnabled()) {
+                    logger.finest(
+                            "Partition replica is lost! partitionId=" + partitionId + " lost replicaIndex=" + lostReplicaIndex
+                                    + " replica versions before shift up=" + Arrays.toString(versionsCopy)
+                                    + " replica versions after shift up=" + Arrays.toString(versions));
+                }
+            } else if (logger.isFinestEnabled()) {
+                logger.finest("PROMOTE partitionId=" + getPartitionId() + " from currentReplicaIndex=" + currentReplicaIndex);
             }
+
+            partitionService.sendPartitionLostEvent(partitionId, lostReplicaIndex);
         } catch (Throwable e) {
-            logger.warning("Partition lost detection failed. partitionId=" + partitionId, e);
+            logger.warning("Promotion failed. partitionId=" + partitionId + " replicaIndex=" + currentReplicaIndex, e);
         }
     }
 
-    void promoteFromBackups() {
-        if (reason != MEMBER_REMOVED) {
-            return;
-        }
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Promoting partitionId=" + getPartitionId());
-        }
-
+    private void migrateServices() {
         try {
-            sendToAllMigrationAwareServices(new PartitionMigrationEvent(DESTINATION, getPartitionId()));
+            sendToAllMigrationAwareServices(new PartitionMigrationEvent(DESTINATION, getPartitionId(), currentReplicaIndex, 0));
         } finally {
             clearPartitionMigratingFlag();
         }
-    }
-
-    private int getLostReplicaIndex(final long[] versions) {
-        int biggestLostReplicaIndex = 0;
-
-        for (int replicaIndex = 1; replicaIndex <= versions.length; replicaIndex++) {
-            if (versions[replicaIndex - 1] == InternalPartition.SYNC_WAITING) {
-                biggestLostReplicaIndex = replicaIndex;
-            }
-        }
-
-        return biggestLostReplicaIndex;
-    }
-
-    private void overwriteLostReplicaVersionsWithFirstAvailableVersion(final int partitionId, final long[] versions,
-                                                                       final int lostReplicaIndex) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Partition replica is lost! partitionId=" + partitionId + " lost-replicaIndex=" + lostReplicaIndex
-                            + " replicaVersions=" + Arrays.toString(versions));
-        }
-
-        final long forcedVersion = lostReplicaIndex < versions.length ? versions[lostReplicaIndex] : 0;
-        for (int replicaIndex = lostReplicaIndex; replicaIndex > 0; replicaIndex--) {
-            versions[replicaIndex - 1] = forcedVersion;
-        }
-    }
-
-    private void resetSyncWaitingVersions(int partitionId, long[] versions) {
-        long[] versionsBeforeReset = null;
-        for (int replicaIndex = 1; replicaIndex <= versions.length; replicaIndex++) {
-            if (versions[replicaIndex - 1] == InternalPartition.SYNC_WAITING) {
-                if (versionsBeforeReset == null) {
-                    versionsBeforeReset = Arrays.copyOf(versions, versions.length);
-                }
-
-                versions[replicaIndex - 1] = 0;
-            }
-        }
-
-        if (logger.isFinestEnabled() && versionsBeforeReset != null) {
-            logger.finest("Resetting all SYNC_WAITING Versions. partitionId=" + partitionId + " versionsBeforeReset=" + Arrays
-                    .toString(versionsBeforeReset));
-        }
-    }
-
-    private void sendPartitionLostEvent(int partitionId, int lostReplicaIndex) {
-        final IPartitionLostEvent event = new IPartitionLostEvent(partitionId, lostReplicaIndex,
-                getNodeEngine().getThisAddress());
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final InternalPartitionLostEventPublisher publisher = new InternalPartitionLostEventPublisher(nodeEngine, event);
-        nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, publisher);
     }
 
     private void sendToAllMigrationAwareServices(PartitionMigrationEvent event) {
@@ -249,32 +178,4 @@ public final class PromoteFromBackupOperation
         throw new UnsupportedOperationException();
     }
 
-    static class InternalPartitionLostEventPublisher
-            implements Runnable {
-
-        private final NodeEngineImpl nodeEngine;
-
-        private final IPartitionLostEvent event;
-
-        public InternalPartitionLostEventPublisher(NodeEngineImpl nodeEngine, IPartitionLostEvent event) {
-            this.nodeEngine = nodeEngine;
-            this.event = event;
-        }
-
-        @Override
-        public void run() {
-            for (PartitionAwareService service : nodeEngine.getServices(PartitionAwareService.class)) {
-                try {
-                    service.onPartitionLost(event);
-                } catch (Exception e) {
-                    final ILogger logger = nodeEngine.getLogger(InternalPartitionLostEventPublisher.class);
-                    logger.warning("Handling partitionLostEvent failed. Service: " + service.getClass() + " Event: " + event, e);
-                }
-            }
-        }
-
-        public IPartitionLostEvent getEvent() {
-            return event;
-        }
-    }
 }

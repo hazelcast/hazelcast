@@ -23,29 +23,31 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
-public abstract class BaseMigrationOperation extends AbstractOperation
+abstract class BaseMigrationOperation extends AbstractOperation
         implements MigrationCycleOperation, PartitionAwareOperation {
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
     protected int partitionStateVersion;
 
-    public BaseMigrationOperation() {
+    BaseMigrationOperation() {
     }
 
-    public BaseMigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
+    BaseMigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
         this.migrationInfo = migrationInfo;
         this.partitionStateVersion = partitionStateVersion;
         setPartitionId(migrationInfo.getPartitionId());
@@ -67,8 +69,12 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         InternalPartitionService partitionService = getService();
         int localPartitionStateVersion = partitionService.getPartitionStateVersion();
         if (partitionStateVersion != localPartitionStateVersion) {
-            throw new RetryableHazelcastException("Partition state versions are not matching!"
-                    + " Local: " + localPartitionStateVersion + ", Master: " + partitionStateVersion);
+            if (getNodeEngine().getThisAddress().equals(migrationInfo.getMaster())) {
+                return;
+            }
+
+            // this is expected when cluster member list changes during migration
+            throw new PartitionStateVersionMismatchException(partitionStateVersion, localPartitionStateVersion);
         }
     }
 
@@ -85,17 +91,17 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         }
     }
 
-    protected void onMigrationStart() {
+    void onMigrationStart() {
         InternalPartitionServiceImpl partitionService = getService();
         InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
         migrationListener.onMigrationStart(getMigrationParticipantType(), migrationInfo);
     }
 
-    protected void onMigrationComplete() {
+    void onMigrationComplete() {
         onMigrationComplete(success);
     }
 
-    protected void onMigrationComplete(boolean result) {
+    void onMigrationComplete(boolean result) {
         InternalPartitionServiceImpl partitionService = getService();
         InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
         migrationListener.onMigrationComplete(getMigrationParticipantType(), migrationInfo, result);
@@ -132,6 +138,19 @@ public abstract class BaseMigrationOperation extends AbstractOperation
             return ExceptionAction.THROW_EXCEPTION;
         }
         return super.onInvocationException(throwable);
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof PartitionStateVersionMismatchException) {
+            ILogger logger = getLogger();
+            if (logger.isFineEnabled()) {
+                logger.log(Level.FINE, e.getMessage(), e);
+            }
+            return;
+        }
+
+        super.logError(e);
     }
 
     @Override

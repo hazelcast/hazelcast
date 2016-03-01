@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchReplicationOperation;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;

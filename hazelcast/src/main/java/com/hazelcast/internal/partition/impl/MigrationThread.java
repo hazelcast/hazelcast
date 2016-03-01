@@ -25,23 +25,27 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.Math.max;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * MigrationThread is responsible to execute migration related tasks submitted to its
+ * migration-queue.
  */
 class MigrationThread extends Thread implements Runnable {
+
+    private static final long DEFAULT_MIGRATION_SLEEP_INTERVAL = 250L;
+
     private final MigrationManager migrationManager;
     private final MigrationQueue queue;
     private final ILogger logger;
     private final long partitionMigrationInterval;
     private final long sleepTime;
 
-    MigrationThread(MigrationManager migrationManager, HazelcastThreadGroup hazelcastThreadGroup, ILogger logger) {
+    MigrationThread(MigrationManager migrationManager, HazelcastThreadGroup hazelcastThreadGroup, ILogger logger,
+                    MigrationQueue queue) {
         super(hazelcastThreadGroup.getInternalThreadGroup(), hazelcastThreadGroup.getThreadNamePrefix("migration"));
 
         this.migrationManager = migrationManager;
-        queue = migrationManager.migrationQueue;
+        this.queue = queue;
         partitionMigrationInterval = migrationManager.partitionMigrationInterval;
-        sleepTime = max(250L, partitionMigrationInterval);
+        sleepTime = max(DEFAULT_MIGRATION_SLEEP_INTERVAL, partitionMigrationInterval);
         this.logger = logger;
     }
 
@@ -66,10 +70,7 @@ class MigrationThread extends Thread implements Runnable {
         boolean migrating = false;
         for (; ; ) {
             if (!migrationManager.isMigrationAllowed()) {
-                MigrationRunnable runnable = queue.peek();
-                if (runnable == null || runnable.isPauseable()) {
-                    break;
-                }
+                break;
             }
             MigrationRunnable runnable = queue.poll(1, TimeUnit.SECONDS);
             if (runnable == null) {
@@ -93,9 +94,9 @@ class MigrationThread extends Thread implements Runnable {
         }
     }
 
-    boolean processTask(MigrationRunnable runnable) {
+    private boolean processTask(MigrationRunnable runnable) {
         try {
-            if (runnable == null || isInterrupted() || !runnable.isValid()) {
+            if (runnable == null || isInterrupted()) {
                 return false;
             }
 

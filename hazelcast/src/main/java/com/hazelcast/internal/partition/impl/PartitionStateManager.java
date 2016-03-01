@@ -22,7 +22,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.logging.ILogger;
@@ -31,7 +30,6 @@ import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -179,40 +177,18 @@ public class PartitionStateManager {
         return node.isLiteMember() ? 0 : 1;
     }
 
-    Collection<MigrationInfo> removeDeadAddress(Address deadAddress) {
-        Collection<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+    void removeDeadAddress(Address address) {
         for (InternalPartitionImpl partition : partitions) {
-            final int index = partition.removeAddress(deadAddress);
+            int index = partition.removeAddress(address);
 
             // address is not replica of this partition
             if (index == -1) {
                 continue;
-            }
-
-            // if owner is null, promote 1.backup to owner
-            // don't touch to the other backups
-            if (index == 0) {
-                partition.swapAddresses(0, 1);
-            }
-
-            Address owner;
-            if ((owner = partition.getOwnerOrNull()) == null) {
-                // we lost the partition!
-                continue;
-            }
-
-            // search for a destination to assign empty index
-            Address destination;
-            for (int i = InternalPartition.MAX_REPLICA_COUNT - 1; i > index; i--) {
-                destination = partition.getReplicaAddress(i);
-                if (destination != null) {
-                    // create a new migration from owner to destination for replica-index
-                    migrations.add(new MigrationInfo(partition.getPartitionId(), index, owner, destination));
-                    break;
-                }
+            } else if (logger.isFinestEnabled()) {
+                logger.finest("partitionId=" + partition.getPartitionId() + " " + address
+                        + " is removed from replica index: " + index + " partition: " + partition);
             }
         }
-        return migrations;
     }
 
     InternalPartition[] getPartitions() {
@@ -257,6 +233,7 @@ public class PartitionStateManager {
         partition.setReplicaAddresses(replicaAddresses);
     }
 
+    // called under partition service lock
     void setVersion(int version) {
         stateVersion.set(version);
     }

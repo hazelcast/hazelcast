@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.MigrationType;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -35,6 +35,12 @@ public class MigrationInfo implements DataSerializable {
         INVALID(1),
         SUCCESS(2),
         FAILED(3);
+
+        private final int code;
+
+        MigrationStatus(int code) {
+            this.code = code;
+        }
 
         public static void writeTo(MigrationStatus type, DataOutput out) throws IOException {
             out.writeByte(type.code);
@@ -51,26 +57,27 @@ public class MigrationInfo implements DataSerializable {
                     return SUCCESS;
                 case 3:
                     return FAILED;
+                default:
+                    throw new IllegalArgumentException("Code: " + code);
             }
-            throw new IllegalArgumentException("Code: " + code);
         }
-
-        MigrationStatus(int code) {
-            this.code = code;
-        }
-
-        private final int code;
 
     }
 
+    private String uuid;
     private int partitionId;
-    private int replicaIndex;
+
     private Address source;
     private Address destination;
     private Address master;
-    private String masterUuid;
-    private int keepReplicaIndex = -1;
-    private MigrationType type = MigrationType.MOVE;
+
+    private int sourceCurrentReplicaIndex;
+    private int sourceNewReplicaIndex;
+    private int destinationCurrentReplicaIndex;
+    private int destinationNewReplicaIndex;
+
+    // old replica owner of sourceNewReplicaIndex
+    private Address oldBackupReplicaOwner;
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
     private volatile MigrationStatus status;
@@ -78,23 +85,28 @@ public class MigrationInfo implements DataSerializable {
     public MigrationInfo() {
     }
 
-    public MigrationInfo(int partitionId, int replicaIndex, Address source, Address destination) {
-        this(partitionId, replicaIndex, source, destination, MigrationType.MOVE, -1);
-    }
-
-    public MigrationInfo(int partitionId, int replicaIndex, Address source, Address destination, MigrationType type) {
-        this(partitionId, replicaIndex, source, destination, type, -1);
-    }
-
-    public MigrationInfo(int partitionId, int replicaIndex, Address source, Address destination,
-            MigrationType type, int keepReplicaIndex) {
+    public MigrationInfo(int partitionId, Address source, Address destination, int sourceCurrentReplicaIndex,
+                         int sourceNewReplicaIndex, int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
+        this.uuid = UuidUtil.newUnsecureUuidString();
         this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
         this.source = source;
         this.destination = destination;
-        this.type = type;
-        this.keepReplicaIndex = keepReplicaIndex;
+        this.sourceCurrentReplicaIndex = sourceCurrentReplicaIndex;
+        this.sourceNewReplicaIndex = sourceNewReplicaIndex;
+        this.destinationCurrentReplicaIndex = destinationCurrentReplicaIndex;
+        this.destinationNewReplicaIndex = destinationNewReplicaIndex;
         this.status = MigrationStatus.ACTIVE;
+    }
+
+    public MigrationInfo copy() {
+        MigrationInfo copy = new MigrationInfo(partitionId, source, destination, sourceCurrentReplicaIndex,
+                sourceNewReplicaIndex, destinationCurrentReplicaIndex, destinationNewReplicaIndex);
+
+        copy.uuid = uuid;
+        copy.master = master;
+        copy.status = status;
+        copy.oldBackupReplicaOwner = oldBackupReplicaOwner;
+        return copy;
     }
 
     public Address getSource() {
@@ -109,40 +121,38 @@ public class MigrationInfo implements DataSerializable {
         return partitionId;
     }
 
-    public int getReplicaIndex() {
-        return replicaIndex;
+    public int getSourceCurrentReplicaIndex() {
+        return sourceCurrentReplicaIndex;
     }
 
-    public int getKeepReplicaIndex() {
-        return keepReplicaIndex;
+    public int getSourceNewReplicaIndex() {
+        return sourceNewReplicaIndex;
     }
 
-    public void setKeepReplicaIndex(int keepReplicaIndex) {
-        this.keepReplicaIndex = keepReplicaIndex;
+    public int getDestinationCurrentReplicaIndex() {
+        return destinationCurrentReplicaIndex;
     }
 
-    public MigrationType getType() {
-        return type;
-    }
-
-    public void setType(MigrationType type) {
-        this.type = type;
-    }
-
-    public void setMasterUuid(String uuid) {
-        masterUuid = uuid;
-    }
-
-    public String getMasterUuid() {
-        return masterUuid;
+    public int getDestinationNewReplicaIndex() {
+        return destinationNewReplicaIndex;
     }
 
     public Address getMaster() {
         return master;
     }
 
-    public void setMaster(Address master) {
+    public MigrationInfo setMaster(Address master) {
         this.master = master;
+        return this;
+    }
+
+    public Address getOldBackupReplicaOwner() {
+        return oldBackupReplicaOwner;
+    }
+
+    public MigrationInfo setOldBackupReplicaOwner(Address oldKeepReplicaOwner) {
+        this.oldBackupReplicaOwner = oldKeepReplicaOwner;
+        return this;
     }
 
     public boolean startProcessing() {
@@ -161,8 +171,9 @@ public class MigrationInfo implements DataSerializable {
         return status;
     }
 
-    public void setStatus(MigrationStatus status) {
+    public MigrationInfo setStatus(MigrationStatus status) {
         this.status = status;
+        return this;
     }
 
     public boolean isValid() {
@@ -171,92 +182,99 @@ public class MigrationInfo implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(uuid);
         out.writeInt(partitionId);
-        out.writeByte(replicaIndex);
-        out.writeByte(keepReplicaIndex);
-        MigrationType.writeTo(type, out);
+        out.writeByte(sourceCurrentReplicaIndex);
+        out.writeByte(sourceNewReplicaIndex);
+        out.writeByte(destinationCurrentReplicaIndex);
+        out.writeByte(destinationNewReplicaIndex);
         MigrationStatus.writeTo(status, out);
 
-        boolean hasFrom = source != null;
-        out.writeBoolean(hasFrom);
-        if (hasFrom) {
+        boolean hasSource = source != null;
+        out.writeBoolean(hasSource);
+        if (hasSource) {
             source.writeData(out);
         }
-        destination.writeData(out);
 
-        out.writeUTF(masterUuid);
-        boolean b = master != null;
-        out.writeBoolean(b);
-        if (b) {
-            master.writeData(out);
+        boolean hasDestination = destination != null;
+        out.writeBoolean(hasDestination);
+        if (hasDestination) {
+            destination.writeData(out);
+        }
+
+
+        master.writeData(out);
+
+        boolean hasOld = oldBackupReplicaOwner != null;
+        out.writeBoolean(hasOld);
+        if (hasOld) {
+            oldBackupReplicaOwner.writeData(out);
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        uuid = in.readUTF();
         partitionId = in.readInt();
-        replicaIndex = in.readByte();
-        keepReplicaIndex = in.readByte();
-        type = MigrationType.readFrom(in);
+        sourceCurrentReplicaIndex = in.readByte();
+        sourceNewReplicaIndex = in.readByte();
+        destinationCurrentReplicaIndex = in.readByte();
+        destinationNewReplicaIndex = in.readByte();
         status = MigrationStatus.readFrom(in);
 
-        boolean hasFrom = in.readBoolean();
-        if (hasFrom) {
+        boolean hasSource = in.readBoolean();
+        if (hasSource) {
             source = new Address();
             source.readData(in);
         }
-        destination = new Address();
-        destination.readData(in);
 
-        masterUuid = in.readUTF();
+        boolean hasDestination = in.readBoolean();
+        if (hasDestination) {
+            destination = new Address();
+            destination.readData(in);
+        }
+
+        master = new Address();
+        master.readData(in);
+
         if (in.readBoolean()) {
-            master = new Address();
-            master.readData(in);
+            oldBackupReplicaOwner = new Address();
+            oldBackupReplicaOwner.readData(in);
         }
     }
 
-    //CHECKSTYLE:OFF
-    // This equals method is to complex for our rules due to many internal object type members
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         MigrationInfo that = (MigrationInfo) o;
 
-        if (partitionId != that.partitionId) return false;
-        if (replicaIndex != that.replicaIndex) return false;
-        if (keepReplicaIndex != that.keepReplicaIndex) return false;
-        if (source != null ? !source.equals(that.source) : that.source != null) return false;
-        if (destination != null ? !destination.equals(that.destination) : that.destination != null) return false;
-        if (masterUuid != null ? !masterUuid.equals(that.masterUuid) : that.masterUuid != null) return false;
-        return type == that.type;
+        return uuid.equals(that.uuid);
+
     }
 
     @Override
     public int hashCode() {
-        int result = partitionId;
-        result = 31 * result + replicaIndex;
-        result = 31 * result + (source != null ? source.hashCode() : 0);
-        result = 31 * result + (destination != null ? destination.hashCode() : 0);
-        result = 31 * result + (masterUuid != null ? masterUuid.hashCode() : 0);
-        result = 31 * result + keepReplicaIndex;
-        result = 31 * result + type.hashCode();
-        return result;
+        return uuid.hashCode();
     }
-    //CHECKSTYLE:ON
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("MigrationInfo{");
-        sb.append("partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append("uuid=").append(uuid);
+        sb.append(", partitionId=").append(partitionId);
         sb.append(", source=").append(source);
+        sb.append(", sourceCurrentReplicaIndex=").append(sourceCurrentReplicaIndex);
+        sb.append(", sourceNewReplicaIndex=").append(sourceNewReplicaIndex);
         sb.append(", destination=").append(destination);
+        sb.append(", destinationCurrentReplicaIndex=").append(destinationCurrentReplicaIndex);
+        sb.append(", destinationNewReplicaIndex=").append(destinationNewReplicaIndex);
         sb.append(", master=").append(master);
-        sb.append(", masterUuid='").append(masterUuid).append('\'');
-        sb.append(", keepReplicaIndex=").append(keepReplicaIndex);
-        sb.append(", type=").append(type);
         sb.append(", processing=").append(processing);
         sb.append(", status=").append(status);
         sb.append('}');

@@ -80,7 +80,7 @@ public final class ClearReplicaOperation extends AbstractOperation
                 logMigrationError(e);
             }
         }
-        partitionService.clearPartitionReplicaVersions(partitionId);
+        partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId);
     }
 
     private void logMigrationError(Throwable e) {

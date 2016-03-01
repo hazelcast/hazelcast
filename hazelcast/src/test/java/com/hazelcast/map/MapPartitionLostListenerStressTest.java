@@ -4,20 +4,24 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MapPartitionLostListenerStressTest
         extends AbstractPartitionLostListenerTest {
@@ -47,6 +51,11 @@ public class MapPartitionLostListenerStressTest
         }
     }
 
+    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{{1, true}, {1, false}, {2, true}, {2, false}, {3, true}, {3, false}});
+    }
+
     protected int getNodeCount() {
         return 5;
     }
@@ -55,55 +64,14 @@ public class MapPartitionLostListenerStressTest
         return 5000;
     }
 
-    @Test
-    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withoutData()
-            throws InterruptedException {
-        testMapPartitionLostListener(1, false);
-    }
+    @Parameterized.Parameter(0)
+    public int numberOfNodesToCrash;
+
+    @Parameterized.Parameter(1)
+    public boolean withData;
 
     @Test
-    public void test_mapPartitionLostListenerInvoked_when1NodeCrashed_withData()
-            throws InterruptedException {
-        testMapPartitionLostListener(1, true);
-    }
-
-    @Test
-    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withoutData()
-            throws InterruptedException {
-        testMapPartitionLostListener(2, false);
-    }
-
-    @Test
-    public void test_mapPartitionLostListenerInvoked_when2NodesCrashed_withData()
-            throws InterruptedException {
-        testMapPartitionLostListener(2, true);
-    }
-
-    @Test
-    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withoutData()
-            throws InterruptedException {
-        testMapPartitionLostListener(3, false);
-    }
-
-    @Test
-    public void test_mapPartitionLostListenerInvoked_when3NodesCrashed_withData()
-            throws InterruptedException {
-        testMapPartitionLostListener(3, true);
-    }
-
-    @Test
-    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withoutData()
-            throws InterruptedException {
-        testMapPartitionLostListener(4, false);
-    }
-
-    @Test
-    public void test_mapPartitionLostListenerInvoked_when4NodesCrashed_withData()
-            throws InterruptedException {
-        testMapPartitionLostListener(4, true);
-    }
-
-    private void testMapPartitionLostListener(int numberOfNodesToCrash, boolean withData)
+    public void testMapPartitionLostListener()
             throws InterruptedException {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 

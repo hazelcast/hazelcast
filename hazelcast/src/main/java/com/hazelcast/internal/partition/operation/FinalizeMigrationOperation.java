@@ -19,10 +19,11 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.MigrationManager;
+import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -30,6 +31,8 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 
 // runs locally...
 public final class FinalizeMigrationOperation extends AbstractOperation
@@ -50,29 +53,83 @@ public final class FinalizeMigrationOperation extends AbstractOperation
         InternalPartitionServiceImpl partitionService = getService();
 
         int partitionId = getPartitionId();
-        MigrationManager migrationManager = partitionService.getMigrationManager();
-//        MigrationInfo migrationInfo = migrationManager.getActiveMigration(partitionId);
-//        if (migrationInfo == null) {
-//            return;
-//        }
-
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
-        PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, migrationInfo.getType(), partitionId,
-                migrationInfo.getReplicaIndex(), migrationInfo.getKeepReplicaIndex());
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+        PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, partitionId,
+                endpoint == MigrationEndpoint.SOURCE
+                        ? migrationInfo.getSourceCurrentReplicaIndex() : migrationInfo.getDestinationCurrentReplicaIndex(),
+                endpoint == MigrationEndpoint.SOURCE
+                        ? migrationInfo.getSourceNewReplicaIndex() : migrationInfo.getDestinationNewReplicaIndex());
+
+        Collection<MigrationAwareService> migrationAwareServices = nodeEngine.getServices(MigrationAwareService.class);
+
+        // Old backup owner is not notified about migration until migration
+        // is committed on destination. This is the only place on backup owner
+        // knows replica is moved away from itself.
+        if (nodeEngine.getThisAddress().equals(migrationInfo.getSource())
+                && migrationInfo.getSourceCurrentReplicaIndex() > 0) {
+            // execute beforeMigration on old backup before commit/rollback
+            for (MigrationAwareService service : migrationAwareServices) {
+                beforeMigration(event, service);
+            }
+        }
+
+        for (MigrationAwareService service : migrationAwareServices) {
             finishMigration(event, service);
         }
 
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+        ILogger logger = getLogger();
+
         if (endpoint == MigrationEndpoint.SOURCE && success) {
-            partitionService.clearPartitionReplicaVersions(partitionId);
+            int keepReplicaIndex = migrationInfo.getSourceNewReplicaIndex();
+            if (keepReplicaIndex < 0) {
+                replicaManager.clearPartitionReplicaVersions(partitionId);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Replica versions are cleared in source after migration. partitionId=" + partitionId);
+                }
+            } else if (migrationInfo.getSourceCurrentReplicaIndex() != keepReplicaIndex && keepReplicaIndex > 1) {
+                long[] versions = replicaManager.getPartitionReplicaVersions(partitionId);
+                // No need to set versions back right now. actual version array is modified directly.
+                Arrays.fill(versions, 0, keepReplicaIndex - 1, 0);
+
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Replica versions are set after MOVE COPY BACK migration. partitionId="
+                            + partitionId + " replica versions=" + Arrays.toString(versions));
+                }
+            }
         } else if (endpoint == MigrationEndpoint.DESTINATION && !success) {
-            partitionService.clearPartitionReplicaVersions(partitionId);
+            int destinationCurrentReplicaIndex = migrationInfo.getDestinationCurrentReplicaIndex();
+            if (destinationCurrentReplicaIndex == -1) {
+                replicaManager.clearPartitionReplicaVersions(partitionId);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Replica versions are cleared in destination after failed migration. partitionId="
+                            + partitionId);
+                }
+            } else {
+                long[] versions = replicaManager.getPartitionReplicaVersions(partitionId);
+                int replicaOffset = migrationInfo.getDestinationCurrentReplicaIndex() <= 1 ? 1 : migrationInfo
+                        .getDestinationCurrentReplicaIndex();
+                // No need to set versions back right now. actual version array is modified directly.
+                Arrays.fill(versions, 0, replicaOffset - 1, 0);
+
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Replica versions are rolled back in destination after failed migration. partitionId="
+                            + partitionId + " replica versions=" + Arrays.toString(versions));
+                }
+            }
         }
 
-//        migrationManager.removeActiveMigration(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
+        }
+    }
+
+    private void beforeMigration(PartitionMigrationEvent event, MigrationAwareService service) {
+        try {
+            service.beforeMigration(event);
+        } catch (Throwable e) {
+            getLogger().warning("Error before migration -> " + event, e);
         }
     }
 

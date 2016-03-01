@@ -238,6 +238,12 @@ public class PartitionReplicaManager {
     }
 
     // called in operation threads
+    public boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex) {
+        PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
+        return partitionVersion.isStale(versions, replicaIndex);
+    }
+
+    // called in operation threads
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     public long[] getPartitionReplicaVersions(int partitionId) {
         return replicaVersions[partitionId].get();

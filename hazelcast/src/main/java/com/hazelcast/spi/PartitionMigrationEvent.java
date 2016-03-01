@@ -16,8 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.partition.MigrationType;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.EventObject;
 
@@ -29,26 +28,19 @@ public class PartitionMigrationEvent extends EventObject {
 
     private final MigrationEndpoint migrationEndpoint;
 
-    private final MigrationType migrationType;
-
     private final int partitionId;
 
-    private final int replicaIndex;
+    private final int currentReplicaIndex;
 
-    private final int keepReplicaIndex;
+    private final int newReplicaIndex;
 
-    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, int partitionId) {
-        this(migrationEndpoint, MigrationType.MOVE, partitionId, 0, -1);
-    }
-
-    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, MigrationType migrationType, int partitionId,
-            int replicaIndex, int keepReplicaIndex) {
+    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, int partitionId,
+            int currentReplicaIndex, int newReplicaIndex) {
         super(partitionId);
         this.migrationEndpoint = migrationEndpoint;
-        this.migrationType = migrationType;
         this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
-        this.keepReplicaIndex = keepReplicaIndex;
+        this.currentReplicaIndex = currentReplicaIndex;
+        this.newReplicaIndex = newReplicaIndex;
     }
 
     /**
@@ -73,16 +65,8 @@ public class PartitionMigrationEvent extends EventObject {
      * TODO
      * @return
      */
-    public int getReplicaIndex() {
-        return replicaIndex;
-    }
-
-    /**
-     * TODO
-     * @return
-     */
-    public MigrationType getMigrationType() {
-        return migrationType;
+    public int getCurrentReplicaIndex() {
+        return currentReplicaIndex;
     }
 
     /**
@@ -90,18 +74,17 @@ public class PartitionMigrationEvent extends EventObject {
      *
      * @return
      */
-    public int getKeepReplicaIndex() {
-        return keepReplicaIndex;
+    public int getNewReplicaIndex() {
+        return newReplicaIndex;
     }
 
     @Override
     public String toString() {
-        return "PartitionMigrationEvent{" +
-                "migrationEndpoint=" + migrationEndpoint +
-                ", migrationType=" + migrationType +
-                ", partitionId=" + partitionId +
-                ", replicaIndex=" + replicaIndex +
-                ", keepReplicaIndex=" + keepReplicaIndex +
-                '}';
+        return "PartitionMigrationEvent{"
+                + "migrationEndpoint=" + migrationEndpoint
+                + ", partitionId=" + partitionId
+                + ", currentReplicaIndex=" + currentReplicaIndex
+                + ", newReplicaIndex=" + newReplicaIndex
+                + '}';
     }
 }
