@@ -149,7 +149,6 @@ import static java.util.Collections.emptyMap;
 public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
-    protected static final String EMPTY_COLLECTION_IS_NOT_ALLOWED = "Empty collection is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
@@ -1322,8 +1321,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
         checkNotNull(keys, NULL_KEY_IS_NOT_ALLOWED);
-        if (keys.size() == 0) {
-            throw new IllegalArgumentException(EMPTY_COLLECTION_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return emptyMap();
         }
         Collection<Data> dataCollection = objectToDataCollection(keys, getSerializationService());
 

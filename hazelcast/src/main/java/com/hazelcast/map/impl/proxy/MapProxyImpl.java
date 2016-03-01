@@ -687,8 +687,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        if (keys.size() == 0) {
-            throw new IllegalArgumentException(EMPTY_COLLECTION_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return Collections.emptyMap();
         }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
