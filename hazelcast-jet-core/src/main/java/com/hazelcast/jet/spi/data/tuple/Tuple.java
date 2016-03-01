@@ -73,16 +73,18 @@ public interface Tuple<K, V> extends CalculationStrategyAware, PartitionIdAware,
      *
      * @param index      - corresponding index;
      * @param nodeEngine - Hazelcast nodeEngine;
+     * @param calculationStrategy the calculation strategy to use for the key
      * @return - Hazelcast Data object;
      */
     Data getKeyData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine);
 
 
     /**
-     * Represents binary representation of мфдгу-object with specified index;
+     * Represents binary representation of value-object with specified index;
      *
      * @param index      - corresponding index;
      * @param nodeEngine - Hazelcast nodeEngine;
+     * @param calculationStrategy the calculation strategy to use for the value
      * @return - Hazelcast Data object;
      */
     Data getValueData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine);

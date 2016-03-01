@@ -18,9 +18,9 @@ package com.hazelcast.jet.api.hazelcast;
 
 /**
  * Represents factory to create invocation-objects from main JET-operations;
- * <p/>
+ *
  * Examples:
- * <p/>
+ *
  * <pre>
  *     InitInvocation
  *     SubmitDagInvocation

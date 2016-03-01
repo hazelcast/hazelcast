@@ -33,7 +33,7 @@ public enum ProcessingStrategy implements Serializable {
     BROADCAST,
     /**
      * Data will be passed in accordance object's hash which will be calculated using classes:
-     * <p/>
+     *
      * {@link com.hazelcast.jet.spi.strategy.HashingStrategy},
      * {@link com.hazelcast.jet.spi.strategy.CalculationStrategy},
      * {@link com.hazelcast.core.PartitioningStrategy}

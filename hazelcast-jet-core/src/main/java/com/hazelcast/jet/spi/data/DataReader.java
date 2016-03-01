@@ -47,7 +47,7 @@ public interface DataReader extends ObjectProducer {
 
     /**
      * Read next chunk of objects;
-     * <p/>
+     *
      * It will take into account result of {@link #readFromPartitionThread() readFromPartitionThread} method;
      *
      * @return corresponding chunk of objects;

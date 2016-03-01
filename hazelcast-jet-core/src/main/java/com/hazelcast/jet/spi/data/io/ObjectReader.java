@@ -32,7 +32,7 @@ public interface ObjectReader<T> {
      * @param objectDataInput     - binary source;
      * @param objectReaderFactory - factory to construct object readers;
      * @return - Java representation of object
-     * @throws IOException
+     * @throws IOException if error reading from input
      */
     T read(ObjectDataInput objectDataInput,
            ObjectReaderFactory objectReaderFactory) throws IOException;

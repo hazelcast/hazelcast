@@ -23,15 +23,15 @@ import java.util.Iterator;
 
 /**
  * Direct acyclic graph representation;
- * <p/>
+ *
  * DAG describes topology of calculation flow;
- * <p/>
+ *
  * <pre>
  *
- *     Vertex1 -> Vertex2  -> Vertex3
- *                         -> Vertex4
+ *     Vertex1 -&gt; Vertex2  -&gt; Vertex3
+ *                            -&gt; Vertex4
  * </pre>
- * <p/>
+ *
  * Data will be passed from vertex to vertex
  */
 public interface DAG extends DataSerializable {
@@ -81,16 +81,16 @@ public interface DAG extends DataSerializable {
 
     /**
      * Validate DAG's consistency;
-     * <p/>
+     *
      * It checks:
-     * <p/>
+     *
      * <pre>
      *      -   duplicate of vertices names;
      *      -   duplicate of edges names;
      *      -   absence of loops on DAG;
      * </pre>
      *
-     * @throws IllegalStateException
+     * @throws IllegalStateException if DAG validation fails
      */
     void validate() throws IllegalStateException;
 

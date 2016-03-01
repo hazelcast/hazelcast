@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Interface which represents abstract JET-container;
  * Containers:
- * <p/>
+ *
  * <pre>
  *     1) Application master;
  *     2) Data processing container;

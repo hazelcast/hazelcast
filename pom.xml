@@ -507,6 +507,11 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <excludePackageNames>
+                                *.impl
+                            </excludePackageNames>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

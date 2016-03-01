@@ -25,6 +25,7 @@ public interface Producer<T> {
      * Method to produce an abstract entry
      *
      * @return produced entry
+     * @throws Exception if any exception
      */
     T produce() throws Exception;
 }

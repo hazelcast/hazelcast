@@ -24,7 +24,7 @@ import java.io.Serializable;
 /**
  * Strategy which determines Hazelcast's nodes addresses where data should be sent
  * during shuffling process between vertices;
- * <p/>
+ *
  * For example:
  * <pre>
  *     IListBasedShufflingStrategy

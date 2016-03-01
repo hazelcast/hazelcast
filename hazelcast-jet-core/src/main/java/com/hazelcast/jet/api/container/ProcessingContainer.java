@@ -78,7 +78,7 @@ public interface ProcessingContainer
     void handleTaskEvent(ContainerTask containerTask, TaskEvent event, Throwable error);
 
     /**
-     * TaskID -> ContainerTask;
+     * TaskID -&gt; ContainerTask;
      *
      * @return - cache of container's tasks;
      */
@@ -97,14 +97,14 @@ public interface ProcessingContainer
     /**
      * Starts containers execution;
      *
-     * @throws Exception;
+     * @throws Exception if any exception
      */
     void start() throws Exception;
 
     /**
      * Destroys container;
      *
-     * @throws Exception;
+     * @throws Exception if any exception
      */
     void destroy() throws Exception;
 

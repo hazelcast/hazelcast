@@ -20,17 +20,17 @@ import java.io.Serializable;
 
 /**
  * Represents strategy of data transferring;
- * <p/>
+ *
  * Jet uses ringBuffers to pass data from one vertex to another;
- * <p/>
+ *
  * RingBuffers can work by reference or by value;
- * <p/>
+ *
  * By references means that all input objects will be copied into the
  * ringBuffer by reference (without internal copy);
- * <p/>
+ *
  * By value means ringBuffer has pre-allocated objects; Data will be copied
  * from input objects into pre-allocated objects;
- * <p/>
+ *
  * Used depends on the flow to avoid copy or in opposite to avoid garbage creation;
  *
  * @param <T> - type if input source objects to be written into the ringBuffer;
@@ -43,6 +43,8 @@ public interface DataTransferringStrategy<T> extends Serializable {
 
     /**
      * Creates new instance of object;
+     *
+     * @return the new instance
      */
     T newInstance();
 

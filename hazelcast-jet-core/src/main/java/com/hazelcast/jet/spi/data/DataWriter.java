@@ -31,7 +31,7 @@ public interface DataWriter extends ObjectConsumer, Shuffler {
 
     /**
      * @return - true if write is partition-aware, else otherwise;
-     * <p/>
+     *
      * Examples of partition-aware writers:
      * <pre>
      *          - Map

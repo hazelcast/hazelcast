@@ -26,7 +26,7 @@ public interface ContainerPayLoadProcessor<PayLoad> {
      * Invoked on change of state of container's state-machine;
      *
      * @param payload - argument;
-     * @throws Exception
+     * @throws Exception if any exception
      */
     void process(PayLoad payload) throws Exception;
 }

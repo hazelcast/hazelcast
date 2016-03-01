@@ -26,7 +26,7 @@ import java.util.Map;
 
 /**
  * Interface for localization storage
- * <p/>
+ *
  * It stores byte-code of classes which will be used in application
  */
 public interface LocalizationStorage {
@@ -34,8 +34,8 @@ public interface LocalizationStorage {
      * Add next chunk with byte-code into the storage
      *
      * @param chunk -   chunk with byte-code
-     * @throws IOException
-     * @throws JetException
+     * @throws IOException if IO error
+     * @throws JetException if any other error
      */
     void receiveFileChunk(Chunk chunk) throws IOException, JetException;
 
@@ -43,20 +43,20 @@ public interface LocalizationStorage {
      * Accepts localisation phase.
      * Signal that no more chunks will be received
      *
-     * @throws InvalidLocalizationException
+     * @throws InvalidLocalizationException if localization could not be completed
      */
     void accept() throws InvalidLocalizationException;
 
     /**
      * Returns classLoaders corresponding to the received byte-code
      *
-     * @return
+     * @return the class loader
      */
     ClassLoader getClassLoader();
 
     /**
      * @return all resources stored in storage
-     * @throws IOException
+     * @throws IOException if IOException
      */
     Map<LocalizationResourceDescriptor, ResourceStream> getResources() throws IOException;
 

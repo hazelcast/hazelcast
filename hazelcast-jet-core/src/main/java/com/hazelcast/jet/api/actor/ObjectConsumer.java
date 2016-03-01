@@ -27,18 +27,18 @@ import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
  */
 
 public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
+
     /**
      * @param chunk - chunk of Tuples to consume
      * @return really consumed amount of tuples
-     * @throws Exception
+     * @throws Exception if any exception
      */
-
     int consumeChunk(ProducerInputStream<Object> chunk) throws Exception;
 
     /**
      * @param object - object to consume
      * @return 1 if tuple was consumed , 0 otherwise
-     * @throws Exception
+     * @throws Exception if any exception
      */
     int consumeObject(Object object) throws Exception;
 
@@ -81,7 +81,7 @@ public interface ObjectConsumer extends Consumer<ProducerInputStream<Object>> {
     ShufflingStrategy getShufflingStrategy();
 
     /**
-     * Return partitioning strategy
+     * @return the partitioning strategy
      */
     PartitioningStrategy getPartitionStrategy();
 

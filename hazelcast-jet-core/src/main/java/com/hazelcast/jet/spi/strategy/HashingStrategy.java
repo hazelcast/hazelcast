@@ -22,9 +22,9 @@ import java.io.Serializable;
 
 /**
  * Strategy to calculate hash for data passed between JET containers;
- * <p/>
+ *
  * Used for example to determine correct task which should consume data;
- * <p/>
+ *
  * For example object can be a tuple, partitionKey - fields to be used for hash calculation;
  *
  * @param <O> - type of the input object;

@@ -25,10 +25,10 @@ import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 /**
  * Interface which represents factory to create tasks' execution processors;
- * <p/>
+ *
  * Each processor has following structure:
- * <p/>
- * Producers --> Processor -> Consumers;
+ *
+ * Producers --&gt; Processor -&gt; Consumers;
  */
 public interface TaskProcessorFactory {
     /**

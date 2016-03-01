@@ -18,16 +18,16 @@ package com.hazelcast.jet.api.executor;
 
 /**
  * Represents abstract task;
- * <p/>
+ *
  * Tasks can be:
- * <pre>
- *     <ul>
- *     <li><Container execution task</li>
+ *
+ * <ul>
+ *     <li>Container execution task</li>
  *     <li>Network socket writer</li>
  *     <li>Network socket reader</li>
  * </ul>
- * </pre>
- * <p/>
+ *
+ *
  * General architecture of any tasks usage is:
  * <pre>
  *      Producer_1                  Consumer_1
@@ -35,15 +35,15 @@ package com.hazelcast.jet.api.executor;
  *
  *
  *
- *      .....           ->  Task ->
+ *      .....           -&gt;  Task -&gt;
  *
  *
  *
  *      Producer_n                  Consumer_K
  * </pre>
- * <p/>
+ *
  * Examples of producers and consumers:
- * <p/>
+ *
  * <pre>
  *     Network socketChannel,
  *     Files,
@@ -83,7 +83,7 @@ public interface Task {
      *
      * @param payload - payLoad which holds execution useful activity;
      * @return - true - if task should be executed again, false if task should be removed from executor;
-     * @throws Exception
+     * @throws Exception if any exception
      */
     boolean executeTask(Payload payload) throws Exception;
 
