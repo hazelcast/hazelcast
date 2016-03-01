@@ -208,6 +208,15 @@
             <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
     </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>snapshot-repository</id>
+            <name>Maven2 Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -339,6 +348,20 @@
             <properties>
                 <hazelcast.version>3.7-SNAPSHOT</hazelcast.version>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                    <version>${hazelcast.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                    <scope>test</scope>
+                    <version>${hazelcast.version}</version>
+                    <classifier>tests</classifier>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
