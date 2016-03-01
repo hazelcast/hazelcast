@@ -55,7 +55,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         try {
             DAG dag = createDAG();
 
-            fillMap("source.interruptionTest", SERVER, 1000000);
+            fillMap("source.interruptionTest", SERVER, 100_000);
 
             Vertex vertex1 = createVertex("dummy1", VerySlowProcessor.Factory.class);
             Vertex vertex2 = createVertex("dummy2", VerySlowProcessor.Factory.class);
@@ -111,7 +111,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             IMap<Integer, String> sinkMap1 = SERVER.getMap("sinkMap1.complexGraphTest");
             IMap<Integer, String> sinkMap2 = SERVER.getMap("sinkMap2.complexGraphTest");
 
-            int CNT = 1000000;
+            int CNT = 100_000;
 
             fillMap("sourceMap.complexGraphTest", SERVER, CNT);
 
@@ -153,8 +153,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
     public void giantGraphTest() throws Exception {
         final Application application = createApplication("giantGraphTest");
         int branchCount = 5;
-        int vertexCount = 10;
-        final int CNT = 10000;
+        int vertexCount = 5;
+        final int CNT = 10_000;
 
         try {
             DAG dag = createDAG();

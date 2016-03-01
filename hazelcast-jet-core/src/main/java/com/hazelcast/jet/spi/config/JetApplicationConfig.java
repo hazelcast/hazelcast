@@ -38,8 +38,6 @@ public class JetApplicationConfig implements Serializable {
 
     public static final int DEFAULT_FILE_CHUNK_SIZE_BYTES = 1024;
 
-    public static final String DEFAULT_LOCALIZATION_DIRECTORY = System.getProperty("java.io.tmpdir");
-
     public static final int DEFAULT_CHUNK_SIZE = 256;
 
     public static final int DEFAULT_JET_SECONDS_TO_AWAIT = 1200;
@@ -53,7 +51,7 @@ public class JetApplicationConfig implements Serializable {
     private static final int DEFAULT_IO_THREADS_COUNT = 5;
     private final JetApplicationConfig defConfig;
     private final Properties properties;
-    private String localizationDirectory = DEFAULT_LOCALIZATION_DIRECTORY;
+    private String localizationDirectory;
     private int resourceFileChunkSize = DEFAULT_FILE_CHUNK_SIZE_BYTES;
     private int defaultApplicationDirectoryCreationAttemptsCount = DEFAULT_APP_ATTEMPTS_COUNT;
     private int jetSecondsToAwait = DEFAULT_JET_SECONDS_TO_AWAIT;
