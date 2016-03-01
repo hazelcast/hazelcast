@@ -106,23 +106,25 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         if (isShutdown) {
             throw new HazelcastClientNotActiveException("Client is shut down");
         }
-        registerInvocation(invocation);
+        synchronized (connection) {
+            registerInvocation(invocation);
 
-        ClientMessage clientMessage = invocation.getClientMessage();
-        if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
-            final long callId = clientMessage.getCorrelationId();
-            ClientInvocation clientInvocation = deRegisterCallId(callId);
-            if (clientInvocation != null) {
-                callIdSequence.complete();
-                throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
-            } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Invocation not found to deregister for call id " + callId);
+            ClientMessage clientMessage = invocation.getClientMessage();
+            if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
+                final long callId = clientMessage.getCorrelationId();
+                ClientInvocation clientInvocation = deRegisterCallId(callId);
+                if (clientInvocation != null) {
+                    callIdSequence.complete();
+                    throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
+                } else {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Invocation not found to deregister for call id " + callId);
+                    }
                 }
             }
-        }
 
-        invocation.setSendConnection(connection);
+            invocation.setSendConnection(connection);
+        }
     }
 
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
@@ -167,13 +169,15 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     public void cleanResources(ConstructorFunction<Object, Throwable> responseCtor, ClientConnection connection) {
-        final Iterator<Map.Entry<Long, ClientInvocation>> iter = callIdMap.entrySet().iterator();
-        while (iter.hasNext()) {
-            final Map.Entry<Long, ClientInvocation> entry = iter.next();
-            final ClientInvocation invocation = entry.getValue();
-            if (connection.equals(invocation.getSendConnection())) {
-                iter.remove();
-                invocation.notifyException(responseCtor.createNew(null));
+        synchronized (connection) {
+            final Iterator<Map.Entry<Long, ClientInvocation>> iter = callIdMap.entrySet().iterator();
+            while (iter.hasNext()) {
+                final Map.Entry<Long, ClientInvocation> entry = iter.next();
+                final ClientInvocation invocation = entry.getValue();
+                if (connection.equals(invocation.getSendConnection())) {
+                    iter.remove();
+                    invocation.notifyException(responseCtor.createNew(null));
+                }
             }
         }
     }
