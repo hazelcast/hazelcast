@@ -16,8 +16,6 @@ import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
-import org.junit.AfterClass;
-
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.AfterClass;
 
 public abstract class JetBaseTest extends HazelcastTestSupport {
     public static final int TIME_TO_AWAIT = 600;
@@ -44,7 +43,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     protected static HazelcastInstance[] HAZELCAST_INSTANCES;
 
     static {
-        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
+        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
     }
 
     public static void initCluster(int membersCount) throws Exception {
@@ -76,12 +75,12 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         CLIENT = HAZELCAST_FACTORY.newHazelcastClient();
     }
 
-    public static Vertex createVertex(String name, Class processorClass, int processorsCount) {
+    public static Vertex createVertex(String name, Class processorClass, int taskCount) {
         return new VertexImpl(
                 name,
                 ProcessorDescriptor.
                         builder(processorClass).
-                        withTaskCount(processorsCount).
+                        withTaskCount(taskCount).
                         build()
         );
     }

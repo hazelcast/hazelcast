@@ -28,13 +28,12 @@ import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractHazelcastReader<V> implements DataReader {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHazelcastReader.class);
