@@ -41,6 +41,8 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -114,7 +116,8 @@ public class MapContainer {
 
     // this method is overridden.
     Evictor createEvictor(MapConfig mapConfig, MapServiceContext mapServiceContext) {
-        EvictionChecker evictionChecker = new EvictionChecker(mapServiceContext);
+        MemoryInfoAccessor memoryInfoAccessor = new RuntimeMemoryInfoAccessor();
+        EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
         MapEvictionPolicy evictionPolicy = getMapEvictionPolicy(mapConfig.getEvictionPolicy());
         IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
 
