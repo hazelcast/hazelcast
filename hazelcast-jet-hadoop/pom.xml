@@ -10,6 +10,13 @@
     <description>Wrapper under main Hadoop modules</description>
     <url>http://www.hazelcast.com/</url>
 
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-jet-root</artifactId>
+        <version>0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
