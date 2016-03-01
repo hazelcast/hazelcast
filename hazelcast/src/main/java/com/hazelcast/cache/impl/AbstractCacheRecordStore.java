@@ -100,6 +100,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final boolean wanReplicationEnabled;
+    protected final boolean disablePerEntryInvalidationEvents;
     protected boolean primary;
 
     //CHECKSTYLE:OFF
@@ -117,6 +118,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     + nodeEngine.getLocalMember());
         }
         this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(name);
+        this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
         this.evictionConfig = cacheConfig.getEvictionConfig();
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null");
@@ -336,8 +338,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data recordEventData = toEventData(removedRecord);
         onProcessExpiredEntry(key, removedRecord, expiryTime, now, source, origin);
         if (isEventsEnabled()) {
-            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
-                                                 CacheRecord.TIME_NOT_AVAILABLE,
+            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData, CacheRecord.TIME_NOT_AVAILABLE,
                                                  origin, IGNORE_COMPLETION));
         }
         return null;
@@ -358,7 +359,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void invalidateEntry(Data key, String source) {
         if (isInvalidationEnabled()) {
-            cacheService.sendInvalidationEvent(name, toHeapData(key), source);
+            if (key == null) {
+                cacheService.sendInvalidationEvent(name, null, source);
+            } else if (!disablePerEntryInvalidationEvents) {
+                cacheService.sendInvalidationEvent(name, toHeapData(key), source);
+            }
         }
     }
 
@@ -466,10 +471,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (v1 == null && v2 == null) {
             return true;
         }
-        if (v1 == null) {
-            return false;
-        }
-        if (v2 == null) {
+        if (v1 == null || v2 == null) {
             return false;
         }
         return v1.equals(v2);
@@ -492,13 +494,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return record;
     }
 
-    protected void onCreateRecordError(Data key, Object value, long expiryTime, long now,
-                                       boolean disableWriteThrough, int completionId, String origin,
-                                       R record, Throwable error) {
+    protected void onCreateRecordError(Data key, Object value, long expiryTime, long now, boolean disableWriteThrough,
+                                       int completionId, String origin, R record, Throwable error) {
     }
 
-    protected R createRecord(Data key, Object value, long expiryTime,
-                             long now, boolean disableWriteThrough, int completionId, String origin) {
+    protected R createRecord(Data key, Object value, long expiryTime, long now,
+                             boolean disableWriteThrough, int completionId, String origin) {
         R record = createRecord(value, now, expiryTime);
         try {
             doPutRecord(key, record);
@@ -609,9 +610,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
                 if (!disableWriteThrough) {
                     writeThroughCache(key, value);
-                    // If writing to `CacheWriter` fails no need to revert.
-                    // Because we have not update record value yet with its new value
-                    // but just converted new value to required storage type.
+                    // If writing to `CacheWriter` fails no need to revert. Because we have not update record value yet
+                    // with its new value but just converted new value to required storage type.
                 }
 
                 Data eventDataKey = toEventData(key);
@@ -856,7 +856,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void putRecord(Data key, CacheRecord record) {
         evictIfRequired();
-
         doPutRecord(key, (R) record);
     }
 
@@ -956,7 +955,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, String source,
                          boolean getValue, boolean disableWriteThrough, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean isOnNewPut = false;

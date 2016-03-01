@@ -1220,6 +1220,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheConfig.setMergePolicy(value);
             } else if ("hot-restart".equals(nodeName)) {
                 cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
+            } else if ("disable-per-entry-invalidation-events".equals(nodeName)) {
+                cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(value));
             }
         }
         this.config.addCacheConfig(cacheConfig);

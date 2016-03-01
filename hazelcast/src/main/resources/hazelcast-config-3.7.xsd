@@ -539,6 +539,14 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
+            <xs:element name="disable-per-entry-invalidation-events" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Disables invalidation events for per entry but full-flush invalidation events are still enabled.
+                        Full-flush invalidation event means that invalidation events for all entries on clear.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
 
         <xs:attribute name="name" use="required">

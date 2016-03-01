@@ -124,7 +124,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
+@ContextConfiguration(locations = {"fullConfig-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
 public class TestFullApplicationContext {
 
@@ -219,6 +219,7 @@ public class TestFullApplicationContext {
         assertEquals(1, config.getCacheConfigs().size());
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
+        assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
         assertTrue(cacheConfig.getHotRestartConfig().isFsync());
 

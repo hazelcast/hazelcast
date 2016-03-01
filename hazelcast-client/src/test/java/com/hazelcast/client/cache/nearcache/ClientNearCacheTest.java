@@ -102,4 +102,14 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
         doTestGetAllReturnsFromNearCache();
     }
 
+    @Test
+    public void putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabledWithBinaryInMemoryFormat() {
+        putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabled(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabledWithObjectInMemoryFormat() {
+        putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabled(InMemoryFormat.OBJECT);
+    }
+
 }

@@ -49,6 +49,7 @@
         </cache-entry-listeners>
         <backup-count>3</backup-count>
         <async-backup-count>2</async-backup-count>
+        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
     </cache>
 
     <cache name="cacheWithTimedCreatedExpiryPolicyFactory">

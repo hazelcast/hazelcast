@@ -139,4 +139,9 @@ public class CacheSimpleConfigReadOnlyTest {
         new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).addCachePartitionLostListenerConfig(null);
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void settingDisablePerEntryInvalidationEventsOfReadOnlyCacheSimpleConfigShouldFail() {
+        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setDisablePerEntryInvalidationEvents(true);
+    }
+
 }
