@@ -19,28 +19,29 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.internal.util.counters.SwCounter;
-import java.util.Collection;
+
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
-import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
+import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
  * The InvocationsRegistry is responsible for the registration of all pending invocations. Using the InvocationRegistry the
@@ -57,7 +58,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
-public class InvocationRegistry {
+public class InvocationRegistry implements Iterable<Invocation> {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -154,8 +155,9 @@ public class InvocationRegistry {
         return invocations.size();
     }
 
-    public Collection<Invocation> invocations() {
-        return invocations.values();
+    @Override
+    public Iterator<Invocation> iterator() {
+        return invocations.values().iterator();
     }
 
     /**
