@@ -160,4 +160,9 @@ public class CacheSimpleConfigReadOnly
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
+    @Override
+    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
 }

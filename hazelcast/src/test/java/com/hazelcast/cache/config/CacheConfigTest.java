@@ -140,6 +140,8 @@ public class CacheConfigTest extends HazelcastTestSupport {
         WanReplicationRef wanRefDisabledRepublishingTestCache =
                 config1.getCacheConfig("wanRefDisabledRepublishingTestCache").getWanReplicationRef();
         assertFalse(wanRefDisabledRepublishingTestCache.isRepublishingEnabled());
+
+        assertTrue(cacheConfig1.isDisablePerEntryInvalidationEvents());
     }
 
     @Test
@@ -293,6 +295,8 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig1.getEvictionConfig().getEvictionPolicy());
+
+        assertTrue(cacheConfig1.isDisablePerEntryInvalidationEvents());
     }
 
     @Test

@@ -608,6 +608,14 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="disable-per-entry-invalidation-events" type="parameterized-boolean" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Disables invalidation events for per entry but full-flush invalidation events are still enabled.
+                                            Full-flush invalidation event means that invalidation events for all entries on clear.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="write-through" type="parameterized-boolean" use="optional">
                                     <xs:annotation>
                                         <xs:documentation>

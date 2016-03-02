@@ -101,6 +101,12 @@ public class CacheSimpleConfig {
 
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    /**
+     * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
+     * Full-flush invalidation event means that invalidation events for all entries on clear.
+     */
+    private boolean disablePerEntryInvalidationEvents;
+
     @SuppressWarnings("checkstyle:executablestatementcount")
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
         this.name = cacheSimpleConfig.name;
@@ -127,6 +133,7 @@ public class CacheSimpleConfig {
         this.quorumName = cacheSimpleConfig.quorumName;
         this.mergePolicy = cacheSimpleConfig.mergePolicy;
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
+        this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
     }
 
     public CacheSimpleConfig() {
@@ -592,6 +599,26 @@ public class CacheSimpleConfig {
     public CacheSimpleConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = hotRestartConfig;
         return this;
+    }
+
+    /**
+     * Returns invalidation events disabled status for per entry.
+     *
+     * @return <tt>true</tt> if invalidation events are disabled for per entry,
+     *         otherwise <tt>false</tt>
+     */
+    public boolean isDisablePerEntryInvalidationEvents() {
+        return disablePerEntryInvalidationEvents;
+    }
+
+    /**
+     * Sets invalidation events disabled status for per entry.
+     *
+     * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is <tt>true</tt>,
+     *                                          otherwise enables it.
+     */
+    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+        this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
     }
 
     /**

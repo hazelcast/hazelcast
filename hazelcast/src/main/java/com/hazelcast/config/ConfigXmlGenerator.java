@@ -454,6 +454,9 @@ public class ConfigXmlGenerator {
             if (c.getMergePolicy() != null) {
                 xml.append("<merge-policy>").append(c.getMergePolicy()).append("</merge-policy>");
             }
+            xml.append("<disable-per-entry-invalidation-events>")
+                    .append(c.isDisablePerEntryInvalidationEvents())
+                    .append("</disable-per-entry-invalidation-events>");
             xml.append("</cache>");
         }
     }
