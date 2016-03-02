@@ -61,9 +61,9 @@ public class InvocationMonitor {
     private final ExecutionService executionService;
     private final InvocationMonitorThread monitorThread;
     private final ILogger logger;
-    @Probe(name = "invocations.backupTimeouts", level = MANDATORY)
+    @Probe(name = "backupTimeouts", level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
-    @Probe(name = "invocations.normalTimeouts", level = MANDATORY)
+    @Probe(name = "normalTimeouts", level = MANDATORY)
     private final SwCounter normalTimeoutsCount = newSwCounter();
 
     public InvocationMonitor(InvocationRegistry invocationRegistry, ILogger logger, GroupProperties props,
@@ -76,7 +76,7 @@ public class InvocationMonitor {
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
         this.monitorThread = new InvocationMonitorThread(hzThreadGroup);
 
-        metricsRegistry.scanAndRegister(this, "operation");
+        metricsRegistry.scanAndRegister(this, "operation.invocations");
 
         monitorThread.start();
     }
