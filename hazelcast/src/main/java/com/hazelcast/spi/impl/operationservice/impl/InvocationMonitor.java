@@ -59,7 +59,7 @@ public class InvocationMonitor {
     private final long slowInvocationThresholdMs;
     private final InvocationRegistry invocationRegistry;
     private final ExecutionService executionService;
-    private final MonitorThread monitorThread;
+    private final InvocationMonitorThread monitorThread;
     private final ILogger logger;
     @Probe(name = "invocations.backupTimeouts", level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
@@ -74,7 +74,7 @@ public class InvocationMonitor {
         this.executionService = executionService;
         this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
-        this.monitorThread = new MonitorThread(hzThreadGroup);
+        this.monitorThread = new InvocationMonitorThread(hzThreadGroup);
 
         metricsRegistry.scanAndRegister(this, "operation");
 
@@ -104,7 +104,7 @@ public class InvocationMonitor {
     }
 
     /**
-     * The MonitorThread iterates over all pending invocations and sees what needs to be done
+     * The InvocationMonitorThread iterates over all pending invocations and sees what needs to be done
      * <p/>
      * But it should also check if a 'is still running' check needs to be done. This removed complexity from
      * the invocation.waitForResponse which is too complicated too understand.
@@ -112,11 +112,11 @@ public class InvocationMonitor {
      * This class needs to implement the {@link OperationHostileThread} interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
-    private final class MonitorThread extends Thread implements OperationHostileThread {
+    private final class InvocationMonitorThread extends Thread implements OperationHostileThread {
 
         private volatile boolean shutdown;
 
-        private MonitorThread(HazelcastThreadGroup hzThreadGroup) {
+        private InvocationMonitorThread(HazelcastThreadGroup hzThreadGroup) {
             super(hzThreadGroup.getInternalThreadGroup(), hzThreadGroup.getThreadNamePrefix("InvocationMonitorThread"));
         }
 
