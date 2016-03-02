@@ -19,12 +19,14 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.concurrent.Future;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -93,17 +95,16 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
                 , op, remoteNodeEngine.getThisAddress());
         Field invocationField = InvocationFuture.class.getDeclaredField("invocation");
         invocationField.setAccessible(true);
-        Invocation invocation = (Invocation) invocationField.get(future);
+        final Invocation invocation = (Invocation) invocationField.get(future);
 
         invocation.notifyError(new RetryableHazelcastException());
         invocation.notifyError(new RetryableHazelcastException());
-
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection<Invocation> invocations = operationService.invocationsRegistry.invocations();
-                assertEquals(0, invocations.size());
+                Iterator<Invocation> invocations = operationService.invocationsRegistry.iterator();
+                assertFalse(invocations.hasNext());
             }
         });
     }

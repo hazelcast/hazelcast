@@ -71,7 +71,7 @@ public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
     }
 
     private void scan() {
-        for (Invocation invocation : invocationRegistry.invocations()) {
+        for (Invocation invocation : invocationRegistry) {
             occurrenceMap.add(invocation.op.getClass(), 1);
         }
     }

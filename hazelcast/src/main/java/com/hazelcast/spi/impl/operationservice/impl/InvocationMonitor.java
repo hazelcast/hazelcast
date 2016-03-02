@@ -279,7 +279,7 @@ public class InvocationMonitor {
 
         @Override
         public void run() {
-            for (Invocation invocation : invocationRegistry.invocations()) {
+            for (Invocation invocation : invocationRegistry) {
                 if (hasMemberLeft(invocation)) {
                     invocation.notifyError(new MemberLeftException(leftMember));
                 }
