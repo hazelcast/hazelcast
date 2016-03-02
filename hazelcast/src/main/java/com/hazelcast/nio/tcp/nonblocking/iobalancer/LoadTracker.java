@@ -17,15 +17,19 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.util.ItemCounter;
-
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.util.StringUtil.getLineSeperator;
 
@@ -52,9 +56,11 @@ class LoadTracker {
     private final ItemCounter<MigratableHandler> handlerEventsCounter = new ItemCounter<MigratableHandler>();
 
     //contains all known handlers
-    private final Set<MigratableHandler> handlers = new CopyOnWriteArraySet<MigratableHandler>();
+    private final Set<MigratableHandler> handlers = new HashSet<MigratableHandler>();
 
     private final LoadImbalance imbalance;
+
+    private final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
 
     LoadTracker(NonBlockingIOThread[] ioThreads, ILogger logger) {
         this.logger = logger;
@@ -76,6 +82,7 @@ class LoadTracker {
      * @return recalculated imbalance
      */
     LoadImbalance updateImbalance() {
+        handleAddedOrRemovedConnections();
         clearWorkingImbalance();
         updateNewWorkingImbalance();
         updateNewFinalImbalance();
@@ -83,9 +90,28 @@ class LoadTracker {
         return imbalance;
     }
 
+    private void handleAddedOrRemovedConnections() {
+        Iterator<Runnable> iterator = tasks.iterator();
+        while (iterator.hasNext()) {
+            Runnable task = iterator.next();
+            task.run();
+            iterator.remove();
+        }
+    }
+
     // just for testing
     Set<MigratableHandler> getHandlers() {
         return handlers;
+    }
+
+    // just for testing
+    ItemCounter<MigratableHandler> getLastEventCounter() {
+        return lastEventCounter;
+    }
+
+    // just for testing
+    ItemCounter<MigratableHandler> getHandlerEventsCounter() {
+        return handlerEventsCounter;
     }
 
     private void updateNewFinalImbalance() {
@@ -112,6 +138,15 @@ class LoadTracker {
         }
     }
 
+    public void notifyConnectionAdded(TcpIpConnection connection) {
+        ConnectionAddedTask connectionAddedTask = new ConnectionAddedTask(connection);
+        tasks.offer(connectionAddedTask);
+    }
+
+    public void notifyConnectionRemoved(TcpIpConnection connection) {
+        ConnectionRemovedTask connectionRemovedTask = new ConnectionRemovedTask(connection);
+        tasks.offer(connectionRemovedTask);
+    }
     private void updateNewWorkingImbalance() {
         for (MigratableHandler handler : handlers) {
             updateHandlerState(handler);
@@ -147,6 +182,8 @@ class LoadTracker {
 
     void removeHandler(MigratableHandler handler) {
         handlers.remove(handler);
+        handlerEventsCounter.remove(handler);
+        lastEventCounter.remove(handler);
     }
 
     private void printDebugTable() {
@@ -216,5 +253,49 @@ class LoadTracker {
                     .append(getLineSeperator());
         }
         sb.append(getLineSeperator());
+    }
+
+    class ConnectionRemovedTask implements Runnable {
+
+        private TcpIpConnection connection;
+
+        public ConnectionRemovedTask(TcpIpConnection connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public void run() {
+            NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+            NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Removing handlers from: " + connection);
+            }
+
+            removeHandler(socketReader);
+            removeHandler(socketWriter);
+        }
+    }
+
+    class ConnectionAddedTask implements Runnable {
+
+        private TcpIpConnection connection;
+
+        public ConnectionAddedTask(TcpIpConnection connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public void run() {
+            NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+            NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Added handlers for: " + connection);
+            }
+
+            addHandler(socketReader);
+            addHandler(socketWriter);
+        }
     }
 }
