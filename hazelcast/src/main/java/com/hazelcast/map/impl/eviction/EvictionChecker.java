@@ -28,7 +28,6 @@ import com.hazelcast.partition.IPartition;
 import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.MemoryInfoAccessor;
-import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,12 +50,10 @@ public class EvictionChecker {
     protected static final int ONE_MEGABYTE = ONE_KILOBYTE * ONE_KILOBYTE;
 
     protected final MapServiceContext mapServiceContext;
+    protected final MemoryInfoAccessor memoryInfoAccessor;
 
-    // not final for testing purposes.
-    protected MemoryInfoAccessor memoryInfoAccessor;
-
-    public EvictionChecker(MapServiceContext mapServiceContext) {
-        this.memoryInfoAccessor = new RuntimeMemoryInfoAccessor();
+    public EvictionChecker(MemoryInfoAccessor memoryInfoAccessor, MapServiceContext mapServiceContext) {
+        this.memoryInfoAccessor = memoryInfoAccessor;
         this.mapServiceContext = mapServiceContext;
     }
 
@@ -111,10 +108,11 @@ public class EvictionChecker {
     public double calculatePerNodeMaxRecordStoreSize(RecordStore recordStore) {
         MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
-        int configuredMaxSize = maxSizeConfig.getSize();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+
+        int configuredMaxSize = maxSizeConfig.getSize();
         int memberCount = nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR);
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
         return (1D * configuredMaxSize * memberCount / partitionCount);
 
@@ -146,20 +144,23 @@ public class EvictionChecker {
     }
 
     protected boolean checkHeapPercentageEviction(String mapName, MaxSizeConfig maxSizeConfig) {
-        final long usedHeapSize = getUsedHeapSize(mapName);
+        long usedHeapSize = getUsedHeapSize(mapName);
         if (usedHeapSize == -1L) {
             return false;
         }
-        final double maxSize = maxSizeConfig.getSize();
-        final long total = getTotalMemory();
-        return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
+
+        double maxOccupiedHeapPercentage = maxSizeConfig.getSize();
+        long maxMemory = getMaxMemory();
+
+        return maxOccupiedHeapPercentage < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / maxMemory);
     }
 
     protected boolean checkFreeHeapPercentageEviction(MaxSizeConfig maxSizeConfig) {
-        final long currentFreeHeapSize = getAvailableMemory();
-        final double freeHeapPercentage = maxSizeConfig.getSize();
-        final long total = getTotalMemory();
-        return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / total);
+        double freeHeapPercentage = maxSizeConfig.getSize();
+        long currentFreeHeapSize = getAvailableMemory();
+        long maxMemory = getMaxMemory();
+
+        return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / maxMemory);
     }
 
     protected long getTotalMemory() {
@@ -235,11 +236,6 @@ public class EvictionChecker {
         final IPartition partition = partitionService.getPartition(partitionId, false);
         final Address thisAddress = nodeEngine.getThisAddress();
         return partition.isOwnerOrBackup(thisAddress);
-    }
-
-    // only used when testing.
-    public void setMemoryInfoAccessor(MemoryInfoAccessor memoryInfoAccessor) {
-        this.memoryInfoAccessor = memoryInfoAccessor;
     }
 }
 
