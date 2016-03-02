@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -63,15 +64,6 @@ public class BackpressureRegulator {
      * The percentage above and below a certain sync-window we should randomize.
      */
     static final float RANGE = 0.25f;
-
-    // A thread-local containing a random. Unfortunately we need to support Java 6 and there is no
-    // ThreadLocalRandom. Once we move to Java 7, we can make use of that class.
-    private static final ThreadLocal<Random> THREAD_LOCAL_RANDOM = new ThreadLocal<Random>() {
-        @Override
-        protected Random initialValue() {
-            return new Random();
-        }
-    };
 
     // number of ints in a single cache-line.
     private static final int INTS_PER_CACHE_LINE = CACHE_LINE_LENGTH / INT_SIZE_IN_BYTES;
@@ -218,7 +210,7 @@ public class BackpressureRegulator {
             return 1;
         }
 
-        Random random = THREAD_LOCAL_RANDOM.get();
+        Random random = ThreadLocalRandom.current();
         int randomSyncWindow = round((1 - RANGE) * syncWindow + random.nextInt(round(2 * RANGE * syncWindow)));
         return max(1, randomSyncWindow);
     }
