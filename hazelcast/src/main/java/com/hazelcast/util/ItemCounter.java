@@ -113,6 +113,10 @@ public final class ItemCounter<T> {
         return oldValue;
     }
 
+    public void remove(T item) {
+        map.remove(item);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -103,27 +103,13 @@ public class IOBalancer {
     }
 
     public void connectionAdded(TcpIpConnection connection) {
-        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
-        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Added handlers for: " + connection);
-        }
-
-        inLoadTracker.addHandler(socketReader);
-        outLoadTracker.addHandler(socketWriter);
+        inLoadTracker.notifyConnectionAdded(connection);
+        outLoadTracker.notifyConnectionAdded(connection);
     }
 
     public void connectionRemoved(TcpIpConnection connection) {
-        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
-        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Removing handlers from: " + connection);
-        }
-
-        inLoadTracker.removeHandler(socketReader);
-        outLoadTracker.removeHandler(socketWriter);
+        inLoadTracker.notifyConnectionRemoved(connection);
+        outLoadTracker.notifyConnectionRemoved(connection);
     }
 
     public void start() {
@@ -211,4 +197,5 @@ public class IOBalancer {
     public void signalMigrationComplete() {
         migrationCompletedCount.inc();
     }
+
 }
