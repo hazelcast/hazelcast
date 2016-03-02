@@ -22,12 +22,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import java.io.IOException;
+import java.net.Socket;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,10 +49,12 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMemoryLeak() throws IOException {
+    public void testMemoryLeak_with_RestConnections() throws IOException {
         Config config = new Config();
         config.getGroupConfig().setName(randomName());
         config.setProperty(GroupProperty.REST_ENABLED, "true");
+        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS, "1");
+
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
@@ -67,5 +72,65 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
             }
         });
     }
+
+
+    @Test
+    public void testMemoryLeak_with_SocketConnections() throws IOException {
+        Config config = new Config();
+        config.getGroupConfig().setName(randomName());
+        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS, "1");
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final Address address = instance.getCluster().getLocalMember().getAddress();
+        int threadCount = 10;
+        final int connectionCountPerThread = 100;
+
+        Runnable runnable = new Runnable() {
+            public void run() {
+                for (int i = 0; i < connectionCountPerThread; i++) {
+                    Socket socket = null;
+                    try {
+                        socket = new Socket(address.getHost(), address.getPort());
+                        socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
+                        sleepMillis(1000);
+                        socket.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+
+        Thread[] threads = new Thread[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            threads[i] = new Thread(runnable);
+            threads[i].start();
+        }
+
+        assertJoinable(threads);
+
+
+        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
+        final IOBalancer ioBalancer = connectionManager.getIoBalancer();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
+                LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
+                int inHandlerSize = inLoadTracker.getHandlers().size();
+                int outHandlerSize = outLoadTracker.getHandlers().size();
+                int inHandlerEventsCount = inLoadTracker.getHandlerEventsCounter().keySet().size();
+                int outHandlerEventsCount = outLoadTracker.getHandlerEventsCounter().keySet().size();
+                int inLastEventsCount = inLoadTracker.getLastEventCounter().keySet().size();
+                int outLastEventsCount = outLoadTracker.getLastEventCounter().keySet().size();
+                Assert.assertEquals(0, inHandlerSize);
+                Assert.assertEquals(0, outHandlerSize);
+                Assert.assertEquals(0, inHandlerEventsCount);
+                Assert.assertEquals(0, outHandlerEventsCount);
+                Assert.assertEquals(0, inLastEventsCount);
+                Assert.assertEquals(0, outLastEventsCount);
+            }
+        });
+    }
+
 
 }
