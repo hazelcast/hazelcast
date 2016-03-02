@@ -26,6 +26,7 @@ package com.hazelcast.internal.memory;
  * the supplied "offset" is treated as the absolute address in CPU's native address space.
  * </p>
  */
+@SuppressWarnings("checkstyle:interfaceistype")
 public interface GlobalMemoryAccessor
         extends ConcurrentMemoryAccessor, HeapMemoryAccessStrategy, ByteAccessStrategy<Object> {
 

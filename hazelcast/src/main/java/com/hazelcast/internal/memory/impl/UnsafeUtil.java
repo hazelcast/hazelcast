@@ -31,18 +31,19 @@ import static com.hazelcast.util.QuickMath.normalize;
 /**
  * Utility class for {@link sun.misc.Unsafe}.
  */
+@SuppressWarnings("checkstyle:magicnumber")
 public final class UnsafeUtil {
-
-    /**
-     * The {@link sun.misc.Unsafe} instance which is available and ready to use.
-     */
-    static final Unsafe UNSAFE;
 
     /**
      * If this constant is {@code true}, then {@link Unsafe} refers to a usable {@code Unsafe}
      * instance.
      */
-    public static final boolean UNSAFE_AVAILABLE;
+    static final boolean UNSAFE_AVAILABLE;
+
+    /**
+     * The {@link sun.misc.Unsafe} instance which is available and ready to use.
+     */
+    static final Unsafe UNSAFE;
 
     private static final ILogger LOGGER = Logger.getLogger(UnsafeUtil.class);
 
@@ -68,7 +69,7 @@ public final class UnsafeUtil {
             }
         } catch (Throwable t) {
             unsafe = null;
-            LOGGER.warning("Unable to get Unsafe. So skipping Unsafe support...", t);
+            LOGGER.warning("Unable to get an instance of Unsafe. Unsafe-based operations will be unavailable", t);
         }
         UNSAFE = unsafe;
         UNSAFE_AVAILABLE = UNSAFE != null;

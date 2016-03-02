@@ -28,7 +28,7 @@ import java.io.UTFDataFormatException;
  * explicitly specified endianness. The low-level strategy of reading and writing individual bytes is
  * supplied by an instance of {@link ByteAccessStrategy}.
  */
-@SuppressWarnings({"checkstyle:magicnumber", "MagicNumber"})
+@SuppressWarnings({"checkstyle:magicnumber", "MagicNumber", "checkstyle:methodcount"})
 public final class EndiannessUtil {
 
     /** Accesses bytes in a Java byte array */

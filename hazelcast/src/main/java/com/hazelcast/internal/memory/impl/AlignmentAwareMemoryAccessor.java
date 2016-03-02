@@ -23,6 +23,7 @@ import static com.hazelcast.internal.memory.impl.AlignmentUtil.is4BytesAligned;
 import static com.hazelcast.internal.memory.impl.AlignmentUtil.is8BytesAligned;
 import static com.hazelcast.internal.memory.impl.AlignmentUtil.IS_PLATFORM_BIG_ENDIAN;
 import static com.hazelcast.internal.memory.impl.EndiannessUtil.NATIVE_ACCESS;
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
 /**
  * <p>
@@ -46,11 +47,11 @@ import static com.hazelcast.internal.memory.impl.EndiannessUtil.NATIVE_ACCESS;
  * </ul>
  * </p>
  */
-public class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
-    public static final AlignmentAwareMemoryAccessor INSTANCE = AVAILABLE ? new AlignmentAwareMemoryAccessor() : null;
+public final class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
+    public static final AlignmentAwareMemoryAccessor INSTANCE = UNSAFE_AVAILABLE ? new AlignmentAwareMemoryAccessor() : null;
 
     private AlignmentAwareMemoryAccessor() {
-        if (!AVAILABLE) {
+        if (!UNSAFE_AVAILABLE) {
             throw new IllegalStateException(getClass().getName() + " can only be used only when Unsafe is available!");
         }
     }

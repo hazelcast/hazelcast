@@ -17,8 +17,8 @@
 package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.GlobalMemoryAccessor;
-import com.hazelcast.internal.memory.MemoryAccessor;
-import sun.misc.Unsafe;
+
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
 /**
  * Base class for {@link sun.misc.Unsafe} backed {@link GlobalMemoryAccessor} implementations.
@@ -26,20 +26,9 @@ import sun.misc.Unsafe;
 abstract class UnsafeBasedMemoryAccessor implements GlobalMemoryAccessor {
 
     /**
-     * The {@link sun.misc.Unsafe} instance which is available and ready to use.
-     */
-    protected static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
-
-    /**
-     * If this constant is {@code true}, then {@link #UNSAFE} refers to a usable {@code Unsafe}
-     * instance.
-     */
-    protected static final boolean AVAILABLE = UNSAFE != null;
-
-    /**
      * Returns whether memory accessors of type {@link UnsafeBasedMemoryAccessor} are available or not.
      */
     public static boolean isAvailable() {
-        return AVAILABLE;
+        return UNSAFE_AVAILABLE;
     }
 }

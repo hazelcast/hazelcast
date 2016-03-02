@@ -18,6 +18,7 @@ package com.hazelcast.internal.memory.impl;
 
 import java.nio.ByteOrder;
 
+@SuppressWarnings("checkstyle:magicnumber")
 public final class AlignmentUtil {
     public static final int OBJECT_REFERENCE_ALIGN = UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class);
     public static final int OBJECT_REFERENCE_MASK = OBJECT_REFERENCE_ALIGN - 1;

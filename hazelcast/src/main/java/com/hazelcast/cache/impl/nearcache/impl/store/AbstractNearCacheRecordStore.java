@@ -16,13 +16,6 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
-import com.hazelcast.internal.eviction.EvictionChecker;
-import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
-import com.hazelcast.internal.eviction.EvictionPolicyType;
-import com.hazelcast.internal.eviction.EvictionStrategy;
-import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
@@ -30,13 +23,22 @@ import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.NearCacheRecordMap;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.eviction.EvictionChecker;
+import com.hazelcast.internal.eviction.EvictionListener;
+import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.internal.eviction.EvictionPolicyType;
+import com.hazelcast.internal.eviction.EvictionStrategy;
+import com.hazelcast.internal.eviction.EvictionStrategyProvider;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 
 public abstract class AbstractNearCacheRecordStore<
         K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
@@ -51,9 +53,7 @@ public abstract class AbstractNearCacheRecordStore<
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
     protected static final int REFERENCE_SIZE =
-            MemoryAccessor.MEM_AVAILABLE
-                    ? MemoryAccessor.MEM.arrayIndexScale(Object[].class)
-                    : (Integer.SIZE / Byte.SIZE);
+            MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
 
     private static final int MILLI_SECONDS_IN_A_SECOND = 1000;
 

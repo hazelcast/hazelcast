@@ -25,6 +25,7 @@ import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVA
  * Strategy for direct access to memory on the Java heap. On-heap memory must be addressed as an offset
  * from a specified object's base address.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface HeapMemoryAccessStrategy {
 
     /**

@@ -18,16 +18,20 @@ package com.hazelcast.internal.memory.impl;
 
 import java.lang.reflect.Field;
 
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE;
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
+
 /**
  * Standard {@link com.hazelcast.internal.memory.MemoryAccessor} implementations
  * that directly uses {@link sun.misc.Unsafe} for accessing to memory.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
 
-    public static final StandardMemoryAccessor INSTANCE = AVAILABLE ? new StandardMemoryAccessor() : null;
+    public static final StandardMemoryAccessor INSTANCE = UNSAFE_AVAILABLE ? new StandardMemoryAccessor() : null;
 
     StandardMemoryAccessor() {
-        if (!AVAILABLE) {
+        if (!UNSAFE_AVAILABLE) {
             throw new IllegalStateException(getClass().getName() + " can only be used only when Unsafe is available!");
         }
     }
