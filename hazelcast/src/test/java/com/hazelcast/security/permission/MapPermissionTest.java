@@ -49,11 +49,51 @@ public class MapPermissionTest {
         new CheckPermission().of("index").against("read", "create", "put", "intercept").expect(false).run();
     }
 
+    @Test
+    public void willReturnTrueForPermOnPutOn() {
+        new CheckPermission().of("put").against("put", "read", "create", "put", "intercept").expect(true).run();
+    }
+
+    @Test
+    public void willReturnTrueWhenNameUseMatchingWildcard() {
+        new CheckPermission()
+                .withAllowedName("map.*")
+                .withRequestedName("map.foo")
+                .of("put")
+                .against("put", "read", "create", "put", "intercept")
+                .expect(true).run();
+    }
+
+    @Test
+    public void willReturnFalseWhenNameUseNonNames() {
+        new CheckPermission()
+                .withAllowedName("map")
+                .withRequestedName("queue")
+                .of("put")
+                .against("put", "read", "create", "put", "intercept")
+                .expect(false).run();
+    }
+
     private static class CheckPermission {
+
+        private static final String DEFAULT_ALLOWED_NAME = "someMapsPermission";
+        private static final String DEFAULT_REQUESTED_NAME = "someMapsPermission";
 
         private String requested = null;
         private String[] allowed = null;
         private Boolean expectedResult = null;
+        private String allowedName = DEFAULT_ALLOWED_NAME;
+        private String requestedName = DEFAULT_REQUESTED_NAME;
+
+        CheckPermission withRequestedName(String requestedName) {
+            this.requestedName = requestedName;
+            return this;
+        }
+
+        CheckPermission withAllowedName(String allowedName) {
+            this.allowedName = allowedName;
+            return this;
+        }
 
         CheckPermission of(String requested) {
             this.requested = requested;
@@ -72,8 +112,8 @@ public class MapPermissionTest {
 
         void run() {
             if (requested != null && allowed != null && expectedResult != null) {
-                MapPermission allowedMapPermissions = new MapPermission("someMapsPermission", allowed);
-                MapPermission requestedMapPermission = new MapPermission("someMapsPermission", requested);
+                MapPermission allowedMapPermissions = new MapPermission(allowedName, allowed);
+                MapPermission requestedMapPermission = new MapPermission(requestedName, requested);
 
                 boolean actualResult = allowedMapPermissions.implies(requestedMapPermission);
 
