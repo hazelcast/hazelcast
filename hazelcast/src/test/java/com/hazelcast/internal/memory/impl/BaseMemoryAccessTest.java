@@ -1,6 +1,6 @@
 package com.hazelcast.internal.memory.impl;
 
-import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 import com.hazelcast.internal.memory.UnsafeDependentMemoryAccessorTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -12,6 +12,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import sun.misc.Unsafe;
 
+import static com.hazelcast.internal.memory.HeapMemoryAccessStrategy.ARRAY_BYTE_BASE_OFFSET;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -19,17 +20,17 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccessorTest {
+public abstract class BaseMemoryAccessTest extends UnsafeDependentMemoryAccessorTest {
 
     protected final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
 
-    private MemoryAccessor memoryAccessor;
+    private GlobalMemoryAccessor memoryAccessor;
 
-    abstract protected MemoryAccessor createMemoryAccessor();
+    protected abstract GlobalMemoryAccessor memoryAccessor();
 
     @Before
     public void setup() {
-        memoryAccessor = createMemoryAccessor();
+        memoryAccessor = memoryAccessor();
     }
 
     protected long allocateMemory(long size) {
@@ -45,76 +46,76 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     @Test
     public void test_getObjectFieldOffset() throws NoSuchFieldException {
         assertEquals(SampleObject.BOOLEAN_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("booleanValue")));
         assertEquals(SampleObject.BYTE_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("byteValue")));
         assertEquals(SampleObject.CHAR_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("charValue")));
         assertEquals(SampleObject.SHORT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("shortValue")));
         assertEquals(SampleObject.INT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("intValue")));
         assertEquals(SampleObject.FLOAT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("floatValue")));
         assertEquals(SampleObject.LONG_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("longValue")));
         assertEquals(SampleObject.DOUBLE_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("doubleValue")));
         assertEquals(SampleObject.OBJECT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
+                memoryAccessor.objectFieldOffset(
                         SampleObject.class.getDeclaredField("objectValue")));
     }
 
     @Test
     public void test_getArrayBaseOffset() {
         assertEquals(UNSAFE.arrayBaseOffset(boolean[].class),
-                     memoryAccessor.arrayBaseOffset(boolean[].class));
+                memoryAccessor.arrayBaseOffset(boolean[].class));
         assertEquals(UNSAFE.arrayBaseOffset(byte[].class),
-                     memoryAccessor.arrayBaseOffset(byte[].class));
+                memoryAccessor.arrayBaseOffset(byte[].class));
         assertEquals(UNSAFE.arrayBaseOffset(char[].class),
-                     memoryAccessor.arrayBaseOffset(char[].class));
+                memoryAccessor.arrayBaseOffset(char[].class));
         assertEquals(UNSAFE.arrayBaseOffset(short[].class),
-                     memoryAccessor.arrayBaseOffset(short[].class));
+                memoryAccessor.arrayBaseOffset(short[].class));
         assertEquals(UNSAFE.arrayBaseOffset(int[].class),
-                     memoryAccessor.arrayBaseOffset(int[].class));
+                memoryAccessor.arrayBaseOffset(int[].class));
         assertEquals(UNSAFE.arrayBaseOffset(float[].class),
-                     memoryAccessor.arrayBaseOffset(float[].class));
+                memoryAccessor.arrayBaseOffset(float[].class));
         assertEquals(UNSAFE.arrayBaseOffset(long[].class),
-                     memoryAccessor.arrayBaseOffset(long[].class));
+                memoryAccessor.arrayBaseOffset(long[].class));
         assertEquals(UNSAFE.arrayBaseOffset(double[].class),
-                     memoryAccessor.arrayBaseOffset(double[].class));
+                memoryAccessor.arrayBaseOffset(double[].class));
         assertEquals(UNSAFE.arrayBaseOffset(Object[].class),
-                     memoryAccessor.arrayBaseOffset(Object[].class));
+                memoryAccessor.arrayBaseOffset(Object[].class));
     }
 
     @Test
     public void test_getArrayIndexScale() {
         assertEquals(UNSAFE.arrayIndexScale(boolean[].class),
-                     memoryAccessor.arrayIndexScale(boolean[].class));
+                memoryAccessor.arrayIndexScale(boolean[].class));
         assertEquals(UNSAFE.arrayIndexScale(byte[].class),
-                     memoryAccessor.arrayIndexScale(byte[].class));
+                memoryAccessor.arrayIndexScale(byte[].class));
         assertEquals(UNSAFE.arrayIndexScale(char[].class),
-                     memoryAccessor.arrayIndexScale(char[].class));
+                memoryAccessor.arrayIndexScale(char[].class));
         assertEquals(UNSAFE.arrayIndexScale(short[].class),
-                     memoryAccessor.arrayIndexScale(short[].class));
+                memoryAccessor.arrayIndexScale(short[].class));
         assertEquals(UNSAFE.arrayIndexScale(int[].class),
-                     memoryAccessor.arrayIndexScale(int[].class));
+                memoryAccessor.arrayIndexScale(int[].class));
         assertEquals(UNSAFE.arrayIndexScale(float[].class),
-                     memoryAccessor.arrayIndexScale(float[].class));
+                memoryAccessor.arrayIndexScale(float[].class));
         assertEquals(UNSAFE.arrayIndexScale(long[].class),
-                     memoryAccessor.arrayIndexScale(long[].class));
+                memoryAccessor.arrayIndexScale(long[].class));
         assertEquals(UNSAFE.arrayIndexScale(double[].class),
-                     memoryAccessor.arrayIndexScale(double[].class));
+                memoryAccessor.arrayIndexScale(double[].class));
         assertEquals(UNSAFE.arrayIndexScale(Object[].class),
-                     memoryAccessor.arrayIndexScale(Object[].class));
+                memoryAccessor.arrayIndexScale(Object[].class));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -152,12 +153,10 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
                 assertEquals((byte) (i * i), memoryAccessor.getByte(accessDestinationAddress + i));
             }
 
-            byte[] src = new byte[] {0x11, 0x22, 0x33, 0x44};
+            byte[] src = new byte[]{0x11, 0x22, 0x33, 0x44};
             byte[] dest = new byte[src.length];
 
-            memoryAccessor.copyMemory(src, MemoryAccessor.ARRAY_BYTE_BASE_OFFSET,
-                                      dest, MemoryAccessor.ARRAY_BYTE_BASE_OFFSET,
-                                      src.length);
+            memoryAccessor.copyMemory(src, ARRAY_BYTE_BASE_OFFSET, dest, ARRAY_BYTE_BASE_OFFSET, src.length);
 
             assertArrayEquals(src, dest);
         } finally {

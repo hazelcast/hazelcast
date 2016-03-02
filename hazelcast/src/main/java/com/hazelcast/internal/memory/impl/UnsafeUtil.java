@@ -31,7 +31,7 @@ import static com.hazelcast.util.QuickMath.normalize;
 /**
  * Utility class for {@link sun.misc.Unsafe}.
  */
-final class UnsafeUtil {
+public final class UnsafeUtil {
 
     /**
      * The {@link sun.misc.Unsafe} instance which is available and ready to use.
@@ -42,7 +42,7 @@ final class UnsafeUtil {
      * If this constant is {@code true}, then {@link Unsafe} refers to a usable {@code Unsafe}
      * instance.
      */
-    static final boolean UNSAFE_AVAILABLE;
+    public static final boolean UNSAFE_AVAILABLE;
 
     private static final ILogger LOGGER = Logger.getLogger(UnsafeUtil.class);
 

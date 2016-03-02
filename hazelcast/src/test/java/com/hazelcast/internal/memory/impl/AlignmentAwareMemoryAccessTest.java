@@ -1,5 +1,6 @@
 package com.hazelcast.internal.memory.impl;
 
+import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -10,11 +11,11 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class AlignmentAwareMemoryAccessorTest extends BaseMemoryAccessorTest {
+public class AlignmentAwareMemoryAccessTest extends BaseMemoryAccessTest {
 
     @Override
-    protected MemoryAccessor createMemoryAccessor() {
-        return new AlignmentAwareMemoryAccessor();
+    protected GlobalMemoryAccessor memoryAccessor() {
+        return AlignmentAwareMemoryAccessor.INSTANCE;
     }
 
     @Test(expected = IllegalArgumentException.class)
