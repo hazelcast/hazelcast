@@ -25,11 +25,6 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -179,25 +174,6 @@ public class InvocationRegistry implements Iterable<Invocation> {
         return invocations.get(callId);
     }
 
-    /**
-     * Notifies the invocation that a Response is available.
-     *
-     * @param response The response that is available.
-     * @param sender   Endpoint who sent the response
-     */
-    public void notify(Response response, Address sender) {
-        if (response instanceof NormalResponse) {
-            notifyNormalResponse((NormalResponse) response, sender);
-        } else if (response instanceof BackupResponse) {
-            notifyBackupComplete(response.getCallId());
-        } else if (response instanceof CallTimeoutResponse) {
-            notifyCallTimeout((CallTimeoutResponse) response, sender);
-        } else if (response instanceof ErrorResponse) {
-            notifyErrorResponse((ErrorResponse) response, sender);
-        } else {
-            logger.severe("Unrecognized response: " + response);
-        }
-    }
 
     public void notifyBackupComplete(long callId) {
         responseBackupCounter.inc();
@@ -210,7 +186,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
             // taking too much time.
             if (invocation == null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("No Invocation found for BackupResponse with callId " + callId);
+                    logger.finest("No Invocation found for backup response with callId " + callId);
                 }
                 return;
             }
@@ -221,40 +197,40 @@ public class InvocationRegistry implements Iterable<Invocation> {
         }
     }
 
-    private void notifyErrorResponse(ErrorResponse response, Address sender) {
+    public void notifyErrorResponse(long callId, Object cause, Address sender) {
         responseErrorCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for error response with callId: " + callId + " sent from " + sender);
             }
             return;
         }
 
-        invocation.notifyError(response.getCause());
+        invocation.notifyError(cause);
     }
 
-    private void notifyNormalResponse(NormalResponse response, Address sender) {
+    public void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {
         responseNormalCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for normal response with callId " + callId + " sent from " + sender);
             }
             return;
         }
-        invocation.notifyNormalResponse(response.getValue(), response.getBackupCount());
+        invocation.notifyNormalResponse(value, backupCount);
     }
 
-    private void notifyCallTimeout(CallTimeoutResponse response, Address sender) {
+    public void notifyCallTimeout(long callId, Address sender) {
         responseTimeoutCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for call timeout response with callId" + callId + " sent from " + sender);
             }
             return;
         }
