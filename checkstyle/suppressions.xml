@@ -358,6 +358,10 @@
     <suppress checks="JavadocVariable" files="com/hazelcast/util/executor/"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/util/executor/DelegatingFuture"/>
 
+    <!-- written by Doug Lea  -->
+    <suppress checks=""
+              files="com/hazelcast/internal/util/ThreadLocalRandom"/>
+
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>
 
