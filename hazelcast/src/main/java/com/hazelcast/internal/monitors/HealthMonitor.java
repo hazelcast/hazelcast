@@ -24,6 +24,7 @@ import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.memory.JvmMemoryStats;
 import com.hazelcast.memory.MemoryStats;
 
 import java.util.logging.Level;
@@ -35,17 +36,17 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry} to provides some clues
- * about the internal Hazelcast state.
- * <p/>
+ * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry}
+ * to provides some clues about the internal Hazelcast state.
+ * <p>
  * Health monitor can be configured with system properties.
- * <p/>
+ * <p>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
  * This property can be one of the following:
  * {@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints.
  * {@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default).
  * {@link HealthMonitorLevel#OFF}    => does not print anything.
- * <p/>
+ * <p>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  * <p/>
@@ -427,30 +428,21 @@ public class HealthMonitor {
         }
 
         private void renderNativeMemory() {
-            MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
-            if (memoryStats.getMaxNativeMemory() <= 0L) {
+            JvmMemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
+            final MemoryStats nativeStats = memoryStats.getNativeMemoryStats();
+            if (nativeStats.getMax() <= 0L) {
                 return;
             }
 
-            final long usedNative = memoryStats.getUsedNativeMemory();
+            final long usedNative = nativeStats.getUsed();
             sb.append("native.memory.used=")
               .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
-                    .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+              .append(numberToUnit(nativeStats.getFree())).append(", ");
             sb.append("native.memory.total=")
-                    .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+              .append(numberToUnit(nativeStats.getCommitted())).append(", ");
             sb.append("native.memory.max=")
-                    .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
-            final long maxMeta = memoryStats.getMaxMetadata();
-            if (maxMeta > 0) {
-                final long usedMeta = memoryStats.getUsedMetadata();
-                sb.append("native.memory.meta.used=")
-                  .append(numberToUnit(usedMeta)).append(", ");
-                sb.append("native.memory.meta.free=")
-                  .append(numberToUnit(maxMeta - usedMeta)).append(", ");
-                sb.append("native.memory.meta.percentage=")
-                  .append(numberToUnit((PERCENTAGE_INT_MULTIPLIER * usedMeta) / (usedNative + usedMeta))).append(", ");
-            }
+                    .append(numberToUnit(nativeStats.getMax())).append(", ");
         }
 
         private void renderExecutors() {

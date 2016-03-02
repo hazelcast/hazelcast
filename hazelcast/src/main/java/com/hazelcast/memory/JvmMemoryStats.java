@@ -17,31 +17,28 @@
 package com.hazelcast.memory;
 
 /**
- * Memory statistics for abstract MemoryManager
+ * Memory statistics for the JVM which current HazelcastInstance belongs to.
+ * <p>
+ * Shows total physical/free OS memory, max/committed/used/free heap memory
+ * and max/committed/used/free native memory.
+ *
+ * @see com.hazelcast.memory.GarbageCollectorStats
  */
-public interface MemoryStats {
+public interface JvmMemoryStats extends MemoryStats {
     /**
-     * @return - total memory available for MemoryManager
+     * @return memory statistics for all heap memory
      */
-    long getTotal();
+    MemoryStats getHeapMemoryStats();
 
     /**
-     * @return - amount of free memory to allocate
+     * @return memory statistics for all native memory
      */
-    long getFree();
+    MemoryStats getNativeMemoryStats();
 
     /**
-     * @return - maximal amount of memory which can be allocated
+     * Returns the garbage collector statistics for the JVM
+     *
+     * @return GC statistics
      */
-    long getMax();
-
-    /**
-     * @return -amount of memory which has been commited
-     */
-    long getCommitted();
-
-    /**
-     * @return - amount of memory which has been used
-     */
-    long getUsed();
+    GarbageCollectorStats getGCStats();
 }
