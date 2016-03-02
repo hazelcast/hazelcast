@@ -29,6 +29,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static org.junit.Assert.assertEquals;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapPreconditionsTest {
@@ -578,35 +582,32 @@ public class MapPreconditionsTest {
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnKey() throws Exception {
-        map.executeOnKey(null, new EntryProcessor() {
-            @Override
-            public Object process(Map.Entry entry) {
-                return null;
-            }
-
-            @Override
-            public EntryBackupProcessor getBackupProcessor() {
-                return null;
-            }
-        });
+        map.executeOnKey(null, new NoOpEntryProcessor());
     }
 
     @Test(expected = NullPointerException.class)
     public void testExecuteOnKeys() throws Exception {
         Set set = new HashSet();
         set.add(null);
+        map.executeOnKeys(set, new NoOpEntryProcessor());
+    }
 
-        map.executeOnKeys(set, new EntryProcessor() {
-            @Override
-            public Object process(Map.Entry entry) {
-                return null;
-            }
+    @Test
+    public void testIssue7631_emptyKeysSupported() {
+        Map<Object, Object> res = map.executeOnKeys(emptySet(), new NoOpEntryProcessor());
+        assertEquals(emptyMap(), res);
+    }
 
-            @Override
-            public EntryBackupProcessor getBackupProcessor() {
-                return null;
-            }
-        });
+    private static class NoOpEntryProcessor implements EntryProcessor {
+        @Override
+        public Object process(Map.Entry entry) {
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
     }
 
     private class TestEntryListener implements EntryListener {

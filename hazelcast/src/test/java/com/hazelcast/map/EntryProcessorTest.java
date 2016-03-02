@@ -63,6 +63,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -994,6 +995,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIssue7631_emptyKeysSupported() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        IMap<Object, Object> map = factory.newHazelcastInstance().getMap("default");
+        assertEquals(emptyMap(), map.executeOnEntries(new NoOpEntryProcessor()));
+    }
+
+    @Test
     public void testSubmitToKey() throws InterruptedException, ExecutionException {
         HazelcastInstance instance1 = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -1321,6 +1329,18 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public void readData(ObjectDataInput in) throws IOException {
             serializedCount = in.readInt();
             deserializedCount = in.readInt() + 1;
+        }
+    }
+
+    private static class NoOpEntryProcessor implements EntryProcessor {
+        @Override
+        public Object process(final Map.Entry entry) {
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
         }
     }
 
