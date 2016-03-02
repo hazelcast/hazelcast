@@ -65,14 +65,16 @@ public class InvocationRegistry implements Iterable<Invocation> {
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
 
-    @Probe(name = "response.normal.count", level = MANDATORY)
-    private final SwCounter responseNormalCounter = newSwCounter();
-    @Probe(name = "response.timeout.count", level = MANDATORY)
-    private final SwCounter responseTimeoutCounter = newSwCounter();
-    @Probe(name = "response.backup.count", level = MANDATORY)
-    private final MwCounter responseBackupCounter = newMwCounter();
-    @Probe(name = "response.error.count", level = MANDATORY)
-    private final SwCounter responseErrorCounter = newSwCounter();
+    @Probe(name = "responses[normal]", level = MANDATORY)
+    private final SwCounter responsesNormal = newSwCounter();
+    @Probe(name = "responses[timeout]", level = MANDATORY)
+    private final SwCounter responsesTimeout = newSwCounter();
+    @Probe(name = "responses[backup]", level = MANDATORY)
+    private final MwCounter responsesBackup = newMwCounter();
+    @Probe(name = "responses[error]", level = MANDATORY)
+    private final SwCounter responsesError = newSwCounter();
+    @Probe(name = "responses[missing]", level = MANDATORY)
+    private final MwCounter responsesMissing = newMwCounter();
 
     public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
                               int concurrencyLevel) {
@@ -176,7 +178,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
 
 
     public void notifyBackupComplete(long callId) {
-        responseBackupCounter.inc();
+        responsesBackup.inc();
 
         try {
             Invocation invocation = invocations.get(callId);
@@ -198,10 +200,11 @@ public class InvocationRegistry implements Iterable<Invocation> {
     }
 
     public void notifyErrorResponse(long callId, Object cause, Address sender) {
-        responseErrorCounter.inc();
+        responsesError.inc();
         Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
+            responsesMissing.inc();
             if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for error response with callId: " + callId + " sent from " + sender);
             }
@@ -212,10 +215,11 @@ public class InvocationRegistry implements Iterable<Invocation> {
     }
 
     public void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {
-        responseNormalCounter.inc();
+        responsesNormal.inc();
         Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
+            responsesMissing.inc();
             if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for normal response with callId " + callId + " sent from " + sender);
             }
@@ -225,10 +229,11 @@ public class InvocationRegistry implements Iterable<Invocation> {
     }
 
     public void notifyCallTimeout(long callId, Address sender) {
-        responseTimeoutCounter.inc();
+        responsesTimeout.inc();
         Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
+            responsesMissing.inc();
             if (nodeEngine.isRunning()) {
                 logger.warning("No Invocation found for call timeout response with callId" + callId + " sent from " + sender);
             }
@@ -238,7 +243,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
     }
 
     public void reset() {
-        for (Invocation invocation : invocations.values()) {
+        for (Invocation invocation : this) {
             try {
                 invocation.notifyError(new MemberLeftException());
             } catch (Throwable e) {
@@ -248,7 +253,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
     }
 
     public void shutdown() {
-        for (Invocation invocation : invocations.values()) {
+        for (Invocation invocation : this) {
             try {
                 invocation.notifyError(new HazelcastInstanceNotActiveException());
             } catch (Throwable e) {
