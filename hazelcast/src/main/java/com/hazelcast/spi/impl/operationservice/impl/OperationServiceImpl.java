@@ -213,11 +213,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return operationExecutor.getPartitionOperationThreadCount();
     }
 
-    @Override
-    public int getGenericOperationThreadCount() {
-        return operationExecutor.getGenericOperationThreadCount();
-    }
-
     @Probe(name = "running.count")
     @Override
     public int getRunningOperationsCount() {
@@ -241,7 +236,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Probe(name = "priority-queue.size", level = MANDATORY)
-    @Override
     public int getPriorityOperationExecutorQueueSize() {
         return operationExecutor.getPriorityOperationExecutorQueueSize();
     }

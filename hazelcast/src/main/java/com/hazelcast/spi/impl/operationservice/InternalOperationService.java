@@ -18,10 +18,12 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.List;
 
@@ -34,6 +36,18 @@ import java.util.List;
  * the the SPI management.
  */
 public interface InternalOperationService extends OperationService, PacketHandler {
+
+    int getResponseQueueSize();
+
+    int getOperationExecutorQueueSize();
+
+    int getRunningOperationsCount();
+
+    int getRemoteOperationsCount();
+
+    int getPartitionOperationThreadCount();
+
+    long getExecutedOperationCount();
 
     /**
      * Checks if this call is timed out. A timed out call is not going to be executed.
@@ -61,4 +75,17 @@ public interface InternalOperationService extends OperationService, PacketHandle
     List<SlowOperationDTO> getSlowOperationDTOs();
 
     <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
+
+    /**
+     * Sends a response to a remote machine.
+     * <p/>
+     * This methods is deprecated since 3.5. It is an implementation detail, so it is moved to the
+     * {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
+     *
+     * @param response the response to send.
+     * @param target   the address of the target machine
+     * @return true if send is successful, false otherwise.
+     */
+    @Deprecated
+    boolean send(Response response, Address target);
 }

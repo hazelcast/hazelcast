@@ -17,7 +17,6 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,63 +31,7 @@ import java.util.Map;
  */
 public interface OperationService {
 
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    int getResponseQueueSize();
-
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    int getOperationExecutorQueueSize();
-
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    int getPriorityOperationExecutorQueueSize();
-
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    int getRunningOperationsCount();
-
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    int getRemoteOperationsCount();
-
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    int getPartitionOperationThreadCount();
-
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    int getGenericOperationThreadCount();
-
-    /**
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    long getExecutedOperationCount();
-
-    /**
+    /*
      * Runs an operation in the calling thread.
      *
      * @param op the operation to execute in the calling thread
@@ -170,16 +113,4 @@ public interface OperationService {
      */
     boolean send(Operation op, Address target);
 
-    /**
-     * Sends a response to a remote machine.
-     * <p/>
-     * This methods is deprecated since 3.5. It is an implementation detail, so it is moved to the
-     * {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
-     *
-     * @param response the response to send.
-     * @param target   the address of the target machine
-     * @return true if send is successful, false otherwise.
-     */
-    @Deprecated
-    boolean send(Response response, Address target);
 }
