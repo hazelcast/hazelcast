@@ -200,10 +200,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Override
-    public void dumpPerformanceMetrics(StringBuffer sb) {
-    }
-
-    @Override
     public List<SlowOperationDTO> getSlowOperationDTOs() {
         return slowOperationDetector.getSlowOperationDTOs();
     }
@@ -215,11 +211,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     public int getPartitionOperationThreadCount() {
         return operationExecutor.getPartitionOperationThreadCount();
-    }
-
-    @Override
-    public int getGenericOperationThreadCount() {
-        return operationExecutor.getGenericOperationThreadCount();
     }
 
     @Probe(name = "running.count")
@@ -245,7 +236,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Probe(name = "priority-queue.size", level = MANDATORY)
-    @Override
     public int getPriorityOperationExecutorQueueSize() {
         return operationExecutor.getPriorityOperationExecutorQueueSize();
     }
@@ -301,11 +291,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     public void executeOperation(Operation op) {
         operationExecutor.execute(op);
-    }
-
-    @Override
-    public boolean isAllowedToRunOnCallingThread(Operation op) {
-        return operationExecutor.isAllowedToRunInCurrentThread(op);
     }
 
     @Override

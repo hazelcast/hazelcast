@@ -29,8 +29,8 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.lang.management.ClassLoadingMXBean;
@@ -55,7 +55,7 @@ final class TimedMemberStateFactoryHelper {
 
     static void registerJMXBeans(HazelcastInstanceImpl instance, MemberStateImpl memberState) {
         final EventService es = instance.node.nodeEngine.getEventService();
-        final OperationService os = instance.node.nodeEngine.getOperationService();
+        final InternalOperationService os = instance.node.nodeEngine.getOperationService();
         final ConnectionManager cm = instance.node.connectionManager;
         final InternalPartitionService ps = instance.node.partitionService;
         final ProxyService proxyService = instance.node.nodeEngine.getProxyService();

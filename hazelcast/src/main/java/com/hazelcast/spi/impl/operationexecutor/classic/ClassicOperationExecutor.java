@@ -203,8 +203,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return genericOperationRunners;
     }
 
-    @Override
-    public boolean isAllowedToRunInCurrentThread(Operation op) {
+    boolean isAllowedToRunInCurrentThread(Operation op) {
         checkNotNull(op, "op can't be null");
 
         Thread currentThread = Thread.currentThread();

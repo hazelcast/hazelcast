@@ -35,6 +35,18 @@ import java.util.List;
  */
 public interface InternalOperationService extends OperationService, PacketHandler {
 
+    int getResponseQueueSize();
+
+    int getOperationExecutorQueueSize();
+
+    int getRunningOperationsCount();
+
+    int getRemoteOperationsCount();
+
+    int getPartitionOperationThreadCount();
+
+    long getExecutedOperationCount();
+
     /**
      * Checks if this call is timed out. A timed out call is not going to be executed.
      *
