@@ -145,14 +145,14 @@ public class EvictionCheckerImpl implements EvictionChecker {
             return false;
         }
         final double maxSize = maxSizeConfig.getSize();
-        final long total = getTotalMemory();
+        final long total = getMaxMemory();
         return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
     }
 
     protected boolean checkFreeHeapPercentageEviction(MaxSizeConfig maxSizeConfig) {
         final long currentFreeHeapSize = getAvailableMemory();
         final double freeHeapPercentage = maxSizeConfig.getSize();
-        final long total = getTotalMemory();
+        final long total = getMaxMemory();
         return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / total);
     }
 

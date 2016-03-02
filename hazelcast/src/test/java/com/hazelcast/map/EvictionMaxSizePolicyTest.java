@@ -134,23 +134,33 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     @Test
     public void testUsedHeapPercentagePolicy() {
-        final int maxUsedHeapPercentage = 60;
+        final int maxUsedHeapPercentage = 49;
         final int nodeCount = 1;
-        final int putCount = 1000;
+        final int putCount = 1;
         final String mapName = randomMapName();
         final Config config = createConfig(MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE, maxUsedHeapPercentage, mapName);
         final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
-        // pick an enormously big heap cost for an entry for testing.
-        final long oneEntryHeapCostInMegaBytes = 1 << 30;
-        setTestSizeEstimator(maps, MemoryUnit.MEGABYTES.toBytes(oneEntryHeapCostInMegaBytes));
+
+        // here order of `setTestMaxRuntimeMemoryInMegaBytes` and `setTestSizeEstimator`
+        // should not be changed.
+        setTestMaxRuntimeMemoryInMegaBytes(maps, 40);
+
+        // object can be key or value, so heap-cost of a record = keyCost + valueCost
+        final long oneObjectHeapCostInMegaBytes = 10;
+        setTestSizeEstimator(maps, MemoryUnit.MEGABYTES.toBytes(oneObjectHeapCostInMegaBytes));
+
         populateMaps(maps, putCount);
 
         assertUsedHeapPercentagePolicyTriggersEviction(maps, putCount);
     }
 
+    private void setTestMaxRuntimeMemoryInMegaBytes(Collection<IMap> maps, int maxMemoryMB) {
+        setMockRuntimeMemoryInfoAccessor(maps, -1, -1, maxMemoryMB);
+    }
+
     @Test
     public void testFreeHeapPercentagePolicy() {
-        final int minFreeHeapPercentage = 60;
+        final int minFreeHeapPercentage = 51;
         final int nodeCount = 1;
         final int putCount = 1000;
         final String mapName = randomMapName();
@@ -158,11 +168,11 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
 
 
-        // make available free heap memory 5MB.
+        // make available free heap memory 20MB.
         // availableFree = maxMemoryMB - (totalMemoryMB - freeMemoryMB);
-        final int totalMemoryMB = 15;
-        final int freeMemoryMB = 0;
-        final int maxMemoryMB = 20;
+        final int totalMemoryMB = 25;
+        final int freeMemoryMB = 5;
+        final int maxMemoryMB = 40;
 
         setMockRuntimeMemoryInfoAccessor(maps, totalMemoryMB, freeMemoryMB, maxMemoryMB);
 
