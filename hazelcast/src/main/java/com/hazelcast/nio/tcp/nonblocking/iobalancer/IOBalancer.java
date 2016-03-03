@@ -103,13 +103,17 @@ public class IOBalancer {
     }
 
     public void connectionAdded(TcpIpConnection connection) {
-        inLoadTracker.notifyConnectionAdded(connection);
-        outLoadTracker.notifyConnectionAdded(connection);
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+        inLoadTracker.notifyHandlerAdded(socketReader);
+        outLoadTracker.notifyHandlerAdded(socketWriter);
     }
 
     public void connectionRemoved(TcpIpConnection connection) {
-        inLoadTracker.notifyConnectionRemoved(connection);
-        outLoadTracker.notifyConnectionRemoved(connection);
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+        inLoadTracker.notifyHandlerRemoved(socketReader);
+        outLoadTracker.notifyHandlerRemoved(socketWriter);
     }
 
     public void start() {
