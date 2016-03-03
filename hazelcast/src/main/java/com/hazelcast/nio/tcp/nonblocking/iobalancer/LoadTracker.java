@@ -17,11 +17,8 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.util.ItemCounter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +32,7 @@ import static com.hazelcast.util.StringUtil.getLineSeperator;
 
 /**
  * Tracks the load of of NonBlockingIOThread(s) and creates a mapping between NonBlockingIOThread -> Handler.
- *
+ * <p/>
  * This class is not thread-safe with the exception of
  * {@link #addHandler(MigratableHandler)}   and
  * {@link #removeHandler(MigratableHandler)}
@@ -138,15 +135,16 @@ class LoadTracker {
         }
     }
 
-    public void notifyConnectionAdded(TcpIpConnection connection) {
-        ConnectionAddedTask connectionAddedTask = new ConnectionAddedTask(connection);
-        tasks.offer(connectionAddedTask);
+    public void notifyHandlerAdded(MigratableHandler handler) {
+        AddHandlerTask addHandlerTask = new AddHandlerTask(handler);
+        tasks.offer(addHandlerTask);
     }
 
-    public void notifyConnectionRemoved(TcpIpConnection connection) {
-        ConnectionRemovedTask connectionRemovedTask = new ConnectionRemovedTask(connection);
-        tasks.offer(connectionRemovedTask);
+    public void notifyHandlerRemoved(MigratableHandler handler) {
+        RemoveHandlerTask removeHandlerTask = new RemoveHandlerTask(handler);
+        tasks.offer(removeHandlerTask);
     }
+
     private void updateNewWorkingImbalance() {
         for (MigratableHandler handler : handlers) {
             updateHandlerState(handler);
@@ -255,47 +253,41 @@ class LoadTracker {
         sb.append(getLineSeperator());
     }
 
-    class ConnectionRemovedTask implements Runnable {
+    class RemoveHandlerTask implements Runnable {
 
-        private TcpIpConnection connection;
+        private final MigratableHandler handler;
 
-        public ConnectionRemovedTask(TcpIpConnection connection) {
-            this.connection = connection;
+        public RemoveHandlerTask(MigratableHandler handler) {
+            this.handler = handler;
         }
 
         @Override
         public void run() {
-            NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
-            NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Removing handlers from: " + connection);
+                logger.finest("Removing handler : " + handler);
             }
 
-            removeHandler(socketReader);
-            removeHandler(socketWriter);
+            removeHandler(handler);
         }
     }
 
-    class ConnectionAddedTask implements Runnable {
+    class AddHandlerTask implements Runnable {
 
-        private TcpIpConnection connection;
+        private final MigratableHandler handler;
 
-        public ConnectionAddedTask(TcpIpConnection connection) {
-            this.connection = connection;
+        public AddHandlerTask(MigratableHandler handler) {
+            this.handler = handler;
         }
 
         @Override
         public void run() {
-            NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
-            NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
 
             if (logger.isFinestEnabled()) {
-                logger.finest("Added handlers for: " + connection);
+                logger.finest("Adding handler : " + handler);
             }
 
-            addHandler(socketReader);
-            addHandler(socketWriter);
+            addHandler(handler);
         }
     }
 }
