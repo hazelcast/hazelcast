@@ -26,10 +26,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import java.util.Collection;
 
-public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSupport {
+public class GetAllOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
 
     public GetAllOperation() {
     }

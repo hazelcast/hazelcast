@@ -28,7 +28,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitNotifyService;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
@@ -90,11 +90,11 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
     // here we have an implicit lock for specific WaitNotifyKey.
     // see javadoc
     @Override
-    public void await(WaitSupport waitSupport) {
-        final WaitNotifyKey key = waitSupport.getWaitKey();
+    public void await(BlockingOperation blockingOperation) {
+        final WaitNotifyKey key = blockingOperation.getWaitKey();
         final Queue<WaitingOperation> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
-        long timeout = waitSupport.getWaitTimeout();
-        WaitingOperation waitingOp = new WaitingOperation(q, waitSupport);
+        long timeout = blockingOperation.getWaitTimeout();
+        WaitingOperation waitingOp = new WaitingOperation(q, blockingOperation);
         waitingOp.setNodeEngine(nodeEngine);
         q.offer(waitingOp);
         if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {
@@ -215,7 +215,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
             for (WaitingOperation waitingOp : q) {
                 if (waitingOp.isValid()) {
-                    WaitNotifyKey wnk = waitingOp.waitSupport.getWaitKey();
+                    WaitNotifyKey wnk = waitingOp.blockingOperation.getWaitKey();
                     if (serviceName.equals(wnk.getServiceName())
                             && objectId.equals(wnk.getObjectName())) {
                         waitingOp.cancel(cause);
