@@ -13,7 +13,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import sun.misc.Unsafe;
 
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

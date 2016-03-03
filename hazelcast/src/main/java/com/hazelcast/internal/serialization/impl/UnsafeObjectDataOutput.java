@@ -16,29 +16,29 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.MEM_COPY_THRESHOLD;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_BOOLEAN_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_BOOLEAN_INDEX_SCALE;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_BYTE_INDEX_SCALE;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_CHAR_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_CHAR_INDEX_SCALE;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_DOUBLE_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_DOUBLE_INDEX_SCALE;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_FLOAT_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_FLOAT_INDEX_SCALE;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_INT_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_INT_INDEX_SCALE;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_LONG_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_LONG_INDEX_SCALE;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_SHORT_BASE_OFFSET;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessor.ARRAY_SHORT_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BOOLEAN_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BOOLEAN_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_CHAR_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_CHAR_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_DOUBLE_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_DOUBLE_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_FLOAT_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_FLOAT_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_INT_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_INT_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_LONG_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_LONG_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_SHORT_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_SHORT_INDEX_SCALE;
 import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.DOUBLE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
@@ -270,7 +270,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         ensureAvailable(remaining);
 
         while (remaining > 0) {
-            int chunk = Math.min(remaining, MEM_COPY_THRESHOLD);
+            int chunk = Math.min(remaining, GlobalMemoryAccessor.MEM_COPY_THRESHOLD);
             MEM.copyMemory(src, offset, buffer, ARRAY_BYTE_BASE_OFFSET + pos, chunk);
             remaining -= chunk;
             offset += chunk;

@@ -18,6 +18,7 @@ package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 
+import static com.hazelcast.internal.memory.impl.AlignmentUtil.IS_PLATFORM_BIG_ENDIAN;
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
 /**
@@ -30,5 +31,10 @@ abstract class UnsafeBasedMemoryAccessor implements GlobalMemoryAccessor {
      */
     public static boolean isAvailable() {
         return UNSAFE_AVAILABLE;
+    }
+
+    @Override
+    public boolean isBigEndian() {
+        return IS_PLATFORM_BIG_ENDIAN;
     }
 }
