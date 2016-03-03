@@ -28,26 +28,47 @@ public final class AlignmentUtil {
 
     }
 
-    public static boolean is2BytesAligned(long value) {
-        return (value & 0x01) == 0;
+    public static boolean is2BytesAligned(long address) {
+        return (address & 0x01) == 0;
     }
 
-    public static boolean is4BytesAligned(long value) {
-        return (value & 0x03) == 0;
+    public static boolean is4BytesAligned(long address) {
+        return (address & 0x03) == 0;
     }
 
-    public static boolean is8BytesAligned(long value) {
-        return (value & 0x07) == 0;
+    public static boolean is8BytesAligned(long address) {
+        return (address & 0x07) == 0;
     }
 
-    public static boolean isReferenceAligned(long offset) {
-        return (offset & OBJECT_REFERENCE_MASK) == 0;
+    public static boolean isReferenceAligned(long address) {
+        return (address & OBJECT_REFERENCE_MASK) == 0;
     }
 
-    public static void checkReferenceAligned(long offset) {
-        if (!isReferenceAligned(offset)) {
-            throw new IllegalArgumentException("Memory accesses to references must be "
-                    + OBJECT_REFERENCE_ALIGN + "-bytes aligned, but it is " + offset);
+    public static void checkReferenceAligned(long address) {
+        if (!isReferenceAligned(address)) {
+            throw new IllegalArgumentException("Memory access to object references must be "
+                    + OBJECT_REFERENCE_ALIGN + "-bytes aligned, but the address used was " + address);
+        }
+    }
+
+    public static void check2BytesAligned(long address) {
+        if (!is2BytesAligned(address)) {
+            throw new IllegalArgumentException(
+                    "Atomic memory access must be aligned, but the address used was " + address);
+        }
+    }
+
+    public static void check4BytesAligned(long address) {
+        if (!is4BytesAligned(address)) {
+            throw new IllegalArgumentException(
+                    "Atomic memory access must be aligned, but the address used was " + address);
+        }
+    }
+
+    public static void check8BytesAligned(long address) {
+        if (!is8BytesAligned(address)) {
+            throw new IllegalArgumentException(
+                    "Atomic memory access must be aligned, but the address used was " + address);
         }
     }
 

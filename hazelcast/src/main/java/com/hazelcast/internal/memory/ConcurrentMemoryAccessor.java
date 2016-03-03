@@ -151,23 +151,6 @@ public interface ConcurrentMemoryAccessor extends MemoryAccessor {
      */
     void putDoubleVolatile(long address, double x);
 
-    /**
-     * Gets the referenced object from given owner object as volatile by its offset.
-     *
-     * @param address  address to access
-     * @return the retrieved referenced object
-     */
-    Object getObjectVolatile(long address);
-
-    /**
-     * Puts the referenced object to given owner object as volatile by its offset.
-     *
-     * @param address  address to access
-     * @param x        the referenced object to be written
-     */
-    void putObjectVolatile(long address, Object x);
-
-
 
     /**
      * Compares and swaps int value to specified value atomically

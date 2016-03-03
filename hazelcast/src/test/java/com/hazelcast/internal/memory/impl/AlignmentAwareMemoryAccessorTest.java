@@ -1,7 +1,6 @@
 package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.GlobalMemoryAccessor;
-import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 
@@ -11,16 +10,52 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class AlignmentAwareMemoryAccessTest extends BaseMemoryAccessTest {
+public class AlignmentAwareMemoryAccessorTest extends BaseMemoryAccessorTest {
 
     @Override
-    protected GlobalMemoryAccessor memoryAccessor() {
+    protected GlobalMemoryAccessor getMemoryAccessor() {
         return AlignmentAwareMemoryAccessor.INSTANCE;
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
+    public void test_putGetChar_whenUnaligned() {
+        do_test_putGetChar(false);
+        assert_putGetCharVolatileUnalignedFails();
+    }
+
+    @Test
+    public void test_putGetShort_whenUnaligned() {
+        do_test_putGetShort(false);
+        assert_putGetShortVolatileUnalignedFails();
+    }
+
+    @Test
+    public void test_putGetInt_whenUnaligned() {
+        do_test_putGetInt(false);
+        assert_putGetIntVolatileUnalignedFails();
+    }
+
+    @Test
+    public void test_putGetFloat_whenUnaligned() {
+        do_test_putGetFloat(false);
+        assert_putGetFloatVolatileUnalignedFails();
+    }
+
+    @Test
+    public void test_putGetLong_whenUnaligned() {
+        do_test_putGetLong(false);
+        assert_putGetLongVolatileUnalignedFails();
+    }
+
+    @Test
+    public void test_putGetDouble_whenUnaligned() {
+        do_test_putGetDouble(false);
+        assert_putGetDoubleVolatileUnalignedFails();
+    }
+
+    @Test
     public void test_putGetObject_whenUnaligned() {
-        do_test_putGetObject(false);
+        assert_putGetObjectUnalignedFails();
     }
 
     @Test(expected = IllegalArgumentException.class)

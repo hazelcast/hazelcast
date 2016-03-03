@@ -17,34 +17,9 @@
 package com.hazelcast.internal.memory;
 
 /**
- * <p>
- * Abstraction over an address space of readable and writable bytes. A distinguished
- * special case is the native address space of the underlying CPU, to which the two
- * constants, {@link GlobalMemoryAccessorRegistry#MEM} and {@link GlobalMemoryAccessorRegistry#AMEM}, are devoted.
- * These and other kinds of memory accessor can be retrieved from a {@link GlobalMemoryAccessorRegistry} by specifying
- * the desired {@link GlobalMemoryAccessorType}.
- * </p>
- *
- * @see GlobalMemoryAccessorType
- * @see GlobalMemoryAccessorRegistry
+ * Abstraction over an address space of readable and writable bytes.
  */
 public interface MemoryAccessor {
-
-    /**
-     * Gets the referenced object from given owner object by its offset.
-     *
-     * @param address  address to access
-     * @return the retrieved referenced object
-     */
-    Object getObject(long address);
-
-    /**
-     * Puts the referenced object to given owner object by its offset.
-     *
-     * @param address  address to access
-     * @param x        the referenced object to be written
-     */
-    void putObject(long address, Object x);
 
     /**
      * Reads the boolean value from given address.

@@ -40,16 +40,6 @@ public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
     // Address-based memory access
 
     @Override
-    public Object getObject(long offset) {
-        return UNSAFE.getObject(null, offset);
-    }
-
-    @Override
-    public void putObject(long offset, Object x) {
-        UNSAFE.putObject(null, offset, x);
-    }
-
-    @Override
     public boolean getBoolean(long address) {
         return UNSAFE.getBoolean(null, address);
     }
@@ -141,125 +131,116 @@ public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
 
 
     @Override
-    public boolean getBooleanVolatile(long offset) {
-        return UNSAFE.getBooleanVolatile(null, offset);
+    public boolean getBooleanVolatile(long address) {
+        return UNSAFE.getBooleanVolatile(null, address);
     }
 
     @Override
-    public void putBooleanVolatile(long offset, boolean x) {
-        UNSAFE.putBooleanVolatile(null, offset, x);
+    public void putBooleanVolatile(long address, boolean x) {
+        UNSAFE.putBooleanVolatile(null, address, x);
     }
 
     @Override
-    public byte getByteVolatile(long offset) {
-        return UNSAFE.getByteVolatile(null, offset);
+    public byte getByteVolatile(long address) {
+        return UNSAFE.getByteVolatile(null, address);
     }
 
     @Override
-    public void putByteVolatile(long offset, byte x) {
-        UNSAFE.putByteVolatile(null, offset, x);
+    public void putByteVolatile(long address, byte x) {
+        UNSAFE.putByteVolatile(null, address, x);
     }
 
     @Override
-    public char getCharVolatile(long offset) {
-        return UNSAFE.getCharVolatile(null, offset);
+    public char getCharVolatile(long address) {
+        return UNSAFE.getCharVolatile(null, address);
     }
 
     @Override
-    public void putCharVolatile(long offset, char x) {
-        UNSAFE.putCharVolatile(null, offset, x);
+    public void putCharVolatile(long address, char x) {
+        UNSAFE.putCharVolatile(null, address, x);
     }
 
     @Override
-    public short getShortVolatile(long offset) {
-        return UNSAFE.getShortVolatile(null, offset);
+    public short getShortVolatile(long address) {
+        return UNSAFE.getShortVolatile(null, address);
     }
 
     @Override
-    public void putShortVolatile(long offset, short x) {
-        UNSAFE.putShortVolatile(null, offset, x);
+    public void putShortVolatile(long address, short x) {
+        UNSAFE.putShortVolatile(null, address, x);
     }
 
     @Override
-    public int getIntVolatile(long offset) {
-        return UNSAFE.getIntVolatile(null, offset);
+    public int getIntVolatile(long address) {
+        return UNSAFE.getIntVolatile(null, address);
     }
 
     @Override
-    public void putIntVolatile(long offset, int x) {
-        UNSAFE.putIntVolatile(null, offset, x);
+    public void putIntVolatile(long address, int x) {
+        UNSAFE.putIntVolatile(null, address, x);
     }
 
     @Override
-    public float getFloatVolatile(long offset) {
-        return UNSAFE.getFloatVolatile(null, offset);
+    public float getFloatVolatile(long address) {
+        return UNSAFE.getFloatVolatile(null, address);
     }
 
     @Override
-    public void putFloatVolatile(long offset, float x) {
-        UNSAFE.putFloatVolatile(null, offset, x);
+    public void putFloatVolatile(long address, float x) {
+        UNSAFE.putFloatVolatile(null, address, x);
     }
 
     @Override
-    public long getLongVolatile(long offset) {
-        return UNSAFE.getLongVolatile(null, offset);
+    public long getLongVolatile(long address) {
+        return UNSAFE.getLongVolatile(null, address);
     }
 
     @Override
-    public void putLongVolatile(long offset, long x) {
-        UNSAFE.putLongVolatile(null, offset, x);
+    public void putLongVolatile(long address, long x) {
+        UNSAFE.putLongVolatile(null, address, x);
     }
 
     @Override
-    public double getDoubleVolatile(long offset) {
-        return UNSAFE.getDoubleVolatile(null, offset);
+    public double getDoubleVolatile(long address) {
+        return UNSAFE.getDoubleVolatile(null, address);
     }
 
     @Override
-    public void putDoubleVolatile(long offset, double x) {
-        UNSAFE.putDoubleVolatile(null, offset, x);
-    }
-
-    @Override
-    public Object getObjectVolatile(long offset) {
-        return UNSAFE.getObjectVolatile(null, offset);
-    }
-
-    @Override
-    public void putObjectVolatile(long offset, Object x) {
-        UNSAFE.putObjectVolatile(null, offset, x);
+    public void putDoubleVolatile(long address, double x) {
+        UNSAFE.putDoubleVolatile(null, address, x);
     }
 
 
+
     @Override
-    public boolean compareAndSwapInt(long offset, int expected, int x) {
-        return UNSAFE.compareAndSwapInt(null, offset, expected, x);
+    public boolean compareAndSwapInt(long address, int expected, int x) {
+        return UNSAFE.compareAndSwapInt(null, address, expected, x);
     }
 
     @Override
-    public boolean compareAndSwapLong(long offset, long expected, long x) {
-        return UNSAFE.compareAndSwapLong(null, offset, expected, x);
+    public boolean compareAndSwapLong(long address, long expected, long x) {
+        return UNSAFE.compareAndSwapLong(null, address, expected, x);
     }
 
     @Override
-    public boolean compareAndSwapObject(long offset, Object expected, Object x) {
-        return UNSAFE.compareAndSwapObject(null, offset, expected, x);
+    public boolean compareAndSwapObject(long address, Object expected, Object x) {
+        return UNSAFE.compareAndSwapObject(null, address, expected, x);
     }
 
 
     @Override
-    public void putOrderedInt(long offset, int x) {
-        UNSAFE.putOrderedInt(null, offset, x);
+    public void putOrderedInt(long address, int x) {
+        UNSAFE.putOrderedInt(null, address, x);
     }
 
     @Override
-    public void putOrderedLong(long offset, long x) {
-        UNSAFE.putOrderedLong(null, offset, x);
+    public void putOrderedLong(long address, long x) {
+        UNSAFE.putOrderedLong(null, address, x);
     }
 
     @Override
-    public void putOrderedObject(long offset, Object x) {
-        UNSAFE.putOrderedObject(null, offset, x);
+    public void putOrderedObject(long address, Object x) {
+        UNSAFE.putOrderedObject(null, address, x);
     }
 
 
