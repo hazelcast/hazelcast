@@ -27,7 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 import java.io.IOException;
 
@@ -37,7 +37,7 @@ import java.io.IOException;
  * @see NotifyMapFlushOperation
  */
 public class AwaitMapFlushOperation
-        extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, WaitSupport {
+        extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, BlockingOperation {
 
     /**
      * Flush will end after execution of this sequenced store-operation.

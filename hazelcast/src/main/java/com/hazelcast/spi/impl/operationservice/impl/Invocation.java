@@ -33,7 +33,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -158,7 +158,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         long defaultCallTimeout = operationService.defaultCallTimeoutMillis;
-        if (!(op instanceof WaitSupport)) {
+        if (!(op instanceof BlockingOperation)) {
             return defaultCallTimeout;
         }
 
@@ -466,7 +466,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                     + toString());
         }
 
-        if (op instanceof WaitSupport) {
+        if (op instanceof BlockingOperation) {
             // decrement wait-timeout by call-timeout
             long waitTimeout = op.getWaitTimeout();
             waitTimeout -= callTimeout;

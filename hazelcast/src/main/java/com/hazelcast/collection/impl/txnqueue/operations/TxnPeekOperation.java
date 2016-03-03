@@ -23,14 +23,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 import java.io.IOException;
 
 /**
  * Peek operation for the transactional queue.
  */
-public class TxnPeekOperation extends QueueOperation implements WaitSupport {
+public class TxnPeekOperation extends QueueOperation implements BlockingOperation {
 
     private long itemId;
     private String transactionId;

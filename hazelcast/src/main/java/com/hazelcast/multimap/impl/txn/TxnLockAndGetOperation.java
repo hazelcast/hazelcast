@@ -29,12 +29,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport {
+public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
 
     private long ttl;
 

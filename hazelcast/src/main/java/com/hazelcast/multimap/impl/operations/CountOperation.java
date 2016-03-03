@@ -25,9 +25,9 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
-public class CountOperation extends MultiMapKeyBasedOperation implements WaitSupport {
+public class CountOperation extends MultiMapKeyBasedOperation implements BlockingOperation {
 
     public CountOperation() {
     }

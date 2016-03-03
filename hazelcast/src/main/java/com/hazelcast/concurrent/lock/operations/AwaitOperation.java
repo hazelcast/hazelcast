@@ -25,12 +25,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 import java.io.IOException;
 
 public class AwaitOperation extends BaseLockOperation
-        implements WaitSupport, BackupAwareOperation {
+        implements BlockingOperation, BackupAwareOperation {
 
     private String conditionId;
     private boolean expired;

@@ -21,9 +21,9 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
-public abstract class LockAwareOperation extends KeyBasedMapOperation implements WaitSupport {
+public abstract class LockAwareOperation extends KeyBasedMapOperation implements BlockingOperation {
 
     protected LockAwareOperation() {
     }

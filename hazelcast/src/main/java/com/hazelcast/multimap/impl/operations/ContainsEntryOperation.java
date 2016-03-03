@@ -26,10 +26,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import java.io.IOException;
 
-public class ContainsEntryOperation extends MultiMapOperation implements WaitSupport {
+public class ContainsEntryOperation extends MultiMapOperation implements BlockingOperation {
 
     private Data key;
     private Data value;

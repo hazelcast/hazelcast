@@ -23,9 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
-public class ContainsKeyOperation extends KeyBasedMapOperation implements ReadonlyOperation, WaitSupport {
+public class ContainsKeyOperation extends KeyBasedMapOperation implements ReadonlyOperation, BlockingOperation {
 
     private boolean containsKey;
 

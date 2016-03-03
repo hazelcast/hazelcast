@@ -36,7 +36,7 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -215,13 +215,13 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean waitingNeeded(Operation op) {
-        if (!(op instanceof WaitSupport)) {
+        if (!(op instanceof BlockingOperation)) {
             return false;
         }
 
-        WaitSupport waitSupport = (WaitSupport) op;
-        if (waitSupport.shouldWait()) {
-            nodeEngine.getWaitNotifyService().await(waitSupport);
+        BlockingOperation blockingOperation = (BlockingOperation) op;
+        if (blockingOperation.shouldWait()) {
+            nodeEngine.getWaitNotifyService().await(blockingOperation);
             return true;
         }
         return false;

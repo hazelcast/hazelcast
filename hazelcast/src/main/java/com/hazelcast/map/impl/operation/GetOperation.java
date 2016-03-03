@@ -26,10 +26,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 public final class GetOperation extends KeyBasedMapOperation
-        implements IdentifiedDataSerializable, WaitSupport, ReadonlyOperation {
+        implements IdentifiedDataSerializable, BlockingOperation, ReadonlyOperation {
 
     private Data result;
 

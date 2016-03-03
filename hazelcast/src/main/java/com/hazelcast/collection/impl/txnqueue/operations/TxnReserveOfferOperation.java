@@ -23,14 +23,14 @@ import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 import java.io.IOException;
 
 /**
  * Reserve offer operation for the transactional queue.
  */
-public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements WaitSupport {
+public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements BlockingOperation {
 
     private int txSize;
     private String transactionId;

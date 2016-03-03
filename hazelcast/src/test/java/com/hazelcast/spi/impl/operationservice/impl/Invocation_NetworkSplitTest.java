@@ -29,7 +29,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.test.AssertTask;
@@ -188,7 +188,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static class AlwaysBlockingOperation extends AbstractOperation implements WaitSupport {
+    private static class AlwaysBlockingOperation extends AbstractOperation implements BlockingOperation {
 
         @Override
         public void run() throws Exception {
