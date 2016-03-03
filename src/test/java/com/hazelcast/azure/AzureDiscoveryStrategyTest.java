@@ -13,64 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.azure.test;
-
-import com.hazelcast.azure.AzureDiscoveryStrategy;
-import com.hazelcast.azure.AzureDiscoveryStrategyFactory;
-import com.hazelcast.azure.AzureAuthHelper;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
+package com.hazelcast.azure;
 
 import com.hazelcast.spi.discovery.DiscoveryNode;
-
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-
-import com.hazelcast.config.properties.PropertyDefinition;
-import com.hazelcast.config.properties.ValidationException;
-
-import com.microsoft.windowsazure.core.*;
-import com.microsoft.windowsazure.exception.ServiceException;
+import com.microsoft.azure.management.compute.ComputeManagementClient;
+import com.microsoft.azure.management.compute.ComputeManagementService;
+import com.microsoft.azure.management.compute.VirtualMachineOperations;
+import com.microsoft.azure.management.compute.models.InstanceViewStatus;
+import com.microsoft.azure.management.compute.models.NetworkInterfaceReference;
+import com.microsoft.azure.management.compute.models.NetworkProfile;
+import com.microsoft.azure.management.compute.models.VirtualMachine;
+import com.microsoft.azure.management.compute.models.VirtualMachineGetResponse;
+import com.microsoft.azure.management.compute.models.VirtualMachineInstanceView;
+import com.microsoft.azure.management.compute.models.VirtualMachineListResponse;
+import com.microsoft.azure.management.network.NetworkInterfaceOperations;
+import com.microsoft.azure.management.network.NetworkResourceProviderClient;
+import com.microsoft.azure.management.network.NetworkResourceProviderService;
+import com.microsoft.azure.management.network.PublicIpAddressOperations;
+import com.microsoft.azure.management.network.models.NetworkInterface;
+import com.microsoft.azure.management.network.models.NetworkInterfaceGetResponse;
+import com.microsoft.azure.management.network.models.NetworkInterfaceIpConfiguration;
+import com.microsoft.azure.management.network.models.PublicIpAddress;
+import com.microsoft.azure.management.network.models.PublicIpAddressGetResponse;
+import com.microsoft.azure.management.network.models.ResourceId;
 import com.microsoft.windowsazure.Configuration;
-
-import com.microsoft.azure.management.compute.*;
-import com.microsoft.azure.management.compute.models.*;
-
-import com.microsoft.azure.management.network.*;
-import com.microsoft.azure.management.network.models.*;
-
+import com.microsoft.windowsazure.exception.ServiceException;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import java.net.URISyntaxException;
-
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import org.mockito.Mockito;
-
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
-import static com.hazelcast.util.StringUtil.stringToBytes;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(fullyQualifiedNames={

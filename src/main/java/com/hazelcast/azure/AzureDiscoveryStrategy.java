@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Additional Modifications by Microsoft Corporation
- */
+
 package com.hazelcast.azure;
 
-import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.core.HazelcastException;
+
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-
-import com.microsoft.azure.management.resources.ResourceManagementService;
-import com.microsoft.azure.management.resources.ResourceManagementClient;
 
 import com.microsoft.azure.management.compute.VirtualMachineOperations;
 import com.microsoft.azure.management.compute.ComputeManagementClient;
@@ -51,10 +45,7 @@ import com.microsoft.azure.management.network.PublicIpAddressOperations;
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.exception.ServiceException;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -67,7 +58,7 @@ import java.io.IOException;
 public class AzureDiscoveryStrategy implements DiscoveryStrategy {
 
     private static final ILogger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class);
-    
+
     private ComputeManagementClient computeManagement;
     private NetworkResourceProviderClient networkManagement;
     private Map<String, Comparable> properties;
@@ -87,8 +78,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
           Configuration config = AzureAuthHelper.getAzureConfiguration(this.properties);
           this.computeManagement = ComputeManagementService.create(config);
           this.networkManagement = NetworkResourceProviderService.create(config);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
           LOGGER.finest("Failed to start Azure SPI", e);
         }
     }
@@ -97,7 +87,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
     public Iterable<DiscoveryNode> discoverNodes() {
         try {
             VirtualMachineOperations vmOps = this.computeManagement.getVirtualMachinesOperations();
-       
+
             String resourceGroup = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
             String clusterId = AzureProperties.getOrNull(AzureProperties.CLUSTER_ID, properties);
 
@@ -122,15 +112,14 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
 
                 int port = Integer.parseInt(tags.get(clusterId));
                 DiscoveryNode node = buildDiscoveredNode(netProfile, port);
-                
+
                 if (node != null) {
                     nodes.add(node);
                 }
             }
             LOGGER.info("Azure Discovery SPI Discovered " + nodes.size() + " nodes");
             return nodes;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             LOGGER.finest("Failed to discover nodes with Azure SPI", e);
             return null;
@@ -145,7 +134,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
 
     /**
     * Determines if a VM is allocated, or not
-    * 
+    *
     * @param VirtualMachineOperations the vmOperations client
     * @param VirtualMachine the VirtualMachine to check
     * @return boolean true if VirtualMachine is on
@@ -154,11 +143,11 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
         throws IOException, ServiceException, URISyntaxException {
 
         String rgName = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
-        VirtualMachine vmWithInstanceView = vmOps.getWithInstanceView(rgName, 
+        VirtualMachine vmWithInstanceView = vmOps.getWithInstanceView(rgName,
             vm.getName()).getVirtualMachine();
         VirtualMachineInstanceView vmInstanceView = vmWithInstanceView.getInstanceView();
 
-        for(InstanceViewStatus status : vmInstanceView.getStatuses()) {
+        for (InstanceViewStatus status : vmInstanceView.getStatuses()) {
             if (status.getCode().equals("PowerState/running")) {
                 return true;
             }
@@ -171,7 +160,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
     * Takes a reference URI like:
     * /subscriptions/{SubcriptionId}/resourceGroups/{ResourceGroupName}/...
     * and returns the resource name
-    * 
+    *
     * @param referenceUri reference uri of resource
     * @return String the resource name
     */
@@ -185,12 +174,12 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
     * Takes a reference URI like:
     * /subscriptions/{SubcriptionId}/resourceGroups/{ResourceGroupName}/...
     * and returns the resource name
-    * 
+    *
     * @param profile the network profile of the target VM
     * @port the port number of the Hazelcast service
     * @return DiscoveryNode the Hazelcast DiscoveryNode
     */
-    private DiscoveryNode buildDiscoveredNode(NetworkProfile profile, int port) throws UnknownHostException, IOException, ServiceException, Exception {
+    private DiscoveryNode buildDiscoveredNode(NetworkProfile profile, int port) throws Exception {
         PublicIpAddressOperations pubOps = this.networkManagement.getPublicIpAddressesOperations();
         String rgName = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
         NetworkInterfaceOperations nicOps = this.networkManagement.getNetworkInterfacesOperations();
@@ -225,7 +214,6 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
                 return new SimpleDiscoveryNode(privateAddress, publicAddress);
             }
             return new SimpleDiscoveryNode(privateAddress);
-            
         }
 
         // no node found;

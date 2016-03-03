@@ -13,36 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.azure.test;
+package com.hazelcast.azure;
 
-import com.hazelcast.azure.AzureProperties;
-
-import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
-
+import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-
-import com.hazelcast.config.properties.PropertyDefinition;
-import com.hazelcast.config.properties.ValidationException;
-
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import static com.hazelcast.util.StringUtil.stringToBytes;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)

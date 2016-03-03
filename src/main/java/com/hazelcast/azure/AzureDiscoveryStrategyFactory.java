@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Additional Modifications by Microsoft Corporation
- */
+
 package com.hazelcast.azure;
 
 import com.hazelcast.config.properties.PropertyDefinition;
@@ -68,7 +66,7 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
     /**
      * Gets the configuration property definitions
-     * 
+     *
      * @return Collection<PropertyDefinition> the property defitions for the AzureDiscoveryStrategy
      */
     public Collection<PropertyDefinition> getConfigurationProperties() {

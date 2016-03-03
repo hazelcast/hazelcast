@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Additional Modifications by Microsoft Corporation
- */
 
 package com.hazelcast.azure;
 
-import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
 
-import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
-import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
-
 import java.util.Map;
+
+import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
  *  Defines the properties required by teh Azure SPI and the names used in the configuration
@@ -38,30 +33,37 @@ import java.util.Map;
 public final class AzureProperties {
 
     /**
-     * Unique identifier for ComputeService Provider
-     * see the full list of ids : https://jclouds.apache.org/reference/providers/
+     * The constant CLIENT_ID.
      */
     public static final PropertyDefinition CLIENT_ID = property("client-id", STRING);
+
     /**
-     * Unique credential identity specific to users cloud account
+     * The constant TENANT_ID.
      */
     public static final PropertyDefinition TENANT_ID = property("tenant-id", STRING);
+
     /**
-     * Unique credential specific to users cloud accounts identity
+     * The constant SUBSCRIPTION_ID.
      */
     public static final PropertyDefinition SUBSCRIPTION_ID = property("subscription-id", STRING);
+
     /**
-     * Property used to define zones for node filtering
+     * The constant CLIENT_SECRET.
      */
     public static final PropertyDefinition CLIENT_SECRET = property("client-secret", STRING);
+
     /**
-     * Used to compare against the tag on each VM to identify which cluster it belongs
+     * The constant CLUSTER_ID.
      */
     public static final PropertyDefinition CLUSTER_ID = property("cluster-id", STRING);
+
     /**
-     * Resouce group to scan for virtual machines
+     * The constant GROUP_NAME.
      */
     public static final PropertyDefinition GROUP_NAME = property("group-name", STRING);
+
+    private static final int MIN_PORT = 0;
+    private static final int MAX_PORT = 65535;
 
     private AzureProperties() {
     }
@@ -90,9 +92,6 @@ public final class AzureProperties {
         return new SimplePropertyDefinition(key, true, typeConverter, valueValidator);
     }
 
-    private static final int MIN_PORT = 0;
-    private static final int MAX_PORT = 65535;
-
     /**
      * Validator for valid network ports
      */
@@ -115,18 +114,19 @@ public final class AzureProperties {
     }
 
     /**
-    * Returns a Comparable type for the specified property defition in the provided
-    * property map
-    *
-    * @param property the PropertyDefition to use provided by {@link AzureProperties}
-    * @param properties the properties map to retrieve the property from
-    * @throws ValidationException if value does not fall in valid port number range
-    */
+     * Returns a Comparable type for the specified property defition in the provided
+     * property map
+     *
+     * @param property the PropertyDefition to use provided by
+     * @param properties the properties map to retrieve the property from
+     * @return the or null
+     * @throws ValidationException if value does not fall in valid port number range
+     */
     public static <T extends Comparable> T getOrNull(PropertyDefinition property, Map<String, Comparable> properties) {
         return getOrDefault(property, properties, null);
     }
 
-    private static <T extends Comparable> T getOrDefault(PropertyDefinition property, 
+    private static <T extends Comparable> T getOrDefault(PropertyDefinition property,
       Map<String, Comparable> properties, T defaultValue) {
 
         if (properties == null || property == null) {

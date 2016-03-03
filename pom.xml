@@ -28,10 +28,10 @@
 
     <name>hazelcast-azure</name>
     <description>An Azure DiscoveryStrategy for Hazelcast</description>
-    <url>http://github.com/sedouard/hazelcast-azure</url>
+    <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-azure</artifactId>
-    <groupId>com.hazelcast.azure</groupId>
     <version>1.0</version>
+    <url>http://www.hazelcast.com/</url>
     <packaging>jar</packaging>
 
     <licenses>
@@ -145,6 +145,8 @@
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=false
                     </argLine>
+                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                    <excludedGroups>com.hazelcast.test.annotation.SlowTest</excludedGroups>
                 </configuration>
             </plugin>
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.azure.test.integration;
+package com.hazelcast.azure.integration;
 
 import com.hazelcast.azure.AzureAuthHelper;
 

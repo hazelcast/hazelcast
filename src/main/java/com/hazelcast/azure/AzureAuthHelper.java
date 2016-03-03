@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Microsoft. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,42 +19,41 @@ package com.hazelcast.azure;
 import com.microsoft.aad.adal4j.AuthenticationContext;
 import com.microsoft.aad.adal4j.AuthenticationResult;
 import com.microsoft.aad.adal4j.ClientCredential;
-
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.management.configuration.ManagementConfiguration;
 
 import javax.naming.ServiceUnavailableException;
-
+import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import javax.naming.ServiceUnavailableException;
-import java.util.concurrent.Future;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ExecutionException;
-import java.io.IOException;
-import java.lang.InterruptedException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Authentication helper for Azure Active Directory
  */
-public class AzureAuthHelper {
+public final class AzureAuthHelper {
+
+    private AzureAuthHelper() {
+    }
+
     /**
      * Use the ResourceManagementService factory helper method to create a client based on the management config.
-     * 
+     *
      * @param properties The properties Map provided by Hazelcast
      * @return ResourceManagementClient a client to be used to make authenticated requests to the ARM REST API
      * @throws Exception all of the exceptions
      */
     public static Configuration getAzureConfiguration(Map<String, Comparable> properties) throws Exception {
         Configuration config = createConfiguration(
-            (String)AzureProperties.getOrNull(AzureProperties.SUBSCRIPTION_ID, properties),
-            (String)AzureProperties.getOrNull(AzureProperties.CLIENT_ID, properties),
-            (String)AzureProperties.getOrNull(AzureProperties.TENANT_ID, properties),
-            (String)AzureProperties.getOrNull(AzureProperties.CLIENT_SECRET, properties));
+            (String) AzureProperties.getOrNull(AzureProperties.SUBSCRIPTION_ID, properties),
+            (String) AzureProperties.getOrNull(AzureProperties.CLIENT_ID, properties),
+            (String) AzureProperties.getOrNull(AzureProperties.TENANT_ID, properties),
+            (String) AzureProperties.getOrNull(AzureProperties.CLIENT_SECRET, properties));
         return config;
     }
 
@@ -62,7 +61,7 @@ public class AzureAuthHelper {
      * Create configuration builds the management configuration needed for creating the ResourceManagementService.
      * The config contains the baseURI which is the base of the ARM REST service, the subscription id as the context for
      * the ResourceManagementService and the AAD token required for the HTTP Authorization header.
-     * 
+     *
      * @return Configuration the generated configuration
      * @throws URISyntaxException if the URI used to authenticate is invalid
      * @throws IOException if we cannot read the response
@@ -70,16 +69,16 @@ public class AzureAuthHelper {
      * @throws InterruptedException if task is interrupted
      * @throws ExecutionException
      */
-    private static Configuration createConfiguration(String subscriptionId, 
-        String clientId, String tenantId, String clientSecret) throws 
-        URISyntaxException, IOException, ServiceUnavailableException, 
+    private static Configuration createConfiguration(String subscriptionId, String clientId,
+                                                     String tenantId, String clientSecret) throws
+        URISyntaxException, IOException, ServiceUnavailableException,
         ExecutionException, InterruptedException {
         String baseUri = "https://management.core.windows.net";
         return ManagementConfiguration.configure(
                 null,
                 new URI(baseUri),
                 subscriptionId,
-                getAccessTokenFromServicePrincipalCredentials(clientId, 
+                getAccessTokenFromServicePrincipalCredentials(clientId,
                     tenantId, clientSecret).getAccessToken());
     }
 
@@ -93,9 +92,10 @@ public class AzureAuthHelper {
      * @throws ExecutionException          houston we have a problem.
      * @throws InterruptedException        the request to AAD has been interrupted
      */
-    private static AuthenticationResult getAccessTokenFromServicePrincipalCredentials(String clientId, 
+    private static AuthenticationResult getAccessTokenFromServicePrincipalCredentials(String clientId,
         String tenantId, String clientSecret) throws
             ServiceUnavailableException, MalformedURLException, ExecutionException, InterruptedException {
+
         AuthenticationContext context;
         AuthenticationResult result = null;
         ExecutorService service = null;
@@ -111,7 +111,9 @@ public class AzureAuthHelper {
                     "https://management.azure.com/", cred, null);
             result = future.get();
         } finally {
-            service.shutdown();
+            if (service != null) {
+                service.shutdown();
+            }
         }
 
         if (result == null) {
