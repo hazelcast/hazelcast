@@ -18,6 +18,8 @@ package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -25,8 +27,6 @@ import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.internal.util.counters.SwCounter;
 
 import static com.hazelcast.instance.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.instance.GroupProperty.IO_THREAD_COUNT;
@@ -103,13 +103,17 @@ public class IOBalancer {
     }
 
     public void connectionAdded(TcpIpConnection connection) {
-        inLoadTracker.notifyConnectionAdded(connection);
-        outLoadTracker.notifyConnectionAdded(connection);
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+        inLoadTracker.notifyHandlerAdded(socketReader);
+        outLoadTracker.notifyHandlerAdded(socketWriter);
     }
 
     public void connectionRemoved(TcpIpConnection connection) {
-        inLoadTracker.notifyConnectionRemoved(connection);
-        outLoadTracker.notifyConnectionRemoved(connection);
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+        inLoadTracker.notifyHandlerRemoved(socketReader);
+        outLoadTracker.notifyHandlerRemoved(socketWriter);
     }
 
     public void start() {
