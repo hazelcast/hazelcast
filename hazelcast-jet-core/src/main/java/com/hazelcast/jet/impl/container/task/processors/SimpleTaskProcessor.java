@@ -27,13 +27,15 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class SimpleTaskProcessor implements TaskProcessor {
     private static final Object[] DUMMY_CHUNK = new Object[0];
+
+    protected boolean finalizationStarted;
+
     private final ContainerProcessor processor;
     private final ContainerContext containerContext;
     private final DefaultObjectIOStream tupleInputStream;
     private final DefaultObjectIOStream tupleOutputStream;
-    private final ProcessorContext processorContext;
-    protected boolean finalizationStarted;
     private boolean finalized;
+    private final ProcessorContext processorContext;
 
     public SimpleTaskProcessor(ContainerProcessor processor,
                                ContainerContext containerContext,

@@ -16,12 +16,21 @@
 
 package com.hazelcast.jet.impl.util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.jet.api.hazelcast.JetService;
+import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.jet.spi.config.JetClientConfig;
+import com.hazelcast.jet.spi.config.JetConfig;
+import com.hazelcast.spi.NodeEngine;
+
 import java.io.File;
-import java.io.FileReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
@@ -101,7 +110,7 @@ public final class JetUtil {
 
     public static long[] splitFile(File file, int chunkCount) {
         try {
-            FileReader raf = new FileReader(file);
+            InputStreamReader raf = new InputStreamReader(new FileInputStream(file), Charset.forName("UTF-8"));
             long[] offsets = new long[chunkCount];
             Arrays.fill(offsets, -1L);
 
@@ -174,5 +183,64 @@ public final class JetUtil {
                 applicationName.length() <= MAX_APPLICATION_NAME_SIZE,
                 "Length of applicationName shouldn't be greater than " + MAX_APPLICATION_NAME_SIZE
         );
+    }
+
+    private static boolean isEmptyConfig(final JetApplicationConfig jetApplicationConfig) {
+        return (jetApplicationConfig == null) || (jetApplicationConfig.getName() == null);
+    }
+
+    public static JetApplicationConfig resolveJetDefaultApplicationConfig(final NodeEngine nodeEngine) {
+        JetApplicationConfig jetApplicationConfig = null;
+
+        if (isJetConfig(nodeEngine.getConfig())) {
+            jetApplicationConfig =
+                    ((JetConfig) nodeEngine.getConfig()).getJetApplicationConfig(JetService.SERVICE_NAME);
+        }
+
+        if (isEmptyConfig(jetApplicationConfig)) {
+            jetApplicationConfig = new JetApplicationConfig();
+        }
+
+        return jetApplicationConfig;
+    }
+
+    public static JetApplicationConfig resolveJetServerApplicationConfig(final NodeEngine nodeEngine,
+                                                                         final JetApplicationConfig jetApplicationConfig,
+                                                                         final String name) {
+        return resolveJetApplicationConfig(nodeEngine.getConfig(), jetApplicationConfig, name);
+    }
+
+    public static JetApplicationConfig resolveJetClientApplicationConfig(final HazelcastClientInstanceImpl client,
+                                                                         final JetApplicationConfig jetApplicationConfig,
+                                                                         final String name) {
+        return resolveJetApplicationConfig(client.getConfig(), jetApplicationConfig, name);
+    }
+
+    private static <T> JetApplicationConfig resolveJetApplicationConfig(final T hazelcastConfig,
+                                                                        final JetApplicationConfig jetApplicationConfig,
+                                                                        final String name) {
+        JetApplicationConfig resultConfig = jetApplicationConfig;
+
+        if (isEmptyConfig(resultConfig)) {
+            if (isJetConfig(hazelcastConfig)) {
+                resultConfig = ((JetConfig) hazelcastConfig).getJetApplicationConfig(name);
+            } else if (isJetClientConfig(hazelcastConfig)) {
+                resultConfig = ((JetClientConfig) hazelcastConfig).getJetApplicationConfig(name);
+            }
+        }
+
+        if (isEmptyConfig(resultConfig)) {
+            resultConfig = new JetApplicationConfig(name);
+        }
+
+        return resultConfig;
+    }
+
+    private static boolean isJetClientConfig(final Object hazelcastConfig) {
+        return ((hazelcastConfig != null) && (hazelcastConfig instanceof JetClientConfig));
+    }
+
+    private static boolean isJetConfig(final Object hazelcastConfig) {
+        return ((hazelcastConfig != null) && (hazelcastConfig instanceof JetConfig));
     }
 }

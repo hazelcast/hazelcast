@@ -18,15 +18,21 @@ package com.hazelcast.jet.impl.hazelcast;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.OutboundFrame;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-//CHECKSTYLE:OFF
+@SuppressWarnings({
+        "checkstyle:npathcomplexity",
+        "checkstyle:cyclomaticcomplexity",
+        "checkstyle:methodcount"
+}
+)
 public final class JetPacket extends HeapData implements OutboundFrame {
     public static final byte VERSION = 105;
 
@@ -53,7 +59,6 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     private static final short PERSIST_CONTAINER = 11;
     private static final short PERSIST_APPLICATION_SIZE = 12;
     private static final short PERSIST_APPLICATION = 13;
-    protected transient Connection conn;
     protected short header;
     private int partitionId;
     // These 2 fields are only used during read/write. Otherwise they have no meaning.
@@ -70,21 +75,24 @@ public final class JetPacket extends HeapData implements OutboundFrame {
 
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(byte[] applicationNameBytes, byte[] payLoad) {
         this(-1, -1, applicationNameBytes, payLoad);
     }
 
-
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(byte[] applicationNameBytes) {
         this(-1, -1, applicationNameBytes, null);
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(int containerId,
                      byte[] applicationNameBytes
     ) {
         this(-1, containerId, applicationNameBytes, null);
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(int taskID,
                      int containerId,
                      byte[] applicationNameBytes
@@ -92,6 +100,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         this(taskID, containerId, applicationNameBytes, null);
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(int taskID,
                      int containerId,
                      byte[] applicationNameBytes,
@@ -104,7 +113,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         this.applicationNameBytes = applicationNameBytes;
     }
 
-
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public JetPacket(byte[] payload, int partitionId) {
         super(payload);
         this.partitionId = partitionId;
@@ -345,6 +354,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         return this.containerId;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public byte[] getApplicationNameBytes() {
         return this.applicationNameBytes;
     }
@@ -512,16 +522,7 @@ public final class JetPacket extends HeapData implements OutboundFrame {
         final StringBuilder sb = new StringBuilder("JetPacket{").append("header=").
                 append(header).
                 append(", containerId=").append(this.containerId).
-                append(", applicationName=").
-                append(
-                        this.applicationNameBytes == null
-                                ?
-                                "null"
-                                :
-                                new String(this.applicationNameBytes)
-                ).
                 append(", taskID=").append(this.taskID).
-                append(", conn=").append(this.conn == null ? "null" : this.conn).
                 append('}');
 
         return sb.toString();
@@ -547,5 +548,63 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     public void setRemoteMember(Address remoteMember) {
         this.remoteMember = remoteMember;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        JetPacket jetPacket = (JetPacket) o;
+
+        if (header != jetPacket.header) {
+            return false;
+        }
+        if (partitionId != jetPacket.partitionId) {
+            return false;
+        }
+        if (valueOffset != jetPacket.valueOffset) {
+            return false;
+        }
+        if (size != jetPacket.size) {
+            return false;
+        }
+        if (persistStatus != jetPacket.persistStatus) {
+            return false;
+        }
+        if (taskID != jetPacket.taskID) {
+            return false;
+        }
+        if (containerId != jetPacket.containerId) {
+            return false;
+        }
+        if (remoteMember != null ? !remoteMember.equals(jetPacket.remoteMember) : jetPacket.remoteMember != null) {
+            return false;
+        }
+
+        return Arrays.equals(applicationNameBytes, jetPacket.applicationNameBytes);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) header;
+        result = 31 * result + partitionId;
+        result = 31 * result + valueOffset;
+        result = 31 * result + size;
+        result = 31 * result + (int) persistStatus;
+        result = 31 * result + taskID;
+        result = 31 * result + containerId;
+        result = 31 * result + (remoteMember != null ? remoteMember.hashCode() : 0);
+        result = 31 * result + (applicationNameBytes != null ? Arrays.hashCode(applicationNameBytes) : 0);
+        return result;
+    }
 }
-//CHECKSTYLE:ON

@@ -37,11 +37,13 @@ import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class RingBufferActor implements ObjectActor {
     private final Edge edge;
     private final Vertex vertex;
@@ -96,7 +98,6 @@ public class RingBufferActor implements ObjectActor {
                 :
                 new RingBufferWithValueStrategy<Object>(
                         containerQueueSize,
-                        nodeEngine.getLogger(RingBufferActor.class),
                         edge.getDataTransferringStrategy()
                 );
 

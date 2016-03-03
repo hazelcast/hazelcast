@@ -26,9 +26,11 @@ import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class ProducerTaskProcessor implements TaskProcessor {
     protected final int taskID;
     protected final ObjectProducer[] producers;
@@ -83,8 +85,6 @@ public class ProducerTaskProcessor implements TaskProcessor {
     public boolean process() throws Exception {
         int producersCount = this.producers.length;
 
-        boolean produced = false;
-
         if (this.finalizationStarted) {
             this.finalizationFinished = this.processor.finalizeProcessor(
                     this.tupleOutputStream,
@@ -96,14 +96,19 @@ public class ProducerTaskProcessor implements TaskProcessor {
             return processProducer(this.pendingProducer);
         }
 
+        return !scanProducers(producersCount);
+    }
+
+    private boolean scanProducers(int producersCount) throws Exception {
         int lastIdx = 0;
+        boolean produced = false;
 
         //We should scan all producers if they were marked as closed
         int startFrom = startFrom();
 
-        for (int i = startFrom; i < producersCount; i++) {
-            lastIdx = i;
-            ObjectProducer producer = this.producers[i];
+        for (int idx = startFrom; idx < producersCount; idx++) {
+            lastIdx = idx;
+            ObjectProducer producer = this.producers[idx];
 
             Object[] inChunk = producer.produce();
 
@@ -119,8 +124,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
             );
 
             if (!processProducer(producer)) {
-                this.nextProducerIdx = (i + 1) % producersCount;
-                return false;
+                this.nextProducerIdx = (idx + 1) % producersCount;
+                return true;
             }
         }
 
@@ -133,7 +138,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
             this.produced = produced;
         }
 
-        return true;
+        return false;
     }
 
     private int startFrom() {

@@ -16,17 +16,16 @@
 
 package com.hazelcast.jet.api.application.localization;
 
-import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
 import com.hazelcast.jet.impl.application.localization.Chunk;
+import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
 import com.hazelcast.jet.impl.application.localization.classloader.ResourceStream;
-import com.hazelcast.jet.spi.JetException;
 
 import java.io.IOException;
 import java.util.Map;
 
 /**
  * Interface for localization storage
- *
+ * <p>
  * It stores byte-code of classes which will be used in application
  */
 public interface LocalizationStorage {
@@ -35,9 +34,8 @@ public interface LocalizationStorage {
      *
      * @param chunk -   chunk with byte-code
      * @throws IOException if IO error
-     * @throws JetException if any other error
      */
-    void receiveFileChunk(Chunk chunk) throws IOException, JetException;
+    void receiveFileChunk(Chunk chunk) throws IOException;
 
     /**
      * Accepts localisation phase.

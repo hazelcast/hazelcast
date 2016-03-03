@@ -50,6 +50,9 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     protected final ContainerDescriptor containerDescriptor;
 
     protected final DefaultObjectIOStream<Object> chunkBuffer;
+
+    protected volatile boolean isFlushed = true;
+
     private final String name;
     private final int partitionId;
     private final NodeEngine nodeEngine;
@@ -88,7 +91,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
             }
         }
     };
-    protected volatile boolean isFlushed = true;
     private int lastConsumedCount;
     private boolean isClosed;
 

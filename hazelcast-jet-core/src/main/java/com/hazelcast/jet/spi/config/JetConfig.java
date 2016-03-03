@@ -25,7 +25,7 @@ public class JetConfig extends Config {
         this.jetConfigurator = new JetConfigurator();
     }
 
-    public JetApplicationConfig getJetApplicationCofig(String name) {
+    public JetApplicationConfig getJetApplicationConfig(String name) {
         return this.jetConfigurator.getJetApplicationCofig(name);
     }
 

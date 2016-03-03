@@ -18,7 +18,9 @@ package com.hazelcast.jet.impl.processor.descriptor;
 
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class DefaultProcessorDescriptor extends ProcessorDescriptor {
     private final String clazz;
     private final Object[] args;

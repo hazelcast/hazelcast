@@ -1,8 +1,25 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
+
 import javax.annotation.Generated;
 
 @Generated("Hazelcast.code.generator")
@@ -13,14 +30,17 @@ public final class JetAcceptLocalizationCodec {
     public static final int RESPONSE_TYPE = 101;
     public static final boolean RETRYABLE = false;
 
+    private JetAcceptLocalizationCodec() {
+    }
+
     //************************ REQUEST *************************//
 
     public static class RequestParameters {
-    public static final JetMessageType TYPE = REQUEST_TYPE;
+        public static final JetMessageType TYPE = REQUEST_TYPE;
         public java.lang.String name;
 
         public static int calculateDataSize(java.lang.String
- name) {
+                                                    name) {
             int dataSize = ClientMessage.HEADER_SIZE;
             dataSize += ParameterUtil.calculateDataSize(name);
             return dataSize;
@@ -28,7 +48,7 @@ public final class JetAcceptLocalizationCodec {
     }
 
     public static ClientMessage encodeRequest(java.lang.String
- name) {
+                                                      name) {
         final int requiredDataSize = RequestParameters.calculateDataSize(name);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(REQUEST_TYPE.id());
@@ -42,7 +62,7 @@ public final class JetAcceptLocalizationCodec {
         final RequestParameters parameters = new RequestParameters();
         java.lang.String name = null;
         name = clientMessage.getStringUtf8();
-            parameters.name = name;
+        parameters.name = name;
         return parameters;
     }
 
@@ -52,7 +72,7 @@ public final class JetAcceptLocalizationCodec {
         public boolean response;
 
         public static int calculateDataSize(boolean
- response) {
+                                                    response) {
             int dataSize = ClientMessage.HEADER_SIZE;
             dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
             return dataSize;
@@ -60,7 +80,7 @@ public final class JetAcceptLocalizationCodec {
     }
 
     public static ClientMessage encodeResponse(boolean
- response) {
+                                                       response) {
         final int requiredDataSize = ResponseParameters.calculateDataSize(response);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(RESPONSE_TYPE);
@@ -72,9 +92,9 @@ public final class JetAcceptLocalizationCodec {
 
     public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
         ResponseParameters parameters = new ResponseParameters();
-        boolean response ;
+        boolean response;
         response = clientMessage.getBoolean();
-            parameters.response = response;
+        parameters.response = response;
         return parameters;
     }
 

@@ -18,7 +18,9 @@ package com.hazelcast.jet.impl.hazelcast;
 
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptorProvider;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class JetRemoteServiceDescriptorProvider implements RemoteServiceDescriptorProvider {
     private RemoteServiceDescriptor[] descriptors;
 

@@ -43,6 +43,7 @@ import com.hazelcast.jet.spi.application.ApplicationListener;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.nio.Address;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,7 +53,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -83,6 +84,7 @@ public class ApplicationMasterImpl extends
     private volatile boolean interrupted;
     private volatile Throwable interruptionError;
     private volatile DAG dag;
+    private final byte[] applicationNameBytes;
 
     public ApplicationMasterImpl(
             ApplicationContext applicationContext,
@@ -90,6 +92,7 @@ public class ApplicationMasterImpl extends
     ) {
         super(STATE_MACHINE_FACTORY, applicationContext.getNodeEngine(), applicationContext);
         this.discoveryService = discoveryService;
+        this.applicationNameBytes = getNodeEngine().getSerializationService().toBytes(applicationContext.getName());
     }
 
     @Override
@@ -145,6 +148,7 @@ public class ApplicationMasterImpl extends
                         getNetworkTaskContext().getTasks().length;
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void notifyInterrupted(Throwable error) throws Exception {
         Throwable interruptionError =
                 error == null ? APPLICATION_INTERRUPTED_EXCEPTION : error;
@@ -178,12 +182,12 @@ public class ApplicationMasterImpl extends
         this.interruptionError = null;
         this.containerCounter.set(0);
         this.networkTaskCounter.set(0);
-        this.executionMailBox.set(new LinkedBlockingQueue<Object>());
+        this.executionMailBox.set(new ArrayBlockingQueue<Object>(1));
     }
 
     @Override
     public void registerInterruption() {
-        this.interruptionFutureHolder.set(new LinkedBlockingQueue<Object>());
+        this.interruptionFutureHolder.set(new ArrayBlockingQueue<Object>(1));
     }
 
     @Override
@@ -216,6 +220,7 @@ public class ApplicationMasterImpl extends
         System.out.println("addToExecutionMailBox.2 " + getApplicationContext().getName());
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void addToMailBox(Object object, List<Throwable> errors) {
         BlockingQueue<Object> executionMailBox = this.executionMailBox.get();
 
@@ -256,7 +261,7 @@ public class ApplicationMasterImpl extends
 
     private void notifyClusterMembers(Object reason, MemberImpl member) {
         JetPacket jetPacket = new JetPacket(
-                getApplicationName().getBytes(),
+                this.applicationNameBytes,
                 toBytes(reason)
         );
 

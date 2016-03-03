@@ -34,10 +34,10 @@ public class DefaultApplicationStateMachineRequestProcessor implements Applicati
             this.applicationContext.getExecutorContext().getApplicationTaskContext().init();
         }
 
-        if ((event == ApplicationEvent.EXECUTION_FAILURE) ||
-                (event == ApplicationEvent.EXECUTION_SUCCESS) ||
-                (event == ApplicationEvent.INTERRUPTION_FAILURE) ||
-                (event == ApplicationEvent.INTERRUPTION_SUCCESS)
+        if ((event == ApplicationEvent.EXECUTION_FAILURE)
+                || (event == ApplicationEvent.EXECUTION_SUCCESS)
+                || (event == ApplicationEvent.INTERRUPTION_FAILURE)
+                || (event == ApplicationEvent.INTERRUPTION_SUCCESS)
                 ) {
             this.applicationContext.getExecutorContext().getNetworkTaskContext().destroy();
         }

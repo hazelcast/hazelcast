@@ -29,6 +29,7 @@ import com.hazelcast.jet.api.statemachine.StateMachineState;
 import com.hazelcast.jet.impl.container.RequestPayLoad;
 import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.jet.spi.JetException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 
@@ -43,14 +44,15 @@ public abstract class AbstractStateMachineImpl
                 State extends StateMachineState,
                 Output extends StateMachineOutput> implements StateMachine<Input, State, Output> {
     protected final String name;
+    protected volatile Output output;
+    protected volatile State state = defaultState();
+
     private final ILogger logger;
     private final Map<State, Map<Input, State>> stateTransitionMatrix;
     private final ApplicationContext applicationContext;
     private final StateMachineRequestProcessor<Input> processor;
     private final BlockingQueue<RequestPayLoad<Input, Output>> eventsQueue =
             new LinkedBlockingDeque<RequestPayLoad<Input, Output>>();
-    protected volatile Output output;
-    protected volatile State state = defaultState();
 
     protected AbstractStateMachineImpl(String name,
                                        Map<State, Map<Input, State>> stateTransitionMatrix,
@@ -82,7 +84,11 @@ public abstract class AbstractStateMachineImpl
     public <P> Future<Output> handleRequest(StateMachineRequest<Input, P> request) {
         RequestPayLoad<Input, Output> payLoad =
                 new RequestPayLoad<Input, Output>(request.getContainerEvent(), request.getPayLoad());
-        this.eventsQueue.offer(payLoad);
+
+        if (!this.eventsQueue.offer(payLoad)) {
+            throw new JetException("Can't add request to the stateMachine " + name);
+        }
+
         return payLoad.getFuture();
     }
 

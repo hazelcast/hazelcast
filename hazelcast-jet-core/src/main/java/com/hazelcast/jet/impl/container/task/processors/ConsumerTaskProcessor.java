@@ -25,6 +25,7 @@ import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -42,6 +43,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected boolean finalizationFinished;
     protected boolean finalizationStarted;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public ConsumerTaskProcessor(ObjectConsumer[] consumers,
                                  ContainerProcessor processor,
                                  ContainerContext containerContext,

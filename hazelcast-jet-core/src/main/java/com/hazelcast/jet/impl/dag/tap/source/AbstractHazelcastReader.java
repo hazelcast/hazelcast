@@ -28,10 +28,12 @@ import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,10 +43,10 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
     protected final NodeEngine nodeEngine;
     protected final TupleFactory tupleFactory;
     protected final ContainerDescriptor containerDescriptor;
-    private final String name;
-    private final Vertex vertex;
-    private final int chunkSize;
-    private final int partitionId;
+    protected long position;
+    protected Iterator<V> iterator;
+    protected volatile Object[] chunkBuffer;
+
     protected final PartitionSpecificRunnable partitionSpecificOpenRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -61,6 +63,7 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
             }
         }
     };
+
     protected final PartitionSpecificRunnable partitionSpecificCloseRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -77,17 +80,7 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
             }
         }
     };
-    private final int awaitSecondsTime;
-    private final InternalOperationService internalOperationService;
-    private final List<ProducerCompletionHandler> completionHandlers;
-    private final DataTransferringStrategy dataTransferringStrategy;
-    protected long position;
-    protected Iterator<V> iterator;
-    protected volatile Object[] chunkBuffer;
-    private volatile int lastProducedCount;
-    private Object[] buffer;
-    private boolean markClosed;
-    private boolean closed;
+
     protected final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
         @Override
         public int getPartitionId() {
@@ -104,6 +97,19 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
             }
         }
     };
+
+    private boolean closed;
+    private Object[] buffer;
+    private final String name;
+    private boolean markClosed;
+    private final Vertex vertex;
+    private final int chunkSize;
+    private final int partitionId;
+    private final int awaitSecondsTime;
+    private volatile int lastProducedCount;
+    private final InternalOperationService internalOperationService;
+    private final DataTransferringStrategy dataTransferringStrategy;
+    private final List<ProducerCompletionHandler> completionHandlers;
     private volatile boolean isReadRequested;
 
     public AbstractHazelcastReader(ContainerDescriptor containerDescriptor,

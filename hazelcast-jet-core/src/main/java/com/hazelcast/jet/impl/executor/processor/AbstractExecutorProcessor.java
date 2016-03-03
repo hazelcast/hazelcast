@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.actor.strategy.AdaptiveSleepingStrategy;
 import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
 import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.logging.ILogger;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +92,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
         this.lockingQueue.take();
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void start() {
         if (!this.started) {
             this.started = true;
@@ -102,6 +104,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
     }
 
     @Override
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void wakeUp() {
         this.lockingQueue.offer(true);
     }
@@ -131,7 +134,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
 
             if (task instanceof DefaultContainerTask) {
                 System.out.println("Incoming=" + task.getClass() + " size=" + this.tasks.size()
-                        + " idx=" + this + " wtc=" + this.workingTaskCount.get()
+                                + " idx=" + this + " wtc=" + this.workingTaskCount.get()
                 );
             }
         } while (true);

@@ -32,8 +32,8 @@ import com.hazelcast.jet.impl.operation.application.InitApplicationRequestOperat
 import com.hazelcast.jet.impl.operation.application.InterruptExecutionOperation;
 import com.hazelcast.jet.impl.operation.application.LocalizationChunkOperation;
 import com.hazelcast.jet.impl.operation.application.SubmitApplicationRequestOperation;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.spi.config.JetConfig;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
 import com.hazelcast.jet.spi.dag.DAG;
@@ -127,15 +127,8 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
     }
 
     @Override
-    protected JetApplicationConfig getConfig() {
-        JetApplicationConfig config =
-                ((JetConfig) this.nodeEngine.getConfig()).getJetApplicationCofig(this.name);
-
-        if (config == null) {
-            return new JetApplicationConfig();
-        }
-
-        return config;
+    protected JetApplicationConfig getJetApplicationConfig() {
+        return JetUtil.resolveJetServerApplicationConfig(this.nodeEngine, this.jetApplicationConfig, name);
     }
 
     @Override

@@ -17,13 +17,17 @@
 package com.hazelcast.jet.impl.application.localization.classloader;
 
 import com.hazelcast.jet.api.application.localization.LocalizationStorage;
+import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ApplicationClassLoader extends ClassLoader {
     protected final List<ProxyClassLoader> loaders = new ArrayList<ProxyClassLoader>();
@@ -32,11 +36,20 @@ public class ApplicationClassLoader extends ClassLoader {
     private final ProxyClassLoader parentLoader = new ParentLoader();
     private final ProxyClassLoader currentLoader = new CurrentLoader();
 
-    public ApplicationClassLoader(LocalizationStorage localizationStorage) {
+    public ApplicationClassLoader(final LocalizationStorage localizationStorage) {
         addDefaultLoaders();
 
         try {
-            addLoader(new LocalizationClassLoader(localizationStorage.getResources()));
+            final Map<LocalizationResourceDescriptor, ResourceStream> resources =
+                    localizationStorage.getResources();
+
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    addLoader(new LocalizationClassLoader(resources));
+                    return null;
+                }
+            });
         } catch (IOException e) {
             throw JetUtil.reThrow(e);
         }
@@ -200,7 +213,7 @@ public class ApplicationClassLoader extends ClassLoader {
     /**
      * Current class loader
      */
-    class CurrentLoader implements ProxyClassLoader {
+    static class CurrentLoader implements ProxyClassLoader {
         @Override
         public Class loadClass(String className, boolean resolveIt) {
             Class result;

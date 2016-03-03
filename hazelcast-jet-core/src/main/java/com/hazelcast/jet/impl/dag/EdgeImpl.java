@@ -123,31 +123,83 @@ public class EdgeImpl implements Edge {
 
 
     @Override
+    @SuppressWarnings({
+            "checkstyle:npathcomplexity",
+            "checkstyle:cyclomaticcomplexity"
+    })
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EdgeImpl edge = (EdgeImpl) o;
 
-        if (shuffled != edge.shuffled) return false;
-        if (to != null ? !to.equals(edge.to) : edge.to != null) return false;
-        if (name != null ? !name.equals(edge.name) : edge.name != null) return false;
-        if (from != null ? !from.equals(edge.from) : edge.from != null) return false;
-        if (hashingStrategy != null ? !hashingStrategy.getClass().equals(edge.hashingStrategy.getClass()) : edge.hashingStrategy != null) {
+        if (shuffled != edge.shuffled) {
             return false;
         }
-        if (shufflingStrategy != null ? !shufflingStrategy.equals(edge.shufflingStrategy) : edge.shufflingStrategy != null) {
-            return false;
-        }
-        if (processingStrategy != edge.processingStrategy) return false;
-        if (partitioningStrategy != null ? !partitioningStrategy.getClass().equals(edge.partitioningStrategy.getClass()) : edge.partitioningStrategy != null) {
-            return false;
-        }
-        return !(dataTransferringStrategy != null ? !dataTransferringStrategy.getClass().equals(edge.dataTransferringStrategy.getClass()) : edge.dataTransferringStrategy != null);
 
+        if (to != null
+                ? !to.equals(edge.to)
+                : edge.to != null) {
+            return false;
+        }
+
+        if (name != null
+                ? !name.equals(edge.name)
+                : edge.name != null) {
+            return false;
+        }
+
+        if (from != null
+                ? !from.equals(edge.from)
+                : edge.from != null) {
+            return false;
+        }
+
+        if (hashingStrategy != null
+                ?
+                !hashingStrategy.getClass().equals(edge.hashingStrategy.getClass())
+                :
+                edge.hashingStrategy != null) {
+            return false;
+        }
+
+        if (shufflingStrategy != null
+                ?
+                !shufflingStrategy.equals(edge.shufflingStrategy)
+                :
+                edge.shufflingStrategy != null) {
+            return false;
+        }
+
+        if (processingStrategy != edge.processingStrategy) {
+            return false;
+        }
+
+        if (partitioningStrategy != null
+                ?
+                !partitioningStrategy.getClass().equals(edge.partitioningStrategy.getClass())
+                :
+                edge.partitioningStrategy != null) {
+            return false;
+        }
+
+        return !(dataTransferringStrategy != null
+                ?
+                !dataTransferringStrategy.getClass().equals(edge.dataTransferringStrategy.getClass())
+                :
+                edge.dataTransferringStrategy != null
+        );
     }
 
     @Override
+    @SuppressWarnings({
+            "checkstyle:npathcomplexity"
+    })
     public int hashCode() {
         int result = to != null ? to.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
@@ -163,17 +215,17 @@ public class EdgeImpl implements Edge {
 
     @Override
     public String toString() {
-        return "EdgeImpl{" +
-                "to=" + to +
-                ", name='" + name + '\'' +
-                ", from=" + from +
-                ", shuffled=" + shuffled +
-                ", hashingStrategy=" + hashingStrategy +
-                ", shufflingStrategy=" + shufflingStrategy +
-                ", processingStrategy=" + processingStrategy +
-                ", partitioningStrategy=" + partitioningStrategy +
-                ", dataTransferringStrategy=" + dataTransferringStrategy +
-                '}';
+        return "EdgeImpl{"
+                + "to=" + to
+                + ", name='" + name + '\''
+                + ", from=" + from
+                + ", shuffled=" + shuffled
+                + ", hashingStrategy=" + hashingStrategy
+                + ", shufflingStrategy=" + shufflingStrategy
+                + ", processingStrategy=" + processingStrategy
+                + ", partitioningStrategy=" + partitioningStrategy
+                + ", dataTransferringStrategy=" + dataTransferringStrategy
+                + '}';
     }
 
     public static class EdgeBuilder {

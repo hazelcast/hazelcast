@@ -55,7 +55,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         try {
             DAG dag = createDAG();
 
-            fillMap("source.interruptionTest", SERVER, 100_000);
+            fillMap("source.interruptionTest", SERVER, 100_0000);
 
             Vertex vertex1 = createVertex("dummy1", VerySlowProcessor.Factory.class);
             Vertex vertex2 = createVertex("dummy2", VerySlowProcessor.Factory.class);
