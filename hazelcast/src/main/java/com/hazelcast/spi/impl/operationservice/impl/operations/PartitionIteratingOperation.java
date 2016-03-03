@@ -130,11 +130,6 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         public Object get() throws InterruptedException {
             return b.take();
         }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
     }
 
     @Override

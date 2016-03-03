@@ -29,11 +29,11 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.IPartition;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -145,11 +145,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     IPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
-    }
-
-    @Override
-    public boolean isLocal() {
-        return true;
     }
 
     private long getCallTimeout(long callTimeout) {
@@ -363,7 +358,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + obj);
         }
-        notify(obj);
+
+        if (operationService.nodeEngine.isRunning()) {
+            notify(obj);
+        } else {
+            notify(new HazelcastInstanceNotActiveException());
+        }
     }
 
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
@@ -610,7 +610,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
         invocationFuture.set(pendingResponse);
         return true;
     }
