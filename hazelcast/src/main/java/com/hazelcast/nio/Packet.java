@@ -36,12 +36,12 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
 
-    public static final int FLAG_OP = 0;
-    public static final int FLAG_RESPONSE = 1;
-    public static final int FLAG_EVENT = 2;
-    public static final int FLAG_WAN_REPLICATION = 3;
-    public static final int FLAG_URGENT = 4;
-    public static final int FLAG_BIND = 5;
+    public static final int FLAG_OP = 1 << 0;
+    public static final int FLAG_RESPONSE = 1 << 1;
+    public static final int FLAG_EVENT = 1 << 2;
+    public static final int FLAG_WAN_REPLICATION = 1 << 3;
+    public static final int FLAG_URGENT = 1 << 4;
+    public static final int FLAG_BIND = 1 << 5;
 
     private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
@@ -88,12 +88,35 @@ public final class Packet extends HeapData implements OutboundFrame {
         this.conn = conn;
     }
 
-    public void setFlag(int bit) {
-        flags |= 1 << bit;
+    /**
+     * Sets a particular flag. The other flags will not be touched.
+     *
+     * @param flag the flag to set
+     */
+    public void setFlag(int flag) {
+        flags = (short) (flags | flag);
     }
 
-    public boolean isFlagSet(int bit) {
-        return (flags & 1 << bit) != 0;
+    /**
+     * Sets all flags in 1 go. The old flags will be completely overwritten by the new flags.
+     *
+     * The reason this method accepts an int instead of a short, is that unfortunately Java immediately converts to ints and
+     * it makes doing bit shifting logic since you need to down cast to a short all the time.*
+     *
+     * @param flags the flags.
+     */
+    public void setAllFlags(int flags) {
+        this.flags = (short) flags;
+    }
+
+    /**
+     * Checks if a flag is set.
+     *
+     * @param flag the flag to check
+     * @return true if the flag is set, false otherwise.
+     */
+    public boolean isFlagSet(int flag) {
+        return (flags & flag) != 0;
     }
 
     /**
