@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.memory.JVMMemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.ReadHandler;
@@ -157,7 +157,7 @@ public interface NodeExtension {
      *
      * @return memory statistics
      */
-    MemoryStats getMemoryStats();
+    JVMMemoryStats getMemoryStats();
 
      /**
      * Called before a new node is joining to cluster,

@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.memory.impl.DirectMemoryBits;
+import com.hazelcast.internal.memory.MemoryAccessStrategy;
+import com.hazelcast.internal.memory.impl.EndiannessUtility;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -82,113 +82,113 @@ public final class Bits {
     }
 
     public static char readChar(byte[] buffer, int pos, boolean bigEndian) {
-        return DirectMemoryBits.readChar(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
+        return EndiannessUtility.readChar(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static char readCharB(byte[] buffer, int pos) {
-        return DirectMemoryBits.readCharB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readCharB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static char readCharL(byte[] buffer, int pos) {
-        return DirectMemoryBits.readCharL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readCharL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeChar(byte[] buffer, int pos, char v, boolean bigEndian) {
-        DirectMemoryBits.writeChar(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
+        EndiannessUtility.writeChar(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
     }
 
     public static void writeCharB(byte[] buffer, int pos, char v) {
-        DirectMemoryBits.writeCharB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeCharB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeCharL(byte[] buffer, int pos, char v) {
-        DirectMemoryBits.writeCharL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeCharL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static short readShort(byte[] buffer, int pos, boolean bigEndian) {
-        return DirectMemoryBits.readShort(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
+        return EndiannessUtility.readShort(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static short readShortB(byte[] buffer, int pos) {
-        return DirectMemoryBits.readShortB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readShortB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static short readShortL(byte[] buffer, int pos) {
-        return DirectMemoryBits.readShortL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readShortL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeShort(byte[] buffer, int pos, short v, boolean bigEndian) {
-        DirectMemoryBits.writeShort(buffer, pos, v, bigEndian);
+        EndiannessUtility.writeShort(buffer, pos, v, bigEndian);
     }
 
     public static void writeShortB(byte[] buffer, int pos, short v) {
-        DirectMemoryBits.writeShortB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeShortB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeShortL(byte[] buffer, int pos, short v) {
-        DirectMemoryBits.writeShortL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeShortL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static int readInt(byte[] buffer, int pos, boolean bigEndian) {
-        return DirectMemoryBits.readInt(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
+        return EndiannessUtility.readInt(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static int readIntB(byte[] buffer, int pos) {
-        return DirectMemoryBits.readIntB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readIntB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static int readIntL(byte[] buffer, int pos) {
-        return DirectMemoryBits.readIntL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readIntL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeInt(byte[] buffer, int pos, int v, boolean bigEndian) {
-        DirectMemoryBits.writeInt(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
+        EndiannessUtility.writeInt(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
     }
 
     public static void writeIntB(byte[] buffer, int pos, int v) {
-        DirectMemoryBits.writeIntB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeIntB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeIntL(byte[] buffer, int pos, int v) {
-        DirectMemoryBits.writeIntL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeIntL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static long readLong(byte[] buffer, int pos, boolean bigEndian) {
-        return DirectMemoryBits.readLong(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
+        return EndiannessUtility.readLong(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, bigEndian);
     }
 
     public static long readLongB(byte[] buffer, int pos) {
-        return DirectMemoryBits.readLongB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readLongB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static long readLongL(byte[] buffer, int pos) {
-        return DirectMemoryBits.readLongL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos);
+        return EndiannessUtility.readLongL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos);
     }
 
     public static void writeLong(byte[] buffer, int pos, long v, boolean bigEndian) {
-        DirectMemoryBits.writeLong(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
+        EndiannessUtility.writeLong(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v, bigEndian);
     }
 
     public static void writeLongB(byte[] buffer, int pos, long v) {
-        DirectMemoryBits.writeLongB(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeLongB(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static void writeLongL(byte[] buffer, int pos, long v) {
-        DirectMemoryBits.writeLongL(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
+        EndiannessUtility.writeLongL(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, v);
     }
 
     public static int writeUtf8Char(byte[] buffer, int pos, int c) {
-        return DirectMemoryBits.writeUtf8Char(MemoryAccessor.HEAP_BYTE_ARRAY_MEM, buffer, pos, c);
+        return EndiannessUtility.writeUtf8Char(MemoryAccessStrategy.HEAP_BYTE_ARRAY_MEM, buffer, pos, c);
     }
 
     public static int readUtf8Char(byte[] buffer, int pos, char[] dst, int dstPos)
             throws IOException {
-        return DirectMemoryBits.readUtf8Char(buffer, pos, dst, dstPos);
+        return EndiannessUtility.readUtf8Char(buffer, pos, dst, dstPos);
     }
 
     public static char readUtf8Char(DataInput in, byte firstByte)
             throws IOException {
-        return DirectMemoryBits.readUtf8Char(in, firstByte);
+        return EndiannessUtility.readUtf8Char(in, firstByte);
     }
 
     /**

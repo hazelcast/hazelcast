@@ -30,6 +30,7 @@ import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.NearCacheRecordMap;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.internal.memory.MemoryAccessStrategy;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
@@ -52,7 +53,7 @@ public abstract class AbstractNearCacheRecordStore<
      */
     protected static final int REFERENCE_SIZE =
             MemoryAccessor.MEM_AVAILABLE
-                    ? MemoryAccessor.MEM.arrayIndexScale(Object[].class)
+                    ? MemoryAccessStrategy.MEM.arrayIndexScale(Object[].class)
                     : (Integer.SIZE / Byte.SIZE);
 
     private static final int MILLI_SECONDS_IN_A_SECOND = 1000;
