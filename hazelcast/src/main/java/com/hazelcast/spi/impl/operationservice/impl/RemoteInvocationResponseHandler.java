@@ -16,11 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.exception.ResponseNotSentException;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -31,14 +31,22 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
  * to that operation.
  */
 public final class RemoteInvocationResponseHandler implements OperationResponseHandler {
-    private final InternalOperationService operationService;
+    private final OperationServiceImpl operationService;
+    private final ILogger logger;
+    private final NodeEngineImpl nodeEngine;
 
-    public RemoteInvocationResponseHandler(InternalOperationService operationService) {
+    public RemoteInvocationResponseHandler(OperationServiceImpl operationService, ILogger logger) {
         this.operationService = operationService;
+        this.nodeEngine = operationService.nodeEngine;
+        this.logger = logger;
     }
 
     @Override
     public void sendResponse(Operation operation, Object obj) {
+        if (!nodeEngine.isRunning()) {
+            return;
+        }
+
         Connection conn = operation.getConnection();
 
         Response response;
@@ -51,13 +59,7 @@ public final class RemoteInvocationResponseHandler implements OperationResponseH
         }
 
         if (!operationService.send(response, operation.getCallerAddress())) {
-            throw new ResponseNotSentException("Cannot send response: " + obj + " to " + conn.getEndPoint()
-                + ". Op: " + operation);
+            logger.warning(("Cannot send response: " + obj + " to " + conn.getEndPoint() + ". Op: " + operation));
         }
-    }
-
-    @Override
-    public boolean isLocal() {
-        return false;
     }
 }

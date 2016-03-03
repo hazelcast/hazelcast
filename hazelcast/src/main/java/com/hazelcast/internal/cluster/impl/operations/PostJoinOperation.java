@@ -70,11 +70,6 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
                             }
                         }
                     }
-
-                    @Override
-                    public boolean isLocal() {
-                        return true;
-                    }
                 });
 
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
