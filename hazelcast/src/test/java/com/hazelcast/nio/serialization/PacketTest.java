@@ -18,8 +18,8 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -28,13 +28,18 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 
+import static com.hazelcast.nio.Packet.FLAG_EVENT;
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.FACTORY_ID;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.PortableAddress;
 import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.PortablePerson;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -44,7 +49,7 @@ public class PacketTest {
     private final Person person = new Person(111, 123L, 89.56d, "test-person", new Address("street", 987));
 
     private final PortablePerson portablePerson = new PortablePerson(222, 456L, "portable-person",
-                                                             new PortableAddress("street", 567));
+            new PortableAddress("street", 567));
 
     private SerializationServiceBuilder createSerializationServiceBuilder() {
         final PortableFactory portableFactory = new PortableFactory() {
@@ -88,5 +93,33 @@ public class PacketTest {
 
         assertEquals(originalPacket, clonedPacket);
         assertEquals(originalObject, clonedObject);
+    }
+
+    @Test
+    public void setFlag() {
+        Packet packet = new Packet();
+        packet.setFlag(FLAG_OP);
+        packet.setFlag(FLAG_URGENT);
+
+        assertEquals(FLAG_OP | FLAG_URGENT, packet.getFlags());
+    }
+
+    @Test
+    public void isFlagSet() {
+        Packet packet = new Packet();
+        packet.setFlag(FLAG_OP);
+        packet.setFlag(FLAG_URGENT);
+
+        assertTrue(packet.isFlagSet(FLAG_OP));
+        assertTrue(packet.isFlagSet(FLAG_URGENT));
+        assertFalse(packet.isFlagSet(FLAG_EVENT));
+    }
+
+    @Test
+    public void setAllFlags() {
+        Packet packet = new Packet();
+        packet.setAllFlags(FLAG_OP | FLAG_URGENT);
+
+        assertEquals(FLAG_OP | FLAG_URGENT, packet.getFlags());
     }
 }
