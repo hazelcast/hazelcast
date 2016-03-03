@@ -38,99 +38,97 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
-
-/** Test the multicast loopback mode when there is no other
+/**
+ * Test the multicast loopback mode when there is no other
  * network interface than 127.0.0.1.
- *  
+ *
  * @author St&amp;eacute;phane Galland <galland@arakhne.org>
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 
-	/** Replies if a network interface was properly configured.
-	 * 
-	 * @return <code>true</code> if there is at least one configured interface;
-	 * <code>false</code> otherwise.
-	 */
-	protected static boolean hasConfiguredNetworkInterface() {
-		try {
-			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-			while (e.hasMoreElements()) {
-				NetworkInterface i = e.nextElement();
-				Enumeration<InetAddress> as = i.getInetAddresses();
-				while (as.hasMoreElements()) {
-					InetAddress a = as.nextElement();
-					if (a instanceof Inet4Address && !a.isLoopbackAddress()
-							&& !a.isMulticastAddress()) {
-						return true;
-					}
-				}
-			}
-		}
-		catch (Exception _) {
-			// Silently cast the exceptions
-		}
-		return false;
-	}
-	
-	private String multicastGroup;
-	private HazelcastInstance hz1;
-	private HazelcastInstance hz2;
+    /**
+     * Replies if a network interface was properly configured.
+     *
+     * @return <code>true</code> if there is at least one configured interface;
+     * <code>false</code> otherwise.
+     */
+    protected static boolean hasConfiguredNetworkInterface() {
+        try {
+            Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+            while (e.hasMoreElements()) {
+                NetworkInterface i = e.nextElement();
+                Enumeration<InetAddress> as = i.getInetAddresses();
+                while (as.hasMoreElements()) {
+                    InetAddress a = as.nextElement();
+                    if (a instanceof Inet4Address && !a.isLoopbackAddress() && !a.isMulticastAddress()) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // silently cast the exceptions
+        }
+        return false;
+    }
 
-	@Before
-	public void setUpTests() {
-		assumeFalse(
-				"This test can be processed only if your host has no configured network interface.",
-				hasConfiguredNetworkInterface());
-		multicastGroup = System.clearProperty("hazelcast.multicast.group");
-	}
+    private String multicastGroup;
+    private HazelcastInstance hz1;
+    private HazelcastInstance hz2;
 
-	@After
-	public void tearDownTests() {
-		HazelcastInstanceManager.terminateAll();
-		if (multicastGroup == null) {
-			System.clearProperty("hazelcast.multicast.group");
-		} else {
-			System.setProperty("hazelcast.multicast.group", multicastGroup);
-		}
-	}	
+    @Before
+    public void setUpTests() {
+        assumeFalse(
+                "This test can be processed only if your host has no configured network interface.",
+                hasConfiguredNetworkInterface());
+        multicastGroup = System.clearProperty("hazelcast.multicast.group");
+    }
 
-	private void createTestEnvironment(boolean loopbackMode) throws Exception {
-		Config config = new Config();
-		config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-		MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
-		multicastConfig.setEnabled(true);
-		multicastConfig.setLoopbackModeEnabled(loopbackMode);
+    @After
+    public void tearDownTests() {
+        HazelcastInstanceManager.terminateAll();
+        if (multicastGroup == null) {
+            System.clearProperty("hazelcast.multicast.group");
+        } else {
+            System.setProperty("hazelcast.multicast.group", multicastGroup);
+        }
+    }
 
-		hz1 = HazelcastInstanceManager.newHazelcastInstance(config);
-		assertNotNull("Cannot create the first HazelcastInstance", hz1);
+    private void createTestEnvironment(boolean loopbackMode) throws Exception {
+        Config config = new Config();
+        config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        multicastConfig.setEnabled(true);
+        multicastConfig.setLoopbackModeEnabled(loopbackMode);
 
-		hz2 = HazelcastInstanceManager.newHazelcastInstance(config);
-		assertNotNull("Cannot create the second HazelcastInstance", hz2);
-	}
+        hz1 = HazelcastInstanceManager.newHazelcastInstance(config);
+        assertNotNull("Cannot create the first HazelcastInstance", hz1);
 
-	@Test
-	public void testEnabledMode() throws Exception {
-		createTestEnvironment(true);
+        hz2 = HazelcastInstanceManager.newHazelcastInstance(config);
+        assertNotNull("Cannot create the second HazelcastInstance", hz2);
+    }
 
-		assertClusterSize(2, hz1);
-		assertClusterSize(2, hz2);
+    @Test
+    public void testEnabledMode() throws Exception {
+        createTestEnvironment(true);
 
-		Cluster cluster1 = hz1.getCluster();
-		Cluster cluster2 = hz2.getCluster();
-		assertTrue("Members list " + cluster1.getMembers() + " should contain " + cluster2.getLocalMember(),
-				cluster1.getMembers().contains(cluster2.getLocalMember()));
-		assertTrue("Members list " + cluster2.getMembers() + " should contain " + cluster1.getLocalMember(),
-				cluster2.getMembers().contains(cluster1.getLocalMember()));
-	}
+        assertClusterSize(2, hz1);
+        assertClusterSize(2, hz2);
 
-	@Test
-	public void testDisabledMode() throws Exception {
-		createTestEnvironment(false);
+        Cluster cluster1 = hz1.getCluster();
+        Cluster cluster2 = hz2.getCluster();
+        assertTrue("Members list " + cluster1.getMembers() + " should contain " + cluster2.getLocalMember(),
+                cluster1.getMembers().contains(cluster2.getLocalMember()));
+        assertTrue("Members list " + cluster2.getMembers() + " should contain " + cluster1.getLocalMember(),
+                cluster2.getMembers().contains(cluster1.getLocalMember()));
+    }
 
-		assertClusterSize(1, hz1);
-		assertClusterSize(1, hz2);
-	}
+    @Test
+    public void testDisabledMode() throws Exception {
+        createTestEnvironment(false);
 
+        assertClusterSize(1, hz1);
+        assertClusterSize(1, hz2);
+    }
 }
