@@ -86,8 +86,8 @@ public abstract class AbstractSerializationService implements SerializationServi
     private ILogger logger = Logger.getLogger(SerializationService.class);
 
     AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
-            ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize,
-            BufferPoolFactory bufferPoolFactory) {
+                                 ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
+                                 int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory) {
         this.inputOutputFactory = inputOutputFactory;
         this.version = version;
         this.classLoader = classLoader;
@@ -98,10 +98,30 @@ public abstract class AbstractSerializationService implements SerializationServi
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
     }
 
+    @Override
+    public BufferPool pool() {
+        return bufferPoolThreadLocal.get();
+    }
+
     //region Serialization Service
     @Override
     public final Data toData(Object obj) {
         return toData(obj, globalPartitioningStrategy);
+    }
+
+    @Override
+    public void writeAsData(Object obj, BufferObjectDataOutput out) {
+        try {
+            SerializerAdapter serializer = serializerFor(obj);
+            int partitionHash = calculatePartitionHash(obj, globalPartitioningStrategy);
+            out.writeInt(partitionHash, ByteOrder.BIG_ENDIAN);
+
+            out.writeInt(serializer.getTypeId(), ByteOrder.BIG_ENDIAN);
+
+            serializer.write(out, obj);
+        } catch (Throwable e) {
+            throw handleException(e);
+        }
     }
 
     @Override
@@ -389,7 +409,7 @@ public abstract class AbstractSerializationService implements SerializationServi
         Class type = object.getClass();
 
         //2-Default serializers, Dataserializable, Portable, primitives, arrays, String and some helper Java types(BigInteger etc)
-        SerializerAdapter  serializer = lookupDefaultSerializer(type);
+        SerializerAdapter serializer = lookupDefaultSerializer(type);
 
         //3-Custom registered types by user
         if (serializer == null) {

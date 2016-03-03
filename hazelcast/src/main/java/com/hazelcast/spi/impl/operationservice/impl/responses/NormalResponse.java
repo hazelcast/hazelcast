@@ -19,9 +19,10 @@ package com.hazelcast.spi.impl.operationservice.impl.responses;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
 /**
  * A NormalResponse is send when an Operation needs to return a value. This response value can a 'normal' value,
@@ -45,10 +46,11 @@ public class NormalResponse extends Response {
     private int backupCount;
 
     public NormalResponse() {
+        super(NORMAL_RESPONSE);
     }
 
     public NormalResponse(Object value, long callId, int backupCount, boolean urgent) {
-        super(callId, urgent);
+        super(NORMAL_RESPONSE, callId, urgent);
         this.value = value;
         this.backupCount = backupCount;
     }
@@ -69,11 +71,6 @@ public class NormalResponse extends Response {
      */
     public int getBackupCount() {
         return backupCount;
-    }
-
-    @Override
-    public int getId() {
-        return SpiDataSerializerHook.NORMAL_RESPONSE;
     }
 
     @Override

@@ -16,16 +16,16 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
+
+import static com.hazelcast.nio.Bits.readLong;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_BACKUP_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_ERROR_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_NORMAL_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_TIMEOUT_RESPONSE;
 
 /**
  * Responsible for handling responses.
@@ -33,41 +33,37 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 final class ResponsePacketHandlerImpl implements PacketHandler {
 
     private final ILogger logger;
-    private final SerializationService serializationService;
     private final InvocationRegistry invocationRegistry;
 
-    public ResponsePacketHandlerImpl(ILogger logger,
-                                     SerializationService serializationService,
-                                     InvocationRegistry invocationRegistry) {
+    public ResponsePacketHandlerImpl(ILogger logger, InvocationRegistry invocationRegistry) {
         this.logger = logger;
-        this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;
     }
 
     @Override
     public void handle(Packet packet) throws Exception {
-        Response response = serializationService.toObject(packet);
         Address sender = packet.getConn().getEndPoint();
+        byte[] bytes = packet.toByteArray();
+
+        byte type = bytes[bytes.length - 1];
+        long callId = readLong(bytes, bytes.length - 9, true);
         try {
-            if (response instanceof NormalResponse) {
-                NormalResponse normalResponse = (NormalResponse) response;
-                invocationRegistry.notifyNormalResponse(
-                        normalResponse.getCallId(),
-                        normalResponse.getValue(),
-                        normalResponse.getBackupCount(),
-                        sender);
-            } else if (response instanceof BackupResponse) {
-                invocationRegistry.notifyBackupComplete(response.getCallId());
-            } else if (response instanceof CallTimeoutResponse) {
-                invocationRegistry.notifyCallTimeout(response.getCallId(), sender);
-            } else if (response instanceof ErrorResponse) {
-                ErrorResponse errorResponse = (ErrorResponse) response;
-                invocationRegistry.notifyErrorResponse(
-                        errorResponse.getCallId(),
-                        errorResponse.getCause(),
-                        sender);
-            } else {
-                logger.severe("Unrecognized response: " + response);
+            switch (type) {
+                case TYPE_NORMAL_RESPONSE:
+                    int backupCount = bytes[bytes.length - 10];
+                    invocationRegistry.notifyNormalResponse(callId, packet, backupCount, sender);
+                    break;
+                case TYPE_BACKUP_RESPONSE:
+                    invocationRegistry.notifyBackupComplete(callId);
+                    break;
+                case TYPE_TIMEOUT_RESPONSE:
+                    invocationRegistry.notifyCallTimeout(callId, sender);
+                    break;
+                case TYPE_ERROR_RESPONSE:
+                    invocationRegistry.notifyErrorResponse(callId, packet, sender);
+                    break;
+                default:
+                    throw new IllegalStateException("Unrecognized response type:" + type);
             }
         } catch (Throwable e) {
             logger.severe("While processing response...", e);

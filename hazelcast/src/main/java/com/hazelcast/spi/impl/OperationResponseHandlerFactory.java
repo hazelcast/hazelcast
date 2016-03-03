@@ -17,12 +17,13 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationResponseHandler;
 
 public final class OperationResponseHandlerFactory {
 
-    private static final NoResponseHandler EMPTY_RESPONSE_HANDLER = new NoResponseHandler();
+    private static final EmptyOperationResponseHandler EMPTY_RESPONSE_HANDLER = new EmptyOperationResponseHandler();
 
     private OperationResponseHandlerFactory() {
     }
@@ -31,11 +32,21 @@ public final class OperationResponseHandlerFactory {
         return EMPTY_RESPONSE_HANDLER;
     }
 
-    private static class NoResponseHandler
-            implements OperationResponseHandler {
+    public static class EmptyOperationResponseHandler implements OperationResponseHandler {
+        @Override
+        public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
+        }
 
         @Override
-        public void sendResponse(Operation op, Object obj) {
+        public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+        }
+
+        @Override
+        public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
+        }
+
+        @Override
+        public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
         }
 
         @Override
@@ -48,7 +59,7 @@ public final class OperationResponseHandlerFactory {
         return new ErrorLoggingResponseHandler(logger);
     }
 
-    private static final class ErrorLoggingResponseHandler implements OperationResponseHandler {
+    private static final class ErrorLoggingResponseHandler extends EmptyOperationResponseHandler {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {
@@ -56,11 +67,8 @@ public final class OperationResponseHandlerFactory {
         }
 
         @Override
-        public void sendResponse(Operation op, Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
-                logger.severe(t);
-            }
+        public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+            logger.severe(error);
         }
 
         @Override

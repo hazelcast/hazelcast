@@ -34,7 +34,6 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -42,16 +41,12 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
@@ -66,7 +61,6 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
 import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
@@ -76,9 +70,6 @@ import static java.util.logging.Level.WARNING;
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
 public abstract class Invocation implements OperationResponseHandler, Runnable {
-
-    private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
-            AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
 
     private static final AtomicIntegerFieldUpdater<Invocation> BACKUPS_COMPLETED =
             AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsCompleted");
@@ -98,7 +89,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     volatile Object pendingResponse;
     // number of expected backups. Is set correctly as soon as the pending response is set. See {@link NormalResponse}
     volatile int backupsExpected;
-    // number of backups that have completed. See {@link BackupResponse}.
+    // number of backups that have completed.
     volatile int backupsCompleted;
     // A flag to prevent multiple responses to be send tot he Invocation. Only needed for local operations.
     volatile Boolean responseReceived = FALSE;
@@ -352,34 +343,23 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     @Override
-    public void sendResponse(Operation op, Object response) {
-        if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
-            throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
-                    + ", current-response: : " + response);
-        }
+    public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
+        notifyNormalResponse(response, backupCount);
+    }
 
-        if (response == null) {
-            response = NULL_RESPONSE;
-        }
+    @Override
+    public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+        notifyError(error);
+    }
 
-        if (response instanceof CallTimeoutResponse) {
-            notifyCallTimeout();
-            return;
-        }
+    @Override
+    public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
+        notifyCallTimeout();
+    }
 
-        if (response instanceof ErrorResponse || response instanceof Throwable) {
-            notifyError(response);
-            return;
-        }
-
-        if (response instanceof NormalResponse) {
-            NormalResponse normalResponse = (NormalResponse) response;
-            notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
-            return;
-        }
-
-        // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-        invocationFuture.set(response);
+    @Override
+    public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
+        notifySingleBackupComplete();
     }
 
     @Override
@@ -387,15 +367,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         return true;
     }
 
+    // todo: this logic is a danger because the deserialization happens on the calling thread.
+    // this becomes a problem when the notifyError is called from an io thread.
     void notifyError(Object error) {
         assert error != null;
 
-        Throwable cause;
-        if (error instanceof Throwable) {
-            cause = (Throwable) error;
-        } else {
-            cause = ((ErrorResponse) error).getCause();
-        }
+        Throwable cause = operationService.node.getSerializationService().toObject(error);
 
         switch (onException(cause)) {
             case CONTINUE_WAIT:

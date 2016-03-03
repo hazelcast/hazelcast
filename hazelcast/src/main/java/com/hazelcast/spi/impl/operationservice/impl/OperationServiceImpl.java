@@ -16,22 +16,23 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
@@ -46,9 +47,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -91,6 +90,8 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  */
 public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
 
+    private static final boolean SKIP_RESPONSE_QUEUE = Boolean.getBoolean("skipResponseQueue");
+
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
@@ -127,6 +128,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final SerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
+    private final ResponsePacketHandlerImpl responsePacketHandler;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -156,13 +158,13 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
+        this.responsePacketHandler = new ResponsePacketHandlerImpl(
+                logger,
+                invocationsRegistry);
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
                 node.getHazelcastThreadGroup(),
                 logger,
-                new ResponsePacketHandlerImpl(
-                        logger,
-                        node.getSerializationService(),
-                        invocationsRegistry));
+                responsePacketHandler);
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
@@ -266,7 +268,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         checkTrue(packet.isFlagSet(Packet.FLAG_OP), "Packet.FLAG_OP should be set!");
 
         if (packet.isFlagSet(Packet.FLAG_RESPONSE)) {
-            responsePacketExecutor.handle(packet);
+            if (SKIP_RESPONSE_QUEUE) {
+                responsePacketHandler.handle(packet);
+            } else {
+                responsePacketExecutor.handle(packet);
+            }
         } else {
             operationExecutor.execute(packet);
         }
@@ -402,30 +408,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         packet.setFlag(Packet.FLAG_OP);
 
         if (op instanceof UrgentSystemOperation) {
-            packet.setFlag(Packet.FLAG_URGENT);
-        }
-
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
-    }
-
-    @Override
-    public boolean send(Response response, Address target) {
-        if (target == null) {
-            throw new IllegalArgumentException("Target is required!");
-        }
-
-        if (nodeEngine.getThisAddress().equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
-        }
-
-        byte[] bytes = serializationService.toBytes(response);
-        Packet packet = new Packet(bytes, -1);
-        packet.setFlag(Packet.FLAG_OP);
-        packet.setFlag(Packet.FLAG_RESPONSE);
-
-        if (response.isUrgent()) {
             packet.setFlag(Packet.FLAG_URGENT);
         }
 

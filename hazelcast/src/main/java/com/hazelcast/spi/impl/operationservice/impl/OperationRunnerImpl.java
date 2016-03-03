@@ -25,11 +25,12 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
@@ -47,16 +48,13 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.internal.util.counters.Counter;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -65,7 +63,6 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -103,7 +100,8 @@ class OperationRunnerImpl extends OperationRunner {
         this.logger = operationService.logger;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
-        this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
+        this.remoteResponseHandler = new RemoteOperationResponseHandler(operationService,
+                operationService.nodeEngine.getSerializationService());
         this.executedOperationsCount = operationService.completedOperationsCount;
 
         if (partitionId >= 0) {
@@ -232,9 +230,8 @@ class OperationRunnerImpl extends OperationRunner {
             return false;
         }
 
-        CallTimeoutResponse callTimeoutResponse = new CallTimeoutResponse(op.getCallId(), op.isUrgent());
         OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-        responseHandler.sendResponse(op, callTimeoutResponse);
+        responseHandler.sendTimeoutResponse(op.getConnection(), op.isUrgent(), op.getCallId());
         return true;
     }
 
@@ -269,11 +266,7 @@ class OperationRunnerImpl extends OperationRunner {
         }
 
         try {
-            Object response = op.getResponse();
-            if (syncBackupCount > 0) {
-                response = new NormalResponse(response, op.getCallId(), syncBackupCount, op.isUrgent());
-            }
-            responseHandler.sendResponse(op, response);
+            responseHandler.sendResponse(op.getConnection(), op.isUrgent(), op.getCallId(), syncBackupCount, op.getResponse());
         } catch (ResponseAlreadySentException e) {
             logOperationError(op, e);
         }
@@ -346,9 +339,10 @@ class OperationRunnerImpl extends OperationRunner {
         OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
         try {
             if (nodeEngine.isRunning()) {
-                responseHandler.sendResponse(operation, e);
+                responseHandler.sendErrorResponse(operation.getConnection(), operation.isUrgent(), operation.getCallId(), e);
             } else if (responseHandler.isLocal()) {
-                responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
+                responseHandler.sendErrorResponse(operation.getConnection(), operation.isUrgent(), operation.getCallId(),
+                        new HazelcastInstanceNotActiveException());
             }
         } catch (Throwable t) {
             logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
@@ -392,7 +386,7 @@ class OperationRunnerImpl extends OperationRunner {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet, node.getSerializationService());
-            operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
+            remoteResponseHandler.sendErrorResponse(connection, packet.isUrgent(), callId, throwable);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {

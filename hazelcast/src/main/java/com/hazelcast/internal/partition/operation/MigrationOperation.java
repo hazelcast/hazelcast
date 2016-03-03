@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -45,7 +46,22 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandler() {
         @Override
-        public void sendResponse(Operation op, Object obj) {
+        public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
+            throw new HazelcastException("Migration operations can not send response!");
+        }
+
+        @Override
+        public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+            throw new HazelcastException("Migration operations can not send response!");
+        }
+
+        @Override
+        public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
+            throw new HazelcastException("Migration operations can not send response!");
+        }
+
+        @Override
+        public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
             throw new HazelcastException("Migration operations can not send response!");
         }
 

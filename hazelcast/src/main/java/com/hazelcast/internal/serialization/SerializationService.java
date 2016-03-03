@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,9 +35,13 @@ public interface SerializationService {
 
     <B extends Data> B toData(Object obj);
 
+    void writeAsData(Object obj, BufferObjectDataOutput out);
+
     <B extends Data> B toData(Object obj, PartitioningStrategy strategy);
 
     byte[] toBytes(Object obj);
+
+    BufferPool pool();
 
     byte[] toBytes(Object obj, PartitioningStrategy strategy);
 

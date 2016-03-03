@@ -30,20 +30,20 @@ import java.io.IOException;
  * <li>
  * {@link NormalResponse} the result of a regular Operation result, e.g. Map.put
  * </li>
- * <li>
- * {@link BackupResponse} the result of a completed {@link com.hazelcast.spi.impl.operationservice.impl.operations.Backup}.
- * </li>
  * </ol>
  */
 public abstract class Response implements IdentifiedDataSerializable {
 
     protected long callId;
     protected boolean urgent;
+    private final int id;
 
-    public Response() {
+    public Response(int id) {
+        this.id = id;
     }
 
-    public Response(long callId, boolean urgent) {
+    public Response(int id, long callId, boolean urgent) {
+        this.id = id;
         this.callId = callId;
         this.urgent = urgent;
     }
@@ -53,7 +53,7 @@ public abstract class Response implements IdentifiedDataSerializable {
      *
      * @return true if urgent, false otherwise.
      */
-    public boolean isUrgent() {
+    public final boolean isUrgent() {
         return urgent;
     }
 
@@ -62,12 +62,17 @@ public abstract class Response implements IdentifiedDataSerializable {
      *
      * @return the call id.
      */
-    public long getCallId() {
+    public final long getCallId() {
         return callId;
     }
 
     @Override
-    public int getFactoryId() {
+    public final int getId() {
+        return id;
+    }
+
+    @Override
+    public final int getFactoryId() {
         return SpiDataSerializerHook.F_ID;
     }
 
