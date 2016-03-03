@@ -19,7 +19,7 @@ package com.hazelcast.quorum.map;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastTestRunner;
@@ -89,7 +89,7 @@ public class TransactionalMapWriteQuorumTest {
 
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
 
