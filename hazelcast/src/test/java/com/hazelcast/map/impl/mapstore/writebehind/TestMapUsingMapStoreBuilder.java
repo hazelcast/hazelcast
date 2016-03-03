@@ -150,7 +150,7 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
         config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
         if (backupDelaySeconds > 0) {
-            config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, String.valueOf(backupCount));
+            config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, String.valueOf(backupDelaySeconds));
         }
 
         // nodes
