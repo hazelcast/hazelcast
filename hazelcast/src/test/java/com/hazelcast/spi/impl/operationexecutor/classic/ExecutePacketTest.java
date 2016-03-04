@@ -12,6 +12,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.buildResponsePacket;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -32,8 +33,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
     public void test_whenResponsePacket() {
         initExecutor();
 
-        final Packet packet = RemoteOperationResponseHandler.buildResponsePacket(serializationService, false, 1, 0, null);
-        packet.setAllFlags(Packet.FLAG_OP | FLAG_RESPONSE);
+        final Packet packet = buildResponsePacket(serializationService, false, 1, 0, null);
         executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {

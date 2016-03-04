@@ -83,7 +83,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         operationService.executeOperation(operation);
     }
 
-    private class UnlockResponseHandler extends OperationResponseHandlerFactory.ResponseHandlerAdapter {
+    private class UnlockResponseHandler extends OperationResponseHandlerFactory.OperationResponseHandlerAdapter {
         @Override
         public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
             if (error instanceof RetryableException) {

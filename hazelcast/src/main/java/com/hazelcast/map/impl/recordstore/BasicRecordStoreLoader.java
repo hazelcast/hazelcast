@@ -30,6 +30,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -222,15 +223,14 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
         MapOperation operation = operationProvider.createPutFromLoadAllOperation(name, keyValueSequence);
         operation.setNodeEngine(nodeEngine);
-        //todo:
-//        operation.setOperationResponseHandler(new OperationResponseHandler() {
-//            @Override
-//            public void sendResponse(Operation op, Object obj) {
-//                if (finishedBatchCounter.decrementAndGet() == 0) {
-//                    loaded.set(true);
-//                }
-//            }
-//        });
+        operation.setOperationResponseHandler(new OperationResponseHandlerFactory.OperationResponseHandlerAdapter() {
+            @Override
+            public void onSend() {
+                if (finishedBatchCounter.decrementAndGet() == 0) {
+                    loaded.set(true);
+                }
+            }
+        });
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());

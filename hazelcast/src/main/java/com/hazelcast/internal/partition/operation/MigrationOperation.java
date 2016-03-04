@@ -19,7 +19,6 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -32,8 +31,7 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
-import com.hazelcast.spi.impl.OperationResponseHandlerFactory.ResponseHandlerAdapter;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory.OperationResponseHandlerAdapter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -46,7 +44,7 @@ import java.util.logging.Level;
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public final class MigrationOperation extends BaseMigrationOperation {
 
-    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new ResponseHandlerAdapter() {
+    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandlerAdapter() {
         @Override
         public void onSend() {
             throw new HazelcastException("Migration operations can not send response!");

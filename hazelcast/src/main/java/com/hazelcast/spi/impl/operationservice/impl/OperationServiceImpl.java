@@ -90,8 +90,6 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  */
 public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
 
-    private static final boolean SKIP_RESPONSE_QUEUE = Boolean.getBoolean("skipResponseQueue");
-
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
@@ -128,7 +126,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final SerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
-    private final ResponsePacketHandlerImpl responsePacketHandler;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -158,13 +155,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
-        this.responsePacketHandler = new ResponsePacketHandlerImpl(
-                logger,
-                invocationsRegistry);
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
                 node.getHazelcastThreadGroup(),
                 logger,
-                responsePacketHandler);
+                new ResponsePacketHandlerImpl(logger, invocationsRegistry));
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
@@ -268,11 +262,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         checkTrue(packet.isFlagSet(Packet.FLAG_OP), "Packet.FLAG_OP should be set!");
 
         if (packet.isFlagSet(Packet.FLAG_RESPONSE)) {
-            if (SKIP_RESPONSE_QUEUE) {
-                responsePacketHandler.handle(packet);
-            } else {
-                responsePacketExecutor.handle(packet);
-            }
+            responsePacketExecutor.handle(packet);
         } else {
             operationExecutor.execute(packet);
         }

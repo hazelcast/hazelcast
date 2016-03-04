@@ -32,7 +32,7 @@ public final class OperationResponseHandlerFactory {
         return EMPTY_RESPONSE_HANDLER;
     }
 
-    public static class ResponseHandlerAdapter implements OperationResponseHandler {
+    public static class OperationResponseHandlerAdapter implements OperationResponseHandler {
 
         @Override
         public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
@@ -63,7 +63,7 @@ public final class OperationResponseHandlerFactory {
         }
     }
 
-    public static class EmptyOperationResponseHandler extends ResponseHandlerAdapter {
+    public static class EmptyOperationResponseHandler extends OperationResponseHandlerAdapter {
         @Override
         public boolean isLocal() {
             return false;
@@ -74,7 +74,7 @@ public final class OperationResponseHandlerFactory {
         return new ErrorLoggingResponseHandler(logger);
     }
 
-    private static final class ErrorLoggingResponseHandler extends ResponseHandlerAdapter {
+    private static final class ErrorLoggingResponseHandler extends OperationResponseHandlerAdapter {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {
