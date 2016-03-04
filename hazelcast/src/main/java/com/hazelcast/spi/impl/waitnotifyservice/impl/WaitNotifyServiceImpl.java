@@ -199,10 +199,10 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
                     Operation op = waitingOp.getOperation();
                     if (partitionId == op.getPartitionId()) {
                         waitingOp.setValid(false);
-                        Throwable error = new PartitionMigratingException(thisAddress,
+                        PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
                                 partitionId, op.getClass().getName(), op.getServiceName());
                         OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-                        responseHandler.sendErrorResponse(op.getConnection(), op.isUrgent(), op.getCallId(), error);
+                        responseHandler.sendErrorResponse(op.getConnection(), op.isUrgent(), op.getCallId(), pme);
                         it.remove();
                     }
                 }
