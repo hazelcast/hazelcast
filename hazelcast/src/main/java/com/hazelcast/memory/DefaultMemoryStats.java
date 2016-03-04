@@ -33,6 +33,10 @@ public class DefaultMemoryStats implements JvmMemoryStats {
         this.nativeMemoryStats = new DummyMemoryStats();
     }
 
+    protected DefaultMemoryStats(MemoryStats nativeMemoryStats) {
+        this.nativeMemoryStats = nativeMemoryStats;
+    }
+
     @Override
     public MemoryStats getHeapMemoryStats() {
         return heapMemoryStats;
