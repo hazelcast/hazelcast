@@ -16,79 +16,77 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
-import com.hazelcast.collection.impl.collection.CollectionContainer;
-import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
+import com.hazelcast.collection.impl.CollectionTxnUtil;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.txncollection.CollectionTxnOperation;
-import com.hazelcast.core.ItemEventType;
+import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
+import java.util.List;
 
-public class CollectionTxnAddOperation extends CollectionBackupAwareOperation implements CollectionTxnOperation {
+/**
+ * a wrapper for running all commit operations at once
+ */
+public class CollectionCommitOperation extends CollectionBackupAwareOperation {
 
-    private long itemId;
-    private Data value;
+    private List<Operation> operationList;
 
-    public CollectionTxnAddOperation() {
+    private transient List<Operation> backupList;
+
+    public CollectionCommitOperation() {
     }
 
-    public CollectionTxnAddOperation(String name, long itemId, Data value) {
+    public CollectionCommitOperation(int partitionId, String name, String serviceName, List<Operation> operationList) {
         super(name);
-        this.itemId = itemId;
-        this.value = value;
+        setPartitionId(partitionId);
+        setServiceName(serviceName);
+        this.operationList = operationList;
     }
 
     @Override
-    public boolean shouldBackup() {
-        return true;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new CollectionTxnAddBackupOperation(name, itemId, value);
+    public void beforeRun() throws Exception {
+        super.beforeRun();
+        CollectionTxnUtil.before(operationList, this);
     }
 
     @Override
     public void run() throws Exception {
-        CollectionContainer collectionContainer = getOrCreateContainer();
-        collectionContainer.commitAdd(itemId, value);
-        response = true;
+        backupList = CollectionTxnUtil.run(operationList);
     }
 
     @Override
     public void afterRun() throws Exception {
-        publishEvent(ItemEventType.ADDED, value);
+        super.afterRun();
+        CollectionTxnUtil.after(operationList);
     }
 
     @Override
-    public long getItemId() {
-        return itemId;
+    public boolean shouldBackup() {
+        return !backupList.isEmpty();
     }
 
     @Override
-    public boolean isRemoveOperation() {
-        return false;
+    public Operation getBackupOperation() {
+        return new CollectionCommitBackupOperation(name, getServiceName(), backupList);
     }
+
 
     @Override
     public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_TXN_ADD;
+        return CollectionDataSerializerHook.TXN_COMMIT;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        out.writeData(value);
+        CollectionTxnUtil.write(out, operationList);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        value = in.readData();
+        operationList = CollectionTxnUtil.read(in);
     }
 }

@@ -16,91 +16,115 @@
 
 package com.hazelcast.collection.impl.txncollection;
 
+import com.hazelcast.collection.impl.CollectionTxnUtil;
+import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
-import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
+/**
+ * This class contains Transaction log for the Collection.
+ */
 public class CollectionTransactionLogRecord implements TransactionLogRecord {
 
-    private String transactionId;
-    private long itemId;
-    private String name;
-    private Operation op;
-    private int partitionId;
-    private String serviceName;
+    protected String name;
+    protected List<Operation> operationList;
+    protected int partitionId;
+    protected String transactionId;
+    protected String serviceName;
 
     public CollectionTransactionLogRecord() {
     }
 
-    public CollectionTransactionLogRecord(long itemId, String name, int partitionId, String serviceName,
-                                          String transactionId, Operation op) {
-        this.itemId = itemId;
-        this.name = name;
-        this.op = op;
-        this.partitionId = partitionId;
+    public CollectionTransactionLogRecord(String serviceName, String transactionId, String name, int partitionId) {
         this.serviceName = serviceName;
         this.transactionId = transactionId;
-    }
-
-    @Override
-    public Object getKey() {
-        return new TransactionLogRecordKey(name, itemId, serviceName);
+        this.name = name;
+        this.partitionId = partitionId;
+        this.operationList = new ArrayList<Operation>();
     }
 
     @Override
     public Operation newPrepareOperation() {
-        boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        return new CollectionPrepareOperation(partitionId, name, serviceName, itemId, transactionId, removeOperation);
+        long[] itemIds = createItemIdArray();
+        return new CollectionPrepareOperation(partitionId, name, serviceName, itemIds, transactionId);
     }
 
     @Override
     public Operation newCommitOperation() {
-        op.setServiceName(serviceName);
-        op.setPartitionId(partitionId);
-        return op;
+        return new CollectionCommitOperation(partitionId, name, serviceName, operationList);
     }
 
     @Override
     public Operation newRollbackOperation() {
-        boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        return new CollectionRollbackOperation(partitionId, name, serviceName, itemId, removeOperation);
+        long[] itemIds = createItemIdArray();
+        return new CollectionRollbackOperation(partitionId, name, serviceName, itemIds);
+    }
+
+    @Override
+    public Object getKey() {
+        return name;
+    }
+
+    public void addOperation(CollectionTxnOperation operation) {
+        Iterator<Operation> iterator = operationList.iterator();
+        while (iterator.hasNext()) {
+            CollectionTxnOperation op = (CollectionTxnOperation) iterator.next();
+            if (op.getItemId() == operation.getItemId()) {
+                iterator.remove();
+                break;
+            }
+        }
+        operationList.add((Operation) operation);
+    }
+
+    public int removeOperation(long itemId) {
+        Iterator<Operation> iterator = operationList.iterator();
+        while (iterator.hasNext()) {
+            CollectionTxnOperation op = (CollectionTxnOperation) iterator.next();
+            if (op.getItemId() == itemId) {
+                iterator.remove();
+                break;
+            }
+        }
+        return operationList.size();
+    }
+
+    protected long[] createItemIdArray() {
+        int size = operationList.size();
+        long[] itemIds = new long[size];
+        for (int i = 0; i < size; i++) {
+            CollectionTxnOperation operation = (CollectionTxnOperation) operationList.get(i);
+            itemIds[i] = CollectionTxnUtil.getItemId(operation);
+        }
+        return itemIds;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(itemId);
+        out.writeUTF(serviceName);
+        out.writeUTF(transactionId);
         out.writeUTF(name);
         out.writeInt(partitionId);
-        out.writeUTF(serviceName);
-        out.writeObject(op);
-        out.writeUTF(transactionId);
+        CollectionTxnUtil.write(out, operationList);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        itemId = in.readLong();
+        serviceName = in.readUTF();
+        transactionId = in.readUTF();
         name = in.readUTF();
         partitionId = in.readInt();
-        serviceName = in.readUTF();
-        op = in.readObject();
-        transactionId = in.readUTF();
+        operationList = CollectionTxnUtil.read(in);
     }
 
-    @Override
-    public String toString() {
-        return "CollectionTransactionLogRecord{"
-                + "transactionId='" + transactionId + '\''
-                + ", itemId=" + itemId
-                + ", name='" + name + '\''
-                + ", op=" + op
-                + ", partitionId=" + partitionId
-                + ", serviceName='" + serviceName + '\''
-                + '}';
-    }
+
 }

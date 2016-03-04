@@ -17,65 +17,64 @@
 package com.hazelcast.collection.impl.txncollection.operations;
 
 import com.hazelcast.collection.impl.CollectionTxnUtil;
-import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.List;
 
-public class CollectionRollbackOperation extends CollectionBackupAwareOperation {
+/**
+ * a wrapper for running all commit backup operations at once
+ */
+public class CollectionCommitBackupOperation extends CollectionOperation implements BackupOperation {
 
-    private long[] itemIds;
+    private List<Operation> backupList;
 
-    public CollectionRollbackOperation() {
+
+    public CollectionCommitBackupOperation() {
     }
 
-    public CollectionRollbackOperation(int partitionId, String name, String serviceName, long[] itemIds) {
+    public CollectionCommitBackupOperation(String name, String serviceName, List<Operation> backupList) {
         super(name);
-        setPartitionId(partitionId);
         setServiceName(serviceName);
-        this.itemIds = itemIds;
+        this.backupList = backupList;
     }
 
     @Override
-    public boolean shouldBackup() {
-        return true;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new CollectionRollbackBackupOperation(name, itemIds);
+    public void beforeRun() throws Exception {
+        super.beforeRun();
+        CollectionTxnUtil.before(backupList, this);
     }
 
     @Override
     public void run() throws Exception {
-        CollectionContainer collectionContainer = getOrCreateContainer();
-        for (long itemId : itemIds) {
-            if (CollectionTxnUtil.isRemove(itemId)) {
-                collectionContainer.rollbackRemove(itemId);
-            } else {
-                collectionContainer.rollbackAdd(-itemId);
-            }
-        }
+        CollectionTxnUtil.run(backupList);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        CollectionTxnUtil.after(backupList);
     }
 
     @Override
     public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_ROLLBACK;
+        return CollectionDataSerializerHook.TXN_COMMIT_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLongArray(itemIds);
+        CollectionTxnUtil.write(out, backupList);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemIds = in.readLongArray();
+        backupList = CollectionTxnUtil.read(in);
     }
 }

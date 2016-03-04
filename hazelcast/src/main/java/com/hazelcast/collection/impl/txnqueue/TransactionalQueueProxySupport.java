@@ -19,6 +19,7 @@ package com.hazelcast.collection.impl.txnqueue;
 import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.BaseTxnQueueOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPeekOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
@@ -80,15 +81,30 @@ public abstract class TransactionalQueueProxySupport extends TransactionalDistri
                 }
                 offeredQueue.offer(new QueueItem(null, itemId, data));
                 TxnOfferOperation txnOfferOperation = new TxnOfferOperation(name, itemId, data);
-                QueueTransactionLogRecord record = new QueueTransactionLogRecord(
-                        tx.getTxnId(), itemId, name, partitionId, txnOfferOperation);
-                tx.add(record);
+                putToRecord(txnOfferOperation);
                 return true;
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
         return false;
+    }
+
+    private void putToRecord(BaseTxnQueueOperation operation) {
+        QueueTransactionLogRecord logRecord = (QueueTransactionLogRecord) tx.get(name);
+        if (logRecord == null) {
+            logRecord = new QueueTransactionLogRecord(tx.getTxnId(), name, partitionId);
+            tx.add(logRecord);
+        }
+        logRecord.addOperation(operation);
+    }
+
+    private void removeFromRecord(long itemId) {
+        QueueTransactionLogRecord logRecord = (QueueTransactionLogRecord) tx.get(name);
+        int size = logRecord.removeOperation(itemId);
+        if (size == 0) {
+            tx.remove(name);
+        }
     }
 
     public Data pollInternal(long timeout) {
@@ -101,7 +117,7 @@ public abstract class TransactionalQueueProxySupport extends TransactionalDistri
             if (item != null) {
                 if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()) {
                     offeredQueue.poll();
-                    tx.remove(new TransactionLogRecordKey(reservedOffer.getItemId(), name));
+                    removeFromRecord(reservedOffer.getItemId());
                     itemIdSet.remove(reservedOffer.getItemId());
                     return reservedOffer.getData();
                 }
@@ -109,10 +125,8 @@ public abstract class TransactionalQueueProxySupport extends TransactionalDistri
                 if (!itemIdSet.add(item.getItemId())) {
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
-                TxnPollOperation op = new TxnPollOperation(name, item.getItemId());
-                QueueTransactionLogRecord record
-                        = new QueueTransactionLogRecord(tx.getTxnId(), item.getItemId(), name, partitionId, op);
-                tx.add(record);
+                TxnPollOperation txnPollOperation = new TxnPollOperation(name, item.getItemId());
+                putToRecord(txnPollOperation);
                 return item.getData();
             }
         } catch (Throwable t) {

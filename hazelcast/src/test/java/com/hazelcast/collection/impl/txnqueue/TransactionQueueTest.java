@@ -38,7 +38,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
@@ -52,6 +55,34 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TransactionQueueTest extends HazelcastTestSupport {
+
+    @Test
+    public void testSingleQueueAtomicity() throws ExecutionException, InterruptedException {
+        final String name = randomString();
+        final int itemCount = 200;
+        final HazelcastInstance instance = createHazelcastInstance();
+
+        Future<Integer> f = spawn(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                IQueue<Object> queue = instance.getQueue(name);
+                queue.take();
+                return queue.size();
+            }
+        });
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+
+        TransactionalQueue<Object> queue = context.getQueue(name);
+        for (int i = 0; i < itemCount; i++) {
+            queue.offer("item-" + i);
+        }
+        context.commitTransaction();
+
+        int size = f.get();
+        assertEquals(itemCount-1, size);
+    }
 
     @Test
     public void testPeekWithTimeout() {
@@ -442,6 +473,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         TransactionalQueue<Object> queue = context.getQueue(name);
         Object item = queue.poll(30, TimeUnit.SECONDS);
         assertNotNull(item);
+        context.commitTransaction();
     }
 
     private <E> IQueue<E> getQueue(HazelcastInstance[] instances, String name) {
