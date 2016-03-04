@@ -17,31 +17,34 @@
 package com.hazelcast.memory;
 
 /**
- * Memory statistics for abstract MemoryManager
+ * Memory usage statistics for a {@code MemoryManager} instance.
  */
 public interface MemoryStats {
+
     /**
-     * @return - total memory available for MemoryManager
+     * Returns total memory available to the associated {@code MemoryAllocator}.
+     * Only a fraction of this amount may be usable by the client due to
+     * overheads from headers and/or fragmentation.
      */
     long getTotal();
 
     /**
-     * @return - amount of free memory to allocate
-     */
-    long getFree();
-
-    /**
-     * @return - maximal amount of memory which can be allocated
-     */
-    long getMax();
-
-    /**
-     * @return -amount of memory which has been commited
+     * The portion of total memory that is in active use by the associated
+     * {@code MemoryAllocator}.
      */
     long getCommitted();
 
     /**
-     * @return - amount of memory which has been used
+     * Amount of usable memory allocated from the associated {@code MemoryAllocator}. Less
+     * than or equal to committed memory.
      */
     long getUsed();
+
+    /**
+     * Amount of usable memory available for allocation from the associated
+     * {@code MemoryAllocator}. This may be just an estimate because overheads from
+     * headers and fragmentation can reduce the memory available to the client
+     * in a non-linear fashion.
+     */
+    long getAvailable();
 }

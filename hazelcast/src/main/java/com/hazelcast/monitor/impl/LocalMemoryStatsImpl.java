@@ -44,12 +44,12 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     public LocalMemoryStatsImpl(JvmMemoryStats memoryStats) {
         setTotalPhysical(memoryStats.getTotal());
-        setFreePhysical(memoryStats.getFree());
-        setMaxNativeMemory(memoryStats.getNativeMemoryStats().getMax());
+        setFreePhysical(memoryStats.getAvailable());
+        setTotalNative(memoryStats.getNativeMemoryStats().getTotal());
         setCommittedNativeMemory(memoryStats.getNativeMemoryStats().getCommitted());
         setUsedNativeMemory(memoryStats.getNativeMemoryStats().getUsed());
-        setFreeNativeMemory(memoryStats.getNativeMemoryStats().getFree());
-        setMaxHeap(memoryStats.getHeapMemoryStats().getMax());
+        setFreeNativeMemory(memoryStats.getNativeMemoryStats().getAvailable());
+        setTotalHeap(memoryStats.getHeapMemoryStats().getTotal());
         setCommittedHeap(memoryStats.getHeapMemoryStats().getCommitted());
         setUsedHeap(memoryStats.getHeapMemoryStats().getUsed());
         setGcStats(new LocalGCStatsImpl(memoryStats.getGCStats()));
@@ -65,13 +65,8 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getFree() {
+    public long getAvailable() {
         return freePhysical;
-    }
-
-    @Override
-    public long getMax() {
-        return totalPhysical;
     }
 
     @Override
@@ -88,8 +83,8 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         this.freePhysical = freePhysical;
     }
 
-    public void setMaxNativeMemory(long maxNativeMemory) {
-        nativeMemoryStats.setMax(maxNativeMemory);
+    public void setTotalNative(long totalNative) {
+        nativeMemoryStats.setTotal(totalNative);
     }
 
     public void setUsedNativeMemory(long used) {
@@ -104,8 +99,8 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         nativeMemoryStats.setCommitted(committed);
     }
 
-    public void setMaxHeap(long maxHeap) {
-        heapMemoryStats.setMax(maxHeap);
+    public void setTotalHeap(long totalHeap) {
+        heapMemoryStats.setTotal(totalHeap);
     }
 
     public void setCommittedHeap(long committedHeap) {
@@ -146,11 +141,11 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         root.add("creationTime", creationTime);
         root.add("totalPhysical", totalPhysical);
         root.add("freePhysical", freePhysical);
-        root.add("maxNativeMemory", nativeMemoryStats.getMax());
-        root.add("committedNativeMemory", nativeMemoryStats.getCommitted());
-        root.add("usedNativeMemory", nativeMemoryStats.getUsed());
-        root.add("freeNativeMemory", nativeMemoryStats.getFree());
-        root.add("maxHeap", heapMemoryStats.getMax());
+        root.add("totalNative", nativeMemoryStats.getTotal());
+        root.add("committedNative", nativeMemoryStats.getCommitted());
+        root.add("usedNative", nativeMemoryStats.getUsed());
+        root.add("freeNative", nativeMemoryStats.getAvailable());
+        root.add("totalHeap", heapMemoryStats.getTotal());
         root.add("committedHeap", heapMemoryStats.getCommitted());
         root.add("usedHeap", heapMemoryStats.getUsed());
         if (gcStats == null) {
@@ -165,11 +160,11 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         creationTime = getLong(json, "creationTime", -1L);
         totalPhysical = getLong(json, "totalPhysical", -1L);
         freePhysical = getLong(json, "freePhysical", -1L);
-        nativeMemoryStats.setMax(getLong(json, "maxNativeMemory", -1L));
-        nativeMemoryStats.setCommitted(getLong(json, "committedNativeMemory", -1L));
-        nativeMemoryStats.setUsed(getLong(json, "usedNativeMemory", -1L));
-        nativeMemoryStats.setFree(getLong(json, "freeNativeMemory", -1L));
-        heapMemoryStats.setMax(getLong(json, "maxHeap", -1L));
+        nativeMemoryStats.setTotal(getLong(json, "totalNative", -1L));
+        nativeMemoryStats.setCommitted(getLong(json, "committedNative", -1L));
+        nativeMemoryStats.setUsed(getLong(json, "usedNative", -1L));
+        nativeMemoryStats.setFree(getLong(json, "freeNative", -1L));
+        heapMemoryStats.setTotal(getLong(json, "totalHeap", -1L));
         heapMemoryStats.setCommitted(getLong(json, "committedHeap", -1L));
         heapMemoryStats.setUsed(getLong(json, "usedHeap", -1L));
         gcStats = new LocalGCStatsImpl();
@@ -184,31 +179,29 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         return "LocalMemoryStats{"
                 + "totalPhysical=" + totalPhysical
                 + ", freePhysical=" + freePhysical
-                + ", maxNativeMemory=" + nativeMemoryStats.getMax()
-                + ", committedNativeMemory=" + nativeMemoryStats.getCommitted()
-                + ", usedNativeMemory=" + nativeMemoryStats.getUsed()
-                + ", maxHeap=" + heapMemoryStats.getMax()
+                + ", totalNative=" + nativeMemoryStats.getTotal()
+                + ", committedNative=" + nativeMemoryStats.getCommitted()
+                + ", usedNative=" + nativeMemoryStats.getUsed()
+                + ", totalHeap=" + heapMemoryStats.getTotal()
                 + ", committedHeap=" + heapMemoryStats.getCommitted()
                 + ", usedHeap=" + heapMemoryStats.getUsed()
                 + ", gcStats=" + gcStats
                 + '}';
     }
 
-    private class HeapMemoryStats extends BaseMemoryStats {
+    private static class HeapMemoryStats extends BaseMemoryStats {
         @Override
-        public long getFree() {
-            return getMax() - getUsed();
+        public long getAvailable() {
+            return getTotal() - getUsed();
         }
     }
 
-    private class BaseMemoryStats implements MemoryStats {
-        private long max;
+    private static class BaseMemoryStats implements MemoryStats {
+        private long total;
 
         private long committed;
 
         private long used;
-
-        private long total;
 
         private long free;
 
@@ -218,13 +211,8 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         }
 
         @Override
-        public long getFree() {
+        public long getAvailable() {
             return free;
-        }
-
-        @Override
-        public long getMax() {
-            return max;
         }
 
         @Override
@@ -235,10 +223,6 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         @Override
         public long getUsed() {
             return used;
-        }
-
-        public void setMax(long max) {
-            this.max = max;
         }
 
         public void setCommitted(long committed) {

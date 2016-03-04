@@ -28,22 +28,17 @@ public class HeapMemoryStats implements MemoryStats {
     }
 
     @Override
-    public long getFree() {
+    public long getAvailable() {
         return runtime.freeMemory();
     }
 
     @Override
-    public long getMax() {
-        return runtime.maxMemory();
-    }
-
-    @Override
     public long getCommitted() {
-        return runtime.totalMemory();
+        return getTotal() - getAvailable();
     }
 
     @Override
     public long getUsed() {
-        return getTotal() - getFree();
+        return getCommitted();
     }
 }

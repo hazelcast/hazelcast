@@ -26,12 +26,7 @@ public class DummyMemoryStats implements MemoryStats {
     }
 
     @Override
-    public long getFree() {
-        return 0;
-    }
-
-    @Override
-    public long getMax() {
+    public long getAvailable() {
         return 0;
     }
 
