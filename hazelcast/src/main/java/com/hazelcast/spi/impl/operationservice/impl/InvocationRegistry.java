@@ -183,7 +183,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
         try {
             Invocation invocation = invocations.get(callId);
 
-            // It can happen that a {@link BackupResponse} is send without the Invocation being available anymore.
+            // It can happen that a backup response is send without the Invocation being available anymore.
             // This is because the InvocationRegistry will automatically release invocations where the backup is
             // taking too much time.
             if (invocation == null) {
