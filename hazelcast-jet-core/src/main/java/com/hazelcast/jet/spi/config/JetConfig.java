@@ -18,6 +18,9 @@ package com.hazelcast.jet.spi.config;
 
 import com.hazelcast.config.Config;
 
+/**
+ * Server config for JET-application (compatible with standart Hazelcast server config)
+ */
 public class JetConfig extends Config {
     private final JetConfigurator jetConfigurator;
 
@@ -25,7 +28,7 @@ public class JetConfig extends Config {
         this.jetConfigurator = new JetConfigurator();
     }
 
-    public JetApplicationConfig getJetApplicationCofig(String name) {
+    public JetApplicationConfig getJetApplicationConfig(String name) {
         return this.jetConfigurator.getJetApplicationCofig(name);
     }
 

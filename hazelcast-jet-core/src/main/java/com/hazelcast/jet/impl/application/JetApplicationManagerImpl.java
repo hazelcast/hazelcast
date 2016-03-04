@@ -23,13 +23,11 @@ import com.hazelcast.jet.api.JetApplicationManager;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.executor.SharedApplicationExecutor;
 import com.hazelcast.jet.api.executor.Task;
-import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
 import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
 import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.spi.config.JetConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.IConcurrentMap;
@@ -81,11 +79,7 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
             this.localJetAddress = new Address(host, port);
 
             JetApplicationConfig defaultJetConfig =
-                    ((JetConfig) nodeEngine.getConfig()).getJetApplicationCofig(JetService.SERVICE_NAME);
-
-            if (defaultJetConfig == null) {
-                defaultJetConfig = new JetApplicationConfig();
-            }
+                    JetUtil.resolveJetDefaultApplicationConfig(nodeEngine);
 
             this.networkExecutor = new SharedBalancedExecutorImpl(
                     "network-reader-writer",
@@ -193,6 +187,11 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
             this.threadLocal.set(null);
             wakeUp();
         }
+    }
+
+    @Override
+    public NodeEngine getNodeEngine() {
+        return this.nodeEngine;
     }
 
     private void wakeUp() {

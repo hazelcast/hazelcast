@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.dag.tap.source;
 
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.spi.JetException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 
 public class FileIterator implements Iterator<String> {
@@ -37,10 +39,14 @@ public class FileIterator implements Iterator<String> {
                         long end) {
         try {
             this.byteCountingStream = new ByteCountingInputStream(new FileInputStream(file), end);
-            this.raf = new LineNumberReader(new BufferedReader(new InputStreamReader(this.byteCountingStream)));
+            this.raf = new LineNumberReader(new BufferedReader(
+                    new InputStreamReader(this.byteCountingStream, Charset.forName("UTF-8"))
+            ));
 
             if (start > 0) {
-                this.byteCountingStream.skip(start);
+                if (this.byteCountingStream.skip(start) < 0) {
+                    throw new JetException("Can't read from file inputStream");
+                }
             }
         } catch (IOException e) {
             throw JetUtil.reThrow(e);

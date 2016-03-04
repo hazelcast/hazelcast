@@ -43,6 +43,9 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class OperationExecutorService<PayLoad> implements ApplicationInvocationService<PayLoad> {
     protected static final Logger LOG = LoggerFactory.getLogger(OperationExecutorService.class);
+
+    protected JetApplicationConfig jetApplicationConfig;
+
     private final ExecutorService executorService;
 
     public OperationExecutorService(ExecutorService executorService) {
@@ -51,6 +54,8 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
 
     protected OperationExecutor createInitiationApplicationExecutor(final JetApplicationConfig config,
                                                                     ApplicationStateManager applicationStateManager) {
+        this.jetApplicationConfig = config;
+
         return new OperationExecutor(
                 null,
                 ApplicationEvent.INIT_SUCCESS,
@@ -198,14 +203,14 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
         throw JetUtil.reThrow(e);
     }
 
-    protected abstract JetApplicationConfig getConfig();
+    protected abstract JetApplicationConfig getJetApplicationConfig();
 
     protected int getSecondsToAwait() {
-        return getConfig().getJetSecondsToAwait();
+        return getJetApplicationConfig().getJetSecondsToAwait();
     }
 
     protected int getLocalizationChunkSize() {
-        return getConfig().getChunkSize();
+        return getJetApplicationConfig().getChunkSize();
     }
 
     private void executeApplicationLocalization(final Set<LocalizationResource> localizedResources) {

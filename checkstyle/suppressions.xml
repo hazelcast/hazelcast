@@ -12,4 +12,18 @@
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>
 
+    <!-- Suppress all auto-generated stuff checks-->
+    <suppress checks="" files="com/hazelcast/client/impl/protocol/codec/*.*"/>
+    <suppress checks="" files="com/hazelcast/client/impl/protocol/JetMessageTaskFactoryProvider"/>
+
+    <!-- Suppress RingBuffer checks-->
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingBufferWithValueStrategy"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingBufferWithReferenceStrategy"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/PaddedLong"/>
+
+    <!-- Temporary suppress javaDocs (will be implemented in future)-->
+    <suppress checks="JavadocPackage" files="\.java"/>
+    <suppress checks="JavadocMethod" files="\.java"/>
+    <suppress checks="JavadocType" files="\.java"/>
+    <suppress checks="JavadocVariable" files="\.java"/>
 </suppressions>

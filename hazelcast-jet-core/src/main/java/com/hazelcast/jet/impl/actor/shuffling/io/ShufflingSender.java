@@ -36,7 +36,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     private final Address address;
 
     private final int containerID;
-    private final byte[] applicationName;
+    private final byte[] applicationNameBytes;
     private final RingBufferActor ringBufferActor;
     private final ChunkedOutputStream serializer;
     private final SenderObjectWriter senderObjectWriter;
@@ -54,8 +54,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         this.address = address;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         this.containerID = containerContext.getID();
-        this.applicationName = containerContext.getApplicationContext().getName().getBytes();
-
+        String applicationName = containerContext.getApplicationContext().getName();
+        this.applicationNameBytes = nodeEngine.getSerializationService().toBytes(applicationName);
         this.containerContext = containerContext;
 
         this.ringBufferActor = new RingBufferActor(
@@ -94,7 +94,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         JetPacket packet = new JetPacket(
                 this.taskID,
                 this.containerID,
-                this.applicationName
+                this.applicationNameBytes
         );
 
         packet.setHeader(JetPacket.HEADER_JET_DATA_CHUNK_SENT);
@@ -178,7 +178,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
                 JetPacket packet = new JetPacket(
                         this.taskID,
                         this.containerID,
-                        this.applicationName
+                        this.applicationNameBytes
                 );
 
                 packet.setHeader(JetPacket.HEADER_JET_SHUFFLER_CLOSED);

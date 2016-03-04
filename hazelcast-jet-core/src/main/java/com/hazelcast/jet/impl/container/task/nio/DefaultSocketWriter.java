@@ -39,10 +39,12 @@ public class DefaultSocketWriter
         extends AbstractNetworkTask implements SocketWriter {
     private final byte[] membersBytes;
     private final ByteBuffer sendByteBuffer;
+    private final byte[] applicationNameBytes;
     private final InetSocketAddress inetSocketAddress;
     private final ApplicationContext applicationContext;
     private final List<RingBufferActor> producers = new ArrayList<RingBufferActor>();
     private final Queue<JetPacket> servicePackets = new ConcurrentLinkedQueue<JetPacket>();
+
     private int lastFrameId = -1;
     private int nextProducerIdx;
     private JetPacket lastPacket;
@@ -50,18 +52,23 @@ public class DefaultSocketWriter
     private Object[] currentFrames;
     private boolean memberEventSent;
 
-
     public DefaultSocketWriter(ApplicationContext applicationContext,
                                Address jetAddress) {
         super(applicationContext.getNodeEngine(), jetAddress);
 
         this.inetSocketAddress = new InetSocketAddress(jetAddress.getHost(), jetAddress.getPort());
+
         this.sendByteBuffer = ByteBuffer.allocateDirect(applicationContext.getJetApplicationConfig().getDefaultTCPBufferSize())
                 .order(ByteOrder.BIG_ENDIAN);
 
         this.applicationContext = applicationContext;
+
         this.membersBytes = applicationContext.getNodeEngine().getSerializationService().toBytes(
                 applicationContext.getLocalJetAddress()
+        );
+
+        this.applicationNameBytes = applicationContext.getNodeEngine().getSerializationService().toBytes(
+                applicationContext.getName()
         );
 
         reset();
@@ -130,7 +137,7 @@ public class DefaultSocketWriter
         }
 
         if (!this.memberEventSent) {
-            JetPacket packet = new JetPacket(this.applicationContext.getName().getBytes(), this.membersBytes);
+            JetPacket packet = new JetPacket(this.applicationNameBytes, this.membersBytes);
             packet.setHeader(JetPacket.HEADER_JET_MEMBER_EVENT);
             this.lastPacket = packet;
             this.memberEventSent = true;

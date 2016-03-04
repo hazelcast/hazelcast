@@ -35,9 +35,9 @@ import com.hazelcast.jet.impl.container.ApplicationMasterImpl;
 import com.hazelcast.jet.impl.container.DefaultDiscoveryService;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineImpl;
 import com.hazelcast.jet.impl.statemachine.application.DefaultApplicationStateMachineRequestProcessor;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.application.ApplicationListener;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.spi.config.JetConfig;
 import com.hazelcast.jet.spi.container.ContainerListener;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
@@ -118,19 +118,15 @@ public class ApplicationContextImpl implements ApplicationContext {
         this.owner = new AtomicReference<Address>();
         this.containerIdGenerator = new AtomicInteger(0);
 
-        if (isEmptyConfig(jetApplicationConfig)) {
-            jetApplicationConfig = ((JetConfig) nodeEngine.getConfig()).getJetApplicationCofig(name);
-
-            if (isEmptyConfig(jetApplicationConfig)) {
-                jetApplicationConfig = new JetApplicationConfig();
-            }
-        }
-
-        this.jetApplicationConfig = jetApplicationConfig;
+        this.jetApplicationConfig = JetUtil.resolveJetServerApplicationConfig(
+                nodeEngine,
+                jetApplicationConfig,
+                name
+        );
 
         this.executorContext = new DefaultExecutorContext(
                 this.name,
-                jetApplicationConfig,
+                this.jetApplicationConfig,
                 nodeEngine,
                 jetApplicationManager.getNetworkExecutor(),
                 jetApplicationManager.getProcessingExecutor()
@@ -166,10 +162,6 @@ public class ApplicationContextImpl implements ApplicationContext {
                         this.hzToAddressMapping
                 )
         );
-    }
-
-    private boolean isEmptyConfig(JetApplicationConfig jetApplicationConfig) {
-        return (jetApplicationConfig == null) || (jetApplicationConfig.getName() == null);
     }
 
     @Override

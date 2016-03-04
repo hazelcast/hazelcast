@@ -83,7 +83,7 @@ public class ExecutionApplicationRequestOperation extends AbstractJetApplication
 
             System.out.println("ExecutionApplicationRequestOperation.run.finished");
 
-            if ((result != null) && (result instanceof Throwable)) {
+            if (result instanceof Throwable) {
                 throw JetUtil.reThrow((Throwable) result);
             }
 

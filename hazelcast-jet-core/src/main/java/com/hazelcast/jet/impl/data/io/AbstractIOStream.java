@@ -20,6 +20,7 @@ import com.hazelcast.jet.api.data.BufferAware;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -32,24 +33,12 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
     private T[] buffer;
     private int currentIdx;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public AbstractIOStream(T[] buffer,
                             DataTransferringStrategy dataTransferringStrategy) {
         this.buffer = buffer;
         this.dataTransferringStrategy = dataTransferringStrategy;
         initBuffer();
-    }
-
-    private static int hugeCapacity(int minCapacity) {
-        // overflow
-        if (minCapacity < 0) {
-            throw new OutOfMemoryError();
-        }
-
-        return (minCapacity > MAX_ARRAY_SIZE)
-                ?
-                Integer.MAX_VALUE
-                :
-                MAX_ARRAY_SIZE;
     }
 
     private void initBuffer() {
@@ -122,6 +111,7 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
     }
 
     @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public T[] getBuffer() {
         return this.buffer;
     }
@@ -148,7 +138,7 @@ public abstract class AbstractIOStream<T> implements ProducerInputStream<T>, Con
             newCapacity = minCapacity;
         }
         if (newCapacity - MAX_ARRAY_SIZE > 0) {
-            newCapacity = hugeCapacity(minCapacity);
+            newCapacity = minCapacity;
         }
         // minCapacity is usually close to size, so this is a win:
         this.buffer = Arrays.copyOf(this.buffer, newCapacity);

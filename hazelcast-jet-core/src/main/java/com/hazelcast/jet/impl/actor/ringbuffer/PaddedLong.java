@@ -16,6 +16,12 @@
 
 package com.hazelcast.jet.impl.actor.ringbuffer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+@SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
+@SuppressWarnings({
+        "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
+})
 abstract class LeftPaddedLong {
     protected long p1, p2, p3, p4, p5, p6, p7;
 }
@@ -36,6 +42,10 @@ abstract class RightPaddedLong extends LeftPaddedLong {
     }
 }
 
+@SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
+@SuppressWarnings({
+        "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
+})
 public class PaddedLong extends RightPaddedLong {
     protected long p1, p2, p3, p4, p5, p6, p7;
 

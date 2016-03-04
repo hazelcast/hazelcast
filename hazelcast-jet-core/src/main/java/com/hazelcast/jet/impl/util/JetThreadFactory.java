@@ -19,6 +19,9 @@ package com.hazelcast.jet.impl.util;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Thread factory for default JET-threads
+ */
 public class JetThreadFactory implements ThreadFactory {
     private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(1);
     private final String name;

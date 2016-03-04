@@ -19,7 +19,13 @@ package com.hazelcast.jet.impl.strategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.strategy.HashingStrategy;
 
+/**
+ * Default hashing strategy based on Hazelcast partition-id calculation;
+ */
 public final class DefaultHashingStrategy implements HashingStrategy {
+    /**
+     * Default singleton instance for the default hashing strategy;
+     */
     public static final HashingStrategy INSTANCE = new DefaultHashingStrategy();
 
     private DefaultHashingStrategy() {

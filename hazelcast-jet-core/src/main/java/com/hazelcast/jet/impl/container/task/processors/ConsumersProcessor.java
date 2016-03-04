@@ -18,7 +18,9 @@ package com.hazelcast.jet.impl.container.task.processors;
 
 import com.hazelcast.jet.api.actor.ObjectConsumer;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class ConsumersProcessor {
     private final ObjectConsumer[] consumers;
     private boolean consumed;

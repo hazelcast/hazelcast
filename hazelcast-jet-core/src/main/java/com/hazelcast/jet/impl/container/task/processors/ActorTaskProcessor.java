@@ -24,8 +24,9 @@ import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 public class ActorTaskProcessor extends ProducerTaskProcessor {
-    private final TaskProcessor consumerProcessor;
     protected boolean consumed;
+
+    private final TaskProcessor consumerProcessor;
 
     public ActorTaskProcessor(ObjectProducer[] producers,
                               ContainerProcessor processor,

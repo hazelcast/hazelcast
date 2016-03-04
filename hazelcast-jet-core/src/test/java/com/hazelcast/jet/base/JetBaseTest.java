@@ -1,6 +1,7 @@
 package com.hazelcast.jet.base;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -9,13 +10,13 @@ import com.hazelcast.jet.impl.dag.DAGImpl;
 import com.hazelcast.jet.impl.dag.VertexImpl;
 import com.hazelcast.jet.impl.hazelcast.JetEngine;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.spi.config.JetConfig;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.AfterClass;
 
 public abstract class JetBaseTest extends HazelcastTestSupport {
@@ -35,7 +37,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     public static final String TEST_DATA_PATH = "test.data.path";
     private static final AtomicInteger APPLICATION_NAME_COUNTER = new AtomicInteger();
     protected static JetApplicationConfig JETCONFIG;
-    protected static JetConfig CONFIG;
+    protected static Config CONFIG;
     protected static HazelcastInstance SERVER;
     protected static HazelcastInstance CLIENT;
     protected static List<File> createdFiles = new ArrayList<File>();
@@ -55,8 +57,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
 
         System.setProperty(TEST_DATA_PATH, "src/test/resources/data/");
 
-        CONFIG = new JetConfig();
-        CONFIG.addJetApplicationConfig(JETCONFIG);
+        CONFIG = new Config();
         CONFIG.getMapConfig("source").setInMemoryFormat(InMemoryFormat.OBJECT);
 
         HAZELCAST_FACTORY = new TestHazelcastFactory();

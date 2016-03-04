@@ -21,6 +21,7 @@ import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,20 +30,22 @@ import java.util.Arrays;
 public class ChunkedOutputStream extends OutputStream {
     private static final int BUFFER_OFFSET = HeapData.DATA_OFFSET;
 
+    private int bufferSize;
     private final int taskID;
     private final byte[] buffer;
     private final int containerID;
     private final int shufflingBytesSize;
-    private final byte[] applicationName;
+    private final byte[] applicationNameBytes;
     private final RingBufferActor ringBufferActor;
-    private int bufferSize;
 
     public ChunkedOutputStream(RingBufferActor ringBufferActor, ContainerContext containerContext, int taskID) {
         this.taskID = taskID;
         this.ringBufferActor = ringBufferActor;
         this.shufflingBytesSize = containerContext.getApplicationContext().getJetApplicationConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
-        this.applicationName = containerContext.getApplicationContext().getName().getBytes();
+        String applicationName = containerContext.getApplicationContext().getName();
+        NodeEngine nodeEngine = containerContext.getApplicationContext().getNodeEngine();
+        this.applicationNameBytes = nodeEngine.getSerializationService().toBytes(applicationName);
         this.containerID = containerContext.getID();
     }
 
@@ -68,7 +71,7 @@ public class ChunkedOutputStream extends OutputStream {
                 JetPacket packet = new JetPacket(
                         this.taskID,
                         this.containerID,
-                        this.applicationName,
+                        this.applicationNameBytes,
                         buffer
                 );
 

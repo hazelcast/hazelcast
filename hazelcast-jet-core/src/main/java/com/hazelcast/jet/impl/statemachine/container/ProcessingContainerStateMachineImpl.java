@@ -59,14 +59,7 @@ public class ProcessingContainerStateMachineImpl extends
                             ProcessingContainerState.INTERRUPTING, LinkedMapBuilder.of(
                                     ProcessingContainerEvent.EXECUTION_COMPLETED, ProcessingContainerState.AWAITING,
                                     ProcessingContainerEvent.FINALIZE, ProcessingContainerState.FINALIZED,
-                                    ProcessingContainerEvent.INTERRUPTED, ProcessingContainerState.AWAITING,
-                                    ProcessingContainerEvent.INVALIDATE_CONTAINER, ProcessingContainerState.INVALIDATED
-                            )
-                    ).
-                    put(
-                            ProcessingContainerState.INVALIDATED, LinkedMapBuilder.of(
-                                    ProcessingContainerEvent.INVALIDATE_CONTAINER, ProcessingContainerState.INVALIDATED,
-                                    ProcessingContainerEvent.FINALIZE, ProcessingContainerState.FINALIZED
+                                    ProcessingContainerEvent.INTERRUPTED, ProcessingContainerState.AWAITING
                             )
                     ).
                     build();

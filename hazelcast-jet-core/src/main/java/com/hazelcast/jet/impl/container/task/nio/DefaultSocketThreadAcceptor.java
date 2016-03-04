@@ -53,9 +53,13 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
 
     protected boolean consumePacket(JetPacket packet) throws Exception {
         if (packet.getHeader() == JetPacket.HEADER_JET_MEMBER_EVENT) {
-            ApplicationContext applicationContext = this.jetApplicationManager.getApplicationContext(
-                    new String(packet.getApplicationNameBytes())
+            NodeEngine nodeEngine = this.jetApplicationManager.getNodeEngine();
+
+            String applicationName = nodeEngine.getSerializationService().toObject(
+                    new HeapData(packet.getApplicationNameBytes())
             );
+
+            ApplicationContext applicationContext = this.jetApplicationManager.getApplicationContext(applicationName);
 
             if (applicationContext != null) {
                 Address address = applicationContext.getNodeEngine().getSerializationService().toObject(
@@ -80,7 +84,9 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
 
         if (this.socketChannel != null) {
             if (this.receiveBuffer == null) {
-                this.receiveBuffer = ByteBuffer.allocateDirect(JetApplicationConfig.DEFAULT_TCP_BUFFER_SIZE).order(ByteOrder.BIG_ENDIAN);
+                this.receiveBuffer = ByteBuffer.allocateDirect(
+                        JetApplicationConfig.DEFAULT_TCP_BUFFER_SIZE
+                ).order(ByteOrder.BIG_ENDIAN);
             }
 
             return super.executeTask(payload);

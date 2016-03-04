@@ -18,6 +18,18 @@ package com.hazelcast.jet.impl.util;
 
 import javax.annotation.Nullable;
 
+/**
+ * Future implementation which can be re-used
+ * <pre>
+ *     SettableFuture future = object.getFuture();
+ *     future.get();
+ *     future.reset();
+ *     SettableFuture future = object.getFuture();
+ *     future.get();
+ * </pre>
+ *
+ * @param <V> - type of the result value
+ */
 public final class SettableFuture<V> extends AbstractFuture<V> {
     /**
      * Explicit private constructor, use the {@link #create} factory method to

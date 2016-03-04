@@ -16,15 +16,19 @@
 
 package com.hazelcast.jet.impl.application.localization.classloader;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class ClassLoaderEntry {
     private final byte[] resourceBytes;
     private final String baseUrl;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public ClassLoaderEntry(byte[] resourceBytes, String baseUrl) {
         this.resourceBytes = resourceBytes;
         this.baseUrl = baseUrl;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public byte[] getResourceBytes() {
         return resourceBytes;
     }

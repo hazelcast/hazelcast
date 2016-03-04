@@ -24,11 +24,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
     protected static final Logger LOG = LoggerFactory.getLogger(DiskLocalizationStorage.class);
@@ -77,7 +77,14 @@ public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
 
     @Override
     public ResourceStream asResourceStream(File resource) throws IOException {
-        return new ResourceStream(new FileInputStream(resource), resource.toURI().toURL().toString());
+        InputStream fileInputStream = new FileInputStream(resource);
+
+        try {
+            return new ResourceStream(fileInputStream, resource.toURI().toURL().toString());
+        } catch (Throwable e) {
+            fileInputStream.close();
+            throw JetUtil.reThrow(e);
+        }
     }
 
     @Override

@@ -48,6 +48,7 @@ import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.spi.data.DataWriter;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
 import com.hazelcast.spi.NodeEngine;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +58,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public abstract class AbstractProcessingContainer extends
         AbstractContainer<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>
         implements ProcessingContainer {

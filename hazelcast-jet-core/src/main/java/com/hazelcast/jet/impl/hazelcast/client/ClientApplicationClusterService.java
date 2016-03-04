@@ -33,8 +33,8 @@ import com.hazelcast.jet.api.hazelcast.InvocationFactory;
 import com.hazelcast.jet.api.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.application.localization.Chunk;
 import com.hazelcast.jet.impl.hazelcast.AbstractApplicationClusterService;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
-import com.hazelcast.jet.spi.config.JetClientConfig;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
 import com.hazelcast.jet.spi.dag.DAG;
@@ -125,15 +125,8 @@ public class ClientApplicationClusterService
     }
 
     @Override
-    protected JetApplicationConfig getConfig() {
-        JetApplicationConfig config = ((JetClientConfig) this.client.getClientConfig()).
-                getJetApplicationCofig(this.name);
-
-        if (config == null) {
-            return new JetApplicationConfig();
-        }
-
-        return config;
+    protected JetApplicationConfig getJetApplicationConfig() {
+        return JetUtil.resolveJetClientApplicationConfig(this.client, this.jetApplicationConfig, name);
     }
 
     @Override

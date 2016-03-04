@@ -18,7 +18,9 @@ package com.hazelcast.jet.impl.hazelcast.client;
 
 import com.hazelcast.client.spi.ClientProxyDescriptor;
 import com.hazelcast.client.spi.ClientProxyDescriptorProvider;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class JetClientProxyDescriptorProvider implements ClientProxyDescriptorProvider {
     private final ClientProxyDescriptor[] descriptors;
 

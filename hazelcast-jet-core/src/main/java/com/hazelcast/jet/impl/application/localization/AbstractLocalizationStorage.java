@@ -24,6 +24,8 @@ import com.hazelcast.jet.impl.application.localization.classloader.ResourceStrea
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -75,6 +77,12 @@ public abstract class AbstractLocalizationStorage<S> implements LocalizationStor
         }
 
         this.accepted = true;
-        this.classLoader = new ApplicationClassLoader(this);
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                classLoader = new ApplicationClassLoader(AbstractLocalizationStorage.this);
+                return null;
+            }
+        });
     }
 }

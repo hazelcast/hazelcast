@@ -30,9 +30,11 @@ import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class DefaultComposedActor implements ComposedActor {
     private final Edge edge;
     private final Vertex vertex;

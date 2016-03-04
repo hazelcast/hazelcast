@@ -22,6 +22,9 @@ import com.hazelcast.jet.api.container.ContainerListenerCaller;
  * Listener which will be invoked on change of container's state;
  */
 public interface ContainerListener {
+    /**
+     * Predefined listener to be invoked on container executed
+     */
     ContainerListenerCaller EXECUTED_LISTENER_CALLER = new ContainerListenerCaller() {
         @Override
         public <T extends Throwable> void call(ContainerListener listener, T... payLoad) {
@@ -29,6 +32,9 @@ public interface ContainerListener {
         }
     };
 
+    /**
+     * Predefined listener to be invoked on container interrupted
+     */
     ContainerListenerCaller INTERRUPTED_LISTENER_CALLER = new ContainerListenerCaller() {
         @Override
         public <T extends Throwable> void call(ContainerListener listener, T... payLoad) {
@@ -36,6 +42,9 @@ public interface ContainerListener {
         }
     };
 
+    /**
+     * Predefined listener to be invoked on container failure
+     */
     ContainerListenerCaller FAILURE_LISTENER_CALLER = new ContainerListenerCaller() {
         @Override
         public <T extends Throwable> void call(ContainerListener listener, T... payLoad) {

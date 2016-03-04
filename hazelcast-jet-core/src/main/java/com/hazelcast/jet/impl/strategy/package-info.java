@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.api.statemachine.container.processingcontainer;
-
-import com.hazelcast.jet.api.statemachine.container.ContainerState;
-
-public enum ProcessingContainerState implements ContainerState {
-    NEW,
-    INTERRUPTING,
-    AWAITING,
-    EXECUTION,
-    FINALIZED
-}
+/**
+ * Base package for JET-strategy abstractions;
+ */
+package com.hazelcast.jet.impl.strategy;

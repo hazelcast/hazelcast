@@ -20,6 +20,7 @@ import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.executor.SharedApplicationExecutor;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
@@ -39,4 +40,6 @@ public interface JetApplicationManager {
     Collection<ApplicationContext> getApplicationContexts();
 
     ApplicationContext createOrGetApplicationContext(String name, JetApplicationConfig config);
+
+    NodeEngine getNodeEngine();
 }

@@ -20,8 +20,10 @@ import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+
 
 public class Chunk implements DataSerializable {
     private byte[] bytes;
@@ -32,12 +34,14 @@ public class Chunk implements DataSerializable {
 
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Chunk(byte[] bytes, LocalizationResourceDescriptor descriptor, long length) {
         this.bytes = bytes;
         this.length = length;
         this.descriptor = descriptor;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public byte[] getBytes() {
         return bytes;
     }

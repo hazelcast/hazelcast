@@ -27,6 +27,11 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
+/**
+ * Abstract future implementation
+ *
+ * @param <V> - type of the result value
+ */
 public abstract class AbstractFuture<V> implements Future<V> {
 
     /**
@@ -63,7 +68,7 @@ public abstract class AbstractFuture<V> implements Future<V> {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * <p>The default {@link AbstractFuture} implementation throws {@code
      * InterruptedException} if the current thread is interrupted before or during
      * the call, even if the value is already available.
@@ -103,7 +108,7 @@ public abstract class AbstractFuture<V> implements Future<V> {
      * Subclasses can override this method to implement interruption of the
      * future's computation. The method is invoked automatically by a successful
      * call to {@link #cancel(boolean) cancel(true)}.
-     *
+     * <p>
      * <p>The default implementation does nothing.
      *
      * @since 10.0
@@ -156,12 +161,12 @@ public abstract class AbstractFuture<V> implements Future<V> {
      * in a thread-safe manner.  The current state of the future is held in the
      * Sync state, and the lock is released whenever the state changes to either
      * {@link #COMPLETED} or {@link #CANCELLED}.
-     *
+     * <p>
      * <p>To avoid races between threads doing release and acquire, we transition
      * to the final state in two steps.  One thread will successfully CAS from
      * RUNNING to COMPLETING, that thread will then set the result of the
      * computation, and only then transition to COMPLETED or CANCELLED.
-     *
+     * <p>
      * <p>We don't use the integer argument passed between acquire methods so we
      * pass around a -1 everywhere.
      */

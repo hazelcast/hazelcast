@@ -21,6 +21,7 @@ import com.hazelcast.jet.api.executor.Task;
 import com.hazelcast.jet.api.executor.TaskConsumer;
 import com.hazelcast.jet.api.executor.TaskExecutor;
 import com.hazelcast.logging.ILogger;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,7 @@ public class StateMachineExecutorProcessor extends AbstractExecutorProcessor<Tas
     }
 
     @Override
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void start() {
         if (!this.started) {
             this.tasks.clear();
