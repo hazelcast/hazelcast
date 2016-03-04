@@ -147,11 +147,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 
-    @Override
-    public boolean isLocal() {
-        return true;
-    }
-
     private long getCallTimeout(long callTimeout) {
         if (callTimeout > 0) {
             return callTimeout;
@@ -385,6 +380,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
         invocationFuture.set(response);
+    }
+
+    @Override
+    public boolean isLocal() {
+        return true;
     }
 
     void notifyError(Object error) {
