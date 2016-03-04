@@ -21,6 +21,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -29,7 +30,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.CollectionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Used to process store operations in another thread.
@@ -55,73 +56,122 @@ public class StoreWorker implements Runnable {
     /**
      * Run on backup nodes after this interval.
      */
-    private final long backupRunIntervalTime;
+    private final long backupDelayMillis;
+    private final long writeDelayMillis;
+    private final int partitionCount;
 
     /**
-     * Last run time of this processor.
+     * Entries are fetched from write-behind-queues according to this highestStoreTime. If an entry
+     * has a store-time which is smaller than or equal to this highestStoreTime, it will be processed.
+     * <p/>
+     * Next highestStoreTime will be calculated by adding writeDelayMillis to highestStoreTime, so
+     * next can be found with the equation `highestStoreTime = highestStoreTime + writeDelayMillis`.
+     *
+     * @see #calculateHighestStoreTime
      */
-    private long lastRunTime;
+    private long lastHighestStoreTime;
 
 
     public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
         this.mapName = mapStoreContext.getMapName();
         this.mapServiceContext = mapStoreContext.getMapServiceContext();
         this.writeBehindProcessor = writeBehindProcessor;
-        this.backupRunIntervalTime = getReplicaWaitTime();
-        this.lastRunTime = Clock.currentTimeMillis();
+        this.backupDelayMillis = getReplicaWaitTimeMillis();
+        this.lastHighestStoreTime = Clock.currentTimeMillis();
+        this.writeDelayMillis = SECONDS.toMillis(mapStoreContext.getMapStoreConfig().getWriteDelaySeconds());
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        this.partitionCount = partitionService.getPartitionCount();
     }
 
 
     @Override
     public void run() {
-        long now = Clock.currentTimeMillis();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        int partitionCount = partitionService.getPartitionCount();
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(partitionCount);
+        final long now = Clock.currentTimeMillis();
+        final long ownerHighestStoreTime = calculateHighestStoreTime(lastHighestStoreTime, now);
+        final long backupHighestStoreTime = ownerHighestStoreTime - backupDelayMillis;
+
+        lastHighestStoreTime = ownerHighestStoreTime;
+
+        List<DelayedEntry> ownersList = null;
+        List<DelayedEntry> backupsList = null;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            InternalPartition partition = partitionService.getPartition(partitionId, false);
-            Address owner = partition.getOwnerOrNull();
-            if (owner == null) {
-                continue;
-            }
-
             RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
-            if (recordStore == null) {
+            if (!hasEntryInWriteBehindQueue(recordStore)) {
                 continue;
             }
 
-            List<DelayedEntry> entriesToStore = getEntriesToStore(now, recordStore);
-            if (!partition.isLocal()) {
-                if (now > lastRunTime + backupRunIntervalTime) {
-                    doInBackup(entriesToStore, partitionId);
-                }
+            boolean localPartition = isPartitionLocal(partitionId);
+
+            if (!localPartition) {
+
+                backupsList = initListIfNull(backupsList, partitionCount);
+                selectEntriesToStore(recordStore, backupsList, backupHighestStoreTime);
+
             } else {
-                entries.addAll(entriesToStore);
+
+                ownersList = initListIfNull(ownersList, partitionCount);
+                selectEntriesToStore(recordStore, ownersList, ownerHighestStoreTime);
             }
         }
 
-        if (entries.isEmpty()) {
-            return;
+        if (!isEmpty(ownersList)) {
+            Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(ownersList);
+            removeFinishedStoreOperationsFromQueues(mapName, ownersList);
+            reAddFailedStoreOperationsToQueues(mapName, failuresPerPartition);
         }
 
-        Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(entries);
-        removeFinishedStoreOperationsFromQueues(mapName, entries);
-        readdFailedStoreOperationsToQueues(mapName, failuresPerPartition);
-        lastRunTime = now;
+        if (!isEmpty(backupsList)) {
+            doInBackup(backupsList);
+        }
     }
 
-    private List<DelayedEntry> getEntriesToStore(long now, RecordStore recordStore) {
+    private boolean isPartitionLocal(int partitionId) {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        ClusterService clusterService = nodeEngine.getClusterService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Address thisAddress = clusterService.getThisAddress();
+        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        Address owner = partition.getOwnerOrNull();
+        return owner != null && owner.equals(thisAddress);
+    }
+
+    private static List<DelayedEntry> initListIfNull(List<DelayedEntry> list, int capacity) {
+        if (list == null) {
+            list = new ArrayList<DelayedEntry>(capacity);
+        }
+        return list;
+    }
+
+    /**
+     * Calculates highestStoreTime which is used to select processable entries from write-behind-queues.
+     * Entries which have smaller storeTimes than highestStoreTime will be processed.
+     *
+     * @param lastHighestStoreTime last calculated highest store time in millis.
+     * @param now                  now in millis
+     * @return highestStoreTime in millis.
+     */
+    private long calculateHighestStoreTime(long lastHighestStoreTime, long now) {
+        return now >= lastHighestStoreTime + writeDelayMillis ? now : lastHighestStoreTime;
+    }
+
+    private boolean hasEntryInWriteBehindQueue(RecordStore recordStore) {
+        if (recordStore == null) {
+            return false;
+        }
+
+        MapDataStore mapDataStore = recordStore.getMapDataStore();
+        WriteBehindStore dataStore = (WriteBehindStore) mapDataStore;
+        WriteBehindQueue<DelayedEntry> writeBehindQueue = dataStore.getWriteBehindQueue();
+        return writeBehindQueue.size() != 0;
+    }
+
+    private void selectEntriesToStore(RecordStore recordStore, List<DelayedEntry> entries, long now) {
         int flushCount = getNumberOfFlushedEntries(recordStore);
         WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
 
-        final int defaultCapacity = 16;
-        int initialCapacity = Math.max(flushCount, defaultCapacity);
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(initialCapacity);
         filterWriteBehindQueue(now, flushCount, entries, queue);
-
-        return entries;
     }
 
     private void filterWriteBehindQueue(long now, int count, Collection<DelayedEntry> collection,
@@ -151,7 +201,7 @@ public class StoreWorker implements Runnable {
         }
     }
 
-    private void readdFailedStoreOperationsToQueues(String mapName, Map<Integer, List<DelayedEntry>> failuresPerPartition) {
+    private void reAddFailedStoreOperationsToQueues(String mapName, Map<Integer, List<DelayedEntry>> failuresPerPartition) {
         if (failuresPerPartition.isEmpty()) {
             return;
         }
@@ -175,26 +225,14 @@ public class StoreWorker implements Runnable {
      * it only removes entries from queues and does not persist any of them.
      *
      * @param delayedEntries entries to be processed.
-     * @param partitionId    corresponding partition id.
      */
-    private void doInBackup(final List<DelayedEntry> delayedEntries, final int partitionId) {
-        if (CollectionUtil.isEmpty(delayedEntries)) {
-            return;
-        }
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        final Address thisAddress = clusterService.getThisAddress();
-        final InternalPartition partition = partitionService.getPartition(partitionId, false);
-        final Address owner = partition.getOwnerOrNull();
-        if (owner != null && !owner.equals(thisAddress)) {
-            writeBehindProcessor.callBeforeStoreListeners(delayedEntries);
-            removeFinishedStoreOperationsFromQueues(mapName, delayedEntries);
-            writeBehindProcessor.callAfterStoreListeners(delayedEntries);
-        }
+    private void doInBackup(final List<DelayedEntry> delayedEntries) {
+        writeBehindProcessor.callBeforeStoreListeners(delayedEntries);
+        removeFinishedStoreOperationsFromQueues(mapName, delayedEntries);
+        writeBehindProcessor.callAfterStoreListeners(delayedEntries);
     }
 
-    private long getReplicaWaitTime() {
+    private long getReplicaWaitTimeMillis() {
         GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
         return groupProperties.getMillis(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
     }
