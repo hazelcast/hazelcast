@@ -40,6 +40,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
@@ -351,7 +352,8 @@ public class TestClientRegistry {
         public void close() {
             super.close();
             ClientConnectionManager connectionManager = responseConnection.getConnectionManager();
-            connectionManager.destroyConnection(responseConnection);
+            connectionManager.destroyConnection(responseConnection,
+                    new TargetDisconnectedException("Mocked Remote socket closed"));
         }
 
         @Override

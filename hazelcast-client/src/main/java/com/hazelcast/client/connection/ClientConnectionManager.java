@@ -54,20 +54,19 @@ public interface ClientConnectionManager {
     Connection getConnection(Address address);
 
     /**
-     * @param address       to be connected
-     * @param authenticator Authenticator implementation to send appropriate Authentication Request after connection
+     * @param address to be connected
+     * @param asOwner true if connection should be authenticated as owner, false otherwise
      * @return associated connection if available, creates new connection otherwise
      * @throws IOException if connection is not established
      */
-    Connection getOrConnect(Address address, Authenticator authenticator) throws IOException;
+    Connection getOrConnect(Address address, boolean asOwner) throws IOException;
 
     /**
-     * @param address       to be connected
-     * @param authenticator Authenticator implementation to send appropriate Authentication Request after connection
-     * @return associated connection if available, triggers new connection creation otherwise
-     * @throws IOException if connection is not available at the time of call
+     * @param address to be connected
+     * @param asOwner true if connection should be authenticated as owner, false otherwise
+     * @return associated connection if available, returns null and triggers new connection creation otherwise
      */
-    Connection getOrTriggerConnect(Address address, Authenticator authenticator) throws IOException;
+    Connection getOrTriggerConnect(Address address, boolean asOwner);
 
     /**
      * Destroys the connection
@@ -77,13 +76,14 @@ public interface ClientConnectionManager {
      * If connection is already destroyed before calling this then does nothing.
      *
      * @param connection to be closed
+     * @param exception  exception that cause connection to be closed, null if closed explicitly
      */
-    void destroyConnection(Connection connection);
+    void destroyConnection(Connection connection, Throwable exception);
 
     /**
      * Handles incoming network package
      *
-     * @param message to be processed
+     * @param message    to be processed
      * @param connection that client message come from
      */
     void handleClientMessage(ClientMessage message, Connection connection);

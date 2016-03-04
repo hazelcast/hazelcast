@@ -252,7 +252,6 @@ public final class ClientPartitionServiceImpl
                 if (client.getLifecycleService().isRunning()) {
                     LOGGER.warning("Error while fetching cluster partition table!", e);
                 }
-            } finally {
                 updating.set(false);
             }
         }
