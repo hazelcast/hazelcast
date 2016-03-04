@@ -46,18 +46,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class StoreWorker implements Runnable {
 
-    private static final int ARRAY_LIST_DEFAULT_CAPACITY = 16;
-
-    private final int partitionCount;
-    /**
-     * Write-behind-queues of backup partitions are processed after this delay
-     */
-    private final long backupDelayMillis;
-    private final long writeDelayMillis;
     private final String mapName;
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;
     private final WriteBehindProcessor writeBehindProcessor;
+    private final long backupDelayMillis;
+    private final long writeDelayMillis;
+    private final int partitionCount;
 
     /**
      * Entries are fetched from write-behind-queues according to highestStoreTime. If an entry
@@ -74,8 +69,8 @@ public class StoreWorker implements Runnable {
         this.writeBehindProcessor = writeBehindProcessor;
         this.backupDelayMillis = getReplicaWaitTimeMillis();
         this.lastHighestStoreTime = Clock.currentTimeMillis();
-        this.partitionCount = partitionService.getPartitionCount();
         this.writeDelayMillis = SECONDS.toMillis(getWriteDelaySeconds(mapStoreContext));
+        this.partitionCount = partitionService.getPartitionCount();
     }
 
 
@@ -101,12 +96,9 @@ public class StoreWorker implements Runnable {
             boolean localPartition = isPartitionLocal(partitionId);
 
             if (!localPartition) {
-
                 backupsList = initListIfNull(backupsList, partitionCount);
                 selectEntriesToStore(recordStore, backupsList, backupHighestStoreTime);
-
             } else {
-
                 ownersList = initListIfNull(ownersList, partitionCount);
                 selectEntriesToStore(recordStore, ownersList, ownerHighestStoreTime);
             }
@@ -266,4 +258,3 @@ public class StoreWorker implements Runnable {
     }
 
 }
-
