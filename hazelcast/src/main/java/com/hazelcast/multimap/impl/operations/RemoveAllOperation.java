@@ -40,8 +40,7 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        boolean isLocal = getCallerAddress().equals(getNodeEngine().getClusterService().getLocalMember().getAddress());
-        coll = remove(isLocal);
+        coll = remove(getOperationResponseHandler().isLocal());
         response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
 

@@ -24,6 +24,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.BlockingOperation;
 import java.util.Collection;
@@ -44,8 +45,8 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements Blocki
         Collection coll = null;
         if (multiMapValue != null) {
             multiMapValue.incrementHit();
-            boolean isLocal = getCallerAddress().equals(getNodeEngine().getClusterService().getLocalMember().getAddress());
-            coll = multiMapValue.getCollection(isLocal);
+            OperationResponseHandler responseHandler = getOperationResponseHandler();
+            coll = multiMapValue.getCollection(responseHandler.isLocal());
         }
         response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
