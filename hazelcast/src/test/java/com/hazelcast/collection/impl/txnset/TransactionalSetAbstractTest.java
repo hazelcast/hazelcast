@@ -11,6 +11,10 @@ import com.hazelcast.transaction.TransactionContext;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -51,6 +55,33 @@ public abstract class TransactionalSetAbstractTest extends HazelcastTestSupport 
 
         context.commitTransaction();
         assertEquals(1, set.size());
+    }
+
+    @Test
+    public void testSingleSetAtomicity() throws ExecutionException, InterruptedException {
+        final int itemCount = 200;
+
+        Future<Integer> f = spawn(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                ISet<Object> set = local.getSet(setName);
+                while (!set.remove("item-1")) {
+                }
+                return set.size();
+            }
+        });
+
+        TransactionContext context = local.newTransactionContext();
+        context.beginTransaction();
+
+        TransactionalSet<Object> set = context.getSet(setName);
+        for (int i = 0; i < itemCount; i++) {
+            set.add("item-" + i);
+        }
+        context.commitTransaction();
+
+        int size = f.get();
+        assertEquals(itemCount - 1, size);
     }
 
     @Test

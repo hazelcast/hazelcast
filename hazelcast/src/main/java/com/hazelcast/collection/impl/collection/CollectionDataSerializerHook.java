@@ -39,6 +39,8 @@ import com.hazelcast.collection.impl.list.operations.ListSetBackupOperation;
 import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.collection.impl.set.operations.SetReplicationOperation;
+import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitBackupOperation;
+import com.hazelcast.collection.impl.txncollection.operations.CollectionCommitOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
@@ -50,11 +52,11 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddBa
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY;
@@ -108,6 +110,9 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int COLLECTION_IS_EMPTY = 38;
 
+    public static final int TXN_COMMIT = 39;
+    public static final int TXN_COMMIT_BACKUP = 40;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -116,7 +121,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[COLLECTION_IS_EMPTY + 1];
+                = new ConstructorFunction[TXN_COMMIT_BACKUP + 1];
 
         constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -308,6 +313,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[COLLECTION_IS_EMPTY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionIsEmptyOperation();
+            }
+        };
+        constructors[TXN_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionCommitOperation();
+            }
+        };
+        constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionCommitBackupOperation();
             }
         };
 

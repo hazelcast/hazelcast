@@ -16,67 +16,63 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
-import com.hazelcast.collection.impl.queue.QueueContainer;
+import com.hazelcast.collection.impl.CollectionTxnUtil;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
- * Prepare operation for the transactional queue.
+ * a wrapper for running all commit backup operations at once
  */
-public class TxnPrepareOperation extends QueueBackupAwareOperation {
+public class TxnCommitBackupOperation extends QueueOperation implements BackupOperation {
 
-    private long[] itemIds;
-    private String transactionId;
+    private List<Operation> backupList;
 
-    public TxnPrepareOperation() {
+    public TxnCommitBackupOperation() {
     }
 
-    public TxnPrepareOperation(int partitionId, String name, long[] itemIds, String transactionId) {
+    public TxnCommitBackupOperation(String name, List<Operation> backupList) {
         super(name);
-        setPartitionId(partitionId);
-        this.itemIds = itemIds;
-        this.transactionId = transactionId;
+        this.backupList = backupList;
+    }
+
+    @Override
+    public void beforeRun() throws Exception {
+        super.beforeRun();
+        CollectionTxnUtil.before(backupList, this);
     }
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
-        for (long itemId : itemIds) {
-            queueContainer.txnCheckReserve(Math.abs(itemId));
-        }
+        CollectionTxnUtil.run(backupList);
     }
 
     @Override
-    public boolean shouldBackup() {
-        return true;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(name, itemIds, transactionId);
+    public void afterRun() throws Exception {
+        super.afterRun();
+        CollectionTxnUtil.after(backupList);
     }
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.TXN_PREPARE;
+        return QueueDataSerializerHook.TXN_COMMIT_BACKUP;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(transactionId);
-        out.writeLongArray(itemIds);
+        CollectionTxnUtil.write(out, backupList);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        transactionId = in.readUTF();
-        itemIds = in.readLongArray();
+        backupList = CollectionTxnUtil.read(in);
     }
 }

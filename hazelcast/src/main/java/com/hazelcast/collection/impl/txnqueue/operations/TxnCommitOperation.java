@@ -27,59 +27,71 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
- * Rollback operation for the transactional queue.
+ * a wrapper for running all commit operations at once
  */
-public class TxnRollbackOperation extends QueueBackupAwareOperation implements Notifier {
+public class TxnCommitOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private long[] itemIds;
+    private List<Operation> operationList;
+
+    private transient List<Operation> backupList;
 
     private transient long shouldNotify;
 
-    public TxnRollbackOperation() {
+    public TxnCommitOperation() {
     }
 
-    public TxnRollbackOperation(int partitionId, String name, long[] itemIds) {
+    public TxnCommitOperation(int partitionId, String name, List<Operation> operationList) {
         super(name);
         setPartitionId(partitionId);
-        this.itemIds = itemIds;
+        this.operationList = operationList;
+    }
+
+    @Override
+    public void beforeRun() throws Exception {
+        super.beforeRun();
+        CollectionTxnUtil.before(operationList, this);
     }
 
     @Override
     public void run() throws Exception {
-        QueueContainer queueContainer = getOrCreateContainer();
-        for (long itemId : itemIds) {
-            if (CollectionTxnUtil.isRemove(itemId)) {
-                response = queueContainer.txnRollbackPoll(itemId, false);
-            } else {
-                response = queueContainer.txnRollbackOffer(-itemId);
+        backupList = CollectionTxnUtil.run(operationList);
+        for (Operation operation : operationList) {
+            if (operation instanceof Notifier) {
+                boolean shouldNotify = ((Notifier) operation).shouldNotify();
+                if (shouldNotify) {
+                    this.shouldNotify += operation instanceof TxnPollOperation ? +1 : -1;
+                }
             }
         }
     }
 
     @Override
+    public void afterRun() throws Exception {
+        super.beforeRun();
+        CollectionTxnUtil.after(operationList);
+    }
+
+    @Override
     public boolean shouldBackup() {
-        return true;
+        return !backupList.isEmpty();
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnRollbackBackupOperation(name, itemIds);
+        return new TxnCommitBackupOperation(name, backupList);
     }
 
     @Override
     public boolean shouldNotify() {
-        for (long itemId : itemIds) {
-            shouldNotify += CollectionTxnUtil.isRemove(itemId) ? 1 : -1;
-        }
         return shouldNotify != 0;
     }
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
         QueueContainer queueContainer = getOrCreateContainer();
-
         if (CollectionTxnUtil.isRemove(shouldNotify)) {
             return queueContainer.getOfferWaitNotifyKey();
         }
@@ -88,18 +100,18 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.TXN_ROLLBACK;
+        return QueueDataSerializerHook.TXN_COMMIT;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLongArray(itemIds);
+        CollectionTxnUtil.write(out, operationList);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemIds = in.readLongArray();
+        operationList = CollectionTxnUtil.read(in);
     }
 }

@@ -663,7 +663,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     long nextId() {
-        return idGenerator++;
+        return ++idGenerator;
     }
 
     public QueueWaitNotifyKey getPollWaitNotifyKey() {

@@ -16,11 +16,12 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.collection.impl.CollectionTxnUtil;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
@@ -30,24 +31,26 @@ import java.io.IOException;
  */
 public class TxnPrepareBackupOperation extends QueueOperation implements BackupOperation {
 
-    private long itemId;
-    private boolean pollOperation;
+    private long[] itemIds;
     private String transactionId;
 
     public TxnPrepareBackupOperation() {
     }
 
-    public TxnPrepareBackupOperation(String name, long itemId, boolean pollOperation, String transactionId) {
+    public TxnPrepareBackupOperation(String name, long[] itemIds, String transactionId) {
         super(name);
-        this.itemId = itemId;
-        this.pollOperation = pollOperation;
+        this.itemIds = itemIds;
         this.transactionId = transactionId;
     }
 
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getOrCreateContainer();
-        queueContainer.txnEnsureBackupReserve(itemId, transactionId, pollOperation);
+        for (long itemId : itemIds) {
+            boolean remove = CollectionTxnUtil.isRemove(itemId);
+            queueContainer.txnEnsureBackupReserve(Math.abs(itemId), transactionId, remove);
+        }
+
     }
 
     @Override
@@ -58,16 +61,14 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        out.writeBoolean(pollOperation);
         out.writeUTF(transactionId);
+        out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        pollOperation = in.readBoolean();
         transactionId = in.readUTF();
+        itemIds = in.readLongArray();
     }
 }
