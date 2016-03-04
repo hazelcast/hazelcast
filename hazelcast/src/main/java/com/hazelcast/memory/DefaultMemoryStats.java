@@ -59,33 +59,28 @@ public class DefaultMemoryStats implements JvmMemoryStats {
     }
 
     @Override
-    public long getFree() {
+    public long getAvailable() {
         return freePhysicalMemory();
     }
 
     @Override
-    public long getMax() {
-        return getTotal();
-    }
-
-    @Override
     public long getCommitted() {
-        return getFree();
+        return getAvailable();
     }
 
     public long getUsed() {
-        return getTotal() - getFree();
+        return getTotal() - getAvailable();
     }
 
     @Override
     public String toString() {
         return "MemoryStats{"
                 + "Total Physical: " + MemorySize.toPrettyString(totalPhysicalMemory())
-                + ", Free Physical: " + MemorySize.toPrettyString(getFree())
-                + ", Max Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getMax())
+                + ", Free Physical: " + MemorySize.toPrettyString(getAvailable())
+                + ", Total Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getTotal())
                 + ", Committed Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getCommitted())
                 + ", Used Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getUsed())
-                + ", Free Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getFree())
+                + ", Free Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getAvailable())
                 + ", " + getGCStats()
                 + '}';
     }
