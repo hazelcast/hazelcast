@@ -234,24 +234,21 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         logger.finest("Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
-        Exception error = new HazelcastInstanceNotActiveException();
-        Address thisAddress = nodeEngine.getThisAddress();
+        final Exception response = new HazelcastInstanceNotActiveException();
+        final Address thisAddress = nodeEngine.getThisAddress();
         for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
             for (WaitingOperation waitingOp : q) {
-                if (!waitingOp.isValid()) {
-                    continue;
-                }
-
-                Operation op = waitingOp.getOperation();
-                // only for local invocations, remote ones will be expired via #onMemberLeft()
-                if (!thisAddress.equals(op.getCallerAddress())) {
-                    continue;
-                }
-
-                try {
-                    op.getOperationResponseHandler().sendErrorResponse(op.getConnection(), op.isUrgent(), op.getCallId(), error);
-                } catch (Exception e) {
-                    logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
+                if (waitingOp.isValid()) {
+                    final Operation op = waitingOp.getOperation();
+                    // only for local invocations, remote ones will be expired via #onMemberLeft()
+                    if (thisAddress.equals(op.getCallerAddress())) {
+                        try {
+                            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+                            responseHandler.sendErrorResponse(op.getConnection(), op.isUrgent(), op.getCallId(), response);
+                        } catch (Exception e) {
+                            logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
+                        }
+                    }
                 }
             }
             q.clear();
