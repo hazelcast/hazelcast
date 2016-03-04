@@ -32,6 +32,8 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory.ResponseHandlerAdapter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -44,32 +46,12 @@ import java.util.logging.Level;
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public final class MigrationOperation extends BaseMigrationOperation {
 
-    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandler() {
+    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new ResponseHandlerAdapter() {
         @Override
-        public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
+        public void sendAny() {
             throw new HazelcastException("Migration operations can not send response!");
         }
-
-        @Override
-        public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
-            throw new HazelcastException("Migration operations can not send response!");
-        }
-
-        @Override
-        public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
-            throw new HazelcastException("Migration operations can not send response!");
-        }
-
-        @Override
-        public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
-            throw new HazelcastException("Migration operations can not send response!");
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
-    };
+   };
 
     private long[] replicaVersions;
     private Collection<Operation> tasks;

@@ -29,7 +29,6 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -70,11 +69,11 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             final ResponseQueue queue = responseQueueEntry.getValue();
             final Integer key = responseQueueEntry.getKey();
             final Object result = queue.get();
-            if (result instanceof NormalResponse) {
-                results.put(key, ((NormalResponse) result).getValue());
-            } else {
+            //if (result instanceof NormalResponse) {
+            //    results.put(key, ((NormalResponse) result).getValue());
+            //} else {
                 results.put(key, result);
-            }
+            //}
         }
     }
 

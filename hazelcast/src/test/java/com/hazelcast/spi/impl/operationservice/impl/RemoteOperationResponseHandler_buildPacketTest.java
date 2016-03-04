@@ -29,14 +29,12 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class RemoteOperationResponseHandler_buildPacketTest extends HazelcastTestSupport {
 
-    private RemoteOperationResponseHandler handler;
     private SerializationService serializationService;
 
     @Before
     public void setup() {
         HazelcastInstance hz = createHazelcastInstance();
         serializationService = getSerializationService(hz);
-        handler = new RemoteOperationResponseHandler((OperationServiceImpl) getOperationService(hz), serializationService);
     }
 
     @Test
@@ -54,7 +52,8 @@ public class RemoteOperationResponseHandler_buildPacketTest extends HazelcastTes
         int expectedBackupCount = 3;
         String expectedResponse = "response";
 
-        Packet packet = handler.buildResponsePacket(urgent, expectedCallId, expectedBackupCount, expectedResponse);
+        Packet packet = RemoteOperationResponseHandler.buildResponsePacket(
+                serializationService, urgent, expectedCallId, expectedBackupCount, expectedResponse);
 
         if (urgent) {
             assertFlags(FLAG_RESPONSE | FLAG_OP | FLAG_URGENT, packet);
@@ -80,7 +79,8 @@ public class RemoteOperationResponseHandler_buildPacketTest extends HazelcastTes
         long expectedCallId = 100;
         Throwable expectedError = new ExpectedRuntimeException();
 
-        Packet packet = handler.buildErrorResponsePacket(urgent, expectedCallId, expectedError);
+        Packet packet = RemoteOperationResponseHandler.buildErrorResponsePacket(
+                serializationService,urgent, expectedCallId, expectedError);
 
         if (urgent) {
             assertFlags(FLAG_RESPONSE | FLAG_OP | FLAG_URGENT, packet);
@@ -105,7 +105,7 @@ public class RemoteOperationResponseHandler_buildPacketTest extends HazelcastTes
     public void buildTimeoutResponsePacket(boolean urgent) {
         long expectedCallId = 100;
 
-        Packet packet = handler.buildTimeoutResponsePacket(urgent, expectedCallId);
+        Packet packet = RemoteOperationResponseHandler.buildTimeoutResponsePacket(serializationService,urgent, expectedCallId);
 
         if (urgent) {
             assertFlags(FLAG_RESPONSE | FLAG_OP | FLAG_URGENT, packet);
@@ -130,7 +130,7 @@ public class RemoteOperationResponseHandler_buildPacketTest extends HazelcastTes
     public void buildBackupResponsePacket(boolean urgent) {
         long expectedCallId = 100;
 
-        Packet packet = handler.buildBackupResponsePacket(urgent, expectedCallId);
+        Packet packet = RemoteOperationResponseHandler.buildBackupResponsePacket(serializationService,urgent, expectedCallId);
 
         if (urgent) {
             assertFlags(FLAG_RESPONSE | FLAG_OP | FLAG_URGENT, packet);

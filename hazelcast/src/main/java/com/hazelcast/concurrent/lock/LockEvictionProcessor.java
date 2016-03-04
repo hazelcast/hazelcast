@@ -83,7 +83,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         operationService.executeOperation(operation);
     }
 
-    private class UnlockResponseHandler extends OperationResponseHandlerFactory.EmptyOperationResponseHandler {
+    private class UnlockResponseHandler extends OperationResponseHandlerFactory.ResponseHandlerAdapter {
         @Override
         public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
             if (error instanceof RetryableException) {
@@ -91,11 +91,6 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
             } else {
                 logger.warning(error);
             }
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
         }
     }
 }

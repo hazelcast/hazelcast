@@ -54,11 +54,12 @@ public final class RemoteOperationResponseHandler implements OperationResponseHa
 
     @Override
     public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object value) {
-        Packet packet = buildResponsePacket(urgent, callId, backupCount, value);
+        Packet packet = buildResponsePacket(serializationService, urgent, callId, backupCount, value);
         receiver.write(packet);
     }
 
-    Packet buildResponsePacket(boolean urgent, long callId, int backupCount, Object value) {
+    public static Packet buildResponsePacket(
+            SerializationService serializationService, boolean urgent, long callId, int backupCount, Object value) {
         BufferPool pool = serializationService.pool();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
@@ -88,13 +89,13 @@ public final class RemoteOperationResponseHandler implements OperationResponseHa
 
     @Override
     public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
-        Packet packet = buildErrorResponsePacket(urgent, callId, error);
+        Packet packet = buildErrorResponsePacket(serializationService, urgent, callId, error);
 
         //todo: exception
         receiver.write(packet);
     }
 
-    Packet buildErrorResponsePacket(boolean urgent, long callId, Throwable error) {
+    static Packet buildErrorResponsePacket(SerializationService serializationService, boolean urgent, long callId, Throwable error) {
         BufferPool pool = serializationService.pool();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
@@ -120,13 +121,13 @@ public final class RemoteOperationResponseHandler implements OperationResponseHa
 
     @Override
     public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
-        Packet packet = buildTimeoutResponsePacket(urgent, callId);
+        Packet packet = buildTimeoutResponsePacket(serializationService, urgent, callId);
 
         //todo: exception
         receiver.write(packet);
     }
 
-    Packet buildTimeoutResponsePacket(boolean urgent, long callId) {
+   static Packet buildTimeoutResponsePacket(SerializationService serializationService, boolean urgent, long callId) {
         BufferPool pool = serializationService.pool();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
@@ -149,7 +150,7 @@ public final class RemoteOperationResponseHandler implements OperationResponseHa
 
     @Override
     public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
-        Packet packet = buildBackupResponsePacket(urgent, callId);
+        Packet packet = buildBackupResponsePacket(serializationService, urgent, callId);
 
         ConnectionManager connectionManager = operationService.node.getConnectionManager();
         Connection connection = connectionManager.getOrConnect(receiver);
@@ -157,7 +158,7 @@ public final class RemoteOperationResponseHandler implements OperationResponseHa
         connectionManager.transmit(packet, connection);
     }
 
-    Packet buildBackupResponsePacket(boolean urgent, long callId) {
+    static Packet buildBackupResponsePacket(SerializationService serializationService, boolean urgent, long callId) {
         BufferPool pool = serializationService.pool();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {

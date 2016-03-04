@@ -2,8 +2,8 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -31,18 +32,15 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
     public void test_whenResponsePacket() {
         initExecutor();
 
-        final NormalResponse normalResponse = new NormalResponse(null, 1, 0, false);
-        final Packet packet = new Packet(serializationService.toBytes(normalResponse), 0);
-        packet.setFlag(Packet.FLAG_RESPONSE);
-        packet.setFlag(Packet.FLAG_OP);
+        final Packet packet = RemoteOperationResponseHandler.buildResponsePacket(serializationService, false, 1, 0, null);
+        packet.setAllFlags(Packet.FLAG_OP | FLAG_RESPONSE);
         executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler)ExecutePacketTest.this.responsePacketHandler;
+                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) ExecutePacketTest.this.responsePacketHandler;
                 responsePacketHandler.packets.contains(packet);
-                responsePacketHandler.responses.contains(normalResponse);
             }
         });
     }

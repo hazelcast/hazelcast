@@ -118,6 +118,7 @@ public interface OperationService {
      *
      * @param op the operation to check.
      * @return true if the operation is allowed to run on the calling thread, false otherwise.
+     *
      * @deprecated since 3.5 since not needed anymore.
      */
     @Deprecated

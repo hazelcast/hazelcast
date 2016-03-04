@@ -25,7 +25,6 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
@@ -34,15 +33,14 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(SPI_DS_FACTORY, SPI_DS_FACTORY_ID);
 
-    public static final int NORMAL_RESPONSE = 0;
-    public static final int CALL_TIMEOUT_RESPONSE = 2;
+    public static final int BACKUP = 0;
+    public static final int PARTITION_ITERATOR = 1;
+    public static final int PARTITION_RESPONSE = 2;
+    public static final int PARALLEL_OPERATION_FACTORY = 3;
+    public static final int EVENT_ENVELOPE = 4;
+    public static final int COLLECTION = 5;
 
-    public static final int BACKUP = 3;
-    public static final int PARTITION_ITERATOR = 4;
-    public static final int PARTITION_RESPONSE = 5;
-    public static final int PARALLEL_OPERATION_FACTORY = 6;
-    public static final int EVENT_ENVELOPE = 7;
-    public static final int COLLECTION = 8;
+    public static final int CALL_TIMEOUT_RESPONSE =6;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -50,8 +48,6 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case NORMAL_RESPONSE:
-                        return new NormalResponse();
                     case CALL_TIMEOUT_RESPONSE:
                         return new CallTimeoutResponse();
                     case BACKUP:

@@ -26,11 +26,6 @@ import java.io.IOException;
 /**
  * A {@link Response} is a result of an {@link com.hazelcast.spi.Operation} being executed.
  * There are different types of responses:
- * <ol>
- * <li>
- * {@link NormalResponse} the result of a regular Operation result, e.g. Map.put
- * </li>
- * </ol>
  */
 public abstract class Response implements IdentifiedDataSerializable {
 

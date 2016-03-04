@@ -32,23 +32,39 @@ public final class OperationResponseHandlerFactory {
         return EMPTY_RESPONSE_HANDLER;
     }
 
-    public static class EmptyOperationResponseHandler implements OperationResponseHandler {
+    public static class ResponseHandlerAdapter implements OperationResponseHandler {
+
+
         @Override
         public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
+            sendAny();
         }
 
         @Override
         public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+            sendAny();
         }
 
         @Override
         public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
+
         }
 
         @Override
         public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
+            sendAny();
         }
 
+        public void sendAny() {
+        }
+
+        @Override
+        public boolean isLocal() {
+            return true;
+        }
+    }
+
+    public static class EmptyOperationResponseHandler extends ResponseHandlerAdapter {
         @Override
         public boolean isLocal() {
             return false;
@@ -59,7 +75,7 @@ public final class OperationResponseHandlerFactory {
         return new ErrorLoggingResponseHandler(logger);
     }
 
-    private static final class ErrorLoggingResponseHandler extends EmptyOperationResponseHandler {
+    private static final class ErrorLoggingResponseHandler extends ResponseHandlerAdapter {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {
@@ -69,11 +85,6 @@ public final class OperationResponseHandlerFactory {
         @Override
         public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
             logger.severe(error);
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
         }
     }
 }

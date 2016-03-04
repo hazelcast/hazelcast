@@ -57,7 +57,7 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
             for (int i = 0; i < len; i++) {
                 final Operation op = operations[i];
                 op.setNodeEngine(nodeEngine);
-                op.setOperationResponseHandler(new OperationResponseHandlerFactory.EmptyOperationResponseHandler() {
+                op.setOperationResponseHandler(new OperationResponseHandlerFactory.ResponseHandlerAdapter() {
                     @Override
                     public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
                         ILogger logger = nodeEngine.getLogger(op.getClass());
@@ -67,11 +67,6 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
                         if (logger.isFinestEnabled()) {
                             logger.finest(error);
                         }
-                    }
-
-                    @Override
-                    public boolean isLocal() {
-                        return true;
                     }
                 });
 
