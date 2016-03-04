@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -26,9 +27,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.IPartition;
 import com.hazelcast.partition.IPartitionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.CollectionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * When write-behind is enabled the work is offloaded to another thread than partition-operation-thread.
@@ -48,35 +48,49 @@ public class StoreWorker implements Runnable {
 
     private static final int ARRAY_LIST_DEFAULT_CAPACITY = 16;
 
+    private final int partitionCount;
     /**
      * Write-behind-queues of backup partitions are processed after this delay
      */
-    private final long backupRunIntervalMillis;
-    private final int partitionCount;
+    private final long backupDelayMillis;
+    private final long writeDelayMillis;
     private final String mapName;
     private final MapServiceContext mapServiceContext;
     private final IPartitionService partitionService;
     private final WriteBehindProcessor writeBehindProcessor;
 
-    private long lastRunTimeMillis;
+    /**
+     * Entries are fetched from write-behind-queues according to highestStoreTime. If an entry
+     * has a store-time which is smaller than or equal to the highestStoreTime, it will be processed.
+     *
+     * @see #calculateHighestStoreTime
+     */
+    private long lastHighestStoreTime;
 
     public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
         this.mapName = mapStoreContext.getMapName();
         this.mapServiceContext = mapStoreContext.getMapServiceContext();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        this.partitionService = nodeEngine.getPartitionService();
+        this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.writeBehindProcessor = writeBehindProcessor;
-        this.backupRunIntervalMillis = getReplicaWaitTimeMillis();
-        this.lastRunTimeMillis = Clock.currentTimeMillis();
+        this.backupDelayMillis = getReplicaWaitTimeMillis();
+        this.lastHighestStoreTime = Clock.currentTimeMillis();
         this.partitionCount = partitionService.getPartitionCount();
+        this.writeDelayMillis = SECONDS.toMillis(getWriteDelaySeconds(mapStoreContext));
     }
 
 
     @Override
     public void run() {
-        long now = Clock.currentTimeMillis();
+        final long now = Clock.currentTimeMillis();
+        // if this node is the owner of a partition, we use this criteria time.
+        final long ownerHighestStoreTime = calculateHighestStoreTime(lastHighestStoreTime, now);
+        // if this node is the backup of a partition, we use this criteria time because backups are processed after delay.
+        final long backupHighestStoreTime = ownerHighestStoreTime - backupDelayMillis;
 
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(partitionCount);
+        lastHighestStoreTime = ownerHighestStoreTime;
+
+        List<DelayedEntry> ownersList = null;
+        List<DelayedEntry> backupsList = null;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
@@ -84,28 +98,54 @@ public class StoreWorker implements Runnable {
                 continue;
             }
 
-            List<DelayedEntry> entriesToStore = getEntriesToStore(recordStore, now);
+            boolean localPartition = isPartitionLocal(partitionId);
 
-            if (!isPartitionLocal(partitionId)) {
-                if (now > lastRunTimeMillis + backupRunIntervalMillis) {
-                    doInBackup(entriesToStore, partitionId);
-                }
+            if (!localPartition) {
+
+                backupsList = initListIfNull(backupsList, partitionCount);
+                selectEntriesToStore(recordStore, backupsList, backupHighestStoreTime);
+
             } else {
-                entries.addAll(entriesToStore);
+
+                ownersList = initListIfNull(ownersList, partitionCount);
+                selectEntriesToStore(recordStore, ownersList, ownerHighestStoreTime);
             }
         }
 
-        if (!entries.isEmpty()) {
-            Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(entries);
-            removeFinishedStoreOperationsFromQueues(mapName, entries);
+        if (!isEmpty(ownersList)) {
+            Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(ownersList);
+            removeFinishedStoreOperationsFromQueues(mapName, ownersList);
             reAddFailedStoreOperationsToQueues(mapName, failuresPerPartition);
-            lastRunTimeMillis = now;
+        }
+
+        if (!isEmpty(backupsList)) {
+            doInBackup(backupsList);
         }
 
         notifyFlush();
+
     }
 
-    protected boolean hasEntryInWriteBehindQueue(RecordStore recordStore) {
+    private static List<DelayedEntry> initListIfNull(List<DelayedEntry> list, int capacity) {
+        if (list == null) {
+            list = new ArrayList<DelayedEntry>(capacity);
+        }
+        return list;
+    }
+
+    /**
+     * Calculates highestStoreTime which is used to select processable entries from write-behind-queues.
+     * Entries which have smaller storeTimes than highestStoreTime will be processed.
+     *
+     * @param lastHighestStoreTime last calculated highest store time.
+     * @param now                  now in millis
+     * @return highestStoreTime in millis.
+     */
+    private long calculateHighestStoreTime(long lastHighestStoreTime, long now) {
+        return now >= lastHighestStoreTime + writeDelayMillis ? now : lastHighestStoreTime;
+    }
+
+    private boolean hasEntryInWriteBehindQueue(RecordStore recordStore) {
         if (recordStore == null) {
             return false;
         }
@@ -116,7 +156,7 @@ public class StoreWorker implements Runnable {
         return writeBehindQueue.size() != 0;
     }
 
-    protected void notifyFlush() {
+    private void notifyFlush() {
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
             if (recordStore != null) {
@@ -131,28 +171,14 @@ public class StoreWorker implements Runnable {
         return partition.isLocal();
     }
 
-    private List<DelayedEntry> getEntriesToStore(RecordStore recordStore, long now) {
+    private void selectEntriesToStore(RecordStore recordStore, List<DelayedEntry> entries, long highestStoreTime) {
         WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
         long nextSequenceToFlush = getSequenceToFlush(recordStore);
 
-        int capacity = findListCapacity(queue, nextSequenceToFlush);
-        List<DelayedEntry> entries = new ArrayList<DelayedEntry>(capacity);
-
-        filterWriteBehindQueue(now, nextSequenceToFlush, entries, queue);
-
-        return entries;
+        filterWriteBehindQueue(highestStoreTime, nextSequenceToFlush, entries, queue);
     }
 
-    private int findListCapacity(WriteBehindQueue<DelayedEntry> queue, long nextSequenceToFlush) {
-        DelayedEntry peek = queue.peek();
-
-        assert peek != null : "NPE should not happen, previous lines should prevent it";
-
-        long firstSequenceInQueue = peek.getSequence();
-        return Math.max((int) (nextSequenceToFlush - firstSequenceInQueue), ARRAY_LIST_DEFAULT_CAPACITY);
-    }
-
-    private void filterWriteBehindQueue(final long now, final long sequence, Collection<DelayedEntry> collection,
+    private void filterWriteBehindQueue(final long highestStoreTime, final long sequence, Collection<DelayedEntry> collection,
                                         WriteBehindQueue<DelayedEntry> queue) {
         if (sequence > 0) {
 
@@ -168,7 +194,7 @@ public class StoreWorker implements Runnable {
             queue.filter(new IPredicate<DelayedEntry>() {
                 @Override
                 public boolean test(DelayedEntry delayedEntry) {
-                    return delayedEntry.getStoreTime() <= now;
+                    return delayedEntry.getStoreTime() <= highestStoreTime;
                 }
             }, collection);
         }
@@ -207,13 +233,8 @@ public class StoreWorker implements Runnable {
      * it only removes entries from queues and does not persist any of them.
      *
      * @param delayedEntries entries to be processed.
-     * @param partitionId    corresponding partition id.
      */
-    private void doInBackup(List<DelayedEntry> delayedEntries, int partitionId) {
-        if (CollectionUtil.isEmpty(delayedEntries) || isPartitionLocal(partitionId)) {
-            return;
-        }
-
+    private void doInBackup(List<DelayedEntry> delayedEntries) {
         writeBehindProcessor.callBeforeStoreListeners(delayedEntries);
         removeFinishedStoreOperationsFromQueues(mapName, delayedEntries);
         writeBehindProcessor.callAfterStoreListeners(delayedEntries);
@@ -238,5 +259,11 @@ public class StoreWorker implements Runnable {
         WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
         return writeBehindStore.getSequenceToFlush();
     }
+
+    private static int getWriteDelaySeconds(MapStoreContext mapStoreContext) {
+        MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
+        return mapStoreConfig.getWriteDelaySeconds();
+    }
+
 }
 
