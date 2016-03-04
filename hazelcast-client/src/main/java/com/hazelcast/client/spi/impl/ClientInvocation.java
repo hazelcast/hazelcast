@@ -123,9 +123,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
     }
 
     public ClientInvocationFuture invoke() {
-        if (clientMessage == null) {
-            throw new IllegalStateException("Request can not be null");
-        }
+        assert (clientMessage != null);
 
         try {
             invokeOnSelection();

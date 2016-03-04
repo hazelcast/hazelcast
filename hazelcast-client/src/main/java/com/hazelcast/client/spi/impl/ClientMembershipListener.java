@@ -30,6 +30,7 @@ import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -173,7 +174,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         logger.info(membersString());
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
-            connectionManager.destroyConnection(connection);
+            connectionManager.destroyConnection(connection, new TargetDisconnectedException("Member left the cluster"));
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(members));
@@ -205,7 +206,8 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             if (clusterService.getMember(address) == null) {
                 Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
-                    connectionManager.destroyConnection(connection);
+                    connectionManager.destroyConnection(connection,
+                            new TargetDisconnectedException("Member left detected"));
                 }
             }
         }

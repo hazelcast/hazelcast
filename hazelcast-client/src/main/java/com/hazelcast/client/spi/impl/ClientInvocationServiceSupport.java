@@ -36,7 +36,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -337,8 +336,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             }
         }
 
-        private void handleClientMessage(ClientMessage clientMessage) throws ClassNotFoundException,
-                NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        private void handleClientMessage(ClientMessage clientMessage) {
             long correlationId = clientMessage.getCorrelationId();
 
             final ClientInvocation future = deRegisterCallId(correlationId);
