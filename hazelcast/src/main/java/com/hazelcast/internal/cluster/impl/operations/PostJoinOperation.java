@@ -51,36 +51,34 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
 
     @Override
     public void beforeRun() throws Exception {
-        if (operations == null || operations.length <= 0) {
-            return;
-        }
+        if (operations != null && operations.length > 0) {
+            final NodeEngine nodeEngine = getNodeEngine();
+            final int len = operations.length;
+            for (int i = 0; i < len; i++) {
+                final Operation op = operations[i];
+                op.setNodeEngine(nodeEngine);
+                op.setOperationResponseHandler(new OperationResponseHandlerFactory.EmptyOperationResponseHandler() {
+                    @Override
+                    public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+                        ILogger logger = nodeEngine.getLogger(op.getClass());
+                        logger.warning("Error while running post-join operation: "
+                                + error.getClass().getSimpleName() + ": " + error.getMessage());
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final int len = operations.length;
-        for (int i = 0; i < len; i++) {
-            final Operation op = operations[i];
-            op.setNodeEngine(nodeEngine);
-            op.setOperationResponseHandler(new OperationResponseHandlerFactory.EmptyOperationResponseHandler() {
-                @Override
-                public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
-                    ILogger logger = nodeEngine.getLogger(op.getClass());
-                    logger.warning("Error while running post-join operation: "
-                            + error.getClass().getSimpleName() + ": " + error.getMessage());
-
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(error);
+                        if (logger.isFinestEnabled()) {
+                            logger.finest(error);
+                        }
                     }
-                }
 
-                @Override
-                public boolean isLocal() {
-                    return true;
-                }
-            });
+                    @Override
+                    public boolean isLocal() {
+                        return true;
+                    }
+                });
 
-            OperationAccessor.setCallerAddress(op, getCallerAddress());
-            OperationAccessor.setConnection(op, getConnection());
-            operations[i] = op;
+                OperationAccessor.setCallerAddress(op, getCallerAddress());
+                OperationAccessor.setConnection(op, getConnection());
+                operations[i] = op;
+            }
         }
     }
 
