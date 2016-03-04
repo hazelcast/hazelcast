@@ -27,6 +27,9 @@ package com.hazelcast.jet.spi.data.io;
  * </pre>
  */
 public interface DataType {
+    /**
+     * Type for the null values
+     */
     byte NULL_TYPE_ID = 0;
 
     /**

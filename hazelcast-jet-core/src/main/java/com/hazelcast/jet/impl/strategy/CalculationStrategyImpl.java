@@ -23,6 +23,15 @@ import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.strategy.HashingStrategy;
 
+/**
+ * Default calculation strategy implementation;
+ * <p>
+ * Calculation strategy joins 2 abstractions:
+ * <pre>
+ *      -   HashingStrategy
+ *      -   PartitioningStrategy
+ * </pre>
+ */
 public class CalculationStrategyImpl implements CalculationStrategy {
     private final Class hashingStrategyClass;
 

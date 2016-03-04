@@ -9,14 +9,13 @@ import com.hazelcast.jet.api.statemachine.container.processingcontainer.Processi
 import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.impl.application.DefaultExecutorContext;
 import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
-import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachineImpl;
+import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalizedRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptRequest;
+import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachineImpl;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptedRequest;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
-import com.hazelcast.jet.impl.statemachine.container.requests.InvalidateContainersRequest;
+import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecutionCompletedRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -173,23 +172,20 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
     public void testNextStateIs_Invalidated_when_ProcessingInvalidateContainerEvent_received_and_stateWas_Interrupting() throws Exception {
         processRequest(new ContainerStartRequest());
         processRequest(new ContainerExecuteRequest());
-        processRequest(new ContainerInterruptRequest());
-        ProcessingContainerResponse response = processRequest(new InvalidateContainersRequest());
+        ProcessingContainerResponse response = processRequest(new ContainerInterruptRequest());
 
         assertTrue(response.isSuccess());
-        assertEquals(ProcessingContainerState.INVALIDATED, stateMachine.currentState());
+        assertEquals(ProcessingContainerState.INTERRUPTING, stateMachine.currentState());
     }
 
     @Test
     public void testNextStateIs_Invalidated_when_ProcessingInvalidateContainerEvent_received_and_stateWas_Invalidated() throws Exception {
         processRequest(new ContainerStartRequest());
         processRequest(new ContainerExecuteRequest());
-        processRequest(new ContainerInterruptRequest());
-        processRequest(new InvalidateContainersRequest());
-        ProcessingContainerResponse response = processRequest(new InvalidateContainersRequest());
+        ProcessingContainerResponse response = processRequest(new ContainerInterruptRequest());
 
         assertTrue(response.isSuccess());
-        assertEquals(ProcessingContainerState.INVALIDATED, stateMachine.currentState());
+        assertEquals(ProcessingContainerState.INTERRUPTING, stateMachine.currentState());
     }
 
     @Test
@@ -197,7 +193,6 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
         processRequest(new ContainerStartRequest());
         processRequest(new ContainerExecuteRequest());
         processRequest(new ContainerInterruptRequest());
-        processRequest(new InvalidateContainersRequest());
         ProcessingContainerResponse response = processRequest(new ContainerFinalizedRequest(mock(ProcessingContainer.class)));
 
         assertTrue(response.isSuccess());

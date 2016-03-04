@@ -18,10 +18,32 @@ package com.hazelcast.jet.spi.dag.tap;
 
 import java.io.Serializable;
 
+/**
+ * Represents all possible build-in taps for JET
+ */
 public enum TapType implements Serializable {
+    /**
+     * Represents standard Hazelcast IList object
+     */
     HAZELCAST_LIST,
+
+    /**
+     * Represents standard Hazelcast IMap object
+     */
     HAZELCAST_MAP,
+
+    /**
+     * Represents standard Hazelcast MultiMap object
+     */
     HAZELCAST_MULTIMAP,
+
+    /**
+     * Represents standard Hazelcast File object
+     */
     FILE,
+
+    /**
+     * Represents other (external types of taps)
+     */
     OTHER
 }

@@ -26,10 +26,6 @@ abstract class LeftPaddedLong {
     protected long p1, p2, p3, p4, p5, p6, p7;
 }
 
-@SuppressFBWarnings("UUF_UNUSED_PUBLIC_OR_PROTECTED_FIELD")
-@SuppressWarnings({
-        "checkstyle:declarationorder", "checkstyle:multiplevariabledeclarations"
-})
 abstract class RightPaddedLong extends LeftPaddedLong {
     private volatile long value;
 

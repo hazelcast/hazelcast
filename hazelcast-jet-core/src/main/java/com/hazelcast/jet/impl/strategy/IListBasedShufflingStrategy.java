@@ -22,6 +22,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 
+/**
+ * Shuffling strategy based on IList internal logic;
+ * <p>
+ * All data of Hazelcast list are stored on exactly one node;
+ * <p>
+ * Using this shuffling strategy all JET-data will be sent to this IList's node;
+ */
 public class IListBasedShufflingStrategy implements ShufflingStrategy {
     private final String listName;
 

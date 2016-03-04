@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine.container.requests;
-
-import com.hazelcast.jet.api.Dummy;
-import com.hazelcast.jet.api.statemachine.container.ContainerRequest;
-import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerEvent;
-
-public class InvalidateContainersRequest
-        implements ContainerRequest<ProcessingContainerEvent, Dummy> {
-    @Override
-    public ProcessingContainerEvent getContainerEvent() {
-        return ProcessingContainerEvent.INVALIDATE_CONTAINER;
-    }
-
-    @Override
-    public Dummy getPayLoad() {
-        return Dummy.INSTANCE;
-    }
-}
-
+/**
+ * Utility packet for base JET functions
+ */
+package com.hazelcast.jet.impl.util;

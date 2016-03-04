@@ -18,6 +18,8 @@ package com.hazelcast.jet.api.actor;
 
 /**
  * This is an abstract interface for each consumer
+ *
+ * @param <T> - type of the consumed object
  */
 public interface Consumer<T> {
     /**
@@ -25,7 +27,7 @@ public interface Consumer<T> {
      *
      * @param entry - entity to consume
      * @return true if entry has been consumed
-     *         false if entry hasn't been consumed
+     * false if entry hasn't been consumed
      * @throws Exception if any exception
      */
     boolean consume(T entry) throws Exception;

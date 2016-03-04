@@ -26,64 +26,105 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * Config for JET application;
  */
 public class JetApplicationConfig implements Serializable {
+    /**
+     * Default port to be used by JET for server listening
+     */
     public static final int DEFAULT_PORT = 6701;
 
+    /**
+     * While binding listening port JET sorts out available ports.
+     * This parameter represents  default step of the sorting out
+     */
     public static final int PORT_AUTO_INCREMENT = 1;
 
+    /**
+     * Represents default connection checking interval
+     */
     public static final int DEFAULT_CONNECTIONS_CHECKING_INTERVAL_MS = 100000;
 
+    /**
+     * Represents default value for timeout when socket accepted as broken
+     */
     public static final int DEFAULT_CONNECTIONS_SILENCE_TIMEOUT_MS = 1000;
 
+    /**
+     * Represents default number of attempts to create localization directories
+     */
     public static final int DEFAULT_APP_ATTEMPTS_COUNT = 100;
 
+    /**
+     * Represents default value for localization process chunks to be used
+     */
     public static final int DEFAULT_FILE_CHUNK_SIZE_BYTES = 1024;
 
+    /**
+     * Default chunk size for data passed between JET-containers
+     */
     public static final int DEFAULT_CHUNK_SIZE = 256;
 
+    /**
+     * Represents default value for any futures in system
+     */
     public static final int DEFAULT_JET_SECONDS_TO_AWAIT = 1200;
 
+    /**
+     * Represents default value for TCP-buffer
+     */
     public static final int DEFAULT_TCP_BUFFER_SIZE = 1024;
 
+    /**
+     * Default size for the queues used to pass data between containers
+     */
     private static final int DEFAULT_QUEUE_SIZE = 65536;
 
+    /**
+     * Default packet-size to be used during transportation process
+     */
     private static final int DEFAULT_SHUFFLING_BATCH_SIZE_BYTES = 256;
 
+    /**
+     * Default Input/Output threads count
+     */
     private static final int DEFAULT_IO_THREADS_COUNT = 5;
-    private final JetApplicationConfig defConfig;
+
     private final Properties properties;
+
     private String localizationDirectory;
+
     private int resourceFileChunkSize = DEFAULT_FILE_CHUNK_SIZE_BYTES;
+
     private int defaultApplicationDirectoryCreationAttemptsCount = DEFAULT_APP_ATTEMPTS_COUNT;
+
     private int jetSecondsToAwait = DEFAULT_JET_SECONDS_TO_AWAIT;
+
     private int containerQueueSize = DEFAULT_QUEUE_SIZE;
+
     private int chunkSize = DEFAULT_CHUNK_SIZE;
+
     private int maxProcessingThreads = -1;
+
     private int ioThreadCount = DEFAULT_IO_THREADS_COUNT;
+
     private int defaultTCPBufferSize = DEFAULT_TCP_BUFFER_SIZE;
+
     private int shufflingBatchSizeBytes = DEFAULT_SHUFFLING_BATCH_SIZE_BYTES;
+
     private String name;
 
     public JetApplicationConfig(JetApplicationConfig defConfig, String name) {
         this.name = name;
-        this.defConfig = defConfig;
         this.properties = new Properties();
 
     }
 
     public JetApplicationConfig() {
-        this.defConfig = null;
         this.name = null;
         this.properties = new Properties();
     }
 
     public JetApplicationConfig(String name) {
-        this.defConfig = null;
         this.name = name;
         this.properties = new Properties();
-    }
-
-    public JetApplicationConfig getAsReadOnly() {
-        return new JetApplicationConfigReadOnly(this, name);
     }
 
     public String getName() {

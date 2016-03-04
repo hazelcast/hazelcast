@@ -38,8 +38,18 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
+/**
+ * Utility class for base JET-functionality
+ */
 public final class JetUtil {
+    /**
+     * Represents maximal value for the length of JET-application
+     */
     public static final int MAX_APPLICATION_NAME_SIZE = 32;
+
+    /**
+     * Number of bytes in kilobyte
+     */
     public static final int KILOBYTE = 1024;
 
     private JetUtil() {
