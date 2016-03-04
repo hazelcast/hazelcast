@@ -24,6 +24,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -257,6 +258,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
         cache.getAndRemove(randomString());
     }
 
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/7527
     @Test
     public void testSyncListener_shouldNotHang_whenHazelcastInstanceShutdown() {
         CachingProvider provider = getCachingProvider();
