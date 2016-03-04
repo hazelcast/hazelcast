@@ -28,7 +28,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.memory.DefaultMemoryStats;
-import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.memory.JvmMemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -59,7 +59,7 @@ public class DefaultNodeExtension implements NodeExtension {
     protected final ILogger logger;
     protected final ILogger systemLogger;
 
-    private final MemoryStats memoryStats = new DefaultMemoryStats();
+    private final JvmMemoryStats memoryStats = new DefaultMemoryStats();
 
     public DefaultNodeExtension(Node node) {
         this.node = node;
@@ -196,7 +196,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public MemoryStats getMemoryStats() {
+    public JvmMemoryStats getMemoryStats() {
         return memoryStats;
     }
 

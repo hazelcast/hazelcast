@@ -17,12 +17,12 @@
 package com.hazelcast.internal.memory;
 
 /**
- * Types of the {@link MemoryAccessor} implementations.
+ * Types of {@link GlobalMemoryAccessor} implementations.
  */
-public enum MemoryAccessorType {
+public enum GlobalMemoryAccessorType {
 
     /**
-     * Represents the standard {@link MemoryAccessor} which correctly handles only aligned memory access.
+     * Represents the standard {@link GlobalMemoryAccessor} which correctly handles only aligned memory access.
      * Requesting unaligned memory access from this instance will result in low-level JVM crash on
      * platforms which only support aligned access.
      *
@@ -31,7 +31,7 @@ public enum MemoryAccessorType {
     STANDARD,
 
     /**
-     * Represents the aligned {@link MemoryAccessor}, which checks for and handles unaligned memory access
+     * Represents the aligned {@link GlobalMemoryAccessor}, which checks for and handles unaligned memory access
      * by splitting a larger-size memory operation into several smaller-size ones
      * (which have finer-grained alignment requirements).
      *
@@ -40,22 +40,12 @@ public enum MemoryAccessorType {
     ALIGNMENT_AWARE,
 
     /**
-     * Represents a {@link MemoryAccessor} that checks the underlying platform and behaves as either
-     * {@link #ALIGNMENT_AWARE} or {@link #STANDARD}, as appropriate to the platform's architecture.
+     * Represents a {@link GlobalMemoryAccessor} which is either {@link #ALIGNMENT_AWARE} or {@link #STANDARD},
+     * as appropriate to the underlying platform's architecture.
      * <p>
-     * If the underlying platform supports unaligned memory access,
-     * it behaves as the standard {@link MemoryAccessor} because there's no need for additional checks.
-     * Otherwise, it behaves as the alignment-aware {@link MemoryAccessor}.
-     *
-     * @see com.hazelcast.internal.memory.impl.PlatformAwareMemoryAccessor
+     * If the underlying platform supports unaligned memory access, it will match the standard
+     * {@link GlobalMemoryAccessor} because there's no need for aligmnent checks.
+     * Otherwise it will match the alignment-aware {@link GlobalMemoryAccessor}.
      */
     PLATFORM_AWARE,
-
-
-    /**
-     * Represents the heap-byte {@link MemoryAccessor} which  data in specified heap-byteBuffer (byte[] buffer).
-     *
-     * @see com.hazelcast.internal.memory.impl.ByteBufferMemoryAccessor
-     */
-    HEAP_BYTE_ARRAY;
 }

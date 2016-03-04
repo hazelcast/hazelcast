@@ -17,31 +17,33 @@
 package com.hazelcast.memory;
 
 /**
- * Memory statistics for abstract MemoryManager
+ * Memory stats for HEAP memory
  */
-public interface MemoryStats {
-    /**
-     * @return - total memory available for MemoryManager
-     */
-    long getTotal();
+public class HeapMemoryStats implements MemoryStats {
+    private final Runtime runtime = Runtime.getRuntime();
 
-    /**
-     * @return - amount of free memory to allocate
-     */
-    long getFree();
+    @Override
+    public long getTotal() {
+        return runtime.totalMemory();
+    }
 
-    /**
-     * @return - maximal amount of memory which can be allocated
-     */
-    long getMax();
+    @Override
+    public long getFree() {
+        return runtime.freeMemory();
+    }
 
-    /**
-     * @return -amount of memory which has been commited
-     */
-    long getCommitted();
+    @Override
+    public long getMax() {
+        return runtime.maxMemory();
+    }
 
-    /**
-     * @return - amount of memory which has been used
-     */
-    long getUsed();
+    @Override
+    public long getCommitted() {
+        return runtime.totalMemory();
+    }
+
+    @Override
+    public long getUsed() {
+        return getTotal() - getFree();
+    }
 }

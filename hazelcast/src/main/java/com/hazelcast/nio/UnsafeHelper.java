@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.logging.Logger;
 import sun.misc.Unsafe;
 
@@ -54,13 +55,13 @@ import static com.hazelcast.util.QuickMath.normalize;
 public final class UnsafeHelper {
 
     /**
-     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#MEM} instead
+     * @deprecated {@link GlobalMemoryAccessorRegistry#MEM} instead
      */
     @Deprecated
     public static final Unsafe UNSAFE;
 
     /**
-     * @deprecated {@link com.hazelcast.internal.memory.MemoryAccessor#MEM_AVAILABLE} instead
+     * @deprecated {@link GlobalMemoryAccessorRegistry#MEM_AVAILABLE} instead
      */
     @Deprecated
     public static final boolean UNSAFE_AVAILABLE;

@@ -1,120 +1,141 @@
 package com.hazelcast.internal.memory.impl;
 
-import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 import com.hazelcast.internal.memory.UnsafeDependentMemoryAccessorTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ExceptionUtil;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import sun.misc.Unsafe;
 
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccessorTest {
 
-    protected final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final int ALLOCATED_BLOCK_SIZE = 16;
 
-    private MemoryAccessor memoryAccessor;
+    private static final int CHAR_MISALIGNMENT = 1;
+    private static final int SHORT_MISALIGNMENT = 1;
+    private static final int INT_MISALIGNMENT = 2;
+    private static final int FLOAT_MISALIGNMENT = 2;
+    private static final int LONG_MISALIGNMENT = 4;
+    private static final int DOUBLE_MISALIGNMENT = 4;
+    private static final int OBJECT_MISALIGNMENT = 2;
 
-    abstract protected MemoryAccessor createMemoryAccessor();
+    protected final Unsafe unsafe = UnsafeUtil.UNSAFE;
+
+    private GlobalMemoryAccessor memoryAccessor;
+
+    private final SampleObject sampleObject = new SampleObject();
+
+    private long baseAddress1;
+
+    private long baseAddress2;
 
     @Before
     public void setup() {
-        memoryAccessor = createMemoryAccessor();
+        baseAddress1 = allocate();
+        baseAddress2 = allocate();
+        memoryAccessor = getMemoryAccessor();
     }
 
-    protected long allocateMemory(long size) {
-        return UNSAFE.allocateMemory(size);
+    @After
+    public void tearDown() {
+        free(baseAddress1);
+        free(baseAddress2);
     }
 
-    protected void freeMemory(long address) {
-        UNSAFE.freeMemory(address);
+    private long allocate() {
+        return unsafe.allocateMemory(ALLOCATED_BLOCK_SIZE);
     }
+
+    private void free(long address) {
+        if (address != 0) {
+            unsafe.freeMemory(address);
+        }
+    }
+
+    protected abstract GlobalMemoryAccessor getMemoryAccessor();
 
     ////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void test_getObjectFieldOffset() throws NoSuchFieldException {
+        final Class<SampleObjectBase> klass = SampleObjectBase.class;
         assertEquals(SampleObject.BOOLEAN_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("booleanValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("booleanValue")));
         assertEquals(SampleObject.BYTE_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("byteValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("byteValue")));
         assertEquals(SampleObject.CHAR_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("charValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("charValue")));
         assertEquals(SampleObject.SHORT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("shortValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("shortValue")));
         assertEquals(SampleObject.INT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("intValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("intValue")));
         assertEquals(SampleObject.FLOAT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("floatValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("floatValue")));
         assertEquals(SampleObject.LONG_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("longValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("longValue")));
         assertEquals(SampleObject.DOUBLE_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("doubleValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("doubleValue")));
         assertEquals(SampleObject.OBJECT_VALUE_OFFSET,
-                     memoryAccessor.objectFieldOffset(
-                        SampleObject.class.getDeclaredField("objectValue")));
+                memoryAccessor.objectFieldOffset(klass.getDeclaredField("objectValue")));
     }
 
     @Test
     public void test_getArrayBaseOffset() {
-        assertEquals(UNSAFE.arrayBaseOffset(boolean[].class),
-                     memoryAccessor.arrayBaseOffset(boolean[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(byte[].class),
-                     memoryAccessor.arrayBaseOffset(byte[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(char[].class),
-                     memoryAccessor.arrayBaseOffset(char[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(short[].class),
-                     memoryAccessor.arrayBaseOffset(short[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(int[].class),
-                     memoryAccessor.arrayBaseOffset(int[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(float[].class),
-                     memoryAccessor.arrayBaseOffset(float[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(long[].class),
-                     memoryAccessor.arrayBaseOffset(long[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(double[].class),
-                     memoryAccessor.arrayBaseOffset(double[].class));
-        assertEquals(UNSAFE.arrayBaseOffset(Object[].class),
-                     memoryAccessor.arrayBaseOffset(Object[].class));
+        assertEquals(unsafe.arrayBaseOffset(boolean[].class),
+                memoryAccessor.arrayBaseOffset(boolean[].class));
+        assertEquals(unsafe.arrayBaseOffset(byte[].class),
+                memoryAccessor.arrayBaseOffset(byte[].class));
+        assertEquals(unsafe.arrayBaseOffset(char[].class),
+                memoryAccessor.arrayBaseOffset(char[].class));
+        assertEquals(unsafe.arrayBaseOffset(short[].class),
+                memoryAccessor.arrayBaseOffset(short[].class));
+        assertEquals(unsafe.arrayBaseOffset(int[].class),
+                memoryAccessor.arrayBaseOffset(int[].class));
+        assertEquals(unsafe.arrayBaseOffset(float[].class),
+                memoryAccessor.arrayBaseOffset(float[].class));
+        assertEquals(unsafe.arrayBaseOffset(long[].class),
+                memoryAccessor.arrayBaseOffset(long[].class));
+        assertEquals(unsafe.arrayBaseOffset(double[].class),
+                memoryAccessor.arrayBaseOffset(double[].class));
+        assertEquals(unsafe.arrayBaseOffset(Object[].class),
+                memoryAccessor.arrayBaseOffset(Object[].class));
     }
 
     @Test
     public void test_getArrayIndexScale() {
-        assertEquals(UNSAFE.arrayIndexScale(boolean[].class),
-                     memoryAccessor.arrayIndexScale(boolean[].class));
-        assertEquals(UNSAFE.arrayIndexScale(byte[].class),
-                     memoryAccessor.arrayIndexScale(byte[].class));
-        assertEquals(UNSAFE.arrayIndexScale(char[].class),
-                     memoryAccessor.arrayIndexScale(char[].class));
-        assertEquals(UNSAFE.arrayIndexScale(short[].class),
-                     memoryAccessor.arrayIndexScale(short[].class));
-        assertEquals(UNSAFE.arrayIndexScale(int[].class),
-                     memoryAccessor.arrayIndexScale(int[].class));
-        assertEquals(UNSAFE.arrayIndexScale(float[].class),
-                     memoryAccessor.arrayIndexScale(float[].class));
-        assertEquals(UNSAFE.arrayIndexScale(long[].class),
-                     memoryAccessor.arrayIndexScale(long[].class));
-        assertEquals(UNSAFE.arrayIndexScale(double[].class),
-                     memoryAccessor.arrayIndexScale(double[].class));
-        assertEquals(UNSAFE.arrayIndexScale(Object[].class),
-                     memoryAccessor.arrayIndexScale(Object[].class));
+        assertEquals(unsafe.arrayIndexScale(boolean[].class),
+                memoryAccessor.arrayIndexScale(boolean[].class));
+        assertEquals(unsafe.arrayIndexScale(byte[].class),
+                memoryAccessor.arrayIndexScale(byte[].class));
+        assertEquals(unsafe.arrayIndexScale(char[].class),
+                memoryAccessor.arrayIndexScale(char[].class));
+        assertEquals(unsafe.arrayIndexScale(short[].class),
+                memoryAccessor.arrayIndexScale(short[].class));
+        assertEquals(unsafe.arrayIndexScale(int[].class),
+                memoryAccessor.arrayIndexScale(int[].class));
+        assertEquals(unsafe.arrayIndexScale(float[].class),
+                memoryAccessor.arrayIndexScale(float[].class));
+        assertEquals(unsafe.arrayIndexScale(long[].class),
+                memoryAccessor.arrayIndexScale(long[].class));
+        assertEquals(unsafe.arrayIndexScale(double[].class),
+                memoryAccessor.arrayIndexScale(double[].class));
+        assertEquals(unsafe.arrayIndexScale(Object[].class),
+                memoryAccessor.arrayIndexScale(Object[].class));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -125,49 +146,32 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
-    @RequiresUnalignedMemoryAccessSupport
     public void test_copyMemory_whenUnaligned() {
         do_test_copyMemory(false);
     }
 
-    private void do_test_copyMemory(boolean aligned) {
-        final int COPY_LENGTH = 8;
+    void do_test_copyMemory(boolean aligned) {
+        final int copyLength = ALLOCATED_BLOCK_SIZE / 2;
 
-        long sourceAddress = 0;
-        long destinationAddress = 0;
-        try {
-            sourceAddress = allocateMemory(2 * COPY_LENGTH);
-            destinationAddress = allocateMemory(2 * COPY_LENGTH);
+        long sourceAddress = aligned ? baseAddress1 : baseAddress1 + 1;
+        long destinationAddress = aligned ? baseAddress2 : baseAddress2 + 3;
 
-            long accessSourceAddress = aligned ? sourceAddress : sourceAddress + 1;
-            long accessDestinationAddress = aligned ? destinationAddress : destinationAddress + 1;
-
-            for (int i = 0; i < COPY_LENGTH; i++) {
-                memoryAccessor.putByte(accessSourceAddress + i, (byte) (i * i));
-            }
-
-            memoryAccessor.copyMemory(accessSourceAddress, accessDestinationAddress, COPY_LENGTH);
-
-            for (int i = 0; i < COPY_LENGTH; i++) {
-                assertEquals((byte) (i * i), memoryAccessor.getByte(accessDestinationAddress + i));
-            }
-
-            byte[] src = new byte[] {0x11, 0x22, 0x33, 0x44};
-            byte[] dest = new byte[src.length];
-
-            memoryAccessor.copyMemory(src, MemoryAccessor.ARRAY_BYTE_BASE_OFFSET,
-                                      dest, MemoryAccessor.ARRAY_BYTE_BASE_OFFSET,
-                                      src.length);
-
-            assertArrayEquals(src, dest);
-        } finally {
-            if (sourceAddress != 0) {
-                freeMemory(sourceAddress);
-            }
-            if (destinationAddress != 0) {
-                freeMemory(destinationAddress);
-            }
+        for (int i = 0; i < copyLength; i++) {
+            memoryAccessor.putByte(sourceAddress + i, (byte) (i * i));
         }
+
+        memoryAccessor.copyMemory(sourceAddress, destinationAddress, copyLength);
+
+        for (int i = 0; i < copyLength; i++) {
+            assertEquals((byte) (i * i), memoryAccessor.getByte(destinationAddress + i));
+        }
+
+        byte[] src = new byte[] {0x11, 0x22, 0x33, 0x44};
+        byte[] dest = new byte[src.length];
+
+        memoryAccessor.copyMemory(src, ARRAY_BYTE_BASE_OFFSET, dest, ARRAY_BYTE_BASE_OFFSET, src.length);
+
+        assertArrayEquals(src, dest);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -178,28 +182,19 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     }
 
     @Test
-    @RequiresUnalignedMemoryAccessSupport
     public void test_setMemory_whenUnaligned() {
         do_test_setMemory(false);
     }
 
-    private void do_test_setMemory(boolean aligned) {
-        final int SET_LENGTH = 8;
+    void do_test_setMemory(boolean aligned) {
+        final int setLength = ALLOCATED_BLOCK_SIZE / 2;
 
-        long address = 0;
-        try {
-            address = allocateMemory(2 * SET_LENGTH);
-            long accessAddress = aligned ? address : address + 1;
+        long address = aligned ? baseAddress1 : baseAddress1 + 1;
 
-            memoryAccessor.setMemory(accessAddress, SET_LENGTH, (byte) 0x01);
+        memoryAccessor.setMemory(address, setLength, (byte) 0x01);
 
-            for (int i = 0; i < SET_LENGTH; i++) {
-                assertEquals((byte) 0x01, memoryAccessor.getByte(accessAddress + i));
-            }
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
+        for (int i = 0; i < setLength; i++) {
+            assertEquals((byte) 0x01, memoryAccessor.getByte(address + i));
         }
     }
 
@@ -207,64 +202,38 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
 
     @Test
     public void test_putGetBoolean() {
-        long address = 0;
-        try {
-            address = allocateMemory(16);
+        final long address = baseAddress1;
 
-            memoryAccessor.putBoolean(address, true);
-            assertEquals(true, memoryAccessor.getBoolean(address));
+        memoryAccessor.putBoolean(address, true);
+        assertEquals(true, memoryAccessor.getBoolean(address));
 
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putBooleanVolatile(null, address, false);
-            assertEquals(false, memoryAccessor.getBooleanVolatile(null, address));
+        memoryAccessor.putBooleanVolatile(address, false);
+        assertEquals(false, memoryAccessor.getBooleanVolatile(address));
 
-            SampleObject obj = new SampleObject();
+        memoryAccessor.putBoolean(sampleObject, SampleObject.BOOLEAN_VALUE_OFFSET, true);
+        assertEquals(true, memoryAccessor.getBoolean(sampleObject, SampleObject.BOOLEAN_VALUE_OFFSET));
 
-            memoryAccessor.putBoolean(obj, SampleObject.BOOLEAN_VALUE_OFFSET, true);
-            assertEquals(true, memoryAccessor.getBoolean(obj, SampleObject.BOOLEAN_VALUE_OFFSET));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putBooleanVolatile(obj, SampleObject.BOOLEAN_VALUE_OFFSET, false);
-            assertEquals(false, memoryAccessor.getBooleanVolatile(obj, SampleObject.BOOLEAN_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+        memoryAccessor.putBooleanVolatile(sampleObject, SampleObject.BOOLEAN_VALUE_OFFSET, false);
+        assertEquals(false, memoryAccessor.getBooleanVolatile(sampleObject, SampleObject.BOOLEAN_VALUE_OFFSET));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void test_putGetByte() {
-        long address = 0;
-        try {
-            address = allocateMemory(16);
+        final long address = baseAddress1;
 
-            memoryAccessor.putByte(address, (byte) 1);
-            assertEquals(1, memoryAccessor.getByte(address));
+        memoryAccessor.putByte(address, (byte) 1);
+        assertEquals(1, memoryAccessor.getByte(address));
 
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putByteVolatile(null, address, (byte) 2);
-            assertEquals(2, memoryAccessor.getByteVolatile(null, address));
+        memoryAccessor.putByteVolatile(address, (byte) 2);
+        assertEquals(2, memoryAccessor.getByteVolatile(address));
 
-            SampleObject obj = new SampleObject();
+        memoryAccessor.putByte(sampleObject, SampleObject.BYTE_VALUE_OFFSET, (byte) 3);
+        assertEquals(3, memoryAccessor.getByte(sampleObject, SampleObject.BYTE_VALUE_OFFSET));
 
-            memoryAccessor.putByte(obj, SampleObject.BYTE_VALUE_OFFSET, (byte) 3);
-            assertEquals(3, memoryAccessor.getByte(obj, SampleObject.BYTE_VALUE_OFFSET));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putByteVolatile(obj, SampleObject.BYTE_VALUE_OFFSET, (byte) 4);
-            assertEquals(4, memoryAccessor.getByteVolatile(obj, SampleObject.BYTE_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+        memoryAccessor.putByteVolatile(sampleObject, SampleObject.BYTE_VALUE_OFFSET, (byte) 4);
+        assertEquals(4, memoryAccessor.getByteVolatile(sampleObject, SampleObject.BYTE_VALUE_OFFSET));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -272,283 +241,346 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     @Test
     public void test_putGetChar_whenAligned() {
         do_test_putGetChar(true);
+        do_test_putGetCharVolatile();
     }
 
-    @Test
-    @RequiresUnalignedMemoryAccessSupport
-    public void test_putGetChar_whenUnaligned() {
-        do_test_putGetChar(false);
+
+    void do_test_putGetChar(boolean aligned) {
+        long address = aligned ? baseAddress1 : baseAddress1 + CHAR_MISALIGNMENT;
+
+        memoryAccessor.putChar(address, 'A');
+        assertEquals('A', memoryAccessor.getChar(address));
+
+        memoryAccessor.putChar(sampleObject, SampleObject.CHAR_VALUE_OFFSET, 'B');
+        assertEquals('B', memoryAccessor.getChar(sampleObject, SampleObject.CHAR_VALUE_OFFSET));
     }
 
-    private void do_test_putGetChar(boolean aligned) {
-        long address = 0;
+    void do_test_putGetCharVolatile() {
+        long address = baseAddress1;
+
+        memoryAccessor.putCharVolatile(address, 'C');
+        assertEquals('C', memoryAccessor.getCharVolatile(address));
+
+        memoryAccessor.putCharVolatile(sampleObject, SampleObject.CHAR_VALUE_OFFSET, 'D');
+        assertEquals('D', memoryAccessor.getCharVolatile(sampleObject, SampleObject.CHAR_VALUE_OFFSET));
+    }
+
+    void assert_putGetCharVolatileUnalignedFails() {
+        long address = baseAddress1 + 1;
+        long objectOffset = SampleObject.CHAR_VALUE_OFFSET + CHAR_MISALIGNMENT;
+
         try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
-
-            memoryAccessor.putChar(accessAddress, 'A');
-            assertEquals('A', memoryAccessor.getChar(accessAddress));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putCharVolatile(null, accessAddress, 'B');
-            assertEquals('B', memoryAccessor.getCharVolatile(null, accessAddress));
-
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putChar(obj, SampleObject.CHAR_VALUE_OFFSET, 'C');
-            assertEquals('C', memoryAccessor.getChar(obj, SampleObject.CHAR_VALUE_OFFSET));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putCharVolatile(obj, SampleObject.CHAR_VALUE_OFFSET, 'D');
-            assertEquals('D', memoryAccessor.getCharVolatile(obj, SampleObject.CHAR_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+            memoryAccessor.putCharVolatile(address, 'A');
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getCharVolatile(address);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.putCharVolatile(sampleObject, objectOffset, 'A');
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getCharVolatile(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////
+
 
     @Test
     public void test_putGetShort_whenAligned() {
         do_test_putGetShort(true);
+        do_test_putGetShortVolatile();
     }
 
-    @Test
-    @RequiresUnalignedMemoryAccessSupport
-    public void test_putGetShort_whenUnaligned() {
-        do_test_putGetShort(false);
+    void do_test_putGetShort(boolean aligned) {
+        long address = aligned ? baseAddress1 : baseAddress1 + SHORT_MISALIGNMENT;
+
+        memoryAccessor.putShort(address, (short) 1);
+        assertEquals(1, memoryAccessor.getShort(address));
+
+        memoryAccessor.putShort(sampleObject, SampleObject.SHORT_VALUE_OFFSET, (short) 2);
+        assertEquals(2, memoryAccessor.getShort(sampleObject, SampleObject.SHORT_VALUE_OFFSET));
     }
 
-    private void do_test_putGetShort(boolean aligned) {
-        long address = 0;
+    void do_test_putGetShortVolatile() {
+        long address = baseAddress1;
+
+        memoryAccessor.putShortVolatile(address, (short) 3);
+        assertEquals(3, memoryAccessor.getShortVolatile(address));
+
+        memoryAccessor.putShortVolatile(sampleObject, SampleObject.SHORT_VALUE_OFFSET, (short) 4);
+        assertEquals(4, memoryAccessor.getShortVolatile(sampleObject, SampleObject.SHORT_VALUE_OFFSET));
+    }
+
+    void assert_putGetShortVolatileUnalignedFails() {
+        long address = baseAddress1 + SHORT_MISALIGNMENT;
+        long objectOffset = SampleObject.SHORT_VALUE_OFFSET + SHORT_MISALIGNMENT;
+
         try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
-
-            memoryAccessor.putShort(accessAddress, (short) 1);
-            assertEquals((short) 1, memoryAccessor.getShort(accessAddress));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putShortVolatile(null, accessAddress, (short) 2);
-            assertEquals((short) 2, memoryAccessor.getShortVolatile(null, accessAddress));
-
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putShort(obj, SampleObject.SHORT_VALUE_OFFSET, (short) 3);
-            assertEquals((short) 3, memoryAccessor.getShort(obj, SampleObject.SHORT_VALUE_OFFSET));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putShortVolatile(obj, SampleObject.SHORT_VALUE_OFFSET, (short) 4);
-            assertEquals((short) 4, memoryAccessor.getShortVolatile(obj, SampleObject.SHORT_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+            memoryAccessor.putShortVolatile(address, (short) 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getShortVolatile(address);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.putShortVolatile(sampleObject, objectOffset, (short) 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getShortVolatile(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
 
     @Test
     public void test_putGetInt_whenAligned() {
         do_test_putGetInt(true);
+        do_test_putGetIntVolatile();
     }
 
-    @Test
-    @RequiresUnalignedMemoryAccessSupport
-    public void test_putGetInt_whenUnaligned() {
-        do_test_putGetInt(false);
+    void do_test_putGetInt(boolean aligned) {
+        long address = aligned ? baseAddress1 : baseAddress1 + 2;
+
+        memoryAccessor.putInt(address, 1);
+        assertEquals(1, memoryAccessor.getInt(address));
+
+        memoryAccessor.putInt(sampleObject, SampleObject.INT_VALUE_OFFSET, 2);
+        assertEquals(2, memoryAccessor.getInt(sampleObject, SampleObject.INT_VALUE_OFFSET));
     }
 
-    private void do_test_putGetInt(boolean aligned) {
-        long address = 0;
+    void do_test_putGetIntVolatile() {
+        long address = baseAddress1;
+
+        memoryAccessor.putIntVolatile(address, 3);
+        assertEquals(3, memoryAccessor.getIntVolatile(address));
+
+        memoryAccessor.putIntVolatile(sampleObject, SampleObject.INT_VALUE_OFFSET, 4);
+        assertEquals(4, memoryAccessor.getIntVolatile(sampleObject, SampleObject.INT_VALUE_OFFSET));
+    }
+
+    void assert_putGetIntVolatileUnalignedFails() {
+        long address = baseAddress1 + 2;
+        long objectOffset = SampleObject.INT_VALUE_OFFSET + INT_MISALIGNMENT;
+
         try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
-
-            memoryAccessor.putInt(accessAddress, 1);
-            assertEquals(1, memoryAccessor.getInt(accessAddress));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putIntVolatile(null, accessAddress, 2);
-            assertEquals(2, memoryAccessor.getIntVolatile(null, accessAddress));
-
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putInt(obj, SampleObject.INT_VALUE_OFFSET, 3);
-            assertEquals(3, memoryAccessor.getInt(obj, SampleObject.INT_VALUE_OFFSET));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putIntVolatile(obj, SampleObject.INT_VALUE_OFFSET, 4);
-            assertEquals(4, memoryAccessor.getIntVolatile(obj, SampleObject.INT_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+            memoryAccessor.putIntVolatile(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getIntVolatile(address);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.putIntVolatile(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getIntVolatile(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////
 
     @Test
     public void test_putGetFloat_whenAligned() {
         do_test_putGetFloat(true);
+        do_test_putGetFloatVolatile();
     }
 
-    @Test
-    @RequiresUnalignedMemoryAccessSupport
-    public void test_putGetFloat_whenUnaligned() {
-        do_test_putGetFloat(false);
+    void do_test_putGetFloat(boolean aligned) {
+        long address = aligned ? baseAddress1 : baseAddress1 + FLOAT_MISALIGNMENT;
+
+        memoryAccessor.putFloat(address, 1f);
+        assertEquals(1f, memoryAccessor.getFloat(address), 0f);
+
+        memoryAccessor.putFloat(sampleObject, SampleObject.FLOAT_VALUE_OFFSET, 2f);
+        assertEquals(2f, memoryAccessor.getFloat(sampleObject, SampleObject.FLOAT_VALUE_OFFSET), 0f);
     }
 
-    private void do_test_putGetFloat(boolean aligned) {
-        long address = 0;
+    void do_test_putGetFloatVolatile() {
+        long address = baseAddress1;
+
+        memoryAccessor.putFloatVolatile(address, 3f);
+        assertEquals(3f, memoryAccessor.getFloatVolatile(address), 0f);
+
+        memoryAccessor.putFloatVolatile(sampleObject, SampleObject.FLOAT_VALUE_OFFSET, 4f);
+        assertEquals(4f, memoryAccessor.getFloatVolatile(sampleObject, SampleObject.FLOAT_VALUE_OFFSET), 0f);
+    }
+
+    void assert_putGetFloatVolatileUnalignedFails() {
+        long address = baseAddress1 + FLOAT_MISALIGNMENT;
+        long objectOffset = SampleObject.FLOAT_VALUE_OFFSET + FLOAT_MISALIGNMENT;
+
         try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
-
-            memoryAccessor.putFloat(accessAddress, 11.2F);
-            assertEquals(11.2F, memoryAccessor.getFloat(accessAddress), 0.0F);
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putFloatVolatile(null, accessAddress, 33.4F);
-            assertEquals(33.4F, memoryAccessor.getFloatVolatile(null, accessAddress), 0.0F);
-
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putFloat(obj, SampleObject.FLOAT_VALUE_OFFSET, 55.6F);
-            assertEquals(55.6F, memoryAccessor.getFloat(obj, SampleObject.FLOAT_VALUE_OFFSET), 0.0F);
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putFloatVolatile(obj, SampleObject.FLOAT_VALUE_OFFSET, 77.8F);
-            assertEquals(77.8F, memoryAccessor.getFloatVolatile(obj, SampleObject.FLOAT_VALUE_OFFSET), 0.0F);
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+            memoryAccessor.putFloatVolatile(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getFloatVolatile(address);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.putFloatVolatile(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getFloatVolatile(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////
+
 
     @Test
     public void test_putGetLong_whenAligned() {
         do_test_putGetLong(true);
+        do_test_putGetLongVolatile();
     }
 
-    @Test
-    @RequiresUnalignedMemoryAccessSupport
-    public void test_putGetLong_whenUnaligned() {
-        do_test_putGetLong(false);
+    void do_test_putGetLong(boolean aligned) {
+        long address = aligned ? baseAddress1 : baseAddress1 + LONG_MISALIGNMENT;
+
+        memoryAccessor.putLong(address, 1);
+        assertEquals(1, memoryAccessor.getLong(address));
+
+        memoryAccessor.putLong(sampleObject, SampleObject.LONG_VALUE_OFFSET, 2);
+        assertEquals(2, memoryAccessor.getLong(sampleObject, SampleObject.LONG_VALUE_OFFSET));
     }
 
-    private void do_test_putGetLong(boolean aligned) {
-        long address = 0;
+    void do_test_putGetLongVolatile() {
+        long address = baseAddress1;
+
+        memoryAccessor.putLongVolatile(address, 3);
+        assertEquals(3, memoryAccessor.getLongVolatile(address));
+
+        memoryAccessor.putLongVolatile(sampleObject, SampleObject.LONG_VALUE_OFFSET, 4);
+        assertEquals(4, memoryAccessor.getLongVolatile(sampleObject, SampleObject.LONG_VALUE_OFFSET));
+    }
+
+    void assert_putGetLongVolatileUnalignedFails() {
+        long address = baseAddress1 + LONG_MISALIGNMENT;
+        long objectOffset = SampleObject.LONG_VALUE_OFFSET + LONG_MISALIGNMENT;
         try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
-
-            memoryAccessor.putLong(accessAddress, 1L);
-            assertEquals(1L, memoryAccessor.getLong(accessAddress));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putLongVolatile(null, accessAddress, 2L);
-            assertEquals(2L, memoryAccessor.getLongVolatile(null, accessAddress));
-
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putLong(obj, SampleObject.LONG_VALUE_OFFSET, 3L);
-            assertEquals(3L, memoryAccessor.getLong(obj, SampleObject.LONG_VALUE_OFFSET));
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putLongVolatile(obj, SampleObject.LONG_VALUE_OFFSET, 4L);
-            assertEquals(4L, memoryAccessor.getLongVolatile(obj, SampleObject.LONG_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+            memoryAccessor.putLongVolatile(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getLongVolatile(address);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.putLongVolatile(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getLongVolatile(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////
+
 
     @Test
     public void test_putGetDouble_whenAligned() {
         do_test_putGetDouble(true);
+        do_test_putGetDoubleVolatile();
     }
 
-    @Test
-    @RequiresUnalignedMemoryAccessSupport
-    public void test_putGetDouble_whenUnaligned() {
-        do_test_putGetDouble(false);
+    void do_test_putGetDouble(boolean aligned) {
+        long address = aligned ? baseAddress1 : baseAddress1 + DOUBLE_MISALIGNMENT;
+
+        memoryAccessor.putDouble(address, 1f);
+        assertEquals(1f, memoryAccessor.getDouble(address), 0f);
+
+        memoryAccessor.putDouble(sampleObject, SampleObject.DOUBLE_VALUE_OFFSET, 2f);
+        assertEquals(2f, memoryAccessor.getDouble(sampleObject, SampleObject.DOUBLE_VALUE_OFFSET), 0f);
     }
 
-    private void do_test_putGetDouble(boolean aligned) {
-        long address = 0;
+    void do_test_putGetDoubleVolatile() {
+        long address = baseAddress1;
+
+        memoryAccessor.putDoubleVolatile(address, 3f);
+        assertEquals(3f, memoryAccessor.getDoubleVolatile(address), 0f);
+
+        memoryAccessor.putDoubleVolatile(sampleObject, SampleObject.DOUBLE_VALUE_OFFSET, 4f);
+        assertEquals(4f, memoryAccessor.getDoubleVolatile(sampleObject, SampleObject.DOUBLE_VALUE_OFFSET), 0f);
+    }
+
+    void assert_putGetDoubleVolatileUnalignedFails() {
+        long address = baseAddress1 + DOUBLE_MISALIGNMENT;
+        long objectOffset = SampleObject.DOUBLE_VALUE_OFFSET + DOUBLE_MISALIGNMENT;
+
         try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
-
-            memoryAccessor.putDouble(accessAddress, 11.2);
-            assertEquals(11.2, memoryAccessor.getDouble(accessAddress), 0.0);
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putDoubleVolatile(null, accessAddress, 33.4);
-            assertEquals(33.4, memoryAccessor.getDoubleVolatile(null, accessAddress), 0.0);
-
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putDouble(obj, SampleObject.DOUBLE_VALUE_OFFSET, 55.6);
-            assertEquals(55.6, memoryAccessor.getDouble(obj, SampleObject.DOUBLE_VALUE_OFFSET), 0.0);
-
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really accesses memory as volatile. Does it worth???
-            memoryAccessor.putDoubleVolatile(obj, SampleObject.DOUBLE_VALUE_OFFSET, 77.8);
-            assertEquals(77.8, memoryAccessor.getDoubleVolatile(obj, SampleObject.DOUBLE_VALUE_OFFSET), 0.0);
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+            memoryAccessor.putDoubleVolatile(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getDoubleVolatile(address);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.putDoubleVolatile(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getDoubleVolatile(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
     }
 
     ////////////////////////////////////////////////////////////////////////////////
 
     @Test
     public void test_putGetObject_whenAligned() {
-        do_test_putGetObject(true);
+        final String value1 = "a";
+        memoryAccessor.putObject(sampleObject, SampleObject.OBJECT_VALUE_OFFSET, value1);
+        assertEquals(value1, memoryAccessor.getObject(sampleObject, SampleObject.OBJECT_VALUE_OFFSET));
+
+        final String value2 = "b";
+        memoryAccessor.putObjectVolatile(sampleObject, SampleObject.OBJECT_VALUE_OFFSET, value2);
+        assertEquals(value2, memoryAccessor.getObjectVolatile(sampleObject, SampleObject.OBJECT_VALUE_OFFSET));
     }
 
-    protected void do_test_putGetObject(boolean aligned) {
-        long offset = SampleObject.OBJECT_VALUE_OFFSET;
-        SampleObject obj = new SampleObject();
-        long accessOffset = aligned ? offset : offset + 1;
+    void assert_putGetObjectUnalignedFails() {
+        long objectOffset = SampleObject.OBJECT_VALUE_OFFSET + OBJECT_MISALIGNMENT;
+        final String value = "a";
 
-        String str1 = "String Object 1";
-        memoryAccessor.putObject(obj, accessOffset, str1);
-        assertEquals(str1, memoryAccessor.getObject(obj, accessOffset));
-
-        // TODO Do we really need to concurrency test to verify that
-        // memory accessor really accesses memory as volatile. Does it worth???
-        String str2 = "String Object 2";
-        memoryAccessor.putObjectVolatile(obj, accessOffset, str2);
-        assertEquals(str2, memoryAccessor.getObjectVolatile(obj, accessOffset));
+        try {
+            memoryAccessor.putObjectVolatile(sampleObject, objectOffset, value);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getObjectVolatile(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.putObject(sampleObject, objectOffset, value);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
+        try {
+            memoryAccessor.getObject(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) { }
     }
+
 
     ////////////////////////////////////////////////////////////////////////////////
+
 
     @Test
     public void test_compareAndSwapInt_whenAligned() {
@@ -561,34 +593,24 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         do_test_compareAndSwapInt(false);
     }
 
-    private void do_test_compareAndSwapInt(boolean aligned) {
-        long address = 0;
-        try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
+    void do_test_compareAndSwapInt(boolean aligned) {
+        long accessAddress = aligned ? baseAddress1 : baseAddress1 + 1;
 
-            memoryAccessor.putInt(accessAddress, 1);
-            assertEquals(1, memoryAccessor.getInt(accessAddress));
+        memoryAccessor.putInt(accessAddress, 1);
+        assertEquals(1, memoryAccessor.getInt(accessAddress));
 
-            assertFalse(memoryAccessor.compareAndSwapInt(null, accessAddress, 0, 2));
-            assertTrue(memoryAccessor.compareAndSwapInt(null, accessAddress, 1, 2));
+        assertFalse(memoryAccessor.compareAndSwapInt(null, accessAddress, 0, 2));
+        assertTrue(memoryAccessor.compareAndSwapInt(null, accessAddress, 1, 2));
 
-            assertEquals(2, memoryAccessor.getInt(accessAddress));
+        assertEquals(2, memoryAccessor.getInt(accessAddress));
 
-            SampleObject obj = new SampleObject();
+        memoryAccessor.putInt(sampleObject, SampleObject.INT_VALUE_OFFSET, 1);
+        assertEquals(1, memoryAccessor.getInt(sampleObject, SampleObject.INT_VALUE_OFFSET));
 
-            memoryAccessor.putInt(obj, SampleObject.INT_VALUE_OFFSET, 1);
-            assertEquals(1, memoryAccessor.getInt(obj, SampleObject.INT_VALUE_OFFSET));
+        assertFalse(memoryAccessor.compareAndSwapInt(sampleObject, SampleObject.INT_VALUE_OFFSET, 0, 2));
+        assertTrue(memoryAccessor.compareAndSwapInt(sampleObject, SampleObject.INT_VALUE_OFFSET, 1, 2));
 
-            assertFalse(memoryAccessor.compareAndSwapInt(obj, SampleObject.INT_VALUE_OFFSET, 0, 2));
-            assertTrue(memoryAccessor.compareAndSwapInt(obj, SampleObject.INT_VALUE_OFFSET, 1, 2));
-
-            assertEquals(2, memoryAccessor.getInt(obj, SampleObject.INT_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+        assertEquals(2, memoryAccessor.getInt(sampleObject, SampleObject.INT_VALUE_OFFSET));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -604,34 +626,24 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         do_test_compareAndSwapLong(false);
     }
 
-    private void do_test_compareAndSwapLong(boolean aligned) {
-        long address = 0;
-        try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
+    void do_test_compareAndSwapLong(boolean aligned) {
+        long accessAddress = aligned ? baseAddress1 : baseAddress1 + 1;
 
-            memoryAccessor.putLong(accessAddress, 1L);
-            assertEquals(1L, memoryAccessor.getLong(accessAddress));
+        memoryAccessor.putLong(accessAddress, 1L);
+        assertEquals(1L, memoryAccessor.getLong(accessAddress));
 
-            assertFalse(memoryAccessor.compareAndSwapLong(null, accessAddress, 0L, 2L));
-            assertTrue(memoryAccessor.compareAndSwapLong(null, accessAddress, 1L, 2L));
+        assertFalse(memoryAccessor.compareAndSwapLong(null, accessAddress, 0L, 2L));
+        assertTrue(memoryAccessor.compareAndSwapLong(null, accessAddress, 1L, 2L));
 
-            assertEquals(2L, memoryAccessor.getLong(accessAddress));
+        assertEquals(2L, memoryAccessor.getLong(accessAddress));
 
-            SampleObject obj = new SampleObject();
+        memoryAccessor.putLong(sampleObject, SampleObject.LONG_VALUE_OFFSET, 1L);
+        assertEquals(1L, memoryAccessor.getLong(sampleObject, SampleObject.LONG_VALUE_OFFSET));
 
-            memoryAccessor.putLong(obj, SampleObject.LONG_VALUE_OFFSET, 1L);
-            assertEquals(1L, memoryAccessor.getLong(obj, SampleObject.LONG_VALUE_OFFSET));
+        assertFalse(memoryAccessor.compareAndSwapLong(sampleObject, SampleObject.LONG_VALUE_OFFSET, 0L, 2L));
+        assertTrue(memoryAccessor.compareAndSwapLong(sampleObject, SampleObject.LONG_VALUE_OFFSET, 1L, 2L));
 
-            assertFalse(memoryAccessor.compareAndSwapLong(obj, SampleObject.LONG_VALUE_OFFSET, 0L, 2L));
-            assertTrue(memoryAccessor.compareAndSwapLong(obj, SampleObject.LONG_VALUE_OFFSET, 1L, 2L));
-
-            assertEquals(2L, memoryAccessor.getLong(obj, SampleObject.LONG_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+        assertEquals(2L, memoryAccessor.getLong(sampleObject, SampleObject.LONG_VALUE_OFFSET));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -643,18 +655,17 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
 
     protected void do_test_compareAndSwapObject(boolean aligned) {
         long offset = SampleObject.OBJECT_VALUE_OFFSET;
-        SampleObject obj = new SampleObject();
         long accessOffset = aligned ? offset : offset + 1;
 
         String str1 = "String Object 1";
-        memoryAccessor.putObject(obj, accessOffset, str1);
-        assertEquals(str1, memoryAccessor.getObject(obj, accessOffset));
+        memoryAccessor.putObject(sampleObject, accessOffset, str1);
+        assertEquals(str1, memoryAccessor.getObject(sampleObject, accessOffset));
 
         String str2 = "String Object 2";
-        assertFalse(memoryAccessor.compareAndSwapObject(obj, accessOffset, null, str2));
-        assertTrue(memoryAccessor.compareAndSwapObject(obj, accessOffset, str1, str2));
+        assertFalse(memoryAccessor.compareAndSwapObject(sampleObject, accessOffset, null, str2));
+        assertTrue(memoryAccessor.compareAndSwapObject(sampleObject, accessOffset, str1, str2));
 
-        assertEquals(str2, memoryAccessor.getObject(obj, accessOffset));
+        assertEquals(str2, memoryAccessor.getObject(sampleObject, accessOffset));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -670,26 +681,14 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         do_test_putOrderedInt(false);
     }
 
-    private void do_test_putOrderedInt(boolean aligned) {
-        long address = 0;
-        try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
+    void do_test_putOrderedInt(boolean aligned) {
+        long accessAddress = aligned ? baseAddress1 : baseAddress1 + 1;
 
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really applies writes as ordered. Does it worth???
-            memoryAccessor.putOrderedInt(null, accessAddress, 1);
-            assertEquals(1, memoryAccessor.getInt(accessAddress));
+        memoryAccessor.putOrderedInt(null, accessAddress, 1);
+        assertEquals(1, memoryAccessor.getInt(accessAddress));
 
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putOrderedInt(obj, SampleObject.INT_VALUE_OFFSET, 1);
-            assertEquals(1, memoryAccessor.getInt(obj, SampleObject.INT_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+        memoryAccessor.putOrderedInt(sampleObject, SampleObject.INT_VALUE_OFFSET, 1);
+        assertEquals(1, memoryAccessor.getInt(sampleObject, SampleObject.INT_VALUE_OFFSET));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -705,26 +704,14 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         do_test_putOrderedLong(false);
     }
 
-    private void do_test_putOrderedLong(boolean aligned) {
-        long address = 0;
-        try {
-            address = allocateMemory(16);
-            long accessAddress = aligned ? address : address + 1;
+    void do_test_putOrderedLong(boolean aligned) {
+        long accessAddress = aligned ? baseAddress1 : baseAddress1 + 1;
 
-            // TODO Do we really need to concurrency test to verify that
-            // memory accessor really applies writes as ordered. Does it worth???
-            memoryAccessor.putOrderedLong(null, accessAddress, 1L);
-            assertEquals(1L, memoryAccessor.getLong(accessAddress));
+        memoryAccessor.putOrderedLong(null, accessAddress, 1L);
+        assertEquals(1L, memoryAccessor.getLong(accessAddress));
 
-            SampleObject obj = new SampleObject();
-
-            memoryAccessor.putOrderedLong(obj, SampleObject.LONG_VALUE_OFFSET, 1L);
-            assertEquals(1L, memoryAccessor.getLong(obj, SampleObject.LONG_VALUE_OFFSET));
-        } finally {
-            if (address != 0) {
-                freeMemory(address);
-            }
-        }
+        memoryAccessor.putOrderedLong(sampleObject, SampleObject.LONG_VALUE_OFFSET, 1L);
+        assertEquals(1L, memoryAccessor.getLong(sampleObject, SampleObject.LONG_VALUE_OFFSET));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -736,28 +723,36 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
 
     protected void do_test_putOrderedObject(boolean aligned) {
         long offset = SampleObject.OBJECT_VALUE_OFFSET;
-        SampleObject obj = new SampleObject();
         long accessOffset = aligned ? offset : offset + 1;
 
-        // TODO Do we really need to concurrency test to verify that
-        // memory accessor really applies writes as ordered. Does it worth???
         String str = "String Object";
-        memoryAccessor.putOrderedObject(obj, accessOffset, str);
-        assertEquals(str, memoryAccessor.getObject(obj, accessOffset));
+        memoryAccessor.putOrderedObject(sampleObject, accessOffset, str);
+        assertEquals(str, memoryAccessor.getObject(sampleObject, accessOffset));
     }
 
     ////////////////////////////////////////////////////////////////////////////////
 
     private static long getSampleObjectFieldOffset(String fieldName) {
         try {
-            return UnsafeUtil.UNSAFE.objectFieldOffset(SampleObject.class.getDeclaredField(fieldName));
+            return UnsafeUtil.UNSAFE.objectFieldOffset(SampleObjectBase.class.getDeclaredField(fieldName));
         } catch (NoSuchFieldException e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private static class SampleObject {
+    private static class SampleObjectBase {
+        private byte byteValue;
+        private boolean booleanValue;
+        private char charValue;
+        private short shortValue;
+        private int intValue;
+        private float floatValue;
+        private long longValue;
+        private double doubleValue;
+        private Object objectValue;
+    }
 
+    private static class SampleObject extends SampleObjectBase {
         private static final long BYTE_VALUE_OFFSET = getSampleObjectFieldOffset("byteValue");
         private static final long BOOLEAN_VALUE_OFFSET = getSampleObjectFieldOffset("booleanValue");
         private static final long CHAR_VALUE_OFFSET = getSampleObjectFieldOffset("charValue");
@@ -768,15 +763,9 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         private static final long DOUBLE_VALUE_OFFSET = getSampleObjectFieldOffset("doubleValue");
         private static final long OBJECT_VALUE_OFFSET = getSampleObjectFieldOffset("objectValue");
 
-        private byte byteValue;
-        private boolean booleanValue;
-        private char charValue;
-        private short shortValue;
-        private int intValue;
-        private float floatValue;
-        private long longValue;
-        private double doubleValue;
-        private Object objectValue;
-
+        // ensures additional allocated space at the end of the object, which may be needed to test
+        // unaligned access without causing heap corruption
+        private long padding;
     }
+
 }

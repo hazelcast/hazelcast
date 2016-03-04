@@ -24,7 +24,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
@@ -304,7 +304,7 @@ public class DefaultSerializationServiceBuilder
         }
         if (useNativeByteOrder || byteOrder == ByteOrder.nativeOrder()) {
             byteOrder = ByteOrder.nativeOrder();
-            if (allowUnsafe && MemoryAccessor.MEM_AVAILABLE) {
+            if (allowUnsafe && GlobalMemoryAccessorRegistry.MEM_AVAILABLE) {
                 return new UnsafeInputOutputFactory();
             }
         }

@@ -22,68 +22,25 @@ import static com.hazelcast.memory.MemoryStatsSupport.totalPhysicalMemory;
 /**
  * Default implementation of MemoryStats.
  */
-public class DefaultMemoryStats implements MemoryStats {
-
-    private final Runtime runtime = Runtime.getRuntime();
+public class DefaultMemoryStats implements JvmMemoryStats {
     private final DefaultGarbageCollectorStats gcStats = new DefaultGarbageCollectorStats();
 
-    public final long getTotalPhysical() {
-        return totalPhysicalMemory();
+    private final MemoryStats heapMemoryStats = new HeapMemoryStats();
+
+    private final MemoryStats nativeMemoryStats;
+
+    public DefaultMemoryStats() {
+        this.nativeMemoryStats = new DummyMemoryStats();
     }
 
     @Override
-    public final long getFreePhysical() {
-        return freePhysicalMemory();
+    public MemoryStats getHeapMemoryStats() {
+        return heapMemoryStats;
     }
 
     @Override
-    public final long getMaxHeap() {
-        return runtime.maxMemory();
-    }
-
-    @Override
-    public final long getCommittedHeap() {
-        return runtime.totalMemory();
-    }
-
-    @Override
-    public final long getUsedHeap() {
-        return runtime.totalMemory() - runtime.freeMemory();
-    }
-
-    @Override
-    public final long getFreeHeap() {
-        return runtime.freeMemory();
-    }
-
-    @Override
-    public long getMaxNativeMemory() {
-        return 0;
-    }
-
-    @Override
-    public long getCommittedNativeMemory() {
-        return 0;
-    }
-
-    @Override
-    public long getUsedNativeMemory() {
-        return 0;
-    }
-
-    @Override
-    public long getFreeNativeMemory() {
-        return 0;
-    }
-
-    @Override
-    public long getMaxMetadata() {
-        return 0;
-    }
-
-    @Override
-    public long getUsedMetadata() {
-        return 0;
+    public MemoryStats getNativeMemoryStats() {
+        return nativeMemoryStats;
     }
 
     @Override
@@ -93,14 +50,38 @@ public class DefaultMemoryStats implements MemoryStats {
     }
 
     @Override
+    public long getTotal() {
+        return totalPhysicalMemory();
+    }
+
+    @Override
+    public long getFree() {
+        return freePhysicalMemory();
+    }
+
+    @Override
+    public long getMax() {
+        return getTotal();
+    }
+
+    @Override
+    public long getCommitted() {
+        return getFree();
+    }
+
+    public long getUsed() {
+        return getTotal() - getFree();
+    }
+
+    @Override
     public String toString() {
         return "MemoryStats{"
-                + "Total Physical: " + MemorySize.toPrettyString(getTotalPhysical())
-                + ", Free Physical: " + MemorySize.toPrettyString(getFreePhysical())
-                + ", Max Heap: " + MemorySize.toPrettyString(getMaxHeap())
-                + ", Committed Heap: " + MemorySize.toPrettyString(getCommittedHeap())
-                + ", Used Heap: " + MemorySize.toPrettyString(getUsedHeap())
-                + ", Free Heap: " + MemorySize.toPrettyString(getFreeHeap())
+                + "Total Physical: " + MemorySize.toPrettyString(totalPhysicalMemory())
+                + ", Free Physical: " + MemorySize.toPrettyString(getFree())
+                + ", Max Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getMax())
+                + ", Committed Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getCommitted())
+                + ", Used Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getUsed())
+                + ", Free Heap: " + MemorySize.toPrettyString(getHeapMemoryStats().getFree())
                 + ", " + getGCStats()
                 + '}';
     }

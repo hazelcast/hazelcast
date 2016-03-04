@@ -88,10 +88,7 @@
     <suppress checks="Todo" files="com/hazelcast/concurrent/lock/ConditionImpl"/>
 
     <!-- Memory -->
-    <suppress checks="MagicNumber|IllegalImport" files="com.hazelcast.internal.memory.impl.UnsafeUtil"/>
-    <suppress checks="MethodCount|IllegalImport" files="com.hazelcast.internal.memory.*MemoryAccessor"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor"/>
-    <suppress checks="MethodCount|MagicNumber|IllegalImport" files="com.hazelcast.internal.memory.impl.DirectMemoryBits"/>
+    <suppress checks="IllegalImport" files="com.hazelcast.internal.memory.impl.UnsafeUtil"/>
 
     <!-- OSGI -->
     <suppress checks="MethodCount" files="com/hazelcast/osgi/impl/HazelcastOSGiInstanceImpl"/>

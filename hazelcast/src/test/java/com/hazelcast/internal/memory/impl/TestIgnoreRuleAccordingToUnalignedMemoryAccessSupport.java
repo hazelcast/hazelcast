@@ -1,6 +1,5 @@
 package com.hazelcast.internal.memory.impl;
 
-import com.hazelcast.internal.memory.MemoryAccessorProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.junit.rules.TestRule;
@@ -15,7 +14,7 @@ public class TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport implements Te
     @Override
     public Statement apply(Statement base, final Description description) {
         if (description.getAnnotation(RequiresUnalignedMemoryAccessSupport.class) != null
-            && !MemoryAccessorProvider.isUnalignedAccessAllowed()) {
+            && !AlignmentUtil.isUnalignedAccessAllowed()) {
                 return new Statement() {
                     @Override
                     public void evaluate() throws Throwable {

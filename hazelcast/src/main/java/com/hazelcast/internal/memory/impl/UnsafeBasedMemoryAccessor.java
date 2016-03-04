@@ -16,33 +16,25 @@
 
 package com.hazelcast.internal.memory.impl;
 
-import com.hazelcast.internal.memory.MemoryAccessor;
-import sun.misc.Unsafe;
+import com.hazelcast.internal.memory.GlobalMemoryAccessor;
+
+import static com.hazelcast.internal.memory.impl.AlignmentUtil.IS_PLATFORM_BIG_ENDIAN;
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
 /**
- * Base class for {@link sun.misc.Unsafe} backed {@link MemoryAccessor} implementations.
+ * Base class for {@link sun.misc.Unsafe} backed {@link GlobalMemoryAccessor} implementations.
  */
-abstract class UnsafeBasedMemoryAccessor implements MemoryAccessor {
+abstract class UnsafeBasedMemoryAccessor implements GlobalMemoryAccessor {
 
     /**
-     * The {@link sun.misc.Unsafe} instance which is available and ready to use.
-     */
-    protected static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
-
-    /**
-     * If this constant is {@code true}, then {@link UNSAFE} refers to a usable {@code Unsafe}
-     * instance.
-     */
-    protected static final boolean AVAILABLE = UNSAFE != null;
-
-    /**
-     * Returns the state about this kind of {@link UnsafeBasedMemoryAccessor} instances are available or not.
-     *
-     * @return <tt>true</tt> if this kind of {@link UnsafeBasedMemoryAccessor} instances are available,
-     *         otherwise <tt>false</tt>
+     * Returns whether memory accessors of type {@link UnsafeBasedMemoryAccessor} are available or not.
      */
     public static boolean isAvailable() {
-        return AVAILABLE;
+        return UNSAFE_AVAILABLE;
     }
 
+    @Override
+    public boolean isBigEndian() {
+        return IS_PLATFORM_BIG_ENDIAN;
+    }
 }
