@@ -34,28 +34,27 @@ public final class OperationResponseHandlerFactory {
 
     public static class ResponseHandlerAdapter implements OperationResponseHandler {
 
-
         @Override
         public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
-            sendAny();
+            onSend();
         }
 
         @Override
         public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
-            sendAny();
+            onSend();
         }
 
         @Override
         public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
-
+            onSend();
         }
 
         @Override
         public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
-            sendAny();
+            onSend();
         }
 
-        public void sendAny() {
+        public void onSend() {
         }
 
         @Override
