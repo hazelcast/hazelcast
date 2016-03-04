@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -149,8 +148,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      * because a final response is already set to this future.
      */
     public boolean set(Object offeredResponse) {
-        assert !(offeredResponse instanceof Response) : "unexpected response found: " + offeredResponse;
-
         if (offeredResponse == null) {
             offeredResponse = NULL_RESPONSE;
         }

@@ -95,7 +95,8 @@ public final class RemoteInvocationResponseHandler implements OperationResponseH
         receiver.write(packet);
     }
 
-    static Packet buildErrorResponsePacket(SerializationService serializationService, boolean urgent, long callId, Throwable error) {
+    static Packet buildErrorResponsePacket(
+            SerializationService serializationService, boolean urgent, long callId, Throwable error) {
         BufferPool pool = serializationService.pool();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {

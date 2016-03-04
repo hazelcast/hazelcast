@@ -24,7 +24,6 @@ import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
@@ -40,17 +39,13 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_ENVELOPE = 4;
     public static final int COLLECTION = 5;
 
-    public static final int CALL_TIMEOUT_RESPONSE =6;
-
     @Override
     public DataSerializableFactory createFactory() {
         return new DataSerializableFactory() {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case CALL_TIMEOUT_RESPONSE:
-                        return new CallTimeoutResponse();
-                    case BACKUP:
+                     case BACKUP:
                         return new Backup();
                     case PARTITION_ITERATOR:
                         return new PartitionIteratingOperation();
