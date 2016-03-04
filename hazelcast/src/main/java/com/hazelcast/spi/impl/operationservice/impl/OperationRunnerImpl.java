@@ -100,7 +100,7 @@ class OperationRunnerImpl extends OperationRunner {
         this.logger = operationService.logger;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
-        this.remoteResponseHandler = new RemoteOperationResponseHandler(operationService,
+        this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService,
                 operationService.nodeEngine.getSerializationService());
         this.executedOperationsCount = operationService.completedOperationsCount;
 

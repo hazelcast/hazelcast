@@ -32,7 +32,7 @@ public class Invocation_RemoteResponseTest extends HazelcastTestSupport {
     private OperationServiceImpl localOperationService;
     private InvocationRegistry localInvocationRegistry;
     private Connection c;
-    private RemoteOperationResponseHandler responseHandler;
+    private RemoteInvocationResponseHandler responseHandler;
 
     @Before
     public void setup() {
@@ -44,7 +44,7 @@ public class Invocation_RemoteResponseTest extends HazelcastTestSupport {
         localInvocationRegistry = localOperationService.invocationsRegistry;
 
         c = getConnectionManager(remote).getConnection(getAddress(local));
-        responseHandler = new RemoteOperationResponseHandler(
+        responseHandler = new RemoteInvocationResponseHandler(
                 (OperationServiceImpl) getOperationService(remote), getSerializationService(remote));
     }
 

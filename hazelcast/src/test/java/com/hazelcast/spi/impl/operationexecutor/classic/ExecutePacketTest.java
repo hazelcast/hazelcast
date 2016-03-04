@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -11,8 +10,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.buildResponsePacket;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteInvocationResponseHandler.buildResponsePacket;
 import static org.junit.Assert.assertTrue;
 
 /**

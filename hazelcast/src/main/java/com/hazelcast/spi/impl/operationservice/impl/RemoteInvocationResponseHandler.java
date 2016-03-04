@@ -36,7 +36,7 @@ import static com.hazelcast.nio.Packet.FLAG_URGENT;
  * sends an Operation to the receiving member, the receiving member attaches this RemoteOperationResponseHandler
  * to that operation.
  */
-public final class RemoteOperationResponseHandler implements OperationResponseHandler {
+public final class RemoteInvocationResponseHandler implements OperationResponseHandler {
     public static final byte TYPE_NORMAL_RESPONSE = 0;
     public static final byte TYPE_BACKUP_RESPONSE = 1;
     public static final byte TYPE_ERROR_RESPONSE = 2;
@@ -46,7 +46,7 @@ public final class RemoteOperationResponseHandler implements OperationResponseHa
     private final SerializationService serializationService;
     private final Node node;
 
-    public RemoteOperationResponseHandler(OperationServiceImpl operationService, SerializationService serializationService) {
+    public RemoteInvocationResponseHandler(OperationServiceImpl operationService, SerializationService serializationService) {
         this.operationService = operationService;
         this.serializationService = serializationService;
         this.node = operationService.nodeEngine.getNode();

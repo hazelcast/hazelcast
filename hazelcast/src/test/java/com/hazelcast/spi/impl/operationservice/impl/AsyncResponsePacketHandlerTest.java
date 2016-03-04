@@ -18,7 +18,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.buildResponsePacket;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteInvocationResponseHandler.buildResponsePacket;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

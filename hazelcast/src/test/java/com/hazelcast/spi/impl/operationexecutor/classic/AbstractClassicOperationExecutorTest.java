@@ -23,8 +23,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
-import com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;

@@ -22,10 +22,10 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 
 import static com.hazelcast.nio.Bits.readLong;
-import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_BACKUP_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_ERROR_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_NORMAL_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.RemoteOperationResponseHandler.TYPE_TIMEOUT_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteInvocationResponseHandler.TYPE_BACKUP_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteInvocationResponseHandler.TYPE_ERROR_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteInvocationResponseHandler.TYPE_NORMAL_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.RemoteInvocationResponseHandler.TYPE_TIMEOUT_RESPONSE;
 
 /**
  * Responsible for handling responses.
