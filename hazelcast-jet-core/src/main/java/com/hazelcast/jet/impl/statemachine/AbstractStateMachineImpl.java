@@ -114,47 +114,51 @@ public abstract class AbstractStateMachineImpl
         public boolean executeTask(Payload payload) {
             RequestPayLoad<Input, Output> requestHolder = this.requestsQueue.poll();
 
-            if (requestHolder == null) {
-                payload.set(false);
-                return true;
-            }
-
-            Input event = requestHolder.getEvent();
-            SettableFuture<Output> future = requestHolder.getFuture();
-
             try {
-                Map<Input, State> transmissions = stateTransitionMatrix.get(state);
-
-                if (transmissions == null) {
-                    future.setException(new InvalidEventException(event, state, name));
+                if (requestHolder == null) {
+                    payload.set(false);
                     return true;
                 }
 
-                State nextState = transmissions.get(event);
+                Input event = requestHolder.getEvent();
+                SettableFuture<Output> future = requestHolder.getFuture();
 
-                if (nextState != null) {
-                    if (processor != null) {
-                        processor.processRequest(requestHolder.getEvent(), requestHolder.getPayLoad());
+                try {
+                    Map<Input, State> transmissions = stateTransitionMatrix.get(state);
+
+                    if (transmissions == null) {
+                        future.setException(new InvalidEventException(event, state, name));
+                        return true;
                     }
 
-                    state = nextState;
-                    output = output(event, nextState);
-                    future.set(output);
-                } else {
-                    output = output(event, null);
-                    Throwable error = new InvalidEventException(event, state, name);
-                    logger.warning(error.getMessage(), error);
-                    future.setException(error);
-                }
-            } catch (Throwable e) {
-                if (logger != null) {
-                    logger.warning(e.getMessage(), e);
+                    State nextState = transmissions.get(event);
+
+                    if (nextState != null) {
+                        if (processor != null) {
+                            processor.processRequest(requestHolder.getEvent(), requestHolder.getPayLoad());
+                        }
+
+                        state = nextState;
+                        output = output(event, nextState);
+                        future.set(output);
+                    } else {
+                        output = output(event, null);
+                        Throwable error = new InvalidEventException(event, state, name);
+                        logger.warning(error.getMessage(), error);
+                        future.setException(error);
+                    }
+                } catch (Throwable e) {
+                    if (logger != null) {
+                        logger.warning(e.getMessage(), e);
+                    }
+
+                    future.setException(e);
                 }
 
-                future.setException(e);
+                return true;
+            } finally {
+                payload.set(this.requestsQueue.size() > 0);
             }
-
-            return true;
         }
     }
 }

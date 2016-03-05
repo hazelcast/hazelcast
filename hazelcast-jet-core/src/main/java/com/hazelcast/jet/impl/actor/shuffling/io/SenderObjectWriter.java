@@ -17,9 +17,11 @@
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.data.io.ObjectWriter;
-import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.spi.ObjectWriter;
+import com.hazelcast.jet.io.spi.ObjectWriterFactory;
 import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 public class SenderObjectWriter implements ObjectWriter<ProducerInputStream<Object>> {
     private final ObjectWriterFactory objectWriterFactory;
@@ -31,21 +33,21 @@ public class SenderObjectWriter implements ObjectWriter<ProducerInputStream<Obje
     @Override
     public void writeType(ProducerInputStream<Object> object,
                           ObjectDataOutput objectDataOutput,
-                          ObjectWriterFactory objectWriterFactory) throws Exception {
+                          ObjectWriterFactory objectWriterFactory) throws IOException {
         throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public void writePayLoad(ProducerInputStream<Object> object,
                              ObjectDataOutput objectDataOutput,
-                             ObjectWriterFactory objectWriterFactory) throws Exception {
+                             ObjectWriterFactory objectWriterFactory) throws IOException {
         write(object, objectDataOutput, objectWriterFactory);
     }
 
     @Override
     public void write(ProducerInputStream<Object> inputStream,
                       ObjectDataOutput objectDataOutput,
-                      ObjectWriterFactory objectWriterFactory) throws Exception {
+                      ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeInt(inputStream.size());
 
         for (Object object : inputStream) {

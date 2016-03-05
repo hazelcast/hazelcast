@@ -21,8 +21,8 @@ import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.counters.Accumulator;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
-import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.spi.ObjectReaderFactory;
+import com.hazelcast.jet.io.spi.ObjectWriterFactory;
 import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 

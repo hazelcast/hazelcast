@@ -17,15 +17,21 @@
 package com.hazelcast.jet.impl.container.events;
 
 import com.hazelcast.jet.api.container.ContainerContext;
+import com.hazelcast.jet.api.container.ContainerListenerCaller;
 import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.container.ProcessingContainer;
 import com.hazelcast.jet.api.container.task.TaskEvent;
+import com.hazelcast.jet.api.statemachine.container.ContainerRequest;
+import com.hazelcast.jet.api.statemachine.container.processingcontainer.ProcessingContainerEvent;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecutionCompletedRequest;
+import com.hazelcast.jet.impl.statemachine.container.requests.ContainerInterruptedRequest;
 import com.hazelcast.jet.spi.container.ContainerListener;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TaskEventCompletedProcessor extends AbstractEventProcessor {
+    private volatile Throwable caughtError;
+
     protected TaskEventCompletedProcessor(AtomicInteger completedTasks,
                                           AtomicInteger interruptedTasks,
                                           AtomicInteger readyForFinalizationTasksCounter,
@@ -45,14 +51,28 @@ public class TaskEventCompletedProcessor extends AbstractEventProcessor {
     public void process(ContainerTask containerTask,
                         TaskEvent event,
                         Throwable error) {
+        if (error != null) {
+            caughtError = error;
+        }
+
         if (this.completedTasks.incrementAndGet() >= this.containerTasks.length) {
             this.completedTasks.set(0);
 
-            try {
-                handleContainerRequest(new ContainerExecutionCompletedRequest());
-            } finally {
-                invokeContainerListeners(ContainerListener.EXECUTED_LISTENER_CALLER);
+            if (caughtError == null) {
+                handle(new ContainerExecutionCompletedRequest(), ContainerListener.EXECUTED_LISTENER_CALLER);
+            } else {
+                handle(new ContainerInterruptedRequest(caughtError), ContainerListener.INTERRUPTED_LISTENER_CALLER);
+                caughtError = null;
             }
+        }
+    }
+
+    private <P> void handle(ContainerRequest<ProcessingContainerEvent, P> request,
+                            ContainerListenerCaller containerListenerCaller) {
+        try {
+            handleContainerRequest(request);
+        } finally {
+            invokeContainerListeners(containerListenerCaller);
         }
     }
 }

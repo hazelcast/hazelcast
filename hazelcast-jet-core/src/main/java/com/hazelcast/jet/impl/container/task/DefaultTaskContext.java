@@ -17,13 +17,14 @@
 package com.hazelcast.jet.impl.container.task;
 
 import com.hazelcast.jet.api.application.ApplicationContext;
-import com.hazelcast.jet.api.application.IOContext;
-import com.hazelcast.jet.impl.application.IOContextImpl;
+import com.hazelcast.jet.impl.data.io.JetTupleDataType;
+import com.hazelcast.jet.io.spi.IOContext;
+import com.hazelcast.jet.io.impl.IOContextImpl;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
-import com.hazelcast.jet.spi.data.io.DataType;
-import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
-import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.spi.DataType;
+import com.hazelcast.jet.io.spi.ObjectReaderFactory;
+import com.hazelcast.jet.io.spi.ObjectWriterFactory;
 import com.hazelcast.jet.spi.executor.TaskContext;
 
 import java.io.Serializable;
@@ -41,7 +42,7 @@ public class DefaultTaskContext implements TaskContext {
                               ApplicationContext applicationContext) {
         this.taskCount = taskCount;
         this.taskNumber = taskNumber;
-        this.ioContext = new IOContextImpl();
+        this.ioContext = new IOContextImpl(JetTupleDataType.INSTANCE);
         this.accumulatorMap = new ConcurrentHashMap<CounterKey, Accumulator>();
         applicationContext.registerAccumulators(this.accumulatorMap);
     }

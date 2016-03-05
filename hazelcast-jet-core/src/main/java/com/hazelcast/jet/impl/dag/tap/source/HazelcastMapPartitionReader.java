@@ -21,7 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.data.tuple.TupleIterator;
+import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
@@ -93,7 +93,7 @@ public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<J
         MapService mapService = nei.getService(MapService.SERVICE_NAME);
         PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
         RecordStore recordStore = partitionContainer.getRecordStore(getName());
-        this.iterator = new TupleIterator<Record, K, V>(recordStore.iterator(), tupleConverter, ss);
+        this.iterator = new JetTupleIterator<Record, K, V>(recordStore.iterator(), tupleConverter, ss);
     }
 
     @Override

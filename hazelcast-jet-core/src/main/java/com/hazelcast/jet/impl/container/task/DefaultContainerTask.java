@@ -61,6 +61,9 @@ public class DefaultContainerTask extends AbstractTask
         implements ContainerTask {
     private final ILogger logger;
 
+    private static final InterruptedException INTERRUPTED_EXCEPTION =
+            new InterruptedException("Execution has been interrupted");
+
     private final int taskID;
 
     private final Vertex vertex;
@@ -105,10 +108,10 @@ public class DefaultContainerTask extends AbstractTask
         this.containerContext = container.getContainerContext();
         this.applicationContext = container.getApplicationContext();
         this.nodeEngine = container.getApplicationContext().getNodeEngine();
-        this.logger = this.nodeEngine.getLogger(DefaultContainerTask.class);
         ContainerProcessorFactory processorFactory = container.getContainerProcessorFactory();
         this.processor = processorFactory == null ? null : processorFactory.getProcessor(vertex);
         this.processorContext = new DefaultProcessorContext(taskContext, this.containerContext);
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -248,7 +251,11 @@ public class DefaultContainerTask extends AbstractTask
                 try {
                     onInterrupt(processor);
                 } finally {
-                    this.container.handleTaskEvent(this, TaskEvent.TASK_INTERRUPTED, this.error);
+                    this.container.handleTaskEvent(
+                            this,
+                            TaskEvent.TASK_EXECUTION_COMPLETED,
+                            getError()
+                    );
                 }
 
                 return false;
@@ -272,6 +279,10 @@ public class DefaultContainerTask extends AbstractTask
                 Thread.currentThread().setContextClassLoader(classLoader);
             }
         }
+    }
+
+    private Throwable getError() {
+        return this.error != null ? this.error : INTERRUPTED_EXCEPTION;
     }
 
     private void onInterrupt(TaskProcessor processor) {
@@ -439,21 +450,27 @@ public class DefaultContainerTask extends AbstractTask
     }
 
     private void handleProcessingError(Throwable error) {
-        this.logger.warning("Exception in the task message=" + error.getMessage(), error);
+        logger.warning(error.getMessage(), error);
 
         try {
             this.container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_ERROR, error);
         } catch (Throwable e) {
-            this.logger.warning("Exception in the task message=" + e.getMessage(), e);
+            logger.warning("Exception in the task message=" + e.getMessage(), e);
+        } finally {
+            completeTaskExecution(error);
         }
     }
 
     private void completeTaskExecution() {
+        completeTaskExecution(null);
+    }
+
+    private void completeTaskExecution(Throwable e) {
         try {
             System.out.println("completeTaskExecution=" + applicationContext.getName());
             this.taskProcessor.onClose();
         } finally {
-            this.container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED);
+            this.container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED, e);
         }
     }
 }

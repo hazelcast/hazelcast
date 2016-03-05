@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
-import com.hazelcast.jet.spi.data.io.ObjectReader;
-import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
+import com.hazelcast.jet.io.spi.ObjectReader;
+import com.hazelcast.jet.io.spi.ObjectReaderFactory;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;

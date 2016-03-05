@@ -53,6 +53,10 @@ public final class JetUtil {
      */
     public static final int KILOBYTE = 1024;
 
+    public static final int MEGABYTE = KILOBYTE * KILOBYTE;
+
+    public static final int GIGABYTE = MEGABYTE * KILOBYTE;
+
     private JetUtil() {
     }
 

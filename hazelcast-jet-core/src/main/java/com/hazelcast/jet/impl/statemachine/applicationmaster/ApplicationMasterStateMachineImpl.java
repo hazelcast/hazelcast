@@ -69,6 +69,7 @@ public class ApplicationMasterStateMachineImpl extends
                     ).
                     put(
                             ApplicationMasterState.EXECUTION_FAILED, LinkedMapBuilder.of(
+                                    ApplicationMasterEvent.EXECUTION_COMPLETED, ApplicationMasterState.EXECUTION_FAILED,
                                     ApplicationMasterEvent.EXECUTE, ApplicationMasterState.EXECUTING,
                                     ApplicationMasterEvent.EXECUTION_ERROR, ApplicationMasterState.EXECUTION_FAILED,
                                     ApplicationMasterEvent.FINALIZE, ApplicationMasterState.FINALIZED,

@@ -27,7 +27,7 @@ import com.hazelcast.jet.impl.dag.tap.sink.AbstractHazelcastWriter;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
+import com.hazelcast.jet.io.spi.ObjectWriterFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;

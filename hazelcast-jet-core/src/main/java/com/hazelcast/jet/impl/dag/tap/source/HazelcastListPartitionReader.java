@@ -20,7 +20,7 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.data.tuple.TupleIterator;
+import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
@@ -90,7 +90,7 @@ public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<
         ListContainer listContainer = listService.getOrCreateContainer(getName(), false);
         List<CollectionItem> items = listContainer.getCollection();
         SerializationService ss = nei.getSerializationService();
-        this.iterator = new TupleIterator<CollectionItem, K, V>(items.iterator(), tupleConverter, ss);
+        this.iterator = new JetTupleIterator<CollectionItem, K, V>(items.iterator(), tupleConverter, ss);
     }
 
     @Override
