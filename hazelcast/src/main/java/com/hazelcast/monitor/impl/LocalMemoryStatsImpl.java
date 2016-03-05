@@ -17,7 +17,6 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
-import com.hazelcast.memory.JvmMemoryStats;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.monitor.LocalMemoryStats;
@@ -33,30 +32,46 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     private long freePhysical;
 
-    private final HeapMemoryStats heapMemoryStats = new HeapMemoryStats();
+    private long maxNativeMemory;
 
-    private final BaseMemoryStats nativeMemoryStats = new BaseMemoryStats();
+    private long committedNativeMemory;
+
+    private long usedNativeMemory;
+
+    private long freeNativeMemory;
+
+    private long maxMetadata;
+
+    private long usedMetadata;
+
+    private long maxHeap;
+
+    private long committedHeap;
+
+    private long usedHeap;
 
     private LocalGCStats gcStats;
 
     public LocalMemoryStatsImpl() {
     }
 
-    public LocalMemoryStatsImpl(JvmMemoryStats memoryStats) {
-        setTotalPhysical(memoryStats.getTotal());
-        setFreePhysical(memoryStats.getAvailable());
-        setTotalNative(memoryStats.getNativeMemoryStats().getTotal());
-        setCommittedNativeMemory(memoryStats.getNativeMemoryStats().getCommitted());
-        setUsedNativeMemory(memoryStats.getNativeMemoryStats().getUsed());
-        setFreeNativeMemory(memoryStats.getNativeMemoryStats().getAvailable());
-        setTotalHeap(memoryStats.getHeapMemoryStats().getTotal());
-        setCommittedHeap(memoryStats.getHeapMemoryStats().getCommitted());
-        setUsedHeap(memoryStats.getHeapMemoryStats().getUsed());
+    public LocalMemoryStatsImpl(MemoryStats memoryStats) {
+        setTotalPhysical(memoryStats.getTotalPhysical());
+        setFreePhysical(memoryStats.getFreePhysical());
+        setMaxNativeMemory(memoryStats.getMaxNativeMemory());
+        setCommittedNativeMemory(memoryStats.getCommittedNativeMemory());
+        setUsedNativeMemory(memoryStats.getUsedNativeMemory());
+        setFreeNativeMemory(memoryStats.getFreeNativeMemory());
+        setMaxMetadata(memoryStats.getMaxMetadata());
+        setUsedMetadata(memoryStats.getUsedMetadata());
+        setMaxHeap(memoryStats.getMaxHeap());
+        setCommittedHeap(memoryStats.getCommittedHeap());
+        setUsedHeap(memoryStats.getUsedHeap());
         setGcStats(new LocalGCStatsImpl(memoryStats.getGCStats()));
     }
 
     @Override
-    public long getTotal() {
+    public long getTotalPhysical() {
         return totalPhysical;
     }
 
@@ -65,60 +80,98 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getAvailable() {
+    public long getFreePhysical() {
         return freePhysical;
-    }
-
-    @Override
-    public long getCommitted() {
-        return freePhysical;
-    }
-
-    @Override
-    public long getUsed() {
-        return totalPhysical - freePhysical;
     }
 
     public void setFreePhysical(long freePhysical) {
         this.freePhysical = freePhysical;
     }
 
-    public void setTotalNative(long totalNative) {
-        nativeMemoryStats.setTotal(totalNative);
+    @Override
+    public long getMaxNativeMemory() {
+        return maxNativeMemory;
+    }
+
+    public void setMaxNativeMemory(long maxNativeMemory) {
+        this.maxNativeMemory = maxNativeMemory;
+    }
+
+    @Override
+    public long getCommittedNativeMemory() {
+        return committedNativeMemory;
+    }
+
+    public void setCommittedNativeMemory(long allocated) {
+        this.committedNativeMemory = allocated;
+    }
+
+    @Override
+    public long getUsedNativeMemory() {
+        return usedNativeMemory;
     }
 
     public void setUsedNativeMemory(long used) {
-        nativeMemoryStats.setUsed(used);
+        this.usedNativeMemory = used;
+    }
+
+    @Override
+    public long getFreeNativeMemory() {
+        return freeNativeMemory;
     }
 
     public void setFreeNativeMemory(long freeNativeMemory) {
-        nativeMemoryStats.setFree(freeNativeMemory);
+        this.freeNativeMemory = freeNativeMemory;
     }
 
-    public void setCommittedNativeMemory(long committed) {
-        nativeMemoryStats.setCommitted(committed);
+    @Override
+    public long getMaxMetadata() {
+        return maxMetadata;
     }
 
-    public void setTotalHeap(long totalHeap) {
-        heapMemoryStats.setTotal(totalHeap);
+    public void setMaxMetadata(long maxMetadata) {
+        this.maxMetadata = maxMetadata;
+    }
+
+    @Override
+    public long getUsedMetadata() {
+        return usedMetadata;
+    }
+
+    public void setUsedMetadata(long usedMetadata) {
+        this.usedMetadata = usedMetadata;
+    }
+
+    @Override
+    public long getMaxHeap() {
+        return maxHeap;
+    }
+
+    @Override
+    public long getCommittedHeap() {
+        return committedHeap;
+    }
+
+    @Override
+    public long getUsedHeap() {
+        return usedHeap;
+    }
+
+    public void setMaxHeap(long maxHeap) {
+        this.maxHeap = maxHeap;
     }
 
     public void setCommittedHeap(long committedHeap) {
-        heapMemoryStats.setCommitted(committedHeap);
+        this.committedHeap = committedHeap;
     }
 
     public void setUsedHeap(long usedHeap) {
-        heapMemoryStats.setUsed(usedHeap);
+        this.usedHeap = usedHeap;
     }
 
     @Override
-    public MemoryStats getHeapMemoryStats() {
-        return heapMemoryStats;
-    }
-
-    @Override
-    public MemoryStats getNativeMemoryStats() {
-        return nativeMemoryStats;
+    public long getFreeHeap() {
+        return maxHeap - usedHeap;
     }
 
     @Override
@@ -141,13 +194,13 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         root.add("creationTime", creationTime);
         root.add("totalPhysical", totalPhysical);
         root.add("freePhysical", freePhysical);
-        root.add("totalNative", nativeMemoryStats.getTotal());
-        root.add("committedNative", nativeMemoryStats.getCommitted());
-        root.add("usedNative", nativeMemoryStats.getUsed());
-        root.add("freeNative", nativeMemoryStats.getAvailable());
-        root.add("totalHeap", heapMemoryStats.getTotal());
-        root.add("committedHeap", heapMemoryStats.getCommitted());
-        root.add("usedHeap", heapMemoryStats.getUsed());
+        root.add("maxNativeMemory", maxNativeMemory);
+        root.add("committedNativeMemory", committedNativeMemory);
+        root.add("usedNativeMemory", usedNativeMemory);
+        root.add("freeNativeMemory", freeNativeMemory);
+        root.add("maxHeap", maxHeap);
+        root.add("committedHeap", committedHeap);
+        root.add("usedHeap", usedHeap);
         if (gcStats == null) {
             gcStats = new LocalGCStatsImpl();
         }
@@ -160,15 +213,14 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         creationTime = getLong(json, "creationTime", -1L);
         totalPhysical = getLong(json, "totalPhysical", -1L);
         freePhysical = getLong(json, "freePhysical", -1L);
-        nativeMemoryStats.setTotal(getLong(json, "totalNative", -1L));
-        nativeMemoryStats.setCommitted(getLong(json, "committedNative", -1L));
-        nativeMemoryStats.setUsed(getLong(json, "usedNative", -1L));
-        nativeMemoryStats.setFree(getLong(json, "freeNative", -1L));
-        heapMemoryStats.setTotal(getLong(json, "totalHeap", -1L));
-        heapMemoryStats.setCommitted(getLong(json, "committedHeap", -1L));
-        heapMemoryStats.setUsed(getLong(json, "usedHeap", -1L));
+        maxNativeMemory = getLong(json, "maxNativeMemory", -1L);
+        committedNativeMemory = getLong(json, "committedNativeMemory", -1L);
+        usedNativeMemory = getLong(json, "usedNativeMemory", -1L);
+        freeNativeMemory = getLong(json, "freeNativeMemory", -1L);
+        maxHeap = getLong(json, "maxHeap", -1L);
+        committedHeap = getLong(json, "committedHeap", -1L);
+        usedHeap = getLong(json, "usedHeap", -1L);
         gcStats = new LocalGCStatsImpl();
-
         if (json.get("gcStats") != null) {
             gcStats.fromJson(getObject(json, "gcStats"));
         }
@@ -179,66 +231,15 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         return "LocalMemoryStats{"
                 + "totalPhysical=" + totalPhysical
                 + ", freePhysical=" + freePhysical
-                + ", totalNative=" + nativeMemoryStats.getTotal()
-                + ", committedNative=" + nativeMemoryStats.getCommitted()
-                + ", usedNative=" + nativeMemoryStats.getUsed()
-                + ", totalHeap=" + heapMemoryStats.getTotal()
-                + ", committedHeap=" + heapMemoryStats.getCommitted()
-                + ", usedHeap=" + heapMemoryStats.getUsed()
+                + ", maxNativeMemory=" + maxNativeMemory
+                + ", committedNativeMemory=" + committedNativeMemory
+                + ", usedNativeMemory=" + usedNativeMemory
+                + ", maxMetadata=" + maxMetadata
+                + ", usedUsedMetadata=" + usedMetadata
+                + ", maxHeap=" + maxHeap
+                + ", committedHeap=" + committedHeap
+                + ", usedHeap=" + usedHeap
                 + ", gcStats=" + gcStats
                 + '}';
-    }
-
-    private static class HeapMemoryStats extends BaseMemoryStats {
-        @Override
-        public long getAvailable() {
-            return getTotal() - getUsed();
-        }
-    }
-
-    private static class BaseMemoryStats implements MemoryStats {
-        private long total;
-
-        private long committed;
-
-        private long used;
-
-        private long free;
-
-        @Override
-        public long getTotal() {
-            return total;
-        }
-
-        @Override
-        public long getAvailable() {
-            return free;
-        }
-
-        @Override
-        public long getCommitted() {
-            return committed;
-        }
-
-        @Override
-        public long getUsed() {
-            return used;
-        }
-
-        public void setCommitted(long committed) {
-            this.committed = committed;
-        }
-
-        public void setUsed(long used) {
-            this.used = used;
-        }
-
-        public void setTotal(long total) {
-            this.total = total;
-        }
-
-        public void setFree(long free) {
-            this.free = free;
-        }
     }
 }

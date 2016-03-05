@@ -59,7 +59,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.memory.JvmMemoryStats;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -370,7 +370,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
         return node.getSerializationService();
     }
 
-    public JvmMemoryStats getMemoryStats() {
+    public MemoryStats getMemoryStats() {
         return node.getNodeExtension().getMemoryStats();
     }
 
