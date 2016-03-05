@@ -43,8 +43,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * Invocation and its response(s) can be linked to each other.
  * <p/>
  * When an invocation is registered, a callId is determined. Based on this call-id, when a
- * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} comes in, the
- * appropriate invocation can be looked up.
+ * response comes in, the appropriate invocation can be looked up.
  * <p/>
  * Some idea's:
  * - use an ringbuffer to store all invocations instead of a CHM. The call-id can be used as sequence-id for this

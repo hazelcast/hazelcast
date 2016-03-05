@@ -16,8 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,7 +29,6 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -69,11 +69,11 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             final ResponseQueue queue = responseQueueEntry.getValue();
             final Integer key = responseQueueEntry.getKey();
             final Object result = queue.get();
-            if (result instanceof NormalResponse) {
-                results.put(key, ((NormalResponse) result).getValue());
-            } else {
+            //if (result instanceof NormalResponse) {
+            //    results.put(key, ((NormalResponse) result).getValue());
+            //} else {
                 results.put(key, result);
-            }
+            //}
         }
     }
 
@@ -117,14 +117,32 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         sb.append(", operationFactory=").append(operationFactory);
     }
 
+    //todo:
     private static class ResponseQueue implements OperationResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
+//        @Override
+//        public void sendResponse(Operation op, Object obj) {
+//            if (!b.offer(obj)) {
+//                throw new HazelcastException("Response could not be queued for transportation");
+//            }
+//        }
+
+
         @Override
-        public void sendResponse(Operation op, Object obj) {
-            if (!b.offer(obj)) {
-                throw new HazelcastException("Response could not be queued for transportation");
-            }
+        public void sendBackupResponse(Address receiver, boolean urgent, long callId) {
+        }
+
+        @Override
+        public void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response) {
+        }
+
+        @Override
+        public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+        }
+
+        @Override
+        public void sendTimeoutResponse(Connection receiver, boolean urgent, long callId) {
         }
 
         public Object get() throws InterruptedException {

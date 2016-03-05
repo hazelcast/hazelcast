@@ -47,7 +47,7 @@ public final class SerializationUtil {
         return data.dataSize() == 0 && data.getType() == SerializationConstants.CONSTANT_TYPE_NULL;
     }
 
-    static RuntimeException handleException(Throwable e) {
+    public static RuntimeException handleException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
             throw (Error) e;

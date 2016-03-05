@@ -23,7 +23,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -102,13 +101,10 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
     protected class DummyResponsePacketHandler implements PacketHandler {
         protected List<Packet> packets = synchronizedList(new LinkedList<Packet>());
-        protected List<Response> responses = synchronizedList(new LinkedList<Response>());
 
         @Override
         public void handle(Packet packet) throws Exception {
             packets.add(packet);
-            Response response = serializationService.toObject(packet);
-            responses.add(response);
         }
     }
 

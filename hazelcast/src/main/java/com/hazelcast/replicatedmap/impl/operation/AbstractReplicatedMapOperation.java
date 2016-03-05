@@ -21,8 +21,9 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -87,17 +88,16 @@ public abstract class AbstractReplicatedMapOperation extends AbstractOperation {
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return false;
     }
 
     @Override
-    public Object getResponse() {
-        if (getNodeEngine().getThisAddress().equals(getCallerAddress())) {
-            return response;
-        } else {
-            NormalResponse resp = new NormalResponse(response, getCallId(), 1, isUrgent());
-            return resp;
-        }
+    public void afterRun() throws Exception {
+        super.afterRun();
+
+        int backupCount = getNodeEngine().getThisAddress().equals(getCallerAddress()) ? 0 : 1;
+        OperationResponseHandler responseHandler = getOperationResponseHandler();
+        responseHandler.sendResponse(getConnection(), isUrgent(), getCallId(), backupCount, response);
     }
 
     @Override

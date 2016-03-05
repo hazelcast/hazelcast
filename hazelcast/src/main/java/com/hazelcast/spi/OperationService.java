@@ -17,7 +17,6 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.Collection;
 import java.util.Map;
@@ -170,17 +169,4 @@ public interface OperationService {
      * @return true if send is successful, false otherwise.
      */
     boolean send(Operation op, Address target);
-
-    /**
-     * Sends a response to a remote machine.
-     * <p/>
-     * This methods is deprecated since 3.5. It is an implementation detail, so it is moved to the
-     * {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
-     *
-     * @param response the response to send.
-     * @param target   the address of the target machine
-     * @return true if send is successful, false otherwise.
-     */
-    @Deprecated
-    boolean send(Response response, Address target);
 }

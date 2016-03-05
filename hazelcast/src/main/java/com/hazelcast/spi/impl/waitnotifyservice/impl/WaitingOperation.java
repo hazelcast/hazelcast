@@ -18,14 +18,12 @@ package com.hazelcast.spi.impl.waitnotifyservice.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.util.Clock;
 
 import java.util.Queue;
@@ -41,7 +39,8 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     final BlockingOperation blockingOperation;
     final long expirationTime;
     volatile boolean valid = true;
-    volatile Object cancelResponse;
+    volatile boolean timeout;
+    volatile Throwable error;
 
     WaitingOperation(Queue<WaitingOperation> queue, BlockingOperation blockingOperation) {
         this.op = (Operation) blockingOperation;
@@ -85,14 +84,14 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     }
 
     public boolean isCancelled() {
-        return cancelResponse != null;
+        return timeout || error != null;
     }
 
     public boolean isCallTimedOut() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         InternalOperationService operationService = nodeEngine.getOperationService();
         if (operationService.isCallTimedOut(op)) {
-            cancel(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
+            timeout = true;
             return true;
         }
         return false;
@@ -137,9 +136,10 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         valid = false;
         if (expired) {
             blockingOperation.onWaitExpire();
+        } else if (timeout) {
+            op.getOperationResponseHandler().sendTimeoutResponse(op.getConnection(), op.isUrgent(), op.getCallId());
         } else {
-            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-            responseHandler.sendResponse(op, cancelResponse);
+            op.getOperationResponseHandler().sendErrorResponse(op.getConnection(), op.isUrgent(), op.getCallId(), error);
         }
     }
 
@@ -188,8 +188,8 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         blockingOperation.onWaitExpire();
     }
 
-    public void cancel(Object error) {
-        this.cancelResponse = error;
+    public void cancel(Throwable cause) {
+        this.error = cause;
     }
 
     @Override
@@ -200,4 +200,5 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         sb.append(", expirationTime=").append(expirationTime);
         sb.append(", valid=").append(valid);
     }
+
 }

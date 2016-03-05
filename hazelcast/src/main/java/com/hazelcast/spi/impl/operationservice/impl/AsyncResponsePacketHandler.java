@@ -38,10 +38,6 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * So when a response is received from a remote system, it is put in the workQueue of the ResponseThread.
  * Then the ResponseThread takes it from this workQueue and calls the {@link PacketHandler} for the
  * actual processing.
- *
- * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
- * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
- * deal with the response can be rather expensive currently.
  */
 public class AsyncResponsePacketHandler implements PacketHandler {
 

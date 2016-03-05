@@ -202,7 +202,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
                         PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
                                 partitionId, op.getClass().getName(), op.getServiceName());
                         OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-                        responseHandler.sendResponse(op, pme);
+                        responseHandler.sendErrorResponse(op.getConnection(), op.isUrgent(), op.getCallId(), pme);
                         it.remove();
                     }
                 }
@@ -234,7 +234,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
         logger.finest("Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
-        final Object response = new HazelcastInstanceNotActiveException();
+        final Exception response = new HazelcastInstanceNotActiveException();
         final Address thisAddress = nodeEngine.getThisAddress();
         for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
             for (WaitingOperation waitingOp : q) {
@@ -244,7 +244,7 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
                     if (thisAddress.equals(op.getCallerAddress())) {
                         try {
                             OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-                            responseHandler.sendResponse(op, response);
+                            responseHandler.sendErrorResponse(op.getConnection(), op.isUrgent(), op.getCallId(), response);
                         } catch (Exception e) {
                             logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
                         }

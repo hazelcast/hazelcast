@@ -19,14 +19,15 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.concurrent.lock.operations.UnlockIfLeaseExpiredOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -82,22 +83,14 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         operationService.executeOperation(operation);
     }
 
-    private class UnlockResponseHandler implements OperationResponseHandler {
+    private class UnlockResponseHandler extends OperationResponseHandlerFactory.OperationResponseHandlerAdapter {
         @Override
-        public void sendResponse(Operation op, Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
-                if (t instanceof RetryableException) {
-                    logger.finest("While unlocking... " + t.getMessage());
-                } else {
-                    logger.warning(t);
-                }
+        public void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error) {
+            if (error instanceof RetryableException) {
+                logger.finest("While unlocking... " + error.getMessage());
+            } else {
+                logger.warning(error);
             }
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
         }
     }
 }

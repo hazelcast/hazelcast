@@ -16,22 +16,23 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
@@ -46,9 +47,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -159,10 +158,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
                 node.getHazelcastThreadGroup(),
                 logger,
-                new ResponsePacketHandlerImpl(
-                        logger,
-                        node.getSerializationService(),
-                        invocationsRegistry));
+                new ResponsePacketHandlerImpl(logger, invocationsRegistry));
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
@@ -402,30 +398,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         packet.setFlag(Packet.FLAG_OP);
 
         if (op instanceof UrgentSystemOperation) {
-            packet.setFlag(Packet.FLAG_URGENT);
-        }
-
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getOrConnect(target);
-        return connectionManager.transmit(packet, connection);
-    }
-
-    @Override
-    public boolean send(Response response, Address target) {
-        if (target == null) {
-            throw new IllegalArgumentException("Target is required!");
-        }
-
-        if (nodeEngine.getThisAddress().equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
-        }
-
-        byte[] bytes = serializationService.toBytes(response);
-        Packet packet = new Packet(bytes, -1);
-        packet.setFlag(Packet.FLAG_OP);
-        packet.setFlag(Packet.FLAG_RESPONSE);
-
-        if (response.isUrgent()) {
             packet.setFlag(Packet.FLAG_URGENT);
         }
 

@@ -278,8 +278,8 @@ public abstract class Operation implements DataSerializable {
     }
 
     public final void sendResponse(Object value) {
-        OperationResponseHandler operationResponseHandler = getOperationResponseHandler();
-        operationResponseHandler.sendResponse(this, value);
+        OperationResponseHandler responseHandler = getOperationResponseHandler();
+        responseHandler.sendResponse(connection, isUrgent(), callId, 0, value);
     }
 
      /**

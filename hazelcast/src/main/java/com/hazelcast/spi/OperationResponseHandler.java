@@ -16,27 +16,25 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+
 /**
  * A handler for the {@link com.hazelcast.spi.OperationService} when it has calculated a response. This way you can hook
  * into the Operation execution and decide what to do with it: for example, send it to the right machine.
  *
- * The difference between the {@link ResponseHandler} and the OperationResponseHandler is that the OperationResponseHandler
- * can be re-used since it isn't tied to a particular execution.
- *
  * Also during the development of Hazelcast 3.6 additional methods will be added to the OperationResponseHandler for certain
  * types of responses like exceptions, backup complete etc.
- *
- * @param <O> type of the {@link Operation}
  */
-public interface OperationResponseHandler<O extends Operation> {
+public interface OperationResponseHandler {
 
-    /**
-     * Sends a response.
-     *
-     * @param op       the operation that got executed.
-     * @param response the response of the operation that got executed.
-     */
-    void sendResponse(O op, Object response);
+    void sendResponse(Connection receiver, boolean urgent, long callId, int backupCount, Object response);
+
+    void sendErrorResponse(Connection receiver, boolean urgent, long callId, Throwable error);
+
+    void sendTimeoutResponse(Connection receiver, boolean urgent, long callId);
+
+    void sendBackupResponse(Address receiver, boolean urgent, long callId);
 
     /**
      * Checks if this OperationResponseHandler is for a local invocation.
