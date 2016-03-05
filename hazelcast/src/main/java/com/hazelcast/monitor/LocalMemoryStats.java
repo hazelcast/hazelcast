@@ -17,9 +17,9 @@
 package com.hazelcast.monitor;
 
 
-import com.hazelcast.memory.JvmMemoryStats;
+import com.hazelcast.memory.MemoryStats;
 
-public interface LocalMemoryStats extends JvmMemoryStats, LocalInstanceStats {
+public interface LocalMemoryStats extends MemoryStats, LocalInstanceStats {
 
     @Override
     LocalGCStats getGCStats();
