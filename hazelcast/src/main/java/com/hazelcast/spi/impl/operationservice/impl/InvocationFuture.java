@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
@@ -40,6 +41,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.Math.min;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
@@ -152,35 +154,36 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         ExecutionCallbackNode<E> callbackChain;
-        synchronized (this) {
-            if (response != null && !(response instanceof InternalResponse)) {
-                //it can be that this invocation future already received an answer, e.g. when an invocation
-                //already received a response, but before it cleans up itself, it receives a
-                //HazelcastInstanceNotActiveException.
 
-                // this is no good; no logging while holding a lock
-                ILogger logger = invocation.logger;
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Future response is already set! Current response: "
-                            + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
-                }
+        //synchronized (this) {
+        if (response != null && !(response instanceof InternalResponse)) {
+            //it can be that this invocation future already received an answer, e.g. when an invocation
+            //already received a response, but before it cleans up itself, it receives a
+            //HazelcastInstanceNotActiveException.
 
-                operationService.invocationRegistry.deregister(invocation);
-                return false;
+            // this is no good; no logging while holding a lock
+            ILogger logger = invocation.logger;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Future response is already set! Current response: "
+                        + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
             }
-
-            response = offeredResponse;
-            if (offeredResponse == WAIT_RESPONSE) {
-                return true;
-            }
-            callbackChain = callbackHead;
-            callbackHead = null;
-            notifyAll();
 
             operationService.invocationRegistry.deregister(invocation);
+            return false;
         }
 
-        notifyCallbacks(callbackChain);
+        response = offeredResponse;
+        if (offeredResponse == WAIT_RESPONSE) {
+            return true;
+        }
+        callbackChain = callbackHead;
+        callbackHead = null;
+        //notifyAll();
+        LockSupport.unpark(invocation.thread);
+        operationService.invocationRegistry.deregister(invocation);
+        //}
+
+       notifyCallbacks(callbackChain);
         return true;
     }
 
@@ -194,7 +197,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     @Override
     public E get() throws InterruptedException, ExecutionException {
         try {
-            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            return get(Long.MAX_VALUE, MILLISECONDS);
         } catch (TimeoutException e) {
             invocation.logger.severe("Unexpected timeout while processing " + this, e);
             return null;
@@ -288,18 +291,18 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private void pollResponse(long pollTimeoutMs) throws InterruptedException {
+        long pollTimeoutNs = MILLISECONDS.toNanos(pollTimeoutMs);
+
         //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
         if (pollTimeoutMs <= 0 || response != null) {
             return;
         }
 
-        long currentTimeoutMs = pollTimeoutMs;
-        long waitStart = Clock.currentTimeMillis();
-        synchronized (this) {
-            while (currentTimeoutMs > 0 && response == null) {
-                wait(currentTimeoutMs);
-                currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
-            }
+        long currentTimeoutNs = pollTimeoutNs;
+        long waitStartNs = System.nanoTime();
+        while (currentTimeoutNs > 0 && response == null) {
+            LockSupport.parkNanos(currentTimeoutNs);
+            currentTimeoutNs = pollTimeoutNs - (System.nanoTime() - waitStartNs);
         }
     }
 
@@ -357,10 +360,14 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         Object response = unresolvedResponse;
-        if (invocation.deserialize && response instanceof Data) {
-            response = invocation.nodeEngine.toObject(response);
-            if (response == null) {
-                return null;
+        if (unresolvedResponse instanceof Data) {
+            if (invocation.deserialize) {
+                response = Response.deserializeValue(operationService.serializationService, (Data) response);
+                if (response == null) {
+                    return null;
+                }
+            } else {
+                response = Response.getValueAsData(operationService.serializationService, (Data) response);
             }
         }
 

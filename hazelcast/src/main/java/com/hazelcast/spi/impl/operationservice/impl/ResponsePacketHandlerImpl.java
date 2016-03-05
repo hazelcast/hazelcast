@@ -21,11 +21,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
+
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.ERROR_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.backupCount;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.callId;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.typeId;
 
 /**
  * Responsible for handling responses.
@@ -46,31 +49,37 @@ final class ResponsePacketHandlerImpl implements PacketHandler {
 
     @Override
     public void handle(Packet packet) throws Exception {
-        Response response = serializationService.toObject(packet);
         Address sender = packet.getConn().getEndPoint();
+
+        byte[] bytes = packet.toByteArray();
+        int typeId = typeId(bytes);
         try {
-            if (response instanceof NormalResponse) {
-                NormalResponse normalResponse = (NormalResponse) response;
-                invocationRegistry.notifyNormalResponse(
-                        normalResponse.getCallId(),
-                        normalResponse.getValue(),
-                        normalResponse.getBackupCount(),
-                        sender);
-            } else if (response instanceof BackupResponse) {
-                invocationRegistry.notifyBackupComplete(response.getCallId());
-            } else if (response instanceof CallTimeoutResponse) {
-                invocationRegistry.notifyCallTimeout(response.getCallId(), sender);
-            } else if (response instanceof ErrorResponse) {
-                ErrorResponse errorResponse = (ErrorResponse) response;
-                invocationRegistry.notifyErrorResponse(
-                        errorResponse.getCallId(),
-                        errorResponse.getCause(),
-                        sender);
-            } else {
-                logger.severe("Unrecognized response: " + response);
+            switch (typeId) {
+                case NORMAL_RESPONSE:
+                    invocationRegistry.notifyNormalResponse(
+                            callId(bytes),
+                            packet,
+                            backupCount(bytes),
+                            sender);
+                    break;
+                case BACKUP_RESPONSE:
+                    invocationRegistry.notifyBackupComplete(callId(bytes));
+                    break;
+                case ERROR_RESPONSE:
+                    invocationRegistry.notifyErrorResponse(
+                            callId(bytes),
+                            packet,
+                            sender);
+                    break;
+                case CALL_TIMEOUT_RESPONSE:
+                    invocationRegistry.notifyCallTimeout(callId(bytes), sender);
+                    break;
+                default:
+                    throw new IllegalStateException("Unrecognized response typeId:" + typeId);
             }
         } catch (Throwable e) {
             logger.severe("While processing response...", e);
         }
     }
+
 }
