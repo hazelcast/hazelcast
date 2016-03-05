@@ -3,11 +3,13 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,7 +42,6 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         assertTrue(future.isDone());
     }
 
-
     @Test
     public void whenInterruptedResponse() {
         DummyOperation op = new GetLostPartitionOperation();
@@ -62,7 +63,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isDone_whenNoResponse() {
+    public void whenNoResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
@@ -71,7 +72,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isDone_whenObjectResponse() {
+    public void whenObjectResponse() {
         DummyOperation op = new DummyOperation("foobar");
 
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
@@ -79,6 +80,45 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         assertTrue(future.isDone());
     }
 
+    @Test
+    public void isDone_whenException() {
+        DummyOperation op = new GetLostPartitionOperation();
+
+        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
+        future.complete(new ExpectedRuntimeException());
+
+        assertTrue(future.isDone());
+    }
+
+    @Test
+    @Ignore
+    public void isDone_whenSingleThreadWaiting() {
+//        DummyOperation op = new GetLostPartitionOperation();
+//
+//        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
+//        future.complete(new ExpectedRuntimeException());
+//
+//        assertTrue(future.isDone());
+
+    }
+
+    @Test
+    @Ignore
+    public void isDone_whenMultipleThreadsWaiting() {
+
+    }
+
+    @Test
+    @Ignore
+    public void isDone_whenSingleExecutionCallback() {
+
+    }
+
+    @Test
+    @Ignore
+    public void isDone_whenMultipleExecutionCallback() {
+
+    }
 
     // Needed to have an invocation and this is the easiest way how to get one and do not bother with its result.
     private static class GetLostPartitionOperation extends DummyOperation {

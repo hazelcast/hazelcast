@@ -77,6 +77,16 @@ public class BufferPoolImpl implements BufferPool {
     }
 
     @Override
+    public BufferObjectDataInput takeInputBuffer(byte[] data, int offset) {
+        BufferObjectDataInput in = inputQueue.poll();
+        if (in == null) {
+            in = serializationService.createObjectDataInput((byte[]) null);
+        }
+        in.init(data, offset);
+        return in;
+    }
+
+    @Override
     public void returnInputBuffer(BufferObjectDataInput in) {
         if (in == null) {
             return;

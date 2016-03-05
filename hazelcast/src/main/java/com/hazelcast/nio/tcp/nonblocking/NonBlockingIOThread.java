@@ -19,9 +19,9 @@ package com.hazelcast.nio.tcp.nonblocking;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -211,9 +211,9 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     private void runSelectLoop() throws IOException {
         while (!isInterrupted()) {
-            processTaskQueue();
+            boolean ready = processTaskQueue();
 
-            int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
+            int selectedKeys = ready ? selector.select(SELECT_WAIT_TIME_MILLIS) : selector.selectNow();
             if (selectedKeys > 0) {
                 lastSelectTimeMs = currentTimeMillis();
                 handleSelectionKeys();
@@ -233,14 +233,15 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
-    private void processTaskQueue() {
-        while (!isInterrupted()) {
-            Runnable task = taskQueue.poll();
-            if (task == null) {
-                return;
-            }
-            executeTask(task);
+    private boolean processTaskQueue() {
+        //while (!isInterrupted()) {
+        Runnable task = taskQueue.poll();
+        if (task == null) {
+            return true;
         }
+        executeTask(task);
+        return false;
+        //}
     }
 
     private void executeTask(Runnable task) {

@@ -118,11 +118,12 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final OperationBackupHandler operationBackupHandler;
     final BackpressureRegulator backpressureRegulator;
     final long defaultCallTimeoutMillis;
+    final InternalSerializationService serializationService;
 
     private final SlowOperationDetector slowOperationDetector;
     private final AsyncResponsePacketHandler responsePacketExecutor;
-    private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
+    private final ResponsePacketHandlerImpl responsePacketHandler;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -146,13 +147,14 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
+        responsePacketHandler = new ResponsePacketHandlerImpl(
+                logger,
+                node.getSerializationService(),
+                invocationRegistry);
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
                 node.getHazelcastThreadGroup(),
                 logger,
-                new ResponsePacketHandlerImpl(
-                        logger,
-                        node.getSerializationService(),
-                        invocationRegistry));
+                responsePacketHandler);
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
@@ -333,11 +335,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         op.setServiceName(serviceName).setPartitionId(partitionId).setReplicaIndex(DEFAULT_REPLICA_INDEX);
 
         InvocationFuture future = new PartitionInvocation(this, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
-                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, callback).invokeAsync();
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
 
-//        if (callback != null) {
-//            future.andThen(callback);
-//        }
+        if (callback != null) {
+            future.andThen(callback);
+        }
     }
 
     // =============================== processing operation  ===============================

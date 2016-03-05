@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,6 +40,11 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
+
+    @Before
+    public void setup(){
+        setLoggingLog4j();
+    }
 
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
     @Test

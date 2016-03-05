@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastOverloadException;
+import com.hazelcast.spi.BackupAwareOperation;
 
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -80,18 +81,15 @@ public abstract class CallIdSequence {
      * @return true if registration is required, false otherwise.
      */
     protected boolean skipRegistration(Invocation invocation) {
-        // we can't skip registration; else the invocation monitor can't deal with non responsive invocations
-        return false;
-//
-//        if (invocation.remote) {
-//            return false;
-//        }
-//
-//        if (invocation.op instanceof BackupAwareOperation) {
-//            return false;
-//        }
-//
-//        return true;
+        if (invocation.remote) {
+            return false;
+        }
+
+        if (invocation.op instanceof BackupAwareOperation) {
+            return false;
+        }
+
+        return true;
     }
 
     public static final class CallIdSequenceWithoutBackpressure extends CallIdSequence {

@@ -29,6 +29,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.HEARTBEAT_TIMEOUT;
@@ -37,6 +39,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.VOID
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
@@ -46,21 +49,19 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
+    private static final AtomicReferenceFieldUpdater<InvocationFuture, Object> STATE =
+            AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "state");
+
     volatile boolean interrupted;
-    volatile Object response = VOID;
+    volatile Object state;
 
     final Invocation invocation;
 
     private final OperationServiceImpl operationService;
-    private volatile ExecutionCallbackNode<E> callbackHead;
 
-    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, ExecutionCallback callback) {
+    InvocationFuture(OperationServiceImpl operationService, Invocation invocation) {
         this.invocation = invocation;
         this.operationService = operationService;
-
-        if (callback != null) {
-            callbackHead = new ExecutionCallbackNode<E>(callback, operationService.asyncExecutor, null);
-        }
     }
 
     @Override
@@ -73,23 +74,19 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(callback, "callback");
         isNotNull(executor, "executor");
 
-        synchronized (this) {
-            if (response != VOID) {
-                runAsynchronous(callback, executor);
-                return;
-            }
-
-            this.callbackHead = new ExecutionCallbackNode<E>(callback, executor, callbackHead);
+        Object response = register(callback, executor);
+        if (response != VOID) {
+            runAsynchronous(callback, executor);
         }
     }
 
-      private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
+    private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
         try {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Object resolvedResponse = resolve(response);
+                        Object resolvedResponse = resolve(state);
 
                         if (resolvedResponse == null || !(resolvedResponse instanceof Throwable)) {
                             callback.onResponse((E) resolvedResponse);
@@ -115,46 +112,54 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      * Can be called multiple times, but only the first answer will lead to the future getting triggered. All subsequent
      * 'set' calls are ignored.
      *
-     * @param offeredResponse The type of response to offer.
+     * @param value The type of response to offer.
      * @return <tt>true</tt> if offered response, either a final response or an internal response,
      * is set/applied, <tt>false</tt> otherwise. If <tt>false</tt> is returned, that means offered response is ignored
      * because a final response is already set to this future.
      */
-    public boolean complete(Object offeredResponse) {
-        assert !(offeredResponse instanceof Response) : "unexpected response found: " + offeredResponse;
+    public boolean complete(Object value) {
+        assert !(value instanceof Response) : "unexpected response found: " + value;
 
-        ExecutionCallbackNode<E> callbackChain;
-        synchronized (this) {
-            if (response != VOID) {
+        for (; ; ) {
+            Object oldState = state;
+            if (isDone(oldState)) {
                 // it can be that this invocation future already received an answer, e.g. when an invocation already received a
                 // response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException.
 
                 if (invocation.logger.isFinestEnabled()) {
                     invocation.logger.finest("Future response is already set! Current response: "
-                            + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
+                            + state + ", Offered response: " + value + ", Invocation: " + invocation);
                 }
 
                 return false;
             }
 
-            response = offeredResponse;
-            callbackChain = callbackHead;
-            callbackHead = null;
-            notifyAll();
-
-            operationService.invocationRegistry.deregister(invocation);
-        }
-
-        notifyCallbacks(callbackChain);
-        return true;
-    }
-
-    private void notifyCallbacks(ExecutionCallbackNode<E> callbackChain) {
-        while (callbackChain != null) {
-            runAsynchronous(callbackChain.callback, callbackChain.executor);
-            callbackChain = callbackChain.next;
+            if (STATE.compareAndSet(this, oldState, value)) {
+                operationService.invocationRegistry.deregister(invocation);
+                notifyAll(oldState, operationService.asyncExecutor);
+                return true;
+            }
         }
     }
+
+    private void notifyAll(Object node, Executor executor) {
+        while (node != null) {
+            if (node instanceof Thread) {
+                LockSupport.unpark((Thread) node);
+                return;
+            } else if (node instanceof ExecutionCallback) {
+                runAsynchronous((ExecutionCallback) node, executor);
+                return;
+            } else if (node.getClass() == Waiter.class) {
+                Waiter waiter = (Waiter) node;
+                notifyAll(waiter.target, waiter.executor);
+                node = waiter.next;
+            } else {
+                return;
+            }
+        }
+    }
+
 
     @Override
     public E join() {
@@ -174,65 +179,97 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public E get() throws InterruptedException, ExecutionException {
+        Object response = register(Thread.currentThread(), null);
         if (response != VOID) {
             return resolveAndThrow(response);
         }
 
-        boolean threadInterrupted = false;
-        try {
-            synchronized (this) {
-                while (response == VOID) {
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        threadInterrupted = true;
-                        interrupted = true;
-                    }
-                }
+        // todo: deal with interruption
+        // we are going to park for a result; however it can be that we get spurious wake-ups so
+        // we need to recheck the state. We don't need to reregister
+        for (; ; ) {
+            LockSupport.park();
+            Object state = this.state;
+            if (isDone(state)) {
+                return resolveAndThrow(state);
             }
-
-            return resolveAndThrow(response);
-        } finally {
-            restoreInterrupt(threadInterrupted);
         }
     }
 
+
     @Override
-    public E get(final long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        long timeoutNanos = unit.toNanos(timeout);
+
+        if (timeoutNanos <= 0) {
+            Object response = state;
+            if (isDone(response)) {
+                return resolveAndThrow(response);
+            } else {
+                throw new TimeoutException(invocation.op.getClass().getSimpleName() + " failed to complete within "
+                        + timeout + " " + unit + ". " + invocation);
+            }
+        }
+
+        Object response = register(Thread.currentThread(), null);
         if (response != VOID) {
             return resolveAndThrow(response);
         }
 
-        boolean threadInterrupted = false;
-        long deadLineMs = Clock.currentTimeMillis() + unit.toMillis(timeout);
-        try {
-            synchronized (this) {
-                while (response == VOID) {
-                    long remainingMs = deadLineMs - Clock.currentTimeMillis();
-                    if (remainingMs <= 0) {
-                        throw new TimeoutException(invocation.op.getClass().getSimpleName() + " failed to complete within "
-                                + timeout + " " + unit + ". " + invocation);
-                    }
+        long startTimeNanos = System.nanoTime();
+        // todo: deal with interruption
+        // we are going to park for a result; however it can be that we get spurious wake-ups so
+        // we need to recheck the state. We don't need to re-register
+        for (; ; ) {
+            LockSupport.parkNanos(timeoutNanos);
+            long endTimeNanos = System.nanoTime();
+            timeoutNanos -= endTimeNanos - startTimeNanos;
+            startTimeNanos = endTimeNanos;
 
-                    try {
-                        wait(remainingMs);
-                    } catch (InterruptedException e) {
-                        interrupted = true;
-                    }
-                }
+            Object state = this.state;
+            if (isDone(state)) {
+                return resolveAndThrow(state);
+            } else if (timeoutNanos <= 0) {
+                throw new TimeoutException(invocation.op.getClass().getSimpleName() + " failed to complete within "
+                        + timeout + " " + unit + ". " + invocation);
+            }
+        }
+    }
+
+    private Object register(Object target, Executor executor) {
+        Waiter waiter = null;
+        for (; ; ) {
+            Object oldState = state;
+            if (isDone(oldState)) {
+                return oldState;
             }
 
-            return resolveAndThrow(response);
-        } finally {
-            restoreInterrupt(threadInterrupted);
+            Object newState;
+            if (oldState == VOID) {
+                // Nothing is syncing on this future, so instead of creating a Waiter, we just try
+                // the cas the thread (so no extra litter)
+                newState = target;
+            } else {
+                // something already has been registered for syncing. So we need to create a Waiter.
+                if (waiter == null) {
+                    waiter = new Waiter(target, executor);
+                }
+                waiter.next = oldState;
+                newState = waiter;
+            }
+
+            if (STATE.compareAndSet(this, oldState, newState)) {
+                // we have successfully registered to be notified.
+                return VOID;
+            }
         }
     }
 
     private void restoreInterrupt(boolean threadInterrupted) {
-        if (threadInterrupted && response != INTERRUPTED) {
+        if (threadInterrupted && state != INTERRUPTED) {
             // if the thread got interrupted, but we did not manage to interrupt the invocation, we need to restore
             // the interrupt flag
-            Thread.currentThread().interrupt();
+            currentThread().interrupt();
         }
     }
 
@@ -264,16 +301,20 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         Object response = unresolved;
-        if (invocation.deserialize && response instanceof Data) {
-            response = invocation.nodeEngine.toObject(response);
-            if (response == null) {
-                return null;
+        if (unresolved instanceof Data) {
+            if (invocation.deserialize) {
+                response = Response.deserializeValue(operationService.serializationService, (Data) response);
+                if (response == null) {
+                    return null;
+                }
+            } else {
+                response = Response.getValueAsData(operationService.serializationService, (Data) response);
             }
         }
 
         if (response instanceof Throwable) {
             Throwable throwable = ((Throwable) response);
-            fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+            fixAsyncStackTrace((Throwable) response, currentThread().getStackTrace());
             return throwable;
         }
 
@@ -319,25 +360,47 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return false;
     }
 
+    private boolean isDone(Object state) {
+        if (state == null) {
+            return true;
+        }
+
+        if (state == VOID
+                || state.getClass() == Waiter.class
+                || state instanceof Thread
+                || state instanceof ExecutionCallback) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public boolean isDone() {
-        return response != VOID;
+        return isDone(state);
     }
 
     @Override
     public String toString() {
-        return "InvocationFuture{invocation=" + invocation.toString() + ", response=" + response + ", done=" + isDone() + '}';
+        return "InvocationFuture{invocation=" + invocation.toString() + ", response=" + state + ", done=" + isDone() + '}';
     }
 
-    private static final class ExecutionCallbackNode<E> {
-        private final ExecutionCallback<E> callback;
+    /**
+     * A waiter is something that gets triggered when a response comes in. There are 2 types of waiters:
+     * <ol>
+     * <li>Thread: when a future.get is done.</li>
+     * <li>ExecutionCallback: when a future.andThen is done</li>
+     * </ol>
+     * The target is either a Thread or an ExecutionCallback.
+     */
+    private static final class Waiter {
         private final Executor executor;
-        private final ExecutionCallbackNode<E> next;
+        private final Object target;
+        private Object next;
 
-        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
-            this.callback = callback;
+        private Waiter(Object target, Executor executor) {
+            this.target = target;
             this.executor = executor;
-            this.next = next;
         }
     }
 }
