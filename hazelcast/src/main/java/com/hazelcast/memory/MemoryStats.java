@@ -88,7 +88,7 @@ public interface MemoryStats {
      *
      * @return the maximum amount of native memory in bytes.
      */
-    long getMaxNativeMemory();
+    long getMaxNative();
 
     /**
      * Returns the amount of native memory in bytes that is committed for
@@ -96,21 +96,21 @@ public interface MemoryStats {
      *
      * @return the amount of committed native memory in bytes.
      */
-    long getCommittedNativeMemory();
+    long getCommittedNative();
 
     /**
      * Returns the amount of used native memory in current HazelcastInstance in bytes.
      *
      * @return the amount of used native memory in bytes
      */
-    long getUsedNativeMemory();
+    long getUsedNative();
 
     /**
      * Returns the amount of free native memory in current HazelcastInstance in bytes.
      *
      * @return the amount of free native memory in bytes
      */
-    long getFreeNativeMemory();
+    long getFreeNative();
 
     /**
      * Returns the amount of native memory reserved for metadata. This memory

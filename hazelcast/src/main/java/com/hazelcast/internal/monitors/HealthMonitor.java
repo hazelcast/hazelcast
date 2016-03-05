@@ -428,19 +428,19 @@ public class HealthMonitor {
 
         private void renderNativeMemory() {
             MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
-            if (memoryStats.getMaxNativeMemory() <= 0L) {
+            if (memoryStats.getMaxNative() <= 0L) {
                 return;
             }
 
-            final long usedNative = memoryStats.getUsedNativeMemory();
+            final long usedNative = memoryStats.getUsedNative();
             sb.append("native.memory.used=")
               .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
-                    .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getFreeNative())).append(", ");
             sb.append("native.memory.total=")
-                    .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
             sb.append("native.memory.max=")
-                    .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
             final long maxMeta = memoryStats.getMaxMetadata();
             if (maxMeta > 0) {
                 final long usedMeta = memoryStats.getUsedMetadata();
