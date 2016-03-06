@@ -261,6 +261,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
+    public Object toObject(Data object) {
+        return serializationService.toObject(object);
+    }
+
+    @Override
     public boolean isActive() {
         return isRunning();
     }

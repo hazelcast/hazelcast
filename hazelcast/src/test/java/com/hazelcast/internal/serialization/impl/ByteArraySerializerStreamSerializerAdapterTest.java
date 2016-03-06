@@ -21,9 +21,9 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ByteArraySerializerAdapterTest {
+public class ByteArraySerializerStreamSerializerAdapterTest {
 
-    private ByteArraySerializerAdapter adapter;
+    private ByteArraySerializerStreamSerializerAdapter adapter;
     private ConstantSerializers.TheByteArraySerializer serializer;
 
     private SerializationService mockSerializationService;
@@ -32,7 +32,7 @@ public class ByteArraySerializerAdapterTest {
     public void setUp() {
         mockSerializationService = mock(SerializationService.class);
         serializer = new ConstantSerializers.TheByteArraySerializer();
-        adapter = new ByteArraySerializerAdapter(serializer);
+        adapter = new ByteArraySerializerStreamSerializerAdapter(serializer);
     }
 
     @After
@@ -58,8 +58,8 @@ public class ByteArraySerializerAdapterTest {
 
     @Test
     public void testAdaptorEqualAndHashCode() throws Exception {
-        ByteArraySerializerAdapter theOther = new ByteArraySerializerAdapter(serializer);
-        ByteArraySerializerAdapter theEmptyOne = new ByteArraySerializerAdapter(null);
+        ByteArraySerializerStreamSerializerAdapter theOther = new ByteArraySerializerStreamSerializerAdapter(serializer);
+        ByteArraySerializerStreamSerializerAdapter theEmptyOne = new ByteArraySerializerStreamSerializerAdapter(null);
 
         assertEquals(adapter, adapter);
         assertEquals(adapter, theOther);

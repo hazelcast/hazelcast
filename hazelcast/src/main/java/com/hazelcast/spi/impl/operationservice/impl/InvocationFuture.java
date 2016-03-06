@@ -373,7 +373,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         Object response = unresolvedResponse;
         if (invocation.resultDeserialized && response instanceof Data) {
-            response = invocation.nodeEngine.toObject(response);
+            response = invocation.nodeEngine.toObject((Data)response);
             if (response == null) {
                 return null;
             }

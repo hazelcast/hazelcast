@@ -19,19 +19,81 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-interface SerializerAdapter {
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
-    void write(ObjectDataOutput out, Object object) throws IOException;
+final class SerializerAdapter {
 
-    Object read(ObjectDataInput in) throws IOException;
+    private final StreamSerializer serializer;
+    private final int typeId;
+    private final Serializer impl;
 
-    int getTypeId();
+    public SerializerAdapter(Serializer serializer) {
+        checkNotNull(serializer, "serializer can't be null");
 
-    void destroy();
+        this.impl = serializer;
+        if (serializer instanceof StreamSerializer) {
+            this.serializer = (StreamSerializer) serializer;
+        } else if (serializer instanceof ByteArraySerializer) {
+            this.serializer = new ByteArraySerializerStreamSerializerAdapter((ByteArraySerializer) serializer);
+        } else {
+            throw new IllegalArgumentException("Unrecognized serializer:" + serializer);
+        }
 
-    Serializer getImpl();
+        this.typeId = serializer.getTypeId();
+    }
+
+    @SuppressWarnings("unchecked")
+    public void write(ObjectDataOutput out, Object object) throws IOException {
+        serializer.write(out, object);
+    }
+
+    public Object read(ObjectDataInput in) throws IOException {
+        return serializer.read(in);
+    }
+
+    public int getTypeId() {
+        return typeId;
+    }
+
+    public void destroy() {
+        serializer.destroy();
+    }
+
+    public Serializer getImpl() {
+        return impl;
+    }
+
+    @Override
+    public String toString() {
+        return "StreamSerializerAdapter{serializer=" + serializer + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SerializerAdapter that = (SerializerAdapter) o;
+
+        if (!serializer.equals(that.serializer)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return serializer.hashCode();
+    }
 }

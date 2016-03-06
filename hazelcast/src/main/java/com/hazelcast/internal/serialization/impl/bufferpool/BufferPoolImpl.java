@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.Closeable;
-import java.util.ArrayDeque;
 import java.util.Queue;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -34,13 +33,13 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  * This class is designed to that a subclass can be made. This is done for the Enterprise version.
  */
 public class BufferPoolImpl implements BufferPool {
-    static final int MAX_POOLED_ITEMS = 3;
-
     protected final SerializationService serializationService;
 
-    // accessible for testing.
-    final Queue<BufferObjectDataOutput> outputQueue = new ArrayDeque<BufferObjectDataOutput>(MAX_POOLED_ITEMS);
-    final Queue<BufferObjectDataInput> inputQueue = new ArrayDeque<BufferObjectDataInput>(MAX_POOLED_ITEMS);
+    BufferObjectDataOutput pooledOutput1;
+    BufferObjectDataOutput pooledOutput2;
+
+    BufferObjectDataInput pooledInput1;
+    BufferObjectDataInput pooledInput2;
 
     public BufferPoolImpl(SerializationService serializationService) {
         this.serializationService = serializationService;
@@ -48,10 +47,18 @@ public class BufferPoolImpl implements BufferPool {
 
     @Override
     public BufferObjectDataOutput takeOutputBuffer() {
-        BufferObjectDataOutput out = outputQueue.poll();
-        if (out == null) {
-            out = serializationService.createObjectDataOutput();
+        BufferObjectDataOutput out = pooledOutput1;
+        if (out != null) {
+            pooledOutput1 = null;
+        } else {
+            out = pooledOutput2;
+            if (out != null) {
+                pooledOutput2 = null;
+            } else {
+                out = serializationService.createObjectDataOutput();
+            }
         }
+
         return out;
     }
 
@@ -63,15 +70,29 @@ public class BufferPoolImpl implements BufferPool {
 
         out.clear();
 
-        offerOrClose(outputQueue, out);
+        if (pooledOutput1 == null) {
+            pooledOutput1 = out;
+        } else if (pooledOutput2 == null) {
+            pooledOutput2 = out;
+        } else {
+            closeResource(out);
+        }
     }
 
     @Override
     public BufferObjectDataInput takeInputBuffer(Data data) {
-        BufferObjectDataInput in = inputQueue.poll();
-        if (in == null) {
-            in = serializationService.createObjectDataInput((byte[]) null);
+        BufferObjectDataInput in = pooledInput1;
+        if (in != null) {
+            pooledInput1 = null;
+        } else {
+            in = pooledInput2;
+            if (in != null) {
+                pooledInput2 = null;
+            } else {
+                in = serializationService.createObjectDataInput((byte[]) null);
+            }
         }
+
         in.init(data.toByteArray(), HeapData.DATA_OFFSET);
         return in;
     }
@@ -84,15 +105,12 @@ public class BufferPoolImpl implements BufferPool {
 
         in.clear();
 
-        offerOrClose(inputQueue, in);
-    }
-
-    private static <C extends Closeable> void offerOrClose(Queue<C> queue, C item) {
-        if (queue.size() == MAX_POOLED_ITEMS) {
-            closeResource(item);
-            return;
+        if (pooledInput1 == null) {
+            pooledInput1 = in;
+        } else if (pooledOutput2 == null) {
+            pooledInput2 = in;
+        } else {
+            closeResource(in);
         }
-
-        queue.offer(item);
     }
 }

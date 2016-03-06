@@ -42,6 +42,8 @@ public interface SerializationService {
 
     <T> T toObject(Object data);
 
+    <T> T toObject(Data data);
+
     void writeObject(ObjectDataOutput out, Object obj);
 
     <T> T readObject(ObjectDataInput in);

@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringArraySerializer;
+import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.ExternalizableSerializer;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -70,7 +71,6 @@ import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.C
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.DateSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.EnumSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.JavaSerializer;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
 
@@ -78,10 +78,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     private final PortableSerializer portableSerializer;
 
     SerializationServiceV1(InputOutputFactory inputOutputFactory, byte version, int portableVersion, ClassLoader classLoader,
-            Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
-            Map<Integer, ? extends PortableFactory> portableFactories, ManagedContext managedContext,
-            PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize, BufferPoolFactory bufferPoolFactory,
-            boolean enableCompression, boolean enableSharedObject) {
+                           Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
+                           Map<Integer, ? extends PortableFactory> portableFactories, ManagedContext managedContext,
+                           PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize,
+                           BufferPoolFactory bufferPoolFactory,
+                           boolean enableCompression, boolean enableSharedObject) {
         super(inputOutputFactory, version, classLoader, managedContext, globalPartitionStrategy, initialOutputBufferSize,
                 bufferPoolFactory);
 
@@ -91,14 +92,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             portableContext.registerClassDefinition(cd);
         }
 
-        dataSerializerAdapter = createSerializerAdapter(
-                new DataSerializableSerializer(dataSerializableFactories, classLoader), this);
+        dataSerializerAdapter = new SerializerAdapter(new DataSerializableSerializer(dataSerializableFactories, classLoader));
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
-        portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
+        portableSerializerAdapter = new SerializerAdapter(portableSerializer);
 
-        javaSerializerAdapter = createSerializerAdapter(new JavaSerializer(enableSharedObject, enableCompression), this);
-        javaExternalizableAdapter = createSerializerAdapter(
-                new JavaDefaultSerializers.ExternalizableSerializer(enableCompression), this);
+        javaSerializerAdapter = new SerializerAdapter(new JavaSerializer(enableSharedObject, enableCompression));
+        javaExternalizableAdapter = new SerializerAdapter(new ExternalizableSerializer(enableCompression));
         registerConstantSerializers();
         registerJavaTypeSerializers();
     }
@@ -169,7 +168,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     protected void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap,
-            boolean checkClassDefErrors) {
+                                           boolean checkClassDefErrors) {
         final Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
