@@ -42,10 +42,10 @@ import org.junit.Before;
 
 import javax.cache.spi.CachingProvider;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -197,6 +197,22 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected void putIfAbsentToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
         putToCacheAndThenGetFromClientNearCacheInternal(inMemoryFormat, true);
+    }
+
+    protected void putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat inMemoryFormat)
+            throws ExecutionException, InterruptedException {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
+        nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
+        NearCacheTestContext nearCacheTestContext =
+                createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
+
+        for (int i = 0; i < 10 * DEFAULT_RECORD_COUNT; i++) {
+            String expectedValue = generateValueFromKey(i);
+            Data keyData = nearCacheTestContext.serializationService.toData(i);
+            Future f = nearCacheTestContext.cache.putAsync(i, expectedValue);
+            f.get();
+            assertEquals(expectedValue, nearCacheTestContext.nearCache.get(keyData));
+        }
     }
 
     protected void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat inMemoryFormat) {

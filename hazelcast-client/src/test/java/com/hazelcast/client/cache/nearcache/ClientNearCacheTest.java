@@ -23,6 +23,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.ExecutionException;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientNearCacheTest extends ClientNearCacheTestSupport {
@@ -110,6 +112,18 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     @Test
     public void putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabledWithObjectInMemoryFormat() {
         putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabled(InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithBinaryInMemoryFormat()
+            throws ExecutionException, InterruptedException {
+        putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithObjectInMemoryFormat()
+            throws ExecutionException, InterruptedException {
+        putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat.OBJECT);
     }
 
 }
