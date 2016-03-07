@@ -189,7 +189,7 @@ public interface HeapMemoryAccessor extends ByteAccessStrategy<Object> {
     void putBoolean(Object base, long offset, boolean x);
 
     /**
-     * Returns the boolean value at the supplied offset from the supplied object's base address.
+     * Returns the byte value at the supplied offset from the supplied object's base address.
      *
      * @param base   the object whose base address to use for the operation
      * @param offset offset from object's base to the accessed location
