@@ -143,6 +143,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         // NOP intentionally.
     }
 
+    @Override
     public Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount) {
         return records.getRandomSamples(sampleCount);
     }
