@@ -72,7 +72,7 @@ public final class PhoneHome {
             return;
         }
         try {
-            hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
+            hazelcastNode.nodeEngine.getExecutionService().scheduleWithRepetition(new Runnable() {
                 public void run() {
                     phoneHome(hazelcastNode, version, isEnterprise);
                 }

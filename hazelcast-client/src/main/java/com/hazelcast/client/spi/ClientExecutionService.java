@@ -42,9 +42,7 @@ public interface ClientExecutionService extends Executor {
 
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
-    ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
-
-    ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit);
 
     /**
      * @return executorService that alien(user code) runs on

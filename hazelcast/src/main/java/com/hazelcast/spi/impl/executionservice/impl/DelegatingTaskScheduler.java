@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
+import com.hazelcast.spi.TaskScheduler;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -27,12 +29,14 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-final class ScheduledExecutorServiceDelegate implements ScheduledExecutorService {
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+public final class DelegatingTaskScheduler implements TaskScheduler {
 
     private final ScheduledExecutorService scheduledExecutorService;
     private final ExecutorService executor;
 
-    ScheduledExecutorServiceDelegate(ScheduledExecutorService scheduledExecutorService, ExecutorService executor) {
+    public DelegatingTaskScheduler(ScheduledExecutorService scheduledExecutorService, ExecutorService executor) {
         this.scheduledExecutorService = scheduledExecutorService;
         this.executor = executor;
     }
@@ -59,20 +63,16 @@ final class ScheduledExecutorServiceDelegate implements ScheduledExecutorService
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return scheduledExecutorService.schedule(
-                new ScheduledTaskRunner(command, executor), delay, unit);
+        checkNotNull(command);
+        Runnable decoratedTask = new DelegatingTaskDecorator(command, executor);
+        return scheduledExecutorService.schedule(new DelegatingTaskDecorator(decoratedTask, executor), delay, unit);
     }
 
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutorService.scheduleAtFixedRate(
-                new ScheduledTaskRunner(command, executor), initialDelay, period, unit);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return scheduledExecutorService.scheduleWithFixedDelay(
-                new ScheduledTaskRunner(command, executor), initialDelay, delay, unit);
+    public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        checkNotNull(command);
+        Runnable decoratedTask = new DelegatingTaskDecorator(new SkipOnConcurrentExecutionDecorator(command), executor);
+        return scheduledExecutorService.scheduleAtFixedRate(decoratedTask, initialDelay, period, unit);
     }
 
     @Override
@@ -124,8 +124,4 @@ final class ScheduledExecutorServiceDelegate implements ScheduledExecutorService
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public <V> ScheduledFuture<V> schedule(final Callable<V> callable, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
-    }
 }

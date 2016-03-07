@@ -47,6 +47,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -63,7 +64,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 /**
@@ -93,11 +93,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        ScheduledExecutorService defaultScheduledExecutor
-                = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+        TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         QueueEvictionProcessor entryProcessor = new QueueEvictionProcessor(nodeEngine, this);
         this.queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
-                defaultScheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+                globalScheduler, entryProcessor, ScheduleType.POSTPONE);
         this.logger = nodeEngine.getLogger(QueueService.class);
     }
 

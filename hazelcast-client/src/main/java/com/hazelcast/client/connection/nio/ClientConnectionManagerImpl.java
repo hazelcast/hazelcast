@@ -188,7 +188,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         alive = true;
         startSelectors();
         HeartBeat heartBeat = new HeartBeat();
-        executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
+        executionService.scheduleWithRepetition(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
     }
 
     protected void startSelectors() {

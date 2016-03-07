@@ -78,6 +78,7 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -102,7 +103,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -212,7 +212,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         proxy = new PartitionServiceProxy(this);
 
         ExecutionService executionService = nodeEngine.getExecutionService();
-        ScheduledExecutorService scheduledExecutor = executionService.getDefaultScheduledExecutor();
+        TaskScheduler globalScheduler = executionService.getGlobalTaskScheduler();
 
         // The reason behind this scheduler to have POSTPONE type is as follows:
         // When a node shifts up in the replica table upon a node failure, it sends a sync request to the partition owner and
@@ -221,7 +221,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         // if another node fails for the third time, the already-scheduled sync request should be overwritten with the new one.
         // This is because this node is shifted up to a higher level when the third node failure occurs and its respective sync
         // request will inherently include the backup data that is requested by the previously scheduled sync request.
-        replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor,
+        replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(globalScheduler,
                 new ReplicaSyncEntryProcessor(this), ScheduleType.POSTPONE);
 
         replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(partitionCount);
@@ -287,10 +287,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             partitionTableSendInterval = 1;
         }
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleAtFixedRate(new SendPartitionRuntimeStateTask(),
+        executionService.scheduleWithRepetition(new SendPartitionRuntimeStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
 
-        executionService.scheduleWithFixedDelay(new SyncReplicaVersionTask(),
+        executionService.scheduleWithRepetition(new SyncReplicaVersionTask(),
                 backupSyncCheckInterval, backupSyncCheckInterval, TimeUnit.SECONDS);
     }
 

@@ -66,7 +66,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         this.storageRef = new AtomicReference<InternalReplicatedMapStorage<K, V>>();
         this.storageRef.set(new InternalReplicatedMapStorage<K, V>());
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory
-                .newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
+                .newScheduler(nodeEngine.getExecutionService().getGlobalTaskScheduler(),
                         new ReplicatedMapEvictionProcessor(this, nodeEngine, partitionId), ScheduleType.POSTPONE);
     }
 

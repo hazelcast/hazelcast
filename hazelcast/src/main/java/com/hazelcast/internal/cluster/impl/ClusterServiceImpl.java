@@ -195,7 +195,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         long mergeNextRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
         mergeNextRunDelayMs = (mergeNextRunDelayMs > 0 ? mergeNextRunDelayMs : DEFAULT_MERGE_RUN_DELAY_MILLIS);
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new SplitBrainHandler(node), mergeFirstRunDelayMs,
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new SplitBrainHandler(node), mergeFirstRunDelayMs,
                 mergeNextRunDelayMs, TimeUnit.MILLISECONDS);
 
         clusterHeartbeatManager.init();

@@ -113,7 +113,7 @@ public class ClusterHeartbeatManager {
     void init() {
         ExecutionService executionService = nodeEngine.getExecutionService();
 
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 heartBeat();
             }
@@ -121,7 +121,7 @@ public class ClusterHeartbeatManager {
 
         long masterConfirmationInterval = node.groupProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
         masterConfirmationInterval = (masterConfirmationInterval > 0 ? masterConfirmationInterval : 1);
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
@@ -129,7 +129,7 @@ public class ClusterHeartbeatManager {
 
         long memberListPublishInterval = node.groupProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
         memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }

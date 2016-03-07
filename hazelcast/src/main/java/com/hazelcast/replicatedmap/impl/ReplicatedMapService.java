@@ -120,7 +120,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i] = new PartitionContainer(this, i);
         }
-        nodeEngine.getExecutionService().getDefaultScheduledExecutor().scheduleWithFixedDelay(new Runnable() {
+        nodeEngine.getExecutionService().getGlobalTaskScheduler().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
                 if (clusterService.getSize() == 1) {
