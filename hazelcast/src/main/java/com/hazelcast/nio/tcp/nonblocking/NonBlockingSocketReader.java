@@ -41,8 +41,8 @@ import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.bytesToString;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * A {@link SocketReader} tailored for non blocking IO.
@@ -79,7 +79,7 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
 
     @Probe(name = "idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
-        return Math.max(System.currentTimeMillis() - lastReadTime, 0);
+        return Math.max(currentTimeMillis() - lastReadTime, 0);
     }
 
     @Probe(name = "interestedOps", level = DEBUG)
