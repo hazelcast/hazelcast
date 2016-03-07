@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.memory.impl;
 
+import com.hazelcast.internal.memory.ByteAccessStrategy;
 import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 
 import static com.hazelcast.internal.memory.impl.AlignmentUtil.IS_PLATFORM_BIG_ENDIAN;
@@ -25,6 +26,7 @@ import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
  * Base class for {@link sun.misc.Unsafe} backed {@link GlobalMemoryAccessor} implementations.
  */
 abstract class UnsafeBasedMemoryAccessor implements GlobalMemoryAccessor {
+    private final ByteAccessStrategy<Void> defaultByteAccessStrategy = new DefaultByteAccessStrategy(this);
 
     /**
      * Returns whether memory accessors of type {@link UnsafeBasedMemoryAccessor} are available or not.
@@ -36,5 +38,10 @@ abstract class UnsafeBasedMemoryAccessor implements GlobalMemoryAccessor {
     @Override
     public boolean isBigEndian() {
         return IS_PLATFORM_BIG_ENDIAN;
+    }
+
+    @Override
+    public ByteAccessStrategy<Void> asByteAccessStrategy() {
+        return defaultByteAccessStrategy;
     }
 }
