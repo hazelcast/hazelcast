@@ -18,6 +18,7 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -29,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -71,7 +71,7 @@ final class SlotBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V
     private final ConcurrentMap<Object, Integer> keyToSlot = new ConcurrentHashMap<Object, Integer>(1000);
     private final ConcurrentMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>> slotToScheduledEntry
             = new ConcurrentHashMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>>(1000);
-    private final ScheduledExecutorService scheduledExecutorService;
+    private final TaskScheduler taskScheduler;
     private final ScheduledEntryProcessor<K, V> entryProcessor;
     private final ScheduleType scheduleType;
     private final ConcurrentMap<Integer, ScheduledFuture> slotToFuture
@@ -80,19 +80,19 @@ final class SlotBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V
     private final int millisPerSlot;
     private final ILogger logger = Logger.getLogger(SlotBasedEntryTaskScheduler.class);
 
-    SlotBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
+    SlotBasedEntryTaskScheduler(TaskScheduler taskScheduler,
                                 ScheduledEntryProcessor<K, V> entryProcessor, ScheduleType scheduleType) {
-        this.scheduledExecutorService = scheduledExecutorService;
+        this.taskScheduler = taskScheduler;
         this.entryProcessor = entryProcessor;
         this.scheduleType = scheduleType;
         this.slotsPerSecond = DEFAULT_SLOTS_PER_SECOND;
         this.millisPerSlot = DEFAULT_SLOT_DURATION_MILLIS;
     }
 
-    SlotBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
+    SlotBasedEntryTaskScheduler(TaskScheduler taskScheduler,
                                 ScheduledEntryProcessor<K, V> entryProcessor, ScheduleType scheduleType,
                                 int slotsPerSecond) {
-        this.scheduledExecutorService = scheduledExecutorService;
+        this.taskScheduler = taskScheduler;
         this.entryProcessor = entryProcessor;
         this.scheduleType = scheduleType;
         this.slotsPerSecond = slotsPerSecond;
@@ -422,7 +422,7 @@ final class SlotBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V
     private void schedule(final Integer slot, final long delayMillis) {
         logger.finest("Scheduling slot " + slot + " in delay millis (from now) " + delayMillis);
         EntryProcessorExecutor command = new EntryProcessorExecutor(slot);
-        ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(command, delayMillis, MILLISECONDS);
+        ScheduledFuture scheduledFuture = taskScheduler.schedule(command, delayMillis, MILLISECONDS);
         slotToFuture.put(slot, scheduledFuture);
     }
 

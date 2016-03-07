@@ -56,6 +56,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
@@ -84,7 +85,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -97,8 +97,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_ON_MASTER;
-import static com.hazelcast.partition.impl.InternalPartitionServiceState.SAFE;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.REPLICA_NOT_SYNC;
+import static com.hazelcast.partition.impl.InternalPartitionServiceState.SAFE;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -184,7 +184,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         proxy = new PartitionServiceProxy(this);
 
         ExecutionService executionService = nodeEngine.getExecutionService();
-        ScheduledExecutorService scheduledExecutor = executionService.getDefaultScheduledExecutor();
+        TaskScheduler scheduledExecutor = executionService.getGlobalTaskScheduler();
 
         // The reason behind this scheduler to have POSTPONE type is as follows:
         // When a node shifts up in the replica table upon a node failure, it sends a sync request to the partition owner and
@@ -242,10 +242,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             partitionTableSendInterval = 1;
         }
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleAtFixedRate(new SendClusterStateTask(),
+        executionService.scheduleWithRepetition(new SendClusterStateTask(),
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
 
-        executionService.scheduleWithFixedDelay(new SyncReplicaVersionTask(),
+        executionService.scheduleWithRepetition(new SyncReplicaVersionTask(),
                 backupSyncCheckInterval, backupSyncCheckInterval, TimeUnit.SECONDS);
     }
 

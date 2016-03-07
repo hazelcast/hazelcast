@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -25,7 +26,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 public class SlotBasedEntryTaskSchedulerTest {
 
     @Mock
-    private ScheduledExecutorService executorService = mock(ScheduledExecutorService.class);
+    private TaskScheduler executorService = mock(TaskScheduler.class);
 
     @Mock
     private ScheduledEntryProcessor<Integer, Integer> entryProcessor = mock(ScheduledEntryProcessor.class);

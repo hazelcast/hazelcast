@@ -114,7 +114,7 @@ public class ExpirationManager {
 
     public void start() {
         ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
-        executionService.scheduleAtFixedRate(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
+        executionService.scheduleWithRepetition(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
     }
 
     /**

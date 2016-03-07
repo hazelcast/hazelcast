@@ -230,10 +230,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new SplitBrainHandler(node),
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new SplitBrainHandler(node),
                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 heartBeater();
             }
@@ -241,7 +241,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
         masterConfirmationInterval = masterConfirmationInterval <= 0 ? 1 : masterConfirmationInterval;
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
@@ -249,7 +249,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
         memberListPublishInterval = memberListPublishInterval <= 0 ? 1 : memberListPublishInterval;
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }

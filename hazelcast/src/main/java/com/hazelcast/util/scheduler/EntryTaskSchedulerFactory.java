@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
-import java.util.concurrent.ScheduledExecutorService;
+import com.hazelcast.spi.TaskScheduler;
 
 /**
  * Factory for EntryTaskSchedulers.
@@ -40,31 +40,31 @@ public final class EntryTaskSchedulerFactory {
      * <p/>
      * EntryTaskScheduler implementation is thread-safe.
      *
-     * @param scheduledExecutorService ScheduledExecutorService instance to execute the second
+     * @param taskScheduler ScheduledExecutorService instance to execute the second
      * @param entryProcessor           bulk processor
      * @return EntryTaskScheduler that will run all second operations in bulk
      */
-    public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService,
+    public static <K, V> EntryTaskScheduler<K, V> newScheduler(TaskScheduler taskScheduler,
                                                                ScheduledEntryProcessor<K, V> entryProcessor,
                                                                ScheduleType scheduleType) {
-        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, scheduleType);
+        return new SecondsBasedEntryTaskScheduler<K, V>(taskScheduler, entryProcessor, scheduleType);
     }
 
     /**
      * Creates a new EntryTaskScheduler with customizable granularity.
      *
-     * @param scheduledExecutorService  ScheduledExecutorService instance to execute each slot's tasks
+     * @param taskScheduler             TaskScheduler instance to execute each slot's tasks
      * @param entryProcessor            bulk processor
      * @param scheduleType              type of schedule
      * @param slotsPerSecond            number of slots allocated per second. Tasks are scheduled and executed in
      *                                  bulk at each slot
      * @return EntryTaskScheduler that will schedule operations in each slot
      */
-    public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService,
+    public static <K, V> EntryTaskScheduler<K, V> newScheduler(TaskScheduler taskScheduler,
                                                                ScheduledEntryProcessor<K, V> entryProcessor,
                                                                ScheduleType scheduleType,
                                                                int slotsPerSecond) {
-        return new SlotBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, scheduleType, slotsPerSecond);
+        return new SlotBasedEntryTaskScheduler<K, V>(taskScheduler, entryProcessor, scheduleType, slotsPerSecond);
     }
 
 }

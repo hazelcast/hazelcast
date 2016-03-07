@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -71,15 +71,15 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private final ConcurrentMap<Object, Integer> secondsOfKeys = new ConcurrentHashMap<Object, Integer>(1000);
     private final ConcurrentMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>> scheduledEntries
             = new ConcurrentHashMap<Integer, ConcurrentMap<Object, ScheduledEntry<K, V>>>(1000);
-    private final ScheduledExecutorService scheduledExecutorService;
+    private final TaskScheduler taskScheduler;
     private final ScheduledEntryProcessor<K, V> entryProcessor;
     private final ScheduleType scheduleType;
     private final ConcurrentMap<Integer, ScheduledFuture> scheduledTaskMap
             = new ConcurrentHashMap<Integer, ScheduledFuture>(1000);
 
-    SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
+    SecondsBasedEntryTaskScheduler(TaskScheduler taskScheduler,
                                    ScheduledEntryProcessor<K, V> entryProcessor, ScheduleType scheduleType) {
-        this.scheduledExecutorService = scheduledExecutorService;
+        this.taskScheduler = taskScheduler;
         this.entryProcessor = entryProcessor;
         this.scheduleType = scheduleType;
     }
@@ -398,7 +398,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     private void schedule(final Integer second, final int delaySeconds) {
         EntryProcessorExecutor command = new EntryProcessorExecutor(second);
-        ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(command, delaySeconds, TimeUnit.SECONDS);
+        ScheduledFuture scheduledFuture = taskScheduler.schedule(command, delaySeconds, TimeUnit.SECONDS);
         scheduledTaskMap.put(second, scheduledFuture);
     }
 

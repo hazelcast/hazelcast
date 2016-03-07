@@ -59,7 +59,7 @@ public final class VersionCheck {
         if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
             return;
         }
-        hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
+        hazelcastNode.nodeEngine.getExecutionService().scheduleWithRepetition(new Runnable() {
             public void run() {
                 doCheck(hazelcastNode, version, isEnterprise);
             }

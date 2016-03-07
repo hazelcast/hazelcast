@@ -207,7 +207,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
 
         @Override
-        public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long delay, TimeUnit unit) {
             return clientExecutionService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
         }
 

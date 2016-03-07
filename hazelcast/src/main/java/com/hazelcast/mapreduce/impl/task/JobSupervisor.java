@@ -36,6 +36,7 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.ExceptionUtil;
 
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -50,7 +51,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
@@ -425,8 +425,8 @@ public class JobSupervisor {
 
     private void asyncCancelRemoteOperations(final Set<Address> addresses) {
         final NodeEngine nodeEngine = mapReduceService.getNodeEngine();
-        ScheduledExecutorService executor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-        executor.submit(new Runnable() {
+        TaskScheduler taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
+        taskScheduler.submit(new Runnable() {
 
             @Override
             public void run() {

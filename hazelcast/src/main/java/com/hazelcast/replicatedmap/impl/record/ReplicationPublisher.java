@@ -76,7 +76,7 @@ public class ReplicationPublisher<K, V>
     private final Lock replicationMessageCacheLock = new ReentrantLock();
     private final Random memberRandomizer = new Random();
 
-    private final ScheduledExecutorService executorService;
+    private final WrappedExecutorService executorService;
     private final ExecutionService executionService;
     private final OperationService operationService;
     private final ClusterService clusterService;
@@ -426,11 +426,12 @@ public class ReplicationPublisher<K, V>
         return preReplicationHook;
     }
 
-    private ScheduledExecutorService getExecutorService(NodeEngine nodeEngine, ReplicatedMapConfig replicatedMapConfig) {
+    private WrappedExecutorService getExecutorService(NodeEngine nodeEngine, ReplicatedMapConfig replicatedMapConfig) {
         ScheduledExecutorService es = replicatedMapConfig.getReplicatorExecutorService();
-        if (es == null) {
-            es = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+        if (es != null) {
+            return new WrappedExecutorService(es);
+        } else {
+            return new WrappedExecutorService(nodeEngine.getExecutionService().getGlobalTaskScheduler());
         }
-        return new WrappedExecutorService(es);
     }
 }

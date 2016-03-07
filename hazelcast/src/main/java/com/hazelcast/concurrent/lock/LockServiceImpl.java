@@ -35,6 +35,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
@@ -47,7 +48,6 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -65,8 +65,8 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 @Override
                 public EntryTaskScheduler createNew(ObjectNamespace namespace) {
                     LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-                    ScheduledExecutorService scheduledExecutor =
-                            nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+                    TaskScheduler scheduledExecutor =
+                            nodeEngine.getExecutionService().getGlobalTaskScheduler();
                     return EntryTaskSchedulerFactory
                             .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.FOR_EACH);
                 }

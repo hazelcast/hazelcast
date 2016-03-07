@@ -37,7 +37,7 @@ public interface NearCacheExecutor {
      *
      * @return the {@link ScheduledFuture} instance representing the pending completion of the task.
      */
-    ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
+    ScheduledFuture<?> scheduleWithRepetition(Runnable command,
                                               long initialDelay,
                                               long delay,
                                               TimeUnit unit);

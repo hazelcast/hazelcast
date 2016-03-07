@@ -88,7 +88,7 @@ public class CacheService extends AbstractCacheService {
                     nodeEngine.getGroupProperties().CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getInteger();
             cacheBatchInvalidationMessageSenderScheduler =
                     nodeEngine.getExecutionService()
-                            .scheduleAtFixedRate(SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
+                            .scheduleWithRepetition(SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
                                     new CacheBatchInvalidationMessageSender(),
                                     invalidationMessageBatchFreq,
                                     invalidationMessageBatchFreq,

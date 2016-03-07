@@ -85,7 +85,7 @@ public class TimedMemberStateFactory {
     }
 
     public void init() {
-        instance.node.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
+        instance.node.nodeEngine.getExecutionService().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
                 memberStateSafe = instance.getPartitionService().isLocalMemberSafe();

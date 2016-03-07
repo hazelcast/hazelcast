@@ -85,7 +85,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         this.replicationPublisher = new ReplicationPublisher(this, nodeEngine);
 
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory
-                .newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
+                .newScheduler(nodeEngine.getExecutionService().getGlobalTaskScheduler(),
                         new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name), ScheduleType.POSTPONE);
 
         this.mutexes = new Object[replicatedMapConfig.getConcurrencyLevel()];

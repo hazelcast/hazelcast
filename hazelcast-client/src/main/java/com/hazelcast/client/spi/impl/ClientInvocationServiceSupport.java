@@ -75,7 +75,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
         responseThread.start();
-        executionService.scheduleAtFixedRate(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
+        executionService.scheduleWithRepetition(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     @Override

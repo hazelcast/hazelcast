@@ -16,11 +16,14 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.spi.TaskScheduler;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -31,12 +34,16 @@ import java.util.concurrent.TimeoutException;
  * This class is a wrapper around the normal {@link java.util.concurrent.ScheduledExecutorService} from Hazelcast
  */
 class WrappedExecutorService
-        implements ScheduledExecutorService {
+        implements TaskScheduler {
 
-    private final ScheduledExecutorService executorService;
+    private final ExecutorService executorService;
 
-    WrappedExecutorService(ScheduledExecutorService executorService) {
+    WrappedExecutorService(TaskScheduler executorService) {
         this.executorService = executorService;
+    }
+
+    WrappedExecutorService(ScheduledExecutorService scheduledExecutorService) {
+        this.executorService = scheduledExecutorService;
     }
 
     @Override
@@ -112,21 +119,19 @@ class WrappedExecutorService
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return executorService.schedule(command, delay, unit);
+        if (executorService instanceof TaskScheduler) {
+            return ((TaskScheduler) executorService).schedule(command, delay, unit);
+        } else {
+            return ((ScheduledExecutorService) executorService).schedule(command, delay, unit);
+        }
     }
 
     @Override
-    public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return executorService.schedule(callable, delay, unit);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return executorService.scheduleAtFixedRate(command, initialDelay, period, unit);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return executorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        if (executorService instanceof TaskScheduler) {
+            return ((TaskScheduler) executorService).scheduleWithRepetition(command, initialDelay, period, unit);
+        } else {
+            return ((ScheduledExecutorService) executorService).scheduleAtFixedRate(command, initialDelay, period, unit);
+        }
     }
 }

@@ -62,7 +62,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     public void start() {
         ClientExecutionService clientExecutionService = client.getClientExecutionService();
-        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        clientExecutionService.scheduleWithRepetition(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
