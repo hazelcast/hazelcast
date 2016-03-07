@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -37,6 +38,7 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
     public TxnPrepareBackupOperation() {
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public TxnPrepareBackupOperation(String name, long[] itemIds, String transactionId) {
         super(name);
         this.itemIds = itemIds;

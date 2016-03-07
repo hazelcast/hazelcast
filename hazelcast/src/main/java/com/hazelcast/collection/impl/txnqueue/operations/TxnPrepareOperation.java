@@ -22,6 +22,7 @@ import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -36,6 +37,7 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
     public TxnPrepareOperation() {
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public TxnPrepareOperation(int partitionId, String name, long[] itemIds, String transactionId) {
         super(name);
         setPartitionId(partitionId);
