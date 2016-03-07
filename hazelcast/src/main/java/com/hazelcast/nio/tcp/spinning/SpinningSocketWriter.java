@@ -137,14 +137,14 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     @Override
     public void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
-        urgentWriteQueue.add(new TaskFrame() {
+        urgentWriteQueue.add(new TaskFrame(new Runnable() {
             @Override
             public void run() {
                 logger.info("Setting protocol: " + protocol);
                 createWriter(protocol);
                 latch.countDown();
             }
-        });
+        }));
 
         try {
             latch.await(TIMEOUT, TimeUnit.SECONDS);
@@ -194,8 +194,9 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
                 return null;
             }
 
-            if (frame instanceof TaskFrame) {
-                ((TaskFrame) frame).run();
+            if (frame.getClass() == TaskFrame.class) {
+                TaskFrame taskFrame = (TaskFrame) frame;
+                taskFrame.task.run();
                 continue;
             }
 
@@ -221,7 +222,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         urgentWriteQueue.clear();
 
         ShutdownTask shutdownTask = new ShutdownTask();
-        offer(shutdownTask);
+        offer(new TaskFrame(shutdownTask));
         shutdownTask.awaitCompletion();
     }
 
@@ -309,9 +310,13 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    private abstract class TaskFrame implements OutboundFrame {
+    private static final class TaskFrame implements OutboundFrame {
 
-        abstract void run();
+        private final Runnable task;
+
+        private TaskFrame(Runnable task) {
+            this.task = task;
+        }
 
         @Override
         public boolean isUrgent() {
@@ -319,11 +324,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    private class ShutdownTask extends TaskFrame {
+    private class ShutdownTask implements Runnable {
         private final CountDownLatch latch = new CountDownLatch(1);
 
         @Override
-        void run() {
+        public void run() {
             try {
                 socketChannel.closeOutbound();
             } catch (IOException e) {
