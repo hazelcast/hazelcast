@@ -155,17 +155,24 @@ public interface MemoryAccessor {
      *
      * @param srcAddress  the source address to be copied from
      * @param destAddress the destination address to be copied to
-     * @param lengthBytes       the number of bytes to be copied
+     * @param lengthBytes the number of bytes to be copied
      */
     void copyMemory(long srcAddress, long destAddress, long lengthBytes);
 
     /**
      * Sets memory with given value from specified address as given size.
      *
-     * @param address the start address of the memory region
-     *                which will be set with given value
-     * @param lengthBytes   the number of bytes to be set
-     * @param value   the value to be set
+     * @param address     the start address of the memory region
+     *                    which will be set with given value
+     * @param lengthBytes the number of bytes to be set
+     * @param value       the value to be set
      */
     void setMemory(long address, long lengthBytes, byte value);
+
+    /**
+     * Return default byte access strategy implementation;
+     *
+     * @return - instance of the byte access strategy;
+     */
+    ByteAccessStrategy<Void> asByteAccessStrategy();
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.memory.impl;
 
+import com.hazelcast.internal.memory.ByteAccessStrategy;
 import com.hazelcast.internal.memory.EndianMemoryAccessor;
 
 import java.lang.reflect.Field;
@@ -26,6 +27,7 @@ import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
  * Base class for big- and little-endian implementations.
  */
 abstract class EndianAccessorBase implements EndianMemoryAccessor {
+    private final ByteAccessStrategy<Void> defaultByteAccessStrategy = new DefaultByteAccessStrategy(this);
 
     @Override
     public long objectFieldOffset(Field field) {
@@ -95,5 +97,10 @@ abstract class EndianAccessorBase implements EndianMemoryAccessor {
     @Override
     public void putByte(long address, byte x) {
         MEM.putByte(address, x);
+    }
+
+    @Override
+    public ByteAccessStrategy<Void> asByteAccessStrategy() {
+        return defaultByteAccessStrategy;
     }
 }
