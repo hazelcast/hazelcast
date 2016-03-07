@@ -54,4 +54,12 @@ public interface Storage<K, R> {
     void setSizeEstimator(SizeEstimator sizeEstimator);
 
     void disposeDeferredBlocks();
+
+    /**
+     * Used for sampling based eviction, returns sampled entries.
+     *
+     * @param sampleCount sample count.
+     * @return sampled entries.
+     */
+    Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount);
 }
