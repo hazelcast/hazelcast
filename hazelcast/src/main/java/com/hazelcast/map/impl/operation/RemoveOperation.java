@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -34,7 +33,6 @@ public class RemoveOperation extends BaseRemoveOperation implements IdentifiedDa
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }

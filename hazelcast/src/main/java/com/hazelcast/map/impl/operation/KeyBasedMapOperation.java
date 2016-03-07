@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -34,8 +33,6 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
     protected long threadId;
     protected Data dataValue;
     protected long ttl = DEFAULT_TTL;
-
-    protected transient RecordStore recordStore;
 
     public KeyBasedMapOperation() {
     }
@@ -62,12 +59,6 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
         this.dataKey = dataKey;
         this.dataValue = dataValue;
         this.ttl = ttl;
-    }
-
-    @Override
-    public void innerBeforeRun() throws Exception {
-        super.innerBeforeRun();
-        recordStore = mapServiceContext.getPartitionContainer(getPartitionId()).getRecordStore(name);
     }
 
     @Override
@@ -104,10 +95,6 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
     @Override
     public boolean returnsResponse() {
         return true;
-    }
-
-    protected void evict() {
-        recordStore.evictEntries();
     }
 
     @Override

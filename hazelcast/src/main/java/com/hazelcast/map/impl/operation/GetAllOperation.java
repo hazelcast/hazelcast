@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +34,6 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
 
     private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
-    private transient RecordStore recordStore;
 
     public GetAllOperation() {
     }
@@ -49,7 +47,6 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void run() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Set<Data> partitionKeySet = new HashSet<Data>();
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
@@ -57,21 +54,6 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
             }
         }
         entries = recordStore.getAll(partitionKeySet);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
-        if (!entries.isEmpty()) {
-            evict();
-        }
-    }
-
-    protected void evict() {
-        if (recordStore == null) {
-            return;
-        }
-        recordStore.evictEntries();
     }
 
     @Override

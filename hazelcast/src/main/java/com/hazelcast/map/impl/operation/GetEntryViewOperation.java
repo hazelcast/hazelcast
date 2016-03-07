@@ -21,14 +21,12 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.BlockingOperation;
 
 public class GetEntryViewOperation extends KeyBasedMapOperation implements ReadonlyOperation, BlockingOperation {
 
@@ -43,9 +41,6 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements Reado
 
     @Override
     public void run() {
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());

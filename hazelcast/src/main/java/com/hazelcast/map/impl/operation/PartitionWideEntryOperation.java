@@ -50,8 +50,9 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     @Override
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
-        final SerializationService serializationService = getNodeEngine().getSerializationService();
-        final ManagedContext managedContext = serializationService.getManagedContext();
+
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        ManagedContext managedContext = serializationService.getManagedContext();
         managedContext.initialize(entryProcessor);
     }
 

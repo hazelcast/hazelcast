@@ -16,9 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,6 +25,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
+
+import static com.hazelcast.core.EntryEventType.EVICTED;
 
 public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation {
 
@@ -43,7 +43,6 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         dataValue = mapServiceContext.toData(recordStore.evict(dataKey, false));
         evicted = dataValue != null;
     }
@@ -64,7 +63,6 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
 
     @Override
     public int getAsyncBackupCount() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         if (asyncBackup) {
             return mapContainer.getTotalBackupCount();
@@ -78,7 +76,6 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
         if (asyncBackup) {
             return 0;
         }
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         return mapContainer.getBackupCount();
     }
@@ -92,11 +89,8 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
         if (!evicted) {
             return;
         }
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         mapServiceContext.interceptAfterRemove(name, dataValue);
-        EntryEventType eventType = EntryEventType.EVICTED;
-        mapServiceContext.getMapEventPublisher()
-                .publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
+        mapEventPublisher.publishEvent(getCallerAddress(), name, EVICTED, dataKey, dataValue, null);
         invalidateNearCache(dataKey);
     }
 

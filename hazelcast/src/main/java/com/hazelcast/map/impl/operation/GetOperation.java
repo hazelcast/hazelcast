@@ -20,13 +20,12 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.BlockingOperation;
 
 public final class GetOperation extends KeyBasedMapOperation
         implements IdentifiedDataSerializable, BlockingOperation, ReadonlyOperation {
@@ -42,13 +41,11 @@ public final class GetOperation extends KeyBasedMapOperation
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         result = mapServiceContext.toData(recordStore.get(dataKey, false));
     }
 
     @Override
     public void afterRun() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         mapServiceContext.interceptAfterGet(name, result);
     }
 

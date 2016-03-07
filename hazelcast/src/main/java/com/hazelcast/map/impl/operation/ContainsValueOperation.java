@@ -17,14 +17,12 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.LocalMapStatsProvider;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
+
 import java.io.IOException;
 
 public class ContainsValueOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
@@ -42,9 +40,6 @@ public class ContainsValueOperation extends MapOperation implements PartitionAwa
 
     @Override
     public void run() {
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         contains = recordStore.containsValue(testValue);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();

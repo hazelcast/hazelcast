@@ -17,8 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -51,9 +49,6 @@ public class PartitionCheckIfLoadedOperation extends MapOperation implements Par
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-
         isFinished = recordStore.isLoaded();
 
         if (doLoad) {

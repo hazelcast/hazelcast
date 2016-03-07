@@ -19,10 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -49,7 +47,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private boolean initialLoad;
     private List<Map.Entry<Data, Data>> backupEntries;
     private List<RecordInfo> backupRecordInfos;
-    private transient RecordStore recordStore;
     private List<Data> invalidationKeys;
 
     public PutAllOperation() {
@@ -65,7 +62,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     public void run() {
         backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());
         backupEntries = new ArrayList<Map.Entry<Data, Data>>(mapEntries.size());
-        recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
 
         for (Map.Entry<Data, Data> entry : mapEntries) {
             put(entry);
@@ -78,13 +74,12 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
         Object oldValue = null;
         if (initialLoad) {
-            recordStore.putFromLoad(dataKey, dataValue, -1);
+            recordStore.putFromLoad(dataKey, dataValue, DEFAULT_TTL);
         } else {
             oldValue = recordStore.put(dataKey, dataValue, DEFAULT_TTL);
         }
         mapServiceContext.interceptAfterPut(name, dataValue);
         EntryEventType eventType = oldValue == null ? ADDED : UPDATED;
-        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
         mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
 
@@ -130,10 +125,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     private boolean shouldWanReplicate() {
         return mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null;
-    }
-
-    protected void evict() {
-        recordStore.evictEntries();
     }
 
     @Override
