@@ -18,6 +18,7 @@ package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.ByteAccessStrategy;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
+import com.hazelcast.internal.memory.MemoryAccessor;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -36,6 +37,8 @@ public final class EndiannessUtil {
 
     /** Accesses bytes in CPU's native address space */
     public static final ByteAccessStrategy<Object> NATIVE_ACCESS = GlobalMemoryAccessorRegistry.MEM;
+
+    public static final ByteAccessStrategy<MemoryAccessor> CUSTOM_ACCESS = CustomByteAccessStrategy.INSTANCE;
 
     private EndiannessUtil() {
     }
