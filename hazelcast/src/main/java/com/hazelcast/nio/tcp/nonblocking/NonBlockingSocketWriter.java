@@ -448,7 +448,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
     @Override
     public String toString() {
-        return connection + ".writeHandler";
+        return connection + ".socketWriter";
     }
 
     /**
