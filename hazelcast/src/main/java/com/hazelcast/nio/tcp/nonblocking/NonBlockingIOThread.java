@@ -241,7 +241,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private void executeTask(Runnable task) {
         completedTaskCount.inc();
 
-        NonBlockingIOThread target = getTargetIoThread(task);
+        NonBlockingIOThread target = getTargetIOThread(task);
         if (target == this) {
             task.run();
         } else {
@@ -249,7 +249,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
-    private NonBlockingIOThread getTargetIoThread(Runnable task) {
+    private NonBlockingIOThread getTargetIOThread(Runnable task) {
         if (task instanceof MigratableHandler) {
             return ((MigratableHandler) task).getOwner();
         } else {
