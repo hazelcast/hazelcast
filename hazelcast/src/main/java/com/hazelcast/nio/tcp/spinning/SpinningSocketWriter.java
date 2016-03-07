@@ -52,21 +52,21 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private static final long TIMEOUT = 3;
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "out.writeQueueSize")
+    @Probe(name = "writeQueueSize")
     public final Queue<OutboundFrame> writeQueue;
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "out.priorityWriteQueueSize")
+    @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue;
 
     private final ILogger logger;
     private final SocketChannelWrapper socketChannel;
     private ByteBuffer outputBuffer;
-    @Probe(name = "out.bytesWritten")
+    @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "out.normalFramesWritten")
+    @Probe(name = "normalFramesWritten")
     private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = "out.priorityFramesWritten")
+    @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
     private final MetricsRegistry metricsRegistry;
     private volatile long lastWriteTime;
@@ -81,7 +81,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         this.writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
         this.urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
         // sensors
-        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
     }
 
     @Override
@@ -93,17 +93,17 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    @Probe(name = "out.writeQueuePendingBytes")
+    @Probe(name = "writeQueuePendingBytes")
     public long bytesPending() {
         return bytesPending(writeQueue);
     }
 
-    @Probe(name = "out.priorityWriteQueuePendingBytes")
+    @Probe(name = "priorityWriteQueuePendingBytes")
     public long priorityBytesPending() {
         return bytesPending(urgentWriteQueue);
     }
 
-    @Probe(name = "out.idleTimeMs")
+    @Probe(name = "idleTimeMs")
     private long idleTimeMs() {
         return Math.max(currentTimeMillis() - lastWriteTime, 0);
     }
