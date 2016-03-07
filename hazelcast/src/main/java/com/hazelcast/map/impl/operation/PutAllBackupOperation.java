@@ -18,12 +18,9 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -42,7 +39,6 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
 
     private List<Map.Entry<Data, Data>> entries;
     private List<RecordInfo> recordInfos;
-    private RecordStore recordStore;
 
     public PutAllBackupOperation(String name, List<Map.Entry<Data, Data>> entries, List<RecordInfo> recordInfos) {
         super(name);
@@ -55,10 +51,6 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
 
     @Override
     public void run() {
-        int partitionId = getPartitionId();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapEventPublisher eventPublisher = mapServiceContext.getMapEventPublisher();
-        recordStore = mapServiceContext.getRecordStore(partitionId, name);
         boolean wanEnabled = mapContainer.isWanReplicationEnabled();
         for (int i = 0; i < entries.size(); i++) {
             final RecordInfo recordInfo = recordInfos.get(i);
@@ -68,10 +60,10 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
             if (wanEnabled) {
                 final Data dataValueAsData = mapServiceContext.toData(entry.getValue());
                 final EntryView entryView = EntryViews.createSimpleEntryView(entry.getKey(), dataValueAsData, record);
-                eventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+                mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
 
-            recordStore.evictEntries();
+            evict();
         }
     }
 

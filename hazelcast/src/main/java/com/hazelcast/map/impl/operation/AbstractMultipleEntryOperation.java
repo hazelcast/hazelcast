@@ -25,11 +25,8 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.IPartitionService;
@@ -51,7 +48,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     protected MapEntries responses;
     protected EntryProcessor entryProcessor;
     protected EntryBackupProcessor backupProcessor;
-    protected transient RecordStore recordStore;
     protected List<WanEventWrapper> wanEventList = new ArrayList<WanEventWrapper>();
 
     protected AbstractMultipleEntryOperation() {
@@ -66,18 +62,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         super(name);
         this.backupProcessor = backupProcessor;
     }
-
-    @Override
-    public void innerBeforeRun() throws Exception {
-        super.innerBeforeRun();
-        this.recordStore = getRecordStore();
-    }
-
-    protected RecordStore getRecordStore() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getRecordStore(getPartitionId(), name);
-    }
-
 
     protected Map.Entry createMapEntry(Data key, Object value) {
         return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
@@ -103,14 +87,8 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         }
     }
 
-    protected MapEventPublisher getMapEventPublisher() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getMapEventPublisher();
-    }
-
     protected LocalMapStatsImpl getLocalMapStats() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+        LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
         return localMapStatsProvider.getLocalMapStatsImpl(name);
     }
 
@@ -221,13 +199,11 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     protected void publishEntryEvent(Data key, Object value, Object oldValue, EntryEventType eventType) {
         if (hasRegisteredListenerForThisMap()) {
             oldValue = nullifyOldValueIfNecessary(oldValue, eventType);
-            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
             mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
         }
     }
 
     protected void publishWanReplicationEvent(Data key, Data value, EntryEventType eventType) {
-        MapEventPublisher mapEventPublisher = getMapEventPublisher();
         if (EntryEventType.REMOVED == eventType) {
             mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
             wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
@@ -240,11 +216,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
                 wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
             }
         }
-    }
-
-    protected MapServiceContext getMapServiceContext() {
-        final MapService mapService = getService();
-        return mapService.getMapServiceContext();
     }
 
     protected long getLatencyFrom(long begin) {
@@ -273,10 +244,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     protected boolean keyNotOwnedByThisPartition(Data key) {
         final IPartitionService partitionService = getNodeEngine().getPartitionService();
         return partitionService.getPartitionId(key) != getPartitionId();
-    }
-
-    protected void evict() {
-        recordStore.evictEntries();
     }
 
     public void setWanEventList(List<WanEventWrapper> wanEventList) {

@@ -17,9 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -31,14 +28,15 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
         PartitionAwareOperation, MutatingOperation {
 
     private boolean shouldBackup;
-
     private int numberOfClearedEntries;
 
     public ClearOperation() {
+        this(null);
     }
 
     public ClearOperation(String name) {
         super(name);
+        createRecordStoreOnDemand = false;
     }
 
     @Override
@@ -47,7 +45,6 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
         // but it's still preferred to send a separate operation to clear near-cache.
         clearNearCache(true);
 
-        RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         if (recordStore == null) {
             return;
         }
@@ -63,8 +60,6 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     }
 
     private void hintMapEvent() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.hintMapEvent(getCallerAddress(), name, EntryEventType.CLEAR_ALL,
                 numberOfClearedEntries, getPartitionId());
     }
@@ -76,13 +71,11 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
 
     @Override
     public int getSyncBackupCount() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(name).getBackupCount();
     }
 
     @Override
     public int getAsyncBackupCount() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(name).getAsyncBackupCount();
     }
 

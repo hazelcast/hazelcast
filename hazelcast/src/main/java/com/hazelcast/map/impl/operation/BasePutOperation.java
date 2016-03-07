@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
@@ -49,19 +48,16 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     @Override
     public void afterRun() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapServiceContext.interceptAfterPut(name, dataValue);
         Object value = isPostProcessing(recordStore) ? recordStore.getRecord(dataKey).getValue() : dataValue;
 
         mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(), dataKey, dataOldValue, value);
         invalidateNearCache(dataKey);
-        publishWANReplicationEvent(mapServiceContext, mapEventPublisher, value);
+        publishWANReplicationEvent(mapEventPublisher, value);
         evict();
     }
 
-    private void publishWANReplicationEvent(MapServiceContext mapServiceContext,
-                                            MapEventPublisher mapEventPublisher, Object value) {
+    private void publishWANReplicationEvent(MapEventPublisher mapEventPublisher, Object value) {
         if (!mapContainer.isWanReplicationEnabled()) {
             return;
         }

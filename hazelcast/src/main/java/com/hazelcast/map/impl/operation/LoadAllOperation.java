@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -52,22 +50,18 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
 
     @Override
     public void run() throws Exception {
-        final int partitionId = getPartitionId();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         keys = selectThisPartitionsKeys(this.keys);
         recordStore.loadAllFromStore(keys, replaceExistingValues);
     }
 
     private List<Data> selectThisPartitionsKeys(Collection<Data> keys) {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         final int partitionId = getPartitionId();
         List<Data> dataKeys = null;
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 if (dataKeys == null) {
-                    dataKeys = new ArrayList<Data>();
+                    dataKeys = new ArrayList<Data>(keys.size());
                 }
                 dataKeys.add(key);
             }

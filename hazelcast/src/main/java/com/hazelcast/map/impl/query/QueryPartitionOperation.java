@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,7 +43,6 @@ public class QueryPartitionOperation extends MapOperation implements PartitionAw
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
         result = queryEngine.queryLocalPartition(name, predicate, getPartitionId(), iterationType);
     }

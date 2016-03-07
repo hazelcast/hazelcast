@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -54,7 +53,6 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() {
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         recordStore.evict(dataKey, true);
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -63,10 +61,8 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void afterRun() throws Exception {
-        if (!disableWanReplicationEvent
-                && mapContainer.isWanReplicationEnabled()) {
-            mapService.getMapServiceContext()
-                    .getMapEventPublisher().publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
+        if (!disableWanReplicationEvent && mapContainer.isWanReplicationEnabled()) {
+            mapEventPublisher.publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
         }
     }
 

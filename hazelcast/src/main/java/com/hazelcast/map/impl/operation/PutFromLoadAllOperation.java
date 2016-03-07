@@ -19,10 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -47,7 +45,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     private List<Data> keyValueSequence;
     private List<Data> invalidationKeys;
-    private transient RecordStore recordStore;
 
     public PutFromLoadAllOperation() {
         keyValueSequence = Collections.emptyList();
@@ -61,7 +58,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     @Override
     public void run() throws Exception {
-        recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
         List<Data> keyValueSequence = this.keyValueSequence;
@@ -102,8 +98,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     private void publishEntryEvent(Data key, Object previousValue, Object newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
     }
 
@@ -112,7 +106,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             return;
         }
 
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         value = mapServiceContext.toData(value);
         EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
@@ -125,10 +118,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
         super.afterRun();
         evict();
-    }
-
-    protected void evict() {
-        recordStore.evictEntries();
     }
 
     @Override

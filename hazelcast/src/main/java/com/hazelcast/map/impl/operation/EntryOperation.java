@@ -28,7 +28,6 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -227,7 +226,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private void publishEntryEvent() {
         if (hasRegisteredListenerForThisMap()) {
             nullifyOldValueIfNecessary();
-            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
             mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
         }
     }
@@ -238,7 +236,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 && mapContainer.getWanMergePolicy() == null) {
             return;
         }
-        final MapEventPublisher mapEventPublisher = getMapEventPublisher();
         final Data key = dataKey;
 
         if (REMOVED.equals(eventType)) {
@@ -251,11 +248,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
-    }
-
-    private MapEventPublisher getMapEventPublisher() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getMapEventPublisher();
     }
 
     @Override

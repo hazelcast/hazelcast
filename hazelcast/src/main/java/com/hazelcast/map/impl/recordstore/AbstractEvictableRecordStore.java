@@ -48,15 +48,17 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  */
 abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
-    private final long expiryDelayMillis;
-    private final Evictor evictor;
+    protected final long expiryDelayMillis;
+    protected final Evictor evictor;
+    protected final EventService eventService;
+    protected final MapEventPublisher mapEventPublisher;
+    protected final Address thisAddress;
     /**
      * Iterates over a pre-set entry count/percentage in one round.
      * Used in expiration logic for traversing entries. Initializes lazily.
      */
-    private Iterator<Record> expirationIterator;
-
-    private volatile boolean hasEntryWithCustomTTL;
+    protected Iterator<Record> expirationIterator;
+    protected volatile boolean hasEntryWithCustomTTL;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
@@ -64,6 +66,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         GroupProperties groupProperties = nodeEngine.getGroupProperties();
         expiryDelayMillis = groupProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
         evictor = mapContainer.getEvictor();
+        eventService = nodeEngine.getEventService();
+        mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        thisAddress = nodeEngine.getThisAddress();
     }
 
     /**
@@ -225,15 +230,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public void doPostEvictionOperations(Record record, boolean backup) {
-        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        EventService eventService = nodeEngine.getEventService();
-
         if (!eventService.hasEventRegistration(SERVICE_NAME, name)) {
             return;
         }
-
-        Address thisAddress = nodeEngine.getThisAddress();
 
         // Fire EVICTED event also in case of expiration because historically eviction-listener
         // listens all kind of eviction and expiration events and by firing EVICTED event we are preserving

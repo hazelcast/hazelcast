@@ -16,8 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
+
+import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
 
 public class SetOperation extends BasePutOperation {
 
@@ -32,7 +34,8 @@ public class SetOperation extends BasePutOperation {
 
     @Override
     public void afterRun() {
-        eventType = newRecord ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        eventType = newRecord ? ADDED : UPDATED;
+
         super.afterRun();
     }
 
