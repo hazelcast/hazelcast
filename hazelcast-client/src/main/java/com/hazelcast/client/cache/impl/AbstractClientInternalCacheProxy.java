@@ -487,10 +487,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             throw ExceptionUtil.rethrow(e);
         }
 
-        ClientDelegatingFuture delegatingFuture =
-                new ClientDelegatingFuture(future, clientContext.getSerializationService(), putResponseDecoder);
         if (!async) {
             try {
+                ClientDelegatingFuture delegatingFuture =
+                        new ClientDelegatingFuture(future, clientContext.getSerializationService(), putResponseDecoder);
                 Object response = delegatingFuture.get();
                 if (nearCache != null) {
                     if (cacheOnUpdate) {
@@ -507,10 +507,11 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
             }
         } else {
+            OneShotExecutionCallback oneShotExecutionCallback = null;
             if (nearCache != null || statisticsEnabled) {
-                delegatingFuture.andThen(new ExecutionCallback<Object>() {
+                oneShotExecutionCallback = new OneShotExecutionCallback() {
                     @Override
-                    public void onResponse(Object responseData) {
+                    protected void onResponseInternal(Object responseData) {
                         if (nearCache != null) {
                             if (cacheOnUpdate) {
                                 storeInNearCache(keyData, valueData, value);
@@ -524,10 +525,20 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     }
 
                     @Override
-                    public void onFailure(Throwable t) {
+                    protected void onFailureInternal(Throwable t) {
 
                     }
-                });
+                };
+            }
+            ClientDelegatingFuture delegatingFuture;
+            if (oneShotExecutionCallback != null) {
+                delegatingFuture =
+                        new CallbackAwareClientDelegatingFuture(future, clientContext.getSerializationService(),
+                                                                putResponseDecoder, oneShotExecutionCallback);
+                delegatingFuture.andThen(oneShotExecutionCallback);
+            } else {
+                delegatingFuture =
+                        new ClientDelegatingFuture(future, clientContext.getSerializationService(), putResponseDecoder);
             }
             return delegatingFuture;
         }
