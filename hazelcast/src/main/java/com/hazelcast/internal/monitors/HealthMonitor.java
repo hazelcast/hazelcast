@@ -444,12 +444,12 @@ public class HealthMonitor {
             final long maxMeta = memoryStats.getMaxMetadata();
             if (maxMeta > 0) {
                 final long usedMeta = memoryStats.getUsedMetadata();
-                sb.append("native.memory.meta.used=")
+                sb.append("native.meta.memory.used=")
                   .append(numberToUnit(usedMeta)).append(", ");
-                sb.append("native.memory.meta.free=")
+                sb.append("native.meta.memory.free=")
                   .append(numberToUnit(maxMeta - usedMeta)).append(", ");
-                sb.append("native.memory.meta.percentage=")
-                  .append(numberToUnit((PERCENTAGE_INT_MULTIPLIER * usedMeta) / (usedNative + usedMeta))).append(", ");
+                sb.append("native.meta.memory.percentage=")
+                  .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
             }
         }
 
@@ -499,7 +499,7 @@ public class HealthMonitor {
      * @return a string of the given number as a format float with two decimal places and a period
      */
     public static String percentageString(double p) {
-        return format("%.2f", p) + "%";
+        return format("%.2f%%", p);
     }
 
     public static String numberToUnit(long number) {

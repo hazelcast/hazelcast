@@ -309,8 +309,7 @@ public final class EndiannessUtil {
         }
     }
 
-    public static char readUtf8Char(DataInput in, byte firstByte)
-            throws IOException {
+    public static char readUtf8Char(DataInput in, byte firstByte) throws IOException {
         int b = firstByte & 0xFF;
         switch (b >> 4) {
             case 0:
@@ -337,8 +336,7 @@ public final class EndiannessUtil {
         }
     }
 
-    public static int readUtf8Char(byte[] buffer, int pos, char[] dst, int dstPos)
-            throws IOException {
+    public static int readUtf8Char(byte[] buffer, int pos, char[] dst, int dstPos) throws IOException {
         int b = buffer[pos] & 0xFF;
         switch (b >> 4) {
             case 0:
