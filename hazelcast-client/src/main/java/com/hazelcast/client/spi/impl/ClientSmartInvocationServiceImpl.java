@@ -18,7 +18,6 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.HazelcastException;
@@ -31,13 +30,10 @@ import java.io.IOException;
 public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
 
     private final LoadBalancer loadBalancer;
-    private final ClusterAuthenticator authenticator;
 
     public ClientSmartInvocationServiceImpl(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         super(client);
         this.loadBalancer = loadBalancer;
-        authenticator = new ClusterAuthenticator(client, client.getCredentials());
-
     }
 
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
@@ -75,7 +71,11 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
 
     private Connection getConnection(Address target) throws IOException {
         ensureOwnerConnectionAvailable();
-        return connectionManager.getOrTriggerConnect(target, authenticator);
+        Connection connection = connectionManager.getOrTriggerConnect(target, false);
+        if (connection == null) {
+            throw new IOException("No available connection to address " + target);
+        }
+        return connection;
     }
 
     private void ensureOwnerConnectionAvailable() throws IOException {
