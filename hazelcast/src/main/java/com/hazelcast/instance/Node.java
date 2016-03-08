@@ -436,7 +436,7 @@ public class Node {
             securityContext.destroy();
         }
         logger.finest("Destroying serialization service...");
-        serializationService.destroy();
+        serializationService.dispose();
 
         hazelcastThreadGroup.destroy();
         nodeExtension.shutdown();
