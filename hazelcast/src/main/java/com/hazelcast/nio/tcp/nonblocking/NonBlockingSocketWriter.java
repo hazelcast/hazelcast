@@ -44,10 +44,10 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 import static java.lang.Math.max;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * The writing side of the {@link TcpIpConnection}.
@@ -141,7 +141,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
     @Probe(name = "idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
-        return max(System.currentTimeMillis() - lastWriteTime, 0);
+        return max(currentTimeMillis() - lastWriteTime, 0);
     }
 
     @Probe(name = "isScheduled", level = DEBUG)
