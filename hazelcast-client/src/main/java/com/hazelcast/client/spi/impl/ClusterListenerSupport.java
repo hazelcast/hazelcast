@@ -17,37 +17,25 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.protocol.AuthenticationStatus;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.security.Credentials;
-import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,7 +45,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
@@ -68,11 +55,9 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     protected final HazelcastClientInstanceImpl client;
     private final Collection<AddressProvider> addressProviders;
-    private final ManagerAuthenticator managerAuthenticator = new ManagerAuthenticator();
     private final ExecutorService clusterExecutor;
     private final boolean shuffleMemberList;
 
-    private Credentials credentials;
     private ClientConnectionManager connectionManager;
     private ClientMembershipListener clientMembershipListener;
     private volatile Address ownerConnectionAddress;
@@ -98,7 +83,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         this.clientMembershipListener = new ClientMembershipListener(client);
         connectionManager.addConnectionListener(this);
         connectionManager.addConnectionHeartbeatListener(this);
-        credentials = client.getCredentials();
     }
 
     public Address getOwnerConnectionAddress() {
@@ -107,54 +91,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     public void shutdown() {
         clusterExecutor.shutdown();
-    }
-
-    private class ManagerAuthenticator implements Authenticator {
-
-        @Override
-        public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
-            final SerializationService ss = client.getSerializationService();
-            byte serializationVersion = ss.getVersion();
-            String uuid = null;
-            String ownerUuid = null;
-            if (principal != null) {
-                uuid = principal.getUuid();
-                ownerUuid = principal.getOwnerUuid();
-            }
-            ClientMessage clientMessage;
-            if (credentials.getClass().equals(UsernamePasswordCredentials.class)) {
-                UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-                clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(), cr.getPassword(), uuid, ownerUuid,
-                        true, ClientTypes.JAVA, serializationVersion);
-            } else {
-                Data data = ss.toData(credentials);
-                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, true, ClientTypes.JAVA,
-                        serializationVersion);
-
-            }
-            ClientMessage response;
-            final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
-            final Future<ClientMessage> future = clientInvocation.invokeUrgent();
-            try {
-                response = future.get();
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e, IOException.class);
-            }
-            ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
-
-            AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
-            switch (authenticationStatus) {
-                case AUTHENTICATED:
-                    connection.setRemoteEndpoint(result.address);
-                    connection.setIsAuthenticatedAsOwner();
-                    principal = new ClientPrincipal(result.uuid, result.ownerUuid);
-                    return;
-                case CREDENTIALS_FAILED:
-                    throw new AuthenticationException("Invalid credentials!");
-                default:
-                    throw new AuthenticationException("Authentication status code not supported. status:" + authenticationStatus);
-            }
-        }
     }
 
     protected void connectToCluster() throws Exception {
@@ -183,6 +119,10 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     public ClientPrincipal getPrincipal() {
         return principal;
+    }
+
+    public void setPrincipal(ClientPrincipal principal) {
+        this.principal = principal;
     }
 
     private void connectToOne() throws Exception {
@@ -238,11 +178,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 if (LOGGER.isFinestEnabled()) {
                     LOGGER.finest("Trying to connect to " + address);
                 }
-                ClientConnection connection =
-                        (ClientConnection) connectionManager.getOrConnect(address, managerAuthenticator);
-                if (!connection.isAuthenticatedAsOwner()) {
-                    managerAuthenticator.authenticate(connection);
-                }
+                Connection connection = connectionManager.getOrConnect(address, true);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 ownerConnectionAddress = connection.getEndPoint();
                 return true;
@@ -296,7 +232,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     @Override
     public void heartBeatStopped(Connection connection) {
         if (connection.getEndPoint().equals(ownerConnectionAddress)) {
-            connectionManager.destroyConnection(connection);
+            connectionManager.destroyConnection(connection, new TargetDisconnectedException("Heartbeat stopped"));
         }
     }
 }
