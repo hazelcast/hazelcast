@@ -235,7 +235,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    private class BlockingCallback implements AuthenticationCallback {
+    private static class BlockingCallback implements AuthenticationCallback {
 
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
         private Connection connection;
