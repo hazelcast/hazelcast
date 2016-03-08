@@ -25,13 +25,8 @@ public class ClientQueryCacheScheduler implements QueryCacheScheduler {
     }
 
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRateWithDelaySeconds(Runnable task, long delaySeconds) {
-        return executionService.scheduleWithFixedDelay(task, 1, delaySeconds, TimeUnit.SECONDS);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithDelaySeconds(Runnable task, long delaySeconds) {
-        return executionService.schedule(task, delaySeconds, TimeUnit.SECONDS);
+    public ScheduledFuture<?> scheduleWithRepetition(Runnable task, long delaySeconds) {
+        return executionService.scheduleWithRepetition(task, 1, delaySeconds, TimeUnit.SECONDS);
     }
 
     @Override
