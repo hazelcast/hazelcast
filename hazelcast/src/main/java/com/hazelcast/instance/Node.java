@@ -395,6 +395,10 @@ public class Node {
             if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
+        } catch (Throwable ignored) {
+        }
+
+        try {
             discoveryService.destroy();
         } catch (Throwable ignored) {
         }
