@@ -151,6 +151,7 @@
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>hazelcast.xml</include>
+                <include>hazelcast-full-example.xml</include>
             </includes>
         </fileSet>
         <fileSet>
