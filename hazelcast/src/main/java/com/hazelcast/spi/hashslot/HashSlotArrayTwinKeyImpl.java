@@ -2,7 +2,7 @@ package com.hazelcast.spi.hashslot;
 
 import com.hazelcast.memory.MemoryManager;
 
-import static com.hazelcast.elastic.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_CAPACITY;
 
 /**
  * Implementation of {@link HashSlotArrayTwinKey}.

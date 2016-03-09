@@ -4,9 +4,9 @@ import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.memory.MemoryAllocator;
 import com.hazelcast.memory.MemoryManager;
 
-import static com.hazelcast.elastic.CapacityUtil.DEFAULT_LOAD_FACTOR;
-import static com.hazelcast.elastic.CapacityUtil.nextCapacity;
-import static com.hazelcast.elastic.CapacityUtil.roundCapacity;
+import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.spi.hashslot.CapacityUtil.nextCapacity;
+import static com.hazelcast.spi.hashslot.CapacityUtil.roundCapacity;
 import static com.hazelcast.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.util.HashUtil.fastLongMix;
 import static com.hazelcast.util.QuickMath.modPowerOfTwo;

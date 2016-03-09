@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.elastic;
+package com.hazelcast.spi.hashslot;
 
 import com.hazelcast.util.QuickMath;
 

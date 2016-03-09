@@ -2,7 +2,7 @@ package com.hazelcast.spi.hashslot;
 
 import com.hazelcast.memory.MemoryManager;
 
-import static com.hazelcast.elastic.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_CAPACITY;
 
 /**
  * Twin-key hash slot array with zero-width value. Suitable for a twin-long set implementation.
