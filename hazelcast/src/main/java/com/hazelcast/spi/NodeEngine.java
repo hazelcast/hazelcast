@@ -77,6 +77,8 @@ public interface NodeEngine {
      * Gets the SerializationService.
      *
      * @return the SerializationService.
+     * @deprecated since 3.7. Use {@link #toObject(Object)} or {@link #toData(Object)} to (de)serialize. The SerializationService
+     * is an internal API.
      */
     SerializationService getSerializationService();
 
@@ -233,6 +235,7 @@ public interface NodeEngine {
 
     /**
      * Indicates that node is not shutting down or it has not already shut down
+     *
      * @return true if node is not shutting down or it has not already shut down
      */
     boolean isRunning();
