@@ -16,10 +16,12 @@
 
 package com.hazelcast.memory;
 
+import com.hazelcast.nio.Disposable;
+
 /**
  * Memory Allocator allocates/free memory blocks from/to OS like C malloc()/free()
  */
-public interface MemoryAllocator {
+public interface MemoryAllocator extends Disposable {
 
     /**
      * NULL pointer address.
