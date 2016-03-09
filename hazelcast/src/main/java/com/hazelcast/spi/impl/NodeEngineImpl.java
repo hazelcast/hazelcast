@@ -61,7 +61,7 @@ import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
+import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -230,8 +230,7 @@ public class NodeEngineImpl implements NodeEngine {
         return proxyService;
     }
 
-    @Override
-    public InternalWaitNotifyService getWaitNotifyService() {
+    public WaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
     }
 

@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.waitnotifyservice;
+
+import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.Notifier;
 
 /**
  * A service for an object where one can wait on, like ICondition or ILock when a thread needs
@@ -53,4 +56,5 @@ public interface WaitNotifyService {
      */
     void notify(Notifier notifier);
 
+    void cancelWaitingOps(String serviceName, Object objectId, Throwable cause);
 }

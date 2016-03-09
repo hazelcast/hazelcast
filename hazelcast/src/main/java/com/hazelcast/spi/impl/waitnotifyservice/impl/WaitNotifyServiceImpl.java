@@ -27,11 +27,10 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitNotifyService;
+import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
@@ -47,7 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
+public class WaitNotifyServiceImpl implements WaitNotifyService {
 
     private static final long FIRST_WAIT_TIME = 1000;
     private static final long TIMEOUT_UPPER_BOUND = 1500;
