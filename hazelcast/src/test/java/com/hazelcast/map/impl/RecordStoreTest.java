@@ -24,7 +24,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.impl.Indexes;

@@ -27,7 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.partition.IPartition;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;

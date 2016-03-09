@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.IPartition;
+import com.hazelcast.spi.partition.IPartition;
 
 public interface InternalPartition extends IPartition {
 
