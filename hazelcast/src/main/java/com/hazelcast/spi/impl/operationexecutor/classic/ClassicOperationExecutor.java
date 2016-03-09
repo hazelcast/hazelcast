@@ -33,6 +33,9 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -58,6 +61,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * </li>
  * </ol>
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class ClassicOperationExecutor implements OperationExecutor {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
@@ -201,6 +205,34 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;
+    }
+
+    @Override
+    public void scan(Map<Address, List<Long>> result) {
+        scan(partitionOperationRunners, result);
+        scan(genericOperationRunners, result);
+    }
+
+    private void scan(OperationRunner[] runners, Map<Address, List<Long>> results) {
+        for (OperationRunner runner : runners) {
+            Object task = runner.currentTask();
+            if (!(task instanceof Operation)) {
+                continue;
+            }
+
+            Operation operation = (Operation) task;
+            Address callerAddress = operation.getCallerAddress();
+            if (callerAddress == null) {
+                callerAddress = thisAddress;
+            }
+
+            List<Long> callIds = results.get(callerAddress);
+            if (callIds == null) {
+                callIds = new ArrayList<Long>();
+                results.put(callerAddress, callIds);
+            }
+            callIds.add(operation.getCallId());
+        }
     }
 
     @Override

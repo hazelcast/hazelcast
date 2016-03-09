@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -176,7 +177,6 @@ public class InvocationRegistry implements Iterable<Invocation> {
         return invocations.get(callId);
     }
 
-
     public void notifyBackupComplete(long callId) {
         responsesBackup.inc();
 
@@ -193,7 +193,7 @@ public class InvocationRegistry implements Iterable<Invocation> {
                 return;
             }
 
-            invocation.notifySingleBackupComplete();
+            invocation.notifyBackupComplete();
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
         }
@@ -240,6 +240,17 @@ public class InvocationRegistry implements Iterable<Invocation> {
             return;
         }
         invocation.notifyCallTimeout();
+    }
+
+
+    public void updateHeartbeat(long callId) {
+        Invocation invocation = invocations.get(callId);
+        if (invocation == null) {
+            // the invocation doesn't exist anymore, so we are done.
+            return;
+        }
+
+        invocation.lastHeartbeatMillis = Clock.currentTimeMillis();
     }
 
     public void reset() {

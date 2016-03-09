@@ -35,6 +35,8 @@ import java.util.List;
  */
 public interface InternalOperationService extends OperationService, PacketHandler {
 
+    String SERVICE_NAME = "hz:impl:operationService";
+
     int getResponseQueueSize();
 
     int getOperationExecutorQueueSize();

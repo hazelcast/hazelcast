@@ -27,6 +27,7 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.OperationTracingService;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -35,7 +36,10 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -46,7 +50,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class WaitNotifyServiceImpl implements WaitNotifyService {
+public class WaitNotifyServiceImpl implements WaitNotifyService, OperationTracingService {
 
     private static final long FIRST_WAIT_TIME = 1000;
     private static final long TIMEOUT_UPPER_BOUND = 1500;
@@ -79,6 +83,27 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
                         threadGroup.getThreadNamePrefix("wait-notify")));
 
         expirationTask = expirationService.submit(new ExpirationTask());
+    }
+
+    @Override
+    public void scan(Map<Address, List<Long>> result) {
+        for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
+            for (WaitingOperation op : queue) {
+                Address callerAddress = op.getCallerAddress();
+                if (callerAddress == null) {
+                    // this check sucks; we should rely on getCallerAddress to be valid.
+                    callerAddress = nodeEngine.getThisAddress();
+                }
+
+                List<Long> callIds = result.get(callerAddress);
+                if (callIds == null) {
+                    callIds = new ArrayList<Long>();
+                    result.put(callerAddress, callIds);
+                }
+
+                callIds.add(op.getCallId());
+            }
+        }
     }
 
     private void invalidate(final WaitingOperation waitingOp) throws Exception {
