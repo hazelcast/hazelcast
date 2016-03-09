@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.IPartition;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;

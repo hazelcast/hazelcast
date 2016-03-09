@@ -22,7 +22,7 @@ import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.List;
 

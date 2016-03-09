@@ -17,7 +17,7 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.impl.queue.operations.CheckAndEvictOperation;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;

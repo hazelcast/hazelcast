@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;

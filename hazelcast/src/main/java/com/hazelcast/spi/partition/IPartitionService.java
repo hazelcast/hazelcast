@@ -14,18 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi.partition;
 
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.CoreService;
 
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A SPI service for accessing partition related information.
+ */
 public interface IPartitionService extends CoreService {
 
+    /**
+     * The name of the service.
+     */
     String SERVICE_NAME = "hz:core:partitionService";
 
     /**
@@ -156,7 +164,7 @@ public interface IPartitionService extends CoreService {
      */
     boolean isPartitionOwner(int partitionId);
 
-    /***
+    /**
      * @return copy of array with IPartition objects
      * create new array on each invocation, not recommended to use in high-loaded parts of code
      */

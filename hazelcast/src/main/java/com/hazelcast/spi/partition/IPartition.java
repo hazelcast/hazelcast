@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi.partition;
 
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Address;
@@ -30,6 +30,9 @@ import com.hazelcast.nio.Address;
  */
 public interface IPartition {
 
+    /**
+     * The maximum number of backups.
+     */
     int MAX_BACKUP_COUNT = 6;
 
     /**

@@ -18,7 +18,7 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;

@@ -15,7 +15,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

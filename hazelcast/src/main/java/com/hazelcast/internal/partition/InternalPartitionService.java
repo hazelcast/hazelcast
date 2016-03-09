@@ -17,7 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.concurrent.TimeUnit;
 

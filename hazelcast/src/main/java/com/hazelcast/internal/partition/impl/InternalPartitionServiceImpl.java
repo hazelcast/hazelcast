@@ -56,7 +56,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionEvent;

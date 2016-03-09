@@ -44,7 +44,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;

@@ -9,7 +9,7 @@ import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

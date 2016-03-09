@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.ClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.IPartition;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;

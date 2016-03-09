@@ -18,7 +18,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplicaChangeReason;
 import com.hazelcast.internal.partition.operation.PromoteFromBackupOperation.InternalPartitionLostEventPublisher;
