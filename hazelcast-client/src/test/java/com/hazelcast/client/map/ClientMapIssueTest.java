@@ -38,6 +38,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,7 +48,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -237,12 +241,12 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     @Test
     public void testNoOperationTimeoutException_whenUserCodeLongRunning() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "100");
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
         hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap(randomMapName());
-        SleepyProcessor sleepyProcessor = new SleepyProcessor(2000);
+        SleepyProcessor sleepyProcessor = new SleepyProcessor(SECONDS.toMillis(10));
         String key = randomString();
         String value = randomString();
         map.put(key, value);
@@ -257,6 +261,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             this.millis = millis;
         }
 
+        @Override
         public Object process(Map.Entry entry) {
             try {
 
@@ -267,6 +272,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             return entry.getValue();
         }
 
+        @Override
         public EntryBackupProcessor getBackupProcessor() {
             return null;
         }

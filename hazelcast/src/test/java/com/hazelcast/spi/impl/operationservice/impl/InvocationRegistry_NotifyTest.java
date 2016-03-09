@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -191,7 +192,12 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.notifyCallTimeout(callId, null);
 
-        assertNull(invocation.future.join());
+        try {
+            assertNull(invocation.future.join());
+            fail();
+        } catch (OperationTimeoutException expected) {
+        }
+
         assertNull(invocationRegistry.get(callId));
     }
 }

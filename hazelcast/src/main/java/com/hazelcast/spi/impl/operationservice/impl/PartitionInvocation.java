@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
@@ -29,7 +30,12 @@ public final class PartitionInvocation extends Invocation {
 
     public PartitionInvocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
                                long callTimeout, boolean resultDeserialized) {
-        super(operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+        super(operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized, null);
+    }
+
+    public PartitionInvocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
+                               long callTimeout, boolean resultDeserialized, ExecutionCallback callback) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized, callback);
     }
 
     @Override

@@ -307,7 +307,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         }
     }
 
-    private synchronized void registerService(String serviceName, Object service) {
+    public synchronized void registerService(String serviceName, Object service) {
         if (logger.isFinestEnabled()) {
             logger.finest("Registering service: '" + serviceName + "'");
         }

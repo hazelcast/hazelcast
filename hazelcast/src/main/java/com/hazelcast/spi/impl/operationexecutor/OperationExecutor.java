@@ -16,9 +16,13 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * The OperationExecutor is responsible for scheduling work (packets/operations) to be executed. It can be compared
@@ -127,6 +131,8 @@ public interface OperationExecutor {
      * Interrupts all partition threads.
      */
     void interruptAllPartitionThreads();
+
+    void scan(Map<Address, List<Long>> result);
 
     /**
      * Checks if the operation is allowed to run on the current thread.

@@ -16,15 +16,20 @@
 
 package com.hazelcast.spi;
 
-/**
- * Operation which has a traceable identifier
- */
-public interface TraceableOperation {
+import com.hazelcast.nio.Address;
 
-    /**
-     * Returns the traceable identifier for this operation.
-     *
-     * @return the traceable identifier for this operation
-     */
-    Object getTraceIdentifier();
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Can be implemented by a Service to track operations. This functionality is needed to let the callee side inform the
+ * caller side which operations are still running.
+ *
+ * Some operations are not executing on regular operation threads (e.g. IExecutorService) or not running at all
+ * (blocking operations).
+ */
+public interface OperationTracingService {
+
+    //todo: do we want to pick up all operations or only the ones that have started to run for some time.
+    void scan(Map<Address, List<Long>> result);
 }

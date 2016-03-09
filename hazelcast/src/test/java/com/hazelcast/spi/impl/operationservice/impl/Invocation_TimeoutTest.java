@@ -1,406 +1,347 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
-import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
-import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.core.Partition;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.operations.IsStillExecutingOperation;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.LockSupport;
 
-import static org.junit.Assert.assertFalse;
+import static com.hazelcast.instance.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
-    @Test
-    public void testInterruptionDuringBlockingOp1() throws InterruptedException {
-        HazelcastInstance hz = createHazelcastInstance();
-        final IQueue<Object> q = hz.getQueue("queue");
+    private final static Object RESPONSE = "someresponse";
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
-
-        OpThread thread = new OpThread("Queue Thread", latch, interruptedFlag) {
-            protected void doOp() throws InterruptedException {
-                q.poll(1, TimeUnit.MINUTES);
-            }
-        };
-        thread.start();
-
-        Thread.sleep(5000);
-        thread.interrupt();
-        q.offer("new item!");
-
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
-
-        if (thread.isInterruptionCaught()) {
-            assertFalse("Thread interrupted flag should not be set!", interruptedFlag.get());
-            assertFalse("Queue should not be empty!", q.isEmpty());
-        } else {
-            assertTrue("Thread interrupted flag should be set!", interruptedFlag.get());
-            assertTrue("Queue should be empty!", q.isEmpty());
-        }
-    }
-
-    @Test
-    public void testWaitingIndefinitely() throws InterruptedException {
-        final Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "3000");
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-
-        // need to warm-up partitions,
-        // since waiting for lock backup can take up to 5 seconds
-        // and that may cause OperationTimeoutException with "No response for 4000 ms" error.
-        warmUpPartitions(instances);
-
-        final String name = randomName();
-        ILock lock = instances[0].getLock(name);
-        lock.lock();
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                try {
-                    // because max timeout=3000 we get timeout exception which we should not
-                    instances[1].getLock(name).lock();
-                    latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
-                }
-            }
-        }.start();
-
-        // wait for enough time which is greater than max-timeout (3000)
-        sleepSeconds(10);
-        lock.unlock();
-
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void testWaitingInfinitelyForTryLock() throws InterruptedException {
-        final Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "3000");
-        final HazelcastInstance hz = createHazelcastInstance(config);
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        final ILock lock = hz.getLock(randomName());
-        lock.lock();
-
-        spawn(new Runnable() {
+    private void assertEventuallyFailsWithHeartbeatTimeout(final ExecutionCallback callback) {
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() {
-                try {
-                    boolean result = lock.tryLock(10, TimeUnit.SECONDS);
-                    latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
-                }
+            public void run() throws Exception {
+                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
+                verify(callback).onFailure(argument.capture());
+                Throwable cause = argument.getValue();
+                assertInstanceOf(OperationTimeoutException.class, cause);
+                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
             }
         });
-
-        assertTrue("latch failed to open", latch.await(20, TimeUnit.SECONDS));
     }
 
-    @Test
-    public void testInterruptionDuringBlockingOp2() throws InterruptedException {
-        HazelcastInstance hz = createHazelcastInstance();
-        final ILock lock = hz.getLock("lock");
-        lock.lock();
-        assertTrue(lock.isLockedByCurrentThread());
+    private void assertEventuallyFailsWithCallTimeout(final ExecutionCallback callback) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
+                verify(callback).onFailure(argument.capture());
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicBoolean interruptedFlag = new AtomicBoolean(false);
-
-        final OpThread thread = new OpThread("Lock-Thread", latch, interruptedFlag) {
-            protected void doOp() throws InterruptedException {
-                assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
+                Throwable cause = argument.getValue();
+                assertInstanceOf(OperationTimeoutException.class, cause);
+                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-call-timeout"));
             }
-        };
-        thread.start();
-
-        Thread.sleep(5000);
-        thread.interrupt();
-        lock.unlock();
-
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
-
-        if (thread.isInterruptionCaught()) {
-            assertFalse("Thread interrupted flag should not be set!", interruptedFlag.get());
-            assertFalse("Lock should not be in 'locked' state!", lock.isLocked());
-        } else {
-            assertTrue("Thread interrupted flag should be set! " + thread, interruptedFlag.get());
-            assertTrue("Lock should be 'locked' state!", lock.isLocked());
-        }
+        });
     }
 
-    @Test(expected = ExecutionException.class)
-    public void testInvocationThrowsOperationTimeoutExceptionWhenTimeout() throws Exception {
-        final Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "300");
+
+    /**
+     * Tests if the get is called with a timeout, and the operation takes more time to execute then the timeout, that the call
+     * fails with a TimeoutException.
+     */
+    @Test
+    public void whenGetTimeout_thenTimeoutException() throws InterruptedException, ExecutionException, TimeoutException {
+        Config config = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
 
-        Set<Partition> partitions = remote.getPartitionService().getPartitions();
-        Partition partition = partitions.iterator().next();
-        OperationService service = getOperationService(local);
-        Operation op = new NonRespondingEmptyOperation();
-        op.setPartitionId(partition.getPartitionId());
-        Future f = service.createInvocationBuilder(MapService.SERVICE_NAME, op, partition.getPartitionId()).invoke();
-        f.get(10, TimeUnit.SECONDS);
-    }
-
-    private static class NonRespondingEmptyOperation extends AbstractOperation implements PartitionAwareOperation {
-
-        @Override
-        public void run() throws InterruptedException {
-        }
-
-        @Override
-        public boolean returnsResponse() {
-            return false;
-        }
-
-    }
-
-    private abstract class OpThread extends Thread {
-        final CountDownLatch latch;
-        final AtomicBoolean interruptionCaught = new AtomicBoolean(false);
-        final AtomicBoolean interruptedFlag;
-
-        protected OpThread(String name, CountDownLatch latch, AtomicBoolean interruptedFlag) {
-            super(name);
-            this.latch = latch;
-            this.interruptedFlag = interruptedFlag;
-        }
-
-        public void run() {
-            try {
-                doOp();
-                interruptedFlag.set(isInterrupted());
-            } catch (InterruptedException e) {
-                interruptionCaught.set(true);
-            } finally {
-                latch.countDown();
-            }
-        }
-
-        private boolean isInterruptionCaught() {
-            return interruptionCaught.get();
-        }
-
-        protected abstract void doOp() throws InterruptedException;
-    }
-
-    @Test
-    public void test_operationExecution_whenOperationTimedOut() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-
-        warmUpPartitions(factory.getAllHazelcastInstances());
-
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-
-        String key = randomString();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-
-        long callTimeout = 3000L;
-        LongRunningOperation longRunningOperation = new LongRunningOperation(3 * callTimeout);
-        InternalOperationService operationService = nodeEngine.getOperationService();
-        operationService.invokeOnPartition(null, longRunningOperation, partitionId);
-
-        InternalCompletableFuture<Object> future = operationService.createInvocationBuilder(null,
-                new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), 1, -1, -1), partitionId)
-                .setCallTimeout(callTimeout).invoke();
+        OperationService opService = getOperationService(local);
+        Future f = opService.invokeOnPartition(
+                null,
+                new SlowOperation(SECONDS.toMillis(10), RESPONSE),
+                getPartitionId(remote));
 
         try {
-            future.join();
-            fail("Invocation should failed with timeout!");
-        } catch (OperationTimeoutException ignored) {
+            f.get(1, SECONDS);
+            fail();
+        } catch (TimeoutException expected) {
         }
 
-        IsLockedOperation isLockedOperation = new IsLockedOperation(new InternalLockNamespace(key),
-                nodeEngine.toData(key), 1);
-        Boolean isLocked = (Boolean) operationService
-                .invokeOnPartition(null, isLockedOperation, partitionId).join();
-        assertFalse(isLocked);
+        // so even though the previous get failed with a timeout, the future can still provide a valid result.
+        assertEquals(RESPONSE, f.get());
     }
 
     @Test
-    public void testAsyncInvocationTimeoutsWhenNoResponseIsReceivedForIsStillRunningInvocation() {
-        int callTimeoutMillis = 500;
-        Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+    public void whenMultipleThreadsCallGetOnSameLongRunningOperation() throws ExecutionException, InterruptedException {
+        long callTimeout = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeout);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
-        // invoke on the "remote" member
-        Address remoteAddress = getNode(remote).getThisAddress();
+        warmUpPartitions(local, remote);
 
-        TargetInvocation orgInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1, true);
-        InvocationFuture future = orgInvocation.invoke();
-        final CountDownLatch timeoutLatch = new CountDownLatch(1);
-        future.andThen(new ExecutionCallback() {
-            @Override
-            public void onResponse(Object response) {
+        OperationService opService = getOperationService(local);
+        final Future f = opService.invokeOnPartition(
+                null,
+                new SlowOperation(callTimeout * 3, RESPONSE),
+                getPartitionId(remote));
 
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                if (t instanceof OperationTimeoutException) {
-                    timeoutLatch.countDown();
-                } else {
-                    t.printStackTrace();
+        List<Future> futures = new LinkedList<Future>();
+        for (int k = 0; k < 10; k++) {
+            futures.add(spawn(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    return f.get();
                 }
+            }));
+        }
+
+        for (Future sf : futures) {
+            assertEquals(RESPONSE, sf.get());
+        }
+    }
+
+    // ==================== long running operation ===============================================================================
+    // Tests that a long running operation is not going to give any problems.
+    //
+    // When an operation is running for a long time, so a much longer time than the call timeout and heartbeat time, due to
+    // the heartbeats being detected, the call will not timeout and returns a valid response.
+    // ===========================================================================================================================
+
+    @Test
+    public void sync_whenLongRunningOperation() throws InterruptedException, ExecutionException, TimeoutException {
+        long callTimeout = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeout);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
+
+        OperationService opService = getOperationService(local);
+
+        Future f = opService.invokeOnPartition(
+                null,
+                new SlowOperation(6 * callTimeout, RESPONSE),
+                getPartitionId(remote));
+
+        Object result = f.get(120, SECONDS);
+        assertEquals(RESPONSE, result);
+    }
+
+    @Test
+    public void async_whenLongRunningOperation() throws InterruptedException, ExecutionException, TimeoutException {
+        long callTimeout = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeout);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
+
+        OperationService opService = getOperationService(local);
+        ICompletableFuture f = opService.invokeOnPartition(
+                null,
+                new SlowOperation(6 * callTimeout, RESPONSE),
+                getPartitionId(remote));
+
+        final ExecutionCallback callback = mock(ExecutionCallback.class);
+        f.andThen(callback);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                verify(callback).onResponse(RESPONSE);
             }
         });
-
-        long orgCallId = orgInvocation.op.getCallId();
-
-        TargetInvocation isStillExecutingInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1, true);
-        InvocationFuture isStillExecutingFuture = isStillExecutingInvocation.invoke();
-        isStillExecutingFuture.andThen(new IsStillRunningService.IsOperationStillRunningCallback(orgInvocation));
-
-        assertOpenEventually(timeoutLatch, 30);
     }
 
-    @Test(timeout = 60000)
-    public void testSyncInvocationTimeoutsWhenNoResponseIsReceivedForIsStillRunningInvocation()
-            throws TimeoutException, InterruptedException, ExecutionException {
-        int callTimeoutMillis = 500;
-        Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+    // ==================== operation heartbeat timeout ==========================================================================
+    // This test verifies that an Invocation is going to timeout when no heartbeat is received.
+    //
+    // This is simulated by executing an void operation (an operation that doesn't send a response). After the execution of this
+    // operation, no heartbeats will be received since it has executed successfully. So eventually the heartbeat timeout should
+    // kick in.
+    // ===========================================================================================================================
+
+    @Test
+    public void sync_whenHeartbeatTimeout_thenOperationTimeoutException() throws Exception {
+        long callTimeoutMs = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeoutMs);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
-        // invoke on the "remote" member
-        Address remoteAddress = getNode(remote).getThisAddress();
+        warmUpPartitions(local, remote);
 
-        TargetInvocation orgInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1, true);
-        InvocationFuture future = orgInvocation.invoke();
+        OperationService opService = getOperationService(local);
 
-        long orgCallId = orgInvocation.op.getCallId();
-
-        TargetInvocation isStillExecutingInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1, true);
-        InvocationFuture isStillExecutingFuture = isStillExecutingInvocation.invoke();
-        isStillExecutingFuture.andThen(new IsStillRunningService.IsOperationStillRunningCallback(orgInvocation));
+        Future f = opService.invokeOnPartition(
+                null,
+                new VoidOperation(),
+                getPartitionId(remote));
 
         try {
-            future.get();
+            f.get(5 * callTimeoutMs, MILLISECONDS);
             fail();
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof OperationTimeoutException);
-        }
-
-    }
-
-
-    static class LongRunningOperation extends AbstractOperation {
-
-        long timeout;
-
-        public LongRunningOperation() {
-        }
-
-        LongRunningOperation(long timeout) {
-            this.timeout = timeout;
-        }
-
-        @Override
-        public void run() throws Exception {
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(timeout));
-        }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out) throws IOException {
-            super.writeInternal(out);
-            out.writeLong(timeout);
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in) throws IOException {
-            super.readInternal(in);
-            timeout = in.readLong();
+            Throwable cause = e.getCause();
+            assertInstanceOf(OperationTimeoutException.class, cause);
+            assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
         }
     }
 
-    public static class SleepingIsStillExecutingOperation extends IsStillExecutingOperation {
+    @Test
+    public void async_whenHeartbeatTimeout_thenOperationTimeoutException() throws Exception {
+        long callTimeoutMs = 1000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeoutMs);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
 
-        private int sleepMs;
+        OperationService opService = getOperationService(local);
 
-        public SleepingIsStillExecutingOperation() {
+        ICompletableFuture f = opService.invokeOnPartition(
+                null,
+                new VoidOperation(),
+                getPartitionId(remote));
+
+        ExecutionCallback callback = mock(ExecutionCallback.class);
+        f.andThen(callback);
+
+        assertEventuallyFailsWithHeartbeatTimeout(callback);
+    }
+
+    // ==================== eventually operation heartbeat timeout ===============================================================
+    // This test verifies that an Invocation is going to timeout when initially there was a heartbeat, but eventually this
+    // heartbeat stops
+    //
+    // This is done by creating a void operation that runs for an extended period and on completion, the void operation doesn't
+    // send a response.
+    // ===========================================================================================================================
+
+    @Test
+    public void sync_whenEventuallyHeartbeatTimeout_thenOperationTimeoutException() throws Exception {
+        long callTimeoutMs = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeoutMs);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
+
+        OperationService opService = getOperationService(local);
+
+        Future f = opService.invokeOnPartition(
+                null,
+                new VoidOperation(callTimeoutMs * 5),
+                getPartitionId(remote));
+
+        try {
+            f.get(10 * callTimeoutMs, MILLISECONDS);
+            fail();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            assertInstanceOf(OperationTimeoutException.class, cause);
+            assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
         }
+    }
 
-        public SleepingIsStillExecutingOperation(long operationCallId, int sleepMs) {
-            super(operationCallId, -1);
-            this.sleepMs = sleepMs;
-        }
+    @Test
+    public void async_whenEventuallyHeartbeatTimeout_thenOperationTimeoutException() throws Exception {
+        long callTimeoutMs = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeoutMs);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
 
-        @Override
-        public void run()
-                throws Exception {
-            sleepAtLeastMillis(sleepMs);
-            sendResponse(true);
-        }
+        OperationService opService = getOperationService(local);
 
-        @Override
-        protected void readInternal(ObjectDataInput in) throws IOException {
-            super.readInternal(in);
-            this.sleepMs = in.readInt();
-        }
+        ICompletableFuture f = opService.invokeOnPartition(
+                null,
+                new VoidOperation(callTimeoutMs * 5),
+                getPartitionId(remote));
 
-        @Override
-        protected void writeInternal(ObjectDataOutput out) throws IOException {
-            super.writeInternal(out);
-            out.writeInt(sleepMs);
+        final ExecutionCallback callback = mock(ExecutionCallback.class);
+        f.andThen(callback);
+
+        assertEventuallyFailsWithHeartbeatTimeout(callback);
+    }
+
+
+    // ==================== operation call timeout ===============================================================================
+    // This test verifies that an operation doesn't get executed after its timeout expires. This is done by
+    // executing an operation in front of the operation that takes a lot of time to execute.
+    // ===========================================================================================================================
+
+    @Test
+    public void sync_whenCallTimeout_thenOperationTimeoutException() throws Exception {
+        long callTimeoutMs = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeoutMs);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
+
+        OperationService opService = getOperationService(local);
+
+        int partitionId = getPartitionId(remote);
+        opService.invokeOnPartition(null, new SlowOperation(callTimeoutMs * 2), partitionId);
+
+        Future f = opService.invokeOnPartition(null, new DummyOperation(), partitionId);
+
+        try {
+            f.get(3 * callTimeoutMs, MILLISECONDS);
+            fail();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            assertInstanceOf(OperationTimeoutException.class, cause);
+            assertTrue(cause.getMessage(), cause.getMessage().contains("operation-call-timeout"));
         }
+    }
+
+    @Test
+    public void async_whenCallTimeout_thenOperationTimeoutException() throws Exception {
+        long callTimeoutMs = 5000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS, "" + callTimeoutMs);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
+
+        OperationService opService = getOperationService(local);
+
+        int partitionId = getPartitionId(remote);
+        opService.invokeOnPartition(null, new SlowOperation(callTimeoutMs * 2), partitionId);
+
+        ICompletableFuture f = opService.invokeOnPartition(null, new DummyOperation(), partitionId);
+
+        ExecutionCallback callback = mock(ExecutionCallback.class);
+        f.andThen(callback);
+
+        assertEventuallyFailsWithCallTimeout(callback);
     }
 }

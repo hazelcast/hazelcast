@@ -35,6 +35,8 @@ import java.util.List;
  */
 public interface InternalOperationService extends OperationService, PacketHandler {
 
+    String SERVICE_NAME = "hz:impl:operationService";
+
     /**
      * Checks if this call is timed out. A timed out call is not going to be executed.
      *

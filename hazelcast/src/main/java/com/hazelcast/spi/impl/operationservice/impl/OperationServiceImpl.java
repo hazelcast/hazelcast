@@ -39,6 +39,7 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.OperationTracingService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -61,6 +62,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
@@ -89,7 +92,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
-public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
+public final class OperationServiceImpl implements InternalOperationService, PacketHandler, OperationTracingService {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -105,12 +108,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Probe(name = "completed.count", level = MANDATORY)
     final AtomicLong completedOperationsCount = new AtomicLong();
 
-    @Probe(name = "operationTimeoutCount", level = MANDATORY)
-    final MwCounter operationTimeoutCount = MwCounter.newMwCounter();
-
-    @Probe(name = "callTimeoutCount", level = MANDATORY)
-    final MwCounter callTimeoutCount = MwCounter.newMwCounter();
-
     @Probe(name = "retryCount", level = MANDATORY)
     final MwCounter retryCount = MwCounter.newMwCounter();
 
@@ -123,7 +120,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final long defaultCallTimeoutMillis;
 
     private final SlowOperationDetector slowOperationDetector;
-    private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
@@ -146,13 +142,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.invocationRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
 
-        this.invocationMonitor = new InvocationMonitor(
-                invocationRegistry,
-                logger,
-                groupProperties,
-                node.getHazelcastThreadGroup(),
-                nodeEngine.getExecutionService(),
-                nodeEngine.getMetricsRegistry());
+        this.invocationMonitor = new InvocationMonitor(invocationRegistry, logger, nodeEngine);
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
@@ -174,13 +164,17 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 metricsRegistry
         );
 
-        this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
-
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
+
         metricsRegistry.scanAndRegister(this, "operation");
+    }
+
+    @Override
+    public void scan(Map<Address, List<Long>> result) {
+        operationExecutor.scan(result);
     }
 
     public void start() {
@@ -193,10 +187,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 operationExecutor.getPartitionOperationRunners(),
                 node.groupProperties,
                 node.getHazelcastThreadGroup());
-    }
-
-    public IsStillRunningService getIsStillRunningService() {
-        return isStillRunningService;
     }
 
     @Override
@@ -261,8 +251,12 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         checkNotNull(packet, "packet can't be null");
         checkTrue(packet.isFlagSet(Packet.FLAG_OP), "Packet.FLAG_OP should be set!");
 
-        if (packet.isFlagSet(Packet.FLAG_RESPONSE)) {
+        int flags = packet.getFlags();
+
+        if ((flags & FLAG_RESPONSE) != 0) {
             responsePacketExecutor.handle(packet);
+        } else if ((flags & FLAG_OP_CONTROL) != 0) {
+            invocationMonitor.handle(packet);
         } else {
             operationExecutor.execute(packet);
         }
@@ -339,11 +333,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         op.setServiceName(serviceName).setPartitionId(partitionId).setReplicaIndex(DEFAULT_REPLICA_INDEX);
 
         InvocationFuture future = new PartitionInvocation(this, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
-                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, callback).invokeAsync();
 
-        if (callback != null) {
-            future.andThen(callback);
-        }
+//        if (callback != null) {
+//            future.andThen(callback);
+//        }
     }
 
     // =============================== processing operation  ===============================
@@ -435,7 +429,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         byte[] bytes = serializationService.toBytes(response);
         Packet packet = new Packet(bytes, -1);
         packet.setFlag(Packet.FLAG_OP);
-        packet.setFlag(Packet.FLAG_RESPONSE);
+        packet.setFlag(FLAG_RESPONSE);
 
         if (response.isUrgent()) {
             packet.setFlag(Packet.FLAG_URGENT);
