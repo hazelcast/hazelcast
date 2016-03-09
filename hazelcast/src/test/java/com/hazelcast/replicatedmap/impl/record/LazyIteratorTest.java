@@ -21,7 +21,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;

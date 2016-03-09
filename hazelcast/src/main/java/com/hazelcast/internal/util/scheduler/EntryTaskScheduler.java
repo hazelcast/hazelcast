@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.scheduler;
+package com.hazelcast.internal.util.scheduler;
 
 /**
  * Schedules (or reschedules) the execution of given entry.

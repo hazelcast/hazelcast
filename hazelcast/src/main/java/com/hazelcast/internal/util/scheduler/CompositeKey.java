@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.scheduler;
+package com.hazelcast.internal.util.scheduler;
 
 /**
  * This object is first needed for having different key objects that are created for the same key updated in

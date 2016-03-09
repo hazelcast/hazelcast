@@ -82,12 +82,12 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.HashUtil;
-import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduleType;
-import com.hazelcast.util.scheduler.ScheduledEntry;
-import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.internal.util.scheduler.ScheduleType;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.ArrayList;
 import java.util.Arrays;

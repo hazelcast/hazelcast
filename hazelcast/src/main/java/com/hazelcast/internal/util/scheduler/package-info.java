@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.scheduler;
-
-import com.hazelcast.util.Clock;
-
-class StaticClock extends Clock.ClockImpl {
-
-    private static final long TIME = System.currentTimeMillis();
-
-    @Override
-    protected long currentTimeMillis() {
-        return TIME;
-    }
-}
+/**
+ * This package contains scheduler classes for Util
+ */
+package com.hazelcast.internal.util.scheduler;

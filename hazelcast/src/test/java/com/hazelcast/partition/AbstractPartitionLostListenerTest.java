@@ -8,7 +8,7 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import org.junit.After;
 import org.junit.Before;
 

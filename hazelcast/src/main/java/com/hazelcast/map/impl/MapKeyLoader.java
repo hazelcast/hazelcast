@@ -38,7 +38,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.StateMachine;
-import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
+import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 
 import java.io.Closeable;
 import java.util.ArrayList;

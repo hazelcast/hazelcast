@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.internal.util.scheduler.EntryTaskScheduler;
 
 import java.io.IOException;
 import java.util.Collection;

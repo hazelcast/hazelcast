@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.scheduler;
+package com.hazelcast.internal.util.scheduler;
 
-/**
- * Controls behaviour of {@link SecondsBasedEntryTaskScheduler} when a new entry is added
- * under already existing key.
- */
-public enum ScheduleType {
+import com.hazelcast.util.Clock;
 
-    /**
-     * If there is an entry already scheduled under a given key then
-     * the existing entry will be removed and a new one will be scheduled instead.
-     */
-    POSTPONE,
+class StaticClock extends Clock.ClockImpl {
 
-    /**
-     * Always add a new entry even when there is one already scheduled under a given key. The existing entry
-     * won't be affected.
-     */
-    FOR_EACH
+    private static final long TIME = System.currentTimeMillis();
+
+    @Override
+    protected long currentTimeMillis() {
+        return TIME;
+    }
 }
