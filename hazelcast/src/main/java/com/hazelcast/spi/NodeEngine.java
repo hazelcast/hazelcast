@@ -260,6 +260,7 @@ public interface NodeEngine {
      * @param <T>
      * @return the found service, or null if the service was not found.
      * @throws NullPointerException if the serviceName is null.
+     * @deprecated since 3.7. Use {@link #getService(String)} instead.
      */
     <T extends SharedService> T getSharedService(String serviceName);
 }

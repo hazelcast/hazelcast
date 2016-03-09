@@ -180,7 +180,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected LockStore createLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         if (lockService == null) {
             return null;
         }

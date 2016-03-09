@@ -23,6 +23,8 @@ package com.hazelcast.spi;
  * otherwise it will be an isolated service.
  * <p/>
  * Shared services are accessible via {@link NodeEngine#getSharedService(String)}.
+ *
+ * @deprecated since 3.7. A service can be retrieved using {@link NodeEngine#getService(String)}
  */
 public interface SharedService {
 }
