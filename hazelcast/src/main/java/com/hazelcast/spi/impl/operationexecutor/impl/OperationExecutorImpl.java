@@ -25,12 +25,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -194,6 +196,24 @@ public final class OperationExecutorImpl implements OperationExecutor {
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;
+    }
+
+
+    @Override
+    public void scan(LiveOperations result) {
+        scan(partitionOperationRunners, result);
+        scan(genericOperationRunners, result);
+    }
+
+    private void scan(OperationRunner[] runners, LiveOperations result) {
+        for (OperationRunner runner : runners) {
+            Object task = runner.currentTask();
+            if (!(task instanceof Operation) || task.getClass() == Backup.class) {
+                continue;
+            }
+            Operation operation = (Operation) task;
+            result.add(operation.getCallerAddress(), operation.getCallId());
+        }
     }
 
     @Probe(name = "runningCount")

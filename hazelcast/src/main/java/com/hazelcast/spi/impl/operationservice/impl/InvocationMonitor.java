@@ -22,161 +22,228 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
+import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.internal.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
  * The InvocationMonitor monitors all pending invocations and determines if there are any problems like timeouts. It uses the
  * {@link InvocationRegistry} to access the pending invocations.
- * <p/>
- * An experimental feature to support debugging is the slow invocation detector. So it can log any invocation that takes
- * more than x seconds. See {@link GroupProperty#SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS} for more information.
  */
-public class InvocationMonitor {
+public class InvocationMonitor implements PacketHandler {
 
-    private static final long ON_MEMBER_LEFT_DELAY_MS = 1111;
-    private static final int SCAN_DELAY_MILLIS = 1000;
+    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
+    private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
 
-    private final long backupTimeoutMillis;
+    private final NodeEngineImpl nodeEngine;
+    private final InternalSerializationService serializationService;
+    private final ServiceManager serviceManager;
     private final InvocationRegistry invocationRegistry;
-    private final ExecutionService executionService;
-    private final InvocationMonitorThread monitorThread;
     private final ILogger logger;
+    private final ScheduledExecutorService scheduler;
+    private final Address thisAddress;
+
     @Probe(name = "backupTimeouts", level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
     @Probe(name = "normalTimeouts", level = MANDATORY)
     private final SwCounter normalTimeoutsCount = newSwCounter();
+    @Probe
+    private final SwCounter heartbeatPacketsReceived = newSwCounter();
+    @Probe
+    private final SwCounter heartbeatPacketsSend = newSwCounter();
+    @Probe
+    private final long backupTimeoutMillis;
+    @Probe
+    private final long invocationTimeoutMillis;
+    @Probe
+    private final long heartbeatBroadcastPeriodMillis;
+    @Probe
+    private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
 
-    public InvocationMonitor(InvocationRegistry invocationRegistry, ILogger logger, GroupProperties props,
-                             HazelcastThreadGroup hzThreadGroup, ExecutionService executionService,
+    //todo: we need to get rid of the nodeEngine dependency
+    public InvocationMonitor(NodeEngineImpl nodeEngine,
+                             Address thisAddress,
+                             HazelcastThreadGroup threadGroup,
+                             GroupProperties groupProperties,
+                             InvocationRegistry invocationRegistry,
+                             ILogger logger,
+                             InternalSerializationService serializationService,
+                             ServiceManager serviceManager,
                              MetricsRegistry metricsRegistry) {
+        this.nodeEngine = nodeEngine;
+        this.thisAddress = thisAddress;
+        this.serializationService = serializationService;
+        this.serviceManager = serviceManager;
         this.invocationRegistry = invocationRegistry;
         this.logger = logger;
-        this.executionService = executionService;
-        this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
-        this.monitorThread = new InvocationMonitorThread(hzThreadGroup);
+        this.backupTimeoutMillis = backupTimeoutMillis(groupProperties);
+        this.invocationTimeoutMillis = invocationTimeoutMillis(groupProperties);
+        this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(groupProperties);
+
+        this.scheduler = newScheduler(threadGroup);
 
         metricsRegistry.scanAndRegister(this, "operation.invocations");
     }
 
-    public void start() {
-        monitorThread.start();
+    private ScheduledExecutorService newScheduler(final HazelcastThreadGroup threadGroup) {
+        // the scheduler is configured with a single thread.
+        ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new InvocationMonitorThread(r, threadGroup);
+                thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                    @Override
+                    public void uncaughtException(Thread t, Throwable e) {
+                        logger.severe(e);
+                    }
+                });
+                return thread;
+            }
+        });
+        return scheduler;
     }
 
-    public void shutdown() {
-        monitorThread.shutdown();
+    private long invocationTimeoutMillis(GroupProperties properties) {
+        long heartbeatTimeoutMillis = properties.getMillis(OPERATION_CALL_TIMEOUT_MILLIS);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Operation invocation timeout is " + heartbeatTimeoutMillis + " ms");
+        }
+
+        return heartbeatTimeoutMillis;
     }
 
-    public void awaitTermination(long timeoutMillis) throws InterruptedException {
-        monitorThread.join(timeoutMillis);
+    private long backupTimeoutMillis(GroupProperties properties) {
+        long backupTimeoutMillis = properties.getMillis(OPERATION_BACKUP_TIMEOUT_MILLIS);
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Operation backup timeout is " + backupTimeoutMillis + " ms");
+        }
+
+        return backupTimeoutMillis;
+    }
+
+    private long heartbeatBroadcastPeriodMillis(GroupProperties groupProperties) {
+        // The heartbeat period is configured to be 1/4 of the call timeout. So with default settings, every 15 seconds,
+        // every member in the cluster, will notify every other member in the cluster about all calls that are pending.
+        // This is done quite efficiently; imagine at any given moment one node has 1000 concurrent calls pending on another
+        // node; then every 15 seconds an 8 KByte packet is send to the other member.
+        // Another advantage is that multiple heartbeat timeouts are allowed to get lost; without leading to premature
+        // abortion of the invocation.
+        int callTimeoutMs = groupProperties.getInteger(OPERATION_CALL_TIMEOUT_MILLIS);
+        long periodMs = Math.max(SECONDS.toMillis(1), callTimeoutMs / HEARTBEAT_CALL_TIMEOUT_RATIO);
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Operation heartbeat period is " + periodMs + " ms");
+        }
+
+        return periodMs;
     }
 
     public void onMemberLeft(MemberImpl member) {
         // postpone notifying invocations since real response may arrive in the mean time.
-        Runnable task = new OnMemberLeftTask(member);
-        executionService.schedule(task, ON_MEMBER_LEFT_DELAY_MS, TimeUnit.MILLISECONDS);
+        scheduler.schedule(new OnMemberLeftTask(member), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
     }
 
+    @Override
+    public void handle(Packet packet) {
+        scheduler.execute(new ProcessOperationHeartbeatsTask(packet));
+    }
+
+    public void start() {
+        scheduler.scheduleAtFixedRate(new MonitorInvocationsTask(), 0, invocationScanPeriodMillis, MILLISECONDS);
+        scheduler.scheduleAtFixedRate(new BroadcastOperationHeartbeatsTask(), 0, heartbeatBroadcastPeriodMillis, MILLISECONDS);
+    }
+
+    public void shutdown() {
+        scheduler.shutdown();
+    }
+
+    public void awaitTermination(long timeoutMillis) throws InterruptedException {
+        scheduler.awaitTermination(timeoutMillis, MILLISECONDS);
+    }
+
+
     /**
-     * The InvocationMonitorThread iterates over all pending invocations and sees what needs to be done
-     * <p/>
-     * But it should also check if a 'is still running' check needs to be done. This removed complexity from
-     * the invocation.waitForResponse which is too complicated too understand.
-     * <p/>
-     * This class needs to implement the {@link OperationHostileThread} interface to make sure that the OperationExecutor
-     * is not going to schedule any operations on this task due to retry.
+     * The MonitorTask iterates over all pending invocations and sees what needs to be done. Currently its tasks are:
+     * - getting rid of duplicates
+     * - checking for heartbeat timeout
+     * - checking for backup timeout
+     *
+     * In the future additional checks can be added here like checking if a retry is needed etc.
      */
-    private final class InvocationMonitorThread extends Thread implements OperationHostileThread {
-
-        private volatile boolean shutdown;
-
-        private InvocationMonitorThread(HazelcastThreadGroup hzThreadGroup) {
-            super(hzThreadGroup.getInternalThreadGroup(), hzThreadGroup.getThreadNamePrefix("InvocationMonitorThread"));
-        }
-
-        public void shutdown() {
-            shutdown = true;
-            interrupt();
-        }
+    private final class MonitorInvocationsTask implements Runnable {
 
         @Override
         public void run() {
-            try {
-                while (!shutdown) {
-                    scan();
-                    if (!shutdown) {
-                        sleep();
-                    }
-                }
-            } catch (Throwable t) {
-                inspectOutputMemoryError(t);
-                logger.severe("Failed to run", t);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Scanning all invocations");
             }
-        }
 
-        private void sleep() {
-            try {
-                Thread.sleep(SCAN_DELAY_MILLIS);
-            } catch (InterruptedException ignore) {
-                // can safely be ignored. If this thread wants to shut down, it will read the shutdown variable.
-                EmptyStatement.ignore(ignore);
-            }
-        }
-
-        private void scan() {
             if (invocationRegistry.size() == 0) {
                 return;
             }
 
             int backupTimeouts = 0;
-            int invocationTimeouts = 0;
+            int normalTimeouts = 0;
             int invocationCount = 0;
 
             Set<Map.Entry<Long, Invocation>> invocations = invocationRegistry.entrySet();
             Iterator<Map.Entry<Long, Invocation>> iterator = invocations.iterator();
             while (iterator.hasNext()) {
                 invocationCount++;
-
-                if (shutdown) {
-                    return;
-                }
                 Map.Entry<Long, Invocation> entry = iterator.next();
                 Long callId = entry.getKey();
-                Invocation invocation = entry.getValue();
+                Invocation inv = entry.getValue();
 
-                if (duplicate(invocation, callId, iterator)) {
+                if (duplicate(inv, callId, iterator)) {
                     continue;
                 }
 
-                if (checkInvocationTimeout(invocation)) {
-                    invocationTimeouts++;
-                }
-
-                if (checkBackupTimeout(invocation)) {
-                    backupTimeouts++;
+                try {
+                    if (inv.detectAndHandleTimeout(invocationTimeoutMillis)) {
+                        normalTimeouts++;
+                    } else if (inv.detectAndHandleBackupTimeout(backupTimeoutMillis)) {
+                        backupTimeouts++;
+                    }
+                } catch (Throwable t) {
+                    inspectOutputMemoryError(t);
+                    logger.severe("Failed to check invocation:" + inv, t);
                 }
             }
 
             backupTimeoutsCount.inc(backupTimeouts);
-            normalTimeoutsCount.inc(invocationTimeouts);
-            log(invocationCount, backupTimeouts, invocationTimeouts);
+            normalTimeoutsCount.inc(normalTimeouts);
+            log(invocationCount, backupTimeouts, normalTimeouts);
         }
 
         /**
@@ -211,26 +278,6 @@ public class InvocationMonitor {
             return false;
         }
 
-        private boolean checkInvocationTimeout(Invocation invocation) {
-            try {
-                return invocation.checkInvocationTimeout();
-            } catch (Throwable t) {
-                inspectOutputMemoryError(t);
-                logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
-                return false;
-            }
-        }
-
-        private boolean checkBackupTimeout(Invocation invocation) {
-            try {
-                return invocation.checkBackupTimeout(backupTimeoutMillis);
-            } catch (Throwable t) {
-                inspectOutputMemoryError(t);
-                logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
-                return false;
-            }
-        }
-
         private void log(int invocationCount, int backupTimeouts, int invocationTimeouts) {
             Level logLevel = null;
             if (backupTimeouts > 0 || invocationTimeouts > 0) {
@@ -250,7 +297,7 @@ public class InvocationMonitor {
     private final class OnMemberLeftTask implements Runnable {
         private final MemberImpl leftMember;
 
-        public OnMemberLeftTask(MemberImpl leftMember) {
+        private OnMemberLeftTask(MemberImpl leftMember) {
             this.leftMember = leftMember;
         }
 
@@ -271,6 +318,84 @@ public class InvocationMonitor {
             } else {
                 return leftMember.getUuid().equals(targetMember.getUuid());
             }
+        }
+    }
+
+    private final class ProcessOperationHeartbeatsTask implements Runnable {
+        // either a packet or a long-array.
+        private Object callIds;
+
+        private ProcessOperationHeartbeatsTask(Object callIds) {
+            this.callIds = callIds;
+        }
+
+        @Override
+        public void run() {
+            heartbeatPacketsReceived.inc();
+            for (long callId : (long[]) serializationService.toObject(callIds)) {
+                updateHeartbeat(callId);
+            }
+        }
+
+        private void updateHeartbeat(long callId) {
+            Invocation invocation = invocationRegistry.get(callId);
+            if (invocation == null) {
+                // the invocation doesn't exist anymore, so we are done.
+                return;
+            }
+
+            invocation.lastHeartbeatMillis = Clock.currentTimeMillis();
+        }
+    }
+
+    private final class BroadcastOperationHeartbeatsTask implements Runnable {
+        private final LiveOperations liveOperations = new LiveOperations(thisAddress);
+
+
+        @Override
+        public void run() {
+            LiveOperations result = populate();
+            Set<Address> addresses = result.addresses();
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Broadcasting operation heartbeats to: " + addresses.size() + " members");
+            }
+
+            for (Address address : addresses) {
+                sendHeartbeats(address, result.callIds(address));
+            }
+        }
+
+        private LiveOperations populate() {
+            liveOperations.clear();
+
+            for (LiveOperationsTracker tracker : serviceManager.getServices(LiveOperationsTracker.class)) {
+                tracker.populate(liveOperations);
+            }
+
+            return liveOperations;
+        }
+
+        private void sendHeartbeats(Address address, long[] callIds) {
+            heartbeatPacketsSend.inc();
+
+            if (address.equals(thisAddress)) {
+                scheduler.execute(new ProcessOperationHeartbeatsTask(callIds));
+            } else {
+                Packet packet = new Packet(serializationService.toBytes(callIds))
+                        .setAllFlags(FLAG_OP | FLAG_OP_CONTROL | FLAG_URGENT);
+                nodeEngine.getNode().getConnectionManager().transmit(packet, address);
+            }
+        }
+    }
+
+    /**
+     * This class needs to implement the {@link OperationHostileThread} interface to make sure that the OperationExecutor
+     * is not going to schedule any operations on this thread due to retry.
+     */
+    private static final class InvocationMonitorThread extends Thread implements OperationHostileThread {
+        private InvocationMonitorThread(Runnable task, HazelcastThreadGroup hzThreadGroup) {
+            super(hzThreadGroup.getInternalThreadGroup(), task, hzThreadGroup.getThreadNamePrefix("InvocationMonitorThread"));
         }
     }
 }

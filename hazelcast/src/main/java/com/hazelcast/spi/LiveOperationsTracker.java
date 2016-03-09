@@ -17,14 +17,19 @@
 package com.hazelcast.spi;
 
 /**
- * Operation which has a traceable identifier
+ * Can be implemented by a Service to track live operations. This functionality is needed to let the executing side
+ * inform the caller side which operations are still running. If an operation doesn't provide a heartbeat, the caller
+ * can eventually decide to timeout the operation.
+ *
+ * Some operations are not executing on regular operation threads (e.g. IExecutorService) or not running at all
+ * (blocking operations).
  */
-public interface TraceableOperation {
+public interface LiveOperationsTracker {
 
     /**
-     * Returns the traceable identifier for this operation.
+     * Populate the LifeOperations
      *
-     * @return the traceable identifier for this operation
+     * @param result the result.
      */
-    Object getTraceIdentifier();
+    void populate(LiveOperations result);
 }

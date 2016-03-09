@@ -36,6 +36,8 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
@@ -61,6 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
@@ -91,7 +94,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
-public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
+public final class OperationServiceImpl implements InternalOperationService, PacketHandler, LiveOperationsTracker {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -125,7 +128,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final long defaultCallTimeoutMillis;
 
     private final SlowOperationDetector slowOperationDetector;
-    private final IsStillRunningService isStillRunningService;
     private final AsyncResponseHandler responsePacketExecutor;
     private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
@@ -151,12 +153,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel, nodeEngine.getMetricsRegistry());
 
         this.invocationMonitor = new InvocationMonitor(
-                invocationRegistry,
-                logger,
-                groupProperties,
-                node.getHazelcastThreadGroup(),
-                nodeEngine.getExecutionService(),
-                nodeEngine.getMetricsRegistry());
+                nodeEngine, node.getThisAddress(), node.getHazelcastThreadGroup(), node.getGroupProperties(),
+                invocationRegistry, logger, (InternalSerializationService) nodeEngine.getSerializationService(),
+                nodeEngine.getServiceManager(), nodeEngine.getMetricsRegistry());
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
@@ -181,13 +180,17 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 metricsRegistry
         );
 
-        this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
-
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
+
         metricsRegistry.scanAndRegister(this, "operation");
+    }
+
+    @Override
+    public void populate(LiveOperations result) {
+        operationExecutor.scan(result);
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -196,10 +199,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 operationExecutor.getPartitionOperationRunners(),
                 node.groupProperties,
                 node.getHazelcastThreadGroup());
-    }
-
-    public IsStillRunningService getIsStillRunningService() {
-        return isStillRunningService;
     }
 
     @Override
@@ -264,8 +263,12 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         checkNotNull(packet, "packet can't be null");
         checkTrue(packet.isFlagSet(FLAG_OP), "Packet.FLAG_OP should be set!");
 
-        if (packet.isFlagSet(FLAG_RESPONSE)) {
+        int flags = packet.getFlags();
+
+        if ((flags & FLAG_RESPONSE) != 0) {
             responsePacketExecutor.handle(packet);
+        } else if ((flags & FLAG_OP_CONTROL) != 0) {
+            invocationMonitor.handle(packet);
         } else {
             operationExecutor.execute(packet);
         }

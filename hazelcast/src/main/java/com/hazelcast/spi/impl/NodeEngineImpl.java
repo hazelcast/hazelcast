@@ -62,6 +62,7 @@ import com.hazelcast.spi.impl.packetdispatcher.impl.PacketDispatcherImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
@@ -126,6 +127,9 @@ public class NodeEngineImpl implements NodeEngine {
                 new ConnectionManagerPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
         this.performanceMonitor = newPerformanceMonitor();
+
+        serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
+        serviceManager.registerService(WaitNotifyService.SERVICE_NAME, waitNotifyService);
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
@@ -144,6 +148,7 @@ public class NodeEngineImpl implements NodeEngine {
                 loggingService.getLogger(PerformanceMonitor.class),
                 node.getHazelcastThreadGroup(),
                 node.groupProperties);
+
     }
 
     class ConnectionManagerPacketHandler implements PacketHandler {
@@ -181,6 +186,10 @@ public class NodeEngineImpl implements NodeEngine {
         performanceMonitor.register(new MetricsPlugin(this));
         performanceMonitor.register(new SlowOperationPlugin(this));
         performanceMonitor.register(new InvocationPlugin(this));
+    }
+
+    public ServiceManager getServiceManager() {
+        return serviceManager;
     }
 
     @Override

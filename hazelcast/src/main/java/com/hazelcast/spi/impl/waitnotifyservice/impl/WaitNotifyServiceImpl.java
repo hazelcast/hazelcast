@@ -27,6 +27,8 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.LiveOperationsTracker;
+import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -46,7 +48,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class WaitNotifyServiceImpl implements WaitNotifyService {
+public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsTracker {
 
     private static final long FIRST_WAIT_TIME = 1000;
     private static final long TIMEOUT_UPPER_BOUND = 1500;
@@ -79,6 +81,15 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
                         threadGroup.getThreadNamePrefix("wait-notify")));
 
         expirationTask = expirationService.submit(new ExpirationTask());
+    }
+
+    @Override
+    public void populate(LiveOperations liveOperations) {
+        for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
+            for (WaitingOperation op : queue) {
+                liveOperations.add(op.getCallerAddress(), op.getCallId());
+            }
+        }
     }
 
     private void invalidate(final WaitingOperation waitingOp) throws Exception {

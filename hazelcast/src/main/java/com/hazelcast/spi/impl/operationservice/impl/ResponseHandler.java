@@ -114,7 +114,7 @@ public final class ResponseHandler implements PacketHandler {
                 return;
             }
 
-            invocation.notifySingleBackupComplete();
+            invocation.notifyBackupComplete();
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
         }

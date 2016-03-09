@@ -25,6 +25,8 @@ import com.hazelcast.spi.Notifier;
  */
 public interface WaitNotifyService {
 
+    String SERVICE_NAME = "hz:impl:waitNotifyService";
+
     /**
      * Causes the current operation to wait in WaitNotifyService until it is notified
      * by a {@link com.hazelcast.spi.Notifier} operation or timeout specified by
