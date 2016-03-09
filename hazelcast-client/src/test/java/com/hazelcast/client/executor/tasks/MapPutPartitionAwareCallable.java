@@ -16,12 +16,17 @@
 
 package com.hazelcast.client.executor.tasks;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import java.util.concurrent.Callable;
+
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
 /**
  * this task should execute on a node owning the given partitionKey argument,

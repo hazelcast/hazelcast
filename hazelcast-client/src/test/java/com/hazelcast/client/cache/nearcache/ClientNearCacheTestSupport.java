@@ -41,7 +41,6 @@ import org.junit.After;
 import org.junit.Before;
 
 import javax.cache.spi.CachingProvider;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;

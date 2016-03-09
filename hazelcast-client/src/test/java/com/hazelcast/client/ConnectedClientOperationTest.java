@@ -22,7 +22,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 
