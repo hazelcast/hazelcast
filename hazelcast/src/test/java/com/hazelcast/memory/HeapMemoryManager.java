@@ -28,13 +28,13 @@ import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCES
  */
 public class HeapMemoryManager implements MemoryManager {
 
+    private static final int HEAP_BOTTOM = 8;
+
     private final Allocator malloc = new Allocator();
 
     private final Accessor mem = new Accessor();
 
-    private final byte[] storage;
-
-    private static final int HEAP_BOTTOM = 8;
+    private byte[] storage;
 
     private int heapTop = HEAP_BOTTOM;
 
@@ -54,6 +54,7 @@ public class HeapMemoryManager implements MemoryManager {
 
     @Override
     public void dispose() {
+        storage = null;
     }
 
     class Allocator implements MemoryAllocator {
@@ -80,6 +81,7 @@ public class HeapMemoryManager implements MemoryManager {
 
         @Override
         public void dispose() {
+            storage = null;
         }
     }
 

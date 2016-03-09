@@ -37,9 +37,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class CapacityUtilTest extends HazelcastTestSupport {
 
-    @Rule
-    public final TestRule assertEnabledRule = new AssertEnabledFilterRule();
-
     @Test
     public void testConstructor() throws Exception {
         assertUtilityConstructor(CapacityUtil.class);
