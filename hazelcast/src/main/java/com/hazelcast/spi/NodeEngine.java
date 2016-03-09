@@ -245,6 +245,15 @@ public interface NodeEngine {
     HazelcastInstance getHazelcastInstance();
 
     /**
+     * Gets the service with the given name.
+     *
+     * @param serviceName the name of the service
+     * @param <T> the type of the service.
+     * @return the found service, or HazelcastException in case of failure. Null will not be returned.
+     */
+    <T> T getService(String serviceName);
+
+    /**
      * Gets the {@link SharedService} for the given serviceName.
      *
      * @param serviceName the name of the shared service to get.
