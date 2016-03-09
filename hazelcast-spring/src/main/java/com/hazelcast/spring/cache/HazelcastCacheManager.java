@@ -73,4 +73,8 @@ public class HazelcastCacheManager implements CacheManager {
     public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
     }
+
+    public HazelcastInstance getHazelcastInstance() {
+        return hazelcastInstance;
+    }
 }
