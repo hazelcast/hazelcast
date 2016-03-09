@@ -87,7 +87,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     protected ScheduledFuture scheduleExpirationTask(NearCacheExecutor nearCacheExecutor,
                                                      ExpirationTask expirationTask) {
-        return nearCacheExecutor.scheduleWithFixedDelay(expirationTask,
+        return nearCacheExecutor.scheduleWithRepetition(expirationTask,
                 DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
                 DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
                 TimeUnit.SECONDS);

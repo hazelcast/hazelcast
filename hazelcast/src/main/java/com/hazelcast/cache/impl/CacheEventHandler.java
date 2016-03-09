@@ -69,7 +69,7 @@ class CacheEventHandler {
             CacheBatchInvalidationMessageSender batchInvalidationMessageSender
                     = new CacheBatchInvalidationMessageSender();
             cacheBatchInvalidationMessageSenderScheduler = executionService
-                    .scheduleAtFixedRate(ICacheService.SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
+                    .scheduleWithRepetition(ICacheService.SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
                                          batchInvalidationMessageSender,
                                          invalidationMessageBatchFreq,
                                          invalidationMessageBatchFreq,

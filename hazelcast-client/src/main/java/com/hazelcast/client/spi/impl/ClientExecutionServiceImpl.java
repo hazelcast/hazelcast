@@ -21,6 +21,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.executionservice.impl.SkipOnConcurrentExecutionDecorator;
 import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
@@ -149,19 +150,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
+    public ScheduledFuture<?> scheduleWithRepetition(final Runnable command, long initialDelay, long period, TimeUnit unit) {
+        final Runnable decoratedCommand = new SkipOnConcurrentExecutionDecorator(command);
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                executeInternalSafely(command, failureLoggingExecutionCallback);
-            }
-        }, initialDelay, period, unit);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
-            public void run() {
-                executeInternalSafely(command, failureLoggingExecutionCallback);
+                executeInternalSafely(decoratedCommand, failureLoggingExecutionCallback);
             }
         }, initialDelay, period, unit);
     }

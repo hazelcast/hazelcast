@@ -260,7 +260,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     private void startBackgroundBatchProcessor() {
         int periodSeconds = getBackgroundProcessorRunPeriodSeconds();
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleAtFixedRate(INVALIDATION_EXECUTOR_NAME,
+        executionService.scheduleWithRepetition(INVALIDATION_EXECUTOR_NAME,
                 new MapBatchInvalidationEventSender(), periodSeconds, periodSeconds, TimeUnit.SECONDS);
 
     }

@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -28,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 
 public final class LockStoreContainer {
 
@@ -100,9 +100,8 @@ public final class LockStoreContainer {
     private EntryTaskScheduler createScheduler(ObjectNamespace namespace) {
         NodeEngine nodeEngine = lockService.getNodeEngine();
         LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
-        ScheduledExecutorService scheduledExecutor =
-                nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+        TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         return EntryTaskSchedulerFactory
-                .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.FOR_EACH);
+                .newScheduler(globalScheduler, entryProcessor, ScheduleType.FOR_EACH);
     }
 }

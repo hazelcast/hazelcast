@@ -352,7 +352,7 @@ abstract class AbstractCacheProxy<K, V>
                     .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
-                total += (Integer) serializationService.toObject(result);
+                total += (Integer) getNodeEngine().toObject(result);
             }
             return total;
         } catch (Throwable t) {

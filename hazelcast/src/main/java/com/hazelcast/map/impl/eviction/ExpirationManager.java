@@ -59,7 +59,7 @@ public class ExpirationManager {
 
     public void start() {
         nodeEngine.getExecutionService()
-                .scheduleAtFixedRate(new ClearExpiredRecordsTask(), INITIAL_DELAY, PERIOD, UNIT);
+                .scheduleWithRepetition(new ClearExpiredRecordsTask(), INITIAL_DELAY, PERIOD, UNIT);
     }
 
     /**

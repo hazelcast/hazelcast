@@ -16,26 +16,31 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.util.ExceptionUtil;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import java.util.concurrent.Executor;
-
-class ScheduledTaskRunner implements Runnable {
-
-    private final Executor executor;
+/**
+ * Decorator to prevent concurrent task execution.
+ *
+ * If this task is running on a thread and another thread calls attempt the execute it concurrently
+ * then the 2nd execution will be skipped.
+ *
+ */
+public class SkipOnConcurrentExecutionDecorator implements Runnable {
+    private final AtomicBoolean isAlreadyRunning = new AtomicBoolean();
     private final Runnable runnable;
 
-    public ScheduledTaskRunner(Runnable runnable, Executor executor) {
-        this.executor = executor;
+    public SkipOnConcurrentExecutionDecorator(Runnable runnable) {
         this.runnable = runnable;
     }
 
     @Override
     public void run() {
-        try {
-            executor.execute(runnable);
-        } catch (Throwable t) {
-            ExceptionUtil.sneakyThrow(t);
+        if (isAlreadyRunning.compareAndSet(false, true)) {
+            try {
+                runnable.run();
+            } finally {
+                isAlreadyRunning.set(false);
+            }
         }
     }
 }
