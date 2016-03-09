@@ -129,16 +129,6 @@ public interface OperationExecutor {
     void interruptAllPartitionThreads();
 
     /**
-     * Checks if the operation is allowed to run on the current thread.
-     *
-     * @param op the Operation to check
-     * @return true if it is allowed, false otherwise.
-     * @throws java.lang.NullPointerException if op is null.
-     */
-    @Deprecated
-    boolean isAllowedToRunInCurrentThread(Operation op);
-
-    /**
      * Checks if the current thread is an operation thread.
      *
      * @return true if is an operation thread, false otherwise.
