@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 
@@ -122,6 +123,8 @@ public interface OperationExecutor extends PacketHandler {
      * @throws java.lang.NullPointerException if op is null.
      */
     void runOrExecute(Operation op);
+
+    void scan(LiveOperations result);
 
     /**
      * Checks if the {@link Operation} is allowed to run on the current thread.

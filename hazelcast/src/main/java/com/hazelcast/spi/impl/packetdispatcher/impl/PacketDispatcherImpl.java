@@ -25,6 +25,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
 import static com.hazelcast.nio.Packet.FLAG_BIND;
 import static com.hazelcast.nio.Packet.FLAG_EVENT;
 import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 
 /**
@@ -33,20 +34,23 @@ import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 public final class PacketDispatcherImpl implements PacketDispatcher {
 
     private final ILogger logger;
-    private final PacketHandler eventPacketHandler;
+    private final PacketHandler eventService;
     private final PacketHandler operationExecutor;
-    private final PacketHandler connectionPacketHandler;
+    private final PacketHandler connectionManager;
     private final PacketHandler responseHandler;
+    private final PacketHandler invocationMonitor;
 
     public PacketDispatcherImpl(ILogger logger,
                                 PacketHandler operationExecutor,
                                 PacketHandler responseHandler,
-                                PacketHandler eventPacketHandler,
-                                PacketHandler connectionPacketHandler) {
+                                PacketHandler invocationMonitor,
+                                PacketHandler eventService,
+                                PacketHandler connectionManager) {
         this.logger = logger;
         this.responseHandler = responseHandler;
-        this.eventPacketHandler = eventPacketHandler;
-        this.connectionPacketHandler = connectionPacketHandler;
+        this.eventService = eventService;
+        this.invocationMonitor = invocationMonitor;
+        this.connectionManager = connectionManager;
         this.operationExecutor = operationExecutor;
     }
 
@@ -56,13 +60,15 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
             if (packet.isFlagSet(FLAG_OP)) {
                 if (packet.isFlagSet(FLAG_RESPONSE)) {
                     responseHandler.handle(packet);
+                } else if (packet.isFlagSet(FLAG_OP_CONTROL)) {
+                    invocationMonitor.handle(packet);
                 } else {
                     operationExecutor.handle(packet);
                 }
             } else if (packet.isFlagSet(FLAG_EVENT)) {
-                eventPacketHandler.handle(packet);
+                eventService.handle(packet);
             } else if (packet.isFlagSet(FLAG_BIND)) {
-                connectionPacketHandler.handle(packet);
+                connectionManager.handle(packet);
             } else {
                 logger.severe("Unknown packet type! Header: " + packet.getFlags());
             }

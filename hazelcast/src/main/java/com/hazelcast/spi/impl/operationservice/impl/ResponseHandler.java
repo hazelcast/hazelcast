@@ -120,7 +120,7 @@ public final class ResponseHandler implements PacketHandler, MetricsProvider {
                 return;
             }
 
-            invocation.notifySingleBackupComplete();
+            invocation.notifyBackupComplete();
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
         }
