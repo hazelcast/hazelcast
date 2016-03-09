@@ -18,9 +18,7 @@ package com.hazelcast.spi;
 
 
 /**
- * A interface that can be implemented to participate in the Wait/Notify System.
- *
- * See {@link  com.hazelcast.spi.WaitNotifyService}.
+ * A interface that can be implemented by an operation that can block. For example an ILock.acquire.
  */
 public interface BlockingOperation {
 

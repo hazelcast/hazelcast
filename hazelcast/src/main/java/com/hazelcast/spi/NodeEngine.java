@@ -87,14 +87,7 @@ public interface NodeEngine {
      */
     ProxyService getProxyService();
 
-    /**
-     * Gets the WaitNotifyService.
-     *
-     * @return the WaitNotifyService.
-     */
-    WaitNotifyService getWaitNotifyService();
-
-    /**
+   /**
      * Gets the WanReplicationService.
      *
      * @return the WanReplicationService.
