@@ -54,9 +54,9 @@ public class NodeExtensionTest extends HazelcastTestSupport {
 
         InOrder inOrder = inOrder(nodeExtension);
 
+        inOrder.verify(nodeExtension, times(1)).printNodeInfo();
         inOrder.verify(nodeExtension, times(1)).beforeStart();
         inOrder.verify(nodeExtension, times(1)).createSerializationService();
-        inOrder.verify(nodeExtension, times(1)).printNodeInfo();
         inOrder.verify(nodeExtension, times(1)).createExtensionServices();
         inOrder.verify(nodeExtension, times(1)).beforeJoin();
         inOrder.verify(nodeExtension, times(1)).afterStart();
