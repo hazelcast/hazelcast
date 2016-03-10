@@ -23,7 +23,7 @@ import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.partition.IPartition;
+import com.hazelcast.spi.partition.IPartition;
 
 import java.io.File;
 import java.util.ArrayList;
