@@ -200,10 +200,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Override
-    public void dumpPerformanceMetrics(StringBuffer sb) {
-    }
-
-    @Override
     public List<SlowOperationDTO> getSlowOperationDTOs() {
         return slowOperationDetector.getSlowOperationDTOs();
     }
