@@ -168,6 +168,7 @@ public class Node {
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
             this.nodeExtension = nodeContext.createNodeExtension(this);
+            nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -180,7 +181,6 @@ public class Node {
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
-            nodeExtension.printNodeInfo();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             discoveryService = createDiscoveryService(config);
             joiner = nodeContext.createJoiner(this);
