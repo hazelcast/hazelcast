@@ -109,7 +109,7 @@ public class MapContainer {
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
         this.indexes = new Indexes(serializationService, extractors);
         this.evictor = createEvictor(mapConfig, mapServiceContext);
-        this.memberNearCacheInvalidationEnabled = isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
+        this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
     }
@@ -196,7 +196,7 @@ public class MapContainer {
         }
     }
 
-    public boolean isNearCacheEnabled() {
+    public boolean hasMemberNearCache() {
         return mapConfig.isNearCacheEnabled();
     }
 

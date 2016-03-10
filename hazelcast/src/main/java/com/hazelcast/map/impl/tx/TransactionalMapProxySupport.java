@@ -90,7 +90,7 @@ public abstract class TransactionalMapProxySupport
 
     public Object getInternal(Data key) {
         MapService mapService = getService();
-        boolean nearCacheEnabled = mapService.getMapServiceContext().getMapContainer(name).isNearCacheEnabled();
+        boolean nearCacheEnabled = mapService.getMapServiceContext().getMapContainer(name).hasMemberNearCache();
         if (nearCacheEnabled) {
             Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
