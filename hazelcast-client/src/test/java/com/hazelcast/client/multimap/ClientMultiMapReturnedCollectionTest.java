@@ -31,8 +31,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 

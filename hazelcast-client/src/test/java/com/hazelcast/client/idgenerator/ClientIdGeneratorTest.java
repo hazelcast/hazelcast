@@ -17,7 +17,6 @@
 package com.hazelcast.client.idgenerator;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.test.HazelcastParallelClassRunner;

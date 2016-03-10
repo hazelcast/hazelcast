@@ -18,7 +18,6 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.matcher.LegacyMatchingPointConfigPatternMatcher;
-import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})

@@ -18,7 +18,6 @@ package com.hazelcast.client.atomiclong;
 
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;

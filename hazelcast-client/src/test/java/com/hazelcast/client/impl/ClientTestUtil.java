@@ -1,7 +1,6 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import org.junit.Ignore;
 
 public final class ClientTestUtil {
 
