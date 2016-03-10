@@ -53,8 +53,7 @@
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/AbstractHazelcastCacheManager"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/cache/impl/AbstractCacheService"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/CacheStatisticsImpl"/>
-    <suppress checks="ClassDataAbstractionCoupling"
-              files="com/hazelcast/cache/impl/DefaultOperationProvider"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/cache/impl/DefaultOperationProvider"/>
 
     <!-- Core -->
     <suppress checks="JavadocMethod" files="com/hazelcast/core/"/>
@@ -302,8 +301,7 @@
 
     <!-- Spring -->
     <suppress checks="MethodCount|MethodLength" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="CyclomaticComplexity|NPathComplexity"
-              files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
 
     <!-- Spring framework breaks the IllegalType check in its own implementation -->
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastClientBeanDefinitionParser"/>
@@ -334,8 +332,7 @@
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
-    <suppress checks="ClassDataAbstractionCoupling"
-              files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/operation/DefaultMapOperationProvider"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/map/impl/client/AbstractTxnMapRequest"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/map/impl/recordstore/LazyEntryViewFromRecord"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
@@ -356,8 +353,7 @@
     <suppress checks="NPathComplexity" files="com/hazelcast/util/executor/DelegatingFuture"/>
 
     <!-- written by Doug Lea  -->
-    <suppress checks=""
-              files="com/hazelcast/internal/util/ThreadLocalRandom"/>
+    <suppress checks="" files="com/hazelcast/internal/util/ThreadLocalRandom"/>
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>
