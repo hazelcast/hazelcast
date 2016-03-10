@@ -2,8 +2,8 @@ package com.hazelcast.spi.hashslot;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.memory.HeapMemoryManager;
-import com.hazelcast.memory.MemoryManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static com.hazelcast.memory.MemoryAllocator.NULL_ADDRESS;
@@ -28,7 +27,7 @@ public class HashSlotArrayImplTest {
     private static final int VALUE_LENGTH = 32;
 
     private final Random random = new Random();
-    private MemoryManager memMgr;
+    private HeapMemoryManager memMgr;
     private MemoryAccessor mem;
     private HashSlotArray hsa;
 
@@ -37,6 +36,7 @@ public class HashSlotArrayImplTest {
         memMgr = new HeapMemoryManager(32 << 20);
         mem = memMgr.getAccessor();
         hsa = new HashSlotArrayImpl(0L, memMgr, VALUE_LENGTH);
+        hsa.gotoNew();
     }
 
     @After
@@ -138,37 +138,54 @@ public class HashSlotArrayImplTest {
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
+    public void testMemoryNotLeaking() {
+        final long k = 2000;
+        for (long i = 1; i <= k; i++) {
+            insert(i);
+        }
+        hsa.dispose();
+        assertEquals("Memory leak: used memory not zero after dispose", 0, memMgr.getUsedMemory());
+
+    }
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testPut_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.ensure(1);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testGet_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.get(1);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testRemove_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.remove(1);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testClear_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.clear();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_key_withoutAdvance() {
         HashSlotCursor cursor = hsa.cursor();
         cursor.key();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_valueAddress_withoutAdvance() {
         HashSlotCursor cursor = hsa.cursor();
         cursor.valueAddress();
@@ -190,6 +207,7 @@ public class HashSlotArrayImplTest {
     }
 
     @Test
+    @RequireAssertEnabled
     public void testCursor_advance_afterAdvanceReturnsFalse() {
         insert(random.nextLong());
 
@@ -199,8 +217,8 @@ public class HashSlotArrayImplTest {
 
         try {
             cursor.advance();
-            fail("cursor.advance() should throw IllegalStateException, because previous advance() returned false!");
-        } catch (IllegalStateException ignored) {
+            fail("cursor.advance() returned false, but subsequent call did not throw AssertionError");
+        } catch (AssertionError ignored) {
         }
     }
 
@@ -223,21 +241,24 @@ public class HashSlotArrayImplTest {
         assertEquals(valueAddress, cursor.valueAddress());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_advance_whenDisposed() {
         HashSlotCursor cursor = hsa.cursor();
         hsa.dispose();
         cursor.advance();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_key_whenDisposed() {
         HashSlotCursor cursor = hsa.cursor();
         hsa.dispose();
         cursor.key();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_valueAddress_whenDisposed() {
         HashSlotCursor cursor = hsa.cursor();
         hsa.dispose();
@@ -247,27 +268,20 @@ public class HashSlotArrayImplTest {
     @Test
     public void testCursor_withManyValues() {
         final int k = 1000;
-
         for (int i = 1; i <= k; i++) {
             long key = (long) i;
             insert(key);
         }
-
-        boolean[] verifyKeys = new boolean[k];
-        Arrays.fill(verifyKeys, false);
-
+        boolean[] verifiedKeys = new boolean[k];
         HashSlotCursor cursor = hsa.cursor();
         while (cursor.advance()) {
             long key = cursor.key();
             long valueAddress = cursor.valueAddress();
-
             verifyValue(key, valueAddress);
-
-            verifyKeys[((int) key) - 1] = true;
+            verifiedKeys[((int) key) - 1] = true;
         }
-
         for (int i = 0; i < k; i++) {
-            assertTrue("Haven't read " + k + "th key!", verifyKeys[i]);
+            assertTrue("Failed to encounter key " + i, verifiedKeys[i]);
         }
     }
 
@@ -279,7 +293,6 @@ public class HashSlotArrayImplTest {
     }
 
     private void verifyValue(long key, long valueAddress) {
-        // pre-check to avoid SIGSEGV
         assertNotEquals(NULL_ADDRESS, valueAddress);
         assertEquals(key, mem.getLong(valueAddress));
     }

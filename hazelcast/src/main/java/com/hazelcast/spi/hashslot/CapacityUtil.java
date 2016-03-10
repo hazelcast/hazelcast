@@ -80,7 +80,7 @@ public final class CapacityUtil {
 
     /** Returns the next possible capacity, counting from the current buffers' size. */
     public static long nextCapacity(long current) {
-        assert current > 0 && Long.bitCount(current) == 1 : "Capacity must be a power of two.";
+        assert current > 0 && Long.bitCount(current) == 1 : "Capacity must be a power of two, but was " + current;
 
         if (current < MIN_CAPACITY / 2) {
             current = MIN_CAPACITY / 2;

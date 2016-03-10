@@ -16,9 +16,11 @@
 
 package com.hazelcast.spi.hashslot;
 
+import com.hazelcast.memory.MemoryAllocator;
 import com.hazelcast.memory.MemoryManager;
 
 import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
 
 /**
  * Implementation of {@link HashSlotArrayTwinKey}.
@@ -34,20 +36,24 @@ public class HashSlotArrayTwinKeyImpl extends HashSlotArrayBase implements HashS
 
     private static final int KEY_LENGTH = 16;
 
-    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager mm, int valueLength, int initialCapacity) {
-        this(nullSentinel, KEY_LENGTH, mm, valueLength, initialCapacity);
+    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager mm, int valueLength,
+                                    int initialCapacity, float loadFactor) {
+        this(nullSentinel, KEY_LENGTH, mm, null, valueLength, initialCapacity, loadFactor);
         assert valueLengthValid(valueLength) : "Invalid value length: " + valueLength;
     }
 
     public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager mm, int valueLength) {
-        this(nullSentinel, mm, valueLength, DEFAULT_CAPACITY);
+        this(nullSentinel, mm, valueLength, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
-    protected HashSlotArrayTwinKeyImpl(long nullSentinel, long offsetOfNullSentinel, MemoryManager mm,
-                                       int valueLength, int initialCapacity
+    protected HashSlotArrayTwinKeyImpl(
+            long nullSentinel, long offsetOfNullSentinel, MemoryManager mm, MemoryAllocator auxMalloc,
+            int valueLength, int initialCapacity, float loadFactor
     ) {
-        super(nullSentinel, offsetOfNullSentinel, mm, KEY_LENGTH, valueLength, initialCapacity);
+        super(nullSentinel, offsetOfNullSentinel, mm, auxMalloc, KEY_LENGTH, valueLength,
+                initialCapacity, loadFactor);
     }
+
 
     /**
      * {@inheritDoc}

@@ -2,8 +2,8 @@ package com.hazelcast.spi.hashslot;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.memory.HeapMemoryManager;
-import com.hazelcast.memory.MemoryManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static com.hazelcast.memory.MemoryAllocator.NULL_ADDRESS;
@@ -29,15 +28,16 @@ public class HashSlotArrayTwinKeyImplTest {
     private static final int VALUE_LENGTH = 32;
 
     private final Random random = new Random();
-    private MemoryManager memMgr;
+    private HeapMemoryManager memMgr;
     private MemoryAccessor mem;
-    private HashSlotArrayTwinKey hsa;
+    private HashSlotArrayTwinKeyImpl hsa;
 
     @Before
     public void setUp() throws Exception {
         memMgr = new HeapMemoryManager(32 << 20);
         mem = memMgr.getAccessor();
         hsa = new HashSlotArrayTwinKeyImpl(0L, memMgr, VALUE_LENGTH);
+        hsa.gotoNew();
     }
 
     @After
@@ -151,43 +151,95 @@ public class HashSlotArrayTwinKeyImplTest {
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
+    public void testMemoryNotLeaking() {
+        final long k = 2000;
+        final long factor = 123456;
+
+        for (long i = 1; i <= k; i++) {
+            insert(i, factor * i);
+        }
+        hsa.dispose();
+        assertEquals("Memory leak: used memory not zero after dispose", 0, memMgr.getUsedMemory());
+
+    }
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testPut_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.ensure(1, 1);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testGet_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.get(1, 1);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testRemove_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.remove(1, 1);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testClear_whenDisposed() throws Exception {
         hsa.dispose();
         hsa.clear();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
+    public void testMigrateTo() {
+        final long valueAddr = insert(1, 2);
+        mem.putLong(valueAddr, 3);
+        final HeapMemoryManager mgr2 = new HeapMemoryManager(memMgr);
+        hsa.migrateTo(mgr2.getAllocator());
+        assertEquals(0, memMgr.getUsedMemory());
+        final long newValueAddr = hsa.get(1, 2);
+        assertEquals(3, mem.getLong(newValueAddr));
+    }
+
+    @Test
+    public void testGotoNew() {
+        hsa.dispose();
+        hsa.gotoNew();
+        final long valueAddr = insert(1, 2);
+        final long gotValueAddr = hsa.get(1, 2);
+        assertEquals(valueAddr, gotValueAddr);
+    }
+
+    @Test
+    public void testGotoAddress() {
+        final long addr1 = hsa.address();
+        final long valueAddr1 = insert(1, 2);
+        hsa.gotoNew();
+        assertEquals(NULL_ADDRESS, hsa.get(1, 2));
+        hsa.gotoAddress(addr1);
+        assertEquals(valueAddr1, hsa.get(1, 2));
+    }
+
+    // Cursor tests
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_key1_withoutAdvance() {
         HashSlotCursorTwinKey cursor = hsa.cursor();
         cursor.key1();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_key2_withoutAdvance() {
         HashSlotCursorTwinKey cursor = hsa.cursor();
         cursor.key2();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
     public void testCursor_valueAddress_withoutAdvance() {
         HashSlotCursorTwinKey cursor = hsa.cursor();
         cursor.valueAddress();
@@ -209,6 +261,7 @@ public class HashSlotArrayTwinKeyImplTest {
     }
 
     @Test
+    @RequireAssertEnabled
     public void testCursor_advance_afterAdvanceReturnsFalse() {
         insert(randomKey(), randomKey());
 
@@ -218,8 +271,8 @@ public class HashSlotArrayTwinKeyImplTest {
 
         try {
             cursor.advance();
-            fail("cursor.advance() should throw IllegalStateException, because previous advance() returned false!");
-        } catch (IllegalStateException ignored) {
+            fail("cursor.advance() returned false, but subsequent call did not throw AssertionError");
+        } catch (AssertionError ignored) {
         }
     }
 
@@ -254,28 +307,28 @@ public class HashSlotArrayTwinKeyImplTest {
         assertEquals(valueAddress, cursor.valueAddress());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
     public void testCursor_advance_whenDisposed() {
         HashSlotCursorTwinKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.advance();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
     public void testCursor_key1_whenDisposed() {
         HashSlotCursorTwinKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.key1();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
     public void testCursor_key2_whenDisposed() {
         HashSlotCursorTwinKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.key2();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = AssertionError.class)
     public void testCursor_valueAddress_whenDisposed() {
         HashSlotCursorTwinKey cursor = hsa.cursor();
         hsa.dispose();
@@ -290,26 +343,20 @@ public class HashSlotArrayTwinKeyImplTest {
         for (int i = 1; i <= k; i++) {
             long key1 = (long) i;
             long key2 = key1 * factor;
-            long valueAddress = insert(key1, key2);
+            insert(key1, key2);
         }
-
-        boolean[] verifyKeys = new boolean[k];
-        Arrays.fill(verifyKeys, false);
-
+        boolean[] verifiedKeys = new boolean[k];
         HashSlotCursorTwinKey cursor = hsa.cursor();
         while (cursor.advance()) {
             long key1 = cursor.key1();
             long key2 = cursor.key2();
             long valueAddress = cursor.valueAddress();
-
             assertEquals(key1 * factor, key2);
             verifyValue(key1, key2, valueAddress);
-
-            verifyKeys[((int) key1) - 1] = true;
+            verifiedKeys[((int) key1) - 1] = true;
         }
-
         for (int i = 0; i < k; i++) {
-            assertTrue("Haven't read " + k + "th key!", verifyKeys[i]);
+            assertTrue("Failed to encounter key " + i, verifiedKeys[i]);
         }
     }
 

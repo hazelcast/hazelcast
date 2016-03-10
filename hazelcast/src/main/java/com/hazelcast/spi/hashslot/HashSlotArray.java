@@ -19,18 +19,41 @@ package com.hazelcast.spi.hashslot;
 import com.hazelcast.nio.Disposable;
 
 /** <p>
- * Manages the backbone array of an off-heap open-addressed hashtable. The backbone consists
- * of <i>slots</i>, where each slot has a key part and an optional value part. The key part
- * is a {@code long} value and the value part is a block whose size is a multiple of 8. A block
- * of zero size is also possible.
+ * A <i>Flyweight</i> object that manages the backbone array of an off-heap open-addressed hashtable.
+ * The backbone consists of <i>slots</i>, where each slot has a key part and an optional value part.
+ * The key part is a {@code long} value and the value part is a block whose size is a multiple of 8.
+ * A block of zero size is also possible.
  * </p><p>
  * The update operations on this class only ensure that a slot for a given key exists/doesn't exist
  * and it is up to the caller to manage the contents of the value part. The caller will be provided
  * with the raw address of the value, suitable for accessing with {@code Unsafe} memory operations.
  * <b>The returned address is valid only up to the next map update operation</b>.
+ * </p><p>
+ * Since this is a <i>Flyweight</i>-style object, the same instance can be used to manage many
+ * hashtables, one at a time. The {@link #gotoAddress(long)} method resets the instance to work
+ * with the hashtable at the provided address and {@link #gotoNew()} allocates a new hashtable.
+ * It is the caller's duty to ensure against memory leaks by keeping track of all existing hashtables'
+ * base addresses. Since an update operation may trigger a new allocation, freeing the old block,
+ * it is the caller's duty to save the new address before moving on to another base address.
  * </p>
  */
 public interface HashSlotArray extends Disposable {
+
+    /**
+     * @return current base address of this flyweight
+     */
+    long address();
+
+    /**
+     * Position this flyweight to the supplied base address.
+     */
+    void gotoAddress(long address);
+
+    /**
+     * Allocate a new array and position this flyweight to its base address.
+     * @return the base address of the new array.
+     */
+    long gotoNew();
 
     /**
      * Ensures that there is a mapping from the given key to a slot in the array.

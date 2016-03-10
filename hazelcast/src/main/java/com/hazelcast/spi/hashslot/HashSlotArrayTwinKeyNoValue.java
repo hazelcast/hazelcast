@@ -19,6 +19,7 @@ package com.hazelcast.spi.hashslot;
 import com.hazelcast.memory.MemoryManager;
 
 import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
 
 /**
  * Twin-key hash slot array with zero-width value. Suitable for a twin-long set implementation.
@@ -30,15 +31,15 @@ public class HashSlotArrayTwinKeyNoValue extends HashSlotArrayTwinKeyImpl {
     /**
      * @param nullKey1 the null-sentinel value checked against the {@code key1} field.
      */
-    public HashSlotArrayTwinKeyNoValue(long nullKey1, MemoryManager mm, int initialCapacity) {
-        super(nullKey1, 0L, mm, 0, initialCapacity);
+    public HashSlotArrayTwinKeyNoValue(long nullKey1, MemoryManager mm, int initialCapacity, float loadFactor) {
+        super(nullKey1, 0L, mm, null, 0, initialCapacity, loadFactor);
     }
 
     /**
      * @param nullKey1 the null-sentinel value checked against the {@code key1} field.
      */
     public HashSlotArrayTwinKeyNoValue(long nullKey1, MemoryManager mm) {
-        this(nullKey1, mm, DEFAULT_CAPACITY);
+        this(nullKey1, mm, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
     // Value length is always zero (not under user's control)

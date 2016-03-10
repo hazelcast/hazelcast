@@ -18,6 +18,9 @@ package com.hazelcast.memory;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
+import com.hazelcast.util.collection.Long2LongHashMap;
+import com.hazelcast.util.collection.LongHashSet;
+import junit.framework.AssertionFailedError;
 
 import java.util.Arrays;
 
@@ -34,12 +37,22 @@ public class HeapMemoryManager implements MemoryManager {
 
     private final Accessor mem = new Accessor();
 
+    private final Long2LongHashMap allocatedAddrs = new Long2LongHashMap(1024, 0.7, -1);
+
     private byte[] storage;
 
     private int heapTop = HEAP_BOTTOM;
 
+    private int usedMemory;
+
     public HeapMemoryManager(int size) {
         this.storage = new byte[size];
+    }
+
+    // Suports the testing of HashSlotArray#migrateTo()
+    public HeapMemoryManager(HeapMemoryManager that) {
+        this.storage = that.storage;
+        this.heapTop = that.heapTop;
     }
 
     @Override
@@ -50,6 +63,10 @@ public class HeapMemoryManager implements MemoryManager {
     @Override
     public MemoryAccessor getAccessor() {
         return mem;
+    }
+
+    public long getUsedMemory() {
+        return usedMemory;
     }
 
     @Override
@@ -67,6 +84,8 @@ public class HeapMemoryManager implements MemoryManager {
             }
             final long addr = heapTop;
             heapTop += size;
+            usedMemory += size;
+            allocatedAddrs.put(addr, size);
             return addr;
         }
 
@@ -77,6 +96,15 @@ public class HeapMemoryManager implements MemoryManager {
 
         @Override
         public void free(long address, long size) {
+            final long allocatedSize = allocatedAddrs.remove(address);
+            if (allocatedSize == -1) {
+                throw new AssertionFailedError(String.format("Address %d was not allocated", address));
+            }
+            if (allocatedSize != size) {
+                throw new AssertionFailedError(String.format(
+                        "Allocated size at %d was %d, but tried to free %d bytes", address, allocatedSize, size));
+            }
+            usedMemory -= size;
         }
 
         @Override

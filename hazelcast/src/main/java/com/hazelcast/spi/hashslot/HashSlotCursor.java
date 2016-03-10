@@ -22,6 +22,11 @@ package com.hazelcast.spi.hashslot;
  */
 public interface HashSlotCursor {
     /**
+     * Resets the cursor to the initial state.
+     */
+    void reset();
+
+    /**
      * Advance to the next assigned slot.
      * @return {@code true} if the cursor advanced. If {@code false} is returned, the cursor is now invalid.
      * @throws IllegalStateException if a previous call to advance() already returned false.

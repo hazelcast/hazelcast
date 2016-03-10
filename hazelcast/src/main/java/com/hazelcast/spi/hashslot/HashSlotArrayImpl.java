@@ -19,6 +19,7 @@ package com.hazelcast.spi.hashslot;
 import com.hazelcast.memory.MemoryManager;
 
 import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
 import static com.hazelcast.util.HashUtil.fastLongMix;
 
 /**
@@ -49,7 +50,8 @@ public class HashSlotArrayImpl extends HashSlotArrayBase implements HashSlotArra
     protected HashSlotArrayImpl(long unassignedSentinel, long offsetOfUnassignedSentinel,
                                 MemoryManager mm, int valueLength, int initialCapacity
     ) {
-        super(unassignedSentinel, offsetOfUnassignedSentinel, mm, KEY_LENGTH, valueLength, initialCapacity);
+        super(unassignedSentinel, offsetOfUnassignedSentinel, mm, null, KEY_LENGTH, valueLength,
+                initialCapacity, DEFAULT_LOAD_FACTOR);
     }
 
     /**

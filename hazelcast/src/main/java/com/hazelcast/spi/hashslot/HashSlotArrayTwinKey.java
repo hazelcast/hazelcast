@@ -38,9 +38,32 @@ import com.hazelcast.nio.Disposable;
  * pointing to invalid data. The <code>(nativeAddress, sequenceId)</code> pair is expected to be
  * acquired from a native data structure which complies with this concept and stores the relevant
  * key data.
+ * </p><p>
+ * Since this is a <i>Flyweight</i>-style object, the same instance can be used to manage many
+ * hashtables, one at a time. The {@link #gotoAddress(long)} method resets the instance to work
+ * with the hashtable at the provided address and {@link #gotoNew()} allocates a new hashtable.
+ * It is the caller's duty to ensure against memory leaks by keeping track of all existing hashtables'
+ * base addresses. Since an update operation may trigger a new allocation, freeing the old block,
+ * it is the caller's duty to save the new address before moving on to another base address.
  * </p>
  */
 public interface HashSlotArrayTwinKey extends Disposable {
+
+    /**
+     * @return current base address of this flyweight
+     */
+    long address();
+
+    /**
+     * Position this flyweight to the supplied base address.
+     */
+    void gotoAddress(long address);
+
+    /**
+     * Allocate a new array and position this flyweight to its base address.
+     * @return the base address of the new array.
+     */
+    long gotoNew();
 
     /**
      * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the array.

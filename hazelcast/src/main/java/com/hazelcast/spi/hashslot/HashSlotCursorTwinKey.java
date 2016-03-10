@@ -22,6 +22,11 @@ package com.hazelcast.spi.hashslot;
  */
 public interface HashSlotCursorTwinKey {
     /**
+     * Resets the cursor to the initial state.
+     */
+    void reset();
+
+    /**
      * Advances to the next assigned slot.
      * @return true if the cursor advanced. If false is returned, the cursor is now invalid.
      * @throws IllegalStateException if a previous call to advance() already returned false.
