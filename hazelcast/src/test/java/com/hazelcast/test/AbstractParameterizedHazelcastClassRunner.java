@@ -51,6 +51,7 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
         super(clazz);
         fParameters = parameters;
         fName = name;
+        isParameterized = true;
     }
 
     @Override
