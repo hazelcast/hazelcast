@@ -80,7 +80,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
     }
 
     private void addInvalidation(Data key) {
-        if (!mapContainer.isNearCacheEnabled()) {
+        if (!mapContainer.isInvalidationEnabled()) {
             return;
         }
 
