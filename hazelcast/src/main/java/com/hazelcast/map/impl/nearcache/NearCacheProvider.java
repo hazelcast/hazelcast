@@ -121,7 +121,7 @@ public class NearCacheProvider {
 
     public Object getFromNearCache(String mapName, Data key) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        if (!mapContainer.isNearCacheEnabled()) {
+        if (!mapContainer.hasMemberNearCache()) {
             return null;
         }
         NearCache nearCache = getOrCreateNearCache(mapName);
