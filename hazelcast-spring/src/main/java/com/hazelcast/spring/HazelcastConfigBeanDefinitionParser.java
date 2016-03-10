@@ -77,9 +77,10 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -783,59 +784,64 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final Node attName = node.getAttributes().getNamedItem("name");
             final String name = getTextContent(attName);
             wanRepConfigBuilder.addPropertyValue("name", name);
-            final Node attSnapshotEnabled = node.getAttributes().getNamedItem("snapshot-enabled");
-            final boolean snapshotEnabled = getBooleanValue(getTextContent(attSnapshotEnabled));
-            wanRepConfigBuilder.addPropertyValue("snapshotEnabled", snapshotEnabled);
 
-            final ManagedList targetClusters = new ManagedList();
+            final ManagedList wanPublishers = new ManagedList();
             for (Node n : childElements(node)) {
                 final String nName = cleanNodeName(n);
-                if ("target-cluster".equals(nName)) {
-                    final BeanDefinitionBuilder targetClusterConfigBuilder = createBeanBuilder(
-                            WanTargetClusterConfig.class);
-                    final AbstractBeanDefinition childBeanDefinition = targetClusterConfigBuilder.getBeanDefinition();
-                    fillAttributeValues(n, targetClusterConfigBuilder, Collections.<String>emptyList());
-                    for (Node childNode : childElements(n)) {
-                        final String childNodeName = cleanNodeName(childNode);
-                        if ("replication-impl".equals(childNodeName)) {
-                            targetClusterConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
-                        } else if ("replication-impl-object".equals(childNodeName)) {
-                            Node refName = childNode.getAttributes().getNamedItem("ref");
-                            targetClusterConfigBuilder
-                                    .addPropertyReference(xmlToJavaName(childNodeName), getTextContent(refName));
-                        } else if ("end-points".equals(childNodeName)) {
-                            final ManagedList addresses = new ManagedList();
-                            for (Node addressNode : childElements(childNode)) {
-                                if ("address".equals(cleanNodeName(addressNode))) {
-                                    addresses.add(getTextContent(addressNode));
-                                }
-                            }
-                            targetClusterConfigBuilder.addPropertyValue("endpoints", addresses);
-                        } else if ("acknowledge-type".equals(childNodeName)) {
-                            targetClusterConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
-                        } else if ("queue-full-behavior".equals(childNodeName)) {
-                            targetClusterConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
-                        } else if ("batch-size".equals(childNodeName)) {
-                            targetClusterConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
-                        } else if ("batch-max-delay-millis".equals(childNodeName)) {
-                            targetClusterConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
-                        } else if ("queue-capacity".equals(childNodeName)) {
-                            targetClusterConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
-                        } else if ("response-timeout-millis".equals(childNodeName)) {
-                            targetClusterConfigBuilder
-                                    .addPropertyValue(xmlToJavaName(childNodeName), getTextContent(childNode));
+                if ("wan-publisher".equals(nName)) {
+                    final BeanDefinitionBuilder publisherConfigBuilder = createBeanBuilder(WanPublisherConfig.class);
+                    final AbstractBeanDefinition childBeanDefinition = publisherConfigBuilder.getBeanDefinition();
+                    fillAttributeValues(n, publisherConfigBuilder, Collections.<String>emptyList());
+
+                    final NamedNodeMap attrs = n.getAttributes();
+                    Node classNameNode = attrs.getNamedItem("class-name");
+                    String className = classNameNode != null ? getTextContent(classNameNode) : null;
+                    Node implNode = attrs.getNamedItem("implementation");
+                    String implementation = implNode != null ? getTextContent(implNode) : null;
+                    publisherConfigBuilder.addPropertyValue("className", className);
+                    if (implementation != null) {
+                        publisherConfigBuilder.addPropertyReference("implementation", implementation);
+                    }
+                    Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
+                            + "attributes is required to create WanPublisherConfig!");
+                    for (Node child : childElements(n)) {
+                        final String nodeName = cleanNodeName(child);
+                        if ("properties".equals(nodeName)) {
+                            handleProperties(child, publisherConfigBuilder);
+                            break;
+                        } else if ("queue-full-behavior".equals(nodeName)) {
+                            publisherConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                        } else if ("queue-capacity".equals(nodeName)) {
+                            publisherConfigBuilder
+                                    .addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                         }
                     }
-                    targetClusters.add(childBeanDefinition);
+                    wanPublishers.add(childBeanDefinition);
+                } else if ("wan-consumer".equals(nName)) {
+                    final BeanDefinitionBuilder consumerConfigBuilder = createBeanBuilder(WanConsumerConfig.class);
+                    final NamedNodeMap attrs = n.getAttributes();
+                    Node classNameNode = attrs.getNamedItem("class-name");
+                    String className = classNameNode != null ? getTextContent(classNameNode) : null;
+                    Node implNode = attrs.getNamedItem("implementation");
+                    String implementation = implNode != null ? getTextContent(implNode) : null;
+                    consumerConfigBuilder.addPropertyValue("className", className);
+                    if (implementation != null) {
+                        consumerConfigBuilder.addPropertyReference("implementation", implementation);
+                    }
+                    Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
+                            + "attributes is required to create WanConsumerConfig!");
+                    for (Node child : childElements(n)) {
+                        final String nodeName = cleanNodeName(child);
+                        if ("properties".equals(nodeName)) {
+                            handleProperties(child, consumerConfigBuilder);
+                            break;
+                        }
+                    }
+                    wanRepConfigBuilder.addPropertyValue("wanConsumerConfig", consumerConfigBuilder.getBeanDefinition());
                 }
             }
-            wanRepConfigBuilder.addPropertyValue("targetClusterConfigs", targetClusters);
+            wanRepConfigBuilder.addPropertyValue("wanPublisherConfigs", wanPublishers);
             wanReplicationManagedMap.put(name, beanDefinition);
         }
 

@@ -16,10 +16,8 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.impl.PacketHandler;
 
 /**
  * This is the WAN replications service API core interface. The WanReplicationService needs to
@@ -28,7 +26,7 @@ import com.hazelcast.spi.impl.PacketHandler;
  * delays, slow uploads and higher latencies.
  */
 public interface WanReplicationService
-        extends CoreService, PacketHandler, StatisticsAwareService {
+        extends CoreService, StatisticsAwareService {
 
     /**
      * Service name.
@@ -43,15 +41,6 @@ public interface WanReplicationService
      * @return instance of the corresponding replication publisher
      */
     WanReplicationPublisher getWanReplicationPublisher(String name);
-
-    /**
-     * This method is called when a replication packet arrives at the connection handler. WAN
-     * replication messages are handled directly instead of going through the normal message
-     * process.
-     *
-     * @param packet the WAN replication packet to process
-     */
-    void handle(Packet packet);
 
     /**
      * Starts the shutdown process of the WAN replication service.

@@ -25,7 +25,6 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
 import static com.hazelcast.nio.Packet.FLAG_BIND;
 import static com.hazelcast.nio.Packet.FLAG_EVENT;
 import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_WAN_REPLICATION;
 
 /**
  * Default {@link PacketDispatcher} implementation.
@@ -34,19 +33,16 @@ public class PacketDispatcherImpl implements PacketDispatcher {
 
     private final ILogger logger;
     private final PacketHandler eventPacketHandler;
-    private final PacketHandler wanReplicationPacketHandler;
     private final PacketHandler operationPacketHandler;
     private final PacketHandler connectionPacketHandler;
 
     public PacketDispatcherImpl(ILogger logger,
                                 PacketHandler operationPacketHandler,
                                 PacketHandler eventPacketHandler,
-                                PacketHandler wanReplicationPacketHandler,
                                 PacketHandler connectionPacketHandler) {
         this.logger = logger;
         this.operationPacketHandler = operationPacketHandler;
         this.eventPacketHandler = eventPacketHandler;
-        this.wanReplicationPacketHandler = wanReplicationPacketHandler;
         this.connectionPacketHandler = connectionPacketHandler;
     }
 
@@ -57,8 +53,6 @@ public class PacketDispatcherImpl implements PacketDispatcher {
                 operationPacketHandler.handle(packet);
             } else if (packet.isFlagSet(FLAG_EVENT)) {
                 eventPacketHandler.handle(packet);
-            } else if (packet.isFlagSet(FLAG_WAN_REPLICATION)) {
-                wanReplicationPacketHandler.handle(packet);
             } else if (packet.isFlagSet(FLAG_BIND)) {
                 connectionPacketHandler.handle(packet);
             } else {

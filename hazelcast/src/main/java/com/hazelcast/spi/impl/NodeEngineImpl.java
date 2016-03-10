@@ -120,7 +120,6 @@ public class NodeEngineImpl implements NodeEngine {
                 logger,
                 operationService,
                 eventService,
-                wanReplicationService,
                 new ConnectionManagerPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
         this.performanceMonitor = new PerformanceMonitor(

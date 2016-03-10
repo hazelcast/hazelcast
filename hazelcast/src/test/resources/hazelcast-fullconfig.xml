@@ -43,26 +43,35 @@
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <management-center enabled="true" update-interval="5">http://mywebserver:8080</management-center>
     <wan-replication name="my-wan-cluster">
-        <target-cluster group-name="tokyo" group-password="tokyo-pass">
-            <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>
-            <end-points>
-                <address>10.2.1.1:5701</address>
-                <address>10.2.1.2:5701</address>
-            </end-points>
-        </target-cluster>
-        <target-cluster group-name="london" group-password="london-pass">
-            <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>
-            <end-points>
-                <address>10.3.5.1:5701</address>
-                <address>10.3.5.2:5701</address>
-            </end-points>
-            <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>
+        <wan-publisher group-name="tokyo">
+            <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
-            <batch-size>7</batch-size>
-            <batch-max-delay-millis>14</batch-max-delay-millis>
-            <queue-capacity>21</queue-capacity>
-            <response-timeout-millis>28</response-timeout-millis>
-        </target-cluster>
+            <queue-capacity>1000</queue-capacity>
+            <properties>
+                <property name="batch.size">50</property>
+                <property name="batch.max.delay.millis">3000</property>
+                <property name="snapshot.enabled">false</property>
+                <property name="response.timeout.millis">5000</property>
+                <property name="ack.type">ACK_ON_OPERATION_COMPLETE</property>
+                <property name="endpoints">10.3.5.1:5701, 10.3.5.2:5701</property>
+                <property name="snapshot.enabled">false</property>
+                <property name="group.password">pass</property>
+            </properties>
+        </wan-publisher>
+        <wan-publisher group-name="istanbul">
+            <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>
+            <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+            <queue-capacity>10000</queue-capacity>
+            <properties>
+                <property name="custom.prop.publisher">prop.publisher</property>
+            </properties>
+        </wan-publisher>
+        <wan-consumer>
+            <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>
+            <properties>
+                <property name="custom.prop.consumer">prop.consumer</property>
+            </properties>
+        </wan-consumer>
     </wan-replication>
     <network>
         <port auto-increment="true" port-count="100">5701</port>

@@ -49,27 +49,31 @@
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
             </hz:properties>
-            <hz:wan-replication name="testWan" snapshot-enabled="false">
-                <hz:target-cluster group-name="tokyo" group-password="tokyo-pass">
-                    <hz:replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</hz:replication-impl>
-                    <hz:end-points>
-                        <hz:address>10.2.1.1:5701</hz:address>
-                        <hz:address>10.2.1.2:5701</hz:address>
-                    </hz:end-points>
-                    <hz:acknowledge-type>ACK_ON_OPERATION_COMPLETE</hz:acknowledge-type>
+            <hz:wan-replication name="testWan">
+                <hz:wan-publisher group-name="tokyo" class-name="com.hazelcast.enterprise.wan.replication.WanBatchReplication">
                     <hz:queue-full-behavior>THROW_EXCEPTION</hz:queue-full-behavior>
-                    <hz:batch-size>7</hz:batch-size>
-                    <hz:batch-max-delay-millis>14</hz:batch-max-delay-millis>
-                    <hz:queue-capacity>21</hz:queue-capacity>
-                    <hz:response-timeout-millis>28</hz:response-timeout-millis>
-                </hz:target-cluster>
-                <hz:target-cluster group-name="london" group-password="london-pass">
-                    <hz:replication-impl-object ref="dummyWanReplication"/>
-                    <hz:end-points>
-                        <hz:address>10.3.5.1:5701</hz:address>
-                        <hz:address>10.3.5.2:5701</hz:address>
-                    </hz:end-points>
-                </hz:target-cluster>
+                    <hz:queue-capacity>1000</hz:queue-capacity>
+                    <hz:properties>
+                        <hz:property name="batch.size">50</hz:property>
+                        <hz:property name="batch.max.delay.millis">3000</hz:property>
+                        <hz:property name="snapshot.enabled">false</hz:property>
+                        <hz:property name="response.timeout.millis">5000</hz:property>
+                        <hz:property name="ack.type">ACK_ON_OPERATION_COMPLETE</hz:property>
+                        <hz:property name="endpoints">10.3.5.1:5701, 10.3.5.2:5701</hz:property>
+                        <hz:property name="snapshot.enabled">false</hz:property>
+                        <hz:property name="group.password">pass</hz:property>
+                    </hz:properties>
+                </hz:wan-publisher>
+                <hz:wan-publisher group-name="istanbul" class-name="com.hazelcast.wan.custom.CustomPublisher">
+                    <hz:properties>
+                        <hz:property name="custom.prop.publisher">prop.publisher</hz:property>
+                    </hz:properties>
+                </hz:wan-publisher>
+                <hz:wan-consumer class-name="com.hazelcast.wan.custom.WanConsumer">
+                    <hz:properties>
+                        <hz:property name="custom.prop.consumer">prop.consumer</hz:property>
+                    </hz:properties>
+                </hz:wan-consumer>
             </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:outbound-ports>

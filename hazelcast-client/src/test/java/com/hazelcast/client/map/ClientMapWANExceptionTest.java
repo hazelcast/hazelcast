@@ -2,9 +2,9 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
@@ -63,7 +63,7 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
         WanReplicationConfig wanConfig = new WanReplicationConfig();
         wanConfig.setName("dummyWan");
 
-        wanConfig.addTargetClusterConfig(getTargetClusterConfig());
+        wanConfig.addWanPublisherConfig(getWanPublisherConfig());
 
         WanReplicationRef wanRef = new WanReplicationRef();
         wanRef.setName("dummyWan");
@@ -74,10 +74,9 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
         return config;
     }
 
-    private WanTargetClusterConfig getTargetClusterConfig() {
-        WanTargetClusterConfig target = new WanTargetClusterConfig();
-        target.setReplicationImpl(FullQueueWanReplication.class.getName());
-        target.addEndpoint("127.0.0.1:9999");
+    private WanPublisherConfig getWanPublisherConfig() {
+        WanPublisherConfig target = new WanPublisherConfig();
+        target.setClassName(FullQueueWanReplication.class.getName());
         return target;
     }
 }

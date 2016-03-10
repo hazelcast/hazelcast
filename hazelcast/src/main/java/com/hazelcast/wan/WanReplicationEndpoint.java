@@ -16,6 +16,8 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
 
 /**
@@ -29,11 +31,10 @@ public interface WanReplicationEndpoint
      * Initializes the endpoint using the given arguments.
      *
      * @param node      the current node that tries to connect
-     * @param groupName the group name to connect with
-     * @param password  the group password
-     * @param targets   possible target endpoints bundled in this endpoint
+     * @param wanReplicationConfig {@link WanReplicationConfig} instance
+     * @param publisherConfig  {@link WanPublisherConfig} instance
      */
-    void init(Node node, String groupName, String password, String... targets);
+    void init(Node node, WanReplicationConfig wanReplicationConfig, WanPublisherConfig publisherConfig);
 
     /**
      * Closes the endpoint and its internal connections and shuts down other internal states

@@ -18,36 +18,15 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
+
 /**
  * Configuration for wan replication.
  */
 public class WanReplicationConfig {
 
-    String name;
-    List<WanTargetClusterConfig> targetClusterConfigs;
-
-    /**
-     * This property is only valid when used with WAN Batch replication, Enterprise Only
-     * When enabled, only the latest {@link com.hazelcast.wan.WanReplicationEvent} of a key is sent to target
-     */
-    boolean snapshotEnabled;
-
-    public List<WanTargetClusterConfig> getTargetClusterConfigs() {
-        return targetClusterConfigs;
-    }
-
-    public WanReplicationConfig addTargetClusterConfig(WanTargetClusterConfig wanTargetClusterConfig) {
-        if (targetClusterConfigs == null) {
-            targetClusterConfigs = new ArrayList<WanTargetClusterConfig>(2);
-        }
-        targetClusterConfigs.add(wanTargetClusterConfig);
-        return this;
-    }
-
-    public WanReplicationConfig setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
-        targetClusterConfigs = list;
-        return this;
-    }
+    private String name;
+    private WanConsumerConfig wanConsumerConfig;
+    private List<WanPublisherConfig> wanPublisherConfigs = new ArrayList<WanPublisherConfig>(2);
 
     public String getName() {
         return name;
@@ -58,20 +37,37 @@ public class WanReplicationConfig {
         return this;
     }
 
-    public boolean isSnapshotEnabled() {
-        return snapshotEnabled;
+    public WanConsumerConfig getWanConsumerConfig() {
+        return wanConsumerConfig;
     }
 
-    public void setSnapshotEnabled(boolean snapshotEnabled) {
-        this.snapshotEnabled = snapshotEnabled;
+    public WanReplicationConfig setWanConsumerConfig(WanConsumerConfig wanConsumerConfig) {
+        this.wanConsumerConfig = wanConsumerConfig;
+        return this;
+    }
+
+    public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
+        if (wanPublisherConfigs == null
+                || wanPublisherConfigs.isEmpty()) {
+            throw new InvalidConfigurationException("WanReplicationConfig must have at least one WanPublisherConfig.");
+        }
+        this.wanPublisherConfigs = wanPublisherConfigs;
+    }
+
+    public List<WanPublisherConfig> getWanPublisherConfigs() {
+        return wanPublisherConfigs;
+    }
+
+    public WanReplicationConfig addWanPublisherConfig(WanPublisherConfig wanPublisherConfig) {
+        wanPublisherConfigs.add(wanPublisherConfig);
+        return this;
     }
 
     @Override
     public String toString() {
         return "WanReplicationConfig"
                 + "{name='" + name + '\''
-                + ", snapshotEnabled=" + snapshotEnabled
-                + ", targetClusterConfigs=" + targetClusterConfigs
+                + ", wanPublisherConfigs=" + wanPublisherConfigs
                 + '}';
     }
 }
