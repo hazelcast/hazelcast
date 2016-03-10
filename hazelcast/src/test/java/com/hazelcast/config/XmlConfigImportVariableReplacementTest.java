@@ -143,10 +143,10 @@ public class XmlConfigImportVariableReplacementTest {
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_START_TAG +
-                "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config2.toURI().toURL() + "\"/>\n" +
                 "</hazelcast>";
         String config2Xml = HAZELCAST_START_TAG +
-                "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config1.toURI().toURL() + "\"/>\n" +
                 "</hazelcast>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -156,13 +156,13 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        final String template = HAZELCAST_START_TAG + "    <import resource=\"file:///%s\"/>\n</hazelcast>";
+        final String template = HAZELCAST_START_TAG + "    <import resource=\"%s\"/>\n</hazelcast>";
         final File config1 = createConfigFile("hz1", "xml");
         final File config2 = createConfigFile("hz2", "xml");
         final File config3 = createConfigFile("hz3", "xml");
-        final String config1Xml = String.format(template, config2.getAbsolutePath());
-        final String config2Xml = String.format(template, config3.getAbsolutePath());
-        final String config3Xml = String.format(template, config1.getAbsolutePath());
+        final String config1Xml = String.format(template, config2.toURI().toURL());
+        final String config2Xml = String.format(template, config3.toURI().toURL());
+        final String config3Xml = String.format(template, config1.toURI().toURL());
         writeStringToStreamAndClose(new FileOutputStream(config1), config1Xml);
         writeStringToStreamAndClose(new FileOutputStream(config2), config2Xml);
         writeStringToStreamAndClose(new FileOutputStream(config3), config3Xml);
@@ -175,7 +175,7 @@ public class XmlConfigImportVariableReplacementTest {
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
         String config1Xml = HAZELCAST_START_TAG +
-                "    <import resource='file:///" + config1.getAbsolutePath() + "'/>\n</hazelcast>";
+                "    <import resource='" + config1.toURI().toURL() + "'/>\n</hazelcast>";
         writeStringToStreamAndClose(os1, "");
         expectInvalid("Premature end of file.");
         buildConfig(config1Xml, null);
@@ -212,7 +212,7 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_START_TAG +
-                "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + file.toURI().toURL() + "\"/>\n" +
                 "</hazelcast>";
 
         Config config = buildConfig(xml, null);
@@ -239,7 +239,7 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(os, mapConfig);
 
         String xml = HAZELCAST_START_TAG +
-                "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + file.toURI().toURL() + "\"/>\n" +
                 "</hazelcast>";
 
         Config config = buildConfig(xml, null);
@@ -410,9 +410,9 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_START_TAG +
-                "    <import resource=\"file:///" + "${file}" + "\"/>\n" +
+                "    <import resource=\"" + "${file}" + "\"/>\n" +
                 "</hazelcast>";
-        Config config = buildConfig(xml, "file", file.getAbsolutePath());
+        Config config = buildConfig(xml, "file", file.toURI().toURL().toString());
         assertEquals(config.getProperty("prop1"), "value1");
         assertEquals(config.getProperty("prop2"), "value2");
     }
