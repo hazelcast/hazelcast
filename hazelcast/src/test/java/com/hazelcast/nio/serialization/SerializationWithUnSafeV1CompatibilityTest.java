@@ -42,7 +42,7 @@ public class SerializationWithUnSafeV1CompatibilityTest extends AbstractSerializ
 
     @After
     public void tearDown() {
-        serializationService.destroy();
+        serializationService.dispose();
     }
 
 }

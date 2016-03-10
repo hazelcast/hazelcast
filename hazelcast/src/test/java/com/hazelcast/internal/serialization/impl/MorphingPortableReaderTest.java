@@ -61,8 +61,8 @@ public class MorphingPortableReaderTest {
 
     @After
     public void after() throws Exception {
-        service1.destroy();
-        service2.destroy();
+        service1.dispose();
+        service2.dispose();
     }
 
     @Test
@@ -311,4 +311,4 @@ public class MorphingPortableReaderTest {
         reader.readByteArray("byte");
     }
 
-} 
+}

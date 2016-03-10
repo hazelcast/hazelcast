@@ -74,7 +74,7 @@ public class StringSerializationTest {
 
     @After
     public void tearDown() {
-        serializationService.destroy();
+        serializationService.dispose();
     }
 
     @Test

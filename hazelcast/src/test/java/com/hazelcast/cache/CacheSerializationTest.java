@@ -52,7 +52,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        service.destroy();
+        service.dispose();
     }
 
     @Test

@@ -59,7 +59,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
     @After
     public void after() {
-        serializationService.destroy();
+        serializationService.dispose();
     }
 
     // ========================== getAttribute ===========================================
