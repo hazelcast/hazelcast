@@ -17,7 +17,6 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 

@@ -17,7 +17,12 @@
 package com.hazelcast.spring.context;
 
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.*;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 /**

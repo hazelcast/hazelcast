@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
