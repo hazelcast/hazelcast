@@ -19,7 +19,6 @@ package com.hazelcast.memory;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
 import com.hazelcast.util.collection.Long2LongHashMap;
-import com.hazelcast.util.collection.LongHashSet;
 import junit.framework.AssertionFailedError;
 
 import java.util.Arrays;
@@ -146,7 +145,7 @@ public class HeapMemoryManager implements MemoryManager {
         }
 
         @Override
-        public void copyFromByteArray(byte[] source, int offset, int length, long destAddress) {
+        public void copyFromByteArray(byte[] source, int offset, long destAddress, int length) {
             System.arraycopy(source, offset, storage, (int) toStorageIndex(destAddress), length);
         }
 
