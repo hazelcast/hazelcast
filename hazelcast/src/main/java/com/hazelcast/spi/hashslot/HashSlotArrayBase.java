@@ -380,9 +380,9 @@ abstract class HashSlotArrayBase {
         markAllUnassigned();
     }
 
-    private void auxAllocateAndAdjustFields(long auxAddress, long oldCapacity, long newCapacity) {
+    private void auxAllocateAndAdjustFields(long auxAddress, long size, long oldCapacity, long newCapacity) {
         try {
-            allocateArrayAndAdjustFields(size(), newCapacity);
+            allocateArrayAndAdjustFields(size, newCapacity);
         } catch (Error e) {
             try {
                 // Try to restore state prior to allocation failure
@@ -422,9 +422,10 @@ abstract class HashSlotArrayBase {
         final MemoryAllocator oldMalloc;
         final long oldAddress;
         if (auxMalloc != null) {
+            final long size = size();
             oldAddress = move(baseAddress, oldCapacity, malloc, auxMalloc);
             oldMalloc = auxMalloc;
-            auxAllocateAndAdjustFields(oldAddress, oldCapacity, newCapacity);
+            auxAllocateAndAdjustFields(oldAddress, size, oldCapacity, newCapacity);
         } else {
             oldMalloc = malloc;
             oldAddress = baseAddress;
