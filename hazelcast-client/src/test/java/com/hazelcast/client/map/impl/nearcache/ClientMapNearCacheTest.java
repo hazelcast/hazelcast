@@ -468,6 +468,35 @@ public class ClientMapNearCacheTest {
         });
     }
 
+
+    @Test
+    public void testMemberLoadAll_invalidates_clientNearCache() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+
+        Config config = member.getConfig();
+        SimpleMapStore store = new SimpleMapStore();
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        populateNearCache(clientMap, mapSize);
+
+        IMap<Integer, Integer> map = member.getMap(mapName);
+        map.loadAll(true);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertThatOwnedEntryCountEquals(clientMap, 0);
+            }
+        });
+    }
+
     @Test
     public void testAfterLoadAllWithDefinedKeysNearCacheIsInvalidated() {
         int mapSize = 1000;
@@ -523,6 +552,37 @@ public class ClientMapNearCacheTest {
         }
 
         clientMap.putAll(hashMap);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertThatOwnedEntryCountEquals(clientMap, 0);
+            }
+        });
+    }
+
+
+    @Test
+    public void testMemberPutAll_invalidates_clientNearCache() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
+
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>();
+        for (int i = 0; i < mapSize; i++) {
+            clientMap.put(i, i);
+            hashMap.put(i, i);
+        }
+
+        for (int i = 0; i < mapSize; i++) {
+            clientMap.get(i);
+        }
+
+        IMap<Integer, Integer> memberMap = member.getMap(mapName);
+        memberMap.putAll(hashMap);
 
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {

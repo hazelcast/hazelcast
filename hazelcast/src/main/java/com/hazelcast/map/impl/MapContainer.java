@@ -107,7 +107,7 @@ public class MapContainer {
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
         this.indexes = new Indexes(serializationService, extractors);
         this.evictor = createEvictor(mapServiceContext);
-        this.memberNearCacheInvalidationEnabled = isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
+        this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
     }
 
     // this method is overridden.
@@ -188,7 +188,7 @@ public class MapContainer {
         }
     }
 
-    public boolean isNearCacheEnabled() {
+    public boolean hasMemberNearCache() {
         return mapConfig.isNearCacheEnabled();
     }
 
