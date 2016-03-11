@@ -18,6 +18,7 @@ package com.hazelcast.spring;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.quorum.QuorumFunction;
+
 import java.util.Collection;
 
 public class DummyQuorumFunction implements QuorumFunction {
