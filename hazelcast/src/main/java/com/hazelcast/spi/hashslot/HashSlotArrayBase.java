@@ -405,10 +405,6 @@ abstract class HashSlotArrayBase {
 
     private void markAllUnassigned() {
         final long capacity = capacity();
-        mem.setMemory(baseAddress, capacity * slotLength, (byte) 0);
-        if (unassignedSentinel == 0) {
-            return;
-        }
         final long addrOfFirstSentinel = baseAddress + offsetOfUnassignedSentinel;
         final int stride = slotLength;
         for (long i = 0; i < capacity; i++) {
