@@ -124,6 +124,7 @@
                                 </Export-Package>
                                 <Import-Package>
                                     !org.junit,
+                                    !com.hazelcast.*,
                                     !com.eclipsesource.json,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
