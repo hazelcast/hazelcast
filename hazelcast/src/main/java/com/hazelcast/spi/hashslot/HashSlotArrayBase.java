@@ -33,7 +33,7 @@ import static com.hazelcast.util.QuickMath.modPowerOfTwo;
 abstract class HashSlotArrayBase {
 
     protected static final int KEY_1_OFFSET = 0;
-    private static final int KEY_2_OFFSET = 8;
+    protected static final int KEY_2_OFFSET = 8;
     private static final int VALUE_LENGTH_GRANULARITY = 8;
     private static final int HEADER_SIZE = 0x18;
     private static final int CAPACITY_OFFSET = -0x8;
@@ -405,10 +405,6 @@ abstract class HashSlotArrayBase {
 
     private void markAllUnassigned() {
         final long capacity = capacity();
-        mem.setMemory(baseAddress, capacity * slotLength, (byte) 0);
-        if (unassignedSentinel == 0) {
-            return;
-        }
         final long addrOfFirstSentinel = baseAddress + offsetOfUnassignedSentinel;
         final int stride = slotLength;
         for (long i = 0; i < capacity; i++) {

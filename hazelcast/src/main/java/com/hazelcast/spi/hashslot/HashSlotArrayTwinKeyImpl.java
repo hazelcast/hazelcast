@@ -36,14 +36,19 @@ public class HashSlotArrayTwinKeyImpl extends HashSlotArrayBase implements HashS
 
     private static final int KEY_LENGTH = 16;
 
-    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager mm, int valueLength,
+    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager memMgr, MemoryAllocator auxMalloc, int valueLength,
                                     int initialCapacity, float loadFactor) {
-        this(nullSentinel, KEY_LENGTH, mm, null, valueLength, initialCapacity, loadFactor);
+        this(nullSentinel, KEY_LENGTH, memMgr, auxMalloc, valueLength, initialCapacity, loadFactor);
         assert valueLengthValid(valueLength) : "Invalid value length: " + valueLength;
     }
 
+    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager memMgr, int valueLength,
+                                    int initialCapacity, float loadFactor) {
+        this(nullSentinel, memMgr, null, valueLength, initialCapacity, loadFactor);
+    }
+
     public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager mm, int valueLength) {
-        this(nullSentinel, mm, valueLength, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
+        this(nullSentinel, mm, null, valueLength, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
     protected HashSlotArrayTwinKeyImpl(
@@ -79,5 +84,21 @@ public class HashSlotArrayTwinKeyImpl extends HashSlotArrayBase implements HashS
 
     protected boolean valueLengthValid(int valueLength) {
         return valueLength > 0;
+    }
+
+    public static long addrOfKey1At(long slotBase) {
+        return slotBase + KEY_1_OFFSET;
+    }
+
+    public static long addrOfKey2At(long slotBase) {
+        return slotBase + KEY_2_OFFSET;
+    }
+
+    public static long addrOfValueAt(long slotBase) {
+        return slotBase + KEY_LENGTH;
+    }
+
+    public static long valueAddr2slotBase(long valueAddr) {
+        return valueAddr - KEY_LENGTH;
     }
 }
