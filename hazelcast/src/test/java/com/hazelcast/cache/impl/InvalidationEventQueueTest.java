@@ -1,10 +1,10 @@
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.CacheEventHandler.InvalidationEventQueue;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.RunParallel;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,9 +19,6 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
 
-import com.hazelcast.cache.impl.CacheEventHandler.InvalidationEventQueue;
-
-@RunParallel
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class InvalidationEventQueueTest {
