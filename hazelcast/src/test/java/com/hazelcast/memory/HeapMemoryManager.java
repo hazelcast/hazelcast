@@ -52,7 +52,7 @@ public class HeapMemoryManager implements MemoryManager {
     // Suports the testing of HashSlotArray#migrateTo()
     public HeapMemoryManager(HeapMemoryManager that) {
         this.storage = that.storage;
-        this.heapTop = that.heapTop;
+        this.heapTop = storage.length / 2;
     }
 
     @Override
@@ -143,6 +143,16 @@ public class HeapMemoryManager implements MemoryManager {
         public void copyMemory(long srcAddress, long destAddress, long lengthBytes) {
             System.arraycopy(storage, (int) toStorageIndex(srcAddress),
                     storage, (int) toStorageIndex(destAddress), (int) lengthBytes);
+        }
+
+        @Override
+        public void copyFromByteArray(byte[] source, int offset, int length, long destAddress) {
+            System.arraycopy(source, offset, storage, (int) toStorageIndex(destAddress), length);
+        }
+
+        @Override
+        public void copyToByteArray(long srcAddress, byte[] destination, int offset, int length) {
+            System.arraycopy(storage, (int) toStorageIndex(srcAddress), destination, offset, length);
         }
 
         @Override

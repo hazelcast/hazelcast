@@ -5,6 +5,7 @@ import com.hazelcast.memory.HeapMemoryManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
+import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +15,8 @@ import org.junit.runner.RunWith;
 import java.util.Random;
 
 import static com.hazelcast.memory.MemoryAllocator.NULL_ADDRESS;
+import static org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap.DEFAULT_INITIAL_CAPACITY;
+import static org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap.DEFAULT_LOAD_FACTOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -25,7 +28,7 @@ import static org.junit.Assert.fail;
 public class HashSlotArrayTwinKeyImplTest {
 
     // Value length must be at least 16 bytes, as required by the test's logic
-    private static final int VALUE_LENGTH = 32;
+    private static final int VALUE_LENGTH = 16;
 
     private final Random random = new Random();
     private HeapMemoryManager memMgr;
@@ -161,7 +164,6 @@ public class HashSlotArrayTwinKeyImplTest {
         }
         hsa.dispose();
         assertEquals("Memory leak: used memory not zero after dispose", 0, memMgr.getUsedMemory());
-
     }
 
     @Test(expected = AssertionError.class)
@@ -201,6 +203,23 @@ public class HashSlotArrayTwinKeyImplTest {
         assertEquals(0, memMgr.getUsedMemory());
         final long newValueAddr = hsa.get(1, 2);
         assertEquals(3, mem.getLong(newValueAddr));
+    }
+
+    @Test
+    public void testAuxAllocator() {
+        final HeapMemoryManager mgr2 = new HeapMemoryManager(memMgr);
+        final int initialCapacity = 4;
+        final int factor = 13;
+        hsa = new HashSlotArrayTwinKeyImpl(0, memMgr, mgr2.getAllocator(),
+                VALUE_LENGTH, initialCapacity, DEFAULT_LOAD_FACTOR);
+        hsa.gotoNew();
+        for (int i = 1; i <= 2 * initialCapacity; i++) {
+            insert(i, factor * i);
+        }
+        for (int i = 1; i <= 2 * initialCapacity; i++) {
+            verifyValue(i, factor * i, hsa.get(i, factor * i));
+        }
+        assertEquals(0, mgr2.getUsedMemory());
     }
 
     @Test
@@ -374,7 +393,6 @@ public class HashSlotArrayTwinKeyImplTest {
     }
 
     private void verifyValue(long key1, long key2, long valueAddress) {
-        // pre-check to avoid SIGSEGV
         assertNotEquals(NULL_ADDRESS, valueAddress);
         assertEquals(key1, mem.getLong(valueAddress));
         assertEquals(key2, mem.getLong(valueAddress + 8L));
