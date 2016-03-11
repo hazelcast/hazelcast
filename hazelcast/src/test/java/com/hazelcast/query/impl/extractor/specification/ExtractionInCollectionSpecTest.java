@@ -258,6 +258,13 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
                 Expected.of(BOND));
     }
 
+    @Test
+    public void comparable_primitive_reduced_atLeaf_comparedToNull_matching2() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("limbs_[any].fingers_", null), mv),
+                Expected.of(BOND));
+    }
+
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> parametrisationData() {

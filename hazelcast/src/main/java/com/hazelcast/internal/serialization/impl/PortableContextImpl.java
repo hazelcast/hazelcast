@@ -179,12 +179,12 @@ final class PortableContextImpl implements PortableContext {
     @Override
     public FieldDefinition getFieldDefinition(ClassDefinition classDef, String name) {
         FieldDefinition fd = classDef.getField(name);
-        if (fd == null) {
+        if (fd == null && name.contains(".")) {
             String[] fieldNames = NESTED_FIELD_PATTERN.split(name);
             if (fieldNames.length > 1) {
                 ClassDefinition currentClassDef = classDef;
                 for (int i = 0; i < fieldNames.length; i++) {
-                    name = fieldNames[i];
+                    name = PortableHelper.extractAttributeNameNameWithoutArguments(fieldNames[i]);
                     fd = currentClassDef.getField(name);
                     if (i == fieldNames.length - 1) {
                         break;
@@ -199,6 +199,9 @@ final class PortableContextImpl implements PortableContext {
                     }
                 }
             }
+        } else {
+            name = PortableHelper.extractAttributeNameNameWithoutArguments(name);
+            fd = classDef.getField(name);
         }
         return fd;
     }

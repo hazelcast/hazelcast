@@ -37,7 +37,10 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.query.Predicates.equal;
@@ -201,6 +204,11 @@ public class ClientMapStandaloneTest {
         }, predicate, true);
         map.put(key, element);
         assertOpenEventually(eventLatch);
+
+
+        Collection values = map.values(Predicates.lessThan("date", new Date().getTime()));
+        assertEquals(values.iterator().next(), element);
+
     }
 
 }

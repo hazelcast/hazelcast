@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.query.extractor.ValueCollector;
 
 import java.io.IOException;
 import java.util.Set;
@@ -24,6 +25,8 @@ import java.util.Set;
 /**
  * Provides a mean of reading portable fields from a binary in form of java primitives
  * arrays of java primitives , nested portable fields and array of portable fields.
+ * <p/>
+ * fieldName used in most of the methods may contain nested fields, like body.brain.iq
  */
 public interface PortableReader {
 
@@ -194,6 +197,28 @@ public interface PortableReader {
      * @throws IOException
      */
     Portable[] readPortableArray(String fieldName) throws IOException;
+
+//    /**
+//     * Enables reading from fields and returning multiple results, e.g. using [any] quantifier
+//     * In example: body.legs[any].name will return the names of all legs contained by the legs array.
+//     *
+//     * @param fieldName
+//     * @param collector
+//     * @return
+//     * @throws IOException
+//     */
+//    boolean collect(String fieldName, ValueCollector collector) throws IOException;
+//
+//    /**
+//     * Enables reading from fields and returning multiple results, e.g. using [any] quantifier
+//     * In example: body.legs[any].name will return the names of all legs contained by the legs array.
+//     *
+//     * @param fieldName
+//     * @param collector
+//     * @return
+//     * @throws IOException
+//     */
+//    boolean collect(String fieldName, ValueCollector collector, ValueFilter filter) throws IOException;
 
     /**
      * {@link PortableWriter#getRawDataOutput()}.

@@ -209,7 +209,11 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         if (extractedSingleResult == null) {
             return null;
         }
+        if (extractedSingleResult instanceof Portable) {
+            return AttributeType.PORTABLE;
+        }
         return ReflectionHelper.getAttributeType(extractedSingleResult.getClass());
+
     }
 
     private AttributeType extractAttributeTypeFromMultiResult(MultiResult extractedMultiResult) {

@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.query.QueryException;
 
@@ -36,7 +37,7 @@ final class PortableExtractor {
             new PortableFieldExtractor[FieldType.values().length];
 
     static {
-        FIELD_EXTRACTORS[FieldType.PORTABLE.getId()] = new PortableUnsupportedFieldExtractor();
+        FIELD_EXTRACTORS[FieldType.PORTABLE.getId()] = new PortableObjectFieldExtractor();
 
         FIELD_EXTRACTORS[FieldType.BYTE.getId()] = new PortableByteFieldExtractor();
         FIELD_EXTRACTORS[FieldType.BOOLEAN.getId()] = new PortableBooleanFieldExtractor();
@@ -48,14 +49,15 @@ final class PortableExtractor {
         FIELD_EXTRACTORS[FieldType.DOUBLE.getId()] = new PortableDoubleFieldExtractor();
         FIELD_EXTRACTORS[FieldType.UTF.getId()] = new PortableUtfFieldExtractor();
 
-        FIELD_EXTRACTORS[FieldType.PORTABLE_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
-        FIELD_EXTRACTORS[FieldType.BYTE_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
-        FIELD_EXTRACTORS[FieldType.CHAR_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
-        FIELD_EXTRACTORS[FieldType.SHORT_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
-        FIELD_EXTRACTORS[FieldType.INT_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
-        FIELD_EXTRACTORS[FieldType.LONG_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
-        FIELD_EXTRACTORS[FieldType.FLOAT_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
-        FIELD_EXTRACTORS[FieldType.DOUBLE_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
+        FIELD_EXTRACTORS[FieldType.PORTABLE_ARRAY.getId()] = new PortableArrayExtractor();
+        FIELD_EXTRACTORS[FieldType.BYTE_ARRAY.getId()] = new PortableByteArrayElementExtractor();
+        FIELD_EXTRACTORS[FieldType.CHAR_ARRAY.getId()] = new PortableCharArrayElementExtractor();
+        FIELD_EXTRACTORS[FieldType.SHORT_ARRAY.getId()] = new PortableShortArrayElementExtractor();
+        FIELD_EXTRACTORS[FieldType.INT_ARRAY.getId()] = new PortableIntArrayElementExtractor();
+        FIELD_EXTRACTORS[FieldType.LONG_ARRAY.getId()] = new PortableLongArrayElementExtractor();
+        FIELD_EXTRACTORS[FieldType.FLOAT_ARRAY.getId()] = new PortableFloatArrayElementExtractor();
+        FIELD_EXTRACTORS[FieldType.DOUBLE_ARRAY.getId()] = new PortableDoubleArrayElementExtractor();
+        FIELD_EXTRACTORS[FieldType.UTF_ARRAY.getId()] = new PortableUtfArrayElementExtractor();
     }
 
     private static final PortableFieldExtractor NULL_PORTABLE_FIELD_EXTRACTOR = createNullPortableFieldExtractor();
@@ -63,7 +65,7 @@ final class PortableExtractor {
     private PortableExtractor() {
     }
 
-    public static Comparable extractValue(InternalSerializationService serializationService, Data data, String fieldName)
+    public static Object extractValue(InternalSerializationService serializationService, Data data, String fieldName)
             throws IOException {
         PortableContext context = serializationService.getPortableContext();
         PortableFieldExtractor fieldExtractor = getFieldExtractor(context, data, fieldName);
@@ -228,6 +230,18 @@ final class PortableExtractor {
         }
     }
 
+    private static class PortableObjectFieldExtractor implements PortableFieldExtractor {
+        @Override
+        public Portable extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readPortable(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.PORTABLE;
+        }
+    }
+
     /**
      * A {@link com.hazelcast.query.impl.PortableExtractor.PortableFieldExtractor} which's methods always return null.
      * Used in cases that a portable field exists on one node but not exists on another one. In those cases returning null
@@ -247,9 +261,121 @@ final class PortableExtractor {
 
     }
 
+    private static final class PortableArrayExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readPortable(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return null;
+        }
+
+    }
+
+    private static final class PortableByteArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readByte(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.BYTE;
+        }
+    }
+
+    private static final class PortableShortArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readShort(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.SHORT;
+        }
+    }
+
+    private static final class PortableIntArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readInt(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.INTEGER;
+        }
+    }
+
+    private static final class PortableLongArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readLong(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.LONG;
+        }
+    }
+
+    private static final class PortableCharArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readChar(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.CHAR;
+        }
+    }
+
+    private static final class PortableFloatArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readFloat(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.FLOAT;
+        }
+    }
+
+    private static final class PortableDoubleArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readDouble(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.DOUBLE;
+        }
+    }
+
+
+    private static final class PortableUtfArrayElementExtractor implements PortableFieldExtractor {
+        @Override
+        public Object extract(PortableReader reader, String fieldName) throws IOException {
+            return reader.readUTF(fieldName);
+        }
+
+        @Override
+        public AttributeType getAttributeType() {
+            return AttributeType.STRING;
+        }
+    }
+
+
     private interface PortableFieldExtractor {
 
-        Comparable extract(PortableReader reader, String fieldName) throws IOException;
+        // May return multivalue
+        Object extract(PortableReader reader, String fieldName) throws IOException;
 
         AttributeType getAttributeType();
     }

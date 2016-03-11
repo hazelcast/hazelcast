@@ -20,23 +20,23 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.regex.Pattern;
 
+/**
+ * Can't be accessed concurrently
+ */
 public class DefaultPortableReader implements PortableReader {
 
-    private static final Pattern NESTED_FIELD_PATTERN = Pattern.compile("\\.");
-
+    private final BufferObjectDataInput in;
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
-    private final BufferObjectDataInput in;
+
+    private final PortablePathNavigator navigator;
     private final int finalPosition;
     private final int offset;
     private boolean raw;
@@ -45,19 +45,12 @@ public class DefaultPortableReader implements PortableReader {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
-        int fieldCount;
-        try {
-            // final position after portable is read
-            finalPosition = in.readInt();
-            // field count
-            fieldCount = in.readInt();
-        } catch (IOException e) {
-            throw new HazelcastSerializationException(e);
-        }
-        if (fieldCount != cd.getFieldCount()) {
-            throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);
-        }
-        this.offset = in.position();
+
+        this.navigator = new PortablePathNavigator();
+        this.navigator.init(in, cd, serializer);
+
+        this.finalPosition = navigator.finalPosition;
+        this.offset = navigator.offset;
     }
 
     @Override
@@ -86,22 +79,67 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public int readInt(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.INT);
+    public byte readByte(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.BYTE).position;
+        return in.readByte(pos);
+    }
+
+    @Override
+    public short readShort(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.SHORT).position;
+        return in.readShort(pos);
+    }
+
+    @Override
+    public int readInt(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.INT).position;
         return in.readInt(pos);
     }
 
     @Override
-    public long readLong(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.LONG);
+    public long readLong(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.LONG).position;
         return in.readLong(pos);
     }
 
     @Override
-    public String readUTF(String fieldName) throws IOException {
+    public float readFloat(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.FLOAT).position;
+        return in.readFloat(pos);
+    }
+
+    @Override
+    public double readDouble(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.DOUBLE).position;
+        return in.readDouble(pos);
+    }
+
+    @Override
+    public boolean readBoolean(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.BOOLEAN).position;
+        return in.readBoolean(pos);
+    }
+
+    @Override
+    public char readChar(String path) throws IOException {
+        validateQuantifier(path);
+        int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.CHAR).position;
+        return in.readChar(pos);
+    }
+
+    @Override
+    public String readUTF(String path) throws IOException {
+        validateQuantifier(path);
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.UTF);
+            int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.UTF).position;
             in.position(pos);
             return in.readUTF();
         } finally {
@@ -110,46 +148,33 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public boolean readBoolean(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.BOOLEAN);
-        return in.readBoolean(pos);
-    }
-
-    @Override
-    public byte readByte(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.BYTE);
-        return in.readByte(pos);
-    }
-
-    @Override
-    public char readChar(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.CHAR);
-        return in.readChar(pos);
-    }
-
-    @Override
-    public double readDouble(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.DOUBLE);
-        return in.readDouble(pos);
-    }
-
-    @Override
-    public float readFloat(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.FLOAT);
-        return in.readFloat(pos);
-    }
-
-    @Override
-    public short readShort(String fieldName) throws IOException {
-        int pos = readPosition(fieldName, FieldType.SHORT);
-        return in.readShort(pos);
-    }
-
-    @Override
-    public byte[] readByteArray(String fieldName) throws IOException {
+    @SuppressWarnings("unchecked")
+    public Portable readPortable(String path) throws IOException {
+        validateQuantifier(path);
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.BYTE_ARRAY);
+            PortablePathNavigator.Position pos = navigator.findPositionOfPortableObject(path);
+            in.position(pos.position);
+            if (!pos.isNull) {
+                return serializer.readAndInitialize(in, pos.factoryId, pos.classId);
+            }
+            return null;
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+    private void validateQuantifier(String path) {
+        if (path.contains("[any]")) {
+            throw new IllegalArgumentException("Invalid method for [any] quantifier. Use the readArray method family.");
+        }
+    }
+
+    @Override
+    public byte[] readByteArray(String path) throws IOException {
+        final int currentPos = in.position();
+        try {
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.BYTE_ARRAY).position;
             in.position(pos);
             return in.readByteArray();
         } finally {
@@ -158,10 +183,10 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public boolean[] readBooleanArray(String fieldName) throws IOException {
+    public boolean[] readBooleanArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.BOOLEAN_ARRAY).position;
             in.position(pos);
             return in.readBooleanArray();
         } finally {
@@ -170,10 +195,10 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public char[] readCharArray(String fieldName) throws IOException {
+    public char[] readCharArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.CHAR_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.CHAR_ARRAY).position;
             in.position(pos);
             return in.readCharArray();
         } finally {
@@ -182,10 +207,10 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public int[] readIntArray(String fieldName) throws IOException {
+    public int[] readIntArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.INT_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.INT_ARRAY).position;
             in.position(pos);
             return in.readIntArray();
         } finally {
@@ -194,10 +219,10 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public long[] readLongArray(String fieldName) throws IOException {
+    public long[] readLongArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.LONG_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.LONG_ARRAY).position;
             in.position(pos);
             return in.readLongArray();
         } finally {
@@ -206,10 +231,10 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public double[] readDoubleArray(String fieldName) throws IOException {
+    public double[] readDoubleArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.DOUBLE_ARRAY).position;
             in.position(pos);
             return in.readDoubleArray();
         } finally {
@@ -218,10 +243,10 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public float[] readFloatArray(String fieldName) throws IOException {
+    public float[] readFloatArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.FLOAT_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.FLOAT_ARRAY).position;
             in.position(pos);
             return in.readFloatArray();
         } finally {
@@ -230,10 +255,10 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public short[] readShortArray(String fieldName) throws IOException {
+    public short[] readShortArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.SHORT_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.SHORT_ARRAY).position;
             in.position(pos);
             return in.readShortArray();
         } finally {
@@ -242,42 +267,12 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
-    public String[] readUTFArray(String fieldName) throws IOException {
+    public String[] readUTFArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            int pos = readPosition(fieldName, FieldType.UTF_ARRAY);
+            int pos = navigator.findPositionOfPrimitiveArray(path, FieldType.UTF_ARRAY).position;
             in.position(pos);
             return in.readUTFArray();
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
-    @Override
-    public Portable readPortable(String fieldName) throws IOException {
-        final int currentPos = in.position();
-        try {
-            FieldDefinition fd = cd.getField(fieldName);
-            if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
-            }
-            if (fd.getType() != FieldType.PORTABLE) {
-                throw new HazelcastSerializationException("Not a Portable field: " + fieldName);
-            }
-
-            int pos = readPosition(fd);
-            in.position(pos);
-
-            boolean isNull = in.readBoolean();
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-
-            checkFactoryAndClass(fd, factoryId, classId);
-
-            if (!isNull) {
-                return serializer.readAndInitialize(in, factoryId, classId);
-            }
-            return null;
         } finally {
             in.position(currentPos);
         }
@@ -287,110 +282,25 @@ public class DefaultPortableReader implements PortableReader {
     public Portable[] readPortableArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            FieldDefinition fd = cd.getField(fieldName);
-            if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
-            }
-            if (fd.getType() != FieldType.PORTABLE_ARRAY) {
-                throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
-            }
-
-            int pos = readPosition(fd);
-            in.position(pos);
-
-            int len = in.readInt();
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-            if (len == Bits.NULL_ARRAY_LENGTH) {
+            PortablePathNavigator.Position pos = navigator.findPositionOfPortableArray(fieldName);
+            in.position(pos.position);
+            if (pos.len == Bits.NULL_ARRAY_LENGTH) {
                 return null;
             }
-
-            checkFactoryAndClass(fd, factoryId, classId);
-
-            final Portable[] portables = new Portable[len];
-            if (len > 0) {
-                final int offset = in.position();
-                for (int i = 0; i < len; i++) {
-                    final int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
-                    in.position(start);
-                    portables[i] = serializer.readAndInitialize(in, factoryId, classId);
-                }
-            }
-            return portables;
+            return readPortableArray(pos);
         } finally {
             in.position(currentPos);
         }
     }
 
-    private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
-        if (factoryId != fd.getFactoryId()) {
-            throw new IllegalArgumentException("Invalid factoryId! Expected: "
-                    + fd.getFactoryId() + ", Current: " + factoryId);
+    private Portable[] readPortableArray(PortablePathNavigator.Position pos) throws IOException {
+        final Portable[] portables = new Portable[pos.len];
+        for (int i = 0; i < pos.len; i++) {
+            final int start = in.readInt(pos.position + i * Bits.INT_SIZE_IN_BYTES);
+            in.position(start);
+            portables[i] = serializer.readAndInitialize(in, pos.factoryId, pos.classId);
         }
-        if (classId != fd.getClassId()) {
-            throw new IllegalArgumentException("Invalid classId! Expected: "
-                    + fd.getClassId() + ", Current: " + classId);
-        }
-    }
-
-    private HazelcastSerializationException throwUnknownFieldException(String fieldName) {
-        return new HazelcastSerializationException("Unknown field name: '" + fieldName
-                + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
-    }
-
-    private int readPosition(String fieldName, FieldType type) throws IOException {
-        if (raw) {
-            throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
-        }
-        FieldDefinition fd = cd.getField(fieldName);
-        if (fd == null) {
-            return readNestedPosition(fieldName, type);
-        }
-        if (fd.getType() != type) {
-            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
-        }
-        return readPosition(fd);
-    }
-
-    private int readNestedPosition(String fieldName, FieldType type) throws IOException {
-        String[] fieldNames = NESTED_FIELD_PATTERN.split(fieldName);
-        if (fieldNames.length > 1) {
-            FieldDefinition fd = null;
-            DefaultPortableReader reader = this;
-
-            for (int i = 0; i < fieldNames.length; i++) {
-                fd = reader.cd.getField(fieldNames[i]);
-                if (fd == null) {
-                    break;
-                }
-                if (i == fieldNames.length - 1) {
-                    break;
-                }
-
-                int pos = reader.readPosition(fd);
-                in.position(pos);
-                boolean isNull = in.readBoolean();
-                if (isNull) {
-                    throw new NullPointerException("Parent field is null: " + fieldNames[i]);
-                }
-                reader = serializer.createReader(in);
-            }
-            if (fd == null) {
-                throw throwUnknownFieldException(fieldName);
-            }
-            if (fd.getType() != type) {
-                throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
-            }
-            return reader.readPosition(fd);
-        }
-        throw throwUnknownFieldException(fieldName);
-    }
-
-    private int readPosition(FieldDefinition fd) throws IOException {
-        int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
-        short len = in.readShort(pos);
-        // name + len + type
-        return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
+        return portables;
     }
 
     @Override
