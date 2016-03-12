@@ -93,9 +93,6 @@
     <suppress checks="MethodCount" files="com/hazelcast/osgi/impl/HazelcastOSGiInstanceImpl"/>
 
     <!-- Client -->
-    <!-- TODO: these JavaDoc issues need to be addressed -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/client/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/client/"/>
     <!-- TODO: we need to get these wildcard suppressions fixed -->
     <suppress checks="" files="com/hazelcast/client/proxy/ClientQueueProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientListProxy"/>
