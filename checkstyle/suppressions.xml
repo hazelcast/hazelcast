@@ -158,7 +158,7 @@
     <suppress checks="MethodCount|ClassFanOutComplexity|VisibilityModifier" files="com/hazelcast/instance/HazelcastInstanceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/instance/HazelcastInstanceProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/instance/MemberImpl"/>
-    <suppress checks="" files="com/hazelcast/instance/Node"/>
+    <suppress checks="MagicNumber|VisibilityModifier|DeclarationOrder|ClassDataAbstractionCoupling|NPathComplexity|CyclomaticComplexity|OneStatementPerLine|LineLength|ClassFanOutComplexity|JavadocType|MethodCount|ExecutableStatementCount|EmptyBlockCheck" files="com/hazelcast/instance/Node"/>
 
     <!-- SPI -->
     <suppress checks="MethodCount|NPathComplexity|MagicNumber" files="com/hazelcast/spi/Operation"/>
