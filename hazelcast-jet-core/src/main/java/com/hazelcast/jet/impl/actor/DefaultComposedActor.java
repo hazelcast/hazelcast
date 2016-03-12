@@ -23,12 +23,14 @@ import com.hazelcast.jet.api.actor.ProducerCompletionHandler;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
-import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
+import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
+import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -40,9 +42,8 @@ public class DefaultComposedActor implements ComposedActor {
     private final Vertex vertex;
     private final ContainerTask task;
     private final ObjectActor[] consumers;
-    private final ContainerContext containerContext;
     private final ProcessingStrategy processingStrategy;
-    private final PartitioningStrategy partitioningStrategy;
+    private final CalculationStrategy calculationStrategy;
 
     private int nextActorId;
     private int lastConsumedCount;
@@ -56,14 +57,20 @@ public class DefaultComposedActor implements ComposedActor {
         this.edge = edge;
         this.task = task;
         this.vertex = vertex;
-        this.containerContext = containerContext;
         this.processingStrategy = edge.getProcessingStrategy();
         this.consumers = actors.toArray(new ObjectActor[actors.size()]);
-        this.partitioningStrategy = edge.getPartitioningStrategy() == null
+
+        PartitioningStrategy partitioningStrategy = edge.getPartitioningStrategy() == null
                 ?
                 StringPartitioningStrategy.INSTANCE
                 :
                 edge.getPartitioningStrategy();
+
+        this.calculationStrategy = new CalculationStrategyImpl(
+                edge.getHashingStrategy(),
+                partitioningStrategy,
+                containerContext
+        );
     }
 
     @Override
@@ -134,8 +141,7 @@ public class DefaultComposedActor implements ComposedActor {
 
     @SuppressWarnings("unchecked")
     private int calculatePartitionIndex(Object object) {
-        Object partitionKey = this.partitioningStrategy.getPartitionKey(object);
-        return this.edge.getHashingStrategy().hash(object, partitionKey, this.containerContext);
+        return this.calculationStrategy.hash(object);
     }
 
     private void next() {
@@ -236,12 +242,12 @@ public class DefaultComposedActor implements ComposedActor {
 
     @Override
     public Object[] produce() {
-        throw new IllegalStateException("Not supported");
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
     public int lastProducedCount() {
-        throw new IllegalStateException("Not supported");
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override
