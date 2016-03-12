@@ -37,8 +37,6 @@
     <suppress checks="MethodCount" files="com/hazelcast/config/CacheConfig"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/ICache"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/cache/impl/AbstractClientCacheProxy"/>
-    <suppress checks="ClassDataAbstractionCoupling|MethodCount|"
-              files="com/hazelcast/client/cache/impl/AbstractClientInternalCacheProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/CacheRecordStore"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/CacheService"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/config/CacheConfig"/>
@@ -130,7 +128,6 @@
     <suppress checks="ParameterNumber" files="com/hazelcast/client/proxy/ClientMapReduceProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/ClientMessage"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/util/MessageFlyweight"/>
-    <suppress checks="ClassFanOutComplexity" files="com/hazelcast/client/cache/impl/AbstractClientInternalCacheProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/cache/impl/ClientCacheProxy"/>
 
     <!-- Monitor -->
