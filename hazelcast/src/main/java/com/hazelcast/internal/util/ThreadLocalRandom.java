@@ -51,9 +51,9 @@ import java.util.Random;
  */
 public class ThreadLocalRandom extends Random {
     // same constants as Random, but must be redeclared because private
-    private static final long multiplier = 0x5DEECE66DL;
-    private static final long addend = 0xBL;
-    private static final long mask = (1L << 48) - 1;
+    private static final long MULTIPLIER = 0x5DEECE66DL;
+    private static final long ADDEND = 0xBL;
+    private static final long MASK = (1L << 48) - 1;
 
     /**
      * The random seed. We can't use super.seed.
@@ -111,11 +111,11 @@ public class ThreadLocalRandom extends Random {
         if (initialized) {
             throw new UnsupportedOperationException();
         }
-        rnd = (seed ^ multiplier) & mask;
+        rnd = (seed ^ MULTIPLIER) & MASK;
     }
 
     protected int next(int bits) {
-        rnd = (rnd * multiplier + addend) & mask;
+        rnd = (rnd * MULTIPLIER + ADDEND) & MASK;
         return (int) (rnd >>> (48-bits));
     }
 
