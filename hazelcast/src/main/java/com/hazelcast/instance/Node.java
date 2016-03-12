@@ -82,18 +82,6 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
-    private final ILogger logger;
-
-    private final AtomicBoolean joined = new AtomicBoolean(false);
-
-    private volatile NodeState state;
-
-    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
-
-    private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
-
-    private final SerializationService serializationService;
-
     public final NodeEngineImpl nodeEngine;
 
     public final ClientEngineImpl clientEngine;
@@ -118,19 +106,31 @@ public class Node {
 
     public final MemberImpl localMember;
 
-    private volatile Address masterAddress;
-
     public final HazelcastInstanceImpl hazelcastInstance;
 
     public final LoggingServiceImpl loggingService;
+
+    public final SecurityContext securityContext;
+
+    private final ILogger logger;
+
+    private final AtomicBoolean joined = new AtomicBoolean(false);
+
+    private volatile NodeState state;
+
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
+
+    private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
+
+    private final SerializationService serializationService;
+
+    private volatile Address masterAddress;
 
     private final Joiner joiner;
 
     private final NodeExtension nodeExtension;
 
     private ManagementCenterService managementCenterService;
-
-    public final SecurityContext securityContext;
 
     private final ClassLoader configClassLoader;
 
@@ -140,12 +140,7 @@ public class Node {
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
-
     private final boolean liteMember;
-
-    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
-        return nodeContext.createNodeExtension(this);
-    }
 
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
@@ -274,6 +269,10 @@ public class Node {
                 logger.warning(error, t);
             }
         }
+    }
+
+    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
+        return nodeContext.createNodeExtension(this);
     }
 
     public ManagementCenterService getManagementCenterService() {
