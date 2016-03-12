@@ -82,7 +82,7 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
-    private final static int SLEEP_DURATION = 500;
+    private static final int SLEEP_DURATION = 500;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -165,7 +165,7 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address), 
+            localMember = new MemberImpl(address, true, createMemberUuid(address),
                                             hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
