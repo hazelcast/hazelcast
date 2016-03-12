@@ -123,7 +123,7 @@ public class ThreadLocalRandom extends Random {
 
     protected int next(int bits) {
         rnd = (rnd * MULTIPLIER + ADDEND) & MASK;
-        return (int) (rnd >>> (48-bits));
+        return (int) (rnd >>> (48 - bits));
     }
 
     /**
