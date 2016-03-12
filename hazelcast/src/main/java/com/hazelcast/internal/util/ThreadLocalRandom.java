@@ -50,28 +50,11 @@ import java.util.Random;
  * @author Doug Lea
  */
 public class ThreadLocalRandom extends Random {
+
     // same constants as Random, but must be redeclared because private
     private static final long MULTIPLIER = 0x5DEECE66DL;
     private static final long ADDEND = 0xBL;
     private static final long MASK = (1L << 48) - 1;
-
-    /**
-     * The random seed. We can't use super.seed.
-     */
-    private long rnd;
-
-    /**
-     * Initialization flag to permit calls to setSeed to succeed only
-     * while executing the Random constructor.  We can't allow others
-     * since it would cause setting seed in one part of a program to
-     * unintentionally impact other usages by the thread.
-     */
-    boolean initialized;
-
-    // Padding to help avoid memory contention among seed updates in
-    // different TLRs in the common case that they are located near
-    // each other.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
 
     /**
      * The actual ThreadLocal
@@ -83,6 +66,30 @@ public class ThreadLocalRandom extends Random {
                 }
             };
 
+    /**
+     * The random seed. We can't use super.seed.
+     */
+    private long rnd;
+
+    // Padding to help avoid memory contention among seed updates in
+    // different TLRs in the common case that they are located near
+    // each other.
+    private long pad0;
+    private long pad1;
+    private long pad2;
+    private long pad3;
+    private long pad4;
+    private long pad5;
+    private long pad6
+    private long pad7;
+
+    /**
+     * Initialization flag to permit calls to setSeed to succeed only
+     * while executing the Random constructor.  We can't allow others
+     * since it would cause setting seed in one part of a program to
+     * unintentionally impact other usages by the thread.
+     */
+    boolean initialized;
 
     /**
      * Constructor called only by localRandom.initialValue.
