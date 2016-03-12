@@ -1573,7 +1573,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
                 return;
             }
             while (nextTableIndex >= 0) {
-                if ((nextEntry = currentTable[nextTableIndex--]) != null) {
+                nextEntry = currentTable[nextTableIndex--];
+                if (nextEntry != null) {
                     return;
                 }
             }
@@ -1582,7 +1583,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
                 if (seg.count != 0) {
                     currentTable = seg.table;
                     for (int j = currentTable.length - 1; j >= 0; --j) {
-                        if ((nextEntry = currentTable[j]) != null) {
+                        nextEntry = currentTable[j];
+                        if (nextEntry != null) {
                             nextTableIndex = j - 1;
                             return;
                         }
