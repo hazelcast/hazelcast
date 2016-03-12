@@ -55,11 +55,11 @@ public class ThreadLocalRandom extends Random {
     private static final long MULTIPLIER = 0x5DEECE66DL;
     private static final long ADDEND = 0xBL;
     private static final long MASK = (1L << 48) - 1;
-
+    private static final long serialVersionUID = -5851777807851030925L;
     /**
      * The actual ThreadLocal
      */
-    private static final ThreadLocal<ThreadLocalRandom> localRandom =
+    private static final ThreadLocal<ThreadLocalRandom> LOCALRANDOM =
             new ThreadLocal<ThreadLocalRandom>() {
                 protected ThreadLocalRandom initialValue() {
                     return new ThreadLocalRandom();
@@ -105,7 +105,7 @@ public class ThreadLocalRandom extends Random {
      * @return the current thread's {@code ThreadLocalRandom}
      */
     public static ThreadLocalRandom current() {
-        return localRandom.get();
+        return LOCALRANDOM.get();
     }
 
     /**
@@ -137,7 +137,7 @@ public class ThreadLocalRandom extends Random {
      * to bound
      */
     public int nextInt(int least, int bound) {
-        if (least >= bound) { 
+        if (least >= bound) {
             throw new IllegalArgumentException();
         }
         return nextInt(bound - least) + least;
@@ -223,6 +223,4 @@ public class ThreadLocalRandom extends Random {
         }
         return nextDouble() * (bound - least) + least;
     }
-
-    private static final long serialVersionUID = -5851777807851030925L;
 }
