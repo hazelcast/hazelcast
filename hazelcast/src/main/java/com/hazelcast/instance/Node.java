@@ -165,7 +165,8 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address), hazelcastInstance, memberAttributes, liteMember);
+            localMember = new MemberImpl(address, true, createMemberUuid(address), 
+                                            hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
