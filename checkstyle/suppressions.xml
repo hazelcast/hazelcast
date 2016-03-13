@@ -338,7 +338,7 @@
 
     <!-- Util -->
     <!-- written by Doug Lea  -->
-    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
+    <suppress checks="MagicNumber|FileLength|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
               files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
     <suppress checks="Header|IllegalImport" files="com/hazelcast/util/HashUtil"/>
     <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>

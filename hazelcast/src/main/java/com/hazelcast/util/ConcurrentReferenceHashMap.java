@@ -260,6 +260,191 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     transient Set<Map.Entry<K, V>> entrySet;
     transient Collection<V> values;
 
+    /* ---------------- Public operations -------------- */
+
+    /**
+     * Creates a new, empty map with the specified initial
+     * capacity, reference types, load factor, and concurrency level.
+     * <p>
+     * Behavioral changing options such as {@link Option#IDENTITY_COMPARISONS}
+     * can also be specified.
+     *
+     * @param initialCapacity  the initial capacity. The implementation
+     *                         performs internal sizing to accommodate this many elements.
+     * @param loadFactor       the load factor threshold, used to control resizing.
+     *                         Resizing may be performed when the average number of elements per
+     *                         bin exceeds this threshold.
+     * @param concurrencyLevel the estimated number of concurrently
+     *                         updating threads. The implementation performs internal sizing
+     *                         to try to accommodate this many threads.
+     * @param keyType          the reference type to use for keys
+     * @param valueType        the reference type to use for values
+     * @param options          the behavioral options
+     * @throws IllegalArgumentException if the initial capacity is
+     *                                  negative or the load factor or concurrencyLevel are
+     *                                  nonpositive.
+     */
+    public ConcurrentReferenceHashMap(int initialCapacity,
+                                      float loadFactor, int concurrencyLevel,
+                                      ReferenceType keyType, ReferenceType valueType,
+                                      EnumSet<Option> options) {
+        if (!(loadFactor > 0) || initialCapacity < 0 || concurrencyLevel <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (concurrencyLevel > MAX_SEGMENTS) {
+            concurrencyLevel = MAX_SEGMENTS;
+        }
+        // Find power-of-two sizes best matching arguments
+        int sshift = 0;
+        int ssize = 1;
+        while (ssize < concurrencyLevel) {
+            ++sshift;
+            ssize <<= 1;
+        }
+        segmentShift = 32 - sshift;
+        segmentMask = ssize - 1;
+        this.segments = Segment.newArray(ssize);
+        if (initialCapacity > MAXIMUM_CAPACITY) {
+            initialCapacity = MAXIMUM_CAPACITY;
+        }
+        int c = initialCapacity / ssize;
+        if (c * ssize < initialCapacity) {
+            ++c;
+        }
+        int cap = 1;
+        while (cap < c) {
+            cap <<= 1;
+        }
+        identityComparisons = options != null && options.contains(Option.IDENTITY_COMPARISONS);
+        for (int i = 0; i < this.segments.length; ++i) {
+            this.segments[i] = new Segment<K, V>(cap, loadFactor, keyType, valueType, identityComparisons);
+        }
+    }
+
+    /**
+     * Creates a new, empty map with the specified initial
+     * capacity, load factor, and concurrency level.
+     *
+     * @param initialCapacity  the initial capacity. The implementation
+     *                         performs internal sizing to accommodate this number of elements.
+     * @param loadFactor       the load factor threshold, used to control resizing.
+     *                         Resizing may be performed when the average number of elements per
+     *                         bin exceeds this threshold.
+     * @param concurrencyLevel the estimated number of concurrently
+     *                         updating threads. The implementation performs internal sizing
+     *                         to try to accommodate this many threads.
+     * @throws IllegalArgumentException if the initial capacity is
+     *                                  negative or the load factor or concurrencyLevel are
+     *                                  nonpositive.
+     */
+    public ConcurrentReferenceHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
+        this(initialCapacity, loadFactor, concurrencyLevel, DEFAULT_KEY_TYPE, DEFAULT_VALUE_TYPE, null);
+    }
+
+    /**
+     * Creates a new, empty map with the specified initial capacity
+     * and load factor and with the default reference types (weak keys,
+     * strong values), and concurrencyLevel (16).
+     *
+     * @param initialCapacity The implementation performs internal
+     *                        sizing to accommodate this number of elements.
+     * @param loadFactor      the load factor threshold, used to control resizing.
+     *                        Resizing may be performed when the average number of elements per
+     *                        bin exceeds this threshold.
+     * @throws IllegalArgumentException if the initial capacity of
+     *                                  elements is negative or the load factor is nonpositive
+     * @since 1.6
+     */
+    public ConcurrentReferenceHashMap(int initialCapacity, float loadFactor) {
+        this(initialCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL);
+    }
+
+
+    /**
+     * Creates a new, empty map with the specified initial capacity,
+     * reference types, and with a default load factor (0.75) and concurrencyLevel (16).
+     *
+     * @param initialCapacity the initial capacity. The implementation
+     *                        performs internal sizing to accommodate this many elements.
+     * @param keyType         the reference type to use for keys
+     * @param valueType       the reference type to use for values
+     * @throws IllegalArgumentException if the initial capacity of
+     *                                  elements is negative.
+     */
+    public ConcurrentReferenceHashMap(int initialCapacity,
+                                      ReferenceType keyType, ReferenceType valueType) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL,
+                keyType, valueType, null);
+    }
+
+    /**
+     * Creates a new, empty reference map with the specified key
+     * and value reference types.
+     *
+     * @param keyType   the reference type to use for keys
+     * @param valueType the reference type to use for values
+     * @throws IllegalArgumentException if the initial capacity of
+     *                                  elements is negative.
+     */
+    public ConcurrentReferenceHashMap(ReferenceType keyType, ReferenceType valueType) {
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL,
+                keyType, valueType, null);
+    }
+
+    /**
+     * Creates a new, empty reference map with the specified reference types
+     * and behavioral options.
+     *
+     * @param keyType   the reference type to use for keys
+     * @param valueType the reference type to use for values
+     * @throws IllegalArgumentException if the initial capacity of
+     *                                  elements is negative.
+     */
+    public ConcurrentReferenceHashMap(ReferenceType keyType, ReferenceType valueType, EnumSet<Option> options) {
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL,
+                keyType, valueType, options);
+    }
+
+
+    /**
+     * Creates a new, empty map with the specified initial capacity,
+     * and with default reference types (weak keys, strong values),
+     * load factor (0.75) and concurrencyLevel (16).
+     *
+     * @param initialCapacity the initial capacity. The implementation
+     *                        performs internal sizing to accommodate this many elements.
+     * @throws IllegalArgumentException if the initial capacity of
+     *                                  elements is negative.
+     */
+    public ConcurrentReferenceHashMap(int initialCapacity) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL);
+    }
+
+    /**
+     * Creates a new, empty map with a default initial capacity (16),
+     * reference types (weak keys, strong values), default
+     * load factor (0.75) and concurrencyLevel (16).
+     */
+    public ConcurrentReferenceHashMap() {
+        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL);
+    }
+
+    /**
+     * Creates a new map with the same mappings as the given map.
+     * The map is created with a capacity of 1.5 times the number
+     * of mappings in the given map or 16 (whichever is greater),
+     * and a default load factor (0.75) and concurrencyLevel (16).
+     *
+     * @param m the map
+     */
+    public ConcurrentReferenceHashMap(Map<? extends K, ? extends V> m) {
+        this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,
+                        DEFAULT_INITIAL_CAPACITY),
+                DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL
+        );
+        putAll(m);
+    }
+
     /* ---------------- Small Utilities -------------- */
 
     /**
@@ -908,193 +1093,6 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-
-
-    /* ---------------- Public operations -------------- */
-
-    /**
-     * Creates a new, empty map with the specified initial
-     * capacity, reference types, load factor, and concurrency level.
-     * <p>
-     * Behavioral changing options such as {@link Option#IDENTITY_COMPARISONS}
-     * can also be specified.
-     *
-     * @param initialCapacity  the initial capacity. The implementation
-     *                         performs internal sizing to accommodate this many elements.
-     * @param loadFactor       the load factor threshold, used to control resizing.
-     *                         Resizing may be performed when the average number of elements per
-     *                         bin exceeds this threshold.
-     * @param concurrencyLevel the estimated number of concurrently
-     *                         updating threads. The implementation performs internal sizing
-     *                         to try to accommodate this many threads.
-     * @param keyType          the reference type to use for keys
-     * @param valueType        the reference type to use for values
-     * @param options          the behavioral options
-     * @throws IllegalArgumentException if the initial capacity is
-     *                                  negative or the load factor or concurrencyLevel are
-     *                                  nonpositive.
-     */
-    public ConcurrentReferenceHashMap(int initialCapacity,
-                                      float loadFactor, int concurrencyLevel,
-                                      ReferenceType keyType, ReferenceType valueType,
-                                      EnumSet<Option> options) {
-        if (!(loadFactor > 0) || initialCapacity < 0 || concurrencyLevel <= 0) {
-            throw new IllegalArgumentException();
-        }
-        if (concurrencyLevel > MAX_SEGMENTS) {
-            concurrencyLevel = MAX_SEGMENTS;
-        }
-        // Find power-of-two sizes best matching arguments
-        int sshift = 0;
-        int ssize = 1;
-        while (ssize < concurrencyLevel) {
-            ++sshift;
-            ssize <<= 1;
-        }
-        segmentShift = 32 - sshift;
-        segmentMask = ssize - 1;
-        this.segments = Segment.newArray(ssize);
-        if (initialCapacity > MAXIMUM_CAPACITY) {
-            initialCapacity = MAXIMUM_CAPACITY;
-        }
-        int c = initialCapacity / ssize;
-        if (c * ssize < initialCapacity) {
-            ++c;
-        }
-        int cap = 1;
-        while (cap < c) {
-            cap <<= 1;
-        }
-        identityComparisons = options != null && options.contains(Option.IDENTITY_COMPARISONS);
-        for (int i = 0; i < this.segments.length; ++i) {
-            this.segments[i] = new Segment<K, V>(cap, loadFactor, keyType, valueType, identityComparisons);
-        }
-    }
-
-    /**
-     * Creates a new, empty map with the specified initial
-     * capacity, load factor, and concurrency level.
-     *
-     * @param initialCapacity  the initial capacity. The implementation
-     *                         performs internal sizing to accommodate this number of elements.
-     * @param loadFactor       the load factor threshold, used to control resizing.
-     *                         Resizing may be performed when the average number of elements per
-     *                         bin exceeds this threshold.
-     * @param concurrencyLevel the estimated number of concurrently
-     *                         updating threads. The implementation performs internal sizing
-     *                         to try to accommodate this many threads.
-     * @throws IllegalArgumentException if the initial capacity is
-     *                                  negative or the load factor or concurrencyLevel are
-     *                                  nonpositive.
-     */
-    public ConcurrentReferenceHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
-        this(initialCapacity, loadFactor, concurrencyLevel, DEFAULT_KEY_TYPE, DEFAULT_VALUE_TYPE, null);
-    }
-
-    /**
-     * Creates a new, empty map with the specified initial capacity
-     * and load factor and with the default reference types (weak keys,
-     * strong values), and concurrencyLevel (16).
-     *
-     * @param initialCapacity The implementation performs internal
-     *                        sizing to accommodate this number of elements.
-     * @param loadFactor      the load factor threshold, used to control resizing.
-     *                        Resizing may be performed when the average number of elements per
-     *                        bin exceeds this threshold.
-     * @throws IllegalArgumentException if the initial capacity of
-     *                                  elements is negative or the load factor is nonpositive
-     * @since 1.6
-     */
-    public ConcurrentReferenceHashMap(int initialCapacity, float loadFactor) {
-        this(initialCapacity, loadFactor, DEFAULT_CONCURRENCY_LEVEL);
-    }
-
-
-    /**
-     * Creates a new, empty map with the specified initial capacity,
-     * reference types, and with a default load factor (0.75) and concurrencyLevel (16).
-     *
-     * @param initialCapacity the initial capacity. The implementation
-     *                        performs internal sizing to accommodate this many elements.
-     * @param keyType         the reference type to use for keys
-     * @param valueType       the reference type to use for values
-     * @throws IllegalArgumentException if the initial capacity of
-     *                                  elements is negative.
-     */
-    public ConcurrentReferenceHashMap(int initialCapacity,
-                                      ReferenceType keyType, ReferenceType valueType) {
-        this(initialCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL,
-                keyType, valueType, null);
-    }
-
-    /**
-     * Creates a new, empty reference map with the specified key
-     * and value reference types.
-     *
-     * @param keyType   the reference type to use for keys
-     * @param valueType the reference type to use for values
-     * @throws IllegalArgumentException if the initial capacity of
-     *                                  elements is negative.
-     */
-    public ConcurrentReferenceHashMap(ReferenceType keyType, ReferenceType valueType) {
-        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL,
-                keyType, valueType, null);
-    }
-
-    /**
-     * Creates a new, empty reference map with the specified reference types
-     * and behavioral options.
-     *
-     * @param keyType   the reference type to use for keys
-     * @param valueType the reference type to use for values
-     * @throws IllegalArgumentException if the initial capacity of
-     *                                  elements is negative.
-     */
-    public ConcurrentReferenceHashMap(ReferenceType keyType, ReferenceType valueType, EnumSet<Option> options) {
-        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL,
-                keyType, valueType, options);
-    }
-
-
-    /**
-     * Creates a new, empty map with the specified initial capacity,
-     * and with default reference types (weak keys, strong values),
-     * load factor (0.75) and concurrencyLevel (16).
-     *
-     * @param initialCapacity the initial capacity. The implementation
-     *                        performs internal sizing to accommodate this many elements.
-     * @throws IllegalArgumentException if the initial capacity of
-     *                                  elements is negative.
-     */
-    public ConcurrentReferenceHashMap(int initialCapacity) {
-        this(initialCapacity, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL);
-    }
-
-    /**
-     * Creates a new, empty map with a default initial capacity (16),
-     * reference types (weak keys, strong values), default
-     * load factor (0.75) and concurrencyLevel (16).
-     */
-    public ConcurrentReferenceHashMap() {
-        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL);
-    }
-
-    /**
-     * Creates a new map with the same mappings as the given map.
-     * The map is created with a capacity of 1.5 times the number
-     * of mappings in the given map or 16 (whichever is greater),
-     * and a default load factor (0.75) and concurrencyLevel (16).
-     *
-     * @param m the map
-     */
-    public ConcurrentReferenceHashMap(Map<? extends K, ? extends V> m) {
-        this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,
-                        DEFAULT_INITIAL_CAPACITY),
-                DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL
-        );
-        putAll(m);
-    }
-
     /**
      * Returns <tt>true</tt> if this map contains no key-value mappings.
      *
@@ -1575,7 +1573,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
                 return;
             }
             while (nextTableIndex >= 0) {
-                if ((nextEntry = currentTable[nextTableIndex--]) != null) {
+                nextEntry = currentTable[nextTableIndex--];
+                if (nextEntry != null) {
                     return;
                 }
             }
@@ -1584,7 +1583,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
                 if (seg.count != 0) {
                     currentTable = seg.table;
                     for (int j = currentTable.length - 1; j >= 0; --j) {
-                        if ((nextEntry = currentTable[j]) != null) {
+                        nextEntry = currentTable[j];
+                        if (nextEntry != null) {
                             nextTableIndex = j - 1;
                             return;
                         }
