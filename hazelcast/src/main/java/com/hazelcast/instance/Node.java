@@ -82,7 +82,7 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
-    private static final int SLEEP_DURATION = 500;
+    private static final int THREAD_SLEEP_DURATION_MS = 500;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -467,7 +467,7 @@ public class Node {
         logger.info("Node is already shutting down... Waiting for shutdown process to complete...");
         while (state != NodeState.SHUT_DOWN) {
             try {
-                Thread.sleep(SLEEP_DURATION);
+                Thread.sleep(THREAD_SLEEP_DURATION_MS);
             } catch (InterruptedException e) {
                 logger.warning("Interrupted while waiting for shutdown!");
                 return;
