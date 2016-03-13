@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.hashslot;
 
-import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.memory.HeapMemoryManager;
+import com.hazelcast.spi.memory.MemoryAccessor;
+import com.hazelcast.spi.impl.memory.HeapMemoryManager;
 import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;

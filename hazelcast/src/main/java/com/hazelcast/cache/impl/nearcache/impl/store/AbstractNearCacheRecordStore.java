@@ -37,8 +37,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
+import static com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry.MEM;
+import static com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 
 public abstract class AbstractNearCacheRecordStore<
         K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>

@@ -16,7 +16,7 @@
 
 package com.hazelcast.memory;
 
-import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.spi.memory.MemoryAccessor;
 import com.hazelcast.nio.Disposable;
 
 /**

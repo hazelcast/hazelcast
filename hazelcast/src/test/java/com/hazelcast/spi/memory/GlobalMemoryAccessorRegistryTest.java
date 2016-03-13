@@ -16,9 +16,10 @@
 
 package com.hazelcast.spi.memory;
 
-import com.hazelcast.spi.memory.impl.AlignmentAwareMemoryAccessor;
-import com.hazelcast.spi.memory.impl.AlignmentUtil;
-import com.hazelcast.spi.memory.impl.StandardMemoryAccessor;
+import com.hazelcast.spi.impl.memory.AlignmentAwareMemoryAccessor;
+import com.hazelcast.spi.impl.memory.AlignmentUtil;
+import com.hazelcast.spi.impl.memory.StandardMemoryAccessor;
+import com.hazelcast.spi.impl.memory.UnsafeDependentMemoryAccessorTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 

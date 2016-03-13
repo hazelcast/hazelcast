@@ -23,7 +23,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
+import static com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry.MEM;
 import static java.lang.Math.abs;
 
 /**

@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.memory;
 
-import com.hazelcast.spi.memory.impl.AlignmentAwareMemoryAccessor;
-import com.hazelcast.spi.memory.impl.AlignmentUtil;
-import com.hazelcast.spi.memory.impl.StandardMemoryAccessor;
+import com.hazelcast.spi.impl.memory.AlignmentAwareMemoryAccessor;
+import com.hazelcast.spi.impl.memory.AlignmentUtil;
+import com.hazelcast.spi.impl.memory.StandardMemoryAccessor;
 
 import java.util.EnumMap;
 import java.util.Map;

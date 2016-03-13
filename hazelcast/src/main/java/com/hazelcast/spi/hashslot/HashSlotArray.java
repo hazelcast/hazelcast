@@ -20,6 +20,7 @@ import com.hazelcast.nio.Disposable;
 import com.hazelcast.spi.impl.hashslot.HashSlotArray16byteKeyNoValue;
 import com.hazelcast.spi.impl.hashslot.HashSlotArray8byteKeyNoValue;
 import com.hazelcast.spi.impl.hashslot.HashSlotArrayBase;
+import com.hazelcast.spi.memory.MemoryAccessor;
 
 /** <p>
  * A <i>Flyweight</i> object that manages the backbone array of an off-heap open-addressed hashtable.
@@ -34,7 +35,7 @@ import com.hazelcast.spi.impl.hashslot.HashSlotArrayBase;
  * The update operations only ensure that a slot for a given key exists/doesn't exist and it is
  * up to the caller to manage the contents of the value part. The caller will be provided
  * with the raw address of the value, suitable for accessing with the associated
- * {@link com.hazelcast.internal.memory.MemoryAccessor MemoryAccessor}.
+ * {@link MemoryAccessor MemoryAccessor}.
  * <b>The returned address is valid only up to the next map update operation</b>.
  * </p><p>
  * Since this is a <i>Flyweight</i>-style object, the same instance can be used to manage many

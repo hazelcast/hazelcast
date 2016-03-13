@@ -16,13 +16,13 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.internal.memory.impl.EndiannessUtil;
+import com.hazelcast.spi.impl.memory.EndiannessUtil;
 
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
-import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCESS;
+import static com.hazelcast.spi.impl.memory.EndiannessUtil.BYTE_ARRAY_ACCESS;
 
 /**
  * Access and manipulate bits, bytes, primitives ...

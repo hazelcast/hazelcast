@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.hashslot;
 
-import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.spi.memory.MemoryAccessor;
 import com.hazelcast.memory.MemoryAllocator;
 import com.hazelcast.memory.MemoryManager;
 import com.hazelcast.spi.hashslot.HashSlotArray;

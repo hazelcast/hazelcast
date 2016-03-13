@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.util.counters;
 
-import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
+import com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
+import static com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
