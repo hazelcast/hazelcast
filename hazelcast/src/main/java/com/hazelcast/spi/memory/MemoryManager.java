@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.memory;
+package com.hazelcast.spi.memory;
 
+import com.hazelcast.memory.MemoryAllocator;
 import com.hazelcast.spi.memory.MemoryAccessor;
 import com.hazelcast.nio.Disposable;
 

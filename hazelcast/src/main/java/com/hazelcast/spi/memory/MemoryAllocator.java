@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.memory;
+package com.hazelcast.spi.memory;
 
+import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.Disposable;
 
 /**
