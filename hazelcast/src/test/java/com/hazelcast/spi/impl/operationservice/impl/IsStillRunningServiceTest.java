@@ -109,7 +109,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         });
 
         // we wait for completion.
-        f.getSafely();
+        f.join();
 
         // after the call is complete, the operation should not be running anymore eventually
         assertTrueEventually(new AssertTask() {
@@ -150,7 +150,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         });
 
         // we wait for completion
-        f.getSafely();
+        f.join();
 
         // after the call is complete, the operation should not be running anymore
         assertTrueEventually(new AssertTask() {

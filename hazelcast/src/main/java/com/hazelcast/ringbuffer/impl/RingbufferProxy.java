@@ -92,21 +92,21 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
     public long size() {
         GenericOperation op = new GenericOperation(name, OPERATION_SIZE);
         InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        return (Long) f.join();
     }
 
     @Override
     public long tailSequence() {
         GenericOperation op = new GenericOperation(name, OPERATION_TAIL);
         InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        return (Long) f.join();
     }
 
     @Override
     public long headSequence() {
         GenericOperation op = new GenericOperation(name, OPERATION_HEAD);
         InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        return (Long) f.join();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
 
         GenericOperation op = new GenericOperation(name, OPERATION_REMAINING_CAPACITY);
         InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        return (Long) f.join();
     }
 
     @Override
@@ -128,7 +128,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
 
         AddOperation op = new AddOperation(name, toData(item), OVERWRITE);
         InternalCompletableFuture<Long> f = invoke(op);
-        return f.getSafely();
+        return f.join();
     }
 
     private Data toData(E item) {

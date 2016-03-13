@@ -26,5 +26,15 @@ import com.hazelcast.core.ICompletableFuture;
  */
 public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
 
+    /**
+     * Waits for this future to complete.
+     *
+     * @return the result.
+     */
+    E join();
+
+    /**
+     * @deprecated since 3.7. Use {@link #join()} instead.
+     */
     E getSafely();
 }

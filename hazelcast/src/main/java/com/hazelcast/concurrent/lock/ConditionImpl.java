@@ -96,7 +96,7 @@ final class ConditionImpl implements ICondition {
         Data key = lockProxy.getKeyData();
         BeforeAwaitOperation op = new BeforeAwaitOperation(namespace, key, threadId, conditionId);
         InternalCompletableFuture f = invoke(op);
-        f.getSafely();
+        f.join();
     }
 
     private InternalCompletableFuture invoke(Operation op) {
@@ -120,7 +120,7 @@ final class ConditionImpl implements ICondition {
         Data key = lockProxy.getKeyData();
         SignalOperation op = new SignalOperation(namespace, key, threadId, conditionId, all);
         InternalCompletableFuture f = invoke(op);
-        f.getSafely();
+        f.join();
     }
 
     @Override

@@ -67,7 +67,7 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         Object value = "foo";
         invocationRegistry.notifyNormalResponse(callId, value, 0, null);
 
-        assertEquals(value, invocation.future.getSafely());
+        assertEquals(value, invocation.future.join());
         assertNull(invocationRegistry.get(callId));
     }
 
@@ -97,7 +97,7 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.notifyNormalResponse(callId, value, 1, null);
         assertNull(invocationRegistry.get(callId));
 
-        assertEquals(value, invocation.future.getSafely());
+        assertEquals(value, invocation.future.join());
     }
 
     //todo: more permutations with different number of backups arriving in different orders.
@@ -136,7 +136,7 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.notifyBackupComplete(callId);
         assertNull(invocationRegistry.get(callId));
 
-        assertEquals(value, invocation.future.getSafely());
+        assertEquals(value, invocation.future.join());
     }
 
     @Test
@@ -161,7 +161,7 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
 
         try {
-            invocation.future.getSafely();
+            invocation.future.join();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }
@@ -191,7 +191,7 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.notifyCallTimeout(callId, null);
 
-        assertNull(invocation.future.getSafely());
+        assertNull(invocation.future.join());
         assertNull(invocationRegistry.get(callId));
     }
 }

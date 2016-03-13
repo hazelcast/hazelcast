@@ -107,7 +107,7 @@ public class IsStillRunningService {
         if (isStillRunningOperation(invocation)) {
             // timeout the original invocation since IsStillExecutingOperation is timed out
             final InvocationFuture future = invocation.future;
-            future.set(false);
+            future.complete(false);
             return;
         }
 
@@ -238,7 +238,7 @@ public class IsStillRunningService {
 
         private void setOperationTimeout() {
             InvocationFuture future = invocation.future;
-            future.set(invocation.newOperationTimeoutException(future.getMaxCallTimeout()));
+            future.complete(invocation.newOperationTimeoutException(future.getMaxCallTimeout()));
         }
     }
 

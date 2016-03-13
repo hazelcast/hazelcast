@@ -148,7 +148,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      * is set/applied, <tt>false</tt> otherwise. If <tt>false</tt> is returned, that means offered response is ignored
      * because a final response is already set to this future.
      */
-    public boolean set(Object offeredResponse) {
+    public boolean complete(Object offeredResponse) {
         assert !(offeredResponse instanceof Response) : "unexpected response found: " + offeredResponse;
 
         if (offeredResponse == null) {
@@ -207,7 +207,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     @Override
-    public E getSafely() {
+    public E join() {
         try {
             //this method is quite inefficient when there is unchecked exception, because it will be wrapped
             //in a ExecutionException, and then it is unwrapped again.
@@ -215,6 +215,11 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
+    }
+
+    @Override
+    public E getSafely() {
+        return join();
     }
 
     @Override
@@ -277,7 +282,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                             continue;
                         }
                         // tries to set an OperationTimeoutException response if response is not set yet
-                        set(operationTimeoutException);
+                        complete(operationTimeoutException);
                     }
                 }
             }

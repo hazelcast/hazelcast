@@ -199,7 +199,7 @@ public final class MapReduceUtil {
 
         for (InternalCompletableFuture<V> future : futures) {
             try {
-                V response = future.getSafely();
+                V response = future.join();
                 if (response != null) {
                     results.add(response);
                 }

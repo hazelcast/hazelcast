@@ -131,10 +131,10 @@ abstract class AbstractCacheProxyBase<K, V> {
         OperationService operationService = getNodeEngine().getOperationService();
         InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
         // TODO What happens in exception case? Cache doesn't get destroyed
-        f.getSafely();
+        f.join();
 
         cacheService.deleteCache(getDistributedObjectName(), true, null, true);
-        f.getSafely();
+        f.join();
     }
 
     public boolean isClosed() {

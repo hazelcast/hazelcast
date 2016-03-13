@@ -58,7 +58,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
                 null, operation, getPartitionId(local));
-        assertEquals(expected, invocation.getSafely());
+        assertEquals(expected, invocation.join());
     }
 
     @Test
@@ -68,7 +68,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
                 null, operation, getPartitionId(remote));
-        assertEquals(expected, invocation.getSafely());
+        assertEquals(expected, invocation.join());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
                 null, operation, getPartitionId(remote));
 
         try {
-            invocation.getSafely();
+            invocation.join();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

@@ -379,7 +379,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-        future.set(response);
+        future.complete(response);
     }
 
     @Override
@@ -447,7 +447,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // We are going to notify the future that a response is available. This can happen when:
         // - we had a regular operation (so no backups we need to wait for) that completed.
         // - we had a backup-aware operation that has completed, but also all its backups have completed.
-        future.set(value);
+        future.complete(value);
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -494,7 +494,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // We are the lucky ones since we just managed to complete the last backup for this invocation and since the
         // pendingResponse is set, we can set it on the future.
-        future.set(pendingResponse);
+        future.complete(pendingResponse);
     }
 
     boolean checkInvocationTimeout() {
@@ -539,7 +539,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void handleContinueWait() {
-        future.set(WAIT_RESPONSE);
+        future.complete(WAIT_RESPONSE);
     }
 
     private void handleRetry(Object cause) {
@@ -554,11 +554,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         operationService.invocationRegistry.deregister(this);
 
         if (future.interrupted) {
-            future.set(INTERRUPTED_RESPONSE);
+            future.complete(INTERRUPTED_RESPONSE);
             return;
         }
 
-        if (!future.set(WAIT_RESPONSE)) {
+        if (!future.complete(WAIT_RESPONSE)) {
             logger.finest("Cannot retry " + toString() + ", because a different response is already set: "
                     + future.response);
             return;
@@ -605,7 +605,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        future.set(pendingResponse);
+        future.complete(pendingResponse);
         return true;
     }
 
