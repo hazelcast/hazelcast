@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,62 +21,12 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>hazelcast-ra/hazelcast-jca/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-jca-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast-ra/hazelcast-jca-rar/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-jca-rar-${project.version}.rar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast-wm/target/</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-wm-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast-hibernate/hazelcast-hibernate3/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-hibernate3-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast-hibernate/hazelcast-hibernate4/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-hibernate4-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>hazelcast-spring/target</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>
                 <include>hazelcast-spring-${project.version}.jar</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>hazelcast-cloud/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-cloud-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>hazelcast-jclouds/target</directory>
-            <outputDirectory>/lib/</outputDirectory>
-            <includes>
-                <include>hazelcast-jclouds-${project.version}.jar</include>
-            </includes>
-        </fileSet>
-
         <fileSet>
             <directory>hazelcast-client/target</directory>
             <outputDirectory>/lib/</outputDirectory>
@@ -144,6 +94,7 @@
             <outputDirectory>/bin/</outputDirectory>
             <includes>
                 <include>hazelcast.xml</include>
+                <include>hazelcast-full-example.xml</include>
             </includes>
         </fileSet>
         <fileSet>

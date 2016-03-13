@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
@@ -155,7 +155,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
-    public void onPartitionLost(InternalPartitionLostEvent partitionLostEvent) {
+    public void onPartitionLost(IPartitionLostEvent partitionLostEvent) {
         partitionAwareService.onPartitionLost(partitionLostEvent);
     }
 

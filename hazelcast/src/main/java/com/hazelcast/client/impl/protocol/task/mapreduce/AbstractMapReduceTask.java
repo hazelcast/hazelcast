@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;

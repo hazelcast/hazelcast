@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -122,7 +124,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
+@ContextConfiguration(locations = {"fullConfig-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
 public class TestFullApplicationContext {
 
@@ -217,6 +219,7 @@ public class TestFullApplicationContext {
         assertEquals(1, config.getCacheConfigs().size());
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
+        assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
         assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
         assertTrue(cacheConfig.getHotRestartConfig().isFsync());
 
@@ -475,6 +478,24 @@ public class TestFullApplicationContext {
         assertEquals("sample-tag-value", aws.getTagValue());
 
         assertTrue("reuse-address", networkConfig.isReuseAddress());
+
+        DiscoveryConfig discoveryConfig = networkConfig.getJoin().getDiscoveryConfig();
+        assertTrue(discoveryConfig.getDiscoveryServiceProvider() instanceof DummyDiscoveryServiceProvider);
+        assertTrue(discoveryConfig.getNodeFilter() instanceof DummyNodeFilter);
+        List<DiscoveryStrategyConfig> discoveryStrategyConfigs
+                = (List<DiscoveryStrategyConfig>) discoveryConfig.getDiscoveryStrategyConfigs();
+        assertEquals(2, discoveryStrategyConfigs.size());
+        DiscoveryStrategyConfig discoveryStrategyConfig = discoveryStrategyConfigs.get(0);
+        assertTrue(discoveryStrategyConfig.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
+        assertEquals(3, discoveryStrategyConfig.getProperties().size());
+        assertEquals("foo", discoveryStrategyConfig.getProperties().get("key-string"));
+        assertEquals("123", discoveryStrategyConfig.getProperties().get("key-int"));
+        assertEquals("true", discoveryStrategyConfig.getProperties().get("key-boolean"));
+
+        DiscoveryStrategyConfig discoveryStrategyConfig2 = discoveryStrategyConfigs.get(1);
+        assertEquals(DummyDiscoveryStrategy.class.getName(), discoveryStrategyConfig2.getClassName());
+        assertEquals(1, discoveryStrategyConfig2.getProperties().size());
+        assertEquals("foo2", discoveryStrategyConfig2.getProperties().get("key-string"));
     }
 
 //    @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
@@ -32,6 +36,10 @@ public abstract class MapOperation extends AbstractNamedOperation {
     protected transient MapService mapService;
     protected transient MapContainer mapContainer;
     protected transient MapServiceContext mapServiceContext;
+    protected transient MapEventPublisher mapEventPublisher;
+    protected transient RecordStore recordStore;
+
+    protected transient boolean createRecordStoreOnDemand = true;
 
     public MapOperation() {
     }
@@ -53,14 +61,17 @@ public abstract class MapOperation extends AbstractNamedOperation {
     @Override
     public void beforeRun() throws Exception {
         super.beforeRun();
+
         mapService = getService();
         mapServiceContext = mapService.getMapServiceContext();
         mapContainer = mapServiceContext.getMapContainer(name);
+        mapEventPublisher = mapServiceContext.getMapEventPublisher();
+
         innerBeforeRun();
     }
 
-
     public void innerBeforeRun() throws Exception {
+        getOrCreateRecordStore();
     }
 
     @Override
@@ -70,6 +81,11 @@ public abstract class MapOperation extends AbstractNamedOperation {
 
     @Override
     public void afterRun() throws Exception {
+    }
+
+    protected boolean isPostProcessing(RecordStore recordStore) {
+        MapDataStore mapDataStore = recordStore.getMapDataStore();
+        return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);
     }
 
     public void setThreadId(long threadId) {
@@ -102,5 +118,24 @@ public abstract class MapOperation extends AbstractNamedOperation {
         }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         nearCacheProvider.getNearCacheInvalidator().clear(name, owner, getCallerUuid());
+    }
+
+    protected void evict() {
+        assert recordStore != null : "Record-store cannot be null";
+
+        recordStore.evictEntries();
+    }
+
+    private void getOrCreateRecordStore() {
+        int partitionId = getPartitionId();
+        if (partitionId == -1) {
+            return;
+        }
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        if (createRecordStoreOnDemand) {
+            recordStore = partitionContainer.getRecordStore(name);
+        } else {
+            recordStore = partitionContainer.getExistingRecordStore(name);
+        }
     }
 }

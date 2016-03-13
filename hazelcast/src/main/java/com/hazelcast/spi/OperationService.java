@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,16 +87,6 @@ public interface OperationService {
      */
     @Deprecated
     long getExecutedOperationCount();
-
-    /**
-     * Dumps all kinds of metrics: for example, performance. This can be used for performance analysis. In the future we'll have a
-     * more formal (such as map with key/value pairs) information.
-     * <p/>
-     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
-     * detail and should not directly be exposed the the SPI user.
-     */
-    @Deprecated
-    void dumpPerformanceMetrics(StringBuffer sb);
 
     /**
      * Runs an operation in the calling thread.

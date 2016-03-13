@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,9 @@ public final class HazelcastServerCachingProvider
     private HazelcastInstance getOrCreateInstance(ClassLoader classLoader, Properties properties, boolean isDefaultURI)
             throws URISyntaxException, IOException {
         String location = properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION);
-        // If config location is specified, get instance through it.
+        String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
+
+        // If config location is specified via properties, get instance through it.
         if (location != null) {
             URI uri = new URI(location);
             String scheme = uri.getScheme();
@@ -92,23 +94,20 @@ public final class HazelcastServerCachingProvider
                 throw new URISyntaxException(location, "Unsupported protocol in configuration location URL");
             }
             try {
-                Config config = new XmlConfigBuilder(configURL).build();
-                config.setClassLoader(theClassLoader);
-                config.setInstanceName(configURL.toString());
+                Config config = getConfig(configURL, theClassLoader, instanceName);
                 return HazelcastInstanceManager.getOrCreateHazelcastInstance(config);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
         }
 
-        // If config location is specified, get instance with its name.
-        String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
+        // If instance name is specified via properties, get instance through it.
         if (instanceName != null) {
             return Hazelcast.getHazelcastInstanceByName(instanceName);
         }
 
         HazelcastInstance instance = null;
-        // No instance specified with name of config location,
+        // No instance specified with name or config location,
         // so we are going on with the default one if the URI is the default.
         if (isDefaultURI) {
             if (hazelcastInstance == null) {
@@ -122,6 +121,21 @@ public final class HazelcastServerCachingProvider
             }
         }
         return instance;
+    }
+
+    private Config getConfig(URL configURL, ClassLoader theClassLoader, String instanceName)
+            throws IOException {
+        Config config = new XmlConfigBuilder(configURL).build();
+        config.setClassLoader(theClassLoader);
+        if (instanceName != null) {
+            // If instance name is specified via properties use it
+            // even though instance name is specified in the config.
+            config.setInstanceName(instanceName);
+        } else if (config.getInstanceName() == null) {
+            // Use config url as instance name if instance name is not specified.
+            config.setInstanceName(configURL.toString());
+        }
+        return config;
     }
 
     @Override

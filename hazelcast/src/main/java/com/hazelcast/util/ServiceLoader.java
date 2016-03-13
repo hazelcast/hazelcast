@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public final class ServiceLoader {
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                final URI uri = url.toURI();
+                final URI uri = new URI(url.toExternalForm().replace(" ", "%20"));
 
                 ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
                 if (!highestClassLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {

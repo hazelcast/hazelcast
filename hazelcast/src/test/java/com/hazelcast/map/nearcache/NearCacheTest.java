@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,25 +30,24 @@ import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastTestRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.RunParallel;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -73,8 +72,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunParallel
-@RunWith(HazelcastTestRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class NearCacheTest extends HazelcastTestSupport {
 

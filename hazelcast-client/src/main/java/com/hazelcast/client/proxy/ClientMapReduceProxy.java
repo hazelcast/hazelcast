@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -54,13 +53,12 @@ import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -190,12 +188,9 @@ public class ClientMapReduceProxy
         Data mapperData = toData(mapper);
         Data combinerFactoryData = toData(combinerFactory);
         Data reducerFactoryData = toData(reducerFactory);
-        List<Data> list = null;
+        Collection list = null;
         if (keys != null) {
-            list = new ArrayList<Data>(keys.size());
-            for (Object key : keys) {
-                list.add(toData(key));
-            }
+            list = CollectionUtil.objectToDataCollection(keys, getSerializationService());
         }
 
         String topologyChangedStrategyName = null;
@@ -237,7 +232,8 @@ public class ClientMapReduceProxy
         private final String jobId;
 
         protected ClientCompletableFuture(String jobId) {
-            super(getContext().getExecutionService().getAsyncExecutor(), Logger.getLogger(ClientCompletableFuture.class));
+            super(getContext().getExecutionService().getAsyncExecutor(),
+                    getContext().getLoggingService().getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
         }
 

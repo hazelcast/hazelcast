@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
 
@@ -28,17 +29,17 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     protected Data key;
     protected long version;
-    /**
-     * evictionCriteriaNumber may be used for LRU or LFU eviction depending on configuration.
-     */
-    protected long evictionCriteriaNumber;
     protected long ttl;
-    protected volatile long lastAccessTime;
-    protected volatile long lastUpdateTime;
     protected long creationTime;
 
+    protected volatile long lastAccessTime;
+    protected volatile long lastUpdateTime;
+
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "Record can be accessed by only its own partition thread.")
+    protected volatile long hits;
+
     AbstractRecord() {
-        version = 0L;
     }
 
     @Override
@@ -49,16 +50,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public final void setVersion(long version) {
         this.version = version;
-    }
-
-    @Override
-    public long getEvictionCriteriaNumber() {
-        return evictionCriteriaNumber;
-    }
-
-    @Override
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-        this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
     @Override
@@ -102,6 +93,16 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
+    public long getHits() {
+        return hits;
+    }
+
+    @Override
+    public void setHits(long hits) {
+        this.hits = hits;
+    }
+
+    @Override
     public long getCost() {
         final int objectReferenceInBytes = 4;
         final int numberOfLongs = 6;
@@ -112,8 +113,11 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public void onUpdate() {
+    public void onUpdate(long now) {
+        onAccess(now);
+
         version++;
+        lastUpdateTime = now;
     }
 
     @Override
@@ -122,8 +126,9 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public void onAccess() {
-
+    public void onAccess(long now) {
+        hits++;
+        lastAccessTime = now;
     }
 
     @Override

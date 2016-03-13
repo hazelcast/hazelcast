@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,17 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.executor.ExecutorType;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessors.createWriteBehindProcessor;
@@ -42,7 +42,7 @@ public class WriteBehindManager implements MapStoreManager {
 
     private static final int EXECUTOR_DEFAULT_QUEUE_CAPACITY = 10000;
 
-    private final ScheduledExecutorService scheduledExecutor;
+    private final TaskScheduler taskScheduler;
 
     private final WriteBehindProcessor writeBehindProcessor;
 
@@ -58,12 +58,12 @@ public class WriteBehindManager implements MapStoreManager {
         this.storeWorker = new StoreWorker(mapStoreContext, writeBehindProcessor);
         this.executorName = EXECUTOR_NAME_PREFIX + mapStoreContext.getMapName();
         final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
-        this.scheduledExecutor = getScheduledExecutorService(mapServiceContext);
+        this.taskScheduler = getTaskScheduler(mapServiceContext);
     }
 
     @Override
     public void start() {
-        scheduledExecutor.scheduleAtFixedRate(storeWorker, 1, 1, TimeUnit.SECONDS);
+        taskScheduler.scheduleWithRepetition(storeWorker, 1, 1, TimeUnit.SECONDS);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class WriteBehindManager implements MapStoreManager {
 
     //todo get this via constructor function.
     @Override
-    public MapDataStore getMapDataStore(int partitionId) {
+    public MapDataStore getMapDataStore(String mapName, int partitionId) {
         return MapDataStores.createWriteBehindStore(mapStoreContext, partitionId, writeBehindProcessor);
     }
 
@@ -86,11 +86,11 @@ public class WriteBehindManager implements MapStoreManager {
         return writeBehindProcessor;
     }
 
-    private ScheduledExecutorService getScheduledExecutorService(MapServiceContext mapServiceContext) {
+    private TaskScheduler getTaskScheduler(MapServiceContext mapServiceContext) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(executorName, 1, EXECUTOR_DEFAULT_QUEUE_CAPACITY, ExecutorType.CACHED);
-        return executionService.getScheduledExecutor(executorName);
+        return executionService.getTaskScheduler(executorName);
     }
 
     /**
@@ -101,7 +101,7 @@ public class WriteBehindManager implements MapStoreManager {
 
         private final MapStoreContext mapStoreContext;
 
-        public InternalStoreListener(MapStoreContext mapStoreContext) {
+        InternalStoreListener(MapStoreContext mapStoreContext) {
             this.mapStoreContext = mapStoreContext;
         }
 

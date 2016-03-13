@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,12 @@ public class CacheConfig<K, V>
     private String quorumName;
     private String mergePolicy = CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY;
 
+    /**
+     * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
+     * Full-flush invalidation event means that invalidation events for all entries on clear.
+     */
+    private boolean disablePerEntryInvalidationEvents;
+
     public CacheConfig() {
     }
 
@@ -104,6 +110,7 @@ public class CacheConfig<K, V>
             }
             this.quorumName = config.quorumName;
             this.mergePolicy = config.mergePolicy;
+            this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
         }
     }
 
@@ -158,6 +165,7 @@ public class CacheConfig<K, V>
         this.quorumName = simpleConfig.getQuorumName();
         this.mergePolicy = simpleConfig.getMergePolicy();
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
+        this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
     }
 
     private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
@@ -481,6 +489,26 @@ public class CacheConfig<K, V>
         this.mergePolicy = mergePolicy;
     }
 
+    /**
+     * Returns invalidation events disabled status for per entry.
+     *
+     * @return <tt>true</tt> if invalidation events are disabled for per entry,
+     *         otherwise <tt>false</tt>
+     */
+    public boolean isDisablePerEntryInvalidationEvents() {
+        return disablePerEntryInvalidationEvents;
+    }
+
+    /**
+     * Sets invalidation events disabled status for per entry.
+     *
+     * @param disablePerEntryInvalidationEvents Disables invalidation event sending behaviour if it is <tt>true</tt>,
+     *                                          otherwise enables it.
+     */
+    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
+        this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -521,6 +549,7 @@ public class CacheConfig<K, V>
         }
 
         out.writeUTF(mergePolicy);
+        out.writeBoolean(disablePerEntryInvalidationEvents);
     }
 
     @Override
@@ -565,6 +594,7 @@ public class CacheConfig<K, V>
         }
 
         mergePolicy = in.readUTF();
+        disablePerEntryInvalidationEvents = in.readBoolean();
     }
 
     @Override

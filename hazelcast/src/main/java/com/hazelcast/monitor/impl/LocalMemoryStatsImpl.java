@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,10 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     private long freeNativeMemory;
 
+    private long maxMetadata;
+
+    private long usedMetadata;
+
     private long maxHeap;
 
     private long committedHeap;
@@ -54,10 +58,12 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     public LocalMemoryStatsImpl(MemoryStats memoryStats) {
         setTotalPhysical(memoryStats.getTotalPhysical());
         setFreePhysical(memoryStats.getFreePhysical());
-        setMaxNativeMemory(memoryStats.getMaxNativeMemory());
-        setCommittedNativeMemory(memoryStats.getCommittedNativeMemory());
-        setUsedNativeMemory(memoryStats.getUsedNativeMemory());
-        setFreeNativeMemory(memoryStats.getFreeNativeMemory());
+        setMaxNativeMemory(memoryStats.getMaxNative());
+        setCommittedNativeMemory(memoryStats.getCommittedNative());
+        setUsedNativeMemory(memoryStats.getUsedNative());
+        setFreeNativeMemory(memoryStats.getFreeNative());
+        setMaxMetadata(memoryStats.getMaxMetadata());
+        setUsedMetadata(memoryStats.getUsedMetadata());
         setMaxHeap(memoryStats.getMaxHeap());
         setCommittedHeap(memoryStats.getCommittedHeap());
         setUsedHeap(memoryStats.getUsedHeap());
@@ -83,7 +89,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getMaxNativeMemory() {
+    public long getMaxNative() {
         return maxNativeMemory;
     }
 
@@ -92,7 +98,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getCommittedNativeMemory() {
+    public long getCommittedNative() {
         return committedNativeMemory;
     }
 
@@ -101,7 +107,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getUsedNativeMemory() {
+    public long getUsedNative() {
         return usedNativeMemory;
     }
 
@@ -110,12 +116,30 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getFreeNativeMemory() {
+    public long getFreeNative() {
         return freeNativeMemory;
     }
 
     public void setFreeNativeMemory(long freeNativeMemory) {
         this.freeNativeMemory = freeNativeMemory;
+    }
+
+    @Override
+    public long getMaxMetadata() {
+        return maxMetadata;
+    }
+
+    public void setMaxMetadata(long maxMetadata) {
+        this.maxMetadata = maxMetadata;
+    }
+
+    @Override
+    public long getUsedMetadata() {
+        return usedMetadata;
+    }
+
+    public void setUsedMetadata(long usedMetadata) {
+        this.usedMetadata = usedMetadata;
     }
 
     @Override
@@ -210,6 +234,8 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
                 + ", maxNativeMemory=" + maxNativeMemory
                 + ", committedNativeMemory=" + committedNativeMemory
                 + ", usedNativeMemory=" + usedNativeMemory
+                + ", maxMetadata=" + maxMetadata
+                + ", usedUsedMetadata=" + usedMetadata
                 + ", maxHeap=" + maxHeap
                 + ", committedHeap=" + committedHeap
                 + ", usedHeap=" + usedHeap

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,11 @@ public class ClientClusterWideIterator<K, V>
     private ClientContext context;
 
     public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context) {
-        super(cacheProxy, context.getPartitionService().getPartitionCount());
+        this(cacheProxy, context, DEFAULT_FETCH_SIZE);
+    }
+
+    public ClientClusterWideIterator(ClientCacheProxy<K, V> cacheProxy, ClientContext context, int fetchSize) {
+        super(cacheProxy, context.getPartitionService().getPartitionCount(), fetchSize);
         this.cacheProxy = cacheProxy;
         this.context = context;
         advance();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.OperationService;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class PutAllOperation extends AbstractOperation {
         int partitionId = getPartitionId();
         service = getService();
         store = service.getReplicatedRecordStore(name, true, getPartitionId());
-        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
         for (Map.Entry<Data, Data> entry : entries.getEntries()) {
             Data key = entry.getKey();
             Data value = entry.getValue();
@@ -80,7 +81,7 @@ public class PutAllOperation extends AbstractOperation {
         Collection<Member> members = getNodeEngine().getClusterService().getMembers();
         for (Member member : members) {
             Address address = member.getAddress();
-            if (address.equals(getCallerAddress()) || address.equals(getNodeEngine().getThisAddress())) {
+            if (address.equals(getNodeEngine().getThisAddress())) {
                 continue;
             }
             ReplicateUpdateOperation updateOperation = new ReplicateUpdateOperation(name, key, value, 0, response,

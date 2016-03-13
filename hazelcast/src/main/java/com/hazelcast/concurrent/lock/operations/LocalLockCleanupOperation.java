@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
@@ -58,8 +58,8 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
     @Override
     public boolean shouldBackup() {
         final NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        InternalPartition partition = partitionService.getPartition(getPartitionId());
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartition partition = partitionService.getPartition(getPartitionId());
         return partition.isLocal() && Boolean.TRUE.equals(response);
     }
 

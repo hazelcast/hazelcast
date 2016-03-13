@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -69,6 +70,7 @@ public class ClientXAStressTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/7709
     public void testCommitConcurrently() throws InterruptedException, XAException {
         int count = 10000;
         String name = randomString();

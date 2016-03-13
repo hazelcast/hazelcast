@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,6 +182,11 @@ public class NodeIOService implements IOService {
     @Override
     public int getSocketSendBufferSize() {
         return node.getGroupProperties().getInteger(GroupProperty.SOCKET_SEND_BUFFER_SIZE);
+    }
+
+    @Override
+    public boolean isSocketBufferDirect() {
+        return node.getGroupProperties().getBoolean(GroupProperty.SOCKET_BUFFER_DIRECT);
     }
 
     @Override

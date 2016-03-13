@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         if (record == null && shouldLoad) {
             record = recordStore.loadRecordOrNull(dataKey, false);
         }
-        Data value = record == null ? null : mapService.getMapServiceContext().toData(record.getValue());
+        Data value = record == null ? null : mapServiceContext.toData(record.getValue());
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 

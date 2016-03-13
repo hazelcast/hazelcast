@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
+import com.hazelcast.collection.impl.txncollection.CollectionTxnOperation;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
-public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation {
+public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation implements CollectionTxnOperation {
 
     private long itemId;
     private transient CollectionItem item;
@@ -60,6 +61,16 @@ public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation
         if (item != null) {
             publishEvent(ItemEventType.REMOVED, item.getValue());
         }
+    }
+
+    @Override
+    public long getItemId() {
+        return itemId;
+    }
+
+    @Override
+    public boolean isRemoveOperation() {
+        return true;
     }
 
     @Override

@@ -25,7 +25,8 @@ import static org.junit.Assert.assertTrue;
 public class ClientMessageAccumulatorTest {
 
 
-    private static final byte[] BYTE_DATA = new byte[] { 24, 0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0, 0, 0, 0, 0 };
+    private static final byte[] BYTE_DATA = new byte[] { 0, 0, 24, 0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0, 0, 0, 0, 0 };
+    private static final int OFFSET = 2;
 
     @Before
     public void setUp() {
@@ -39,13 +40,14 @@ public class ClientMessageAccumulatorTest {
     public void shouldAccumulateClientMessageCorrectly() {
         ClientMessage accumulator = ClientMessage.create();
         final ByteBuffer inBuffer = ByteBuffer.wrap(BYTE_DATA);
+        inBuffer.position(OFFSET);
         accumulator.readFrom(inBuffer);
 
         final ByteBuffer byteBuffer = accumulatedByteBuffer(accumulator.buffer(), accumulator.index());
         assertEquals(0, byteBuffer.position());
         assertEquals(accumulator.getFrameLength(), byteBuffer.limit());
 
-        for (int i = 0; i < byteBuffer.limit(); i++) {
+        for (int i = OFFSET; i < byteBuffer.limit(); i++) {
             assertEquals(BYTE_DATA[i], byteBuffer.get());
         }
         assertTrue(accumulator.isComplete());

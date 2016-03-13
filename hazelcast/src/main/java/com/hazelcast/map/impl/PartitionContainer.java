@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -85,12 +85,13 @@ public class PartitionContainer {
         MapContainer mapContainer = serviceContext.getMapContainer(name);
         MapConfig mapConfig = mapContainer.getMapConfig();
         NodeEngine nodeEngine = serviceContext.getNodeEngine();
-        InternalPartitionService ps = nodeEngine.getPartitionService();
+        IPartitionService ps = nodeEngine.getPartitionService();
         OperationService opService = nodeEngine.getOperationService();
         ExecutionService execService = nodeEngine.getExecutionService();
         GroupProperties groupProperties = nodeEngine.getGroupProperties();
 
-        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, execService, mapContainer.toData());
+        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
+                execService, mapContainer.toData());
         keyLoader.setMaxBatch(groupProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);

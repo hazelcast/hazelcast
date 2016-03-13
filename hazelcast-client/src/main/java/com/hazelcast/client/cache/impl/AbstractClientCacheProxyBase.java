@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -73,14 +72,12 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         }
     };
 
-    protected final ILogger logger = Logger.getLogger(getClass());
-
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
-
+    protected final ILogger logger;
     private final ConcurrentMap<Future, CompletionListener> loadAllCalls
             = new ConcurrentHashMap<Future, CompletionListener>();
 
@@ -90,6 +87,7 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
     protected AbstractClientCacheProxyBase(CacheConfig cacheConfig, ClientContext clientContext) {
+        this.logger = clientContext.getLoggingService().getLogger(getClass());
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;

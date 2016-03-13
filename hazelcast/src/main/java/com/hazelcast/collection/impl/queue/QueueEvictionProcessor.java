@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.collection.impl.queue.operations.CheckAndEvictOperation;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -45,7 +45,7 @@ public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, V
             return;
         }
 
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
 
         for (ScheduledEntry<String, Void> entry : entries) {

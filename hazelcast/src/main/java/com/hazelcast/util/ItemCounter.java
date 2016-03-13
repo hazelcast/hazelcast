@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Non Thread-Safe Counter of things. It allows to count items without worrying about nulls.
@@ -26,6 +27,15 @@ import java.util.Map;
  */
 public final class ItemCounter<T> {
     private final Map<T, MutableLong> map = new HashMap<T, MutableLong>();
+
+    /**
+     * Returns an iterator over all keys.
+     *
+     * @return the key iterator.
+     */
+    public Set<T> keySet() {
+        return map.keySet();
+    }
 
     /**
      * Get current counter for an item item
@@ -101,6 +111,10 @@ public final class ItemCounter<T> {
         long oldValue = entry.value;
         entry.value = value;
         return oldValue;
+    }
+
+    public void remove(T item) {
+        map.remove(item);
     }
 
     @Override

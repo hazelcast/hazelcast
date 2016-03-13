@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.hazelcast.core;
 
+import java.io.Serializable;
+
 /**
  * PartitioningStrategy allows keys to be located on the same member.
  * This causes related data to be stored in the same location. (See data-affinity.)
  *
  * @param <K> key type
  */
-public interface PartitioningStrategy<K> {
+public interface PartitioningStrategy<K> extends Serializable {
 
     /**
      * Returns the key object that will be used by Hazelcast to specify the partition.

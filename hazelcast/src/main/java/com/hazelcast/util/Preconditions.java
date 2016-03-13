@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.util;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static java.lang.String.format;
 
 /**

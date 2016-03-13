@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
 
 import java.io.Closeable;
@@ -59,7 +59,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 public class EventServiceImpl implements InternalEventService {
 
@@ -394,7 +394,7 @@ public class EventServiceImpl implements InternalEventService {
             }
         } else {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey);
-            packet.setHeader(Packet.HEADER_EVENT);
+            packet.setFlag(Packet.FLAG_EVENT);
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {

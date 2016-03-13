@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,9 +34,8 @@ import java.util.Map;
  */
 public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
 
-    private MapStoreWrapper store;
-
-    private SerializationService serializationService;
+    private final MapStoreWrapper store;
+    private final SerializationService serializationService;
 
     protected AbstractMapDataStore(MapStoreWrapper store, SerializationService serializationService) {
         if (store == null || serializationService == null) {

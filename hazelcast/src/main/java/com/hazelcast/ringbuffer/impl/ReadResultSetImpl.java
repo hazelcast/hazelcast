@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class ReadResultSetImpl<E> extends AbstractList<E>
         return size >= minSize;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Data[] getDataItems() {
         return items;
     }

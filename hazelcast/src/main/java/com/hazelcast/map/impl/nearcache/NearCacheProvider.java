@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ public class NearCacheProvider {
 
     public Object getFromNearCache(String mapName, Data key) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        if (!mapContainer.isNearCacheEnabled()) {
+        if (!mapContainer.hasMemberNearCache()) {
             return null;
         }
         NearCache nearCache = getOrCreateNearCache(mapName);

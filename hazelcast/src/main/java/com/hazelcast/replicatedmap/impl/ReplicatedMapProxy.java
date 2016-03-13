@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
 import com.hazelcast.replicatedmap.impl.operation.ClearOperationFactory;

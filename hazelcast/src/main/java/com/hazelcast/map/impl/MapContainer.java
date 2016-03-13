@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,10 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
-import com.hazelcast.map.impl.eviction.EvictionCheckerImpl;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
+import com.hazelcast.map.impl.eviction.policies.MapEvictionPolicy;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
@@ -35,22 +34,22 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MemoryInfoAccessor;
+import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
+import static com.hazelcast.map.impl.eviction.policies.MapEvictionPolicies.getMapEvictionPolicy;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
@@ -61,7 +60,6 @@ public class MapContainer {
     protected final String name;
     protected final String quorumName;
     protected final MapServiceContext mapServiceContext;
-    protected final Map<String, MapInterceptor> interceptorMap;
     protected final Indexes indexes;
     protected final Extractors extractors;
     protected final SizeEstimator nearCacheSizeEstimator;
@@ -69,7 +67,7 @@ public class MapContainer {
     protected final MapStoreContext mapStoreContext;
     protected final SerializationService serializationService;
     protected final QueryEntryFactory queryEntryFactory;
-    protected final List<MapInterceptor> interceptors;
+    protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
     protected final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
         @Override
         public Data apply(Object input) {
@@ -107,21 +105,23 @@ public class MapContainer {
         this.recordFactoryConstructor = createRecordFactoryConstructor(serializationService);
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         initWanReplication(nodeEngine);
-        this.interceptors = new CopyOnWriteArrayList<MapInterceptor>();
-        this.interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
-        this.mapStoreContext = createMapStoreContext(this);
-        this.mapStoreContext.start();
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
         this.indexes = new Indexes(serializationService, extractors);
-        this.evictor = createEvictor(mapServiceContext);
-        this.memberNearCacheInvalidationEnabled = isNearCacheEnabled() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
+        this.evictor = createEvictor(mapConfig, mapServiceContext);
+        this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
+        this.mapStoreContext = createMapStoreContext(this);
+        this.mapStoreContext.start();
     }
 
     // this method is overridden.
-    Evictor createEvictor(MapServiceContext mapServiceContext) {
-        EvictionChecker evictionChecker = new EvictionCheckerImpl(mapServiceContext);
-        return new EvictorImpl(evictionChecker, mapServiceContext);
+    Evictor createEvictor(MapConfig mapConfig, MapServiceContext mapServiceContext) {
+        MemoryInfoAccessor memoryInfoAccessor = new RuntimeMemoryInfoAccessor();
+        EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
+        MapEvictionPolicy evictionPolicy = getMapEvictionPolicy(mapConfig.getEvictionPolicy());
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+
+        return new EvictorImpl(evictionChecker, evictionPolicy, partitionService);
     }
 
     // overridden in different context.
@@ -183,27 +183,6 @@ public class MapContainer {
         return wanMergePolicy;
     }
 
-    public void addInterceptor(String id, MapInterceptor interceptor) {
-
-        removeInterceptor(id);
-
-        interceptorMap.put(id, interceptor);
-        interceptors.add(interceptor);
-    }
-
-    public List<MapInterceptor> getInterceptors() {
-        return interceptors;
-    }
-
-    public Map<String, MapInterceptor> getInterceptorMap() {
-        return interceptorMap;
-    }
-
-    public void removeInterceptor(String id) {
-        MapInterceptor interceptor = interceptorMap.remove(id);
-        interceptors.remove(interceptor);
-    }
-
     public boolean isWanReplicationEnabled() {
         if (wanReplicationPublisher == null || wanMergePolicy == null) {
             return false;
@@ -217,7 +196,7 @@ public class MapContainer {
         }
     }
 
-    public boolean isNearCacheEnabled() {
+    public boolean hasMemberNearCache() {
         return mapConfig.isNearCacheEnabled();
     }
 
@@ -308,6 +287,10 @@ public class MapContainer {
 
     public boolean isInvalidationEnabled() {
         return isMemberNearCacheInvalidationEnabled() || hasInvalidationListener();
+    }
+
+    public InterceptorRegistry getInterceptorRegistry() {
+        return interceptorRegistry;
     }
 }
 

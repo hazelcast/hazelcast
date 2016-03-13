@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,7 +229,8 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
 
         private SlowOperation(int sleepSeconds, int partitionId) {
             this.sleepSeconds = sleepSeconds;
-            this.setPartitionId(partitionId);
+
+            setPartitionId(partitionId);
         }
 
         @Override
@@ -248,7 +249,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
             this.map = map;
             this.entryProcessor = new SlowEntryProcessor(sleepSeconds);
 
-            this.setPartitionId(partitionId);
+            setPartitionId(partitionId);
         }
 
         @Override

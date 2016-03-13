@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
@@ -91,7 +91,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         checkNotNull(task, "TransactionalTask is required!");
 
-        final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, null);
+
+        TransactionContext context = newTransactionContext(options);
         context.beginTransaction();
         try {
             T value = task.execute(context);
@@ -114,12 +115,12 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        return new TransactionContextImpl(this, nodeEngine, options, null);
+        return new TransactionContextImpl(this, nodeEngine, options, null, false);
     }
 
     @Override
     public TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid) {
-        return new TransactionContextImpl(this, nodeEngine, options, clientUuid);
+        return new TransactionContextImpl(this, nodeEngine, options, clientUuid, true);
     }
 
     /**
@@ -340,8 +341,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         final String callerUuid;
         final long timeoutMillis;
         final long startTime;
-        volatile State state;
         final boolean allowedDuringPassiveState;
+        volatile State state;
 
         private TxBackupLog(List<TransactionLogRecord> records, String callerUuid, State state,
                             long timeoutMillis, long startTime, boolean allowedDuringPassiveState) {

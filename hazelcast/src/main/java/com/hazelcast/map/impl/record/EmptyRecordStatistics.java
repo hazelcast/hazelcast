@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,27 +30,12 @@ public class EmptyRecordStatistics implements RecordStatistics {
     }
 
     @Override
-    public int getHits() {
-        return 0;
-    }
-
-    @Override
-    public void setHits(int hits) {
-
-    }
-
-    @Override
     public long getExpirationTime() {
         return 0;
     }
 
     @Override
     public void setExpirationTime(long expirationTime) {
-
-    }
-
-    @Override
-    public void access() {
 
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,8 +86,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         if (recordInfo != null) {
             evict();
         }
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         if (!disableWanReplicationEvent) {
             publishWANReplicationEventBackup(mapServiceContext, mapEventPublisher);
         }

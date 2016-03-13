@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
-import com.hazelcast.util.counters.Counter;
+import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
@@ -43,6 +43,8 @@ import static java.lang.String.format;
  * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
  */
 abstract class MethodProbe implements ProbeFunction {
+
+    private static final Object[] EMPTY_ARGS = new Object[0];
 
     final Method method;
     final Probe probe;
@@ -98,21 +100,21 @@ abstract class MethodProbe implements ProbeFunction {
         public long get(S source) throws Exception {
             switch (type) {
                 case TYPE_PRIMITIVE_LONG:
-                    return ((Number) method.invoke(source)).longValue();
+                    return ((Number) method.invoke(source, EMPTY_ARGS)).longValue();
                 case TYPE_LONG_NUMBER:
-                    Number longNumber = (Number) method.invoke(source);
+                    Number longNumber = (Number) method.invoke(source, EMPTY_ARGS);
                     return longNumber == null ? 0 : longNumber.longValue();
                 case TYPE_MAP:
-                    Map<?, ?> map = (Map<?, ?>) method.invoke(source);
+                    Map<?, ?> map = (Map<?, ?>) method.invoke(source, EMPTY_ARGS);
                     return map == null ? 0 : map.size();
                 case TYPE_COLLECTION:
-                    Collection<?> collection = (Collection<?>) method.invoke(source);
+                    Collection<?> collection = (Collection<?>) method.invoke(source, EMPTY_ARGS);
                     return collection == null ? 0 : collection.size();
                 case TYPE_COUNTER:
-                    Counter counter = (Counter) method.invoke(source);
+                    Counter counter = (Counter) method.invoke(source, EMPTY_ARGS);
                     return counter == null ? 0 : counter.get();
                 case TYPE_SEMAPHORE:
-                    Semaphore semaphore = (Semaphore) method.invoke(source);
+                    Semaphore semaphore = (Semaphore) method.invoke(source, EMPTY_ARGS);
                     return semaphore == null ? 0 : semaphore.availablePermits();
                 default:
                     throw new IllegalStateException("Unrecognized type:" + type);
@@ -131,7 +133,7 @@ abstract class MethodProbe implements ProbeFunction {
             switch (type) {
                 case TYPE_DOUBLE_PRIMITIVE:
                 case TYPE_DOUBLE_NUMBER:
-                    Number result = (Number) method.invoke(source);
+                    Number result = (Number) method.invoke(source, EMPTY_ARGS);
                     return result == null ? 0 : result.doubleValue();
                 default:
                     throw new IllegalStateException("Unrecognized type:" + type);

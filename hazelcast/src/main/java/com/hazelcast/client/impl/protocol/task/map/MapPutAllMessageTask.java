@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MapPutAllMessageTask
@@ -41,7 +42,7 @@ public class MapPutAllMessageTask
     @Override
     protected Operation prepareOperation() {
         MapEntries mapEntries = new MapEntries();
-        for (Map.Entry<Data, Data> entry : parameters.entries.entrySet()) {
+        for (Map.Entry<Data, Data> entry : parameters.entries) {
             mapEntries.add(entry.getKey(), entry.getValue());
         }
 
@@ -81,6 +82,10 @@ public class MapPutAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.entries};
+        HashMap<Data, Data> map = new HashMap<Data, Data>();
+        for (Map.Entry<Data, Data> entry : parameters.entries) {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return new Object[]{map};
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
 import java.util.HashMap;
@@ -43,11 +43,11 @@ public class GetPartitionsMessageTask
 
         Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
 
-        for (InternalPartition partition : service.getPartitions()) {
+        for (IPartition partition : service.getPartitions()) {
             Address owner = partition.getOwnerOrNull();
             if (owner == null) {
                 partitionsMap.clear();
-                return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
+                return ClientGetPartitionsCodec.encodeResponse(partitionsMap.entrySet());
             }
             List<Integer> indexes = partitionsMap.get(owner);
             if (indexes == null) {
@@ -56,7 +56,7 @@ public class GetPartitionsMessageTask
             }
             indexes.add(partition.getPartitionId());
         }
-        return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
+        return ClientGetPartitionsCodec.encodeResponse(partitionsMap.entrySet());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
@@ -298,7 +297,7 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
             try {
-                final T result = this.invoke(key, entryProcessor, arguments);
+                final T result = invoke(key, entryProcessor, arguments);
                 ceResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
             } catch (Exception e) {
                 ceResult = new CacheEntryProcessorResult<T>(e);
@@ -395,7 +394,6 @@ public class ClientCacheProxy<K, V>
                                                          boolean isRegister) {
         final Collection<Member> members = clientContext.getClusterService().getMemberList();
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-        final Collection<Future> futures = new ArrayList<Future>();
         for (Member member : members) {
             try {
                 final Address address = member.getAddress();
@@ -403,8 +401,7 @@ public class ClientCacheProxy<K, V>
                 final ClientMessage request =
                         CacheListenerRegistrationCodec.encodeRequest(nameWithPrefix, configData, isRegister, address);
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
-                final Future future = invocation.invoke();
-                futures.add(future);
+                invocation.invoke();
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
             }
@@ -415,6 +412,12 @@ public class ClientCacheProxy<K, V>
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
         return new ClientClusterWideIterator<K, V>(this, clientContext);
+    }
+
+    @Override
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        ensureOpen();
+        return new ClientClusterWideIterator<K, V>(this, clientContext, fetchSize);
     }
 
     @Override

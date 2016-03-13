@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
-public class AwaitOperation extends BaseCountDownLatchOperation implements WaitSupport, IdentifiedDataSerializable {
+public class AwaitOperation extends BaseCountDownLatchOperation implements BlockingOperation, IdentifiedDataSerializable {
 
     public AwaitOperation() {
     }

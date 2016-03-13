@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -259,7 +259,7 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
             try {
-                final T result = this.invoke(key, entryProcessor, arguments);
+                final T result = invoke(key, entryProcessor, arguments);
                 ceResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
             } catch (Exception e) {
                 ceResult = new CacheEntryProcessorResult<T>(e);
@@ -342,6 +342,12 @@ public class CacheProxy<K, V>
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
         return new ClusterWideIterator<K, V>(this);
+    }
+
+    @Override
+    public Iterator<Entry<K, V>> iterator(int fetchSize) {
+        ensureOpen();
+        return new ClusterWideIterator<K, V>(this, fetchSize);
     }
 
     @Override

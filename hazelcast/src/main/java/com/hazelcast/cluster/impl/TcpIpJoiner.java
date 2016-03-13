@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,23 @@
 
 package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.impl.operations.MasterClaimOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.AbstractJoiner;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.operations.MasterClaimOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -42,9 +46,13 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
+/**
+ * @deprecated this class is deprecated since 3.7 and will be (re)moved in 3.8.
+ */
 public class TcpIpJoiner extends AbstractJoiner {
 
     private static final long JOIN_RETRY_WAIT_TIME = 1000L;
+    private static final int LOOK_FOR_MASTER_MAX_TRY_COUNT = 20;
 
     private final int maxPortTryCount;
     private volatile boolean claimingMaster;
@@ -157,8 +165,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                         if (logger.isFinestEnabled()) {
                             Set<Address> votingEndpoints = new HashSet<Address>(possibleAddresses);
                             votingEndpoints.removeAll(blacklistedAddresses.keySet());
-                            logger.finest("Setting myself as master after consensus! " +
-                                    "Voting endpoints: " + votingEndpoints);
+                            logger.finest("Setting myself as master after consensus!"
+                                    + " Voting endpoints: " + votingEndpoints);
                         }
                         node.setAsMaster();
                         claimingMaster = false;
@@ -178,6 +186,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private boolean claimMastership(Collection<Address> possibleAddresses) {
         if (logger.isFinestEnabled()) {
             Set<Address> votingEndpoints = new HashSet<Address>(possibleAddresses);
@@ -191,7 +200,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 continue;
             }
             if (node.getConnectionManager().getConnection(address) != null) {
-                Future future = node.nodeEngine.getOperationService()
+                Future<Boolean> future = node.nodeEngine.getOperationService()
                         .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                                 new MasterClaimOperation(), address).setTryCount(1).invoke();
                 responses.add(future);
@@ -240,7 +249,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private void tryToJoinPossibleAddresses(Collection<Address> possibleAddresses) throws InterruptedException {
-        long connectionTimeoutMillis = getConnTimeoutSeconds() * 1000L;
+        long connectionTimeoutMillis = TimeUnit.SECONDS.toMillis(getConnTimeoutSeconds());
         long start = Clock.currentTimeMillis();
 
         while (!node.joined() && Clock.currentTimeMillis() - start < connectionTimeoutMillis) {
@@ -265,7 +274,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private boolean tryInitialConnection(Collection<Address> possibleAddresses) throws InterruptedException {
-        long connectionTimeoutMillis = getConnTimeoutSeconds() * 1000L;
+        long connectionTimeoutMillis = TimeUnit.SECONDS.toMillis(getConnTimeoutSeconds());
         long start = Clock.currentTimeMillis();
         while (Clock.currentTimeMillis() - start < connectionTimeoutMillis) {
             if (isAllBlacklisted(possibleAddresses)) {
@@ -286,9 +295,10 @@ public class TcpIpJoiner extends AbstractJoiner {
         return blacklistedAddresses.keySet().containsAll(possibleAddresses);
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private void lookForMaster(Collection<Address> possibleAddresses) throws InterruptedException {
         int tryCount = 0;
-        while (node.getMasterAddress() == null && tryCount++ < 20) {
+        while (node.getMasterAddress() == null && tryCount++ < LOOK_FOR_MASTER_MAX_TRY_COUNT) {
             sendMasterQuestion(possibleAddresses);
             //noinspection BusyWait
             Thread.sleep(JOIN_RETRY_WAIT_TIME);
@@ -312,8 +322,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
-        while (node.isRunning() && !node.joined()
-                && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+        while (node.isRunning() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
 
             Address master = node.getMasterAddress();
             if (master != null) {
@@ -361,33 +370,27 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private Address getRequiredMemberAddress() {
-        final TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
-        final String host = tcpIpConfig.getRequiredMember();
+        TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        String host = tcpIpConfig.getRequiredMember();
         try {
-            final AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getNetworkConfig().getPort());
+            AddressHolder addressHolder = AddressUtil.getAddressHolder(host, config.getNetworkConfig().getPort());
             if (AddressUtil.isIpAddress(addressHolder.getAddress())) {
                 return new Address(addressHolder.getAddress(), addressHolder.getPort());
-            } else {
-                final InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
-                if (interfaces.isEnabled()) {
-                    final InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.getAddress());
-                    if (inetAddresses.length > 1) {
-                        for (InetAddress inetAddress : inetAddresses) {
-                            if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
-                                    interfaces.getInterfaces())) {
-                                return new Address(inetAddress, addressHolder.getPort());
-                            }
-                        }
-                    } else {
-                        final InetAddress inetAddress = inetAddresses[0];
-                        if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(),
-                                interfaces.getInterfaces())) {
-                            return new Address(addressHolder.getAddress(), addressHolder.getPort());
+            }
+            InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
+            if (interfaces.isEnabled()) {
+                InetAddress[] inetAddresses = InetAddress.getAllByName(addressHolder.getAddress());
+                if (inetAddresses.length > 1) {
+                    for (InetAddress inetAddress : inetAddresses) {
+                        if (AddressUtil.matchAnyInterface(inetAddress.getHostAddress(), interfaces.getInterfaces())) {
+                            return new Address(inetAddress, addressHolder.getPort());
                         }
                     }
-                } else {
+                } else if (AddressUtil.matchAnyInterface(inetAddresses[0].getHostAddress(), interfaces.getInterfaces())) {
                     return new Address(addressHolder.getAddress(), addressHolder.getPort());
                 }
+            } else {
+                return new Address(addressHolder.getAddress(), addressHolder.getPort());
             }
         } catch (final Exception e) {
             logger.warning(e);
@@ -395,6 +398,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         return null;
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     protected Collection<Address> getPossibleAddresses() {
         final Collection<String> possibleMembers = getMembers();
         final Set<Address> possibleAddresses = new HashSet<Address>();
@@ -409,6 +413,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 try {
                     addressMatcher = AddressUtil.getAddressMatcher(addressHolder.getAddress());
                 } catch (InvalidAddressException ignore) {
+                    EmptyStatement.ignore(ignore);
                 }
                 if (addressMatcher != null) {
                     final Collection<String> matchedAddresses;

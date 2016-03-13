@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_ONE_OPERATION;
 
-public class ReadOneOperation extends AbstractRingBufferOperation implements WaitSupport {
+public class ReadOneOperation extends AbstractRingBufferOperation implements BlockingOperation {
 
     private long sequence;
     private Data result;

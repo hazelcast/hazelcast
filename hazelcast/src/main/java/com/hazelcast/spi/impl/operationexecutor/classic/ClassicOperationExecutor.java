@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,13 +191,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return threads;
     }
 
-    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;
     }
 
-    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;
@@ -374,8 +374,8 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private void checkOpPacket(Packet packet) {
-        if (!packet.isHeaderSet(Packet.HEADER_OP)) {
-            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.HEADER_OP set");
+        if (!packet.isFlagSet(Packet.FLAG_OP)) {
+            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.FLAG_OP set");
         }
     }
 

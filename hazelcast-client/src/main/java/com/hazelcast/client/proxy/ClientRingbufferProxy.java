@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,10 @@ import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferProxy.MAX_BATCH_SIZE;
@@ -187,13 +186,8 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkFalse(collection.isEmpty(), "collection can't be empty");
         checkTrue(collection.size() <= MAX_BATCH_SIZE, "collection can't be larger than " + MAX_BATCH_SIZE);
 
-        final List<Data> valueList = new ArrayList<Data>(collection.size());
-        for (E e : collection) {
-            throwExceptionIfNull(e);
-            valueList.add(toData(e));
-        }
-
-        ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, valueList, overflowPolicy.getId());
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(collection, getSerializationService());
+        ClientMessage request = RingbufferAddAllCodec.encodeRequest(name, dataCollection, overflowPolicy.getId());
 
         try {
             ClientInvocationFuture invocationFuture = new ClientInvocation(getClient(), request, partitionId).invoke();

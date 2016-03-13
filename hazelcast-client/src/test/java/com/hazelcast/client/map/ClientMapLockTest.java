@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,15 +33,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -419,14 +418,14 @@ public class ClientMapLockTest {
     public void testLockTTLExpires_usingIsLocked() throws Exception {
         final IMap map = client.getMap(randomString());
         final String key = "key";
-        map.lock(key, 3, TimeUnit.SECONDS);
+        map.lock(key, 2, TimeUnit.SECONDS);
 
-        final boolean isLockedBeforeSleep = map.isLocked(key);
-        sleepSeconds(4);
-        final boolean isLockedAfterSleep = map.isLocked(key);
-
-        assertTrue(isLockedBeforeSleep);
-        assertFalse(isLockedAfterSleep);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(map.isLocked(key));
+            }
+        }, 10);
     }
 
     @Test

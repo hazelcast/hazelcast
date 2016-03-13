@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
+import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
@@ -68,8 +69,8 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -127,7 +128,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final LockProxySupport lockSupport;
     protected final PartitioningStrategy partitionStrategy;
     protected final MapServiceContext mapServiceContext;
-    protected final InternalPartitionService partitionService;
+    protected final IPartitionService partitionService;
     protected final Address thisAddress;
     protected final MapContainer mapContainer;
     protected final OperationService operationService;
@@ -147,7 +148,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.partitionStrategy = mapServiceContext.getMapContainer(name).getPartitioningStrategy();
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
-        this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
+        this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(SERVICE_NAME, name),
                 LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties()));
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.operationService = nodeEngine.getOperationService();
@@ -276,7 +277,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private RecordStore getRecordStore(Data key) {
         int partitionId = partitionService.getPartitionId(key);
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        IPartition partition = partitionService.getPartition(partitionId, false);
         if (!partition.isOwnerOrBackup(thisAddress)) {
             return null;
         }
@@ -391,6 +392,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    protected ICompletableFuture<Data> setAsyncInternal(final Data key, final Data value,
+                                                        final long ttl, final TimeUnit timeunit) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        MapOperation operation = operationProvider.createSetOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+        operation.setThreadId(ThreadUtil.getThreadId());
+        try {
+            return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
     protected boolean replaceInternal(final Data key, final Data expect, final Data update) {
         MapOperation operation = operationProvider.createReplaceIfSameOperation(name, key, expect, update);
         return (Boolean) invokeOperation(key, operation);
@@ -442,7 +456,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int mapNamePartition = partitionService.getPartitionId(name);
 
         Operation operation = operationProvider.createLoadMapOperation(name, replaceExistingValues);
-        Future loadMapFuture = operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, mapNamePartition);
+        Future loadMapFuture = operationService.invokeOnPartition(SERVICE_NAME, operation, mapNamePartition);
 
         try {
             loadMapFuture.get();
@@ -552,13 +566,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             OperationFactory opFactory = new PartitionCheckIfLoadedOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
             // wait for all the data to be loaded on all partitions - wait forever
-            waitAllTrue(results);
+            waitAllTrue(results, opFactory);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
     }
 
-    private void waitAllTrue(Map<Integer, Object> results) throws InterruptedException {
+
+    private void waitAllTrue(Map<Integer, Object> results,
+                             OperationFactory operationFactory) throws InterruptedException {
         Iterator<Entry<Integer, Object>> iterator = results.entrySet().iterator();
         boolean isFinished = false;
         Set<Integer> retrySet = new HashSet<Integer>();
@@ -572,7 +588,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 }
             }
             if (retrySet.size() > 0) {
-                results = retryPartitions(retrySet);
+                results = retryPartitions(retrySet, operationFactory);
                 iterator = results.entrySet().iterator();
                 TimeUnit.SECONDS.sleep(1);
                 retrySet.clear();
@@ -582,10 +598,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    private Map<Integer, Object> retryPartitions(Collection partitions) {
+    private Map<Integer, Object> retryPartitions(Collection partitions, OperationFactory operationFactory) {
         try {
             Map<Integer, Object> results = operationService.invokeOnPartitions(
-                    SERVICE_NAME, new PartitionCheckIfLoadedOperationFactory(name), partitions);
+                    SERVICE_NAME, operationFactory, partitions);
             return results;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -777,12 +793,28 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return f;
     }
 
+    // todo add a feature to mancenter to sync cache to db completely
     public void flush() {
         try {
-            // todo add a feature to mancenter to sync cache to db completely
-            MapOperation operation = operationProvider.createMapFlushOperation(name);
-            operationService.invokeOnAllPartitions(SERVICE_NAME,
-                    new BinaryOperationFactory(operation, getNodeEngine()));
+            MapOperation mapFlushOperation = operationProvider.createMapFlushOperation(name);
+            BinaryOperationFactory operationFactory = new BinaryOperationFactory(mapFlushOperation, getNodeEngine());
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
+
+
+            List<Future> futures = new ArrayList<Future>();
+            for (Entry<Integer, Object> entry : results.entrySet()) {
+                Integer partitionId = entry.getKey();
+                Long count = ((Long) entry.getValue());
+                if (count != 0) {
+                    Operation operation = new AwaitMapFlushOperation(name, count);
+                    futures.add(operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId));
+                }
+            }
+
+            for (Future future : futures) {
+                future.get();
+            }
+
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

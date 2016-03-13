@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,10 +191,35 @@ public class ServiceLoaderTest {
         assertEquals(1, implementations.size());
     }
 
-    public static interface ServiceLoaderTestInterface {
+    @Test
+    public void loadServicesWithSpaceInURL()
+            throws Exception {
+
+        Class<ServiceLoaderSpacesTestInterface> type = ServiceLoaderSpacesTestInterface.class;
+        String factoryId = "com.hazelcast.ServiceLoaderSpacesTestInterface";
+
+        ClassLoader given = new URLClassLoader(new URL[] { new URL(ClassLoader.getSystemResource("test with spaces").toExternalForm().replace("%20", " ") + "/") });
+
+        Set<ServiceLoaderSpacesTestInterface> implementations = new HashSet<ServiceLoaderSpacesTestInterface>();
+        Iterator<ServiceLoaderSpacesTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
+        while (iterator.hasNext()) {
+            implementations.add(iterator.next());
+        }
+
+        assertEquals(1, implementations.size());
+    }
+
+    public interface ServiceLoaderTestInterface {
     }
 
     public static class ServiceLoaderTestInterfaceImpl
             implements ServiceLoaderTestInterface {
+    }
+
+    public interface ServiceLoaderSpacesTestInterface {
+    }
+
+    public static class ServiceLoaderSpacesTestInterfaceImpl
+            implements ServiceLoaderSpacesTestInterface {
     }
 }

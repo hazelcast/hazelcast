@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -44,29 +44,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
-                <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <annotationProcessors>
-                        <annotationProcessor>com.hazelcast.client.protocol.generator.CodecCodeGenerator</annotationProcessor>
-                        <annotationProcessor>com.hazelcast.client.protocol.generator.CodeGeneratorMessageTaskFactory
-                        </annotationProcessor>
-                    </annotationProcessors>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.hazelcast</groupId>
-                        <artifactId>hazelcast-code-generator</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-
             <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
@@ -147,6 +124,7 @@
                                 </Export-Package>
                                 <Import-Package>
                                     !org.junit,
+                                    !com.hazelcast.*,
                                     !com.eclipsesource.json,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
@@ -213,6 +191,8 @@
                             <target>
                                 <copy file="${basedir}/src/main/resources/hazelcast-default.xml"
                                       tofile="${basedir}/target/hazelcast.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-full-example.xml"/>
                             </target>
                         </configuration>
                     </execution>
@@ -235,6 +215,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>
+                                    <include>com.hazelcast:hazelcast-client-protocol</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -337,9 +318,9 @@
 
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-code-generator</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
+            <artifactId>hazelcast-client-protocol</artifactId>
+            <version>${client.protocol.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>

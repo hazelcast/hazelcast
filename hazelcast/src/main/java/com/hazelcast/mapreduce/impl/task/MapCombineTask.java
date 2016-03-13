@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -73,7 +73,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     private final MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> mappingPhase;
     private final KeyValueSource<KeyIn, ValueIn> keyValueSource;
     private final MapReduceService mapReduceService;
-    private final InternalPartitionService partitionService;
+    private final IPartitionService partitionService;
     private final JobSupervisor supervisor;
     private final NodeEngine nodeEngine;
     private final String name;

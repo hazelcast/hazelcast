@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -103,6 +102,11 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (eventType == null) {
             return;
         }
+        mapServiceContext.interceptAfterPut(name, dataValue);
+        if (isPostProcessing(recordStore)) {
+            Record record = recordStore.getRecord(dataKey);
+            dataValue = record.getValue();
+        }
         invalidateNearCache(dataKey);
         publishEntryEvent();
         publishWanReplicationEvent();
@@ -166,7 +170,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private boolean entryRemoved(Map.Entry entry, long now) {
         final Object value = entry.getValue();
         if (value == null) {
-            recordStore.remove(dataKey);
+            recordStore.delete(dataKey);
             getLocalMapStats().incrementRemoves(getLatencyFrom(now));
             eventType = REMOVED;
             return true;
@@ -178,18 +182,13 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
      * Only difference between add and update is event type to be published.
      */
     private void entryAddedOrUpdated(Map.Entry entry, long now) {
-        Object value = entry.getValue();
-        put(dataKey, value);
+        dataValue = entry.getValue();
+        recordStore.set(dataKey, dataValue, DEFAULT_TTL);
+
         getLocalMapStats().incrementPuts(getLatencyFrom(now));
 
-        dataValue = value;
         eventType = oldValue == null ? ADDED : UPDATED;
     }
-
-    private void put(Data key, Object value) {
-        recordStore.put(key, value, DEFAULT_TTL);
-    }
-
 
     private Data process(Map.Entry entry) {
         final Object result = entryProcessor.process(entry);
@@ -227,7 +226,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private void publishEntryEvent() {
         if (hasRegisteredListenerForThisMap()) {
             nullifyOldValueIfNecessary();
-            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
             mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
         }
     }
@@ -238,7 +236,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 && mapContainer.getWanMergePolicy() == null) {
             return;
         }
-        final MapEventPublisher mapEventPublisher = getMapEventPublisher();
         final Data key = dataKey;
 
         if (REMOVED.equals(eventType)) {
@@ -251,11 +248,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
-    }
-
-    private MapEventPublisher getMapEventPublisher() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getMapEventPublisher();
     }
 
     @Override

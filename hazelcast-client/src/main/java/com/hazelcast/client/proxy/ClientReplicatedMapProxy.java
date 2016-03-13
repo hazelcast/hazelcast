@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,14 +47,16 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.record.ResultSet;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.IterationType;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -372,11 +374,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
-        Collection<V> resultCollection = new ArrayList<V>(result.response.size());
-        for (Data data : result.response) {
-            resultCollection.add((V) toObject(data));
-        }
-        return resultCollection;
+        return new UnmodifiableLazyList<V>(result.response, getSerializationService());
     }
 
     @Override
@@ -424,8 +422,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             EventHandler handler = new ReplicatedMapAddNearCacheEventHandler();
             invalidationListenerId = registerListener(createNearCacheInvalidationListenerCodec(), handler);
         } catch (Exception e) {
-            Logger.getLogger(ClientHeapNearCache.class).severe(
-                    "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            ILogger logger = getContext().getLoggingService().getLogger(ClientHeapNearCache.class);
+            logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
     }
 

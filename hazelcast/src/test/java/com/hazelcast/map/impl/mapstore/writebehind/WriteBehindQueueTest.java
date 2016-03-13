@@ -175,13 +175,20 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
     }
 
-    private void testGetWithCount(WriteBehindQueue<DelayedEntry> queue, int queueSize, int fetchNumberOfEntries) {
+    private void testGetWithCount(WriteBehindQueue<DelayedEntry> queue, int queueSize, final int fetchNumberOfEntries) {
         final List<DelayedEntry> delayedEntries = createDelayedEntryList(queueSize);
         for (DelayedEntry entry : delayedEntries) {
             queue.addLast(entry);
         }
         List<DelayedEntry> entries = new ArrayList<DelayedEntry>();
-        queue.getFrontByNumber(fetchNumberOfEntries, entries);
+        queue.filter(new IPredicate<DelayedEntry>() {
+            int count = 0;
+
+            @Override
+            public boolean test(DelayedEntry delayedEntry) {
+                return count++ < fetchNumberOfEntries;
+            }
+        }, entries);
 
         int expectedFetchedEntryCount = Math.min(queueSize, fetchNumberOfEntries);
         assertEquals(expectedFetchedEntryCount, entries.size());

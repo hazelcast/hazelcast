@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class NearCacheSingleInvalidationOperation extends MapOperation implement
 
     @Override
     public void run() {
-        if (mapContainer.isNearCacheEnabled()) {
+        if (mapContainer.hasMemberNearCache()) {
             NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
             NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
             ((AbstractNearCacheInvalidator) nearCacheInvalidator).invalidateLocal(name, key, null);

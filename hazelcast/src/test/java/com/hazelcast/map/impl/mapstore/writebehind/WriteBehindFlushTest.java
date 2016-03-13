@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -84,6 +87,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(3000);
 
         Config config = getConfig();
+        config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "0");
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance member1 = factory.newHazelcastInstance(config);
@@ -101,6 +105,80 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         assertWriteBehindQueuesEmpty(mapName, asList(member1, member2, member3));
     }
 
+    @Test
+    public void testFlush_shouldNotCause_concurrentStoreOperation() throws Exception {
+        int blockStoreOperationSeconds = 5;
+        TemporaryBlockerMapStore store = new TemporaryBlockerMapStore(blockStoreOperationSeconds);
+
+        Config config = newMapStoredConfig(store, 2000);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        HazelcastInstance node3 = factory.newHazelcastInstance(config);
+
+        IMap<String, String> map = node1.getMap("default");
+
+        int numberOfPuts = 1000;
+        for (int i = 0; i < numberOfPuts; i++) {
+            map.put(i + "", i + "");
+        }
+
+        map.flush();
+
+        assertEquals("Expecting " + numberOfPuts + " store after flush", numberOfPuts, store.getStoreOperationCount());
+    }
+
+
+    @Test
+    public void testWriteBehindQueues_flushed_uponEviction() throws Exception {
+        int nodeCount = 3;
+        String mapName = randomName();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(3000);
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        HazelcastInstance node3 = factory.newHazelcastInstance(config);
+
+        IMap map = node1.getMap(mapName);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < 1000; i++) {
+            map.evict(i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1000, mapStore.countStore.get());
+            }
+        });
+        assertWriteBehindQueuesEmpty(mapName, asList(node1, node2, node3));
+    }
+
+    protected Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapStoreConfig.setImplementation(store);
+
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        return config;
+    }
+
     protected void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -109,7 +187,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
                     assertEquals(0, writeBehindQueueSize(instance, mapName));
                 }
             }
-        });
+        }, 240);
     }
 
 }

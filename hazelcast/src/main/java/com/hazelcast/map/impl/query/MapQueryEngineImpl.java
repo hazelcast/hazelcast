@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -31,7 +31,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
@@ -85,7 +85,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     protected final ILogger logger;
     protected final QueryResultSizeLimiter queryResultSizeLimiter;
     protected final SerializationService serializationService;
-    protected final InternalPartitionService partitionService;
+    protected final IPartitionService partitionService;
     protected final QueryOptimizer queryOptimizer;
     protected final OperationService operationService;
     protected final ClusterService clusterService;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,5 @@
  * <p>Client protocol tasks implementations for Transactional Map</p>
  */
 
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.transactionalmap;
+package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;

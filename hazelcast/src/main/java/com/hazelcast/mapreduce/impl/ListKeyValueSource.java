@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package com.hazelcast.mapreduce.impl;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -74,7 +74,7 @@ public class ListKeyValueSource<V>
         ss = nei.getSerializationService();
 
         Address thisAddress = nei.getThisAddress();
-        InternalPartitionService ps = nei.getPartitionService();
+        IPartitionService ps = nei.getPartitionService();
         Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
         Address partitionOwner = ps.getPartitionOwner(partitionId);

@@ -66,7 +66,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
         TcpIpConnection c = connect(connManagerA, addressB);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
-        packet.setHeader(Packet.HEADER_URGENT);
+        packet.setFlag(Packet.FLAG_URGENT);
 
         boolean result = c.write(packet);
 

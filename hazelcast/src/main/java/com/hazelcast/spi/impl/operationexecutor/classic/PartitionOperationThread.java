@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public final class PartitionOperationThread extends OperationThread {
 
     private final OperationRunner[] partitionOperationRunners;
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name, int threadId,
                                     ScheduleQueue scheduleQueue, ILogger logger,
                                     HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,

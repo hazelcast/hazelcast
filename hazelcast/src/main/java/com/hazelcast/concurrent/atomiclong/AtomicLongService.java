@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -100,9 +100,10 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
         Map<String, Long> data = new HashMap<String, Long>();
         int partitionId = event.getPartitionId();
-        for (String name : containers.keySet()) {
+        for (Map.Entry<String, AtomicLongContainer> containerEntry : containers.entrySet()) {
+            String name = containerEntry.getKey();
             if (partitionId == getPartitionId(name)) {
-                AtomicLongContainer container = containers.get(name);
+                AtomicLongContainer container = containerEntry.getValue();
                 data.put(name, container.get());
             }
         }
@@ -110,7 +111,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     }
 
     private int getPartitionId(String name) {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
     }

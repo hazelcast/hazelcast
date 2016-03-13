@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -28,22 +27,10 @@ import java.io.IOException;
  */
 public class RecordStatisticsImpl implements RecordStatistics {
 
-    protected volatile int hits;
     protected long lastStoredTime;
     protected long expirationTime;
 
     public RecordStatisticsImpl() {
-
-    }
-
-    @Override
-    public int getHits() {
-        return hits;
-    }
-
-    @Override
-    public void setHits(int hits) {
-        this.hits = hits;
     }
 
     @Override
@@ -54,13 +41,6 @@ public class RecordStatisticsImpl implements RecordStatistics {
     @Override
     public void setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
-    }
-
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "We have the guarantee that only the partition thread will call this method")
-    @Override
-    public void access() {
-        hits++;
     }
 
     @Override
@@ -87,14 +67,12 @@ public class RecordStatisticsImpl implements RecordStatistics {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(hits);
         out.writeLong(lastStoredTime);
         out.writeLong(expirationTime);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        hits = in.readInt();
         lastStoredTime = in.readLong();
         expirationTime = in.readLong();
     }

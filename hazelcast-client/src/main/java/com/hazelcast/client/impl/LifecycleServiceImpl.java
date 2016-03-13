@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.List;
@@ -63,7 +62,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     private ILogger getLogger() {
-        return Logger.getLogger(LifecycleService.class);
+        return client.getLoggingService().getLogger(LifecycleService.class);
     }
 
     @Override
@@ -79,9 +78,12 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void fireLifecycleEvent(LifecycleEvent.LifecycleState lifecycleState) {
-        final LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
-        getLogger().info("HazelcastClient[" + client.getName() + "]" + "["
-                + buildInfo.getVersion() + "] is " + lifecycleEvent.getState());
+        LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
+        String revision = buildInfo.getRevision();
+        revision = revision == null || revision.isEmpty() ? "" : " - " + revision;
+        getLogger().info("HazelcastClient " + buildInfo.getVersion() + " ("
+                + buildInfo.getBuild() + revision + ") is "
+                + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }

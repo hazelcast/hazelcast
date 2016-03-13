@@ -15,19 +15,21 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationService;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -39,19 +41,11 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class WanReplicationTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance instance1;
-    private HazelcastInstance instance2;
-
-    @Before
-    public void setup() {
-        factory = createHazelcastInstanceFactory(3);
-        instance1 = factory.newHazelcastInstance(getConfig());
-        instance2 = factory.newHazelcastInstance(getConfig());
-    }
-
     @Test
     public void mapPutRemoveTest() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
         IMap<Object, Object> map = instance1.getMap("dummy-wan-test-map");
 
         for (int i = 0; i < 10; i++) {
@@ -63,11 +57,14 @@ public class WanReplicationTest extends HazelcastTestSupport {
         DummyWanReplication impl2 = getWanReplicationImpl(instance2);
 
         //Number of total events should be 20. (10 put, 10 remove ops)
-        assertEquals(20, impl1.eventQueue.size() + impl2.eventQueue.size());
+        assertTotalQueueSize(20, impl1.getEventQueue(), impl2.getEventQueue());
     }
 
     @Test
     public void entryProcessorTest() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
         IMap<Object, Object> map = instance1.getMap("dummy-wan-entryprocessor-test-map");
 
         for (int i = 0; i < 10; i++) {
@@ -76,7 +73,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
         DummyWanReplication impl1 = getWanReplicationImpl(instance1);
         DummyWanReplication impl2 = getWanReplicationImpl(instance2);
-        assertEquals(10, impl1.eventQueue.size() + impl2.eventQueue.size());
+        assertTotalQueueSize(10, impl1.eventQueue, impl2.eventQueue);
 
         //Clean event queues
         impl1.eventQueue.clear();
@@ -95,7 +92,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
 
         //There should be 10 events since all entries should be processed
-        assertEquals(10, impl1.eventQueue.size() + impl2.eventQueue.size());
+        assertTotalQueueSize(10, impl1.eventQueue, impl2.eventQueue);
 
         //Multiple entry operations (remove)
         OperationFactory deletingOperationFactory
@@ -103,11 +100,12 @@ public class WanReplicationTest extends HazelcastTestSupport {
         operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, deletingOperationFactory);
 
         //10 more event should be published
-        assertEquals(20, impl1.eventQueue.size() + impl2.eventQueue.size());
+        assertTotalQueueSize(20, impl1.eventQueue, impl2.eventQueue);
     }
 
     @Test
     public void programmaticImplCreationTest() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = getConfig();
         WanTargetClusterConfig targetClusterConfig = config.getWanReplicationConfig("dummyWan").getTargetClusterConfigs().get(0);
         DummyWanReplication dummyWanReplication = new DummyWanReplication();
@@ -150,6 +148,16 @@ public class WanReplicationTest extends HazelcastTestSupport {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapServiceContext mapServiceContext = ((MapService) mapProxy.getService()).getMapServiceContext();
         return mapServiceContext.getMapOperationProvider(mapProxy.getName());
+    }
+
+    private void assertTotalQueueSize(final int expectedQueueSize, final Queue<WanReplicationEvent> eventQueue1,
+                                      final Queue<WanReplicationEvent> eventQueue2) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size());
+            }
+        });
     }
 
     private static class UpdatingEntryProcessor

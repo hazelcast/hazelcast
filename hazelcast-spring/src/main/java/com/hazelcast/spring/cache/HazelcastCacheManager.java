@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,5 +72,9 @@ public class HazelcastCacheManager implements CacheManager {
 
     public void setHazelcastInstance(final HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
+    }
+
+    public HazelcastInstance getHazelcastInstance() {
+        return hazelcastInstance;
     }
 }

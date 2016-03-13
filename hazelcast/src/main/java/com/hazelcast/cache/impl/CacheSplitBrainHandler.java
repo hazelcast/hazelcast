@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -58,7 +58,7 @@ class CacheSplitBrainHandler {
 
     Runnable prepareMergeRunnable() {
         final Map<String, Map<Data, CacheRecord>> recordMap = new HashMap<String, Map<Data, CacheRecord>>(configs.size());
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
 

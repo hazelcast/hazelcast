@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 /**
  * An interface that can be implemented by SPI services to get notified of when a partition-related event occurs; for example,
  * if a {@link com.hazelcast.map.impl.MapService} notifies its map listeners when partition is lost for a map.
  *
- * @see com.hazelcast.partition.InternalPartitionLostEvent
+ * @see IPartitionLostEvent
  */
 public interface PartitionAwareService {
 
@@ -30,6 +30,6 @@ public interface PartitionAwareService {
      * Invoked when a partition lost is detected
      * @param event The event object that contains the partition id and the number of replicas that is lost
      */
-    void onPartitionLost(InternalPartitionLostEvent event);
+    void onPartitionLost(IPartitionLostEvent event);
 
 }

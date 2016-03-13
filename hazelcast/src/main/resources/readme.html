@@ -120,10 +120,12 @@
 			<li><strong>/bin</strong>
 				<ul>
 				<li><strong>hazelcast.xml</strong> &mdash; the configuration file for Hazelcast.</li>
-				<li><strong>server.bat</strong> &mdash; Starts a Hazelcast node for Windows users.</li>
-				<li><strong>server.sh</strong> &mdash;  Starts a Hazelcast node for Linux users.</li>
+				<li><strong>hazelcast-full-example.xml</strong> &mdash; It is the Hazelcast configuration file that includes all the configuration elements and attributes with their descriptions.</li>
+				<li><strong>start.bat</strong> &mdash; Starts a Hazelcast node for Windows users.</li>
+				<li><strong>start.sh</strong> &mdash;  Starts a Hazelcast node for Linux users.</li>
                 <li><strong>stop.bat</strong> &mdash; Stops the current running Hazelcast node for Windows users.</li>
                 <li><strong>stop.sh</strong> &mdash; Stops the current running Hazelcast node for Linux users.</li>
+                <li><strong>cluster.sh</strong> &mdash; Provides basic functionalities for cluster management such as getting and changing the cluster state, shutting down the cluster or forcing the cluster to clean its persisted data and make a fresh start.</li>
 				</ul>
 			</li>
 			
@@ -150,13 +152,8 @@
 					<li><strong>hazelcast&ndash;<i>${project.version}</i>.jar</strong> &mdash; The core hazelcast JAR.</li>
 					<li><strong>hazelcast-all&ndash;<i>${project.version}</i>.jar</strong> &mdash; Includes all of the libraries here in one JAR file.</li>
 					<li><strong>hazelcast-client&ndash;<i>${project.version}</i>.jar</strong> &mdash; The Java native client library to be included on classpath for Hazelcast client. This library contains clients which use the new Hazelcast Binary Client Protocol, introduced in the Hazelcast 3.5 Release.</li>
-                    <li><strong>hazelcast-cloud&ndash;<i>${project.version}</i>.jar</strong> &mdash; To connect to a Hazelcast cluster on AWS as a client or node, include this library.</li>
-                    <li><strong>hazelcast-jclouds&ndash;<i>${project.version}</i>.jar</strong> &mdash; To connect to a Hazelcast cluster with jclouds as a client or node, include this library.</li>
-                    <li><strong>hazelcast-hibernate<i>(Hibernate version)</i>&ndash;<i>${project.version}</i>.jar</strong> &mdash; These are the libraries that enable Hazelcast to be used as a Hibernate 2nd Level Cache, for Hibernate 3 and 4.</li>
-					<li><strong>hazelcast-jca&ndash;<i>${project.version}</i>.jar</strong> and <strong>hazelcast-jca-rar&ndash;<i>${project.version}</i>.rar</strong> &mdash; These are the libraries when you want to use a Hazelcast Resource Adapter implementation.</li>
 					<li><strong>hazelcast-spring&ndash;<i>${project.version}</i>.jar</strong> &mdash; This is the library to integrate Hazelcast with Spring based applications.</li>
-					<li><strong>hazelcast-wm&ndash;<i>${project.version}</i>.jar</strong> &mdash; This is the Hazelcast's session replication module library.</li>				
-				</ul>			
+                </ul>
 			</li>
 			
 			<li><strong>/license</strong>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
@@ -29,7 +29,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.test.AssertTask;
@@ -188,7 +188,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static class AlwaysBlockingOperation extends AbstractOperation implements WaitSupport {
+    private static class AlwaysBlockingOperation extends AbstractOperation implements BlockingOperation {
 
         @Override
         public void run() throws Exception {

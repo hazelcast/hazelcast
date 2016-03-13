@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import com.hazelcast.multimap.impl.operations.GetAllOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
@@ -44,12 +44,11 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class TransactionalMultiMapProxySupport extends AbstractDistributedObject<MultiMapService>
+public abstract class TransactionalMultiMapProxySupport extends TransactionalDistributedObject<MultiMapService>
         implements TransactionalObject {
 
     private static final double TIMEOUT_EXTEND_MULTIPLIER = 1.5;
     protected final String name;
-    protected final Transaction tx;
     protected final MultiMapConfig config;
 
     private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<Data, Collection<MultiMapRecord>>();
@@ -58,9 +57,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                                                 MultiMapService service,
                                                 String name,
                                                 Transaction tx) {
-        super(nodeEngine, service);
+        super(nodeEngine, service, tx);
         this.name = name;
-        this.tx = tx;
         this.config = nodeEngine.getConfig().findMultiMapConfig(name);
     }
 
@@ -92,7 +90,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         } else {
             logRecord = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
         }
-        MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
+        MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : toObjectIfNeeded(value));
         if (coll.add(record)) {
             if (recordId == -1) {
                 recordId = nextId(key);
@@ -125,7 +123,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         } else {
             logRecord = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
         }
-        MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
+        MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : toObjectIfNeeded(value));
         Iterator<MultiMapRecord> iterator = coll.iterator();
         long recordId = -1;
         while (iterator.hasNext()) {

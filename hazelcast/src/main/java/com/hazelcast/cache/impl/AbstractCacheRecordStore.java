@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,14 +35,15 @@ import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.Duration;
@@ -99,6 +100,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final boolean wanReplicationEnabled;
+    protected final boolean disablePerEntryInvalidationEvents;
     protected boolean primary;
 
     //CHECKSTYLE:OFF
@@ -116,6 +118,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     + nodeEngine.getLocalMember());
         }
         this.wanReplicationEnabled = cacheService.isWanReplicationEnabled(name);
+        this.disablePerEntryInvalidationEvents = cacheConfig.isDisablePerEntryInvalidationEvents();
         this.evictionConfig = cacheConfig.getEvictionConfig();
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null");
@@ -164,8 +167,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     //CHECKSTYLE:ON
 
     private boolean isPrimary() {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        InternalPartition partition = partitionService.getPartition(partitionId, false);
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartition partition = partitionService.getPartition(partitionId, false);
         Address owner = partition.getOwnerOrNull();
         Address thisAddress = nodeEngine.getThisAddress();
         return owner != null && owner.equals(thisAddress);
@@ -174,6 +177,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void init() {
         primary = isPrimary();
+        records.setEntryCounting(primary);
     }
 
     protected boolean isReadThrough() {
@@ -334,8 +338,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data recordEventData = toEventData(removedRecord);
         onProcessExpiredEntry(key, removedRecord, expiryTime, now, source, origin);
         if (isEventsEnabled()) {
-            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
-                                                 CacheRecord.TIME_NOT_AVAILABLE,
+            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData, CacheRecord.TIME_NOT_AVAILABLE,
                                                  origin, IGNORE_COMPLETION));
         }
         return null;
@@ -356,7 +359,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void invalidateEntry(Data key, String source) {
         if (isInvalidationEnabled()) {
-            cacheService.sendInvalidationEvent(name, toHeapData(key), source);
+            if (key == null) {
+                cacheService.sendInvalidationEvent(name, null, source);
+            } else if (!disablePerEntryInvalidationEvents) {
+                cacheService.sendInvalidationEvent(name, toHeapData(key), source);
+            }
         }
     }
 
@@ -464,10 +471,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (v1 == null && v2 == null) {
             return true;
         }
-        if (v1 == null) {
-            return false;
-        }
-        if (v2 == null) {
+        if (v1 == null || v2 == null) {
             return false;
         }
         return v1.equals(v2);
@@ -490,13 +494,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return record;
     }
 
-    protected void onCreateRecordError(Data key, Object value, long expiryTime, long now,
-                                       boolean disableWriteThrough, int completionId, String origin,
-                                       R record, Throwable error) {
+    protected void onCreateRecordError(Data key, Object value, long expiryTime, long now, boolean disableWriteThrough,
+                                       int completionId, String origin, R record, Throwable error) {
     }
 
-    protected R createRecord(Data key, Object value, long expiryTime,
-                             long now, boolean disableWriteThrough, int completionId, String origin) {
+    protected R createRecord(Data key, Object value, long expiryTime, long now,
+                             boolean disableWriteThrough, int completionId, String origin) {
         R record = createRecord(value, now, expiryTime);
         try {
             doPutRecord(key, record);
@@ -607,9 +610,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
                 if (!disableWriteThrough) {
                     writeThroughCache(key, value);
-                    // If writing to `CacheWriter` fails no need to revert.
-                    // Because we have not update record value yet with its new value
-                    // but just converted new value to required storage type.
+                    // If writing to `CacheWriter` fails no need to revert. Because we have not update record value yet
+                    // with its new value but just converted new value to required storage type.
                 }
 
                 Data eventDataKey = toEventData(key);
@@ -791,6 +793,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
+    @SuppressFBWarnings("WMI_WRONG_MAP_ITERATOR")
     protected void deleteAllCacheEntry(Set<Data> keys) {
         if (isWriteThrough() && cacheWriter != null && keys != null && !keys.isEmpty()) {
             Map<Object, Data> keysToDelete = new HashMap<Object, Data>();
@@ -853,7 +856,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void putRecord(Data key, CacheRecord record) {
         evictIfRequired();
-
         doPutRecord(key, (R) record);
     }
 
@@ -953,7 +955,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, String source,
                          boolean getValue, boolean disableWriteThrough, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean isOnNewPut = false;

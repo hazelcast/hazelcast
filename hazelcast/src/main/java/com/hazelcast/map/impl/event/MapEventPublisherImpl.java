@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,7 +193,6 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
         // below, order of ifs are important.
         // QueryEventFilter is instance of EntryEventFilter.
-        // SyntheticEventFilter wraps an event filter.
         if (filter instanceof EventListenerFilter) {
             if (!filter.eval(eventType.getType())) {
                 return false;

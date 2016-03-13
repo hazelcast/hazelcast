@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
@@ -54,10 +53,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E> {
-    public static final int MAX_BACKOFF = 2000;
-    public static final int INITIAL_BACKOFF_MS = 100;
 
-    private final ILogger logger = Logger.getLogger(getClass());
+    private static final int MAX_BACKOFF = 2000;
+    private static final int INITIAL_BACKOFF_MS = 100;
+
+    private final ILogger logger;
     private final ConcurrentMap<String, MessageRunner> runnersMap = new ConcurrentHashMap<String, MessageRunner>();
     private final Ringbuffer ringbuffer;
     private final SerializationService serializationService;
@@ -69,10 +69,10 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         super(SERVICE_NAME, objectId);
         this.ringbuffer = client.getRingbuffer(TOPIC_RB_PREFIX + objectId);
         this.serializationService = client.getSerializationService();
-
         this.config = client.getClientConfig().getReliableTopicConfig(objectId);
         this.executor = getExecutor(config, client);
         this.overloadPolicy = config.getTopicOverloadPolicy();
+        logger = client.getLoggingService().getLogger(getClass());
     }
 
     private Executor getExecutor(ClientReliableTopicConfig config, HazelcastClientInstanceImpl client) {

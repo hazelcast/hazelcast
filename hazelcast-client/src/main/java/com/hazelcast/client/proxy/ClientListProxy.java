@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
@@ -52,14 +52,13 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.Preconditions;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Set;
 
 public class ClientListProxy<E> extends PartitionSpecificClientProxy implements IList<E> {
 
@@ -68,15 +67,12 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
-        throwExceptionIfNull(c);
-        final List<Data> valueList = new ArrayList<Data>(c.size());
-        for (E e : c) {
-            throwExceptionIfNull(e);
-            valueList.add(toData(e));
-        }
-        ClientMessage request = ListAddAllWithIndexCodec.encodeRequest(name, index, valueList);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = ListAddAllWithIndexCodec.encodeRequest(name, index, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        ListAddAllWithIndexCodec.ResponseParameters resultParameters = ListAddAllWithIndexCodec.decodeResponse(response);
+        ListAddAllWithIndexCodec.ResponseParameters resultParameters =
+                ListAddAllWithIndexCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
@@ -88,8 +84,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public E set(int index, E element) {
-        throwExceptionIfNull(element);
-        final Data value = toData(element);
+        Preconditions.checkNotNull(element);
+        Data value = toData(element);
         ClientMessage request = ListSetCodec.encodeRequest(name, index, value);
         ClientMessage response = invokeOnPartition(request);
         ListSetCodec.ResponseParameters resultParameters = ListSetCodec.decodeResponse(response);
@@ -97,8 +93,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public void add(int index, E element) {
-        throwExceptionIfNull(element);
-        final Data value = toData(element);
+        Preconditions.checkNotNull(element);
+        Data value = toData(element);
         ClientMessage request = ListAddWithIndexCodec.encodeRequest(name, index, value);
         invokeOnPartition(request);
     }
@@ -125,8 +121,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public boolean contains(Object o) {
-        throwExceptionIfNull(o);
-        final Data value = toData(o);
+        Preconditions.checkNotNull(o);
+        Data value = toData(o);
         ClientMessage request = ListContainsCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
         ListContainsCodec.ResponseParameters resultParameters = ListContainsCodec.decodeResponse(response);
@@ -151,8 +147,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public boolean add(E e) {
-        throwExceptionIfNull(e);
-        final Data element = toData(e);
+        Preconditions.checkNotNull(e);
+        Data element = toData(e);
         ClientMessage request = ListAddCodec.encodeRequest(name, element);
         ClientMessage response = invokeOnPartition(request);
         ListAddCodec.ResponseParameters resultParameters = ListAddCodec.decodeResponse(response);
@@ -160,8 +156,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public boolean remove(Object o) {
-        throwExceptionIfNull(o);
-        final Data value = toData(o);
+        Preconditions.checkNotNull(o);
+        Data value = toData(o);
         ClientMessage request = ListRemoveCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
         ListRemoveCodec.ResponseParameters resultParameters = ListRemoveCodec.decodeResponse(response);
@@ -169,54 +165,40 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public boolean containsAll(Collection<?> c) {
-        throwExceptionIfNull(c);
-        Set<Data> valueSet = new HashSet<Data>(c.size());
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(toData(o));
-        }
-        ClientMessage request = ListContainsAllCodec.encodeRequest(name, valueSet);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = ListContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         ListContainsAllCodec.ResponseParameters resultParameters = ListContainsAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        throwExceptionIfNull(c);
-        final List<Data> valueList = new ArrayList<Data>(c.size());
-        for (E e : c) {
-            throwExceptionIfNull(e);
-            valueList.add(toData(e));
-        }
-        ClientMessage request = ListAddAllCodec.encodeRequest(name, valueList);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = ListAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         ListAddAllCodec.ResponseParameters resultParameters = ListAddAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean removeAll(Collection<?> c) {
-        throwExceptionIfNull(c);
-        final Set<Data> valueSet = new HashSet<Data>();
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(toData(o));
-        }
-        ClientMessage request = ListCompareAndRemoveAllCodec.encodeRequest(name, valueSet);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = ListCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        ListCompareAndRemoveAllCodec.ResponseParameters resultParameters = ListCompareAndRemoveAllCodec.decodeResponse(response);
+        ListCompareAndRemoveAllCodec.ResponseParameters resultParameters =
+                ListCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean retainAll(Collection<?> c) {
-        throwExceptionIfNull(c);
-        final Set<Data> valueSet = new HashSet<Data>();
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(toData(o));
-        }
-        ClientMessage request = ListCompareAndRetainAllCodec.encodeRequest(name, valueSet);
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = ListCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        ListCompareAndRetainAllCodec.ResponseParameters resultParameters = ListCompareAndRetainAllCodec.decodeResponse(response);
+        ListCompareAndRetainAllCodec.ResponseParameters resultParameters =
+                ListCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
@@ -226,8 +208,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     @Override
-    public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
+    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
+        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
 
@@ -263,17 +245,12 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage request = ListGetAllCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         ListGetAllCodec.ResponseParameters resultParameters = ListGetAllCodec.decodeResponse(response);
-        Collection<Data> resultCollection = resultParameters.response;
-        final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
-        for (Data value : resultCollection) {
-            list.add((E) toObject(value));
-        }
-        return list;
+        return new UnmodifiableLazyList<E>(resultParameters.response, getSerializationService());
     }
 
     public int lastIndexOf(Object o) {
-        throwExceptionIfNull(o);
-        final Data value = toData(o);
+        Preconditions.checkNotNull(o);
+        Data value = toData(o);
         ClientMessage request = ListLastIndexOfCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
         ListLastIndexOfCodec.ResponseParameters resultParameters = ListLastIndexOfCodec.decodeResponse(response);
@@ -281,8 +258,8 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     }
 
     public int indexOf(Object o) {
-        throwExceptionIfNull(o);
-        final Data value = toData(o);
+        Preconditions.checkNotNull(o);
+        Data value = toData(o);
         ClientMessage request = ListIndexOfCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
         ListIndexOfCodec.ResponseParameters resultParameters = ListIndexOfCodec.decodeResponse(response);
@@ -319,11 +296,9 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final boolean includeValue;
         private final ItemListener<E> listener;
 
-        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
-            this.includeValue = includeValue;
+        public ItemEventHandler(ItemListener<E> listener) {
             this.listener = listener;
         }
 

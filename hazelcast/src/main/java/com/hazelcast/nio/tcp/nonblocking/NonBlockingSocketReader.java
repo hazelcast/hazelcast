@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.nio.tcp.NewClientReadHandler;
@@ -25,8 +28,6 @@ import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.util.counters.Counter;
-import com.hazelcast.util.counters.SwCounter;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -35,13 +36,13 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * A {@link SocketReader} tailored for non blocking IO.
@@ -52,13 +53,13 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  */
 public final class NonBlockingSocketReader extends AbstractHandler implements SocketReader {
 
-    @Probe(name = "in.eventCount")
+    @Probe(name = "eventCount")
     private final SwCounter eventCount = newSwCounter();
-    @Probe(name = "in.bytesRead")
+    @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
-    @Probe(name = "in.normalFramesRead")
+    @Probe(name = "normalFramesRead")
     private final SwCounter normalFramesRead = newSwCounter();
-    @Probe(name = "in.priorityFramesRead")
+    @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
     private final MetricsRegistry metricRegistry;
 
@@ -73,21 +74,21 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
         super(connection, ioThread, SelectionKey.OP_READ);
         this.ioThread = ioThread;
         this.metricRegistry = metricsRegistry;
-        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
     }
 
-    @Probe(name = "in.idleTimeMs", level = DEBUG)
+    @Probe(name = "idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
-        return Math.max(System.currentTimeMillis() - lastReadTime, 0);
+        return Math.max(currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Probe(name = "in.interestedOps", level = DEBUG)
+    @Probe(name = "interestedOps", level = DEBUG)
     private long interestOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(name = "in.readyOps", level = DEBUG)
+    @Probe(name = "readyOps", level = DEBUG)
     private long readyOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();
@@ -224,7 +225,8 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
     }
 
     private void configureBuffers(int size) {
-        inputBuffer = ByteBuffer.allocate(size);
+        inputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
+
         try {
             connection.setReceiveBufferSize(size);
         } catch (SocketException e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.client.impl.protocol.MessageTaskFactory;
-import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
@@ -84,7 +82,7 @@ public class DefaultNodeExtension implements NodeExtension {
         }
         systemLogger.info("Hazelcast " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
-        systemLogger.info("Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.");
+        systemLogger.info("Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.");
         systemLogger.info("Configured Hazelcast Serialization version : " + buildInfo.getSerializationVersion());
     }
 
@@ -187,11 +185,6 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService) {
         return new MemberWriteHandler();
-    }
-
-    @Override
-    public MessageTaskFactory createMessageTaskFactory() {
-        return new MessageTaskFactoryImpl(node);
     }
 
     @Override

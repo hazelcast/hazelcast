@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
-import static com.hazelcast.nio.Packet.HEADER_BIND;
-import static com.hazelcast.nio.Packet.HEADER_EVENT;
-import static com.hazelcast.nio.Packet.HEADER_OP;
-import static com.hazelcast.nio.Packet.HEADER_WAN_REPLICATION;
+import static com.hazelcast.nio.Packet.FLAG_BIND;
+import static com.hazelcast.nio.Packet.FLAG_EVENT;
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_WAN_REPLICATION;
 
 /**
  * Default {@link PacketDispatcher} implementation.
@@ -53,16 +53,16 @@ public class PacketDispatcherImpl implements PacketDispatcher {
     @Override
     public void dispatch(Packet packet) {
         try {
-            if (packet.isHeaderSet(HEADER_OP)) {
+            if (packet.isFlagSet(FLAG_OP)) {
                 operationPacketHandler.handle(packet);
-            } else if (packet.isHeaderSet(HEADER_EVENT)) {
+            } else if (packet.isFlagSet(FLAG_EVENT)) {
                 eventPacketHandler.handle(packet);
-            } else if (packet.isHeaderSet(HEADER_WAN_REPLICATION)) {
+            } else if (packet.isFlagSet(FLAG_WAN_REPLICATION)) {
                 wanReplicationPacketHandler.handle(packet);
-            } else if (packet.isHeaderSet(HEADER_BIND)) {
+            } else if (packet.isFlagSet(FLAG_BIND)) {
                 connectionPacketHandler.handle(packet);
             } else {
-                logger.severe("Unknown packet type! Header: " + packet.getHeader());
+                logger.severe("Unknown packet type! Header: " + packet.getFlags());
             }
         } catch (Throwable t) {
             inspectOutputMemoryError(t);

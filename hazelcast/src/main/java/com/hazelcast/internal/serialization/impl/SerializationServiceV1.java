@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             portableContext.registerClassDefinition(cd);
         }
 
-        dataSerializerAdapter = createSerializerAdapter(new DataSerializer(dataSerializableFactories, classLoader), this);
+        dataSerializerAdapter = createSerializerAdapter(
+                new DataSerializableSerializer(dataSerializableFactories, classLoader), this);
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
 

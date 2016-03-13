@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -35,12 +35,13 @@ import java.util.logging.Level;
  */
 public class AwsAddressProvider implements AddressProvider {
 
-    private static final ILogger LOGGER = Logger.getLogger(AwsAddressProvider.class);
+    private final ILogger logger;
     private final AWSClient awsClient;
     private volatile Map<String, String> privateToPublic;
 
-    public AwsAddressProvider(ClientAwsConfig awsConfig) {
+    public AwsAddressProvider(ClientAwsConfig awsConfig, LoggingService loggingService) {
         awsClient = new AWSClient(awsConfig);
+        logger = loggingService.getLogger(AwsAddressProvider.class);
     }
 
     @Override
@@ -65,7 +66,7 @@ public class AwsAddressProvider implements AddressProvider {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
+            logger.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,8 +197,8 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         @Override
         public void map(Key key, Value value, Context<Integer, DistinctType> context) {
             int mappingKey = key();
-            entry.key = key;
-            entry.value = value;
+            entry.setKey(key);
+            entry.setValue(value);
             DistinctType valueOut = supplier.apply(entry);
             if (valueOut != null) {
                 context.emit(mappingKey, valueOut);
@@ -237,32 +237,4 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
         }
     }
 
-    /**
-     * Internal implementation of an map entry with changeable value to prevent
-     * to much object allocation while supplying
-     *
-     * @param <K> key type
-     * @param <V> value type
-     */
-    private static final class SimpleEntry<K, V>
-            implements Map.Entry<K, V> {
-
-        private K key;
-        private V value;
-
-        @Override
-        public K getKey() {
-            return key;
-        }
-
-        @Override
-        public V getValue() {
-            return value;
-        }
-
-        @Override
-        public V setValue(V value) {
-            throw new UnsupportedOperationException();
-        }
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     /**
      * Entry to define keys and values for sampling.
      */
-    public class SamplingEntry extends SimpleEntry<K, V> {
+    public static class SamplingEntry<K, V> extends SimpleEntry<K, V> {
 
         public SamplingEntry(K key, V value) {
             super(key, value);

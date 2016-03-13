@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -354,57 +357,11 @@ public class EvictionTest extends HazelcastTestSupport {
         int insertCount = size * pnum * 2;
         final Map map = instances[0].getMap(mapName);
         for (int i = 0; i < insertCount; i++) {
-            if (i == insertCount - 1) {
-                sleepMillis(1100);
-            }
             map.put(i, i);
         }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(map.size() < size);
-            }
-        });
-    }
-
-    @Test
-    public void testEvictionLRU_sweepsLeastRecentlyUseds() {
-        final int nodeCount = 2;
-        final int perNodeMaxSize = 1000;
-
-        final String mapName = randomMapName();
-        Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
-        MapConfig mc = cfg.getMapConfig(mapName);
-        mc.setEvictionPolicy(EvictionPolicy.LRU);
-        mc.setEvictionPercentage(20);
-        mc.setMinEvictionCheckMillis(0L);
-        MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(perNodeMaxSize);
-        mc.setMaxSizeConfig(msc);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        final HazelcastInstance[] instances = factory.newInstances(cfg);
-        IMap<Object, Object> map = instances[0].getMap(mapName);
-
-        // 1. Use only first half of entries by getting them.
-        int recentlyUsedEvicted = 0;
-        for (int i = 0; i < perNodeMaxSize / 2; i++) {
-            map.put(i, i);
-            map.get(i);
-        }
-        // 2. Over fill map to trigger eviction.
-        for (int i = perNodeMaxSize / 2; i < 5 * perNodeMaxSize; i++) {
-            map.put(i, i);
-        }
-        // 3. These entries should not be evicted.
-        for (int i = 0; i < perNodeMaxSize / 2; i++) {
-            if (map.get(i) == null) {
-                recentlyUsedEvicted++;
-            }
-        }
-        assertEquals(0, recentlyUsedEvicted);
+        int mapSize = map.size();
+        String message = format("mapSize : %d should be <= max-size : %d ", mapSize, size);
+        assertTrue(message, mapSize <= size);
     }
 
     @Test
@@ -446,94 +403,45 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEvictionLFU_statisticsDisabled() {
-        final String mapName = randomMapName("_testEvictionLFU_statisticsDisabled_");
-        final int instanceCount = 1;
-        final int size = 10000;
-
-        Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
-        MapConfig mc = cfg.getMapConfig(mapName);
-        mc.setStatisticsEnabled(false);
-        mc.setEvictionPolicy(EvictionPolicy.LFU);
-        mc.setEvictionPercentage(20);
-        mc.setMinEvictionCheckMillis(0);
-        MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(size);
-        mc.setMaxSizeConfig(msc);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        final HazelcastInstance[] instances = factory.newInstances(cfg);
-        final int atLeastShouldEvict = size / 40;
-        final CountDownLatch latch = new CountDownLatch(atLeastShouldEvict);
-        IMap<Object, Object> map = instances[0].getMap(mapName);
-        map.addLocalEntryListener(new EntryAdapter<Object, Object>() {
-            @Override
-            public void entryEvicted(EntryEvent<Object, Object> event) {
-                latch.countDown();
-            }
-        });
-        // these are frequently used entries.
-        for (int i = 0; i < size / 2; i++) {
-            map.put(i, i);
-            map.get(i);
-        }
-        // expecting these entries to be evicted.
-        for (int i = size / 2; i < size + 1; i++) {
-            map.put(i, i);
-        }
-        assertOpenEventually(latch, 120);
-        assertFalse("No eviction!?!?!?", map.size() == size);
-        // these entries should exist in map after evicting LFU.
-        for (int i = 0; i < size / 2; i++) {
-            assertNotNull(map.get(i));
-        }
+    public void testEvictionLFU() {
+        testEvictionLFUInternal(false);
     }
 
     @Test
-    public void testEvictionLFU() {
-        final String mapName = "testEvictionLFU_" + randomString();
-        final int size = 10000;
-
-        Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
-        MapConfig mc = cfg.getMapConfig(mapName);
-        mc.setEvictionPolicy(EvictionPolicy.LFU);
-        mc.setEvictionPercentage(20);
-        mc.setMinEvictionCheckMillis(0);
-        MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
-        msc.setSize(size);
-
-        mc.setMaxSizeConfig(msc);
-
-        HazelcastInstance node = createHazelcastInstance(cfg);
-        IMap<Object, Object> map = node.getMap(mapName);
-        final int atLeastShouldEvict = size / 40;
-        final CountDownLatch latch = new CountDownLatch(atLeastShouldEvict);
-        map.addLocalEntryListener(new EntryAdapter<Object, Object>() {
-            @Override
-            public void entryEvicted(EntryEvent<Object, Object> event) {
-                latch.countDown();
-            }
-        });
-        // these are frequently used entries.
-        for (int i = 0; i < size / 2; i++) {
-            map.put(i, i);
-            map.get(i);
-        }
-        // expecting these entries to be evicted.
-        for (int i = size / 2; i < size + 1; i++) {
-            map.put(i, i);
-        }
-        assertOpenEventually(latch, 120);
-        assertFalse("No eviction!?!?!?", map.size() == size);
-        // these entries should exist in map after evicting LFU.
-        for (int i = 0; i < size / 2; i++) {
-            assertNotNull(map.get(i));
-        }
+    public void testEvictionLFU_statisticsDisabled() {
+        testEvictionLFUInternal(true);
     }
+
+    /**
+     * This test is only testing occurrence of LFU eviction.
+     */
+    protected void testEvictionLFUInternal(boolean disableStats) {
+        int mapMaxSize = 10000;
+        String mapName = randomMapName();
+
+        MaxSizeConfig msc = new MaxSizeConfig();
+        msc.setMaxSizePolicy(PER_NODE);
+        msc.setSize(mapMaxSize);
+
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setStatisticsEnabled(disableStats);
+        mapConfig.setEvictionPolicy(LFU);
+        mapConfig.setMinEvictionCheckMillis(0);
+        mapConfig.setMaxSizeConfig(msc);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Object, Object> map = node.getMap(mapName);
+
+        for (int i = 0; i < 2 * mapMaxSize; i++) {
+            map.put(i, i);
+        }
+
+        int mapSize = map.size();
+        assertTrue("Eviction did not work, map size " + mapSize + " should be smaller than allowed max size = " + mapMaxSize,
+                mapSize < mapMaxSize);
+    }
+
 
     @Test
     public void testEvictionLFU2() {
@@ -749,7 +657,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final long diffSecs = TimeUnit.MILLISECONDS.toSeconds(lastAccessTimeAfterContainsOperation - lastAccessTime);
 
         //3. So there should be a diff at least waitSeconds.
-        final String failureMessage = String.format("Diff seconds %d, wait seconds %d", diffSecs, waitSeconds);
+        final String failureMessage = format("Diff seconds %d, wait seconds %d", diffSecs, waitSeconds);
         assertTrue(failureMessage, diffSecs >= waitSeconds);
 
     }

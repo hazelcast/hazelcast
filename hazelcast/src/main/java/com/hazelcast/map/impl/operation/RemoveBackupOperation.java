@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -56,10 +53,6 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
 
     @Override
     public void run() {
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        int partitionId = getPartitionId();
-        RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         recordStore.removeBackup(dataKey);
         if (unlockKey) {
             recordStore.forceUnlock(dataKey);
@@ -69,11 +62,12 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     @Override
     public void afterRun() throws Exception {
         evict();
-        if (!disableWanReplicationEvent
-                && mapContainer.isWanReplicationEnabled()) {
-            mapService.getMapServiceContext()
-                    .getMapEventPublisher().publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
+
+        if (!disableWanReplicationEvent && mapContainer.isWanReplicationEnabled()) {
+            mapEventPublisher.publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
         }
+
+        super.afterRun();
     }
 
     @Override

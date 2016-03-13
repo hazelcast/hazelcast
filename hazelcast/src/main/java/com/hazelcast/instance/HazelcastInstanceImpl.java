@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,8 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.internal.monitors.HealthMonitor;
-import com.hazelcast.internal.monitors.PerformanceMonitor;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
@@ -105,16 +104,13 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
-    final PerformanceMonitor performanceMonitor;
-
     final HealthMonitor healthMonitor;
 
-    HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
+    protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
             throws Exception {
         this.name = name;
+        this.lifecycleService = new LifecycleServiceImpl(this);
 
-
-        lifecycleService = new LifecycleServiceImpl(this);
         ManagedContext configuredManagedContext = config.getManagedContext();
         managedContext = new HazelcastManagedContext(this, configuredManagedContext);
 
@@ -122,7 +118,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
         //user-context map instance instead of having a shared map instance. So changes made to the user-context map
         //in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances.
         userContext.putAll(config.getUserContext());
-        node = new Node(this, config, nodeContext);
+        node = createNode(config, nodeContext);
 
         try {
             logger = node.getLogger(getClass().getName());
@@ -136,7 +132,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
 
-            this.performanceMonitor = new PerformanceMonitor(this).start();
             this.healthMonitor = new HealthMonitor(node).start();
         } catch (Throwable e) {
             try {
@@ -148,6 +143,10 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             }
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    protected Node createNode(Config config, NodeContext nodeContext) {
+        return new Node(this, config, nodeContext);
     }
 
     private void initManagedContext(ManagedContext configuredManagedContext) {

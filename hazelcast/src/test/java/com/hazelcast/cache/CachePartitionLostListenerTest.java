@@ -14,8 +14,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -91,7 +91,7 @@ public class CachePartitionLostListenerTest extends AbstractPartitionLostListene
         final EventCollectingCachePartitionLostListener listener = new EventCollectingCachePartitionLostListener(0);
         iCache.addPartitionLostListener(listener);
 
-        final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 1, null);
+        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 1, null);
         CacheService cacheService = getNode(instance).getNodeEngine().getService(CacheService.SERVICE_NAME);
         cacheService.onPartitionLost(internalEvent);
 

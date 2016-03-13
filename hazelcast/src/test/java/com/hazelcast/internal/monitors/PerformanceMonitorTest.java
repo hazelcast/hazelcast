@@ -2,256 +2,123 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.LongProbeFunction;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.LinkedList;
-import java.util.List;
-
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_DELAY_SECONDS;
 import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PerformanceMonitorTest extends HazelcastTestSupport {
 
-    private PerformanceLogFile performanceLogFile;
-    private InternalOperationService operationService;
-    private MetricsRegistry metricsRegistry;
-
     @Before
     public void setup() {
-        Config config = new Config();
-        config.setProperty(PERFORMANCE_MONITOR_ENABLED, "true");
-        config.setProperty(PERFORMANCE_MONITOR_DELAY_SECONDS, "1");
-        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB, "0.2");
-        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT, "3");
+        setLoggingLog4j();
+    }
 
-        config.setProperty(SLOW_OPERATION_DETECTOR_ENABLED, "true");
-        config.setProperty(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "2000");
-
+    private PerformanceMonitor newPerformanceMonitor(Config config) {
         HazelcastInstance hz = createHazelcastInstance(config);
-
-        PerformanceMonitor performanceMonitor = getPerformanceMonitor(hz);
-        performanceLogFile = performanceMonitor.performanceLogFile;
-        operationService = getOperationService(hz);
-        metricsRegistry = getMetricsRegistry(hz);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
+        return new PerformanceMonitor(
+                hz,
+                Logger.getLogger(PerformanceMonitor.class),
+                nodeEngineImpl.getNode().getHazelcastThreadGroup(),
+                nodeEngineImpl.getNode().groupProperties);
     }
 
-    @AfterClass
-    public static void afterClass() {
-        String userDir = System.getProperty("user.dir");
-
-        File[] files = new File(userDir).listFiles();
-        if (files != null) {
-            for (File file : files) {
-                String name = file.getName();
-                if (name.startsWith("performance-") && name.endsWith(".log")) {
-                    file.delete();
-                }
-            }
-        }
+    @Test(expected = NullPointerException.class)
+    public void register_whenNullPlugin() {
+        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+        performanceMonitor.start();
+        performanceMonitor.register(null);
     }
 
     @Test
-    public void testDisabledByDefault() {
-        GroupProperties groupProperties = new GroupProperties(new Config());
-        assertFalse(groupProperties.getBoolean(PERFORMANCE_MONITOR_ENABLED));
+    public void register_whenMonitorDisabled() {
+        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "false"));
+
+        performanceMonitor.start();
+        PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
+        when(plugin.getPeriodMillis()).thenReturn(1l);
+
+        performanceMonitor.register(plugin);
+
+        assertEquals(0, performanceMonitor.staticTasks.get().length);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void register_whenMonitorEnabled_andPluginReturnsValueSmallerThanMinesOne() {
+        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+
+        performanceMonitor.start();
+        PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
+        when(plugin.getPeriodMillis()).thenReturn(-2l);
+
+        performanceMonitor.register(plugin);
     }
 
     @Test
-    public void testHazelcastConfig() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                String content = loadLogfile();
-                assertNotNull(content);
+    public void register_whenMonitorEnabled_andPluginDisabled() {
+        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
 
-                assertTrue(content.contains("Hazelcast Config"));
-            }
-        });
+        performanceMonitor.start();
+        PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
+        when(plugin.getPeriodMillis()).thenReturn(0l);
+
+        performanceMonitor.register(plugin);
+
+        assertEquals(0, performanceMonitor.staticTasks.get().length);
     }
 
     @Test
-    public void testMetricsRegistry() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                String content = loadLogfile();
-                assertNotNull(content);
+    public void register_whenMonitorEnabled_andPluginStatic() {
+        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+        performanceMonitor.start();
 
-                assertTrue(content.contains("Metrics"));
-                assertTrue(content.contains("operation.completed.count"));
-            }
-        });
+
+        performanceMonitor.start();
+        PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
+        when(plugin.getPeriodMillis()).thenReturn(PerformanceMonitorPlugin.STATIC);
+
+        performanceMonitor.register(plugin);
+
+        assertArrayEquals(new PerformanceMonitorPlugin[]{plugin}, performanceMonitor.staticTasks.get());
     }
 
     @Test
-    public void testSystemProperties() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                String content = loadLogfile();
-                assertNotNull(content);
-                assertTrue(content.contains("System Properties"));
-                assertTrue(content.contains("java.home"));
-            }
-        });
+    public void start_whenDisabled() {
+        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "false"));
+        performanceMonitor.start();
+
+        assertNull(performanceMonitor.performanceLog);
     }
 
     @Test
-    public void testBuildInfo() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                String content = loadLogfile();
-                assertNotNull(content);
+    public void start_whenEnabled() {
+        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
+                new Config().setProperty(PERFORMANCE_MONITOR_ENABLED, "true"));
+        performanceMonitor.start();
 
-                assertTrue(content.contains("Build Info"));
-                assertTrue(content.contains("BuildNumber"));
-            }
-        });
-    }
-
-    @Test
-    public void testRollover() {
-        String id = generateRandomString(10000);
-
-        final List<File> files = new LinkedList<File>();
-
-        LongProbeFunction f = new LongProbeFunction() {
-            @Override
-            public long get(Object source) throws Exception {
-                return 0;
-            }
-        };
-
-        for (int k = 0; k < 10; k++) {
-            metricsRegistry.register(this, id + k, ProbeLevel.MANDATORY, f);
-        }
-
-        // we run for some time to make sure we get enough rollovers.
-        while (files.size() < 3) {
-            final File file = performanceLogFile.logFile;
-            if (file != null) {
-                if (!files.contains(file)) {
-                    files.add(file);
-                }
-
-                assertTrueEventually(new AssertTask() {
-                    @Override
-                    public void run() throws Exception {
-                        assertExist(file);
-                    }
-                });
-            }
-
-            sleepMillis(100);
-        }
-
-        // eventually all these files should be gone.
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (File file : files) {
-                    assertNotExist(file);
-                }
-            }
-        });
-    }
-
-    private static void assertNotExist(File file) {
-        assertFalse("file:" + file + " should not exist", file.exists());
-    }
-
-    private static void assertExist(File file) {
-        assertTrue("file:" + file + " should exist", file.exists());
-    }
-
-    @Test
-    public void testSlowOperationTest() throws InterruptedException {
-        operationService.invokeOnPartition(null, new MySlowOperation(), 1);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                String content = loadLogfile();
-                assertNotNull(content);
-
-                assertTrue(content.contains("Slow Operations"));
-                assertTrue(content.contains("MySlowOperation"));
-            }
-        });
-    }
-
-    private String loadLogfile() {
-        File file = performanceLogFile.logFile;
-        if (file == null || !file.exists()) {
-            return null;
-        }
-
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            try {
-                StringBuilder sb = new StringBuilder();
-                String line = br.readLine();
-
-                while (line != null) {
-                    sb.append(line);
-                    sb.append('\n');
-                    line = br.readLine();
-                }
-                return sb.toString();
-            } finally {
-                br.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public PerformanceMonitor getPerformanceMonitor(HazelcastInstance hazelcastInstance) {
-        try {
-            Field field = HazelcastInstanceImpl.class.getDeclaredField("performanceMonitor");
-            Node node = getNode(hazelcastInstance);
-            field.setAccessible(true);
-            return (PerformanceMonitor) field.get(node.hazelcastInstance);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static class MySlowOperation extends AbstractOperation {
-        @Override
-        public void run() throws Exception {
-            Thread.sleep(10000);
-        }
+        assertNotNull(performanceMonitor.performanceLog);
     }
 }

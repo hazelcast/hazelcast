@@ -72,10 +72,8 @@ public class RenderTest {
 
         metricsRegistry.render(renderer);
 
-        verify(renderer).start();
         verify(renderer).renderLong("foo", 10);
         verify(renderer).renderLong("bar", 20);
-        verify(renderer).finish();
         verifyNoMoreInteractions(renderer);
     }
 
@@ -88,10 +86,8 @@ public class RenderTest {
 
         metricsRegistry.render(renderer);
 
-        verify(renderer).start();
         verify(renderer).renderDouble("foo", 10);
         verify(renderer).renderDouble("bar", 20);
-        verify(renderer).finish();
         verifyNoMoreInteractions(renderer);
     }
 
@@ -111,9 +107,7 @@ public class RenderTest {
 
         metricsRegistry.render(renderer);
 
-        verify(renderer).start();
         verify(renderer).renderException("foo", ex);
-        verify(renderer).finish();
         verifyNoMoreInteractions(renderer);
     }
 

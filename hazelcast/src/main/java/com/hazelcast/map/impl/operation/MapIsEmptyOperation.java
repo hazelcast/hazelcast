@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
@@ -34,8 +32,6 @@ public class MapIsEmptyOperation extends MapOperation implements PartitionAwareO
     }
 
     public void run() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         empty = recordStore.isEmpty();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             LocalMapStatsImpl localMapStatsImpl = mapServiceContext.getLocalMapStatsProvider()

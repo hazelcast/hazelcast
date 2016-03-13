@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -92,17 +91,13 @@ public interface ExecutionService {
 
     ScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit);
 
-    ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit);
 
-    ScheduledFuture<?> scheduleAtFixedRate(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
 
-    ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit);
+    TaskScheduler getGlobalTaskScheduler();
 
-    ScheduledFuture<?> scheduleWithFixedDelay(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
-
-    ScheduledExecutorService getDefaultScheduledExecutor();
-
-    ScheduledExecutorService getScheduledExecutor(String name);
+    TaskScheduler getTaskScheduler(String name);
 
     <V> ICompletableFuture<V> asCompletableFuture(Future<V> future);
 }

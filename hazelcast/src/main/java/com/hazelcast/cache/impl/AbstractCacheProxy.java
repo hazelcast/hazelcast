@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -352,7 +352,7 @@ abstract class AbstractCacheProxy<K, V>
                     .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
-                total += (Integer) serializationService.toObject(result);
+                total += (Integer) getNodeEngine().toObject(result);
             }
             return total;
         } catch (Throwable t) {
@@ -361,7 +361,7 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
-        final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        final IPartitionService partitionService = getNodeEngine().getPartitionService();
         final int partitions = partitionService.getPartitionCount();
         final int capacity = Math.min(partitions, keys.size());
         final Set<Integer> partitionIds = new HashSet<Integer>(capacity);

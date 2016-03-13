@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         Collection<MultiMapRecord> coll = getInternal(dataKey);
         Collection<V> collection = new ArrayList<V>(coll.size());
         for (MultiMapRecord record : coll) {
-            collection.add((V) getNodeEngine().toObject(record.getObject()));
+            collection.add((V) toObjectIfNeeded(record.getObject()));
         }
         return collection;
     }
@@ -76,7 +76,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         Collection<MultiMapRecord> coll = removeAllInternal(dataKey);
         Collection<V> result = new ArrayList<V>(coll.size());
         for (MultiMapRecord record : coll) {
-            result.add((V) getNodeEngine().toObject(record.getObject()));
+            result.add((V) toObjectIfNeeded(record.getObject()));
         }
         return result;
     }

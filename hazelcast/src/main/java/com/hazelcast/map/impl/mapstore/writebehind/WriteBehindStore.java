@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,38 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.map.impl.MapStoreWrapper;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.IMap;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Write behind map data store implementation.
@@ -48,28 +61,26 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      */
     private static final DelayedEntry TRANSIENT = DelayedEntries.emptyDelayedEntry();
 
-    private final long writeDelayTime;
-
-    private final int partitionId;
+    /**
+     * Sequence number of store operations.
+     */
+    private final AtomicLong sequence = new AtomicLong(0);
 
     /**
-     * Number of issued flush operations.
-     * Flushes may be caused by an eviction. Instead of directly flushing entries
-     * upon eviction, the flushes are counted and immediately processed
-     * in {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
+     * Holds the sequences according to insertion order at which {@link IMap#flush()} was called.
+     * <p/>
+     * Upon end of a store operation, these sequences are used to find whether there is any flush request
+     * waiting for the stored sequence, and if there is any, {@link NotifyMapFlushOperation} is send to notify
+     * {@link com.hazelcast.map.impl.operation.AwaitMapFlushOperation AwaitMapFlushOperation}
+     *
+     * @see WriteBehindStore#notifyFlush
      */
-    private final AtomicInteger flushCounter;
-
-    private final InMemoryFormat inMemoryFormat;
+    private final Queue<Sequence> flushSequences = new ConcurrentLinkedQueue<Sequence>();
 
     /**
      * @see {@link com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)}
      */
     private final boolean coalesce;
-
-    private WriteBehindQueue<DelayedEntry> writeBehindQueue;
-
-    private WriteBehindProcessor writeBehindProcessor;
 
     /**
      * {@code stagingArea} is a temporary living space for evicted data if we are using a write-behind map store.
@@ -90,17 +101,28 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * We also do not want to make duplicate map-store calls for a key. This is why we use the staging area instead of the
      * direct flushing option to map-store.
      */
-    private final ConcurrentMap<Data, DelayedEntry> stagingArea;
+    private final ConcurrentMap<Data, DelayedEntry> stagingArea = new ConcurrentHashMap<Data, DelayedEntry>();
+    private final OperationService operationService;
+    private final InMemoryFormat inMemoryFormat;
+    private final NodeEngine nodeEngine;
+    private final String mapName;
+    private final int partitionId;
+    private final long writeDelayMillis;
 
-    public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
-                            long writeDelayTime, int partitionId, InMemoryFormat inMemoryFormat, boolean coalesce) {
-        super(store, serializationService);
-        this.writeDelayTime = writeDelayTime;
+    private WriteBehindProcessor writeBehindProcessor;
+    private WriteBehindQueue<DelayedEntry> writeBehindQueue;
+
+    public WriteBehindStore(MapStoreContext mapStoreContext, int partitionId) {
+        super(mapStoreContext.getMapStoreWrapper(),
+                mapStoreContext.getMapServiceContext().getNodeEngine().getSerializationService());
+        MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
+        this.writeDelayMillis = SECONDS.toMillis(mapStoreConfig.getWriteDelaySeconds());
         this.partitionId = partitionId;
-        this.stagingArea = new ConcurrentHashMap<Data, DelayedEntry>();
-        this.flushCounter = new AtomicInteger(0);
-        this.inMemoryFormat = inMemoryFormat;
-        this.coalesce = coalesce;
+        this.inMemoryFormat = getInMemoryFormat(mapStoreContext);
+        this.coalesce = mapStoreConfig.isWriteCoalescing();
+        this.mapName = mapStoreContext.getMapName();
+        this.nodeEngine = mapStoreContext.getMapServiceContext().getNodeEngine();
+        this.operationService = nodeEngine.getOperationService();
     }
 
 
@@ -125,7 +147,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             value = toData(value);
         }
 
-        long storeTime = now + writeDelayTime;
+        long storeTime = now + writeDelayMillis;
         DelayedEntry<Data, Object> delayedEntry
                 = DelayedEntries.createDefault(key, value, storeTime, partitionId);
 
@@ -137,6 +159,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     public void add(DelayedEntry<Data, Object> delayedEntry) {
         writeBehindQueue.addLast(delayedEntry);
         stagingArea.put(delayedEntry.getKey(), delayedEntry);
+
+        delayedEntry.setSequence(sequence.incrementAndGet());
     }
 
     @Override
@@ -159,7 +183,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             key = toData(key);
         }
 
-        long storeTime = now + writeDelayTime;
+        long storeTime = now + writeDelayMillis;
         DelayedEntry<Data, Object> delayedEntry
                 = DelayedEntries.createWithoutValue(key, storeTime, partitionId);
 
@@ -172,10 +196,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void clear() {
+    public void reset() {
         writeBehindQueue.clear();
         stagingArea.clear();
-        flushCounter.set(0);
+        sequence.set(0);
+        flushSequences.clear();
     }
 
     @Override
@@ -255,14 +280,38 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
                 || !writeBehindQueue.contains(DelayedEntries.createWithoutValue(key))) {
             return null;
         }
-        flushCounter.incrementAndGet();
 
+        addAndGetSequence(false);
         return value;
     }
 
     @Override
-    public Collection<Data> flush() {
-        return writeBehindProcessor.flush(writeBehindQueue);
+    public long softFlush() {
+        int size = writeBehindQueue.size();
+        if (size == 0) {
+            return 0;
+        }
+        return addAndGetSequence(true);
+    }
+
+    /**
+     * @param fullFlush {@code true} if flush cause is {@link IMap#flush()},
+     *                  {@code false} for flushes caused by eviction.
+     * @return last store operations sequence number
+     */
+    private long addAndGetSequence(boolean fullFlush) {
+        Sequence sequence = new Sequence(this.sequence.get(), fullFlush);
+        flushSequences.add(sequence);
+        return sequence.getSequence();
+    }
+
+    @Override
+    public void hardFlush() {
+        if (writeBehindQueue.size() == 0) {
+            return;
+        }
+
+        writeBehindProcessor.flush(writeBehindQueue);
     }
 
     public WriteBehindQueue<DelayedEntry> getWriteBehindQueue() {
@@ -277,11 +326,58 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         this.writeBehindProcessor = writeBehindProcessor;
     }
 
-    public AtomicInteger getFlushCounter() {
-        return flushCounter;
+    public void setSequence(long newSequence) {
+        this.sequence.set(newSequence);
     }
 
-    void removeFromStagingArea(DelayedEntry delayedEntry) {
+    public void notifyFlush() {
+        long nextSequenceNumber = sequence.get() + 1;
+        DelayedEntry firstEntry = writeBehindQueue.peek();
+        if (firstEntry == null) {
+            if (!flushSequences.isEmpty()) {
+                findAwaitingFlushesAndSendNotification(nextSequenceNumber);
+            }
+        } else {
+            findAwaitingFlushesAndSendNotification(firstEntry.getSequence());
+        }
+
+    }
+
+    private void findAwaitingFlushesAndSendNotification(long lastSequenceInQueue) {
+        final int maxIterationCount = 100;
+
+        Iterator<Sequence> iterator = flushSequences.iterator();
+        int iterationCount = 0;
+        while (iterator.hasNext()) {
+            Sequence flushSequence = iterator.next();
+            if (flushSequence.getSequence() < lastSequenceInQueue) {
+                iterator.remove();
+                executeNotifyOperation(flushSequence);
+            }
+
+            if (++iterationCount == maxIterationCount) {
+                break;
+            }
+        }
+    }
+
+    private void executeNotifyOperation(Sequence flushSequence) {
+        if (!flushSequence.isFullFlush()
+                || !nodeEngine.getPartitionService().isPartitionOwner(partitionId)) {
+            return;
+        }
+
+        Operation operation = new NotifyMapFlushOperation(mapName, flushSequence.getSequence());
+        operation.setServiceName(SERVICE_NAME)
+                .setNodeEngine(nodeEngine)
+                .setPartitionId(partitionId)
+                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
+                .setOperationResponseHandler(createEmptyResponseHandler());
+
+        operationService.executeOperation(operation);
+    }
+
+    protected void removeFromStagingArea(DelayedEntry delayedEntry) {
         if (delayedEntry == null) {
             return;
         }
@@ -297,4 +393,68 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return delayedEntry;
     }
 
+    public Queue<Sequence> getFlushSequences() {
+        return flushSequences;
+    }
+
+    public long getSequenceToFlush() {
+        final int maxIterationCount = 100;
+
+        Iterator<Sequence> iterator = flushSequences.iterator();
+        long sequenceNumber = 0L;
+        int iterationCount = 0;
+        while (iterator.hasNext()) {
+            Sequence sequence = iterator.next();
+            sequenceNumber = sequence.getSequence();
+
+            if (++iterationCount == maxIterationCount) {
+                break;
+            }
+        }
+        return sequenceNumber;
+    }
+
+    public void setFlushSequences(Queue<Sequence> flushSequences) {
+        this.flushSequences.addAll(flushSequences);
+    }
+
+    private static InMemoryFormat getInMemoryFormat(MapStoreContext mapStoreContext) {
+        MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+
+        Config config = nodeEngine.getConfig();
+        String mapName = mapStoreContext.getMapName();
+        MapConfig mapConfig = config.findMapConfig(mapName);
+        return mapConfig.getInMemoryFormat();
+    }
+
+    /**
+     * The purpose of this class is to provide distinction
+     * between flushes caused by eviction and {@link IMap#flush()}
+     */
+    public static class Sequence {
+
+        /**
+         * Sequence of the store operation.
+         */
+        private final long sequence;
+
+        /**
+         * When {@code true}, it means {@link IMap#flush()} was called at this sequence.
+         */
+        private final boolean fullFlush;
+
+        public Sequence(long sequence, boolean fullFlush) {
+            this.sequence = sequence;
+            this.fullFlush = fullFlush;
+        }
+
+        public long getSequence() {
+            return sequence;
+        }
+
+        public boolean isFullFlush() {
+            return fullFlush;
+        }
+    }
 }

@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.cluster.impl;
+
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+
+public class JoinMessage implements DataSerializable {
+
+    protected byte packetVersion;
+    protected int buildNumber;
+    protected Address address;
+    protected String uuid;
+    protected boolean liteMember;
+    protected ConfigCheck configCheck;
+    protected Collection<Address> memberAddresses;
+    protected int dataMemberCount;
+
+    public JoinMessage() {
+    }
+
+    public JoinMessage(byte packetVersion, int buildNumber, Address address,
+                       String uuid, boolean liteMember, ConfigCheck configCheck) {
+        this(packetVersion, buildNumber, address, uuid, liteMember, configCheck, Collections.<Address>emptySet(), 0);
+    }
+
+    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, boolean liteMember,
+                       ConfigCheck configCheck, Collection<Address> memberAddresses, int dataMemberCount) {
+        this.packetVersion = packetVersion;
+        this.buildNumber = buildNumber;
+        this.address = address;
+        this.uuid = uuid;
+        this.liteMember = liteMember;
+        this.configCheck = configCheck;
+        this.memberAddresses = memberAddresses;
+        this.dataMemberCount = dataMemberCount;
+    }
+
+    public byte getPacketVersion() {
+        return packetVersion;
+    }
+
+    public int getBuildNumber() {
+        return buildNumber;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
+    public ConfigCheck getConfigCheck() {
+        return configCheck;
+    }
+
+    public int getMemberCount() {
+        return memberAddresses != null ? memberAddresses.size() : 0;
+    }
+
+    public Collection<Address> getMemberAddresses() {
+        return memberAddresses != null ? memberAddresses : Collections.<Address>emptySet();
+    }
+
+    public int getDataMemberCount() {
+        return dataMemberCount;
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        packetVersion = in.readByte();
+        buildNumber = in.readInt();
+        address = new Address();
+        address.readData(in);
+        uuid = in.readUTF();
+        configCheck = new ConfigCheck();
+        configCheck.readData(in);
+        liteMember = in.readBoolean();
+
+        int memberCount = in.readInt();
+        memberAddresses = new ArrayList<Address>(memberCount);
+        for (int i = 0; i < memberCount; i++) {
+            Address member = new Address();
+            member.readData(in);
+            memberAddresses.add(member);
+        }
+        dataMemberCount = in.readInt();
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeByte(packetVersion);
+        out.writeInt(buildNumber);
+        address.writeData(out);
+        out.writeUTF(uuid);
+        configCheck.writeData(out);
+        out.writeBoolean(liteMember);
+
+        int memberCount = getMemberCount();
+        out.writeInt(memberCount);
+        if (memberCount > 0) {
+            for (Address member : memberAddresses) {
+                member.writeData(out);
+            }
+        }
+        out.writeInt(dataMemberCount);
+    }
+
+    @Override
+    public String toString() {
+        return "JoinMessage{"
+                + "packetVersion=" + packetVersion
+                + ", buildNumber=" + buildNumber
+                + ", address=" + address
+                + ", uuid='" + uuid + '\''
+                + ", liteMember=" + liteMember
+                + ", memberCount=" + getMemberCount()
+                + ", dataMemberCount=" + dataMemberCount
+                + '}';
+    }
+
+}

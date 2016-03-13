@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,22 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.ItemCounter;
-
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.hazelcast.util.StringUtil.getLineSeperator;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Tracks the load of of NonBlockingIOThread(s) and creates a mapping between NonBlockingIOThread -> Handler.
- *
+ * <p/>
  * This class is not thread-safe with the exception of
  * {@link #addHandler(MigratableHandler)}   and
  * {@link #removeHandler(MigratableHandler)}
@@ -52,9 +53,11 @@ class LoadTracker {
     private final ItemCounter<MigratableHandler> handlerEventsCounter = new ItemCounter<MigratableHandler>();
 
     //contains all known handlers
-    private final Set<MigratableHandler> handlers = new CopyOnWriteArraySet<MigratableHandler>();
+    private final Set<MigratableHandler> handlers = new HashSet<MigratableHandler>();
 
     private final LoadImbalance imbalance;
+
+    private final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
 
     LoadTracker(NonBlockingIOThread[] ioThreads, ILogger logger) {
         this.logger = logger;
@@ -76,6 +79,7 @@ class LoadTracker {
      * @return recalculated imbalance
      */
     LoadImbalance updateImbalance() {
+        handleAddedOrRemovedConnections();
         clearWorkingImbalance();
         updateNewWorkingImbalance();
         updateNewFinalImbalance();
@@ -83,9 +87,28 @@ class LoadTracker {
         return imbalance;
     }
 
+    private void handleAddedOrRemovedConnections() {
+        Iterator<Runnable> iterator = tasks.iterator();
+        while (iterator.hasNext()) {
+            Runnable task = iterator.next();
+            task.run();
+            iterator.remove();
+        }
+    }
+
     // just for testing
     Set<MigratableHandler> getHandlers() {
         return handlers;
+    }
+
+    // just for testing
+    ItemCounter<MigratableHandler> getLastEventCounter() {
+        return lastEventCounter;
+    }
+
+    // just for testing
+    ItemCounter<MigratableHandler> getHandlerEventsCounter() {
+        return handlerEventsCounter;
     }
 
     private void updateNewFinalImbalance() {
@@ -111,6 +134,17 @@ class LoadTracker {
             }
         }
     }
+
+    public void notifyHandlerAdded(MigratableHandler handler) {
+        AddHandlerTask addHandlerTask = new AddHandlerTask(handler);
+        tasks.offer(addHandlerTask);
+    }
+
+    public void notifyHandlerRemoved(MigratableHandler handler) {
+        RemoveHandlerTask removeHandlerTask = new RemoveHandlerTask(handler);
+        tasks.offer(removeHandlerTask);
+    }
+
 
     private void updateNewWorkingImbalance() {
         for (MigratableHandler handler : handlers) {
@@ -147,6 +181,8 @@ class LoadTracker {
 
     void removeHandler(MigratableHandler handler) {
         handlers.remove(handler);
+        handlerEventsCounter.remove(handler);
+        lastEventCounter.remove(handler);
     }
 
     private void printDebugTable() {
@@ -159,9 +195,9 @@ class LoadTracker {
         if (minThread == null || maxThread == null) {
             return;
         }
-        StringBuilder sb = new StringBuilder(getLineSeperator())
+        StringBuilder sb = new StringBuilder(LINE_SEPARATOR)
                 .append("------------")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
         Long eventCountPerSelector = selectorEvents.get(minThread);
 
         sb.append("Min Selector ")
@@ -170,7 +206,7 @@ class LoadTracker {
                 .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ").
-                append(getLineSeperator());
+                append(LINE_SEPARATOR);
         appendSelectorInfo(minThread, selectorToHandlers, sb);
 
         eventCountPerSelector = selectorEvents.get(maxThread);
@@ -180,11 +216,11 @@ class LoadTracker {
                 .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
         appendSelectorInfo(maxThread, selectorToHandlers, sb);
 
         sb.append("Other Selectors: ")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
 
         for (NonBlockingIOThread selector : ioThreads) {
             if (!selector.equals(minThread) && !selector.equals(maxThread)) {
@@ -194,12 +230,12 @@ class LoadTracker {
                         .append(" contains ")
                         .append(eventCountPerSelector)
                         .append(" and has these handlers: ")
-                        .append(getLineSeperator());
+                        .append(LINE_SEPARATOR);
                 appendSelectorInfo(selector, selectorToHandlers, sb);
             }
         }
         sb.append("------------")
-                .append(getLineSeperator());
+                .append(LINE_SEPARATOR);
         logger.finest(sb.toString());
     }
 
@@ -213,8 +249,47 @@ class LoadTracker {
             sb.append(selectionHandler)
                     .append(":  ")
                     .append(eventCountPerHandler)
-                    .append(getLineSeperator());
+                    .append(LINE_SEPARATOR);
         }
-        sb.append(getLineSeperator());
+        sb.append(LINE_SEPARATOR);
     }
+
+    class RemoveHandlerTask implements Runnable {
+
+        private final MigratableHandler handler;
+
+        public RemoveHandlerTask(MigratableHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public void run() {
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Removing handler : " + handler);
+            }
+
+            removeHandler(handler);
+        }
+    }
+
+    class AddHandlerTask implements Runnable {
+
+        private final MigratableHandler handler;
+
+        public AddHandlerTask(MigratableHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public void run() {
+
+            if (logger.isFinestEnabled()) {
+                logger.finest("Adding handler : " + handler);
+            }
+
+            addHandler(handler);
+        }
+    }
+
 }

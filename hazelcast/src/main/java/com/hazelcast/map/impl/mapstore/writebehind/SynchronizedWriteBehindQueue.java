@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,13 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         }
     }
 
+    @Override
+    public E peek() {
+        synchronized (mutex) {
+            return queue.peek();
+        }
+    }
+
     /**
      * Removes the first occurrence of the specified element in this queue
      * when searching it by starting from the head of this queue.
@@ -106,16 +113,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public void getFrontByTime(long time, Collection<E> collection) {
+    public void filter(IPredicate<E> predicate, Collection<E> collection) {
         synchronized (mutex) {
-            queue.getFrontByTime(time, collection);
-        }
-    }
-
-    @Override
-    public void getFrontByNumber(int numberOfElements, Collection<E> collection) {
-        synchronized (mutex) {
-            queue.getFrontByNumber(numberOfElements, collection);
+            queue.filter(predicate, collection);
         }
     }
 

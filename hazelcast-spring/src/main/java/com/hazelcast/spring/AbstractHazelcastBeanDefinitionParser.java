@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -31,6 +33,7 @@ import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.Assert;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -329,6 +332,11 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handleProperties(final Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
+            ManagedMap properties = parseProperties(node);
+            beanDefinitionBuilder.addPropertyValue("properties", properties);
+        }
+
+        protected ManagedMap parseProperties(final Node node) {
             ManagedMap properties = new ManagedMap();
             for (Node n : childElements(node)) {
                 final String name = cleanNodeName(n);
@@ -340,7 +348,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 final String value = getTextContent(n);
                 properties.put(propertyName, value);
             }
-            beanDefinitionBuilder.addPropertyValue("properties", properties);
+            return properties;
         }
 
         protected void handleSpringAware() {
@@ -369,6 +377,78 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 );
             }
             return evictionConfig;
+        }
+
+        protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {
+            final BeanDefinitionBuilder discoveryConfigBuilder =
+                    createBeanBuilder(DiscoveryConfig.class);
+            final ManagedList discoveryStrategyConfigs = new ManagedList();
+            for (Node child : childElements(node)) {
+                final String name = cleanNodeName(child);
+                if ("discovery-strategy".equals(name)) {
+                    handleDiscoveryStrategy(child, discoveryStrategyConfigs);
+                } else if ("node-filter".equals(name)) {
+                    handleDiscoveryNodeFilter(child, discoveryConfigBuilder);
+                } else if ("discovery-service-provider".equals(name)) {
+                    handleDiscoveryServiceProvider(child, discoveryConfigBuilder);
+                }
+            }
+            discoveryConfigBuilder.addPropertyValue("discoveryStrategyConfigs", discoveryStrategyConfigs);
+            joinConfigBuilder.addPropertyValue("discoveryConfig", discoveryConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleDiscoveryServiceProvider(Node node, BeanDefinitionBuilder discoveyConfigBuilder) {
+            final NamedNodeMap attrs = node.getAttributes();
+            Node implNode = attrs.getNamedItem("implementation");
+            String implementation = implNode != null ? getTextContent(implNode) : null;
+            Assert.isTrue(implementation != null,
+                    "`implementation' attribute is required "
+                            + "to create DiscoveryServiceProvider!");
+            discoveyConfigBuilder.addPropertyReference("discoveryServiceProvider", implementation);
+        }
+
+        private void handleDiscoveryNodeFilter(Node node, BeanDefinitionBuilder discoveryConfigBuilder) {
+            final NamedNodeMap attrs = node.getAttributes();
+            Node classNameNode = attrs.getNamedItem("class-name");
+            String className = classNameNode != null ? getTextContent(classNameNode) : null;
+            Node implNode = attrs.getNamedItem("implementation");
+            String implementation = implNode != null ? getTextContent(implNode) : null;
+            Assert.isTrue(className != null || implementation != null,
+                    "One of 'class-name' or 'implementation' attributes is required "
+                            + "to create NodeFilter!");
+            discoveryConfigBuilder.addPropertyValue("nodeFilterClass", className);
+            if (implementation != null) {
+                discoveryConfigBuilder.addPropertyReference("nodeFilter", implementation);
+            }
+        }
+
+        private void handleDiscoveryStrategy(Node node, ManagedList discoveryStrategyConfigs) {
+            final BeanDefinitionBuilder discoveryStrategyConfigBuilder =
+                    createBeanBuilder(DiscoveryStrategyConfig.class);
+            final NamedNodeMap attrs = node.getAttributes();
+            Node classNameNode = attrs.getNamedItem("class-name");
+            String className = classNameNode != null ? getTextContent(classNameNode) : null;
+            Node implNode = attrs.getNamedItem("discovery-strategy-factory");
+            String implementation = implNode != null ? getTextContent(implNode) : null;
+            Assert.isTrue(className != null || implementation != null,
+                    "One of 'class-name' or 'implementation' attributes is required "
+                            + "to create DiscoveryStrategyConfig!");
+            if (implementation != null) {
+                discoveryStrategyConfigBuilder.addConstructorArgReference(implementation);
+            } else if (className != null) {
+                discoveryStrategyConfigBuilder.addConstructorArgValue(className);
+            }
+
+            for (Node child : childElements(node)) {
+                final String name = cleanNodeName(child);
+                if ("properties".equals(name)) {
+                    ManagedMap properties = parseProperties(child);
+                    if (!properties.isEmpty()) {
+                        discoveryStrategyConfigBuilder.addConstructorArgValue(properties);
+                    }
+                }
+            }
+            discoveryStrategyConfigs.add(discoveryStrategyConfigBuilder.getBeanDefinition());
         }
     }
 }

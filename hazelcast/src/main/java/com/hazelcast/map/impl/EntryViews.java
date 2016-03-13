@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public final class EntryViews {
         final SimpleEntryView simpleEntryView = new SimpleEntryView(key, value);
         simpleEntryView.setCost(record.getCost());
         simpleEntryView.setVersion(record.getVersion());
-        simpleEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
+        simpleEntryView.setHits(record.getHits());
         simpleEntryView.setLastAccessTime(record.getLastAccessTime());
         simpleEntryView.setLastUpdateTime(record.getLastUpdateTime());
         simpleEntryView.setTtl(record.getTtl());
@@ -54,7 +54,6 @@ public final class EntryViews {
 
         final RecordStatistics statistics = record.getStatistics();
         if (statistics != null) {
-            simpleEntryView.setHits(statistics.getHits());
             simpleEntryView.setExpirationTime(statistics.getExpirationTime());
             simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
         }
@@ -70,14 +69,13 @@ public final class EntryViews {
         final LazyEntryView lazyEntryView = new LazyEntryView(key, value, serializationService, mergePolicy);
         lazyEntryView.setCost(record.getCost());
         lazyEntryView.setVersion(record.getVersion());
-        lazyEntryView.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
+        lazyEntryView.setHits(record.getHits());
         lazyEntryView.setLastAccessTime(record.getLastAccessTime());
         lazyEntryView.setLastUpdateTime(record.getLastUpdateTime());
         lazyEntryView.setTtl(record.getTtl());
         lazyEntryView.setCreationTime(record.getCreationTime());
         final RecordStatistics statistics = record.getStatistics();
         if (statistics != null) {
-            lazyEntryView.setHits(statistics.getHits());
             lazyEntryView.setExpirationTime(statistics.getExpirationTime());
             lazyEntryView.setLastStoredTime(statistics.getLastStoredTime());
         }
@@ -85,7 +83,8 @@ public final class EntryViews {
     }
 
     public static <K, V> EntryView<K, V> convertToLazyEntryView(EntryView entryView,
-            SerializationService serializationService, MapMergePolicy mergePolicy) {
+                                                                SerializationService serializationService,
+                                                                MapMergePolicy mergePolicy) {
         final LazyEntryView lazyEntryView = new LazyEntryView(entryView.getKey(), entryView.getValue(),
                 serializationService, mergePolicy);
         lazyEntryView.setCost(entryView.getCost());

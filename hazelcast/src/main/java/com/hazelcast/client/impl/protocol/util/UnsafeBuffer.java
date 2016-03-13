@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,23 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.UnsafeHelper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
+
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 
 /**
  * Supports regular, byte ordered, access to an underlying buffer.
  */
-@SuppressFBWarnings({ "EI_EXPOSE_REP", "EI_EXPOSE_REP2" })
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class UnsafeBuffer implements ClientProtocolBuffer {
     private static final String DISABLE_BOUNDS_CHECKS_PROP_NAME = "hazelcast.disable.bounds.checks";
     private static final boolean SHOULD_BOUNDS_CHECK = !Boolean.getBoolean(DISABLE_BOUNDS_CHECKS_PROP_NAME);
 
     private static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
     private static final ByteOrder PROTOCOL_BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
-    private static final Unsafe UNSAFE = UnsafeHelper.UNSAFE;
-    private static final long ARRAY_BASE_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
+    private static final long ARRAY_BASE_OFFSET = MEM.arrayBaseOffset(byte[].class);
 
     private byte[] byteArray;
     private long addressOffset;
@@ -73,7 +72,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
     public long getLong(final int index) {
         boundsCheck(index, Bits.LONG_SIZE_IN_BYTES);
 
-        long bits = UNSAFE.getLong(byteArray, addressOffset + index);
+        long bits = MEM.getLong(byteArray, addressOffset + index);
         if (NATIVE_BYTE_ORDER != PROTOCOL_BYTE_ORDER) {
             bits = Long.reverseBytes(bits);
         }
@@ -90,7 +89,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
             bits = Long.reverseBytes(bits);
         }
 
-        UNSAFE.putLong(byteArray, addressOffset + index, bits);
+        MEM.putLong(byteArray, addressOffset + index, bits);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -99,7 +98,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
     public int getInt(final int index) {
         boundsCheck(index, Bits.INT_SIZE_IN_BYTES);
 
-        int bits = UNSAFE.getInt(byteArray, addressOffset + index);
+        int bits = MEM.getInt(byteArray, addressOffset + index);
         if (NATIVE_BYTE_ORDER != PROTOCOL_BYTE_ORDER) {
             bits = Integer.reverseBytes(bits);
         }
@@ -116,7 +115,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
             bits = Integer.reverseBytes(bits);
         }
 
-        UNSAFE.putInt(byteArray, addressOffset + index, bits);
+        MEM.putInt(byteArray, addressOffset + index, bits);
     }
 
 
@@ -126,7 +125,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
     public short getShort(final int index) {
         boundsCheck(index, Bits.SHORT_SIZE_IN_BYTES);
 
-        short bits = UNSAFE.getShort(byteArray, addressOffset + index);
+        short bits = MEM.getShort(byteArray, addressOffset + index);
         if (NATIVE_BYTE_ORDER != PROTOCOL_BYTE_ORDER) {
             bits = Short.reverseBytes(bits);
         }
@@ -143,21 +142,21 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
             bits = Short.reverseBytes(bits);
         }
 
-        UNSAFE.putShort(byteArray, addressOffset + index, bits);
+        MEM.putShort(byteArray, addressOffset + index, bits);
     }
 
     @Override
     public byte getByte(final int index) {
         boundsCheck(index, Bits.BYTE_SIZE_IN_BYTES);
 
-        return UNSAFE.getByte(byteArray, addressOffset + index);
+        return MEM.getByte(byteArray, addressOffset + index);
     }
 
     @Override
     public void putByte(final int index, final byte value) {
         boundsCheck(index, Bits.BYTE_SIZE_IN_BYTES);
 
-        UNSAFE.putByte(byteArray, addressOffset + index, value);
+        MEM.putByte(byteArray, addressOffset + index, value);
     }
 
     @Override
@@ -170,7 +169,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
         boundsCheck(index, length);
         boundsCheck(dst, offset, length);
 
-        UNSAFE.copyMemory(byteArray, addressOffset + index, dst, ARRAY_BASE_OFFSET + offset, length);
+        MEM.copyMemory(byteArray, addressOffset + index, dst, ARRAY_BASE_OFFSET + offset, length);
     }
 
     @Override
@@ -183,7 +182,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
         boundsCheck(index, length);
         boundsCheck(src, offset, length);
 
-        UNSAFE.copyMemory(src, ARRAY_BASE_OFFSET + offset, byteArray, addressOffset + index, length);
+        MEM.copyMemory(src, ARRAY_BASE_OFFSET + offset, byteArray, addressOffset + index, length);
     }
 
     @Override

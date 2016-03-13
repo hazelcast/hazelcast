@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,14 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 
-public class GetEntryViewOperation extends KeyBasedMapOperation implements ReadonlyOperation, WaitSupport {
+public class GetEntryViewOperation extends KeyBasedMapOperation implements ReadonlyOperation, BlockingOperation {
 
     private EntryView<Data, Data> result;
 
@@ -43,9 +41,6 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements Reado
 
     @Override
     public void run() {
-        MapService mapService = getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());

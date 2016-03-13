@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -35,8 +33,6 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
     protected long threadId;
     protected Data dataValue;
     protected long ttl = DEFAULT_TTL;
-
-    protected transient RecordStore recordStore;
 
     public KeyBasedMapOperation() {
     }
@@ -63,12 +59,6 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
         this.dataKey = dataKey;
         this.dataValue = dataValue;
         this.ttl = ttl;
-    }
-
-    @Override
-    public void innerBeforeRun() throws Exception {
-        super.innerBeforeRun();
-        recordStore = mapServiceContext.getPartitionContainer(getPartitionId()).getRecordStore(name);
     }
 
     @Override
@@ -105,11 +95,6 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
     @Override
     public boolean returnsResponse() {
         return true;
-    }
-
-    protected void evict() {
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
     }
 
     @Override

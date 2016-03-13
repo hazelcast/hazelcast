@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,15 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 
 public final class GetOperation extends KeyBasedMapOperation
-        implements IdentifiedDataSerializable, WaitSupport, ReadonlyOperation {
+        implements IdentifiedDataSerializable, BlockingOperation, ReadonlyOperation {
 
     private Object result;
 
@@ -49,7 +48,6 @@ public final class GetOperation extends KeyBasedMapOperation
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         result = recordStore.get(dataKey, false);
         if (defensiveCopy) {
             result = mapServiceContext.toData(result);
@@ -58,7 +56,6 @@ public final class GetOperation extends KeyBasedMapOperation
 
     @Override
     public void afterRun() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         mapServiceContext.interceptAfterGet(name, result);
     }
 

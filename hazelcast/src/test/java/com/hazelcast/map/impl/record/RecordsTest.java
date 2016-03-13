@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,9 +126,8 @@ public class RecordsTest extends HazelcastTestSupport {
         assertEquals(now, record.getCreationTime());
         assertEquals(now, record.getLastAccessTime());
         assertEquals(now, record.getLastUpdateTime());
-        assertEquals(12, record.getEvictionCriteriaNumber());
         assertEquals(123, record.getVersion());
-        assertEquals(1234, record.getStatistics().getHits());
+        assertEquals(12, record.getHits());
         assertEquals(now, record.getStatistics().getExpirationTime());
         assertEquals(now, record.getStatistics().getLastStoredTime());
     }
@@ -139,13 +138,12 @@ public class RecordsTest extends HazelcastTestSupport {
         when(recordInfo.getCreationTime()).thenReturn(now);
         when(recordInfo.getLastAccessTime()).thenReturn(now);
         when(recordInfo.getLastUpdateTime()).thenReturn(now);
-        when(recordInfo.getEvictionCriteriaNumber()).thenReturn(12L);
+        when(recordInfo.getHits()).thenReturn(12L);
         when(recordInfo.getVersion()).thenReturn(123L);
 
         RecordStatistics statistics = mock(RecordStatistics.class);
         when(statistics.getExpirationTime()).thenReturn(now);
         when(statistics.getLastStoredTime()).thenReturn(now);
-        when(statistics.getHits()).thenReturn(1234);
         when(recordInfo.getStatistics()).thenReturn(statistics);
         return recordInfo;
     }
@@ -161,9 +159,8 @@ public class RecordsTest extends HazelcastTestSupport {
         assertEquals(now, recordInfo.getCreationTime());
         assertEquals(now, recordInfo.getLastAccessTime());
         assertEquals(now, recordInfo.getLastUpdateTime());
-        assertEquals(12, recordInfo.getEvictionCriteriaNumber());
+        assertEquals(12, recordInfo.getHits());
         assertEquals(123, recordInfo.getVersion());
-        assertEquals(1234, recordInfo.getStatistics().getHits());
         assertEquals(now, recordInfo.getStatistics().getExpirationTime());
         assertEquals(now, recordInfo.getStatistics().getLastStoredTime());
     }
@@ -174,12 +171,11 @@ public class RecordsTest extends HazelcastTestSupport {
         when(record.getCreationTime()).thenReturn(now);
         when(record.getLastAccessTime()).thenReturn(now);
         when(record.getLastUpdateTime()).thenReturn(now);
-        when(record.getEvictionCriteriaNumber()).thenReturn(12L);
+        when(record.getHits()).thenReturn(12L);
         when(record.getVersion()).thenReturn(123L);
         when(record.getStatistics()).thenReturn(((RecordStatistics) record));
         when(((RecordStatistics) record).getExpirationTime()).thenReturn(now);
         when(((RecordStatistics) record).getLastStoredTime()).thenReturn(now);
-        when(((RecordStatistics) record).getHits()).thenReturn(1234);
         return record;
     }
 

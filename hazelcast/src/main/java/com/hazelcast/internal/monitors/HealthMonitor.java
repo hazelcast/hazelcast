@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,13 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.monitors.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.monitors.HealthMonitorLevel.valueOf;
-import static com.hazelcast.util.StringUtil.getLineSeperator;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry} to provides some clues
- * about the internal Hazelcast state.
+ * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry}
+ * to provide some clues about the internal Hazelcast state.
  * <p/>
  * Health monitor can be configured with system properties.
  * <p/>
@@ -48,12 +48,19 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p/>
  * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
+ * <p/>
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
+ * Threshold: Percentage of max memory currently in use
+ * <p/>
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
+ * Threshold: CPU system/process load
  */
 public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
-    private static final double THRESHOLD_PERCENTAGE = 70;
+    private static final int PERCENTAGE_INT_MULTIPLIER = 100;
+    private static final double THRESHOLD_PERCENTAGE_INVOCATIONS = 70;
     private static final double THRESHOLD_INVOCATIONS = 1000;
 
     final HealthMetrics healthMetrics;
@@ -61,6 +68,8 @@ public class HealthMonitor {
     private final ILogger logger;
     private final Node node;
     private final HealthMonitorLevel monitorLevel;
+    private final int thresholdMemoryPercentage;
+    private final int thresholdCPUPercentage;
     private final MetricsRegistry metricRegistry;
     private final HealthMonitorThread monitorThread;
 
@@ -69,6 +78,10 @@ public class HealthMonitor {
         this.logger = node.getLogger(HealthMonitor.class);
         this.metricRegistry = node.nodeEngine.getMetricsRegistry();
         this.monitorLevel = getHealthMonitorLevel();
+        this.thresholdMemoryPercentage
+                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
+        this.thresholdCPUPercentage
+                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
         this.healthMetrics = new HealthMetrics();
     }
@@ -154,7 +167,7 @@ public class HealthMonitor {
 
             logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
                             + "enable the PerformanceMonitor by adding the property -D%s=true",
-                    getLineSeperator(), GroupProperty.PERFORMANCE_MONITOR_ENABLED));
+                    LINE_SEPARATOR, GroupProperty.PERFORMANCE_MONITOR_ENABLED));
         }
     }
 
@@ -267,19 +280,19 @@ public class HealthMonitor {
         }
 
         public boolean exceedsThreshold() {
-            if (memoryUsedOfMaxPercentage > THRESHOLD_PERCENTAGE) {
+            if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
                 return true;
             }
 
-            if (osProcessCpuLoad.read() > THRESHOLD_PERCENTAGE) {
+            if (osProcessCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
 
-            if (osSystemCpuLoad.read() > THRESHOLD_PERCENTAGE) {
+            if (osSystemCpuLoad.read() > thresholdCPUPercentage) {
                 return true;
             }
 
-            if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE) {
+            if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE_INVOCATIONS) {
                 return true;
             }
 
@@ -415,18 +428,29 @@ public class HealthMonitor {
 
         private void renderNativeMemory() {
             MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
-            if (memoryStats.getMaxNativeMemory() <= 0L) {
+            if (memoryStats.getMaxNative() <= 0L) {
                 return;
             }
 
+            final long usedNative = memoryStats.getUsedNative();
             sb.append("native.memory.used=")
-                    .append(numberToUnit(memoryStats.getUsedNativeMemory())).append(", ");
+              .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
-                    .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getFreeNative())).append(", ");
             sb.append("native.memory.total=")
-                    .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
             sb.append("native.memory.max=")
-                    .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
+            final long maxMeta = memoryStats.getMaxMetadata();
+            if (maxMeta > 0) {
+                final long usedMeta = memoryStats.getUsedMetadata();
+                sb.append("native.meta.memory.used=")
+                  .append(numberToUnit(usedMeta)).append(", ");
+                sb.append("native.meta.memory.free=")
+                  .append(numberToUnit(maxMeta - usedMeta)).append(", ");
+                sb.append("native.meta.memory.percentage=")
+                  .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
+            }
         }
 
         private void renderExecutors() {
@@ -475,7 +499,7 @@ public class HealthMonitor {
      * @return a string of the given number as a format float with two decimal places and a period
      */
     public static String percentageString(double p) {
-        return format("%.2f", p) + "%";
+        return format("%.2f%%", p);
     }
 
     public static String numberToUnit(long number) {

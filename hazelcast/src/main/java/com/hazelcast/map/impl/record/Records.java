@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public final class Records {
     public static void applyRecordInfo(Record record, RecordInfo replicationInfo) {
         record.setStatistics(replicationInfo.getStatistics());
         record.setVersion(replicationInfo.getVersion());
-        record.setEvictionCriteriaNumber(replicationInfo.getEvictionCriteriaNumber());
+        record.setHits(replicationInfo.getHits());
         record.setTtl(replicationInfo.getTtl());
         record.setCreationTime(replicationInfo.getCreationTime());
         record.setLastAccessTime(replicationInfo.getLastAccessTime());
@@ -43,7 +43,7 @@ public final class Records {
         final RecordInfo info = new RecordInfo();
         info.setStatistics(record.getStatistics());
         info.setVersion(record.getVersion());
-        info.setEvictionCriteriaNumber(record.getEvictionCriteriaNumber());
+        info.setHits(record.getHits());
         info.setCreationTime(record.getCreationTime());
         info.setLastAccessTime(record.getLastAccessTime());
         info.setLastUpdateTime(record.getLastUpdateTime());

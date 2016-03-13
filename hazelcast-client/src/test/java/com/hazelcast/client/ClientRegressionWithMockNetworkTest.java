@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -54,6 +49,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -83,46 +79,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     @After
     public void cleanup() {
         hazelcastFactory.terminateAll();
-    }
-
-    @Test
-    public void testInitialMemberListener() throws InterruptedException {
-        hazelcastFactory.newHazelcastInstance();
-        hazelcastFactory.newHazelcastInstance();
-
-        final ClientConfig clientConfig = new ClientConfig();
-        final CountDownLatch latch1 = new CountDownLatch(1);
-        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new StaticMemberListener(latch1)));
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-
-        assertTrue("Before starting", latch1.await(5, TimeUnit.SECONDS));
-
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        client.getCluster().addMembershipListener(new StaticMemberListener(latch2));
-
-        assertTrue("After starting", latch2.await(5, TimeUnit.SECONDS));
-    }
-
-    private static class StaticMemberListener implements MembershipListener, InitialMembershipListener {
-
-        final CountDownLatch latch;
-
-        StaticMemberListener(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        public void init(InitialMembershipEvent event) {
-            latch.countDown();
-        }
-
-        public void memberAdded(MembershipEvent membershipEvent) {
-        }
-
-        public void memberRemoved(MembershipEvent membershipEvent) {
-        }
-
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        }
     }
 
     /**
@@ -315,33 +271,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    /**
-     * add membership listener
-     */
-    @Test
-    public void testIssue1181() throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        hazelcastFactory.newHazelcastInstance();
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addListenerConfig(new ListenerConfig().setImplementation(new InitialMembershipListener() {
-            public void init(InitialMembershipEvent event) {
-                for (int i = 0; i < event.getMembers().size(); i++) {
-                    latch.countDown();
-                }
-            }
-
-            public void memberAdded(MembershipEvent membershipEvent) {
-            }
-
-            public void memberRemoved(MembershipEvent membershipEvent) {
-            }
-
-            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-            }
-        }));
-        hazelcastFactory.newHazelcastClient(clientConfig);
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-    }
 
     @Test
     public void testInterceptor() throws InterruptedException {
@@ -813,6 +742,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         }
     }
 
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/7582
     @Test
     public void testClusterShutdown_thenCheckOperationsNotHanging() throws Exception {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();

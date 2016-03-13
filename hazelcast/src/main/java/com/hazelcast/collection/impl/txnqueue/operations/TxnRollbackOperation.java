@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.collection.impl.CollectionTxnUtil;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -32,26 +34,29 @@ import java.io.IOException;
  */
 public class TxnRollbackOperation extends QueueBackupAwareOperation implements Notifier {
 
-    private long itemId;
-    private boolean pollOperation;
+    private long[] itemIds;
+
+    private transient long shouldNotify;
 
     public TxnRollbackOperation() {
     }
 
-    public TxnRollbackOperation(int partitionId, String name, long itemId, boolean pollOperation) {
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public TxnRollbackOperation(int partitionId, String name, long[] itemIds) {
         super(name);
         setPartitionId(partitionId);
-        this.itemId = itemId;
-        this.pollOperation = pollOperation;
+        this.itemIds = itemIds;
     }
 
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getOrCreateContainer();
-        if (pollOperation) {
-            response = queueContainer.txnRollbackPoll(itemId, false);
-        } else {
-            response = queueContainer.txnRollbackOffer(itemId);
+        for (long itemId : itemIds) {
+            if (CollectionTxnUtil.isRemove(itemId)) {
+                response = queueContainer.txnRollbackPoll(itemId, false);
+            } else {
+                response = queueContainer.txnRollbackOffer(-itemId);
+            }
         }
     }
 
@@ -62,21 +67,25 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnRollbackBackupOperation(name, itemId, pollOperation);
+        return new TxnRollbackBackupOperation(name, itemIds);
     }
 
     @Override
     public boolean shouldNotify() {
-        return true;
+        for (long itemId : itemIds) {
+            shouldNotify += CollectionTxnUtil.isRemove(itemId) ? 1 : -1;
+        }
+        return shouldNotify != 0;
     }
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
         QueueContainer queueContainer = getOrCreateContainer();
-        if (pollOperation) {
-            return queueContainer.getPollWaitNotifyKey();
+
+        if (CollectionTxnUtil.isRemove(shouldNotify)) {
+            return queueContainer.getOfferWaitNotifyKey();
         }
-        return queueContainer.getOfferWaitNotifyKey();
+        return queueContainer.getPollWaitNotifyKey();
     }
 
     @Override
@@ -87,14 +96,12 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        out.writeBoolean(pollOperation);
+        out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        pollOperation = in.readBoolean();
+        itemIds = in.readLongArray();
     }
 }

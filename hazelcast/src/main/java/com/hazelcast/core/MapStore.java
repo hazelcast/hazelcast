@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +34,6 @@ import java.util.Map;
  * <p/>
  * Store implementation can be called synchronously (write-through)
  * or asynchronously (write-behind) depending on the configuration.
- * <p/>
- * Note that in write-behind mode, there is a possibility that a map-store
- * implementation can be used by multiple threads at the same time, calling methods like
- * {@link IMap#flush()} or {@link IMap#evict(Object)} may trigger this behavior.
  */
 public interface MapStore<K, V> extends MapLoader<K, V> {
     /**

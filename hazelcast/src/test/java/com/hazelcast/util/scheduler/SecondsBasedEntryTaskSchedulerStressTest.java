@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.spi.TaskScheduler;
+import com.hazelcast.spi.impl.executionservice.impl.DelegatingTaskScheduler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,11 +49,18 @@ public class SecondsBasedEntryTaskSchedulerStressTest {
     private static final int NUMBER_OF_EVENTS_PER_THREAD = 10000;
 
     // scheduler is single threaded
-    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private TaskScheduler executorService;
+    private ScheduledExecutorService scheduledExecutorService;
+
+    @Before
+    public void setUp() {
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        executorService = new DelegatingTaskScheduler(scheduledExecutorService, Executors.newSingleThreadExecutor());
+    }
 
     @After
     public void tearDown() {
-        executorService.shutdownNow();
+        scheduledExecutorService.shutdownNow();
     }
 
     @Test

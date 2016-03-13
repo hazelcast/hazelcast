@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package com.hazelcast.map.impl.mapstore;
-
-import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.Map;
@@ -41,9 +39,9 @@ public interface MapDataStore<K, V> {
     void removeBackup(K key, long now);
 
     /**
-     * Clears resources of this map-data-store.
+     * Returns all associated resources of this map-data-store back to the initial state.
      */
-    void clear();
+    void reset();
 
     V load(K key);
 
@@ -64,11 +62,26 @@ public interface MapDataStore<K, V> {
     boolean isPostProcessingMapStore();
 
     /**
-     * Flushes all keys in this map-store.
+     * Only marks this {@link MapDataStore} as flush-able. Flush means storing entries from write-behind-queue into map-store
+     * regardless of the scheduled store-time. Actual flushing is done by another thread than partition-operation thread
+     * which runs {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
      *
-     * @return flushed {@link com.hazelcast.nio.serialization.Data} keys list.
+     * @return last given sequence number to the last store operation
+     * @see com.hazelcast.map.impl.operation.MapFlushOperation
      */
-    Collection<Data> flush();
+    long softFlush();
+
+    /**
+     * Flushes write-behind-queue into map-store in calling thread.
+     * <p/>
+     * After calling of this method, all elements in the {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue}
+     * of this {@link MapDataStore} should be in map-store regardless of the scheduled store-time.
+     * <p/>
+     * The only call to this method is in node-shutdown.
+     *
+     * @see com.hazelcast.map.impl.MapManagedService#shutdown(boolean)
+     */
+    void hardFlush();
 
     /**
      * Flushes the supplied key to the map-store.

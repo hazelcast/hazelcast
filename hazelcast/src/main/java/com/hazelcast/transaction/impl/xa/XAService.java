@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -82,8 +82,8 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     public void destroyDistributedObject(String objectName) {
     }
 
-    public TransactionContext newXATransactionContext(Xid xid, int timeout) {
-        return new XATransactionContextImpl(nodeEngine, xid, null, timeout);
+    public TransactionContext newXATransactionContext(Xid xid, String ownerUuid, int timeout, boolean originatedFromClient) {
+        return new XATransactionContextImpl(nodeEngine, xid, ownerUuid, timeout, originatedFromClient);
     }
 
     public void putTransaction(XATransaction transaction) {

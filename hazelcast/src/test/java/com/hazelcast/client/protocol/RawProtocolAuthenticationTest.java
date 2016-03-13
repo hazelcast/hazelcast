@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -84,18 +85,21 @@ public class RawProtocolAuthenticationTest {
         String username = GroupConfig.DEFAULT_GROUP_NAME;
         String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
 
-        final ClientMessage parameters = ClientAuthenticationCodec.encodeRequest(username, pass, null, null,
+        final ClientMessage authMessage = ClientAuthenticationCodec.encodeRequest(username, pass, null, null,
                 true, ClientTypes.JAVA, SerializationService.VERSION_1);
-        parameters.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
+        authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
-        final ClientProtocolBuffer byteBuffer = parameters.buffer();
-        channel.write(ByteBuffer.wrap(byteBuffer.byteArray()));
+        final ClientProtocolBuffer byteBuffer = authMessage.buffer();
+        channel.write(ByteBuffer.wrap(byteBuffer.byteArray(), 0, authMessage.getFrameLength()));
 
         final ByteBuffer socketBuffer = ByteBuffer.allocate(4096);
         ClientMessage clientMessage = ClientMessage.create();
 
         do {
-            channel.read(socketBuffer);
+            int read = channel.read(socketBuffer);
+            if(read < 0) {
+                throw new EOFException();
+            }
             socketBuffer.flip();
             clientMessage.readFrom(socketBuffer);
             if (socketBuffer.hasRemaining()) {
@@ -128,18 +132,21 @@ public class RawProtocolAuthenticationTest {
         String username = GroupConfig.DEFAULT_GROUP_NAME;
         String pass = "TheInvalidPassword";
 
-        final ClientMessage parameters = ClientAuthenticationCodec
+        final ClientMessage authMessage = ClientAuthenticationCodec
                 .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, SerializationService.VERSION_1);
-        parameters.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
+        authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
-        final ClientProtocolBuffer byteBuffer = parameters.buffer();
-        channel.write(ByteBuffer.wrap(byteBuffer.byteArray()));
+        final ClientProtocolBuffer byteBuffer = authMessage.buffer();
+        channel.write(ByteBuffer.wrap(byteBuffer.byteArray(), 0, authMessage.getFrameLength()));
 
         final ByteBuffer socketBuffer = ByteBuffer.allocate(4096);
         ClientMessage clientMessage = ClientMessage.create();
 
         do {
-            channel.read(socketBuffer);
+            int read = channel.read(socketBuffer);
+            if(read < 0) {
+                throw new EOFException();
+            }
             socketBuffer.flip();
             clientMessage.readFrom(socketBuffer);
             if (socketBuffer.hasRemaining()) {
@@ -161,6 +168,7 @@ public class RawProtocolAuthenticationTest {
         assertNull(resultParameters.uuid);
         assertNull(resultParameters.address);
     }
+
     @Test
     public void testAuthenticateWithUsernameAndPassword_with_Invalid_SerializationVersion()
             throws IOException, InterruptedException {
@@ -171,18 +179,21 @@ public class RawProtocolAuthenticationTest {
         String username = GroupConfig.DEFAULT_GROUP_NAME;
         String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
 
-        final ClientMessage parameters = ClientAuthenticationCodec
+        final ClientMessage authMessage = ClientAuthenticationCodec
                 .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, (byte) 0);
-        parameters.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
+        authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
-        final ClientProtocolBuffer byteBuffer = parameters.buffer();
-        channel.write(ByteBuffer.wrap(byteBuffer.byteArray()));
+        final ClientProtocolBuffer byteBuffer = authMessage.buffer();
+        channel.write(ByteBuffer.wrap(byteBuffer.byteArray(), 0, authMessage.getFrameLength()));
 
         final ByteBuffer socketBuffer = ByteBuffer.allocate(4096);
         ClientMessage clientMessage = ClientMessage.create();
 
         do {
-            channel.read(socketBuffer);
+            int read = channel.read(socketBuffer);
+            if(read < 0) {
+                throw new EOFException();
+            }
             socketBuffer.flip();
             clientMessage.readFrom(socketBuffer);
             if (socketBuffer.hasRemaining()) {
@@ -203,6 +214,41 @@ public class RawProtocolAuthenticationTest {
         assertNull(resultParameters.ownerUuid);
         assertNull(resultParameters.uuid);
         assertNull(resultParameters.address);
+    }
+
+    @Test(expected = EOFException.class)
+    public void testAuthenticateWithUsernameAndPassword_with_Invalid_MessageSize()
+            throws IOException, InterruptedException {
+
+        final ByteBuffer initData = ByteBuffer.wrap("CB2".getBytes());
+        channel.write(initData);
+
+        String username = GroupConfig.DEFAULT_GROUP_NAME;
+        String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
+
+        final ClientMessage authMessage = ClientAuthenticationCodec
+                .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, (byte) 0);
+        authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
+
+        final ClientProtocolBuffer byteBuffer = authMessage.buffer();
+        channel.write(ByteBuffer.wrap(byteBuffer.byteArray()));
+
+        final ByteBuffer socketBuffer = ByteBuffer.allocate(4096);
+        ClientMessage clientMessage = ClientMessage.create();
+
+        do {
+            int read = channel.read(socketBuffer);
+            if(read < 0) {
+                throw new EOFException();
+            }
+            socketBuffer.flip();
+            clientMessage.readFrom(socketBuffer);
+            if (socketBuffer.hasRemaining()) {
+                socketBuffer.compact();
+            } else {
+                socketBuffer.clear();
+            }
+        } while (!clientMessage.isComplete());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -37,7 +35,7 @@ import java.util.concurrent.TimeoutException;
 
 public class ClientInvocationFuture implements ICompletableFuture<ClientMessage> {
 
-    protected static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
+    protected final ILogger logger;
 
     protected final ClientMessage clientMessage;
     protected volatile Object response;
@@ -47,11 +45,12 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
     private final ClientInvocation invocation;
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
-                                  ClientMessage clientMessage) {
+                                  ClientMessage clientMessage, ILogger logger) {
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientMessage = clientMessage;
         this.invocation = invocation;
+        this.logger = logger;
     }
 
     @Override
@@ -80,19 +79,15 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     @Override
     public ClientMessage get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        final int heartBeatInterval = invocation.getHeartBeatInterval();
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
             if (waitMillis > 0) {
                 synchronized (this) {
                     while (waitMillis > 0 && response == null) {
                         long start = Clock.currentTimeMillis();
-                        this.wait(Math.min(heartBeatInterval, waitMillis));
+                        wait(waitMillis);
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
-                        if (!invocation.isConnectionHealthy(elapsed)) {
-                            invocation.notifyException(new TargetDisconnectedException());
-                        }
                     }
                 }
             }
@@ -106,7 +101,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
      */
     boolean shouldSetResponse(Object response) {
         if (this.response != null) {
-            LOGGER.warning("The Future.set() method can only be called once. Request: " + clientMessage
+            logger.warning("The Future.set() method can only be called once. Request: " + clientMessage
                     + ", current response: " + this.response + ", new response: " + response);
             return false;
         }
@@ -120,7 +115,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
             }
 
             this.response = response;
-            this.notifyAll();
+            notifyAll();
             for (ExecutionCallbackNode node : callbackNodeList) {
                 runAsynchronous(node.callback, node.executor);
             }
@@ -182,13 +177,13 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
                         }
                         callback.onResponse(resp);
                     } catch (Throwable t) {
-                        LOGGER.severe("Failed to execute callback: " + callback
+                        logger.severe("Failed to execute callback: " + callback
                                 + "! Request: " + clientMessage + ", response: " + response, t);
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
-            LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
+            logger.warning("Execution of callback: " + callback + " is rejected!", e);
             callback.onFailure(new HazelcastClientNotActiveException(e.getMessage()));
         }
     }

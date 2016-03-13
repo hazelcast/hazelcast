@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
@@ -24,10 +23,12 @@ import com.hazelcast.spi.impl.MutatingOperation;
 public class ClearBackupOperation extends MapOperation implements BackupOperation, MutatingOperation, DataSerializable {
 
     public ClearBackupOperation() {
+        this(null);
     }
 
     public ClearBackupOperation(String name) {
         super(name);
+        createRecordStoreOnDemand = false;
     }
 
     @Override
@@ -36,7 +37,6 @@ public class ClearBackupOperation extends MapOperation implements BackupOperatio
         // node but a near-cache exists.
         clearNearCache(false);
 
-        RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         if (recordStore != null) {
             recordStore.clear();
         }

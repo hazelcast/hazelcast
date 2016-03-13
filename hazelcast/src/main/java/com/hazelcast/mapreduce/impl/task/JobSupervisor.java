@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
@@ -38,6 +38,7 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -52,7 +53,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
@@ -401,8 +401,8 @@ public class JobSupervisor {
 
     private void asyncCancelRemoteOperations(final Set<Address> addresses) {
         final NodeEngine nodeEngine = mapReduceService.getNodeEngine();
-        ScheduledExecutorService executor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-        executor.submit(new Runnable() {
+        TaskScheduler taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
+        taskScheduler.submit(new Runnable() {
 
             @Override
             public void run() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,6 +44,35 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TransactionListTest extends HazelcastTestSupport {
+
+    @Test
+    public void testSingleListAtomicity() throws ExecutionException, InterruptedException {
+        final int itemCount = 200;
+        final HazelcastInstance instance = createHazelcastInstance();
+        final String name = randomString();
+
+        Future<Integer> f = spawn(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                IList<Object> set = instance.getList(name);
+                while (!set.remove("item-1")) {
+                }
+                return set.size();
+            }
+        });
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+
+        TransactionalList<Object> set = context.getList(name);
+        for (int i = 0; i < itemCount; i++) {
+            set.add("item-" + i);
+        }
+        context.commitTransaction();
+
+        int size = f.get();
+        assertEquals(itemCount - 1, size);
+    }
 
     @Test
     public void testOrder_WhenMultipleConcurrentTransactionRollback() throws InterruptedException {
@@ -82,7 +114,7 @@ public class TransactionListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAdd(){
+    public void testAdd() {
         HazelcastInstance instance = createHazelcastInstance();
         String name = randomString();
         String item = randomString();
@@ -102,7 +134,7 @@ public class TransactionListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove(){
+    public void testRemove() {
         HazelcastInstance instance = createHazelcastInstance();
         String name = randomString();
         String item = randomString();
@@ -122,7 +154,7 @@ public class TransactionListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove_withNotContainedItem(){
+    public void testRemove_withNotContainedItem() {
         HazelcastInstance instance = createHazelcastInstance();
         String name = randomString();
         String item = randomString();
@@ -169,7 +201,7 @@ public class TransactionListTest extends HazelcastTestSupport {
         IList<Object> l = aliveInstance.getList(listName);
 
         for (int i = 0; i < 10; i++) {
-            assertEquals(i,l.get(i));
+            assertEquals(i, l.get(i));
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,6 +157,11 @@ public class CacheSimpleConfigReadOnly
     @Override
     public CacheSimpleConfig setPartitionLostListenerConfigs(
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public void setDisablePerEntryInvalidationEvents(boolean disablePerEntryInvalidationEvents) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

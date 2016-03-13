@@ -26,7 +26,6 @@ import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;

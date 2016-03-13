@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * A specific queue implementation which is used for write-behind-store operations.
- * Also supports some filtering methods e.g. {@link #getFrontByTime}, {@link  #getFrontByNumber}
+ * Also supports filtering via {@link #filter(IPredicate, Collection)}
  *
  * @param <E> the type of element to be stored in this queue.
  */
@@ -40,6 +40,14 @@ public interface WriteBehindQueue<E> {
      * @param e element to be offered
      */
     void addLast(E e);
+
+    /**
+     * Retrieves, but does not remove, the head of this queue,
+     * or returns {@code null} if this queue is empty.
+     *
+     * @return the head of this queue, or {@code null} if this queue is empty
+     */
+    E peek();
 
     /**
      * Removes the first occurrence of the specified element in this queue
@@ -87,22 +95,12 @@ public interface WriteBehindQueue<E> {
     List<E> asList();
 
     /**
-     * Adds all elements to the supplied collection which are smaller than or equal to the given time.
-     * Finds elements which's delayed times were elapsed. Used in usual flow of write-behind execution.
+     * Filters this queue according to supplied predicate.
      *
-     * @param time       given time.
-     * @param collection all found elements will be added to this collection.
+     * @param predicate  used to filter this queue
+     * @param collection filtered entries will be added to this collection
      */
-    void getFrontByTime(long time, Collection<E> collection);
-
-    /**
-     * Adds the given number of elements to the supplied collection by starting from the head of this queue.
-     * If there is a need to immediately flush some number of elements from this queue, this method will be used.
-     *
-     * @param numberOfElements get this number of elements from the start of this queue.
-     * @param collection       all found elements will be added to this collection.
-     */
-    void getFrontByNumber(int numberOfElements, Collection<E> collection);
+    void filter(IPredicate<E> predicate, Collection<E> collection);
 
 }
 

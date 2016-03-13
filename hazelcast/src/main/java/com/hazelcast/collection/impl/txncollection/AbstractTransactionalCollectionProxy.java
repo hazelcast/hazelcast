@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveR
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
@@ -40,17 +40,15 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends AbstractDistributedObject<S> {
+public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends TransactionalDistributedObject<S> {
 
     protected final String name;
-    protected final Transaction tx;
     protected final int partitionId;
     protected final Set<Long> itemIdSet = new HashSet<Long>();
 
     public AbstractTransactionalCollectionProxy(String name, Transaction tx, NodeEngine nodeEngine, S service) {
-        super(nodeEngine, service);
+        super(nodeEngine, service, tx);
         this.name = name;
-        this.tx = tx;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
@@ -77,15 +75,30 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 }
                 getCollection().add(new CollectionItem(itemId, value));
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
-                final String serviceName = getServiceName();
-                final String txnId = tx.getTxnId();
-                tx.add(new CollectionTransactionLogRecord(itemId, name, partitionId, serviceName, txnId, op));
+                putToRecord(op);
                 return true;
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
         return false;
+    }
+
+    protected void putToRecord(CollectionTxnOperation operation) {
+        CollectionTransactionLogRecord logRecord = (CollectionTransactionLogRecord) tx.get(name);
+        if (logRecord == null) {
+            logRecord = new CollectionTransactionLogRecord(getServiceName(), tx.getTxnId(), name, partitionId);
+            tx.add(logRecord);
+        }
+        logRecord.addOperation(operation);
+    }
+
+    private void removeFromRecord(long itemId) {
+        CollectionTransactionLogRecord logRecord = (CollectionTransactionLogRecord) tx.get(name);
+        int size = logRecord.removeOperation(itemId);
+        if (size == 0) {
+            tx.remove(name);
+        }
     }
 
     public boolean remove(E e) {
@@ -115,7 +128,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
             if (item != null) {
                 if (reservedItemId == item.getItemId()) {
                     iterator.remove();
-                    tx.remove(reservedItemId);
+                    removeFromRecord(reservedItemId);
                     itemIdSet.remove(reservedItemId);
                     return true;
                 }
@@ -123,13 +136,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
-                tx.add(new CollectionTransactionLogRecord(
-                        item.getItemId(),
-                        name,
-                        partitionId,
-                        getServiceName(),
-                        tx.getTxnId(),
-                        op));
+                putToRecord(op);
                 return true;
             }
         } catch (Throwable t) {

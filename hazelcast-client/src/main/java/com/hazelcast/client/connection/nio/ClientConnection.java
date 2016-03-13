@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,19 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,11 +42,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-public class ClientConnection implements Connection, Closeable {
+public class ClientConnection implements Connection {
 
     protected final int connectionId;
     private final AtomicBoolean live = new AtomicBoolean(true);
-    private final ILogger logger = Logger.getLogger(ClientConnection.class);
+    private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
     private final ClientWriteHandler writeHandler;
@@ -68,8 +68,11 @@ public class ClientConnection implements Connection, Closeable {
         this.lifecycleService = client.getLifecycleService();
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
-        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
-        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
+        LoggingService clientLoggingService = client.getLoggingService();
+        this.logger = clientLoggingService.getLogger(ClientConnection.class);
+        boolean directBuffer = client.getClientProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
+        this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize(), directBuffer, clientLoggingService);
+        this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize(), directBuffer, clientLoggingService);
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
@@ -81,6 +84,7 @@ public class ClientConnection implements Connection, Closeable {
         writeHandler = null;
         readHandler = null;
         socketChannelWrapper = null;
+        logger = client.getLoggingService().getLogger(ClientConnection.class);
     }
 
     public void incrementPendingPacketCount() {

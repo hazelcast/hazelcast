@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
@@ -34,8 +33,8 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
 
         final NormalResponse normalResponse = new NormalResponse(null, 1, 0, false);
         final Packet packet = new Packet(serializationService.toBytes(normalResponse), 0);
-        packet.setHeader(Packet.HEADER_RESPONSE);
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_RESPONSE);
+        packet.setFlag(Packet.FLAG_OP);
         executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {
@@ -54,7 +53,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
 
         final DummyOperation operation = new DummyOperation(0);
         final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
         executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {
@@ -73,7 +72,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
 
         final DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
         final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
         executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {

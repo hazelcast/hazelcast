@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ package com.hazelcast.internal.metrics.renderers;
  */
 public interface ProbeRenderer {
 
-    void start();
-
     void renderLong(String name, long value);
 
     void renderDouble(String name, double value);
@@ -31,7 +29,4 @@ public interface ProbeRenderer {
 
     void renderNoValue(String name);
 
-    void finish();
-
-    String getResult();
 }

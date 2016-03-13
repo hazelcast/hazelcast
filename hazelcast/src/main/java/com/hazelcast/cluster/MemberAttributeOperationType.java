@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,15 @@ package com.hazelcast.cluster;
  */
 public enum MemberAttributeOperationType {
 
-    PUT(1), REMOVE(2);
+    /**
+     * Indicates an attribute being put.
+     */
+    PUT(1),
+
+    /**
+     * Indicates an attribute being removed.
+     */
+    REMOVE(2);
 
     private final int id;
 
@@ -31,10 +39,22 @@ public enum MemberAttributeOperationType {
         this.id = i;
     }
 
+    /**
+     * Gets the id of the MemberAttributeOperationType.
+     *
+     * @return the id.
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     * Gets the MemberAttributeOperationType by id.
+     *
+     * @param id the id of the MemberAttributeOperationType.
+     * @return the found MemberAttributeOperationType
+     * @throws IllegalArgumentException if no MemberAttributeOperationType with the given id is found.
+     */
     public static MemberAttributeOperationType getValue(int id) {
         for (MemberAttributeOperationType operationType : values()) {
             if (operationType.id == id) {

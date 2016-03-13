@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
-import static com.hazelcast.nio.Packet.HEADER_OP;
-import static com.hazelcast.nio.Packet.HEADER_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -68,8 +68,8 @@ public class AsyncResponsePacketHandler implements PacketHandler {
     @Override
     public void handle(Packet packet) {
         checkNotNull(packet, "packet can't be null");
-        checkTrue(packet.isHeaderSet(HEADER_OP), "HEADER_OP should be set");
-        checkTrue(packet.isHeaderSet(HEADER_RESPONSE), "HEADER_RESPONSE should be set");
+        checkTrue(packet.isFlagSet(FLAG_OP), "FLAG_OP should be set");
+        checkTrue(packet.isFlagSet(FLAG_RESPONSE), "FLAG_RESPONSE should be set");
 
         workQueue.add(packet);
     }
@@ -123,7 +123,7 @@ public class AsyncResponsePacketHandler implements PacketHandler {
             }
         }
 
-        @SuppressFBWarnings({"VO_VOLATILE_INCREMENT" })
+        @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
         private void process(Packet responsePacket) {
             processedResponses++;
             try {

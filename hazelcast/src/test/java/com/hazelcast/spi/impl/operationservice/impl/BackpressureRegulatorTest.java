@@ -206,7 +206,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     private class PartitionSpecificOperation extends AbstractOperation implements PartitionAwareOperation, BackupAwareOperation {
 
         public PartitionSpecificOperation(int partitionId) {
-            this.setPartitionId(partitionId);
+            setPartitionId(partitionId);
         }
 
         @Override

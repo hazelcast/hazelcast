@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,33 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
-import com.hazelcast.core.ItemEventType;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-import java.io.IOException;
-
 /**
  * Poll operation for the transactional queue.
  */
-public class TxnPollOperation extends QueueBackupAwareOperation implements Notifier {
+public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier {
 
-    private long itemId;
     private Data data;
 
     public TxnPollOperation() {
     }
 
     public TxnPollOperation(String name, long itemId) {
-        super(name);
-        this.itemId = itemId;
+        super(name, itemId);
     }
 
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getOrCreateContainer();
-        data = queueContainer.txnCommitPoll(itemId);
+        data = queueContainer.txnCommitPoll(getItemId());
         response = data != null;
     }
 
@@ -82,7 +75,12 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnPollBackupOperation(name, itemId);
+        return new TxnPollBackupOperation(name, getItemId());
+    }
+
+    @Override
+    public boolean isRemoveOperation() {
+        return true;
     }
 
     @Override
@@ -90,15 +88,4 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
         return QueueDataSerializerHook.TXN_POLL;
     }
 
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeLong(itemId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        itemId = in.readLong();
-    }
 }

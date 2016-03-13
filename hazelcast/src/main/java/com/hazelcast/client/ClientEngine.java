@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
@@ -39,7 +39,7 @@ public interface ClientEngine {
 
     int getClientEndpointCount();
 
-    InternalPartitionService getPartitionService();
+    IPartitionService getPartitionService();
 
     ClusterService getClusterService();
 

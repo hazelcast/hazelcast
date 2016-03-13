@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -31,13 +31,14 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.partition.impl.InternalPartitionServiceState;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.ComparisonFailure;
@@ -171,7 +172,7 @@ public abstract class HazelcastTestSupport {
         ConnectionManager connectionManager = getConnectionManager(local);
 
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
         packet.setConn(connectionManager.getConnection(getAddress(remote)));
         return packet;
     }
@@ -833,7 +834,7 @@ public abstract class HazelcastTestSupport {
             try {
                 task.run();
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw ExceptionUtil.rethrow(e);
             }
             sleepSeconds(1);
         }
@@ -849,7 +850,7 @@ public abstract class HazelcastTestSupport {
                 try {
                     task.run();
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw ExceptionUtil.rethrow(e);
                 }
                 return;
             } catch (AssertionError e) {
@@ -873,7 +874,7 @@ public abstract class HazelcastTestSupport {
         try {
             task.run();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 

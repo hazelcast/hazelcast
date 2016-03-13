@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class DiscoveryConfig {
 
-    private final List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
+    private List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
@@ -96,6 +96,10 @@ public class DiscoveryConfig {
      */
     public Collection<DiscoveryStrategyConfig> getDiscoveryStrategyConfigs() {
         return discoveryStrategyConfigs;
+    }
+
+    public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+        this.discoveryStrategyConfigs = discoveryStrategyConfigs;
     }
 
     /**

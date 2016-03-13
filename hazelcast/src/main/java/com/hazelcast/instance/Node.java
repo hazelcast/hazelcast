@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package com.hazelcast.instance;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.cluster.impl.ConfigCheck;
-import com.hazelcast.cluster.impl.DiscoveryJoiner;
-import com.hazelcast.cluster.impl.JoinMessage;
-import com.hazelcast.cluster.impl.JoinRequest;
-import com.hazelcast.cluster.impl.MulticastJoiner;
-import com.hazelcast.cluster.impl.MulticastService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ConfigCheck;
+import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.cluster.impl.MulticastJoiner;
+import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
@@ -49,9 +49,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -76,7 +76,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.cluster.impl.MulticastService.createMulticastService;
+import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
@@ -140,7 +140,12 @@ public class Node {
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
+
     private final boolean liteMember;
+
+    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
+        return nodeContext.createNodeExtension(this);
+    }
 
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
@@ -167,7 +172,9 @@ public class Node {
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
-            this.nodeExtension = nodeContext.createNodeExtension(this);
+
+            this.nodeExtension = createNodeExtension(nodeContext);
+            nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -180,7 +187,6 @@ public class Node {
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
-            nodeExtension.printNodeInfo();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             discoveryService = createDiscoveryService(config);
             joiner = nodeContext.createJoiner(this);
@@ -389,6 +395,10 @@ public class Node {
             if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
+        } catch (Throwable ignored) {
+        }
+
+        try {
             discoveryService.destroy();
         } catch (Throwable ignored) {
         }
@@ -426,7 +436,7 @@ public class Node {
             securityContext.destroy();
         }
         logger.finest("Destroying serialization service...");
-        serializationService.destroy();
+        serializationService.dispose();
 
         hazelcastThreadGroup.destroy();
         nodeExtension.shutdown();
@@ -629,8 +639,8 @@ public class Node {
         logger.finest("This node is being set as the master");
         masterAddress = address;
         setJoined();
-        this.getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
-        this.getClusterService().setClusterId(UuidUtil.createClusterUuid());
+        getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
+        getClusterService().setClusterId(UuidUtil.createClusterUuid());
     }
 
     public Config getConfig() {

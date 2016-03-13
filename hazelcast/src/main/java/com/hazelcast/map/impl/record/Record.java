@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,9 @@ public interface Record<V> {
 
     void setStatistics(RecordStatistics stats);
 
-    void onAccess();
+    void onAccess(long now);
 
-    void onUpdate();
+    void onUpdate(long now);
 
     void onStore();
 
@@ -49,10 +49,6 @@ public interface Record<V> {
     long getVersion();
 
     void setVersion(long version);
-
-    void setEvictionCriteriaNumber(long evictionCriteriaNumber);
-
-    long getEvictionCriteriaNumber();
 
     /**
      * Get current cache value or null.
@@ -90,6 +86,10 @@ public interface Record<V> {
     long getCreationTime();
 
     void setCreationTime(long creationTime);
+
+    long getHits();
+
+    void setHits(long hits);
 
     /**
      * Only used for Hot Restart, HDRecord

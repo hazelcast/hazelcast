@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -49,10 +48,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ClientPartitionServiceImpl
         implements ClientPartitionService {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientPartitionService.class);
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
     private static final int PARTITION_WAIT_TIME = 1000;
+    private final ILogger logger;
     private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
 
     private final HazelcastClientInstanceImpl client;
@@ -65,13 +64,14 @@ public final class ClientPartitionServiceImpl
 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
+        logger = client.getLoggingService().getLogger(ClientPartitionService.class);
     }
 
     public void start() {
         ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         // Use internal execution service for all partition refresh process (Do not use the user executor thread)
         ExecutorService internalExecutor = clientExecutionService.getInternalExecutor();
-        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        clientExecutionService.scheduleWithRepetition(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
@@ -133,7 +133,7 @@ public final class ClientPartitionServiceImpl
             return processPartitionResponse(response);
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
-                LOGGER.warning("Error while fetching cluster partition table!", e);
+                logger.warning("Error while fetching cluster partition table!", e);
             }
         }
         return false;
@@ -145,16 +145,16 @@ public final class ClientPartitionServiceImpl
     }
 
     private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
-        LOGGER.finest("Processing partition response.");
-        Map<Address, List<Integer>> partitionResponse = response.partitions;
-        for (Map.Entry<Address, List<Integer>> entry : partitionResponse.entrySet()) {
+        logger.finest("Processing partition response.");
+        List<Map.Entry<Address, List<Integer>>> partitions = response.partitions;
+        for (Map.Entry<Address, List<Integer>> entry : partitions) {
             Address address = entry.getKey();
             for (Integer partition : entry.getValue()) {
                 this.partitions.put(partition, address);
             }
         }
-        partitionCount = partitions.size();
-        return partitionResponse.size() > 0;
+        partitionCount = this.partitions.size();
+        return partitions.size() > 0;
     }
 
     public void stop() {
@@ -250,9 +250,8 @@ public final class ClientPartitionServiceImpl
                 clientInvocationFuture.andThen(refreshTaskCallback, executionService);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
-                    LOGGER.warning("Error while fetching cluster partition table!", e);
+                    logger.warning("Error while fetching cluster partition table!", e);
                 }
-            } finally {
                 updating.set(false);
             }
         }
@@ -275,7 +274,7 @@ public final class ClientPartitionServiceImpl
         @Override
         public void onFailure(Throwable t) {
             if (client.getLifecycleService().isRunning()) {
-                LOGGER.warning("Error while fetching cluster partition table!", t);
+                logger.warning("Error while fetching cluster partition table!", t);
             }
             updating.set(false);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 import java.io.IOException;
 
 /**
@@ -33,6 +34,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     private K key;
     private V value;
+
     private long cost;
     private long creationTime;
     private long expirationTime;
@@ -41,8 +43,13 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     private long lastStoredTime;
     private long lastUpdateTime;
     private long version;
-    private long evictionCriteriaNumber;
     private long ttl;
+    /**
+     * @deprecated this field is not used any more but it is here to prevent `client <-> member` binary compatibility issues
+     * due to the its usage in SimpleEntryViewCodec.
+     */
+    @Deprecated
+    private long evictionCriteriaNumber;
 
     public SimpleEntryView(K key, V value) {
         this.key = key;
@@ -142,14 +149,6 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.version = version;
     }
 
-    public long getEvictionCriteriaNumber() {
-        return evictionCriteriaNumber;
-    }
-
-    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-        this.evictionCriteriaNumber = evictionCriteriaNumber;
-    }
-
     @Override
     public long getTtl() {
         return ttl;
@@ -157,6 +156,13 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
 
     public void setTtl(long ttl) {
         this.ttl = ttl;
+    }
+
+    public long getEvictionCriteriaNumber() {
+        return 0;
+    }
+
+    public void setEvictionCriteriaNumber(long evictionCriteriaNumber) {
     }
 
     @Override

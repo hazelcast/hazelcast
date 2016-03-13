@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,9 +46,10 @@ public class XATransactionContextImpl implements TransactionContext {
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
-    public XATransactionContextImpl(NodeEngineImpl nodeEngine, Xid xid, String txOwnerUuid, int timeout) {
+    public XATransactionContextImpl(NodeEngineImpl nodeEngine, Xid xid, String txOwnerUuid,
+                                    int timeout, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
-        this.transaction = new XATransaction(nodeEngine, xid, txOwnerUuid, timeout);
+        this.transaction = new XATransaction(nodeEngine, xid, txOwnerUuid, timeout, originatedFromClient);
     }
 
     @Override

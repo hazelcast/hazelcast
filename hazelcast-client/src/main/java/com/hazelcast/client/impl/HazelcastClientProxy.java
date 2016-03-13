@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,25 +42,25 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.TerminatedLifecycleService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
- *
  */
-public final class HazelcastClientProxy implements HazelcastInstance, SerializationServiceSupport {
+public class HazelcastClientProxy implements HazelcastInstance, SerializationServiceSupport {
 
     public volatile HazelcastClientInstanceImpl client;
 
@@ -264,7 +264,7 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
         return getClient().getSerializationService();
     }
 
-    private HazelcastClientInstanceImpl getClient() {
+    protected HazelcastClientInstanceImpl getClient() {
         final HazelcastClientInstanceImpl c = client;
         if (c == null || !c.getLifecycleService().isRunning()) {
             throw new HazelcastInstanceNotActiveException();

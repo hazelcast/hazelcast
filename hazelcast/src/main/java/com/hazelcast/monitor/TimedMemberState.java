@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
-import static com.hazelcast.util.StringUtil.getLineSeperator;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 
@@ -148,7 +148,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     @Override
     public String toString() {
         return "TimedMemberState{"
-                + getLineSeperator() + '\t' + memberState
-                + getLineSeperator() + "} Instances: " + instanceNames;
+                + LINE_SEPARATOR + '\t' + memberState
+                + LINE_SEPARATOR + "} Instances: " + instanceNames;
     }
 }

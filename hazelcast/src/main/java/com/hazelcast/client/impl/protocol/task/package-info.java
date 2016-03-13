@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,5 @@
  * Client tasks associated with requests. These tasks are the actual processes that run on server side depending
  * on the request coming from clients.
  */
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+package com.hazelcast.client.impl.protocol.task;

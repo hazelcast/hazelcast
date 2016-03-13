@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,13 @@ package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
@@ -50,6 +54,23 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
                         + lockVersion + " vs " + version);
             }
         }
+    }
+
+    /**
+     * This operation runs on both primary and backup
+     * If it is running on backup we should not send a backup operation
+     * @return
+     */
+    @Override
+    public boolean shouldBackup() {
+        NodeEngine nodeEngine = getNodeEngine();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        Address thisAddress = nodeEngine.getThisAddress();
+        IPartition partition = partitionService.getPartition(getPartitionId());
+        if (!thisAddress.equals(partition.getOwnerOrNull())) {
+            return false;
+        }
+        return super.shouldBackup();
     }
 
     @Override

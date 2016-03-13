@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -42,7 +41,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     protected final ClientExecutionServiceImpl executionService;
     protected final SerializationService serializationService;
     protected final ClientInvocationService invocationService;
-    protected final ILogger logger = Logger.getLogger(ClientListenerService.class);
+    protected final ILogger logger;
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap
             = new ConcurrentHashMap<Long, EventHandler>();
 
@@ -50,10 +49,11 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
         this.client = client;
-        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        this.invocationService = client.getInvocationService();
-        this.serializationService = client.getSerializationService();
-        this.eventExecutor = new StripedExecutor(logger, client.getName() + ".event",
+        executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        invocationService = client.getInvocationService();
+        serializationService = client.getSerializationService();
+        logger = client.getLoggingService().getLogger(ClientListenerService.class);
+        eventExecutor = new StripedExecutor(logger, client.getName() + ".event",
                 client.getThreadGroup(), eventThreadCount, eventQueueCapacity);
     }
 

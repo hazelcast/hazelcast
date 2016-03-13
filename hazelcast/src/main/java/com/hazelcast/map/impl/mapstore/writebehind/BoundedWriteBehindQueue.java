@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,11 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         queue.addLast(e);
     }
 
+    @Override
+    public E peek() {
+        return queue.peek();
+    }
+
     /**
      * Removes the first occurrence of the specified element in this queue
      * when searching it by starting from the head of this queue.
@@ -149,26 +154,9 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         return queue.asList();
     }
 
-    /**
-     * Adds all elements to the supplied collection which are smaller than or equal to the given time.
-     *
-     * @param time       given time.
-     * @param collection to add filtered elements.
-     */
     @Override
-    public void getFrontByTime(long time, Collection<E> collection) {
-        queue.getFrontByTime(time, collection);
-    }
-
-    /**
-     * Adds some number of elements to the supplied collection starting from the head of this queue.
-     *
-     * @param numberOfElements number of elements to add.
-     * @param collection       to add filtered elements.
-     */
-    @Override
-    public void getFrontByNumber(int numberOfElements, Collection<E> collection) {
-        queue.getFrontByNumber(numberOfElements, collection);
+    public void filter(IPredicate<E> predicate, Collection<E> collection) {
+        queue.filter(predicate, collection);
     }
 
     /**

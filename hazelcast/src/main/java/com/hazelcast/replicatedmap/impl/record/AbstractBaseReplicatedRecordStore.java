@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.replicatedmap.impl.record;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -45,9 +45,9 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
     protected final AtomicReference<InternalReplicatedMapStorage<K, V>> storageRef;
     protected final ReplicatedMapService replicatedMapService;
     protected final ReplicatedMapConfig replicatedMapConfig;
-    protected final NodeEngineImpl nodeEngine;
+    protected final NodeEngine nodeEngine;
     protected final SerializationService serializationService;
-    protected final InternalPartitionService partitionService;
+    protected final IPartitionService partitionService;
     protected final AtomicBoolean isLoaded = new AtomicBoolean(false);
     protected final EntryTaskScheduler<Object, Object> ttlEvictionScheduler;
     protected final EventService eventService;
@@ -57,7 +57,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
     protected AbstractBaseReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService, int partitionId) {
         this.name = name;
         this.partitionId = partitionId;
-        this.nodeEngine = (NodeEngineImpl) replicatedMapService.getNodeEngine();
+        this.nodeEngine = replicatedMapService.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.eventService = nodeEngine.getEventService();
@@ -66,7 +66,7 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
         this.storageRef = new AtomicReference<InternalReplicatedMapStorage<K, V>>();
         this.storageRef.set(new InternalReplicatedMapStorage<K, V>());
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory
-                .newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
+                .newScheduler(nodeEngine.getExecutionService().getGlobalTaskScheduler(),
                         new ReplicatedMapEvictionProcessor(this, nodeEngine, partitionId), ScheduleType.POSTPONE);
     }
 

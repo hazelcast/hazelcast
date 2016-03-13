@@ -16,7 +16,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;

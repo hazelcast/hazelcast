@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,7 +226,7 @@ public final class JavaDefaultSerializers {
             return result;
         }
 
-        @SuppressFBWarnings({"OS_OPEN_STREAM" })
+        @SuppressFBWarnings("OS_OPEN_STREAM")
         @Override
         public void write(final ObjectDataOutput out, final Object obj) throws IOException {
             final ObjectOutputStream objectOutputStream;

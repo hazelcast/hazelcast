@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.MemberAttributeEvent;

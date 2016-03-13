@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,15 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 /**
@@ -42,8 +47,28 @@ final class ResponsePacketHandlerImpl implements PacketHandler {
     @Override
     public void handle(Packet packet) throws Exception {
         Response response = serializationService.toObject(packet);
+        Address sender = packet.getConn().getEndPoint();
         try {
-            invocationRegistry.notify(response, packet.getConn().getEndPoint());
+            if (response instanceof NormalResponse) {
+                NormalResponse normalResponse = (NormalResponse) response;
+                invocationRegistry.notifyNormalResponse(
+                        normalResponse.getCallId(),
+                        normalResponse.getValue(),
+                        normalResponse.getBackupCount(),
+                        sender);
+            } else if (response instanceof BackupResponse) {
+                invocationRegistry.notifyBackupComplete(response.getCallId());
+            } else if (response instanceof CallTimeoutResponse) {
+                invocationRegistry.notifyCallTimeout(response.getCallId(), sender);
+            } else if (response instanceof ErrorResponse) {
+                ErrorResponse errorResponse = (ErrorResponse) response;
+                invocationRegistry.notifyErrorResponse(
+                        errorResponse.getCallId(),
+                        errorResponse.getCause(),
+                        sender);
+            } else {
+                logger.severe("Unrecognized response: " + response);
+            }
         } catch (Throwable e) {
             logger.severe("While processing response...", e);
         }

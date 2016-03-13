@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,14 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,10 +56,6 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         if (keyValueSequence == null || keyValueSequence.isEmpty()) {
             return;
         }
-        final int partitionId = getPartitionId();
-        final MapService mapService = this.mapService;
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             final Data key = keyValueSequence.get(i);
             final Data value = keyValueSequence.get(i + 1);
@@ -78,9 +71,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         }
 
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-            final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-            MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+            EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
             mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,10 +42,15 @@ public interface WriteBehindProcessor<E> {
 
     void addStoreListener(StoreListener storeListener);
 
-    Collection flush(WriteBehindQueue queue);
+    /**
+     * Flushes supplied {@link WriteBehindQueue} to map-store.
+     *
+     * @param queue supplied {@link WriteBehindQueue} for flush.
+     */
+    void flush(WriteBehindQueue queue);
 
     /**
-     * Flush a key directly to map store.
+     * Flushes a key directly to map store.
      *
      * @param key to be flushed.
      */

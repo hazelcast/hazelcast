@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +28,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,7 +47,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private boolean initialLoad;
     private List<Map.Entry<Data, Data>> backupEntries;
     private List<RecordInfo> backupRecordInfos;
-    private transient RecordStore recordStore;
     private List<Data> invalidationKeys;
 
     public PutAllOperation() {
@@ -66,7 +62,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     public void run() {
         backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());
         backupEntries = new ArrayList<Map.Entry<Data, Data>>(mapEntries.size());
-        recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
 
         for (Map.Entry<Data, Data> entry : mapEntries) {
             put(entry);
@@ -79,13 +74,12 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
         Object oldValue = null;
         if (initialLoad) {
-            recordStore.putFromLoad(dataKey, dataValue, -1);
+            recordStore.putFromLoad(dataKey, dataValue, DEFAULT_TTL);
         } else {
             oldValue = recordStore.put(dataKey, dataValue, DEFAULT_TTL);
         }
         mapServiceContext.interceptAfterPut(name, dataValue);
         EntryEventType eventType = oldValue == null ? ADDED : UPDATED;
-        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
         mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
 
@@ -106,7 +100,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     }
 
     private void addInvalidation(Data dataKey) {
-        if (mapContainer.isNearCacheEnabled()) {
+        if (mapContainer.isInvalidationEnabled()) {
             if (invalidationKeys == null) {
                 invalidationKeys = new ArrayList<Data>(mapEntries.size());
             }
@@ -122,7 +116,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     }
 
     private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
-        if (!recordStore.getMapDataStore().isPostProcessingMapStore()) {
+        if (!isPostProcessing(recordStore)) {
             return dataValue;
         }
         Record record = recordStore.getRecord(dataKey);
@@ -131,11 +125,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     private boolean shouldWanReplicate() {
         return mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null;
-    }
-
-    protected void evict() {
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
     }
 
     @Override

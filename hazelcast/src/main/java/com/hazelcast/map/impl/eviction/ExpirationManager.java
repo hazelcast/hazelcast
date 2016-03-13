@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.operation.ClearExpiredOperation;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -59,7 +59,7 @@ public class ExpirationManager {
 
     public void start() {
         nodeEngine.getExecutionService()
-                .scheduleAtFixedRate(new ClearExpiredRecordsTask(), INITIAL_DELAY, PERIOD, UNIT);
+                .scheduleWithRepetition(new ClearExpiredRecordsTask(), INITIAL_DELAY, PERIOD, UNIT);
     }
 
     /**
@@ -91,7 +91,7 @@ public class ExpirationManager {
             boolean createLazy = true;
             int currentlyRunningCleanupOperationsCount = 0;
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
+                IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId, false);
                 if (partition.isOwnerOrBackup(nodeEngine.getThisAddress())) {
                     final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
                     if (isContainerEmpty(partitionContainer)) {

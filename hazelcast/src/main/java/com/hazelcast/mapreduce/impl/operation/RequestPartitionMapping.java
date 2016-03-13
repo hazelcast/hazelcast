@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.List;
 
@@ -63,7 +63,7 @@ public class RequestPartitionMapping
             return;
         }
 
-        InternalPartitionService ps = getNodeEngine().getPartitionService();
+        IPartitionService ps = getNodeEngine().getPartitionService();
         List<Integer> memberPartitions = ps.getMemberPartitions(getCallerAddress());
         JobProcessInformationImpl processInformation = supervisor.getJobProcessInformation();
 

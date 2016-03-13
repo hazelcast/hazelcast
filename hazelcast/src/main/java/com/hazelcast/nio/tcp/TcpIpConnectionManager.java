@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.cluster.impl.BindMessage;
+import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -35,7 +35,7 @@ import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
@@ -57,7 +57,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
@@ -228,7 +228,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public void handle(Packet packet) throws Exception {
-        assert packet.isHeaderSet(Packet.HEADER_BIND);
+        assert packet.isFlagSet(Packet.FLAG_BIND);
 
         BindMessage bind = ioService.getSerializationService().toObject(packet);
         bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
@@ -322,7 +322,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes);
-        packet.setHeader(Packet.HEADER_BIND);
+        packet.setFlag(Packet.FLAG_BIND);
         connection.write(packet);
         //now you can send anything...
     }

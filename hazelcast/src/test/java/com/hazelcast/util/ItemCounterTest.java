@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import java.util.HashSet;
+
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -36,6 +41,14 @@ public class ItemCounterTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         counter = new ItemCounter<Object>();
+    }
+
+    @Test
+    public void testKeySet(){
+        counter.add("key1",1);
+        counter.add("key2",1);
+
+        assertEquals(new HashSet(asList("key1","key2")), counter.keySet());
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.FROZEN;
-import static com.hazelcast.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.instance.HazelcastInstanceManager.newHazelcastInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

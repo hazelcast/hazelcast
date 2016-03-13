@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
@@ -44,7 +44,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -158,6 +157,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
+    protected Future<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+        invalidateNearCache(keyData);
+        return super.setAsyncInternal(ttl, timeunit, keyData, valueData);
+    }
+
+    @Override
     protected Future<V> removeAsyncInternal(Data keyData) {
         invalidateNearCache(keyData);
         return super.removeAsyncInternal(keyData);
@@ -232,7 +237,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void loadAllInternal(boolean replaceExistingValues, Set<Data> dataKeys) {
+    protected void loadAllInternal(boolean replaceExistingValues, Collection<Data> dataKeys) {
         invalidateNearCache(dataKeys);
         super.loadAllInternal(replaceExistingValues, dataKeys);
     }
@@ -306,10 +311,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void putAllInternal(Map<Integer, Map<Data, Data>> entryMap) {
-        for (Map<Data, Data> map : entryMap.values()) {
-            Set<Data> keySet = map.keySet();
-            invalidateNearCache(keySet);
+    protected void putAllInternal(Map<Integer, List<Map.Entry<Data, Data>>> entryMap) {
+        for (List<Entry<Data, Data>> entries : entryMap.values()) {
+            for (Entry<Data, Data> entry : entries) {
+                invalidateNearCache(entry.getKey());
+            }
         }
         super.putAllInternal(entryMap);
     }
@@ -364,8 +370,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             invalidationListenerId = registerListener(createNearCacheEntryListenerCodec(), handler);
 
         } catch (Exception e) {
-            Logger.getLogger(ClientHeapNearCache.class).severe(
-                    "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            ILogger logger = getContext().getLoggingService().getLogger(ClientHeapNearCache.class);
+            logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
         }
     }
 

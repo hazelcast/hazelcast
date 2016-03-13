@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -465,6 +466,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+
+        assertTrue(instance1.getCluster().getMembers().size()==3);
+        assertTrue(instance2.getCluster().getMembers().size()==3);
+        assertTrue(instance3.getCluster().getMembers().size()==3);
+
         IMap<Integer, Integer> map = instance1.getMap("testBackupMapEntryProcessorAllKeys");
         int size = 100;
         for (int i = 0; i < size; i++) {
@@ -477,6 +483,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
         instance1.shutdown();
         Thread.sleep(1000);
+
+        assertTrue(instance2.getCluster().getMembers().size() == 2);
+        assertTrue(instance3.getCluster().getMembers().size() == 2);
+
         IMap<Integer, Integer> map2 = instance2.getMap("testBackupMapEntryProcessorAllKeys");
         for (int i = 0; i < size; i++) {
             assertEquals(map2.get(i), (Object) (i + 1));
@@ -985,6 +995,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIssue7631_emptyKeysSupported() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        IMap<Object, Object> map = factory.newHazelcastInstance().getMap("default");
+        assertEquals(emptyMap(), map.executeOnEntries(new NoOpEntryProcessor()));
+    }
+
+    @Test
     public void testSubmitToKey() throws InterruptedException, ExecutionException {
         HazelcastInstance instance1 = createHazelcastInstance(getConfig());
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -1312,6 +1329,18 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public void readData(ObjectDataInput in) throws IOException {
             serializedCount = in.readInt();
             deserializedCount = in.readInt() + 1;
+        }
+    }
+
+    private static class NoOpEntryProcessor implements EntryProcessor {
+        @Override
+        public Object process(final Map.Entry entry) {
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
         }
     }
 

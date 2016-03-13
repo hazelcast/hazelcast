@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.BlockingOperation;
 
 import java.io.IOException;
 
 /**
  * Peek operation for the transactional queue.
  */
-public class TxnPeekOperation extends QueueOperation {
+public class TxnPeekOperation extends QueueOperation implements BlockingOperation {
 
     private long itemId;
     private String transactionId;
@@ -73,5 +75,23 @@ public class TxnPeekOperation extends QueueOperation {
         super.readInternal(in);
         itemId = in.readLong();
         transactionId = in.readUTF();
+    }
+
+    @Override
+    public WaitNotifyKey getWaitKey() {
+        QueueContainer queueContainer = getOrCreateContainer();
+        return queueContainer.getPollWaitNotifyKey();
+    }
+
+
+    @Override
+    public boolean shouldWait() {
+        final QueueContainer queueContainer = getOrCreateContainer();
+        return getWaitTimeout() != 0 && itemId == -1 && queueContainer.size() == 0;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        sendResponse(null);
     }
 }

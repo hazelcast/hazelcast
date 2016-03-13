@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
@@ -30,8 +30,8 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.EventPublishingService;
@@ -47,6 +47,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -63,7 +64,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 /**
@@ -93,11 +93,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        ScheduledExecutorService defaultScheduledExecutor
-                = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
+        TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         QueueEvictionProcessor entryProcessor = new QueueEvictionProcessor(nodeEngine, this);
         this.queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
-                defaultScheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+                globalScheduler, entryProcessor, ScheduleType.POSTPONE);
         this.logger = nodeEngine.getLogger(QueueService.class);
     }
 
@@ -155,7 +154,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -190,7 +189,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     private void clearMigrationData(int partitionId) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
             final Entry<String, QueueContainer> entry = iterator.next();
             final String name = entry.getKey();
@@ -274,7 +273,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
-        InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+        IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
 
         Address owner = partition.getOwnerOrNull();
         if (thisAddress.equals(owner)) {
@@ -288,7 +287,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public LocalQueueStats createLocalQueueStats(String name) {
         SerializationService serializationService = nodeEngine.getSerializationService();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         Data keyData = serializationService.toData(name, StringPartitioningStrategy.INSTANCE);
         int partitionId = partitionService.getPartitionId(keyData);
         return createLocalQueueStats(name, partitionId);
@@ -306,7 +305,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void rollbackTransaction(String transactionId) {
         final Set<String> queueNames = containerMap.keySet();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : queueNames) {
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));

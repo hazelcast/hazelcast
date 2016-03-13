@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -60,7 +58,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
 
     @Override
     public void run() throws Exception {
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         boolean hasInterceptor = mapServiceContext.hasInterceptor(name);
 
         List<Data> keyValueSequence = this.keyValueSequence;
@@ -72,14 +69,18 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
             Object previousValue = recordStore.putFromLoad(key, value);
 
             callAfterPutInterceptors(value);
-            publishEntryEvent(key, previousValue, dataValue);
-            publishWanReplicationEvent(key, dataValue, recordStore.getRecord(key));
+            Record record = recordStore.getRecord(key);
+            if (isPostProcessing(recordStore)) {
+                value = record.getValue();
+            }
+            publishEntryEvent(key, previousValue, value);
+            publishWanReplicationEvent(key, value, record);
             addInvalidation(key);
         }
     }
 
     private void addInvalidation(Data key) {
-        if (!mapContainer.isNearCacheEnabled()) {
+        if (!mapContainer.isInvalidationEnabled()) {
             return;
         }
 
@@ -95,24 +96,20 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         mapService.getMapServiceContext().interceptAfterPut(name, value);
     }
 
-    private void publishEntryEvent(Data key, Object previousValue, Data newValue) {
+    private void publishEntryEvent(Data key, Object previousValue, Object newValue) {
         final EntryEventType eventType = previousValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, previousValue, newValue);
     }
 
-    private void publishWanReplicationEvent(Data key, Data value, Record record) {
-        if (record == null) {
+    private void publishWanReplicationEvent(Data key, Object value, Record record) {
+        if (record == null || !mapContainer.isWanReplicationEnabled()) {
             return;
         }
 
-        if (mapContainer.isWanReplicationEnabled()) {
-            final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-            MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-        }
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        value = mapServiceContext.toData(value);
+        EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
+        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
     }
 
     @Override
@@ -120,6 +117,7 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
         invalidateNearCache(invalidationKeys);
 
         super.afterRun();
+        evict();
     }
 
     @Override

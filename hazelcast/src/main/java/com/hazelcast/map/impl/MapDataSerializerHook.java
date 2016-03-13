@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
@@ -53,8 +54,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int QUERY_RESULT_ROW = 13;
     //public static final int QUERY_RESULT_SET = 14;
     public static final int QUERY_RESULT = 15;
+    public static final int EVICT_BACKUP = 16;
 
-    private static final int LEN = QUERY_RESULT + 1;
+    private static final int LEN = EVICT_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -90,7 +92,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new RemoveBackupOperation();
             }
         };
-
+        constructors[EVICT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EvictBackupOperation();
+            }
+        };
         constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapKeySet();

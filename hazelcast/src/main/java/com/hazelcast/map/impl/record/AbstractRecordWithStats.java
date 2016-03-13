@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     protected RecordStatistics recordStatistics;
 
     protected AbstractRecordWithStats() {
-        super();
         this.recordStatistics = new RecordStatisticsImpl();
     }
 
@@ -39,19 +38,8 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
     }
 
     @Override
-    public final void onAccess() {
-        super.onAccess();
-        this.recordStatistics.access();
-    }
-
-    @Override
     public final void onStore() {
-        this.recordStatistics.store();
-    }
-
-    @Override
-    public final void onUpdate() {
-        super.onUpdate();
+        recordStatistics.store();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.collection.common.DataAwareItemEvent;
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
@@ -52,15 +52,12 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.Preconditions;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -331,28 +328,36 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     }
 
     public boolean containsAll(Collection<?> c) {
-        ClientMessage request = QueueContainsAllCodec.encodeRequest(name, getDataSet(c));
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = QueueContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueContainsAllCodec.ResponseParameters resultParameters = QueueContainsAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        ClientMessage request = QueueAddAllCodec.encodeRequest(name, getDataList(c));
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = QueueAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean removeAll(Collection<?> c) {
-        ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, getDataSet(c));
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters = QueueCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean retainAll(Collection<?> c) {
-        ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, getDataSet(c));
+        Preconditions.checkNotNull(c);
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
+        ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRetainAllCodec.ResponseParameters resultParameters = QueueCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;
@@ -361,22 +366,6 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     public void clear() {
         ClientMessage request = QueueClearCodec.encodeRequest(name);
         invokeOnPartition(request);
-    }
-
-    private Set<Data> getDataSet(Collection<?> objects) {
-        Set<Data> dataSet = new HashSet<Data>(objects.size());
-        for (Object o : objects) {
-            dataSet.add(toData(o));
-        }
-        return dataSet;
-    }
-
-    private List<Data> getDataList(Collection<?> objects) {
-        List<Data> dataList = new ArrayList<Data>(objects.size());
-        for (Object o : objects) {
-            dataList.add(toData(o));
-        }
-        return dataList;
     }
 
     @Override

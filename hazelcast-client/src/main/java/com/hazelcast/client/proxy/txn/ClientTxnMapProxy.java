@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.ArrayList;
@@ -197,13 +198,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Collection<V> values() {
         ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
-        Collection<Data> dataValues = TransactionalMapValuesCodec.decodeResponse(response).response;
-
-        List<V> values = new ArrayList<V>(dataValues.size());
-        for (Data value : dataValues) {
-            values.add((V) toObject(value));
-        }
-        return values;
+        List dataValues = TransactionalMapValuesCodec.decodeResponse(response).response;
+        return new UnmodifiableLazyList<V>(dataValues, getSerializationService());
     }
 
     @Override

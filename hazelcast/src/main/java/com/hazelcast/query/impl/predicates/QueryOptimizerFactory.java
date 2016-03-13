@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.instance.HazelcastProperty;
 
 import java.util.Arrays;
 
@@ -42,7 +43,7 @@ public final class QueryOptimizerFactory {
      * @return
      */
     public static QueryOptimizer newOptimizer(GroupProperties properties) {
-        GroupProperty property = GroupProperty.QUERY_OPTIMIZER_TYPE;
+        HazelcastProperty property = GroupProperty.QUERY_OPTIMIZER_TYPE;
         String string = properties.getString(property);
         Type type;
         try {

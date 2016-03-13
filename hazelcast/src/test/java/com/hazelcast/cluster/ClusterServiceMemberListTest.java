@@ -4,6 +4,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

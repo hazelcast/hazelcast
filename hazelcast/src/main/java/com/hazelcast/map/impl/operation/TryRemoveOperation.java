@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+
 import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
@@ -36,7 +36,6 @@ public class TryRemoveOperation extends BaseRemoveOperation {
 
     @Override
     public void run() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }

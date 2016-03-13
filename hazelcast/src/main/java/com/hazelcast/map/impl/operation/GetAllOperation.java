@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +34,6 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
 
     private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
-    private transient RecordStore recordStore;
 
     public GetAllOperation() {
     }
@@ -48,9 +45,8 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
 
     @Override
     public void run() {
-        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Set<Data> partitionKeySet = new HashSet<Data>();
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
@@ -58,22 +54,6 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
             }
         }
         entries = recordStore.getAll(partitionKeySet);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        super.afterRun();
-        if (!entries.isEmpty()) {
-            evict();
-        }
-    }
-
-    protected void evict() {
-        if (recordStore == null) {
-            return;
-        }
-        final long now = Clock.currentTimeMillis();
-        recordStore.evictEntries(now);
     }
 
     @Override

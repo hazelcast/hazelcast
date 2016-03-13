@@ -12,7 +12,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,7 +30,7 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     @Override
     protected void onSetup() {
         super.onSetup();
-        instanceFactory.newHazelcastInstance(createConfig());
+        getHazelcastInstance();
         ClientConfig clientConfig = createClientConfig();
         client = instanceFactory.newHazelcastClient(clientConfig);
     }
@@ -40,6 +39,11 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     protected void onTearDown() {
         super.onTearDown();
         instanceFactory.shutdownAll();
+    }
+
+    @Override
+    protected HazelcastInstance getHazelcastInstance() {
+        return instanceFactory.newHazelcastInstance(createConfig());
     }
 
     @Override
@@ -52,8 +56,18 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testOwnedEntryCount() {
-        super.testOwnedEntryCount();
+    public void testOwnedEntryCountWhenThereIsNoBackup() {
+        super.testOwnedEntryCountWhenThereIsNoBackup();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testOwnedEntryCountWhenThereAreBackupsOnStaticCluster() {
+        super.testOwnedEntryCountWhenThereAreBackupsOnStaticCluster();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster() {
+        super.testOwnedEntryCountWhenThereAreBackupsOnDynamicCluster();
     }
 
     @Test(expected = UnsupportedOperationException.class)

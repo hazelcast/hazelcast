@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.6.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <instance-name>test-hazelcast-jcache</instance-name>
 
     <group>
         <name>test-group1</name>
@@ -47,6 +49,7 @@
         </cache-entry-listeners>
         <backup-count>3</backup-count>
         <async-backup-count>2</async-backup-count>
+        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
     </cache>
 
     <cache name="cacheWithTimedCreatedExpiryPolicyFactory">

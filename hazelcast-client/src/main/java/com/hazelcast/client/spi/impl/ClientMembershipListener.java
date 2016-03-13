@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -29,6 +30,7 @@ import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,8 +47,8 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         implements EventHandler<ClientMessage> {
 
     public static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
-    private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(ClientMembershipListener.class);
-    private final List<Member> members = new LinkedList<Member>();
+    private final ILogger logger;
+    private final Set<Member> members = new LinkedHashSet<Member>();
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -56,6 +58,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     public ClientMembershipListener(HazelcastClientInstanceImpl client) {
         this.client = client;
+        logger = client.getLoggingService().getLogger(ClientMembershipListener.class);
         connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
         clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
@@ -71,7 +74,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 memberRemoved(member);
                 break;
             default:
-                LOGGER.warning("Unknown event type :" + eventType);
+                logger.warning("Unknown event type :" + eventType);
         }
         partitionService.refreshPartitions();
     }
@@ -91,10 +94,17 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             members.add(initialMember);
         }
 
-        final List<MembershipEvent> events = detectMembershipEvents(prevMembers);
-        if (events.size() != 0) {
-            LOGGER.info(membersString());
+        if (prevMembers.isEmpty()) {
+            //this means this is the first time client connected to server
+            logger.info(membersString());
+            clusterService.handleInitialMembershipEvent(
+                    new InitialMembershipEvent(client.getCluster(), Collections.unmodifiableSet(members)));
+            initialListFetchedLatch.countDown();
+            return;
         }
+
+        List<MembershipEvent> events = detectMembershipEvents(prevMembers);
+        logger.info(membersString());
         fireMembershipEvent(events);
         initialListFetchedLatch.countDown();
     }
@@ -142,10 +152,10 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
+                if (logger.isFinestEnabled()) {
+                    logger.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
                 } else {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress + ", Error: " + e
+                    logger.warning("Error while registering to cluster events! -> " + ownerConnectionAddress + ", Error: " + e
                             .toString());
                 }
             }
@@ -155,19 +165,19 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     private void waitInitialMemberListFetched() throws InterruptedException {
         boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         if (!success) {
-            LOGGER.warning("Error while getting initial member list from cluster!");
+            logger.warning("Error while getting initial member list from cluster!");
         }
     }
 
     private void memberRemoved(Member member) {
         members.remove(member);
-        LOGGER.info(membersString());
+        logger.info(membersString());
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
-            connectionManager.destroyConnection(connection);
+            connectionManager.destroyConnection(connection, new TargetDisconnectedException("Member left the cluster"));
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
-                Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
+                Collections.unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
     }
 
@@ -178,12 +188,12 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
     }
 
     private List<MembershipEvent> detectMembershipEvents(Map<String, Member> prevMembers) {
-        final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
-        final Set<Member> eventMembers = Collections.unmodifiableSet(new LinkedHashSet<Member>(members));
+        List<MembershipEvent> events = new LinkedList<MembershipEvent>();
+        Set<Member> eventMembers = Collections.unmodifiableSet(members);
 
-        final List<Member> newMembers = new LinkedList<Member>();
+        List<Member> newMembers = new LinkedList<Member>();
         for (Member member : members) {
-            final Member former = prevMembers.remove(member.getUuid());
+            Member former = prevMembers.remove(member.getUuid());
             if (former == null) {
                 newMembers.add(member);
             }
@@ -194,9 +204,10 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
             Address address = member.getAddress();
             if (clusterService.getMember(address) == null) {
-                final Connection connection = connectionManager.getConnection(address);
+                Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
-                    connectionManager.destroyConnection(connection);
+                    connectionManager.destroyConnection(connection,
+                            new TargetDisconnectedException("Member left detected"));
                 }
             }
         }
@@ -209,10 +220,9 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     private void memberAdded(Member member) {
         members.add(member);
-        LOGGER.info(membersString());
+        logger.info(membersString());
         MembershipEvent event = new MembershipEvent(client.getCluster(), member,
-                MembershipEvent.MEMBER_ADDED,
-                Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
+                MembershipEvent.MEMBER_ADDED, Collections.unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
     }
 

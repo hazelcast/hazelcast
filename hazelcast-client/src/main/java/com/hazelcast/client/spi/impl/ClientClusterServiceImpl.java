@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Cluster;
@@ -34,9 +33,9 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.Clock;
@@ -50,6 +49,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -59,15 +59,16 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
-    private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
+    private final ILogger logger;
     private final AtomicReference<Map<Address, Member>> members = new AtomicReference<Map<Address, Member>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
     private final Object initialMembershipListenerMutex = new Object();
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         super(client, addressProviders);
-        final ClientConfig clientConfig = getClientConfig();
-        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        logger = client.getLoggingService().getLogger(ClientClusterService.class);
+        ClientConfig clientConfig = getClientConfig();
+        List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {
             EventListener listener = listenerConfig.getImplementation();
             if (listener == null) {
@@ -75,7 +76,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
                     listener = ClassLoaderUtil.newInstance(clientConfig.getClassLoader(),
                             listenerConfig.getClassName());
                 } catch (Exception e) {
-                    LOGGER.severe(e);
+                    logger.severe(e);
                 }
             }
             if (listener instanceof MembershipListener) {
@@ -171,14 +172,6 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         return id;
     }
 
-    private void initMembershipListeners() {
-        synchronized (initialMembershipListenerMutex) {
-            for (MembershipListener listener : listeners.values()) {
-                initMembershipListener(listener);
-            }
-        }
-    }
-
     private void initMembershipListener(MembershipListener listener) {
         if (listener instanceof InitialMembershipListener) {
             Cluster cluster = client.getCluster();
@@ -201,14 +194,25 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     public void start() throws Exception {
         init();
         connectToCluster();
-        initMembershipListeners();
     }
 
     private ClientConfig getClientConfig() {
         return client.getClientConfig();
     }
 
-    void handleMembershipEvent(final MembershipEvent event) {
+    void handleInitialMembershipEvent(InitialMembershipEvent event) {
+        synchronized (initialMembershipListenerMutex) {
+            Set<Member> initialMembers = event.getMembers();
+            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>();
+            for (Member initialMember : initialMembers) {
+                newMap.put(initialMember.getAddress(), initialMember);
+            }
+            members.set(Collections.unmodifiableMap(newMap));
+            fireInitialMembershipEvent(event);
+        }
+    }
+
+    void handleMembershipEvent(MembershipEvent event) {
         synchronized (initialMembershipListenerMutex) {
             Member member = event.getMember();
             if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
@@ -222,6 +226,12 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
             }
 
             fireMembershipEvent(event);
+        }
+    }
+
+    private void fireInitialMembershipEvent(InitialMembershipEvent event) {
+        for (MembershipListener listener : listeners.values()) {
+            ((InitialMembershipListener) listener).init(event);
         }
     }
 

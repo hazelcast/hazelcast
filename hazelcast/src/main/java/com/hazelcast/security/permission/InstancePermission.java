@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,11 +66,7 @@ public abstract class InstancePermission extends ClusterPermission {
             return false;
         }
 
-        if (!CONFIG_PATTERN_MATCHER.matches(that.getName(), this.getName())) {
-            return false;
-        }
-
-        return true;
+        return CONFIG_PATTERN_MATCHER.matches(getName(), that.getName());
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.Iterator;
@@ -53,7 +54,7 @@ public class ClusterPropsRequest implements ConsoleRequest {
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        InternalPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();
+        IPartitionService partitionService = mcs.getHazelcastInstance().node.getPartitionService();
 
         JsonObject properties = new JsonObject();
         properties.add("hazelcast.cl_version", mcs.getHazelcastInstance().node.getBuildInfo().getVersion());

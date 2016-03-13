@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
         "checkstyle:cyclomaticcomplexity",
         "checkstyle:methodlength",
         "checkstyle:returncount",
-        "checkstyle:innerassignment" })
+        "checkstyle:innerassignment"})
 public final class Base64 {
 
     private static final int BASELENGTH = 255;

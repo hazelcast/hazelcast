@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ final class ConditionImpl implements ICondition {
 
     private final LockProxy lockProxy;
     private final int partitionId;
-    private final String conditionId;
     private final ObjectNamespace namespace;
+    private final String conditionId;
 
     public ConditionImpl(LockProxy lockProxy, String id) {
         this.lockProxy = lockProxy;

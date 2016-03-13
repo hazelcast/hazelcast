@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.operationutil;
 
-import com.hazelcast.cluster.impl.operations.JoinOperation;
-import com.hazelcast.cluster.impl.operations.WanReplicationOperation;
-import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
+import com.hazelcast.internal.cluster.impl.operations.WanReplicationOperation;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 

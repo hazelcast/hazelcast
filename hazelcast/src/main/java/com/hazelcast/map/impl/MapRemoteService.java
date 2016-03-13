@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.spi.RemoteService;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;
+import static com.hazelcast.map.impl.MapConfigValidator.checkMapConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
@@ -46,7 +47,7 @@ class MapRemoteService implements RemoteService {
     @Override
     public DistributedObject createDistributedObject(String name) {
         MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(name);
-        checkInMemoryFormat(mapConfig.getInMemoryFormat());
+        checkMapConfig(mapConfig);
 
         if (mapConfig.isNearCacheEnabled()) {
             checkInMemoryFormat(mapConfig.getNearCacheConfig().getInMemoryFormat());
@@ -62,10 +63,11 @@ class MapRemoteService implements RemoteService {
         mapServiceContext.destroyMap(name);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
         Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        MapContainer mapContainer = mapContainers.remove(name);
+        MapContainer mapContainer = mapContainers.get(name);
         if (mapContainer != null) {
             mapServiceContext.getNearCacheProvider().destroyNearCache(name);
             mapContainer.getMapStoreContext().stop();
+            mapContainers.remove(name);
         }
     }
 

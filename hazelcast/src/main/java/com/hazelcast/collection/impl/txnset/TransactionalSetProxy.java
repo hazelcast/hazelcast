@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
-import com.hazelcast.collection.impl.txncollection.CollectionTransactionLogRecord;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
@@ -28,6 +27,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.Future;
@@ -61,9 +61,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
-                final String txnId = tx.getTxnId();
-                final String serviceName = getServiceName();
-                tx.add(new CollectionTransactionLogRecord(itemId, name, partitionId, serviceName, txnId, op));
+                putToRecord(op);
                 return true;
             }
         } catch (Throwable t) {

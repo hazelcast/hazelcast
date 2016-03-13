@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
-import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
-import com.hazelcast.cluster.impl.ConfigMismatchException;
+import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
+import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.DuplicateInstanceNameException;

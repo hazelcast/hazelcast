@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,11 @@ import com.hazelcast.core.EntryEvent;
 /**
  * Invoked after WAN replicated entry is merged.
  *
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  * @since 3.5
  */
-public interface EntryMergedListener<K, V>  extends MapListener {
+public interface EntryMergedListener<K, V> extends MapListener {
 
     /**
      * Invoked after WAN replicated entry is merged.

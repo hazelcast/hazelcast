@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -78,11 +78,15 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         }
     }
 
+    public Operation getBackupOp() {
+        return backupOp;
+    }
+
     @Override
     public void beforeRun() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();
-        InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+        IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
         Address owner = partition.getReplicaAddress(getReplicaIndex());
         if (nodeEngine.getThisAddress().equals(owner)) {
             return;
@@ -115,7 +119,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             return;
         }
 
-        NodeEngine nodeEngine = getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
         if (backupOp == null && backupOpData != null) {
             backupOp = nodeEngine.getSerializationService().toObject(backupOpData);

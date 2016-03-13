@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.config;
 
+import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
@@ -139,6 +140,8 @@ public class CacheConfigTest extends HazelcastTestSupport {
         WanReplicationRef wanRefDisabledRepublishingTestCache =
                 config1.getCacheConfig("wanRefDisabledRepublishingTestCache").getWanReplicationRef();
         assertFalse(wanRefDisabledRepublishingTestCache.isRepublishingEnabled());
+
+        assertTrue(cacheConfig1.isDisablePerEntryInvalidationEvents());
     }
 
     @Test
@@ -292,6 +295,8 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig1.getEvictionConfig().getEvictionPolicy());
+
+        assertTrue(cacheConfig1.isDisablePerEntryInvalidationEvents());
     }
 
     @Test
@@ -331,7 +336,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
     @Test
     public void cacheManagerByInstanceNameTest() throws URISyntaxException {
-        final String instanceName = "instanceName66";
+        final String instanceName = randomName();
         Config config = new Config();
         config.setInstanceName(instanceName);
         Hazelcast.newHazelcastInstance(config);
@@ -343,6 +348,63 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertNotNull(cacheManager);
 
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
+    }
+
+    @Test
+    public void instanceNameShouldBeUsedIfItIsSpecified()
+            throws URISyntaxException, IOException {
+        Config config = new XmlConfigBuilder(configUrl1).build();
+        URI uri = new URI("MY-SCOPE");
+        Properties properties = new Properties();
+        properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, configUrl1.toString());
+        HazelcastCacheManager cacheManager =
+                (HazelcastCacheManager) Caching.getCachingProvider().getCacheManager(uri, null, properties);
+
+        assertNotNull(cacheManager);
+        assertEquals(config.getInstanceName(), cacheManager.getHazelcastInstance().getName());
+    }
+
+    @Test
+    public void configUrlShouldBeUsedAsInstanceNameIfInstanceNameIsNotSpecified()
+            throws URISyntaxException, IOException {
+        URI uri = new URI("MY-SCOPE");
+        Properties properties = new Properties();
+        properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, configUrl2.toString());
+        HazelcastCacheManager cacheManager =
+                (HazelcastCacheManager) Caching.getCachingProvider().getCacheManager(uri, null, properties);
+
+        assertNotNull(cacheManager);
+        assertEquals(configUrl2.toString(), cacheManager.getHazelcastInstance().getName());
+    }
+
+    @Test
+    public void instanceNamePropertyShouldBeUsedWhenNoInstanceNameIsSpecified()
+            throws URISyntaxException, IOException {
+        String instanceName = randomName();
+        URI uri = new URI("MY-SCOPE");
+        Properties properties = new Properties();
+        properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, configUrl2.toString());
+        properties.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, instanceName);
+        HazelcastCacheManager cacheManager =
+                (HazelcastCacheManager) Caching.getCachingProvider().getCacheManager(uri, null, properties);
+
+        assertNotNull(cacheManager);
+        assertEquals(instanceName, cacheManager.getHazelcastInstance().getName());
+    }
+
+    @Test
+    public void instanceNamePropertyShouldBeUsedEvenThoughInstanceNameIsSpecifiedInTheConfig()
+            throws URISyntaxException, IOException {
+        String instanceName = randomName();
+        URI uri = new URI("MY-SCOPE");
+        Properties properties = new Properties();
+        properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, configUrl1.toString());
+        properties.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, instanceName);
+        HazelcastCacheManager cacheManager =
+                (HazelcastCacheManager) Caching.getCachingProvider().getCacheManager(uri, null, properties);
+
+        assertNotNull(cacheManager);
+        assertEquals(instanceName, cacheManager.getHazelcastInstance().getName());
     }
 
     @Test

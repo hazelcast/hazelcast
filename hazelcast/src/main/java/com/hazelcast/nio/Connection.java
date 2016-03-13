@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
@@ -23,7 +24,7 @@ import java.net.InetSocketAddress;
  * Represents a 'connection' between two machines. The most important implementation is the
  * {@link com.hazelcast.nio.tcp.TcpIpConnection}.
  */
-public interface Connection {
+public interface Connection extends Closeable {
 
     /**
      * Checks if the Connection is alive.

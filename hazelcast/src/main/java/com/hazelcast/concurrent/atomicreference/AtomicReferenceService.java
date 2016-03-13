@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
@@ -97,9 +97,10 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
 
         Map<String, Data> data = new HashMap<String, Data>();
         int partitionId = event.getPartitionId();
-        for (String name : containers.keySet()) {
+        for (Map.Entry<String, AtomicReferenceContainer> containerEntry : containers.entrySet()) {
+            String name = containerEntry.getKey();
             if (partitionId == getPartitionId(name)) {
-                AtomicReferenceContainer atomicReferenceContainer = containers.get(name);
+                AtomicReferenceContainer atomicReferenceContainer = containerEntry.getValue();
                 Data value = atomicReferenceContainer.get();
                 data.put(name, value);
             }
@@ -139,7 +140,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     }
 
     private int getPartitionId(String name) {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
     }

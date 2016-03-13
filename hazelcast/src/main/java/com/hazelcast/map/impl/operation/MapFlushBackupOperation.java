@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+
+import java.io.IOException;
 
 /**
  * Empties backup write-behind-queues upon {@link IMap#flush()}
@@ -35,7 +38,16 @@ public class MapFlushBackupOperation extends MapOperation implements BackupOpera
 
     @Override
     public void run() throws Exception {
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-        recordStore.getMapDataStore().clear();
+        recordStore.softFlush();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
     }
 }

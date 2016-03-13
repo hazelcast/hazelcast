@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.memory.MemoryStats;
@@ -60,6 +59,16 @@ public interface NodeExtension {
      * Returns true if the instance has started
      */
     boolean isStartCompleted();
+
+    /**
+     * Called before <tt>Node.shutdown()</tt>
+     */
+    void beforeShutdown();
+
+    /**
+     * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
+     */
+    void shutdown();
 
     /**
      * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.
@@ -128,11 +137,6 @@ public interface NodeExtension {
     WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService);
 
     /**
-     * Creates factory method that creates server side client message handlers
-     */
-    MessageTaskFactory createMessageTaskFactory();
-
-    /**
      * Called on thread start to inject/intercept extension specific logic,
      * like; registering thread in some service,
      * executing a special method before thread starts to do its own task.
@@ -155,20 +159,10 @@ public interface NodeExtension {
      */
     MemoryStats getMemoryStats();
 
-    /**
-     * Called before <tt>Node.shutdown()</tt>
-     */
-    void beforeShutdown();
-
-    /**
-     * Shutdowns <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
-     */
-    void shutdown();
-
-    /**
+     /**
      * Called before a new node is joining to cluster,
      * executed if node is the master node before join event.
-     * {@link com.hazelcast.cluster.impl.ClusterJoinManager} calls this method,
+     * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager} calls this method,
      * when handleJoinRequest method is called. By this way, we can check the logic we want
      * by implementing this method. Implementation should throw required exception, with a valid
      * message which explains rejection reason.
@@ -196,7 +190,6 @@ public interface NodeExtension {
      * even if node is still on validation phase or loading hot-restart data.
      *
      * @return true if hot restart is enabled and this node knows the master
-     *
      */
     boolean triggerForceStart();
 }

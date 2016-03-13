@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,29 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.UnsafeHelper;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BOOLEAN_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BOOLEAN_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_CHAR_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_CHAR_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_DOUBLE_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_DOUBLE_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_FLOAT_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_FLOAT_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_INT_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_INT_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_LONG_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_LONG_INDEX_SCALE;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_SHORT_BASE_OFFSET;
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_SHORT_INDEX_SCALE;
 import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.DOUBLE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
@@ -39,53 +56,53 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     @Override
     public void writeChar(final int v) throws IOException {
         ensureAvailable(CHAR_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (char) v);
+        MEM.putChar(buffer, ARRAY_BYTE_BASE_OFFSET + pos, (char) v);
         pos += CHAR_SIZE_IN_BYTES;
     }
 
     @Override
     public void writeChar(int position, final int v) throws IOException {
         checkAvailable(position, CHAR_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (char) v);
+        MEM.putChar(buffer, ARRAY_BYTE_BASE_OFFSET + position, (char) v);
     }
 
     @Override
     public void writeDouble(final double v) throws IOException {
         ensureAvailable(DOUBLE_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putDouble(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
+        MEM.putDouble(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += DOUBLE_SIZE_IN_BYTES;
     }
 
     @Override
     public void writeDouble(int position, final double v) throws IOException {
         checkAvailable(position, DOUBLE_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putDouble(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
+        MEM.putDouble(buffer, ARRAY_BYTE_BASE_OFFSET + position, v);
     }
 
     @Override
     public void writeFloat(final float v) throws IOException {
         ensureAvailable(FLOAT_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putFloat(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
+        MEM.putFloat(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += FLOAT_SIZE_IN_BYTES;
     }
 
     @Override
     public void writeFloat(int position, final float v) throws IOException {
         checkAvailable(position, FLOAT_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putFloat(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
+        MEM.putFloat(buffer, ARRAY_BYTE_BASE_OFFSET + position, v);
     }
 
     @Override
     public void writeInt(final int v) throws IOException {
         ensureAvailable(INT_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putInt(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
+        MEM.putInt(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += INT_SIZE_IN_BYTES;
     }
 
     @Override
     public void writeInt(int position, int v) throws IOException {
         checkAvailable(position, INT_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putInt(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
+        MEM.putInt(buffer, ARRAY_BYTE_BASE_OFFSET + position, v);
     }
 
     @Override
@@ -109,14 +126,14 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     @Override
     public void writeLong(final long v) throws IOException {
         ensureAvailable(LONG_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
+        MEM.putLong(buffer, ARRAY_BYTE_BASE_OFFSET + pos, v);
         pos += LONG_SIZE_IN_BYTES;
     }
 
     @Override
     public void writeLong(int position, final long v) throws IOException {
         checkAvailable(position, LONG_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
+        MEM.putLong(buffer, ARRAY_BYTE_BASE_OFFSET + position, v);
     }
 
     @Override
@@ -140,14 +157,14 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     @Override
     public void writeShort(final int v) throws IOException {
         ensureAvailable(SHORT_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (short) v);
+        MEM.putShort(buffer, ARRAY_BYTE_BASE_OFFSET + pos, (short) v);
         pos += SHORT_SIZE_IN_BYTES;
     }
 
     @Override
     public void writeShort(int position, final int v) throws IOException {
         checkAvailable(position, SHORT_SIZE_IN_BYTES);
-        UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (short) v);
+        MEM.putShort(buffer, ARRAY_BYTE_BASE_OFFSET + position, (short) v);
     }
 
     @Override
@@ -175,7 +192,8 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(booleans, UnsafeHelper.BOOLEAN_ARRAY_BASE_OFFSET, len, UnsafeHelper.BOOLEAN_ARRAY_INDEX_SCALE);
+            memCopy(booleans, ARRAY_BOOLEAN_BASE_OFFSET,
+                    len, ARRAY_BOOLEAN_INDEX_SCALE);
         }
     }
 
@@ -184,7 +202,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = (bytes != null) ? bytes.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(bytes, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET, len, UnsafeHelper.BYTE_ARRAY_INDEX_SCALE);
+            memCopy(bytes, ARRAY_BYTE_BASE_OFFSET, len, ARRAY_BYTE_INDEX_SCALE);
         }
     }
 
@@ -193,7 +211,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len, UnsafeHelper.CHAR_ARRAY_INDEX_SCALE);
+            memCopy(values, ARRAY_CHAR_BASE_OFFSET, len, ARRAY_CHAR_INDEX_SCALE);
         }
     }
 
@@ -202,7 +220,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len, UnsafeHelper.SHORT_ARRAY_INDEX_SCALE);
+            memCopy(values, ARRAY_SHORT_BASE_OFFSET, len, ARRAY_SHORT_INDEX_SCALE);
         }
     }
 
@@ -211,7 +229,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len, UnsafeHelper.INT_ARRAY_INDEX_SCALE);
+            memCopy(values, ARRAY_INT_BASE_OFFSET, len, ARRAY_INT_INDEX_SCALE);
         }
     }
 
@@ -220,7 +238,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len, UnsafeHelper.FLOAT_ARRAY_INDEX_SCALE);
+            memCopy(values, ARRAY_FLOAT_BASE_OFFSET, len, ARRAY_FLOAT_INDEX_SCALE);
         }
     }
 
@@ -229,7 +247,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len, UnsafeHelper.LONG_ARRAY_INDEX_SCALE);
+            memCopy(values, ARRAY_LONG_BASE_OFFSET, len, ARRAY_LONG_INDEX_SCALE);
         }
     }
 
@@ -238,7 +256,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : NULL_ARRAY_LENGTH;
         writeInt(len);
         if (len > 0) {
-            memCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len, UnsafeHelper.DOUBLE_ARRAY_INDEX_SCALE);
+            memCopy(values, ARRAY_DOUBLE_BASE_OFFSET, len, ARRAY_DOUBLE_INDEX_SCALE);
         }
     }
 
@@ -252,8 +270,8 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         ensureAvailable(remaining);
 
         while (remaining > 0) {
-            int chunk = (remaining > UnsafeHelper.MEM_COPY_THRESHOLD) ? UnsafeHelper.MEM_COPY_THRESHOLD : remaining;
-            UnsafeHelper.UNSAFE.copyMemory(src, offset, buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, chunk);
+            int chunk = Math.min(remaining, GlobalMemoryAccessor.MEM_COPY_THRESHOLD);
+            MEM.copyMemory(src, offset, buffer, ARRAY_BYTE_BASE_OFFSET + pos, chunk);
             remaining -= chunk;
             offset += chunk;
             pos += chunk;

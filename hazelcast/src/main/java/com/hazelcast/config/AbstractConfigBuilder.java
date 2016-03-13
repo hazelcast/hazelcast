@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,14 +57,24 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     private final XPath xpath;
 
     public AbstractConfigBuilder() {
-        final XPathFactory fac = XPathFactory.newInstance();
+        XPathFactory fac = XPathFactory.newInstance();
         this.xpath = fac.newXPath();
+
         xpath.setNamespaceContext(new NamespaceContext() {
-            @Override public String getNamespaceURI(String prefix) {
+            @Override
+            public String getNamespaceURI(String prefix) {
                 return "hz".equals(prefix) ? xmlns : null;
             }
-            @Override public String getPrefix(String namespaceURI) { return null; }
-            @Override public Iterator getPrefixes(String namespaceURI) { return null; }
+
+            @Override
+            public String getPrefix(String namespaceURI) {
+                return null;
+            }
+
+            @Override
+            public Iterator getPrefixes(String namespaceURI) {
+                return null;
+            }
         });
     }
 
@@ -83,7 +93,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
                     "<import> element can appear only in the top level of the XML");
         }
         NodeList importTags = (NodeList) xpath.evaluate(
-                String.format("/hz:%s/hz:%s", this.getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
+                String.format("/hz:%s/hz:%s", getXmlType().name, IMPORT.name), document, XPathConstants.NODESET);
         for (Node node : asElementIterable(importTags)) {
             loadAndReplaceImportElement(root, node);
         }

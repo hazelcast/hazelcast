@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,11 @@ public final class StringUtil {
      * UTF-8 Charset
      */
     public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+
+    /**
+     * Points to the System property 'line.separator'.
+     */
+    public static final String LINE_SEPARATOR =  System.getProperty("line.separator");
 
     private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
 
@@ -121,13 +126,5 @@ public final class StringUtil {
             return s;
         }
         return s.toLowerCase(LOCALE_INTERNAL);
-    }
-
-    /**
-     * Returns system property "line.seperator"
-     * @return line seperator for the specific OS
-     */
-    public static String getLineSeperator() {
-        return System.getProperty("line.separator");
     }
 }

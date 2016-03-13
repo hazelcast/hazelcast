@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class MonitoredThread implements Comparable<MonitoredThread> {
     @Override
     public boolean equals(Object o) {
         if (o != null && o instanceof MonitoredThread) {
-            return this.compareTo((MonitoredThread) o) == 0;
+            return compareTo((MonitoredThread) o) == 0;
         }
         return false;
     }

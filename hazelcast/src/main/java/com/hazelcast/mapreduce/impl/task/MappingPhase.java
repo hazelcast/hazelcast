@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,7 +63,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
         return cancelled.get();
     }
 
-    protected boolean processingPartitionNecessary(int partitionId, InternalPartitionService partitionService) {
+    protected boolean processingPartitionNecessary(int partitionId, IPartitionService partitionService) {
         if (partitionId == -1) {
             partitionKeys = null;
             return true;
@@ -92,7 +92,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
         return predicate != null && predicate.evaluate(key);
     }
 
-    private Object[] prepareKeys(int partitionId, InternalPartitionService partitionService) {
+    private Object[] prepareKeys(int partitionId, IPartitionService partitionService) {
         if (keys == null || keys.length == 0) {
             return null;
         }
@@ -106,7 +106,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
         return partitionMappedKeys[partitionId];
     }
 
-    private Object[][] buildCache(InternalPartitionService partitionService) {
+    private Object[][] buildCache(IPartitionService partitionService) {
         List<Object>[] mapping = buildMapping(partitionService);
         Object[][] cache = new Object[mapping.length][];
         for (int i = 0; i < cache.length; i++) {
@@ -118,7 +118,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
         return cache;
     }
 
-    private List<Object>[] buildMapping(InternalPartitionService partitionService) {
+    private List<Object>[] buildMapping(IPartitionService partitionService) {
         List<Object>[] mapping = new List[partitionService.getPartitionCount()];
         for (Object key : keys) {
             int pid = partitionService.getPartitionId(key);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,30 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.CollectionTxnUtil;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
-import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 
 public class CollectionRollbackOperation extends CollectionBackupAwareOperation {
 
-    private long itemId;
-    private boolean removeOperation;
+    private long[] itemIds;
 
     public CollectionRollbackOperation() {
     }
 
-    public CollectionRollbackOperation(int partitionId, String name, String serviceName, long itemId, boolean removeOperation) {
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public CollectionRollbackOperation(int partitionId, String name, String serviceName, long[] itemIds) {
         super(name);
         setPartitionId(partitionId);
         setServiceName(serviceName);
-        this.itemId = itemId;
-        this.removeOperation = removeOperation;
+        this.itemIds = itemIds;
     }
 
     @Override
@@ -47,16 +49,18 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionRollbackBackupOperation(name, itemId, removeOperation);
+        return new CollectionRollbackBackupOperation(name, itemIds);
     }
 
     @Override
     public void run() throws Exception {
         CollectionContainer collectionContainer = getOrCreateContainer();
-        if (removeOperation) {
-            collectionContainer.rollbackRemove(itemId);
-        } else {
-            collectionContainer.rollbackAdd(itemId);
+        for (long itemId : itemIds) {
+            if (CollectionTxnUtil.isRemove(itemId)) {
+                collectionContainer.rollbackRemove(itemId);
+            } else {
+                collectionContainer.rollbackAdd(-itemId);
+            }
         }
     }
 
@@ -68,14 +72,12 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        out.writeBoolean(removeOperation);
+        out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        removeOperation = in.readBoolean();
+        itemIds = in.readLongArray();
     }
 }

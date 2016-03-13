@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
 
 import java.nio.channels.SelectionKey;
 
@@ -34,12 +34,13 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     private final NonBlockingIOThread ioThread;
     private SelectionKey sk;
 
-    public AbstractClientSelectionHandler(final ClientConnection connection, NonBlockingIOThread ioThread) {
+    public AbstractClientSelectionHandler(final ClientConnection connection, NonBlockingIOThread ioThread,
+                                          LoggingService loggingService) {
         this.connection = connection;
         this.ioThread = ioThread;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
-        this.logger = Logger.getLogger(getClass().getName());
+        this.logger = loggingService.getLogger(getClass().getName());
     }
 
     protected void shutdown() {
@@ -50,9 +51,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
         if (sk != null) {
             sk.cancel();
         }
-        connectionManager.destroyConnection(connection);
-        logger.warning(Thread.currentThread().getName() + " Closing socket to endpoint "
-                + connection.getEndPoint() + ", Cause:" + e);
+        connectionManager.destroyConnection(connection, e);
     }
 
     final void registerOp(final int operation) {

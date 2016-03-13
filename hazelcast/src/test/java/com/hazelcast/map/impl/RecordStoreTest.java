@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.impl.Indexes;
@@ -84,7 +84,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
     private DefaultRecordStore getRecordStore(IMap<Object, Object> map, int key) {
         MapServiceContext mapServiceContext = getMapServiceContext((MapProxyImpl) map);
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(key);
         PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(map.getName());

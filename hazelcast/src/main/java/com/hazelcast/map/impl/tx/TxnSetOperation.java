@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.BasePutOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -73,11 +72,10 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public void run() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final EventService eventService = getNodeEngine().getEventService();
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record == null || version == record.getVersion()) {
+            EventService eventService = getNodeEngine().getEventService();
             if (eventService.hasEventRegistration(MapService.SERVICE_NAME, getName())) {
                 dataOldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }

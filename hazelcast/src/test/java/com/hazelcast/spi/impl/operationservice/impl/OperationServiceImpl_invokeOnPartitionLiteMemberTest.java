@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.partition.InternalPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static java.util.Collections.singletonList;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.TestCase.assertTrue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -133,8 +133,8 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
         final Connection connectionToServer = connectionManager.getConnection(serverAddress);
 
-        connectionManager.destroyConnection(connectionToServer);
-        connectionManager.destroyConnection(connectionToServer);
+        connectionManager.destroyConnection(connectionToServer, null);
+        connectionManager.destroyConnection(connectionToServer, null);
 
         assertEquals("connection removed should be called only once", 1, listener.count.get());
     }

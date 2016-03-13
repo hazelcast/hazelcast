@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,6 +95,25 @@ public class ClientXATest {
         cleanAtomikosLogs();
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testWhenLockedOutOfTransaction() throws Exception {
+        Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap("map");
+        map.put("key", "value");
+        HazelcastXAResource xaResource = client.getXAResource();
+
+        tm.begin();
+        Transaction transaction = tm.getTransaction();
+        transaction.enlistResource(xaResource);
+        TransactionContext context = xaResource.getTransactionContext();
+        TransactionalMap<Object, Object> transactionalMap = context.getMap("map");
+        if (map.tryLock("key")) {
+            transactionalMap.remove("key");
+        }
+        tm.commit();
     }
 
     @Test

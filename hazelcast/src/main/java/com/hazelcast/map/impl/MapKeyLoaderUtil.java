@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.UnmodifiableIterator;
 
@@ -106,7 +106,7 @@ public final class MapKeyLoaderUtil {
         return (int) maxSizePerNode;
     }
 
-    static IFunction<Data, Entry<Integer, Data>> toPartition(final InternalPartitionService partitionService) {
+    static IFunction<Data, Entry<Integer, Data>> toPartition(final IPartitionService partitionService) {
         return new IFunction<Data, Entry<Integer, Data>>() {
             @Override
             public Entry<Integer, Data> apply(Data input) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -231,7 +231,10 @@ public interface RecordStore<R extends Record> {
 
     MapContainer getMapContainer();
 
-    void flush();
+    /**
+     * @see MapDataStore#softFlush()
+     */
+    long softFlush();
 
     /**
      * Clears internal partition data.
@@ -282,7 +285,13 @@ public interface RecordStore<R extends Record> {
      */
     boolean isExpired(R record, long now, boolean backup);
 
-    void doPostEvictionOperations(Data key, Object value, boolean isExpired);
+    /**
+     * Does post eviction operations like sending events
+     *
+     * @param record record to process
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     */
+    void doPostEvictionOperations(Record record, boolean backup);
 
     /**
      * Loads all given keys from defined map store.
@@ -307,7 +316,7 @@ public interface RecordStore<R extends Record> {
      */
     R getRecordOrNull(Data key);
 
-    void evictEntries(long now);
+    void evictEntries();
 
     /**
      * Loads all keys and values
@@ -335,8 +344,6 @@ public interface RecordStore<R extends Record> {
     void destroy();
 
     Storage getStorage();
-
-    boolean isEvictionEnabled();
 
     /**
      * Starts mapLoader

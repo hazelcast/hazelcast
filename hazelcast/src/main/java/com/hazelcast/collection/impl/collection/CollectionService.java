@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package com.hazelcast.collection.impl.collection;
 
+import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -36,6 +36,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -102,7 +103,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     @Override
     public void rollbackTransaction(String transactionId) {
         final Set<String> collectionNames = getContainerMap().keySet();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : collectionNames) {
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -120,7 +121,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     public Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
         Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
@@ -154,7 +155,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     private void clearMigrationData(int partitionId) {
         final Set<? extends Map.Entry<String, ? extends CollectionContainer>> entrySet = getContainerMap().entrySet();
         final Iterator<? extends Map.Entry<String, ? extends CollectionContainer>> iterator = entrySet.iterator();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
             final Map.Entry<String, ? extends CollectionContainer> entry = iterator.next();
             final String name = entry.getKey();

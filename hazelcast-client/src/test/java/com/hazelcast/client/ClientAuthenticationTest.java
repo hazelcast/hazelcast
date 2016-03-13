@@ -3,6 +3,8 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -20,6 +22,9 @@ import org.junit.runner.RunWith;
 public class ClientAuthenticationTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    private final String USERNAME = "user";
+    private final String PASSWORD = "pass";
 
     @After
     public void cleanup() {
@@ -45,33 +50,16 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAuthenticationWithCustomCredentials() {
-        final String username = "dev";
-        final String password = "pass";
-
-        PortableFactory credentialsFactory = new PortableFactory() {
-            @Override
-            public Portable create(int classId) {
-                return new CustomCredentials() {
-                    @Override
-                    public String getUsername() {
-                        return username;
-                    }
-                    @Override
-                    public String getPassword() {
-                        return password;
-                    }
-                };
-            }
-        };
+    public void testAuthenticationWithCustomCredentials_when_singleNode() {
+        PortableFactory factory = new CustomCredentialsPortableFactory();
 
         // with this config, the server will authenticate any credential of type CustomCredentials
         Config config = new Config();
         config.getGroupConfig()
-                .setName(username)
-                .setPassword(password);
+                .setName(USERNAME)
+                .setPassword(PASSWORD);
         config.getSerializationConfig()
-                .addPortableFactory(1, credentialsFactory);
+                .addPortableFactory(1, factory);
         hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
@@ -79,6 +67,51 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         // make sure there are no credentials sent over the wire
         clientConfig.getSecurityConfig().setCredentials(new CustomCredentials());
         hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testAuthenticationWithCustomCredentials_when_multipleNodes() {
+        PortableFactory factory = new CustomCredentialsPortableFactory();
+
+        // with this config, the server will authenticate any credential of type CustomCredentials
+        Config config = new Config();
+        config.getGroupConfig()
+                .setName(USERNAME)
+                .setPassword(PASSWORD);
+        config.getSerializationConfig()
+                .addPortableFactory(1, factory);
+
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+
+        // make sure there are no credentials sent over the wire
+        clientConfig.getSecurityConfig().setCredentials(new CustomCredentials());
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        // ensure client opens a connection to all nodes
+        IMap<Integer, Integer> map = hazelcastInstance.getMap(randomName());
+        for (int i = 0; i < 100; i++) {
+            map.put(i,i);
+        }
+    }
+
+    private class CustomCredentialsPortableFactory implements PortableFactory {
+        @Override
+        public Portable create(int classId) {
+            return new CustomCredentials() {
+                @Override
+                public String getUsername() {
+                    return USERNAME;
+                }
+
+                @Override
+                public String getPassword() {
+                    return PASSWORD;
+                }
+            };
+        }
     }
 
     private class CustomCredentials extends UsernamePasswordCredentials {

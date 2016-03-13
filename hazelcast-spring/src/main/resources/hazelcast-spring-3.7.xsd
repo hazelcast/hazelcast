@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -388,23 +388,23 @@
                                 <xs:attribute name="eviction-percentage" use="optional" type="xs:string">
                                     <xs:annotation>
                                         <xs:documentation>
+                                            This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
+                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+
                                             When max. size is reached, specified percentage of the map will be evicted.
                                             Any integer between 0 and 100. If 25 is set for example, 25% of the
                                             entries will get evicted.
-                                            Beware that eviction mechanism is different for NATIVE in-memory format.
-                                            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
-                                            For this in-memory format, `minEvictionCheckMillis` has no effect
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
                                 <xs:attribute name="min-eviction-check-millis" use="optional" type="xs:string">
                                     <xs:annotation>
                                         <xs:documentation>
+                                            This parameter is deprecated as of version 3.7 due to the eviction mechanism change.
+                                            (New eviction mechanism uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
+
                                             Minimum time in milliseconds which should pass before checking if a
                                             partition of this map is evictable or not. Default value is 100 millis.
-                                            Beware that eviction mechanism is different for NATIVE in-memory format.
-                                            (It uses a probabilistic algorithm based on sampling. Please see documentation for further details.)
-                                            For this in-memory format, `minEvictionCheckMillis` has no effect
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -605,6 +605,14 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             Set if read-through caching should be used.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="disable-per-entry-invalidation-events" type="parameterized-boolean" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Disables invalidation events for per entry but full-flush invalidation events are still enabled.
+                                            Full-flush invalidation event means that invalidation events for all entries on clear.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1472,6 +1480,28 @@
         <xs:attribute name="connection-timeout-seconds" type="xs:string" use="optional" default="5"/>
     </xs:complexType>
 
+    <xs:complexType name="discovery-strategies">
+        <xs:sequence>
+            <xs:element name="node-filter" type="discovery-node-filter" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="discovery-strategy" type="discovery-strategy" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="discovery-service-provider" type="discovery-service-provider" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="discovery-service-provider">
+        <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+    </xs:complexType>
+    <xs:complexType name="discovery-node-filter">
+        <xs:attribute name="class-name" type="non-space-string" use="optional"/>
+        <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+    </xs:complexType>
+    <xs:complexType name="discovery-strategy">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="class-name" type="non-space-string" use="optional"/>
+        <xs:attribute name="discovery-strategy-factory" type="non-space-string" use="optional"/>
+    </xs:complexType>
+
     <xs:complexType name="merge-policies">
         <xs:sequence>
             <xs:element name="map-merge-policy" type="map-merge-policy" minOccurs="1" maxOccurs="unbounded"/>
@@ -1499,6 +1529,7 @@
             <xs:element name="multicast" type="multicast" minOccurs="0"/>
             <xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
             <xs:element name="aws" type="aws" minOccurs="0"/>
+            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -1999,12 +2030,13 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
             <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="false"/>
         <xs:attribute name="redo-operation" use="optional" type="parameterized-boolean" default="false"/>
-        <xs:attribute name="connection-timeout" use="optional" type="intMin1" default="60000"/>
-        <xs:attribute name="connection-attempt-period" use="optional" type="intMin1" default="3000"/>
-        <xs:attribute name="connection-attempt-limit" use="optional" type="intMin0" default="2"/>
+        <xs:attribute name="connection-timeout" use="optional" type="parameterized-positive-integer" default="60000"/>
+        <xs:attribute name="connection-attempt-period" use="optional" type="parameterized-positive-integer" default="3000"/>
+        <xs:attribute name="connection-attempt-limit" use="optional" type="parameterized-non-negative-integer" default="2"/>
     </xs:complexType>
 
     <xs:complexType name="socket-options">
@@ -2055,7 +2087,7 @@
     <xs:simpleType name="parameterized-unsigned-int">
         <xs:union memberTypes="xs:unsignedInt parameterizedValueType"/>
     </xs:simpleType>
-    <xs:simpleType name="intMin1">
+    <xs:simpleType name="parameterized-positive-integer">
         <xs:union memberTypes="xs:positiveInteger parameterizedValueType"/>
     </xs:simpleType>
     <xs:simpleType name="parameterized-backup-count">
@@ -2067,7 +2099,7 @@
             <xs:maxInclusive value="6"/>
         </xs:restriction>
     </xs:simpleType>
-    <xs:simpleType name="intMin0">
+    <xs:simpleType name="parameterized-non-negative-integer">
         <xs:union memberTypes="xs:nonNegativeInteger parameterizedValueType"/>
     </xs:simpleType>
 
@@ -2396,7 +2428,7 @@
         <xs:attribute name="enabled" default="true" type="parameterized-boolean"/>
     </xs:complexType>
     <xs:complexType name="memory-size">
-        <xs:attribute name="value" type="xs:int" default="128"/>
+        <xs:attribute name="value" type="parameterized-non-negative-integer" default="128"/>
         <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
     <xs:simpleType name="memory-unit">

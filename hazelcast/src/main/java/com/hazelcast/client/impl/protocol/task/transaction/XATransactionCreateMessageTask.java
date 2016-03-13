@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,8 @@ public class XATransactionCreateMessageTask
     protected Object call() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         XAService xaService = getService(getServiceName());
-        TransactionContext context = xaService.newXATransactionContext(parameters.xid, (int) parameters.timeout);
+        String ownerUuid = endpoint.getUuid();
+        TransactionContext context = xaService.newXATransactionContext(parameters.xid, ownerUuid, (int) parameters.timeout, true);
         TransactionAccessor.getTransaction(context).begin();
         endpoint.setTransactionContext(context);
         return context.getTxnId();

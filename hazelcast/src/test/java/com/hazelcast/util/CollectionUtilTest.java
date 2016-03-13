@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,23 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.collection.ArrayUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
@@ -84,4 +87,47 @@ public class CollectionUtilTest {
         assertSame(obj, result);
         verify(src, never()).iterator();
     }
+
+    @Test
+    public void objectToDataCollection_size() {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        Collection list = new ArrayList();
+        list.add(1);
+        list.add("foo");
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(list, serializationService);
+        assertEquals(list.size(), dataCollection.size());
+
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void objectToDataCollection_withNullItem() {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        Collection list = new ArrayList();
+        list.add(null);
+        CollectionUtil.objectToDataCollection(list, serializationService);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void objectToDataCollection_withNullCollection() {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        CollectionUtil.objectToDataCollection(null, serializationService);
+    }
+
+
+    @Test
+    public void objectToDataCollection_deserializeBack() {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        Collection list = new ArrayList();
+        list.add(1);
+        list.add("foo");
+
+        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(list, serializationService);
+        Iterator<Data> it1 = dataCollection.iterator();
+        Iterator it2 = list.iterator();
+        while (it1.hasNext() && it2.hasNext()) {
+            assertEquals(serializationService.toObject(it1.next()), it2.next());
+        }
+    }
+
+
 }

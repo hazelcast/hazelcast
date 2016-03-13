@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -143,26 +143,11 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-cloud</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-hibernate3</artifactId>
-            <version>${project.version}</version>
+            <version>3.6</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-spring</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-wm</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-jclouds</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

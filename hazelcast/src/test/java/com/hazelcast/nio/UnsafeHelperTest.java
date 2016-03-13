@@ -43,7 +43,11 @@ public class UnsafeHelperTest extends HazelcastTestSupport {
 
     @Test
     public void testFindUnsafeIfAllowed() {
-        assertNotNull(findUnsafeIfAllowed());
+        if (UnsafeHelper.isUnalignedAccessAllowed()) {
+            assertNotNull(findUnsafeIfAllowed());
+        } else {
+            assertNull(findUnsafeIfAllowed());
+        }
     }
 
     @Test

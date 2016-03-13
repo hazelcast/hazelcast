@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@
 
         <org.springframework.version>4.0.2.RELEASE</org.springframework.version>
         <jsr250.api.version>1.0</jsr250.api.version>
+        <hazelcast.latest.version>3.6</hazelcast.latest.version>
     </properties>
 
     <build>
@@ -170,7 +171,7 @@
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast-hibernate4</artifactId>
-                    <version>${project.parent.version}</version>
+                    <version>${hazelcast.latest.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>
@@ -231,7 +232,7 @@
                 <dependency>
                     <groupId>com.hazelcast</groupId>
                     <artifactId>hazelcast-hibernate3</artifactId>
-                    <version>${project.parent.version}</version>
+                    <version>${hazelcast.latest.version}</version>
                     <scope>test</scope>
                 </dependency>
                 <dependency>

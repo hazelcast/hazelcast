@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
@@ -28,18 +27,18 @@ public class EvictAllBackupOperation extends MapOperation implements BackupOpera
         DataSerializable {
 
     public EvictAllBackupOperation() {
+        this(null);
     }
 
     public EvictAllBackupOperation(String name) {
         super(name);
+        createRecordStoreOnDemand = false;
     }
 
     @Override
     public void run() throws Exception {
         clearNearCache(false);
 
-        RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
-        //if there is no recordStore, then there is nothing to evict.
         if (recordStore == null) {
             return;
         }

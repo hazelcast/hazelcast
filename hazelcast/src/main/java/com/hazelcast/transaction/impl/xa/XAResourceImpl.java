@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.transaction.impl.xa;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -107,7 +107,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private TransactionContext createTransactionContext(Xid xid) {
         XAService xaService = getService();
-        TransactionContext context = xaService.newXATransactionContext(xid, timeoutInSeconds.get());
+        TransactionContext context = xaService.newXATransactionContext(xid, null, timeoutInSeconds.get(), false);
         getTransaction(context).begin();
         return context;
     }
@@ -174,7 +174,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private void finalizeTransactionRemotely(Xid xid, boolean isCommit) throws XAException {
         NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         SerializableXID serializableXID =
                 new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
@@ -195,7 +195,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private void clearRemoteTransactions(Xid xid) {
         NodeEngine nodeEngine = getNodeEngine();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         SerializableXID serializableXID =
                 new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());

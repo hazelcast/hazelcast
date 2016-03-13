@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
@@ -60,7 +60,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
         final Map<String, MapContainer> mapContainers = getMapContainers();
         final Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer,
                 Collection<Record>>(mapContainers.size());
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
 
@@ -126,13 +126,15 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 }
             };
 
-            for (MapContainer mapContainer : recordMap.keySet()) {
-                String mapName = mapContainer.getName();
-                Collection<Record> recordList = recordMap.get(mapContainer);
-                String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
+            for (Map.Entry<MapContainer, Collection<Record>> recordMapEntry : recordMap.entrySet()) {
+                MapContainer mapContainer = recordMapEntry.getKey();
+                Collection<Record> recordList = recordMapEntry.getValue();
 
-                // todo number of records may be high.
-                // todo below can be optimized a many records can be send in single invocation
+                String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
+                String mapName = mapContainer.getName();
+
+                // TODO: number of records may be high
+                // TODO: below can be optimized a many records can be send in single invocation
                 final MapMergePolicy finalMergePolicy
                         = mapServiceContext.getMergePolicyProvider().getMergePolicy(mergePolicyName);
                 MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);

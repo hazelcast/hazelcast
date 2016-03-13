@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -39,7 +39,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -59,11 +59,11 @@ public class InvocationMonitor {
     private final long slowInvocationThresholdMs;
     private final InvocationRegistry invocationRegistry;
     private final ExecutionService executionService;
-    private final MonitorThread monitorThread;
+    private final InvocationMonitorThread monitorThread;
     private final ILogger logger;
-    @Probe(name = "invocations.backupTimeouts", level = MANDATORY)
+    @Probe(name = "backupTimeouts", level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
-    @Probe(name = "invocations.normalTimeouts", level = MANDATORY)
+    @Probe(name = "normalTimeouts", level = MANDATORY)
     private final SwCounter normalTimeoutsCount = newSwCounter();
 
     public InvocationMonitor(InvocationRegistry invocationRegistry, ILogger logger, GroupProperties props,
@@ -74,9 +74,9 @@ public class InvocationMonitor {
         this.executionService = executionService;
         this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
-        this.monitorThread = new MonitorThread(hzThreadGroup);
+        this.monitorThread = new InvocationMonitorThread(hzThreadGroup);
 
-        metricsRegistry.scanAndRegister(this, "operation");
+        metricsRegistry.scanAndRegister(this, "operation.invocations");
 
         monitorThread.start();
     }
@@ -104,7 +104,7 @@ public class InvocationMonitor {
     }
 
     /**
-     * The MonitorThread iterates over all pending invocations and sees what needs to be done
+     * The InvocationMonitorThread iterates over all pending invocations and sees what needs to be done
      * <p/>
      * But it should also check if a 'is still running' check needs to be done. This removed complexity from
      * the invocation.waitForResponse which is too complicated too understand.
@@ -112,11 +112,11 @@ public class InvocationMonitor {
      * This class needs to implement the {@link OperationHostileThread} interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
-    private final class MonitorThread extends Thread implements OperationHostileThread {
+    private final class InvocationMonitorThread extends Thread implements OperationHostileThread {
 
         private volatile boolean shutdown;
 
-        private MonitorThread(HazelcastThreadGroup hzThreadGroup) {
+        private InvocationMonitorThread(HazelcastThreadGroup hzThreadGroup) {
             super(hzThreadGroup.getInternalThreadGroup(), hzThreadGroup.getThreadNamePrefix("InvocationMonitorThread"));
         }
 
@@ -279,7 +279,7 @@ public class InvocationMonitor {
 
         @Override
         public void run() {
-            for (Invocation invocation : invocationRegistry.invocations()) {
+            for (Invocation invocation : invocationRegistry) {
                 if (hasMemberLeft(invocation)) {
                     invocation.notifyError(new MemberLeftException(leftMember));
                 }

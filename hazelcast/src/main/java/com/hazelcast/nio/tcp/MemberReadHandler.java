@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
-import com.hazelcast.util.counters.Counter;
+import com.hazelcast.internal.util.counters.Counter;
 
 import java.nio.ByteBuffer;
 
@@ -64,7 +64,7 @@ public class MemberReadHandler implements ReadHandler {
     }
 
     protected void handlePacket(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_URGENT)) {
+        if (packet.isFlagSet(Packet.FLAG_URGENT)) {
             priorityPacketsRead.inc();
         } else {
             normalPacketsRead.inc();

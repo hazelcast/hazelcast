@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ public class BasicCacheLiteMemberTest
     }
 
     @Test
-    public void testCompletionTest()
+    public void testCompletion()
             throws InterruptedException {
 
         CacheManager cacheManager = liteCachingProvider.getCacheManager();
@@ -150,10 +150,7 @@ public class BasicCacheLiteMemberTest
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
-        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
-        assertNotNull(cache);
-
-        final Cache<Object, Object> instanceCache = instanceCachingProvider.getCacheManager().getCache(cacheName);
+        final Cache<Integer, String> instanceCache = cacheManager.createCache(cacheName, config);
 
         Integer key1 = 1;
         String value1 = "value1";

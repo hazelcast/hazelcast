@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 /**
- * A Packet is a piece of data send over the line. The Packet is used for member to member communication and old-client to
- * member communication.
+ * A Packet is a piece of data send over the line. The Packet is used for member to member communication.
  *
  * The Packet extends HeapData instead of wrapping it. From a design point of view this is often not the preferred solution (
  * prefer composition over inheritance), but in this case that would mean more object litter.
@@ -35,23 +36,16 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
 
-    public static final int HEADER_OP = 0;
-    public static final int HEADER_RESPONSE = 1;
-    public static final int HEADER_EVENT = 2;
-    public static final int HEADER_WAN_REPLICATION = 3;
-    public static final int HEADER_URGENT = 4;
-    public static final int HEADER_BIND = 5;
+    public static final int FLAG_OP = 1 << 0;
+    public static final int FLAG_RESPONSE = 1 << 1;
+    public static final int FLAG_EVENT = 1 << 2;
+    public static final int FLAG_WAN_REPLICATION = 1 << 3;
+    public static final int FLAG_URGENT = 1 << 4;
+    public static final int FLAG_BIND = 1 << 5;
 
-    // The value of these constants is important. The order needs to match the order in the read/write process
-    private static final short PERSIST_VERSION = 1;
-    private static final short PERSIST_HEADER = 2;
-    private static final short PERSIST_PARTITION = 3;
-    private static final short PERSIST_SIZE = 4;
-    private static final short PERSIST_VALUE = 5;
+    private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
-    private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
-
-    private short header;
+    private short flags;
     private int partitionId;
     private transient Connection conn;
 
@@ -59,7 +53,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     private int valueOffset;
     private int size;
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
-    private short persistStatus;
+    private boolean headerComplete;
 
     public Packet() {
     }
@@ -94,22 +88,45 @@ public final class Packet extends HeapData implements OutboundFrame {
         this.conn = conn;
     }
 
-    public void setHeader(int bit) {
-        header |= 1 << bit;
-    }
-
-    public boolean isHeaderSet(int bit) {
-        return (header & 1 << bit) != 0;
+    /**
+     * Sets a particular flag. The other flags will not be touched.
+     *
+     * @param flag the flag to set
+     */
+    public void setFlag(int flag) {
+        flags = (short) (flags | flag);
     }
 
     /**
-     * Returns the header of the Packet. The header is used to figure out what the content is of this Packet before
+     * Sets all flags in 1 go. The old flags will be completely overwritten by the new flags.
+     *
+     * The reason this method accepts an int instead of a short, is that unfortunately Java immediately converts to ints and
+     * it makes doing bit shifting logic since you need to down cast to a short all the time.*
+     *
+     * @param flags the flags.
+     */
+    public void setAllFlags(int flags) {
+        this.flags = (short) flags;
+    }
+
+    /**
+     * Checks if a flag is set.
+     *
+     * @param flag the flag to check
+     * @return true if the flag is set, false otherwise.
+     */
+    public boolean isFlagSet(int flag) {
+        return (flags & flag) != 0;
+    }
+
+    /**
+     * Returns the flags of the Packet. The flags is used to figure out what the content is of this Packet before
      * the actual payload needs to be processed.
      *
-     * @return the header.
+     * @return the flags.
      */
-    public short getHeader() {
-        return header;
+    public short getFlags() {
+        return flags;
     }
 
     /**
@@ -121,230 +138,114 @@ public final class Packet extends HeapData implements OutboundFrame {
         return partitionId;
     }
 
+    public void reset() {
+        headerComplete = false;
+    }
+
     @Override
     public boolean isUrgent() {
-        return isHeaderSet(HEADER_URGENT);
+        return isFlagSet(FLAG_URGENT);
     }
 
     public boolean writeTo(ByteBuffer dst) {
-        if (!writeVersion(dst)) {
-            return false;
+        if (!headerComplete) {
+            if (dst.remaining() < HEADER_SIZE) {
+                return false;
+            }
+
+            dst.put(VERSION);
+            dst.putShort(flags);
+            dst.putInt(partitionId);
+            size = totalSize();
+            dst.putInt(size);
+            headerComplete = true;
         }
 
-        if (!writeHeader(dst)) {
-            return false;
-        }
-
-        if (!writePartition(dst)) {
-            return false;
-        }
-
-        if (!writeSize(dst)) {
-            return false;
-        }
-
-        if (!writeValue(dst)) {
-            return false;
-        }
-
-        setPersistStatus(PERSIST_COMPLETED);
-        return true;
+        return writeValue(dst);
     }
 
     public boolean readFrom(ByteBuffer src) {
-        if (!readVersion(src)) {
-            return false;
-        }
-
-        if (!readHeader(src)) {
-            return false;
-        }
-
-        if (!readPartition(src)) {
-            return false;
-        }
-
-        if (!readSize(src)) {
-            return false;
-        }
-
-        if (!readValue(src)) {
-            return false;
-        }
-
-        setPersistStatus(PERSIST_COMPLETED);
-        return true;
-    }
-
-    // ========================= version =================================================
-
-    private boolean readVersion(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_VERSION)) {
-            if (!src.hasRemaining()) {
+        if (!headerComplete) {
+            if (src.remaining() < HEADER_SIZE) {
                 return false;
             }
+
             byte version = src.get();
-            setPersistStatus(PERSIST_VERSION);
             if (VERSION != version) {
                 throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
                         + VERSION + ", Incoming -> " + version);
             }
-        }
-        return true;
-    }
 
-    private boolean writeVersion(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_VERSION)) {
-            if (!dst.hasRemaining()) {
-                return false;
-            }
-            dst.put(VERSION);
-            setPersistStatus(PERSIST_VERSION);
-        }
-        return true;
-    }
-
-    // ========================= header =================================================
-
-    private boolean readHeader(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (src.remaining() < 2) {
-                return false;
-            }
-            header = src.getShort();
-            setPersistStatus(PERSIST_HEADER);
-        }
-        return true;
-    }
-
-    private boolean writeHeader(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (dst.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
-                return false;
-            }
-            dst.putShort(header);
-            setPersistStatus(PERSIST_HEADER);
-        }
-        return true;
-    }
-
-    // ========================= partition =================================================
-
-    private boolean readPartition(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_PARTITION)) {
-            if (src.remaining() < 4) {
-                return false;
-            }
+            flags = src.getShort();
             partitionId = src.getInt();
-            setPersistStatus(PERSIST_PARTITION);
-        }
-        return true;
-    }
-
-
-    private boolean writePartition(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_PARTITION)) {
-            if (dst.remaining() < Bits.INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            dst.putInt(partitionId);
-            setPersistStatus(PERSIST_PARTITION);
-        }
-        return true;
-    }
-
-    // ========================= size =================================================
-
-    private boolean readSize(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_SIZE)) {
-            if (src.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
             size = src.getInt();
-            setPersistStatus(PERSIST_SIZE);
+            headerComplete = true;
         }
-        return true;
-    }
 
-    private boolean writeSize(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_SIZE)) {
-            if (dst.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            size = totalSize();
-            dst.putInt(size);
-            setPersistStatus(PERSIST_SIZE);
-        }
-        return true;
+        return readValue(src);
     }
 
     // ========================= value =================================================
 
     private boolean readValue(ByteBuffer src) {
-        if (!isPersistStatusSet(PERSIST_VALUE)) {
-            if (payload == null) {
-                payload = new byte[size];
-            }
-
-            if (size > 0) {
-                int bytesReadable = src.remaining();
-
-                int bytesNeeded = size - valueOffset;
-
-                boolean done;
-                int bytesRead;
-                if (bytesReadable >= bytesNeeded) {
-                    bytesRead = bytesNeeded;
-                    done = true;
-                } else {
-                    bytesRead = bytesReadable;
-                    done = false;
-                }
-
-                // read the data from the byte-buffer into the bytes-array.
-                src.get(payload, valueOffset, bytesRead);
-                valueOffset += bytesRead;
-
-                if (!done) {
-                    return false;
-                }
-            }
-
-            setPersistStatus(PERSIST_VALUE);
+        if (payload == null) {
+            payload = new byte[size];
         }
+
+        if (size > 0) {
+            int bytesReadable = src.remaining();
+
+            int bytesNeeded = size - valueOffset;
+
+            boolean done;
+            int bytesRead;
+            if (bytesReadable >= bytesNeeded) {
+                bytesRead = bytesNeeded;
+                done = true;
+            } else {
+                bytesRead = bytesReadable;
+                done = false;
+            }
+
+            // read the data from the byte-buffer into the bytes-array.
+            src.get(payload, valueOffset, bytesRead);
+            valueOffset += bytesRead;
+
+            if (!done) {
+                return false;
+            }
+        }
+
         return true;
     }
 
     private boolean writeValue(ByteBuffer dst) {
-        if (!isPersistStatusSet(PERSIST_VALUE)) {
-            if (size > 0) {
-                // the number of bytes that can be written to the bb.
-                int bytesWritable = dst.remaining();
+        if (size > 0) {
+            // the number of bytes that can be written to the bb.
+            int bytesWritable = dst.remaining();
 
-                // the number of bytes that need to be written.
-                int bytesNeeded = size - valueOffset;
+            // the number of bytes that need to be written.
+            int bytesNeeded = size - valueOffset;
 
-                int bytesWrite;
-                boolean done;
-                if (bytesWritable >= bytesNeeded) {
-                    // All bytes for the value are available.
-                    bytesWrite = bytesNeeded;
-                    done = true;
-                } else {
-                    // Not all bytes for the value are available. So lets write as much as is available.
-                    bytesWrite = bytesWritable;
-                    done = false;
-                }
-
-                byte[] byteArray = toByteArray();
-                dst.put(byteArray, valueOffset, bytesWrite);
-                valueOffset += bytesWrite;
-
-                if (!done) {
-                    return false;
-                }
+            int bytesWrite;
+            boolean done;
+            if (bytesWritable >= bytesNeeded) {
+                // All bytes for the value are available.
+                bytesWrite = bytesNeeded;
+                done = true;
+            } else {
+                // Not all bytes for the value are available. So lets write as much as is available.
+                bytesWrite = bytesWritable;
+                done = false;
             }
-            setPersistStatus(PERSIST_VALUE);
+
+            byte[] byteArray = toByteArray();
+            dst.put(byteArray, valueOffset, bytesWrite);
+            valueOffset += bytesWrite;
+
+            if (!done) {
+                return false;
+            }
         }
         return true;
     }
@@ -355,25 +256,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @return the size of the packet.
      */
     public int packetSize() {
-        // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
-        return (payload != null ? totalSize() : 0) + 11;
-    }
-
-    public boolean done() {
-        return isPersistStatusSet(PERSIST_COMPLETED);
-    }
-
-    public void reset() {
-        payload = null;
-        persistStatus = 0;
-    }
-
-    private void setPersistStatus(short persistStatus) {
-        this.persistStatus = persistStatus;
-    }
-
-    private boolean isPersistStatusSet(short status) {
-        return this.persistStatus >= status;
+        return (payload != null ? totalSize() : 0) + HEADER_SIZE;
     }
 
     @Override
@@ -391,7 +274,7 @@ public final class Packet extends HeapData implements OutboundFrame {
             return false;
         }
 
-        if (header != packet.header) {
+        if (flags != packet.flags) {
             return false;
         }
         return partitionId == packet.partitionId;
@@ -400,7 +283,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (int) header;
+        result = 31 * result + (int) flags;
         result = 31 * result + partitionId;
         return result;
     }
@@ -408,10 +291,10 @@ public final class Packet extends HeapData implements OutboundFrame {
     @Override
     public String toString() {
         return "Packet{"
-                + "header=" + header
-                + ", isResponse=" + isHeaderSet(Packet.HEADER_RESPONSE)
-                + ", isOperation=" + isHeaderSet(Packet.HEADER_OP)
-                + ", isEvent=" + isHeaderSet(Packet.HEADER_EVENT)
+                + "flags=" + flags
+                + ", isResponse=" + isFlagSet(Packet.FLAG_RESPONSE)
+                + ", isOperation=" + isFlagSet(Packet.FLAG_OP)
+                + ", isEvent=" + isFlagSet(Packet.FLAG_EVENT)
                 + ", partitionId=" + partitionId
                 + ", conn=" + conn
                 + '}';

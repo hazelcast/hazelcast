@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,15 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -43,7 +39,6 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
 
     private List<Map.Entry<Data, Data>> entries;
     private List<RecordInfo> recordInfos;
-    private RecordStore recordStore;
 
     public PutAllBackupOperation(String name, List<Map.Entry<Data, Data>> entries, List<RecordInfo> recordInfos) {
         super(name);
@@ -56,11 +51,6 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
 
     @Override
     public void run() {
-        long now = Clock.currentTimeMillis();
-        int partitionId = getPartitionId();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapEventPublisher eventPublisher = mapServiceContext.getMapEventPublisher();
-        recordStore = mapServiceContext.getRecordStore(partitionId, name);
         boolean wanEnabled = mapContainer.isWanReplicationEnabled();
         for (int i = 0; i < entries.size(); i++) {
             final RecordInfo recordInfo = recordInfos.get(i);
@@ -70,10 +60,10 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
             if (wanEnabled) {
                 final Data dataValueAsData = mapServiceContext.toData(entry.getValue());
                 final EntryView entryView = EntryViews.createSimpleEntryView(entry.getKey(), dataValueAsData, record);
-                eventPublisher.publishWanReplicationUpdateBackup(name, entryView);
+                mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
 
-            recordStore.evictEntries(now);
+            evict();
         }
     }
 

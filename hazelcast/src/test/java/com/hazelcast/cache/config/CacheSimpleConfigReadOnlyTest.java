@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,6 +137,11 @@ public class CacheSimpleConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void addingPartitionLostListenerConfigToReadOnlyCacheSimpleConfigShouldFail() {
         new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).addCachePartitionLostListenerConfig(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void settingDisablePerEntryInvalidationEventsOfReadOnlyCacheSimpleConfigShouldFail() {
+        new CacheSimpleConfigReadOnly(new CacheSimpleConfig()).setDisablePerEntryInvalidationEvents(true);
     }
 
 }

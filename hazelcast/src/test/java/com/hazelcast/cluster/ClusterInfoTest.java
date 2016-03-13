@@ -1,7 +1,7 @@
 package com.hazelcast.cluster;
 
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;

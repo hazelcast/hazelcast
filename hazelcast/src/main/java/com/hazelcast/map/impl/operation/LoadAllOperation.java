@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,10 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
@@ -52,22 +50,18 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
 
     @Override
     public void run() throws Exception {
-        final int partitionId = getPartitionId();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         keys = selectThisPartitionsKeys(this.keys);
         recordStore.loadAllFromStore(keys, replaceExistingValues);
     }
 
     private List<Data> selectThisPartitionsKeys(Collection<Data> keys) {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final InternalPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        final IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         final int partitionId = getPartitionId();
         List<Data> dataKeys = null;
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 if (dataKeys == null) {
-                    dataKeys = new ArrayList<Data>();
+                    dataKeys = new ArrayList<Data>(keys.size());
                 }
                 dataKeys.add(key);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,21 +100,21 @@ public abstract class AbstractSerializationService implements SerializationServi
 
     //region Serialization Service
     @Override
-    public final Data toData(Object obj) {
+    public final <B extends Data> B toData(Object obj) {
         return toData(obj, globalPartitioningStrategy);
     }
 
     @Override
-    public final Data toData(Object obj, PartitioningStrategy strategy) {
+    public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
         if (obj == null) {
             return null;
         }
         if (obj instanceof Data) {
-            return (Data) obj;
+            return (B) obj;
         }
 
         byte[] bytes = toBytes(obj, strategy);
-        return new HeapData(bytes);
+        return (B) new HeapData(bytes);
     }
 
     @Override
@@ -179,7 +179,7 @@ public abstract class AbstractSerializationService implements SerializationServi
         }
     }
 
-    private HazelcastSerializationException newHazelcastSerializationException(int typeId) {
+    private static HazelcastSerializationException newHazelcastSerializationException(int typeId) {
         return new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId + ". "
                 + "This exception is likely to be caused by differences in the serialization configuration between members "
                 + "or between clients and members.");
@@ -263,7 +263,7 @@ public abstract class AbstractSerializationService implements SerializationServi
         return version;
     }
 
-    public void destroy() {
+    public void dispose() {
         active = false;
         for (SerializerAdapter serializer : typeMap.values()) {
             serializer.destroy();

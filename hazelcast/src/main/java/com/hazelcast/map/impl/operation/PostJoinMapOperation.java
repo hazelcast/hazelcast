@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -55,8 +56,9 @@ public class PostJoinMapOperation extends AbstractOperation {
     }
 
     public void addMapInterceptors(MapContainer mapContainer) {
-        List<MapInterceptor> interceptorList = mapContainer.getInterceptors();
-        Map<String, MapInterceptor> interceptorMap = mapContainer.getInterceptorMap();
+        InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
+        List<MapInterceptor> interceptorList = interceptorRegistry.getInterceptors();
+        Map<String, MapInterceptor> interceptorMap = interceptorRegistry.getId2InterceptorMap();
         Map<MapInterceptor, String> revMap = new HashMap<MapInterceptor, String>();
         for (Map.Entry<String, MapInterceptor> entry : interceptorMap.entrySet()) {
             revMap.put(entry.getValue(), entry.getKey());
@@ -119,11 +121,12 @@ public class PostJoinMapOperation extends AbstractOperation {
         }
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(interceptorInfo.mapName);
-            Map<String, MapInterceptor> interceptorMap = mapContainer.getInterceptorMap();
+            InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
+            Map<String, MapInterceptor> interceptorMap = interceptorRegistry.getId2InterceptorMap();
             List<Map.Entry<String, MapInterceptor>> entryList = interceptorInfo.interceptors;
             for (Map.Entry<String, MapInterceptor> entry : entryList) {
                 if (!interceptorMap.containsKey(entry.getKey())) {
-                    mapContainer.addInterceptor(entry.getKey(), entry.getValue());
+                    interceptorRegistry.register(entry.getKey(), entry.getValue());
                 }
             }
         }

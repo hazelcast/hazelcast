@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.EmptyStatement;
@@ -80,7 +80,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
         checkTransactionState();
         Data data = pollInternal(unit.toMillis(timeout));
-        return getNodeEngine().toObject(data);
+        return (E) toObjectIfNeeded(data);
     }
 
     @Override
@@ -100,7 +100,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
         checkTransactionState();
         Data data = peekInternal(unit.toMillis(timeout));
-        return getNodeEngine().toObject(data);
+        return (E) toObjectIfNeeded(data);
     }
 
     @Override

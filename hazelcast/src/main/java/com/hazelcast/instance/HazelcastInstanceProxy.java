@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,11 +69,10 @@ import java.util.concurrent.ConcurrentMap;
  * </ol>
  */
 public final class HazelcastInstanceProxy implements HazelcastInstance, SerializationServiceSupport {
-
-    volatile HazelcastInstanceImpl original;
+    protected volatile HazelcastInstanceImpl original;
     private final String name;
 
-    HazelcastInstanceProxy(HazelcastInstanceImpl original) {
+    protected HazelcastInstanceProxy(HazelcastInstanceImpl original) {
         this.original = original;
         name = original.getName();
     }
@@ -268,7 +267,7 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().getSerializationService();
     }
 
-    private HazelcastInstanceImpl getOriginal() {
+    protected HazelcastInstanceImpl getOriginal() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance == null) {
             throw new HazelcastInstanceNotActiveException();

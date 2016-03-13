@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,15 +72,15 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         addCountIndex(collection);
     }
 
-    /**
-     * Inserts to the end of this queue.
-     *
-     * @param entry item to be offered
-     */
     @Override
     public void addLast(DelayedEntry entry) {
         deque.addLast(entry);
         addCountIndex(entry);
+    }
+
+    @Override
+    public DelayedEntry peek() {
+        return deque.peek();
     }
 
     /**
@@ -155,30 +155,17 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     @Override
-    public void getFrontByTime(long time, Collection<DelayedEntry> collection) {
+    public void filter(IPredicate<DelayedEntry> predicate, Collection<DelayedEntry> collection) {
         Iterator<DelayedEntry> iterator = deque.iterator();
         while (iterator.hasNext()) {
             DelayedEntry e = iterator.next();
-            if (e.getStoreTime() <= time) {
+            if (predicate.test(e)) {
                 collection.add(e);
-            }
-        }
-    }
-
-    @Override
-    public void getFrontByNumber(int numberOfElements, Collection<DelayedEntry> collection) {
-        int count = 0;
-        Iterator<DelayedEntry> iterator = deque.iterator();
-        while (iterator.hasNext()) {
-            DelayedEntry e = iterator.next();
-            if (count == numberOfElements) {
+            } else {
                 break;
             }
-            collection.add(e);
-            count++;
         }
     }
-
 
     private void addCountIndex(DelayedEntry entry) {
         Data key = (Data) entry.getKey();

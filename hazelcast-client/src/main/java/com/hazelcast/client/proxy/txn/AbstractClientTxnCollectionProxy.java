@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,4 @@ public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy
     void onDestroy() {
     }
 
-    protected void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
-import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet;
+import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
@@ -84,7 +84,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
         RuntimeMetricSet.register(this);
         GarbageCollectionMetricSet.register(this);
-        OperatingSystemMetricsSet.register(this);
+        OperatingSystemMetricSet.register(this);
         ThreadMetricSet.register(this);
         ClassLoadingMetricSet.register(this);
     }
@@ -234,11 +234,9 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     public void render(ProbeRenderer renderer) {
         checkNotNull(renderer, "renderer can't be null");
 
-        renderer.start();
         for (ProbeInstance probeInstance : getSortedProbeInstances()) {
             render(renderer, probeInstance);
         }
-        renderer.finish();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.logging.Logger;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import static com.hazelcast.util.QuickMath.normalize;
 
 /**
  * Unsafe accessor.
@@ -30,12 +33,37 @@ import java.security.PrivilegedAction;
  * a later JVM implementation can change this behaviour to allow varying index-scales and base-offsets
  * over time or per array instances (e.g. compressed primitive arrays or backwards growing arrays...)
  * <p/>
+ * <p>
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
+ * </p>
+ * @deprecated Use {@link com.hazelcast.internal.memory.MemoryAccessor} instead due to following reasons:
+ * <p>
+ * Deprecated to {@link com.hazelcast.internal.memory.MemoryAccessor} due to following reasons:
+ * <ul>
+ *     <li>
+ *          Preventing hard-dependency to {@link sun.misc.Unsafe}/
+ *     </li>
+ *     <li>
+ *          Some platforms (such as SPARC) don't support unaligned memory access.
+ *          So on these platforms memory access alignments must be checked and handled if possible.
+ *     </li>
+ * </ul>
+ * </p>
  */
+@Deprecated
 public final class UnsafeHelper {
 
+    /**
+     * @deprecated {@link GlobalMemoryAccessorRegistry#MEM} instead
+     */
+    @Deprecated
     public static final Unsafe UNSAFE;
+
+    /**
+     * @deprecated {@link GlobalMemoryAccessorRegistry#MEM_AVAILABLE} instead
+     */
+    @Deprecated
     public static final boolean UNSAFE_AVAILABLE;
 
     public static final long BYTE_ARRAY_BASE_OFFSET;
@@ -103,15 +131,19 @@ public final class UnsafeHelper {
         try {
             // test if unsafe has required methods...
             if (unsafe != null) {
-                byte[] buffer = new byte[8];
-                unsafe.putChar(buffer, BYTE_ARRAY_BASE_OFFSET, '0');
-                unsafe.putBoolean(buffer, BYTE_ARRAY_BASE_OFFSET, false);
-                unsafe.putShort(buffer, BYTE_ARRAY_BASE_OFFSET, (short) 1);
-                unsafe.putInt(buffer, BYTE_ARRAY_BASE_OFFSET, 2);
-                unsafe.putFloat(buffer, BYTE_ARRAY_BASE_OFFSET, 3f);
-                unsafe.putLong(buffer, BYTE_ARRAY_BASE_OFFSET, 4L);
-                unsafe.putDouble(buffer, BYTE_ARRAY_BASE_OFFSET, 5d);
-                unsafe.copyMemory(new byte[8], BYTE_ARRAY_BASE_OFFSET, buffer, BYTE_ARRAY_BASE_OFFSET, buffer.length);
+                long arrayBaseOffset = unsafe.arrayBaseOffset(byte[].class);
+                byte[] buffer = new byte[(int) arrayBaseOffset + (2 * Bits.LONG_SIZE_IN_BYTES)];
+                unsafe.putByte(buffer, arrayBaseOffset, (byte) 0x00);
+                unsafe.putBoolean(buffer, arrayBaseOffset, false);
+                unsafe.putChar(buffer, normalize(arrayBaseOffset, Bits.CHAR_SIZE_IN_BYTES), '0');
+                unsafe.putShort(buffer, normalize(arrayBaseOffset, Bits.SHORT_SIZE_IN_BYTES), (short) 1);
+                unsafe.putInt(buffer, normalize(arrayBaseOffset, Bits.INT_SIZE_IN_BYTES), 2);
+                unsafe.putFloat(buffer, normalize(arrayBaseOffset, Bits.FLOAT_SIZE_IN_BYTES),  3f);
+                unsafe.putLong(buffer, normalize(arrayBaseOffset, Bits.LONG_SIZE_IN_BYTES), 4L);
+                unsafe.putDouble(buffer, normalize(arrayBaseOffset, Bits.DOUBLE_SIZE_IN_BYTES), 5d);
+                unsafe.copyMemory(new byte[buffer.length], arrayBaseOffset,
+                                  buffer, arrayBaseOffset,
+                                  buffer.length);
 
                 unsafeAvailable = true;
             }
@@ -163,7 +195,7 @@ public final class UnsafeHelper {
         return UNSAFE_EXPLICITLY_ENABLED.equals(mode);
     }
 
-    private static boolean isUnalignedAccessAllowed() {
+    static boolean isUnalignedAccessAllowed() {
         // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
         // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
         String arch = System.getProperty("os.arch");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.

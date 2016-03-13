@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,8 @@
 
 package com.hazelcast.spi;
 
-
 /**
- * A interface that can be implemented to participate in the Wait/Notify System.
- *
- * See {@link  com.hazelcast.spi.WaitNotifyService}.
+ * @deprecated this class is deprecated since 3.7. Use {@link BlockingOperation} instead.
  */
-public interface WaitSupport {
-
-    WaitNotifyKey getWaitKey();
-
-    boolean shouldWait();
-
-    long getWaitTimeout();
-
-    void onWaitExpire();
+public interface WaitSupport extends BlockingOperation {
 }

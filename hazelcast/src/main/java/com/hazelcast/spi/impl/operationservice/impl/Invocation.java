@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,24 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -75,7 +75,7 @@ import static java.util.logging.Level.WARNING;
  * <p/>
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
-abstract class Invocation implements OperationResponseHandler, Runnable {
+public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -88,6 +88,9 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     //some constants for logging purposes
     private static final int LOG_MAX_INVOCATION_COUNT = 99;
     private static final int LOG_INVOCATION_COUNT_MOD = 10;
+
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public final Operation op;
 
     // The time in millis when the response of the primary has been received.
     volatile long pendingResponseReceivedMillis = -1;
@@ -103,7 +106,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     final long callTimeout;
     final NodeEngineImpl nodeEngine;
     final String serviceName;
-    final Operation op;
     final int partitionId;
     final int replicaIndex;
     final int tryCount;
@@ -118,6 +120,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
+
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
@@ -140,13 +143,8 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     protected abstract Address getTarget();
 
-    InternalPartition getPartition() {
+    IPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
-    }
-
-    @Override
-    public boolean isLocal() {
-        return true;
     }
 
     private long getCallTimeout(long callTimeout) {
@@ -155,7 +153,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         long defaultCallTimeout = operationService.defaultCallTimeoutMillis;
-        if (!(op instanceof WaitSupport)) {
+        if (!(op instanceof BlockingOperation)) {
             return defaultCallTimeout;
         }
 
@@ -215,7 +213,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private void handleInvocationException(Exception e) {
         if (e instanceof RetryableException) {
-            notify(e);
+            notifyError(e);
         } else {
             throw ExceptionUtil.rethrow(e);
         }
@@ -265,7 +263,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
             operationService.invocationsRegistry.deregister(this);
-            notify(new RetryableIOException("Packet not send to -> " + invTarget));
+            notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
 
@@ -282,7 +280,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         final NodeState state = nodeEngine.getNode().getState();
         boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
         if (!allowed) {
-            notify(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
+            notifyError(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
             remote = false;
         }
         return allowed;
@@ -307,18 +305,18 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
         targetMember = clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            notifyError(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return false;
         }
 
         if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
+            notifyError(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
                     + " is not equal to the partition id of invocation: " + partitionId));
             return false;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
+            notifyError(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
                     + " is not equal to the replica index of invocation: " + replicaIndex));
             return false;
         }
@@ -332,40 +330,34 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         ClusterService clusterService = nodeEngine.getClusterService();
 
         if (!nodeEngine.isRunning()) {
-            notify(new HazelcastInstanceNotActiveException());
+            notifyError(new HazelcastInstanceNotActiveException());
             return;
         }
 
         ClusterState clusterState = clusterService.getClusterState();
         if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
-            notify(new IllegalStateException("Partitions can't be assigned since cluster-state: "
+            notifyError(new IllegalStateException("Partitions can't be assigned since cluster-state: "
                     + clusterState));
             return;
         }
 
         if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-            final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
-                    "Partitions can't be assigned since all nodes in the cluster are lite members");
-            notify(exception);
+            notifyError(new NoDataMemberInClusterException(
+                    "Partitions can't be assigned since all nodes in the cluster are lite members"));
             return;
         }
 
-        notify(new WrongTargetException(thisAddress, null, partitionId,
+        notifyError(new WrongTargetException(thisAddress, null, partitionId,
                 replicaIndex, op.getClass().getName(), serviceName));
     }
 
     @Override
-    public void sendResponse(Operation op, Object obj) {
+    public void sendResponse(Operation op, Object response) {
         if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
-                    + ", current-response: : " + obj);
+                    + ", current-response: : " + response);
         }
-        notify(obj);
-    }
 
-    //this method is called by the operation service to signal the invocation that something has happened, e.g.
-    //a response is returned.
-    void notify(Object response) {
         if (response == null) {
             response = NULL_RESPONSE;
         }
@@ -388,6 +380,11 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
         invocationFuture.set(response);
+    }
+
+    @Override
+    public boolean isLocal() {
+        return true;
     }
 
     void notifyError(Object error) {
@@ -463,7 +460,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
                     + toString());
         }
 
-        if (op instanceof WaitSupport) {
+        if (op instanceof BlockingOperation) {
             // decrement wait-timeout by call-timeout
             long waitTimeout = op.getWaitTimeout();
             waitTimeout -= callTimeout;
@@ -607,7 +604,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
         invocationFuture.set(pendingResponse);
         return true;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
@@ -33,9 +35,11 @@ public class ClientReadHandler
 
     private volatile long lastHandle;
 
-    public ClientReadHandler(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
-        super(connection, ioThread);
-        buffer = ByteBuffer.allocate(bufferSize);
+    public ClientReadHandler(final ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
+                             boolean direct, LoggingService loggingService) {
+        super(connection, ioThread, loggingService);
+
+        buffer = IOUtil.newByteBuffer(bufferSize, direct);
         lastHandle = Clock.currentTimeMillis();
         builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
             @Override

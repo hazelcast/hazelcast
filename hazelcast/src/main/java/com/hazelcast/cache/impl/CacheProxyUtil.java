@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ public final class CacheProxyUtil {
 
     public static final int AWAIT_COMPLETION_TIMEOUT_SECONDS = 60;
 
-    static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
-    static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    private static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
     private CacheProxyUtil() {
     }
@@ -51,7 +51,7 @@ public final class CacheProxyUtil {
     public static void validateResults(Map<Integer, Object> results) {
         for (Object result : results.values()) {
             if (result != null && result instanceof CacheClearResponse) {
-                final Object response = ((CacheClearResponse) result).getResponse();
+                Object response = ((CacheClearResponse) result).getResponse();
                 if (response instanceof Throwable) {
                     ExceptionUtil.sneakyThrow((Throwable) response);
                 }
@@ -130,18 +130,18 @@ public final class CacheProxyUtil {
 
         boolean containsNullKey = false;
         boolean containsNullValue = false;
-        //in case this map keySet or values do not support null values
-        //TODO is it possible to validate a map without try-catch blocks, more efficiently?
+        // we catch possible NPE since the Map implementation could not support null values
+        // TODO: is it possible to validate a map more efficiently without try-catch blocks?
         try {
-            containsNullKey = map.keySet().contains(null);
+            containsNullKey = map.containsKey(null);
         } catch (NullPointerException e) {
-            //ignore as null not allowed for this map
+            // ignore if null key is not allowed for this map
             EmptyStatement.ignore(e);
         }
         try {
-            containsNullValue = map.values().contains(null);
+            containsNullValue = map.containsValue(null);
         } catch (NullPointerException e) {
-            //ignore as null not allowed for this map
+            // ignore if null value is not allowed for this map
             EmptyStatement.ignore(e);
         }
         if (containsNullKey) {
@@ -160,9 +160,8 @@ public final class CacheProxyUtil {
      * @param <K>         the type of key.
      * @throws ClassCastException if the provided key does not match with configured type.
      */
-    public static <K> void validateConfiguredTypes(CacheConfig cacheConfig, K key)
-            throws ClassCastException {
-        final Class keyType = cacheConfig.getKeyType();
+    public static <K> void validateConfiguredTypes(CacheConfig cacheConfig, K key) throws ClassCastException {
+        Class keyType = cacheConfig.getKeyType();
         validateConfiguredKeyType(keyType, key);
     }
 
@@ -176,10 +175,9 @@ public final class CacheProxyUtil {
      * @param <V>         the type of value.
      * @throws ClassCastException if the provided key or value do not match with configured types.
      */
-    public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, K key, V value)
-            throws ClassCastException {
-        final Class keyType = cacheConfig.getKeyType();
-        final Class valueType = cacheConfig.getValueType();
+    public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, K key, V value) throws ClassCastException {
+        Class keyType = cacheConfig.getKeyType();
+        Class valueType = cacheConfig.getValueType();
         validateConfiguredKeyType(keyType, key);
         validateConfiguredValueType(valueType, value);
     }
@@ -197,8 +195,8 @@ public final class CacheProxyUtil {
      */
     public static <K, V> void validateConfiguredTypes(CacheConfig cacheConfig, K key, V value1, V value2)
             throws ClassCastException {
-        final Class keyType = cacheConfig.getKeyType();
-        final Class valueType = cacheConfig.getValueType();
+        Class keyType = cacheConfig.getKeyType();
+        Class valueType = cacheConfig.getValueType();
         validateConfiguredKeyType(keyType, key);
         validateConfiguredValueType(valueType, value1);
         validateConfiguredValueType(valueType, value2);
@@ -212,10 +210,9 @@ public final class CacheProxyUtil {
      * @param <K>     the type of key.
      * @throws ClassCastException if the provided key do not match with keyType.
      */
-    public static <K> void validateConfiguredKeyType(Class<K> keyType, K key)
-            throws ClassCastException {
+    public static <K> void validateConfiguredKeyType(Class<K> keyType, K key) throws ClassCastException {
         if (Object.class != keyType) {
-            //means type checks required
+            // means that type checks is required
             if (!keyType.isAssignableFrom(key.getClass())) {
                 throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
             }
@@ -230,14 +227,12 @@ public final class CacheProxyUtil {
      * @param <V>       the type of value.
      * @throws ClassCastException if the provided value do not match with valueType.
      */
-    public static <V> void validateConfiguredValueType(Class<V> valueType, V value)
-            throws ClassCastException {
+    public static <V> void validateConfiguredValueType(Class<V> valueType, V value) throws ClassCastException {
         if (Object.class != valueType) {
-            //means type checks required
+            // means that type checks is required
             if (!valueType.isAssignableFrom(value.getClass())) {
                 throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
             }
         }
     }
-
 }

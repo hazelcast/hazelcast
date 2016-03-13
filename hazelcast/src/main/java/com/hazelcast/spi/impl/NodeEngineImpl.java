@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -27,14 +27,22 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.monitors.BuildInfoPlugin;
+import com.hazelcast.internal.monitors.ConfigPropertiesPlugin;
+import com.hazelcast.internal.monitors.OverloadedConnectionsPlugin;
+import com.hazelcast.internal.monitors.PendingInvocationsPlugin;
+import com.hazelcast.internal.monitors.MetricsPlugin;
+import com.hazelcast.internal.monitors.PerformanceMonitor;
+import com.hazelcast.internal.monitors.SlowOperationPlugin;
+import com.hazelcast.internal.monitors.SystemPropertiesPlugin;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -53,7 +61,7 @@ import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
+import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -73,6 +81,7 @@ import static com.hazelcast.instance.GroupProperty.PERFORMANCE_METRICS_LEVEL;
  * But the crucial thing is that we don't want to leak concrete dependencies to the outside. For example
  * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
@@ -90,6 +99,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final MetricsRegistryImpl metricsRegistry;
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
+    private final PerformanceMonitor performanceMonitor;
 
     public NodeEngineImpl(final Node node) {
         this.node = node;
@@ -111,12 +121,16 @@ public class NodeEngineImpl implements NodeEngine {
                 operationService,
                 eventService,
                 wanReplicationService,
-                new ConnectionManagerPacketHandler()
-        );
-        quorumService = new QuorumServiceImpl(this);
+                new ConnectionManagerPacketHandler());
+        this.quorumService = new QuorumServiceImpl(this);
+        this.performanceMonitor = new PerformanceMonitor(
+                node.hazelcastInstance,
+                loggingService.getLogger(PerformanceMonitor.class),
+                node.getHazelcastThreadGroup(),
+                node.groupProperties);
     }
 
-    class ConnectionManagerPacketHandler implements PacketHandler {
+     class ConnectionManagerPacketHandler implements PacketHandler {
         // ConnectionManager is only available after the NodeEngineImpl is available.
         @Override
         public void handle(Packet packet) throws Exception {
@@ -138,6 +152,18 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
         operationService.start();
         quorumService.start();
+        performanceMonitor.start();
+
+        // static loggers at beginning of file
+        performanceMonitor.register(new BuildInfoPlugin(this));
+        performanceMonitor.register(new SystemPropertiesPlugin(this));
+        performanceMonitor.register(new ConfigPropertiesPlugin(this));
+
+        // periodic loggers
+        performanceMonitor.register(new OverloadedConnectionsPlugin(this));
+        performanceMonitor.register(new PendingInvocationsPlugin(this));
+        performanceMonitor.register(new MetricsPlugin(this));
+        performanceMonitor.register(new SlowOperationPlugin(this));
     }
 
     @Override
@@ -204,8 +230,7 @@ public class NodeEngineImpl implements NodeEngine {
         return proxyService;
     }
 
-    @Override
-    public InternalWaitNotifyService getWaitNotifyService() {
+    public WaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
     }
 
@@ -358,5 +383,6 @@ public class NodeEngineImpl implements NodeEngine {
         wanReplicationService.shutdown();
         executionService.shutdown();
         metricsRegistry.shutdown();
+        performanceMonitor.shutdown();
     }
 }

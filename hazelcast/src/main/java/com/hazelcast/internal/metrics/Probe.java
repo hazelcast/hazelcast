@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <li>double</li>
  * <li>{@link java.util.concurrent.atomic.AtomicInteger}</li>
  * <li>{@link java.util.concurrent.atomic.AtomicLong}</li>
- * <li>{@link com.hazelcast.util.counters.Counter}</li>
+ * <li>{@link com.hazelcast.internal.util.counters.Counter}</li>
  * <li>{@link Byte}</li>
  * <li>{@link Short}</li>
  * <li>{@link Integer}</li>

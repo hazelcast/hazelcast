@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
-    protected Map<Data, DelayedEntry> map;
+    private Map<Data, DelayedEntry> map;
 
     CoalescedWriteBehindQueue() {
         map = new LinkedHashMap<Data, DelayedEntry>();
@@ -48,9 +47,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         }
         int expectedCapacity = map.size() + collection.size();
         Map<Data, DelayedEntry> newMap = createMapWithExpectedCapacity(expectedCapacity);
-        Iterator<DelayedEntry> iterator = collection.iterator();
-        while (iterator.hasNext()) {
-            DelayedEntry next = iterator.next();
+        for (DelayedEntry next : collection) {
             newMap.put((Data) next.getKey(), next);
         }
         newMap.putAll(map);
@@ -65,6 +62,15 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         calculateStoreTime(delayedEntry);
         Data key = (Data) delayedEntry.getKey();
         map.put(key, delayedEntry);
+    }
+
+    @Override
+    public DelayedEntry peek() {
+        Collection<DelayedEntry> values = map.values();
+        for (DelayedEntry value : values) {
+            return value;
+        }
+        return null;
     }
 
     /**
@@ -128,30 +134,17 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         return Collections.unmodifiableList(new ArrayList<DelayedEntry>(values));
     }
 
-
     @Override
-    public void getFrontByTime(long time, Collection<DelayedEntry> collection) {
+    public void filter(IPredicate<DelayedEntry> predicate, Collection<DelayedEntry> collection) {
         Collection<DelayedEntry> values = map.values();
         for (DelayedEntry e : values) {
-            if (e.getStoreTime() <= time) {
+            if (predicate.test(e)) {
                 collection.add(e);
-            }
-        }
-    }
-
-    @Override
-    public void getFrontByNumber(int numberOfElements, Collection<DelayedEntry> collection) {
-        int count = 0;
-        Collection<DelayedEntry> values = map.values();
-        for (DelayedEntry e : values) {
-            if (count == numberOfElements) {
+            } else {
                 break;
             }
-            collection.add(e);
-            count++;
         }
     }
-
 
     /**
      * If this is an existing key in this queue, use previously set store time;

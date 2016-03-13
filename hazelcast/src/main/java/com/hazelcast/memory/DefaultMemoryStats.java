@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,22 +57,32 @@ public class DefaultMemoryStats implements MemoryStats {
     }
 
     @Override
-    public long getMaxNativeMemory() {
+    public long getMaxNative() {
         return 0;
     }
 
     @Override
-    public long getCommittedNativeMemory() {
+    public long getCommittedNative() {
         return 0;
     }
 
     @Override
-    public long getUsedNativeMemory() {
+    public long getUsedNative() {
         return 0;
     }
 
     @Override
-    public long getFreeNativeMemory() {
+    public long getFreeNative() {
+        return 0;
+    }
+
+    @Override
+    public long getMaxMetadata() {
+        return 0;
+    }
+
+    @Override
+    public long getUsedMetadata() {
         return 0;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.cluster.ClusterClock;
+import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
@@ -31,7 +31,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
@@ -48,7 +48,7 @@ import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperat
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -200,10 +200,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Override
-    public void dumpPerformanceMetrics(StringBuffer sb) {
-    }
-
-    @Override
     public List<SlowOperationDTO> getSlowOperationDTOs() {
         return slowOperationDetector.getSlowOperationDTOs();
     }
@@ -263,9 +259,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     public void handle(Packet packet) throws Exception {
         checkNotNull(packet, "packet can't be null");
-        checkTrue(packet.isHeaderSet(Packet.HEADER_OP), "Packet.HEADER_OP should be set!");
+        checkTrue(packet.isFlagSet(Packet.FLAG_OP), "Packet.FLAG_OP should be set!");
 
-        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+        if (packet.isFlagSet(Packet.FLAG_RESPONSE)) {
             responsePacketExecutor.handle(packet);
         } else {
             operationExecutor.execute(packet);
@@ -399,10 +395,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
         Packet packet = new Packet(bytes, partitionId);
-        packet.setHeader(Packet.HEADER_OP);
+        packet.setFlag(Packet.FLAG_OP);
 
         if (op instanceof UrgentSystemOperation) {
-            packet.setHeader(Packet.HEADER_URGENT);
+            packet.setFlag(Packet.FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();
@@ -422,11 +418,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         byte[] bytes = serializationService.toBytes(response);
         Packet packet = new Packet(bytes, -1);
-        packet.setHeader(Packet.HEADER_OP);
-        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setFlag(Packet.FLAG_OP);
+        packet.setFlag(Packet.FLAG_RESPONSE);
 
         if (response.isUrgent()) {
-            packet.setHeader(Packet.HEADER_URGENT);
+            packet.setFlag(Packet.FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();

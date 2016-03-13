@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,15 @@ package com.hazelcast.spi;
  *
  * Also during the development of Hazelcast 3.6 additional methods will be added to the OperationResponseHandler for certain
  * types of responses like exceptions, backup complete etc.
+ *
+ * @param <O> type of the {@link Operation}
  */
 public interface OperationResponseHandler<O extends Operation> {
 
     /**
      * Sends a response.
      *
-     * @param op the operation that got executed.
+     * @param op       the operation that got executed.
      * @param response the response of the operation that got executed.
      */
     void sendResponse(O op, Object response);

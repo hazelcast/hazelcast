@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,11 +66,11 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -113,13 +113,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapGetCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
         MultiMapGetCodec.ResponseParameters resultParameters = MultiMapGetCodec.decodeResponse(response);
-        Collection<Data> result = resultParameters.response;
-        Collection<V> resultCollection = new ArrayList<V>(result.size());
-        for (Data data : result) {
-            final V value = toObject(data);
-            resultCollection.add(value);
-        }
-        return resultCollection;
+        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
     public boolean remove(Object key, Object value) {
@@ -141,13 +135,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapRemoveCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
         MultiMapRemoveCodec.ResponseParameters resultParameters = MultiMapRemoveCodec.decodeResponse(response);
-        Collection<Data> result = resultParameters.response;
-        Collection<V> resultCollection = new ArrayList<V>(result.size());
-        for (Data data : result) {
-            final V value = toObject(data);
-            resultCollection.add(value);
-        }
-        return resultCollection;
+        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
     public Set<K> localKeySet() {
@@ -171,13 +159,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MultiMapValuesCodec.ResponseParameters resultParameters = MultiMapValuesCodec.decodeResponse(response);
-        Collection<Data> result = resultParameters.response;
-        Collection<V> resultCollection = new ArrayList<V>(result.size());
-        for (Data data : result) {
-            final V value = toObject(data);
-            resultCollection.add(value);
-        }
-        return resultCollection;
+        return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
     }
 
     public Set<Map.Entry<K, V>> entrySet() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class ClientHeartbeatMonitor implements Runnable {
     }
 
     public void start() {
-        executionService.scheduleWithFixedDelay(this, HEART_BEAT_CHECK_INTERVAL_SECONDS,
+        executionService.scheduleWithRepetition(this, HEART_BEAT_CHECK_INTERVAL_SECONDS,
                 HEART_BEAT_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 

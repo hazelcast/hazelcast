@@ -261,6 +261,26 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testSetAsync() {
+        final IMap<String, String> map = hcInstance.getMap(getMapName());
+        for (int k = 0; k < numIterations; k++) {
+            String key = "setasync_" + String.valueOf(k);
+            String value = "merhaba-" + key;
+            // test
+            String value0 = map.get(key); // this brings the NULL_OBJECT into the NearCache
+            Future<Void> future = map.setAsync(key, value);
+            try {
+                future.get();
+            } catch (Exception e) {
+                fail("Exception in future.get(): " + e.getMessage());
+            }
+            String value2 = map.get(key); // here we _might_ still see the NULL_OBJECT
+            // assert
+            assertNull(value0);
+            assertEquals(value, value2);
+        }
+    }
 
     @Test
     public void testEvict() {

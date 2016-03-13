@@ -47,7 +47,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         scheduledExecutorServices.add(scheduledExecutorService);
         return new NearCacheExecutor() {
             @Override
-            public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
+            public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay,
                                                              long delay, TimeUnit unit) {
                 return scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
             }

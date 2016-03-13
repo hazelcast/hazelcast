@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,24 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
-import com.hazelcast.util.counters.MwCounter;
-import com.hazelcast.util.counters.SwCounter;
-import java.util.Collection;
+
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
  * The InvocationsRegistry is responsible for the registration of all pending invocations. Using the InvocationRegistry the
@@ -57,7 +53,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
-public class InvocationRegistry {
+public class InvocationRegistry implements Iterable<Invocation> {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -69,14 +65,16 @@ public class InvocationRegistry {
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
 
-    @Probe(name = "response.normal.count", level = MANDATORY)
-    private final SwCounter responseNormalCounter = newSwCounter();
-    @Probe(name = "response.timeout.count", level = MANDATORY)
-    private final SwCounter responseTimeoutCounter = newSwCounter();
-    @Probe(name = "response.backup.count", level = MANDATORY)
-    private final MwCounter responseBackupCounter = newMwCounter();
-    @Probe(name = "response.error.count", level = MANDATORY)
-    private final SwCounter responseErrorCounter = newSwCounter();
+    @Probe(name = "responses[normal]", level = MANDATORY)
+    private final SwCounter responsesNormal = newSwCounter();
+    @Probe(name = "responses[timeout]", level = MANDATORY)
+    private final SwCounter responsesTimeout = newSwCounter();
+    @Probe(name = "responses[backup]", level = MANDATORY)
+    private final MwCounter responsesBackup = newMwCounter();
+    @Probe(name = "responses[error]", level = MANDATORY)
+    private final SwCounter responsesError = newSwCounter();
+    @Probe(name = "responses[missing]", level = MANDATORY)
+    private final MwCounter responsesMissing = newMwCounter();
 
     public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
                               int concurrencyLevel) {
@@ -154,8 +152,9 @@ public class InvocationRegistry {
         return invocations.size();
     }
 
-    public Collection<Invocation> invocations() {
-        return invocations.values();
+    @Override
+    public Iterator<Invocation> iterator() {
+        return invocations.values().iterator();
     }
 
     /**
@@ -177,38 +176,19 @@ public class InvocationRegistry {
         return invocations.get(callId);
     }
 
-    /**
-     * Notifies the invocation that a Response is available.
-     *
-     * @param response The response that is available.
-     * @param sender   Endpoint who sent the response
-     */
-    public void notify(Response response, Address sender) {
-        if (response instanceof NormalResponse) {
-            notifyNormalResponse((NormalResponse) response, sender);
-        } else if (response instanceof BackupResponse) {
-            notifyBackupComplete(response.getCallId());
-        } else if (response instanceof CallTimeoutResponse) {
-            notifyCallTimeout((CallTimeoutResponse) response, sender);
-        } else if (response instanceof ErrorResponse) {
-            notifyErrorResponse((ErrorResponse) response, sender);
-        } else {
-            logger.severe("Unrecognized response: " + response);
-        }
-    }
 
     public void notifyBackupComplete(long callId) {
-        responseBackupCounter.inc();
+        responsesBackup.inc();
 
         try {
             Invocation invocation = invocations.get(callId);
 
-            // It can happen that a {@link BackupResponse} is send without the Invocation being available anymore.
+            // It can happen that a backup response is send without the Invocation being available anymore.
             // This is because the InvocationRegistry will automatically release invocations where the backup is
             // taking too much time.
             if (invocation == null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("No Invocation found for BackupResponse with callId " + callId);
+                    logger.finest("No Invocation found for backup response with callId " + callId);
                 }
                 return;
             }
@@ -219,40 +199,43 @@ public class InvocationRegistry {
         }
     }
 
-    private void notifyErrorResponse(ErrorResponse response, Address sender) {
-        responseErrorCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+    public void notifyErrorResponse(long callId, Object cause, Address sender) {
+        responsesError.inc();
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
+            responsesMissing.inc();
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for error response with callId: " + callId + " sent from " + sender);
             }
             return;
         }
 
-        invocation.notifyError(response.getCause());
+        invocation.notifyError(cause);
     }
 
-    private void notifyNormalResponse(NormalResponse response, Address sender) {
-        responseNormalCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+    public void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {
+        responsesNormal.inc();
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
+            responsesMissing.inc();
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for normal response with callId " + callId + " sent from " + sender);
             }
             return;
         }
-        invocation.notifyNormalResponse(response.getValue(), response.getBackupCount());
+        invocation.notifyNormalResponse(value, backupCount);
     }
 
-    private void notifyCallTimeout(CallTimeoutResponse response, Address sender) {
-        responseTimeoutCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+    public void notifyCallTimeout(long callId, Address sender) {
+        responsesTimeout.inc();
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
+            responsesMissing.inc();
             if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for call timeout response with callId" + callId + " sent from " + sender);
             }
             return;
         }
@@ -260,7 +243,7 @@ public class InvocationRegistry {
     }
 
     public void reset() {
-        for (Invocation invocation : invocations.values()) {
+        for (Invocation invocation : this) {
             try {
                 invocation.notifyError(new MemberLeftException());
             } catch (Throwable e) {
@@ -270,7 +253,7 @@ public class InvocationRegistry {
     }
 
     public void shutdown() {
-        for (Invocation invocation : invocations.values()) {
+        for (Invocation invocation : this) {
             try {
                 invocation.notifyError(new HazelcastInstanceNotActiveException());
             } catch (Throwable e) {

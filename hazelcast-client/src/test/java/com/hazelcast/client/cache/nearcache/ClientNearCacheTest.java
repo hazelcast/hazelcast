@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.ExecutionException;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -100,6 +102,28 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
     @Test
     public void testGetAllReturnsFromNearCache() {
         doTestGetAllReturnsFromNearCache();
+    }
+
+    @Test
+    public void putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabledWithBinaryInMemoryFormat() {
+        putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabled(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabledWithObjectInMemoryFormat() {
+        putToCacheAndDontInvalidateFromClientNearCacheWhenPerEntryInvalidationIsDisabled(InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithBinaryInMemoryFormat()
+            throws ExecutionException, InterruptedException {
+        putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putAsyncToCacheAndThenGetFromClientNearCacheImmediatelyWithObjectInMemoryFormat()
+            throws ExecutionException, InterruptedException {
+        putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat.OBJECT);
     }
 
 }

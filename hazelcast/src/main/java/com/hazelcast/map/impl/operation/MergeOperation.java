@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
@@ -59,15 +57,14 @@ public class MergeOperation extends BasePutOperation {
     public void run() {
         Record oldRecord = recordStore.getRecord(dataKey);
         if (oldRecord != null) {
-            dataOldValue = mapService.getMapServiceContext().toData(oldRecord.getValue());
+            dataOldValue = mapServiceContext.toData(oldRecord.getValue());
         }
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
         if (merged) {
             Record record = recordStore.getRecord(dataKey);
             if (record != null) {
-                MapServiceContext mapServiceContext = mapService.getMapServiceContext();
                 dataValue = mapServiceContext.toData(record.getValue());
-                mergingValue = mapService.getMapServiceContext().toData(mergingEntry.getValue());
+                mergingValue = mapServiceContext.toData(mergingEntry.getValue());
             }
         }
     }
@@ -85,8 +82,6 @@ public class MergeOperation extends BasePutOperation {
     @Override
     public void afterRun() {
         if (merged) {
-            final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-            final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             mapServiceContext.interceptAfterPut(name, dataValue);
             mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, dataKey, dataOldValue,
                     dataValue, mergingValue);

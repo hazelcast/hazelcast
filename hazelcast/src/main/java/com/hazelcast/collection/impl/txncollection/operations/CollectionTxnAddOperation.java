@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.collection.impl.txncollection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.impl.txncollection.CollectionTxnOperation;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,7 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
-public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
+public class CollectionTxnAddOperation extends CollectionBackupAwareOperation implements CollectionTxnOperation {
 
     private long itemId;
     private Data value;
@@ -42,7 +43,7 @@ public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
 
     @Override
     public boolean shouldBackup() {
-        return false;
+        return true;
     }
 
     @Override
@@ -60,6 +61,16 @@ public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
     @Override
     public void afterRun() throws Exception {
         publishEvent(ItemEventType.ADDED, value);
+    }
+
+    @Override
+    public long getItemId() {
+        return itemId;
+    }
+
+    @Override
+    public boolean isRemoveOperation() {
+        return false;
     }
 
     @Override

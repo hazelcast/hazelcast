@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.task.KeyValueJob;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.ExecutorType;
@@ -41,7 +41,7 @@ class NodeJobTracker
         super(name, jobTrackerConfig, nodeEngine, mapReduceService);
 
         ExecutionService es = nodeEngine.getExecutionService();
-        InternalPartitionService ps = nodeEngine.getPartitionService();
+        IPartitionService ps = nodeEngine.getPartitionService();
         int maxThreadSize = jobTrackerConfig.getMaxThreadSize();
         if (maxThreadSize <= 0) {
             maxThreadSize = Runtime.getRuntime().availableProcessors();

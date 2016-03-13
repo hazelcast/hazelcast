@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,14 @@ public final class IOUtil {
     public static final byte PRIMITIVE_TYPE_UTF = 8;
 
     private IOUtil() {
+    }
+
+    public static ByteBuffer newByteBuffer(int bufferSize, boolean direct) {
+        if (direct) {
+            return ByteBuffer.allocateDirect(bufferSize);
+        } else {
+            return ByteBuffer.allocate(bufferSize);
+        }
     }
 
     /**

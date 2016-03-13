@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -31,8 +32,7 @@ import com.hazelcast.multimap.impl.operations.MultiMapMigrationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -168,7 +168,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
     public Set<Data> localKeySet(String name) {
         Set<Data> keySet = new HashSet<Data>();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            InternalPartition partition = nodeEngine.getPartitionService().getPartition(i);
+            IPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
             if (multiMapContainer == null) {
@@ -305,7 +305,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            InternalPartition partition = nodeEngine.getPartitionService().getPartition(i);
+            IPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
             if (multiMapContainer == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
-
-import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Write through map data store implementation.
@@ -66,7 +63,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void clear() {
+    public void reset() {
 
     }
 
@@ -81,8 +78,14 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Collection<Data> flush() {
-        return Collections.emptyList();
+    public long softFlush() {
+        // Only write-behind configured map-stores are flushable.
+        return 0;
+    }
+
+    @Override
+    public void hardFlush() {
+        // Only write-behind configured map-stores are flushable.
     }
 
     @Override

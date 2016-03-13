@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.logging.LoggingService;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
@@ -42,9 +44,10 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private volatile long lastHandle;
 
-    public ClientWriteHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
-        super(connection, ioThread);
-        buffer = ByteBuffer.allocate(bufferSize);
+    public ClientWriteHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize,
+                              boolean direct, LoggingService loggingService) {
+        super(connection, ioThread, loggingService);
+        buffer = IOUtil.newByteBuffer(bufferSize, direct);
     }
 
     @Override

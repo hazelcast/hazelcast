@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ public class ReplaceOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        final Object oldValue = recordStore.replace(dataKey, dataValue);
-        dataOldValue = mapService.getMapServiceContext().toData(oldValue);
+        Object oldValue = recordStore.replace(dataKey, dataValue);
+        dataOldValue = mapServiceContext.toData(oldValue);
         successful = oldValue != null;
     }
 

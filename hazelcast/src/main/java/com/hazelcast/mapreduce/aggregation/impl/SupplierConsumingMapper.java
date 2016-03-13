@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,15 @@
 
 package com.hazelcast.mapreduce.aggregation.impl;
 
-import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.getters.Extractors;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.Collections;
 
 /**
  * The default mapper implementation for most (but not DistinctValues) aggregations.
@@ -55,8 +50,8 @@ class SupplierConsumingMapper<Key, ValueIn, ValueOut>
 
     @Override
     public void map(Key key, ValueIn value, Context<Key, ValueOut> context) {
-        entry.key = key;
-        entry.value = value;
+        entry.setKey(key);
+        entry.setValue(value);
         ValueOut valueOut = supplier.apply(entry);
         if (valueOut != null) {
             context.emit(key, valueOut);
@@ -85,60 +80,6 @@ class SupplierConsumingMapper<Key, ValueIn, ValueOut>
             throws IOException {
 
         supplier = in.readObject();
-    }
-
-    /**
-     * Internal implementation of an map entry with changeable value to prevent
-     * to much object allocation while supplying.
-     * Extends QueryableEntry in order to provide Extractable logic
-     *
-     * @param <K> key type
-     * @param <V> value type
-     * @see com.hazelcast.query.impl.QueryableEntry
-     * @see com.hazelcast.query.impl.Extractable
-     */
-    private static final class SimpleEntry<K, V> extends QueryableEntry<K, V> {
-
-        private K key;
-        private V value;
-
-        public SimpleEntry() {
-            this.extractors = new Extractors(Collections.<MapAttributeConfig>emptyList());
-        }
-
-        @Override
-        public V getValue() {
-            return value;
-        }
-
-        @Override
-        public V setValue(V value) {
-            this.value = value;
-            return value;
-        }
-
-        @Override
-        public K getKey() {
-            return this.key;
-        }
-
-        @Override
-        public Data getKeyData() {
-            // not used in map-reduce
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Data getValueData() {
-            // not used in map-reduce
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected Object getTargetObject(boolean key) {
-            return key ? this.key : this.value;
-        }
-
     }
 
 }

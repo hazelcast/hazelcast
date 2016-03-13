@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,19 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.proxy.txn.TransactionContextProxy;
 import com.hazelcast.client.proxy.txn.xa.XATransactionContextProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
-import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import javax.transaction.xa.Xid;
-import java.io.IOException;
 import java.util.Set;
 
 public class ClientTransactionManagerServiceImpl implements ClientTransactionManagerService {
@@ -43,13 +39,10 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     final HazelcastClientInstanceImpl client;
 
     private final LoadBalancer loadBalancer;
-    private final ClusterAuthenticator authenticator;
 
     public ClientTransactionManagerServiceImpl(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         this.client = client;
         this.loadBalancer = loadBalancer;
-        Credentials credentials = client.getCredentials();
-        authenticator = new ClusterAuthenticator(client, credentials);
     }
 
     public HazelcastClientInstanceImpl getClient() {
@@ -111,10 +104,8 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         while (count < RETRY_COUNT) {
             try {
                 final Address randomAddress = getRandomAddress();
-                return (ClientConnection) client.getConnectionManager().getOrConnect(randomAddress, authenticator);
-            } catch (IOException e) {
-                lastError = e;
-            } catch (HazelcastInstanceNotActiveException e) {
+                return (ClientConnection) client.getConnectionManager().getOrConnect(randomAddress, false);
+            } catch (Exception e) {
                 lastError = e;
             }
             count++;

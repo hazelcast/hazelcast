@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 import java.io.IOException;
 
 public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation
-        implements BackupAwareOperation, WaitSupport {
+        implements BackupAwareOperation, BlockingOperation {
 
 
     protected MultiMapBackupAwareOperation() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp.spinning;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.nio.tcp.NewClientReadHandler;
@@ -27,8 +28,8 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.util.counters.Counter;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -40,17 +41,17 @@ import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
 import static com.hazelcast.util.StringUtil.bytesToString;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
 public class SpinningSocketReader extends AbstractHandler implements SocketReader {
 
-    @Probe(name = "in.bytesRead")
+    @Probe(name = "bytesRead")
     private final SwCounter bytesRead = newSwCounter();
-    @Probe(name = "in.normalFramesRead")
+    @Probe(name = "normalFramesRead")
     private final SwCounter normalFramesRead = newSwCounter();
-    @Probe(name = "in.priorityFramesRead")
+    @Probe(name = "priorityFramesRead")
     private final SwCounter priorityFramesRead = newSwCounter();
     private final MetricsRegistry metricRegistry;
     private final SocketChannelWrapper socketChannel;
@@ -63,7 +64,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         super(connection, logger);
         this.metricRegistry = metricsRegistry;
         this.socketChannel = connection.getSocketChannelWrapper();
-        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
     }
 
     @Override
@@ -71,7 +72,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         return lastReadTime;
     }
 
-    @Probe(name = "in.idleTimeMs")
+    @Probe(name = "idleTimeMs")
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastReadTime, 0);
     }
@@ -170,7 +171,8 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     private void configureBuffers(int size) {
-        inputBuffer = ByteBuffer.allocate(size);
+        inputBuffer = IOUtil.newByteBuffer(size, ioService.isSocketBufferDirect());
+
         try {
             connection.setReceiveBufferSize(size);
         } catch (SocketException e) {

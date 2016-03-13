@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
-import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static java.lang.Math.min;
 
@@ -85,7 +85,7 @@ final class OperationBackupHandler {
         }
 
         InternalPartitionService partitionService = node.getPartitionService();
-        int maxBackupCount = partitionService.getMaxBackupCount();
+        int maxBackupCount = partitionService.getMaxAllowedBackupCount();
         return min(maxBackupCount, requestedSyncBackups);
     }
 
@@ -97,7 +97,7 @@ final class OperationBackupHandler {
         }
 
         InternalPartitionService partitionService = node.getPartitionService();
-        int maxBackupCount = partitionService.getMaxBackupCount();
+        int maxBackupCount = partitionService.getMaxAllowedBackupCount();
         return min(maxBackupCount - requestedSyncBackups, requestedAsyncBackups);
     }
 

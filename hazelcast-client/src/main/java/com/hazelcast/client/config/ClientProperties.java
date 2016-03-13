@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,11 +122,6 @@ public class ClientProperties extends HazelcastProperties {
      * @param config {@link Config} used to configure the {@link ClientProperty} values.
      */
     public ClientProperties(ClientConfig config) {
-        initProperties(config.getProperties(), ClientProperty.values());
-    }
-
-    @Override
-    protected String[] createProperties() {
-        return new String[ClientProperty.values().length];
+        super(config.getProperties());
     }
 }

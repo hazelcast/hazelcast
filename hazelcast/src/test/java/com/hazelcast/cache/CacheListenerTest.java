@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -257,6 +258,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
         cache.getAndRemove(randomString());
     }
 
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/7527
     @Test
     public void testSyncListener_shouldNotHang_whenHazelcastInstanceShutdown() {
         CachingProvider provider = getCachingProvider();

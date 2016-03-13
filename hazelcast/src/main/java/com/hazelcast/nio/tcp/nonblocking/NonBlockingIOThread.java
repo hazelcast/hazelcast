@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -30,7 +31,8 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.tcp.nonblocking.SelectorOptimizer.optimize;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
@@ -40,12 +42,19 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
+    // this field is set during construction and is meant for the probes so that the read/write handler can
+    // indicate which thread they are currently bound to.
+    @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
+    int id;
+
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
     @Probe
     private final SwCounter eventCount = newSwCounter();
     @Probe
     private final SwCounter selectorIOExceptionCount = newSwCounter();
+    @Probe
+    private final SwCounter completedTaskCount = newSwCounter();
 
     private final ILogger logger;
 
@@ -69,7 +78,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
                                ILogger logger,
                                NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
                                boolean selectNow) {
-        this(threadGroup, threadName, logger, oomeHandler, selectNow, newSelector());
+        this(threadGroup, threadName, logger, oomeHandler, selectNow, newSelector(logger));
     }
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
@@ -85,10 +94,14 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         this.selector = selector;
     }
 
-    private static Selector newSelector() {
+    private static Selector newSelector(ILogger logger) {
         try {
-            return Selector.open();
-        } catch (IOException e) {
+            Selector selector = Selector.open();
+            if (Boolean.getBoolean("tcp.optimizedselector")) {
+                optimize(selector, logger);
+            }
+            return selector;
+        } catch (final IOException e) {
             throw new HazelcastException("Failed to open a Selector", e);
         }
     }
@@ -231,7 +244,9 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void executeTask(Runnable task) {
-        NonBlockingIOThread target = getTargetIoThread(task);
+        completedTaskCount.inc();
+
+        NonBlockingIOThread target = getTargetIOThread(task);
         if (target == this) {
             task.run();
         } else {
@@ -239,7 +254,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
-    private NonBlockingIOThread getTargetIoThread(Runnable task) {
+    private NonBlockingIOThread getTargetIOThread(Runnable task) {
         if (task instanceof MigratableHandler) {
             return ((MigratableHandler) task).getOwner();
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -23,11 +24,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.logging.Level;
@@ -36,10 +38,13 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * An operation could be compared to a {@link Runnable}. It contains logic that is going to be executed; this logic
- * will be placed in the {@link #run()} method.
+ * will be placed in the {@link Operation#run()} method.
  */
 public abstract class Operation implements DataSerializable {
 
+    /**
+     * Marks an {@link Operation} as non partition specific.
+     */
     public static final int GENERIC_PARTITION_ID = -1;
 
     /**
@@ -277,53 +282,10 @@ public abstract class Operation implements DataSerializable {
         operationResponseHandler.sendResponse(this, value);
     }
 
-    /**
-     * This method is deprecated since Hazelcast 3.6. Make use of the
-     * {@link #getOperationResponseHandler()}
-     */
-    @Deprecated
-    public final ResponseHandler getResponseHandler() {
-        if (responseHandler == null) {
-            return null;
-        }
-
-        if (responseHandler instanceof ResponseHandlerAdapter) {
-            ResponseHandlerAdapter adapter = (ResponseHandlerAdapter) responseHandler;
-            return adapter.responseHandler;
-        }
-
-        return new ResponseHandler() {
-            @Override
-            public void sendResponse(Object obj) {
-                responseHandler.sendResponse(Operation.this, obj);
-            }
-
-            @Override
-            public boolean isLocal() {
-                return responseHandler.isLocal();
-            }
-        };
-    }
-
-    /**
-     * This method is deprecated since Hazelcast 3.6. Make use of the
-     * {@link #setOperationResponseHandler(OperationResponseHandler)}
-     */
-    @Deprecated
-    public final Operation setResponseHandler(final ResponseHandler responseHandler) {
-        if (responseHandler == null) {
-            this.responseHandler = null;
-            return this;
-        }
-
-        this.responseHandler = new ResponseHandlerAdapter(responseHandler);
-        return this;
-    }
-
-    /**
+     /**
      * Gets the time in milliseconds since this invocation started.
      *
-     * For more information, see {@link com.hazelcast.cluster.ClusterClock#getClusterTime()}.
+     * For more information, see {@link ClusterClock#getClusterTime()}.
      *
      * @return the time of the invocation start.
      */
@@ -342,7 +304,7 @@ public abstract class Operation implements DataSerializable {
      * aborted, then the call-timeout is 60000 milliseconds.
      *
      * For more information about the default value, see
-     * {@link com.hazelcast.instance.GroupProperties#OPERATION_CALL_TIMEOUT_MILLIS}
+     * {@link com.hazelcast.instance.GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
      *
      * @return the call timeout in milliseconds.
      * @see #setCallTimeout(long)
@@ -589,23 +551,5 @@ public abstract class Operation implements DataSerializable {
         toString(sb);
         sb.append('}');
         return sb.toString();
-    }
-
-    private static class ResponseHandlerAdapter implements OperationResponseHandler {
-        private final ResponseHandler responseHandler;
-
-        public ResponseHandlerAdapter(ResponseHandler responseHandler) {
-            this.responseHandler = responseHandler;
-        }
-
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-            responseHandler.sendResponse(obj);
-        }
-
-        @Override
-        public boolean isLocal() {
-            return responseHandler.isLocal();
-        }
     }
 }

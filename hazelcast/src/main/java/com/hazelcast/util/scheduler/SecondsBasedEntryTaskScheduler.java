@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -26,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -70,16 +70,16 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private final Map<Object, Integer> secondsOfKeys = new HashMap<Object, Integer>(1000);
     private final Map<Integer, Map<Object, ScheduledEntry<K, V>>> scheduledEntries
             = new HashMap<Integer, Map<Object, ScheduledEntry<K, V>>>(1000);
-    private final ScheduledExecutorService scheduledExecutorService;
+    private final TaskScheduler taskScheduler;
     private final ScheduledEntryProcessor<K, V> entryProcessor;
     private final ScheduleType scheduleType;
     private final Map<Integer, ScheduledFuture> scheduledTaskMap = new HashMap<Integer, ScheduledFuture>(1000);
     private final AtomicLong uniqueIdGenerator = new AtomicLong();
     private final Object mutex = new Object();
 
-    SecondsBasedEntryTaskScheduler(ScheduledExecutorService scheduledExecutorService,
+    SecondsBasedEntryTaskScheduler(TaskScheduler taskScheduler,
                                    ScheduledEntryProcessor<K, V> entryProcessor, ScheduleType scheduleType) {
-        this.scheduledExecutorService = scheduledExecutorService;
+        this.taskScheduler = taskScheduler;
         this.entryProcessor = entryProcessor;
         this.scheduleType = scheduleType;
     }
@@ -339,7 +339,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
     private void schedule(Integer second, int delaySeconds) {
         EntryProcessorExecutor command = new EntryProcessorExecutor(second);
-        ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(command, delaySeconds, TimeUnit.SECONDS);
+        ScheduledFuture scheduledFuture = taskScheduler.schedule(command, delaySeconds, TimeUnit.SECONDS);
         scheduledTaskMap.put(second, scheduledFuture);
     }
 

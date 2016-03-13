@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.spi.partition.IPartition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ public class MapConfig {
     /**
      * The number of maximum backup counter
      */
-    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
+    public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
     /**
      * The number of minimum eviction percentage
@@ -312,7 +312,11 @@ public class MapConfig {
      * Returns the evictionPercentage: specified percentage of the map to be evicted
      *
      * @return the evictionPercentage: specified percentage of the map to be evicted
+     *
+     * @deprecated As of version 3.7, eviction mechanism changed.
+     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
+    @Deprecated
     public int getEvictionPercentage() {
         return evictionPercentage;
     }
@@ -327,6 +331,9 @@ public class MapConfig {
      *
      * @param evictionPercentage the evictionPercentage to set: the specified percentage of the map to be evicted
      * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range.
+     *
+     * @deprecated As of version 3.7, eviction mechanism changed.
+     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
     public MapConfig setEvictionPercentage(final int evictionPercentage) {
         if (evictionPercentage < MIN_EVICTION_PERCENTAGE) {
@@ -346,6 +353,9 @@ public class MapConfig {
      *
      * @return number of milliseconds that should pass before asking for the next eviction.
      * @since 3.3
+     *
+     * @deprecated As of version 3.7, eviction mechanism changed.
+     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
     public long getMinEvictionCheckMillis() {
         return minEvictionCheckMillis;
@@ -361,6 +371,9 @@ public class MapConfig {
      *
      * @param minEvictionCheckMillis time in milliseconds that should pass before asking for the next eviction
      * @since 3.3
+     *
+     * @deprecated As of version 3.7, eviction mechanism changed.
+     * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
     public MapConfig setMinEvictionCheckMillis(long minEvictionCheckMillis) {
         if (minEvictionCheckMillis < 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,7 +227,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
             synchronized (this) {
                 if (!isDoneState(this.state)) {
-                    this.wait(millisToWait);
+                    wait(millisToWait);
                 }
             }
         }
@@ -290,7 +290,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     private void notifyThreadsWaitingOnGet() {
         synchronized (this) {
-            this.notifyAll();
+            notifyAll();
         }
     }
 

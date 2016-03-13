@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ import java.util.NoSuchElementException;
 public abstract class AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
 
-    private static final int FETCH_SIZE = 100;
+    protected static final int DEFAULT_FETCH_SIZE = 100;
 
     protected ICache<K, V> cache;
 
@@ -90,12 +90,10 @@ public abstract class AbstractClusterWideIterator<K, V>
     protected int index;
     protected int currentIndex = -1;
 
-    public AbstractClusterWideIterator(ICache<K, V> cache, int partitionCount) {
+    public AbstractClusterWideIterator(ICache<K, V> cache, int partitionCount, int fetchSize) {
         this.cache = cache;
         this.partitionCount = partitionCount;
-
-        //TODO can be made configurable
-        this.fetchSize = FETCH_SIZE;
+        this.fetchSize = fetchSize;
     }
 
     @Override

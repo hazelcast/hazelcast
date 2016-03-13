@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Container for configured Hazelcast properties ({@see GroupProperty}).
@@ -44,8 +42,6 @@ public class GroupProperties extends HazelcastProperties {
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_ENABLED = GroupProperty.PERFORMANCE_MONITOR_ENABLED.getName();
-    @Deprecated
-    public static final String PROP_PERFORMANCE_MONITOR_DELAY_SECONDS = GroupProperty.PERFORMANCE_MONITOR_DELAY_SECONDS.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB
             = GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB.getName();
@@ -265,12 +261,6 @@ public class GroupProperties extends HazelcastProperties {
      * @param config {@link Config} used to configure the {@link GroupProperty} values.
      */
     public GroupProperties(Config config) {
-        checkNotNull(config);
-        initProperties(config.getProperties(), GroupProperty.values());
-    }
-
-    @Override
-    protected String[] createProperties() {
-        return new String[GroupProperty.values().length];
+        super(config.getProperties());
     }
 }

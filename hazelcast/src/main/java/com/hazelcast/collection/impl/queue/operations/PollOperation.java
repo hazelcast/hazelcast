@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.BlockingOperation;
 
 /**
  * Pool operation for Queue.
  */
 public final class PollOperation extends QueueBackupAwareOperation
-        implements WaitSupport, Notifier, IdentifiedDataSerializable {
+        implements BlockingOperation, Notifier, IdentifiedDataSerializable {
 
     private QueueItem item;
 

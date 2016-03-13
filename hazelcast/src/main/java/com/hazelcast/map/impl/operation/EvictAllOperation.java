@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -36,14 +33,15 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
         MutatingOperation, PartitionAwareOperation {
 
     private boolean shouldRunOnBackup;
-
     private int numberOfEvictedEntries;
 
     public EvictAllOperation() {
+        this(null);
     }
 
     public EvictAllOperation(String name) {
         super(name);
+        createRecordStoreOnDemand = false;
     }
 
     @Override
@@ -52,7 +50,6 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
         // TODO this also clears locked keys from near cache which should be preserved.
         clearNearCache(true);
 
-        final RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         if (recordStore == null) {
             return;
         }
@@ -67,8 +64,6 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
     }
 
     private void hintMapEvent() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.hintMapEvent(getCallerAddress(), name,
                 EntryEventType.EVICT_ALL, numberOfEvictedEntries, getPartitionId());
     }
@@ -85,13 +80,11 @@ public class EvictAllOperation extends MapOperation implements BackupAwareOperat
 
     @Override
     public int getSyncBackupCount() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(name).getBackupCount();
     }
 
     @Override
     public int getAsyncBackupCount() {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(name).getAsyncBackupCount();
     }
 

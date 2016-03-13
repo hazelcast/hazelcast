@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,6 +124,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                     oomeHandler,
                     inputSelectNow
             );
+            thread.id = i;
             inputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();
@@ -136,6 +137,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                     ioService.getLogger(NonBlockingIOThread.class.getName()),
                     oomeHandler,
                     outputSelectNow);
+            thread.id = i;
             outputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.CachedExecutorServiceDelegate;
@@ -67,7 +68,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
-    private final ScheduledExecutorService defaultScheduledExecutorServiceDelegate;
+    private final TaskScheduler globalTaskScheduler;
     private final ILogger logger;
     private final CompletableFutureTask completableFutureTask;
 
@@ -112,11 +113,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         // default executors
         register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
         register(SCHEDULED_EXECUTOR, coreSize * POOL_MULTIPLIER, coreSize * QUEUE_MULTIPLIER, ExecutorType.CACHED);
-        defaultScheduledExecutorServiceDelegate = getScheduledExecutor(SCHEDULED_EXECUTOR);
+        globalTaskScheduler = getTaskScheduler(SCHEDULED_EXECUTOR);
 
         // Register CompletableFuture task
         completableFutureTask = new CompletableFutureTask();
-        scheduleWithFixedDelay(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
+        scheduleWithRepetition(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
     }
 
     private void enableRemoveOnCancelIfAvailable() {
@@ -214,44 +215,33 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return defaultScheduledExecutorServiceDelegate.schedule(command, delay, unit);
+        return globalTaskScheduler.schedule(command, delay, unit);
     }
 
     @Override
     public ScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit) {
-        return getScheduledExecutor(name).schedule(command, delay, unit);
+        return getTaskScheduler(name).schedule(command, delay, unit);
     }
 
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return defaultScheduledExecutorServiceDelegate.scheduleAtFixedRate(command, initialDelay, period, unit);
+    public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return globalTaskScheduler.scheduleWithRepetition(command, initialDelay, period, unit);
     }
 
     @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(String name, Runnable command, long initialDelay,
-                                                  long period, TimeUnit unit) {
-        return getScheduledExecutor(name).scheduleAtFixedRate(command, initialDelay, period, unit);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return defaultScheduledExecutorServiceDelegate.scheduleWithFixedDelay(command, initialDelay, period, unit);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(String name, Runnable command, long initialDelay,
+    public ScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay,
                                                      long period, TimeUnit unit) {
-        return getScheduledExecutor(name).scheduleWithFixedDelay(command, initialDelay, period, unit);
+        return getTaskScheduler(name).scheduleWithRepetition(command, initialDelay, period, unit);
     }
 
     @Override
-    public ScheduledExecutorService getDefaultScheduledExecutor() {
-        return defaultScheduledExecutorServiceDelegate;
+    public TaskScheduler getGlobalTaskScheduler() {
+        return globalTaskScheduler;
     }
 
     @Override
-    public ScheduledExecutorService getScheduledExecutor(String name) {
-        return new ScheduledExecutorServiceDelegate(scheduledExecutorService, getExecutor(name));
+    public TaskScheduler getTaskScheduler(String name) {
+        return new DelegatingTaskScheduler(scheduledExecutorService, getExecutor(name));
     }
 
     public void shutdown() {

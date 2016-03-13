@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.util.Clock;
+
+import static java.lang.System.currentTimeMillis;
 
 public class TcpIpConnectionMonitor {
 
@@ -46,7 +47,7 @@ public class TcpIpConnectionMonitor {
     public synchronized void onError(Throwable t) {
         String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
         logger.finest(errorMessage);
-        final long now = Clock.currentTimeMillis();
+        final long now = currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {

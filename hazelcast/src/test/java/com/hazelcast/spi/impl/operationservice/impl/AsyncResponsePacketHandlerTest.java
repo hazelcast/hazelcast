@@ -44,8 +44,8 @@ public class AsyncResponsePacketHandlerTest extends HazelcastTestSupport {
     @Test
     public void whenNoProblemPacket() throws Exception {
         final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)));
-        packet.setHeader(Packet.HEADER_OP);
-        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setFlag(Packet.FLAG_OP);
+        packet.setFlag(Packet.FLAG_RESPONSE);
         asyncHandler.handle(packet);
 
         assertTrueEventually(new AssertTask() {
@@ -59,12 +59,12 @@ public class AsyncResponsePacketHandlerTest extends HazelcastTestSupport {
     @Test
     public void whenPacketThrowsException() throws Exception {
         final Packet badPacket = new Packet(serializationService.toBytes(new NormalResponse("bad", 1, 0, false)));
-        badPacket.setHeader(Packet.HEADER_OP);
-        badPacket.setHeader(Packet.HEADER_RESPONSE);
+        badPacket.setFlag(Packet.FLAG_OP);
+        badPacket.setFlag(Packet.FLAG_RESPONSE);
 
         final Packet goodPacket = new Packet(serializationService.toBytes(new NormalResponse("good", 1, 0, false)));
-        goodPacket.setHeader(Packet.HEADER_OP);
-        goodPacket.setHeader(Packet.HEADER_RESPONSE);
+        goodPacket.setFlag(Packet.FLAG_OP);
+        goodPacket.setFlag(Packet.FLAG_RESPONSE);
 
         doThrow(new ExpectedRuntimeException()).when(responsePacketHandler).handle(badPacket);
 
@@ -84,8 +84,8 @@ public class AsyncResponsePacketHandlerTest extends HazelcastTestSupport {
         asyncHandler.shutdown();
 
         final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)));
-        packet.setHeader(Packet.HEADER_OP);
-        packet.setHeader(Packet.HEADER_RESPONSE);
+        packet.setFlag(Packet.FLAG_OP);
+        packet.setFlag(Packet.FLAG_RESPONSE);
         asyncHandler.handle(packet);
 
         assertTrueFiveSeconds(new AssertTask() {

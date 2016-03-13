@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.NamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
 
 public class AddInterceptorOperation extends AbstractOperation implements MutatingOperation, NamedOperation {
@@ -51,7 +52,7 @@ public class AddInterceptorOperation extends AbstractOperation implements Mutati
     public void run() {
         mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
-        mapContainer.addInterceptor(id, mapInterceptor);
+        mapContainer.getInterceptorRegistry().register(id, mapInterceptor);
     }
 
     @Override

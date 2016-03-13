@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 
 import java.security.Permission;
 
-import static com.hazelcast.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
+import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 
 public class AddPartitionLostListenerMessageTask
         extends AbstractCallableMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters> {
@@ -37,7 +37,7 @@ public class AddPartitionLostListenerMessageTask
 
     @Override
     protected Object call() throws Exception {
-        final InternalPartitionService partitionService = getService(getServiceName());
+        final IPartitionService partitionService = getService(getServiceName());
 
         final PartitionLostListener listener = new PartitionLostListener() {
             @Override
@@ -74,7 +74,7 @@ public class AddPartitionLostListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return InternalPartitionService.SERVICE_NAME;
+        return IPartitionService.SERVICE_NAME;
     }
 
     @Override

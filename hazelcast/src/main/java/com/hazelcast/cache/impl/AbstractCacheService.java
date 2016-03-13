@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -528,7 +528,7 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public void onPartitionLost(InternalPartitionLostEvent partitionLostEvent) {
+    public void onPartitionLost(IPartitionLostEvent partitionLostEvent) {
         final int partitionId = partitionLostEvent.getPartitionId();
         for (CacheConfig config : getCacheConfigs()) {
             final String cacheName = config.getName();

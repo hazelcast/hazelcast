@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -277,18 +277,34 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future putAsync(K key, V value) {
+    public Future<V> putAsync(K key, V value) {
         return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public ICompletableFuture putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+    public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data k = toData(key, partitionStrategy);
         Data v = toData(value);
         return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit),
+                getNodeEngine().getSerializationService());
+    }
+
+    @Override
+    public Future<Void> setAsync(K key, V value) {
+        return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data k = toData(key, partitionStrategy);
+        Data v = toData(value);
+        return new DelegatingFuture<Void>(setAsyncInternal(k, v, ttl, timeunit),
                 getNodeEngine().getSerializationService());
     }
 
@@ -668,8 +684,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor) {
-        if (keys == null || keys.size() == 0 || keys.contains(null)) {
+        if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (keys.isEmpty()) {
+            return Collections.emptyMap();
         }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
@@ -698,7 +717,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
-        return this.executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
+        return executeOnEntries(entryProcessor, TruePredicate.INSTANCE);
     }
 
     @Override

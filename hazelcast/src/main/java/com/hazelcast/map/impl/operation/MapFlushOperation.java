@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,16 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
- * Flushes dirty entries upon {@link IMap#flush()}
+ * Flushes dirty entries upon call of {@link IMap#flush()}
  */
 public class MapFlushOperation extends MapOperation implements BackupAwareOperation, MutatingOperation {
+
+    private long sequence;
 
     public MapFlushOperation() {
     }
@@ -37,13 +38,12 @@ public class MapFlushOperation extends MapOperation implements BackupAwareOperat
 
     @Override
     public void run() {
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
-        recordStore.flush();
+        sequence = recordStore.softFlush();
     }
 
     @Override
     public Object getResponse() {
-        return true;
+        return sequence;
     }
 
     @Override
