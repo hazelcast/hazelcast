@@ -17,7 +17,7 @@
 /**
  * Contains a family of interfaces that provide a common base for various
  * kinds of open-addressed hashtable implementations. The APIs are designed
- * to interact with a {@link com.hazelcast.memory.MemoryManager MemoryManager}
+ * to interact with a {@link com.hazelcast.spi.memory.MemoryManager MemoryManager}
  * for memory allocation and access.
  */
 package com.hazelcast.spi.hashslot;

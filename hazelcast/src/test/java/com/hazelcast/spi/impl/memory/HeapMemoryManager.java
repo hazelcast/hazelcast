@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.memory;
 
-import com.hazelcast.memory.MemoryAllocator;
-import com.hazelcast.memory.MemoryManager;
+import com.hazelcast.spi.memory.MemoryAllocator;
+import com.hazelcast.spi.memory.MemoryManager;
 import com.hazelcast.spi.memory.MemoryAccessor;
 import com.hazelcast.util.collection.Long2LongHashMap;
 import junit.framework.AssertionFailedError;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.hashslot;
 
+import com.hazelcast.spi.memory.MemoryAllocator;
+
 /**
  * Specialization of {@link HashSlotArray} to the case where the key consists of two {@code long} values
  * and the value part is a block whose size is a multiple of 8 (including zero).
@@ -40,7 +42,7 @@ public interface HashSlotArray16byteKey extends HashSlotArray {
      * @param key1 key part 1
      * @param key2 key part 2
      * @return address of the value block or
-     * {@link com.hazelcast.memory.MemoryAllocator#NULL_ADDRESS MemoryAllocator.NULL_ADDRESS}
+     * {@link MemoryAllocator#NULL_ADDRESS MemoryAllocator.NULL_ADDRESS}
      * if no mapping for {@code (key1, key2)} exists.
      */
     long get(long key1, long key2);

@@ -17,14 +17,14 @@
 package com.hazelcast.spi.impl.hashslot;
 
 import com.hazelcast.spi.memory.MemoryAccessor;
-import com.hazelcast.memory.MemoryAllocator;
-import com.hazelcast.memory.MemoryManager;
+import com.hazelcast.spi.memory.MemoryAllocator;
+import com.hazelcast.spi.memory.MemoryManager;
 import com.hazelcast.spi.hashslot.HashSlotArray;
 import com.hazelcast.spi.hashslot.HashSlotCursor12byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor8byteKey;
 
-import static com.hazelcast.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.spi.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.spi.impl.hashslot.CapacityUtil.nextCapacity;
 import static com.hazelcast.spi.impl.hashslot.CapacityUtil.roundCapacity;
 import static com.hazelcast.util.HashUtil.fastLongMix;
