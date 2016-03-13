@@ -85,7 +85,7 @@
     <suppress checks="Todo" files="com/hazelcast/concurrent/lock/ConditionImpl"/>
 
     <!-- Memory -->
-    <suppress checks="IllegalImport" files="com.hazelcast.internal.memory.impl.UnsafeUtil"/>
+    <suppress checks="IllegalImport" files="com/hazelcast/spi/impl/memory/UnsafeUtil"/>
 
     <!-- OSGI -->
     <suppress checks="MethodCount" files="com/hazelcast/osgi/impl/HazelcastOSGiInstanceImpl"/>

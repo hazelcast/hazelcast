@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.memory;
 
-import com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry;
+import static com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry.MEM;
 
 /**
  * Provides big-endian access on a natively little-endian platform.
@@ -152,21 +152,21 @@ public class BigEndianMemoryAccessor extends EndianAccessorBase {
 
     @Override
     public void copyMemory(long srcAddress, long destAddress, long lengthBytes) {
-        GlobalMemoryAccessorRegistry.MEM.copyMemory(srcAddress, destAddress, lengthBytes);
+        MEM.copyMemory(srcAddress, destAddress, lengthBytes);
     }
 
     @Override
     public void copyFromByteArray(byte[] source, int offset, long destAddress, int length) {
-        GlobalMemoryAccessorRegistry.MEM.copyMemory(source, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, null, destAddress, length);
+        MEM.copyMemory(source, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, null, destAddress, length);
     }
 
     @Override
     public void copyToByteArray(long srcAddress, byte[] destination, int offset, int length) {
-        GlobalMemoryAccessorRegistry.MEM.copyMemory(null, srcAddress, destination, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, length);
+        MEM.copyMemory(null, srcAddress, destination, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, length);
     }
 
     @Override
     public void setMemory(long address, long lengthBytes, byte value) {
-        GlobalMemoryAccessorRegistry.MEM.setMemory(address, lengthBytes, value);
+        MEM.setMemory(address, lengthBytes, value);
     }
 }

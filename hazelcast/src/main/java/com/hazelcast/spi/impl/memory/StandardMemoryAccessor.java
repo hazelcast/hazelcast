@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.memory;
 
-import com.hazelcast.spi.memory.HeapMemoryAccessor;
 import com.hazelcast.spi.memory.MemoryAccessor;
 
 import java.lang.reflect.Field;
@@ -129,12 +128,12 @@ public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
 
     @Override
     public void copyFromByteArray(byte[] source, int offset, long destAddress, int length) {
-        copyMemory(source, HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET + HeapMemoryAccessor.ARRAY_BYTE_INDEX_SCALE * offset, null, destAddress, length);
+        copyMemory(source, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, null, destAddress, length);
     }
 
     @Override
     public void copyToByteArray(long srcAddress, byte[] destination, int offset, int length) {
-        copyMemory(null, srcAddress, destination, HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET + HeapMemoryAccessor.ARRAY_BYTE_INDEX_SCALE * offset, length);
+        copyMemory(null, srcAddress, destination, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, length);
     }
 
     @Override

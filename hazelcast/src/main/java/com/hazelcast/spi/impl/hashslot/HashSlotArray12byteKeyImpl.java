@@ -16,11 +16,12 @@
 
 package com.hazelcast.spi.impl.hashslot;
 
-import com.hazelcast.spi.memory.MemoryManager;
 import com.hazelcast.spi.hashslot.HashSlotArray12byteKey;
 import com.hazelcast.spi.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor12byteKey;
+import com.hazelcast.spi.memory.MemoryManager;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.util.HashUtil.fastIntMix;
 import static com.hazelcast.util.HashUtil.fastLongMix;
 import static com.hazelcast.util.QuickMath.modPowerOfTwo;
@@ -56,7 +57,8 @@ public final class HashSlotArray12byteKeyImpl extends HashSlotArrayBase implemen
     ) {
         super(unassignedSentinel, offsetOfUnassignedSentinel, mm, null, KEY_LENGTH, valueLength,
                 initialCapacity, loadFactor);
-        assert valueLength >= 4 && modPowerOfTwo(valueLength - 4, VALUE_LENGTH_GRANULARITY) == 0
+        assert valueLength >= INT_SIZE_IN_BYTES
+                && modPowerOfTwo(valueLength - INT_SIZE_IN_BYTES, VALUE_LENGTH_GRANULARITY) == 0
                 : "Value length must be 4 plus a positive multiple of 8, but was " + valueLength;
     }
 
