@@ -65,6 +65,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Proxy implementation of {@link JobTracker} for a client initiated map reduce job.
+ */
 public class ClientMapReduceProxy
         extends ClientProxy
         implements JobTracker {

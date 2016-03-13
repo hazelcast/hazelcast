@@ -30,6 +30,10 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * ClientReadHandler gets called by an IO-thread when there is space available to write to.
+ * It then writes some of its enqueued data to the socket from a bytebuffer.
+ */
 public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
 
     private final Queue<ClientMessage> writeQueue = new ConcurrentLinkedQueue<ClientMessage>();

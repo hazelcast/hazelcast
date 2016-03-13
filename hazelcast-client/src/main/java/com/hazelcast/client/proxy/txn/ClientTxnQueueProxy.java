@@ -30,6 +30,11 @@ import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Proxy implementation of {@link TransactionalQueue}.
+ *
+ * @param <E> the type of elements in this queue
+ */
 public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements TransactionalQueue<E> {
 
     public ClientTxnQueueProxy(String name, ClientTransactionContext transactionContext) {

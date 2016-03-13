@@ -21,6 +21,9 @@ import com.hazelcast.concurrent.idgen.IdGeneratorImpl;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
 
+/**
+ * Proxy implementation of {@link IdGenerator}.
+ */
 public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 
     private final IdGeneratorImpl idGeneratorImpl;

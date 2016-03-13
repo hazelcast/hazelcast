@@ -24,6 +24,11 @@ import static com.hazelcast.topic.TopicOverloadPolicy.BLOCK;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
+/**
+ * Contains the ReliableTopic configuration for a client.
+ *
+ * @see com.hazelcast.client.proxy.ClientReliableTopicProxy
+ */
 public class ClientReliableTopicConfig {
     /**
      * The default read batch size.
