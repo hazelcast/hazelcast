@@ -1,7 +1,25 @@
-package com.hazelcast.spi.hashslot;
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.spi.impl.hashslot;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.memory.HeapMemoryManager;
+import com.hazelcast.spi.hashslot.HashSlotArray8byteKey;
+import com.hazelcast.spi.hashslot.HashSlotCursor8byteKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
@@ -22,20 +40,20 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class HashSlotArrayImplTest {
+public class HashSlotArray8byteKeyImplTest {
 
     private static final int VALUE_LENGTH = 32;
 
     private final Random random = new Random();
     private HeapMemoryManager memMgr;
     private MemoryAccessor mem;
-    private HashSlotArray hsa;
+    private HashSlotArray8byteKey hsa;
 
     @Before
     public void setUp() throws Exception {
         memMgr = new HeapMemoryManager(32 << 20);
         mem = memMgr.getAccessor();
-        hsa = new HashSlotArrayImpl(0L, memMgr, VALUE_LENGTH);
+        hsa = new HashSlotArray8byteKeyImpl(0L, memMgr, VALUE_LENGTH);
         hsa.gotoNew();
     }
 
@@ -180,20 +198,20 @@ public class HashSlotArrayImplTest {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_key_withoutAdvance() {
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         cursor.key();
     }
 
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_valueAddress_withoutAdvance() {
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         cursor.valueAddress();
     }
 
     @Test
     public void testCursor_advance_whenEmpty() {
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         assertFalse(cursor.advance());
     }
 
@@ -201,7 +219,7 @@ public class HashSlotArrayImplTest {
     public void testCursor_advance() {
         insert(random.nextLong());
 
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         assertTrue(cursor.advance());
         assertFalse(cursor.advance());
     }
@@ -211,7 +229,7 @@ public class HashSlotArrayImplTest {
     public void testCursor_advance_afterAdvanceReturnsFalse() {
         insert(random.nextLong());
 
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         cursor.advance();
         cursor.advance();
 
@@ -227,7 +245,7 @@ public class HashSlotArrayImplTest {
         final long key = random.nextLong();
         insert(key);
 
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         cursor.advance();
         assertEquals(key, cursor.key());
     }
@@ -236,7 +254,7 @@ public class HashSlotArrayImplTest {
     public void testCursor_valueAddress() {
         final long valueAddress = insert(random.nextLong());
 
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         cursor.advance();
         assertEquals(valueAddress, cursor.valueAddress());
     }
@@ -244,7 +262,7 @@ public class HashSlotArrayImplTest {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_advance_whenDisposed() {
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.advance();
     }
@@ -252,7 +270,7 @@ public class HashSlotArrayImplTest {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_key_whenDisposed() {
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.key();
     }
@@ -260,7 +278,7 @@ public class HashSlotArrayImplTest {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_valueAddress_whenDisposed() {
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.valueAddress();
     }
@@ -273,7 +291,7 @@ public class HashSlotArrayImplTest {
             insert(key);
         }
         boolean[] verifiedKeys = new boolean[k];
-        HashSlotCursor cursor = hsa.cursor();
+        HashSlotCursor8byteKey cursor = hsa.cursor();
         while (cursor.advance()) {
             long key = cursor.key();
             long valueAddress = cursor.valueAddress();

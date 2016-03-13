@@ -14,49 +14,54 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.spi.impl.hashslot;
 
 import com.hazelcast.memory.MemoryAllocator;
 import com.hazelcast.memory.MemoryManager;
+import com.hazelcast.spi.hashslot.HashSlotArray16byteKey;
+import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
 
-import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_CAPACITY;
-import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.util.QuickMath.modPowerOfTwo;
 
 /**
- * Implementation of {@link HashSlotArrayTwinKey}.
+ * Implementation of {@link HashSlotArray16byteKey}.
  * <p>
  * This class uses the first 8 bytes of the value block for the unassigned sentinel.
  * <strong>It is the responsibility of the caller to ensure that the unassigned sentinel
  * is overwritten with a non-sentinel value as soon as a new slot is assigned (after calling
  * {@link #ensure(long, long)} and getting a positive return value).</strong>
  * For the same reason this class must not be instantiated with zero value length. Use
- * {@link HashSlotArrayTwinKeyNoValue} as a zero-length key implementation.
+ * {@link HashSlotArray16byteKeyNoValue} as a zero-length key implementation.
  */
-public class HashSlotArrayTwinKeyImpl extends HashSlotArrayBase implements HashSlotArrayTwinKey {
+public class HashSlotArray16byteKeyImpl extends HashSlotArrayBase implements HashSlotArray16byteKey {
 
     private static final int KEY_LENGTH = 16;
 
-    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager memMgr, MemoryAllocator auxMalloc, int valueLength,
-                                    int initialCapacity, float loadFactor) {
+    public HashSlotArray16byteKeyImpl(long nullSentinel, MemoryManager memMgr, MemoryAllocator auxMalloc, int valueLength,
+                                      int initialCapacity, float loadFactor) {
         this(nullSentinel, KEY_LENGTH, memMgr, auxMalloc, valueLength, initialCapacity, loadFactor);
         assert valueLengthValid(valueLength) : "Invalid value length: " + valueLength;
     }
 
-    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager memMgr, int valueLength,
-                                    int initialCapacity, float loadFactor) {
+    public HashSlotArray16byteKeyImpl(long nullSentinel, MemoryManager memMgr, int valueLength,
+                                      int initialCapacity, float loadFactor) {
         this(nullSentinel, memMgr, null, valueLength, initialCapacity, loadFactor);
     }
 
-    public HashSlotArrayTwinKeyImpl(long nullSentinel, MemoryManager mm, int valueLength) {
+    public HashSlotArray16byteKeyImpl(long nullSentinel, MemoryManager mm, int valueLength) {
         this(nullSentinel, mm, null, valueLength, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
-    protected HashSlotArrayTwinKeyImpl(
+    protected HashSlotArray16byteKeyImpl(
             long nullSentinel, long offsetOfNullSentinel, MemoryManager mm, MemoryAllocator auxMalloc,
             int valueLength, int initialCapacity, float loadFactor
     ) {
         super(nullSentinel, offsetOfNullSentinel, mm, auxMalloc, KEY_LENGTH, valueLength,
                 initialCapacity, loadFactor);
+        assert modPowerOfTwo(valueLength, VALUE_LENGTH_GRANULARITY) == 0
+                : "Value length must be a positive multiple of 8, but was " + valueLength;
     }
 
 
@@ -78,8 +83,8 @@ public class HashSlotArrayTwinKeyImpl extends HashSlotArrayBase implements HashS
         return super.remove0(key1, key2);
     }
 
-    @Override public HashSlotCursorTwinKey cursor() {
-        return new Cursor();
+    @Override public HashSlotCursor16byteKey cursor() {
+        return new CursorLongKey2();
     }
 
     protected boolean valueLengthValid(int valueLength) {

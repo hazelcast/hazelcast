@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.spi.impl.hashslot;
 
 import com.hazelcast.memory.MemoryManager;
+import com.hazelcast.spi.hashslot.HashSlotArray8byteKey;
+import com.hazelcast.spi.hashslot.HashSlotCursor8byteKey;
 
-import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_CAPACITY;
-import static com.hazelcast.spi.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
 import static com.hazelcast.util.HashUtil.fastLongMix;
+import static com.hazelcast.util.QuickMath.modPowerOfTwo;
 
 /**
- * Implementation of {@link HashSlotArray} as a restriction of {@link HashSlotArrayBase}
+ * Implementation of {@link HashSlotArray8byteKey} as a restriction of {@link HashSlotArrayBase}
  * to a case where just {@code key1} is used.
  * <p>
  * This class uses the first 8 bytes of the value block for the unassigned sentinel.
@@ -31,27 +34,30 @@ import static com.hazelcast.util.HashUtil.fastLongMix;
  * is overwritten with a non-sentinel value as soon as a new slot is assigned (after calling
  * {@link #ensure(long)} and getting a positive return value).</strong>
  * For the same reason this class must not be instantiated with zero value length. Use
- * {@link HashSlotArrayNoValue} as a zero-length key implementation.
+ * {@link HashSlotArray8byteKeyNoValue} as a zero-length key implementation.
  */
-public class HashSlotArrayImpl extends HashSlotArrayBase implements HashSlotArray {
+public class HashSlotArray8byteKeyImpl extends HashSlotArrayBase implements HashSlotArray8byteKey {
 
     private static final int KEY_LENGTH = 8;
 
-    public HashSlotArrayImpl(long unassignedSentinel, MemoryManager mm, int valueLength, int initialCapacity) {
-        this(unassignedSentinel, KEY_LENGTH, mm, valueLength, initialCapacity);
+    public HashSlotArray8byteKeyImpl(long unassignedSentinel, MemoryManager mm, int valueLength,
+                                     int initialCapacity, float loadFactor) {
+        this(unassignedSentinel, KEY_LENGTH, mm, valueLength, initialCapacity, loadFactor);
         assert valueLength > 0 : "Attempted to instantiate HashSlotArrayImpl with zero value length";
     }
 
-    public HashSlotArrayImpl(long unassignedSentinel, MemoryManager mm, int valueLength) {
-        this(unassignedSentinel, mm, valueLength, DEFAULT_CAPACITY);
+    public HashSlotArray8byteKeyImpl(long unassignedSentinel, MemoryManager mm, int valueLength) {
+        this(unassignedSentinel, mm, valueLength, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
         assert valueLength > 0 : "Attempted to instantiate HashSlotArrayImpl with zero value length";
     }
 
-    protected HashSlotArrayImpl(long unassignedSentinel, long offsetOfUnassignedSentinel,
-                                MemoryManager mm, int valueLength, int initialCapacity
+    protected HashSlotArray8byteKeyImpl(long unassignedSentinel, long offsetOfUnassignedSentinel,
+                                        MemoryManager mm, int valueLength, int initialCapacity, float loadFactor
     ) {
         super(unassignedSentinel, offsetOfUnassignedSentinel, mm, null, KEY_LENGTH, valueLength,
-                initialCapacity, DEFAULT_LOAD_FACTOR);
+                initialCapacity, loadFactor);
+        assert modPowerOfTwo(valueLength, VALUE_LENGTH_GRANULARITY) == 0
+                : "Value length must be a positive multiple of 8, but was " + valueLength;
     }
 
     /**
@@ -72,7 +78,7 @@ public class HashSlotArrayImpl extends HashSlotArrayBase implements HashSlotArra
         return super.remove0(key, 0);
     }
 
-    @Override public HashSlotCursor cursor() {
+    @Override public HashSlotCursor8byteKey cursor() {
         return new Cursor();
     }
 
@@ -80,15 +86,11 @@ public class HashSlotArrayImpl extends HashSlotArrayBase implements HashSlotArra
         return 0;
     }
 
-    @Override protected long key2OfSlot(long slot) {
-        return 0;
+    @Override protected void putKey(long baseAddress, long slot, long key, long ignored) {
+        mem.putLong(slotBase(baseAddress, slot) + KEY_1_OFFSET, key);
     }
 
     @Override protected long hash(long key, long ignored) {
         return fastLongMix(key);
-    }
-
-    @Override protected void putKey(long slot, long key, long ignored) {
-        mem.putLong(slotBase(slot) + KEY_1_OFFSET, key);
     }
 }

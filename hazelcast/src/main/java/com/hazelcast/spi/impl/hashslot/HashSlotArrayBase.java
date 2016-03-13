@@ -14,31 +14,36 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.spi.impl.hashslot;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.memory.MemoryAllocator;
 import com.hazelcast.memory.MemoryManager;
+import com.hazelcast.spi.hashslot.HashSlotArray;
+import com.hazelcast.spi.hashslot.HashSlotCursor12byteKey;
+import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
+import com.hazelcast.spi.hashslot.HashSlotCursor8byteKey;
 
 import static com.hazelcast.memory.MemoryAllocator.NULL_ADDRESS;
-import static com.hazelcast.spi.hashslot.CapacityUtil.nextCapacity;
-import static com.hazelcast.spi.hashslot.CapacityUtil.roundCapacity;
+import static com.hazelcast.spi.impl.hashslot.CapacityUtil.nextCapacity;
+import static com.hazelcast.spi.impl.hashslot.CapacityUtil.roundCapacity;
 import static com.hazelcast.util.HashUtil.fastLongMix;
 import static com.hazelcast.util.QuickMath.modPowerOfTwo;
 
 /**
- * Common implementation base for {@link HashSlotArray} and {@link HashSlotArrayTwinKey}.
+ * Implementation of {@link HashSlotArray}, common to all its subtype implementations.
  */
 @SuppressWarnings("checkstyle:methodcount")
-abstract class HashSlotArrayBase {
+public class HashSlotArrayBase implements HashSlotArray {
 
+    public static final int HEADER_SIZE = 0x18;
+    public static final int CAPACITY_OFFSET = -0x8;
+    public static final int SIZE_OFFSET = -0x10;
+    public static final int EXPAND_AT_OFFSET = -0x18;
+
+    protected static final int VALUE_LENGTH_GRANULARITY = 8;
     protected static final int KEY_1_OFFSET = 0;
     protected static final int KEY_2_OFFSET = 8;
-    private static final int VALUE_LENGTH_GRANULARITY = 8;
-    private static final int HEADER_SIZE = 0x18;
-    private static final int CAPACITY_OFFSET = -0x8;
-    private static final int SIZE_OFFSET = -0x10;
-    private static final int EXPAND_AT_OFFSET = -0x18;
 
     /**
      * Sentinel value that marks a slot as "unassigned".
@@ -66,7 +71,7 @@ abstract class HashSlotArrayBase {
 
     /**
      * Base address of the memory region containing the hash slots. Preceded by a header that stores metadata
-     * ({@code capacity}, {@code mask}, {@code size}, and {@code expandAt}).
+     * ({@code capacity}, {@code size}, and {@code expandAt}).
      */
     private long baseAddress;
 
@@ -114,8 +119,6 @@ abstract class HashSlotArrayBase {
                                 MemoryManager mm, MemoryAllocator auxMalloc,
                                 int keyLength, int valueLength, int initialCapacity, float loadFactor
     ) {
-        assert modPowerOfTwo(valueLength, VALUE_LENGTH_GRANULARITY) == 0
-                : "Value length must be a positive multiple of 8, but was " + valueLength;
         this.unassignedSentinel = unassignedSentinel;
         this.offsetOfUnassignedSentinel = offsetOfUnassignedSentinel;
         this.malloc = mm.getAllocator();
@@ -129,32 +132,43 @@ abstract class HashSlotArrayBase {
     }
 
 
-    // These public final methods will automatically fit as interface implementation in subclasses
+    // These public final methods implement the general HashSlotArray interface
 
+    @Override
     public final long address() {
-        return baseAddress - HEADER_SIZE;
+        return baseAddress;
     }
 
+    @Override
     public final void gotoAddress(long address) {
-        baseAddress = address + HEADER_SIZE;
+        baseAddress = address;
     }
 
+    @Override
     public final long gotoNew() {
         allocateInitial();
         return address();
     }
 
+    @Override
     public final long size() {
-        ensureLive();
+        assertValid();
         return mem.getLong(baseAddress + SIZE_OFFSET);
     }
 
+    @Override public long capacity() {
+        assertValid();
+        return mem.getLong(baseAddress + CAPACITY_OFFSET);
+    }
+
+    @Override
     public final void clear() {
-        ensureLive();
+        assertValid();
         markAllUnassigned();
         setSize(0);
     }
 
+    @Override
     public final boolean trimToSize() {
         final long minCapacity = minCapacityForSize(size(), loadFactor);
         if (capacity() <= minCapacity) {
@@ -167,6 +181,18 @@ abstract class HashSlotArrayBase {
         return true;
     }
 
+    @Override
+    public final void dispose() {
+        if (baseAddress <= HEADER_SIZE) {
+            return;
+        }
+        malloc.free(baseAddress - HEADER_SIZE, HEADER_SIZE + capacity() * slotLength);
+        baseAddress = -1L;
+    }
+
+
+    // Additional non-interface public method. Has a specific use case in Hot Restart.
+
     /**
      * Migrates the backing memory region to a new allocator, freeing the current region. Memory allocated by the
      * new allocator must be accessible by the same accessor as the current one.
@@ -177,14 +203,6 @@ abstract class HashSlotArrayBase {
         auxMalloc = null;
     }
 
-    public final void dispose() {
-        if (baseAddress <= HEADER_SIZE) {
-            return;
-        }
-        malloc.free(baseAddress - HEADER_SIZE, HEADER_SIZE + capacity() * slotLength);
-        baseAddress = -1L;
-    }
-
 
     // These protected final methods will be called from the subclasses
 
@@ -193,28 +211,28 @@ abstract class HashSlotArrayBase {
     }
 
     protected final long ensure0(long key1, long key2) {
-        ensureLive();
+        assertValid();
         final long size = size();
         if (size == expandAt()) {
-            resizeTo(nextCapacity(capacity()));
+            resizeTo(CapacityUtil.nextCapacity(capacity()));
         }
         long slot = hash(key1, key2) & mask();
-        while (isAssigned(slot)) {
+        while (isSlotAssigned(slot)) {
             if (equal(key1OfSlot(slot), key2OfSlot(slot), key1, key2)) {
                 return -valueAddrOfSlot(slot);
             }
             slot = (slot + 1) & mask();
         }
         setSize(size + 1);
-        putKey(slot, key1, key2);
+        putKey(baseAddress, slot, key1, key2);
         return valueAddrOfSlot(slot);
     }
 
     protected final long get0(long key1, long key2) {
-        ensureLive();
+        assertValid();
         long slot = hash(key1, key2) & mask();
         final long wrappedAround = slot;
-        while (isAssigned(slot)) {
+        while (isSlotAssigned(slot)) {
             if (equal(key1OfSlot(slot), key2OfSlot(slot), key1, key2)) {
                 return valueAddrOfSlot(slot);
             }
@@ -227,10 +245,10 @@ abstract class HashSlotArrayBase {
     }
 
     protected final boolean remove0(long key1, long key2) {
-        ensureLive();
+        assertValid();
         long slot = hash(key1, key2) & mask();
         final long wrappedAround = slot;
-        while (isAssigned(slot)) {
+        while (isSlotAssigned(slot)) {
             if (equal(key1OfSlot(slot), key2OfSlot(slot), key1, key2)) {
                 setSize(size() - 1);
                 shiftConflictingKeys(slot);
@@ -254,7 +272,7 @@ abstract class HashSlotArrayBase {
         final long mask = mask();
         while (true) {
             slotCurr = ((slotPrev = slotCurr) + 1) & mask;
-            while (isAssigned(slotCurr)) {
+            while (isSlotAssigned(slotCurr)) {
                 slotOther = hash(key1OfSlot(slotCurr), key2OfSlot(slotCurr)) & mask;
                 if (slotPrev <= slotCurr) {
                     // we're to the right of the original slot.
@@ -269,35 +287,43 @@ abstract class HashSlotArrayBase {
                 }
                 slotCurr = (slotCurr + 1) & mask;
             }
-            if (!isAssigned(slotCurr)) {
+            if (!isSlotAssigned(slotCurr)) {
                 break;
             }
             // Shift key/value pair.
-            putKey(slotPrev, key1OfSlot(slotCurr), key2OfSlot(slotCurr));
+            putKey(baseAddress, slotPrev, key1OfSlot(slotCurr), key2OfSlot(slotCurr));
             mem.copyMemory(valueAddrOfSlot(slotCurr), valueAddrOfSlot(slotPrev), valueLength);
         }
-        final long slotBase = slotBase(slotPrev);
-        mem.setMemory(slotBase, slotLength, (byte) 0);
-        mem.putLong(slotBase + offsetOfUnassignedSentinel, unassignedSentinel);
+        markUnassigned(baseAddress, slotPrev);
     }
 
-    protected final void ensureLive() {
+    protected final void assertValid() {
         assert baseAddress >= HEADER_SIZE : "This instance doesn't point to a valid hashtable";
-    }
-
-    protected final long slotBase(long slot) {
-        return slotBase(baseAddress, slot);
     }
 
 
     // These protected methods will be overridden in some subclasses
 
-    protected long key2OfSlot(long slot) {
-        return mem.getLong(slotBase(baseAddress, slot) + KEY_2_OFFSET);
+    protected long key1OfSlot(long baseAddress, long slot) {
+        return mem.getLong(slotBase(baseAddress, slot) + KEY_1_OFFSET);
     }
 
     protected long key2OfSlot(long baseAddress, long slot) {
         return mem.getLong(slotBase(baseAddress, slot) + KEY_2_OFFSET);
+    }
+
+    protected boolean isAssigned(long baseAddress, long slot) {
+        return mem.getLong(slotBase(baseAddress, slot) + offsetOfUnassignedSentinel) != unassignedSentinel;
+    }
+
+    protected void markUnassigned(long baseAddress, long slot) {
+        mem.putLong(slotBase(baseAddress, slot) + offsetOfUnassignedSentinel, unassignedSentinel);
+    }
+
+    protected void putKey(long baseAddress, long slot, long key1, long key2) {
+        final long slotBase = slotBase(baseAddress, slot);
+        mem.putLong(slotBase + KEY_1_OFFSET, key1);
+        mem.putLong(slotBase + KEY_2_OFFSET, key2);
     }
 
     protected long hash(long key1, long key2) {
@@ -308,34 +334,22 @@ abstract class HashSlotArrayBase {
         return key1a == key1b && key2a == key2b;
     }
 
-    protected void putKey(long slot, long key1, long key2) {
-        final long slotBase = slotBase(baseAddress, slot);
-        mem.putLong(slotBase + KEY_1_OFFSET, key1);
-        mem.putLong(slotBase + KEY_2_OFFSET, key2);
-    }
-
 
     // These are private instance methods
 
-    /** Capacity (in terms of slots) of the currently allocated memory region. */
-    private long capacity() {
-        ensureLive();
-        return mem.getLong(baseAddress + CAPACITY_OFFSET);
-    }
-
     private void setCapacity(long capacity) {
-        ensureLive();
+        assertValid();
         mem.putLong(baseAddress + CAPACITY_OFFSET, capacity);
     }
 
     /** Resize the array when {@code size} hits this value. */
     private long expandAt() {
-        ensureLive();
+        assertValid();
         return mem.getLong(baseAddress + EXPAND_AT_OFFSET);
     }
 
     private void setExpandAt(long expandAt) {
-        ensureLive();
+        assertValid();
         mem.putLong(baseAddress + EXPAND_AT_OFFSET, expandAt);
     }
 
@@ -349,27 +363,23 @@ abstract class HashSlotArrayBase {
     }
 
     private void allocateInitial() {
-        allocateArrayAndAdjustFields(0, roundCapacity((int) (initialCapacity / loadFactor)));
-    }
-
-    private boolean isAssigned(long baseAddr, long slot) {
-        return mem.getLong(slotBase(baseAddr, slot) + offsetOfUnassignedSentinel) != unassignedSentinel;
-    }
-
-    private boolean isAssigned(long slot) {
-        return isAssigned(baseAddress, slot);
+        allocateArrayAndAdjustFields(0, CapacityUtil.roundCapacity((int) (initialCapacity / loadFactor)));
     }
 
     private long key1OfSlot(long slot) {
-        return mem.getLong(slotBase(baseAddress, slot) + KEY_1_OFFSET);
+        return key1OfSlot(baseAddress, slot);
+    }
+
+    private long key2OfSlot(long slot) {
+        return key2OfSlot(baseAddress, slot);
     }
 
     private long valueAddrOfSlot(long slot) {
         return slotBase(baseAddress, slot) + valueOffset;
     }
 
-    private long key1OfSlot(long baseAddress, long slot) {
-        return mem.getLong(slotBase(baseAddress, slot) + KEY_1_OFFSET);
+    private boolean isSlotAssigned(long slot) {
+        return isAssigned(baseAddress, slot);
     }
 
     private void allocateArrayAndAdjustFields(long size, long newCapacity) {
@@ -405,10 +415,8 @@ abstract class HashSlotArrayBase {
 
     private void markAllUnassigned() {
         final long capacity = capacity();
-        final long addrOfFirstSentinel = baseAddress + offsetOfUnassignedSentinel;
-        final int stride = slotLength;
         for (long i = 0; i < capacity; i++) {
-            mem.putLong(addrOfFirstSentinel + stride * i, unassignedSentinel);
+            markUnassigned(baseAddress, i);
         }
     }
 
@@ -438,10 +446,10 @@ abstract class HashSlotArrayBase {
                 long key2 = key2OfSlot(oldAddress, slot);
                 long valueAddress = slotBase(oldAddress, slot) + valueOffset;
                 long newSlot = hash(key1, key2) & mask;
-                while (isAssigned(newSlot)) {
+                while (isSlotAssigned(newSlot)) {
                     newSlot = (newSlot + 1) & mask;
                 }
-                putKey(newSlot, key1, key2);
+                putKey(baseAddress, newSlot, key1, key2);
                 mem.copyMemory(valueAddress, valueAddrOfSlot(newSlot), valueLength);
             }
         }
@@ -453,25 +461,25 @@ abstract class HashSlotArrayBase {
     }
 
     private static long minCapacityForSize(long size, float loadFactor) {
-        return roundCapacity((long) Math.ceil(size / loadFactor));
+        return CapacityUtil.roundCapacity((long) Math.ceil(size / loadFactor));
     }
 
 
-    protected final class Cursor implements HashSlotCursor, HashSlotCursorTwinKey {
+    protected class Cursor implements HashSlotCursor8byteKey {
 
-        private long currentSlot;
+        long currentSlot;
 
         protected Cursor() {
             reset();
         }
 
         @Override
-        public void reset() {
+        public final void reset() {
             currentSlot = -1;
         }
 
-        @Override public boolean advance() {
-            ensureLive();
+        @Override public final boolean advance() {
+            assertValid();
             assert currentSlot != Long.MIN_VALUE : "Cursor has advanced past the last slot";
             if (tryAdvance()) {
                 return true;
@@ -480,39 +488,48 @@ abstract class HashSlotArrayBase {
             return false;
         }
 
-        @Override public long key() {
+        @Override public final long key() {
             return key1();
         }
 
-        @Override public long key1() {
-            ensureValid();
+        public final long key1() {
+            assertCursorValid();
             return key1OfSlot(currentSlot);
         }
 
-        @Override public long key2() {
-            ensureValid();
-            return key2OfSlot(currentSlot);
-        }
-
-        @Override public long valueAddress() {
-            ensureValid();
+        @Override public final long valueAddress() {
+            assertCursorValid();
             return valueAddrOfSlot(currentSlot);
         }
 
-        private void ensureValid() {
-            ensureLive();
+        final void assertCursorValid() {
+            assertValid();
             assert currentSlot >= 0 : "Cursor is invalid";
         }
 
         private boolean tryAdvance() {
             final long capacity = capacity();
             for (long slot = currentSlot + 1; slot < capacity; slot++) {
-                if (isAssigned(slot)) {
+                if (isSlotAssigned(slot)) {
                     currentSlot = slot;
                     return true;
                 }
             }
             return false;
+        }
+    }
+
+    protected final class CursorIntKey2 extends Cursor implements HashSlotCursor12byteKey {
+        @Override public int key2() {
+            assertCursorValid();
+            return (int) key2OfSlot(currentSlot);
+        }
+    }
+
+    protected final class CursorLongKey2 extends Cursor implements HashSlotCursor16byteKey {
+        @Override public long key2() {
+            assertCursorValid();
+            return key2OfSlot(currentSlot);
         }
     }
 }

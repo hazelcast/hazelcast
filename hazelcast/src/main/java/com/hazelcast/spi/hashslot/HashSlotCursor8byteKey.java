@@ -17,33 +17,27 @@
 package com.hazelcast.spi.hashslot;
 
 /**
- * Cursor over assigned slots in a {@link HashSlotArrayTwinKey}. Initially the cursor's location is
- * before the first map entry and the cursor is invalid.
+ * Cursor over assigned hash slots in a {@link HashSlotArray8byteKey}.
+ * Initially the cursor's location is before the first slot and the cursor is invalid.
  */
-public interface HashSlotCursorTwinKey {
+public interface HashSlotCursor8byteKey {
     /**
      * Resets the cursor to the initial state.
      */
     void reset();
 
     /**
-     * Advances to the next assigned slot.
-     * @return true if the cursor advanced. If false is returned, the cursor is now invalid.
+     * Advance to the next assigned slot.
+     * @return {@code true} if the cursor advanced. If {@code false} is returned, the cursor is now invalid.
      * @throws IllegalStateException if a previous call to advance() already returned false.
      */
     boolean advance();
 
     /**
-     * @return key part 1 of current slot.
+     * @return the key of the current slot.
      * @throws IllegalStateException if the cursor is invalid.
      */
-    long key1();
-
-    /**
-     * @return key part 2 of current slot.
-     * @throws IllegalStateException if the cursor is invalid.
-     */
-    long key2();
+    long key();
 
     /**
      * @return Address of the current slot's value block.
