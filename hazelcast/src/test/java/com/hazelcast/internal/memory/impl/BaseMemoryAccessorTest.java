@@ -201,6 +201,27 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     ////////////////////////////////////////////////////////////////////////////////
 
     @Test
+    public void test_copyFromByteArray() {
+        final byte[] ary = {2, 3};
+        memoryAccessor.copyFromByteArray(ary, 0, baseAddress1, 2);
+        for (int i = 0; i < ary.length; i++) {
+            assertEquals(ary[i], memoryAccessor.getByte(baseAddress1 + i));
+        }
+    }
+
+    @Test
+    public void test_copyToByteArray() {
+        final byte[] ary = new byte[2];
+        for (int i = 0; i < ary.length; i++) {
+            memoryAccessor.putByte(baseAddress1 + i, (byte) i);
+        }
+        memoryAccessor.copyToByteArray(baseAddress1, ary, 0, 2);
+        for (int i = 0; i < ary.length; i++) {
+            assertEquals(ary[i], memoryAccessor.getByte(baseAddress1 + i));
+        }
+    }
+
+    @Test
     public void test_putGetBoolean() {
         final long address = baseAddress1;
 

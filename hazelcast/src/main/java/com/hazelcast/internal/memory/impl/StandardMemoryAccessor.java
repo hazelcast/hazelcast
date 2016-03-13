@@ -125,6 +125,16 @@ public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
     }
 
     @Override
+    public void copyFromByteArray(byte[] source, int offset, long destAddress, int length) {
+        copyMemory(source, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, null, destAddress, length);
+    }
+
+    @Override
+    public void copyToByteArray(long srcAddress, byte[] destination, int offset, int length) {
+        copyMemory(null, srcAddress, destination, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, length);
+    }
+
+    @Override
     public void setMemory(long address, long lengthBytes, byte value) {
         UNSAFE.setMemory(address, lengthBytes, value);
     }

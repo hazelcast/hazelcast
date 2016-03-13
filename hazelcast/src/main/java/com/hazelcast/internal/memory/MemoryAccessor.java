@@ -160,6 +160,26 @@ public interface MemoryAccessor {
     void copyMemory(long srcAddress, long destAddress, long lengthBytes);
 
     /**
+     * Copies bytes from a Java byte array into this accessor's address space.
+     *
+     * @param source the source byte array
+     * @param offset index of the first byte to copy
+     * @param destAddress address where the first byte will be written
+     * @param length number of bytes to copy
+     */
+    void copyFromByteArray(byte[] source, int offset, long destAddress, int length);
+
+    /**
+     * Copies bytes from this accessor's address space to a Java byte array.
+     *
+     * @param srcAddress address of the first byte to copy
+     * @param destination the destination byte array
+     * @param offset array index wher the first byte will be written
+     * @param length number of bytes to copy
+     */
+    void copyToByteArray(long srcAddress, byte[] destination, int offset, int length);
+
+    /**
      * Sets memory with given value from specified address as given size.
      *
      * @param address the start address of the memory region

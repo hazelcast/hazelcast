@@ -157,6 +157,16 @@ public class LittleEndianMemoryAccessor extends EndianAccessorBase {
     }
 
     @Override
+    public void copyFromByteArray(byte[] source, int offset, long destAddress, int length) {
+        MEM.copyMemory(source, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, null, destAddress, length);
+    }
+
+    @Override
+    public void copyToByteArray(long srcAddress, byte[] destination, int offset, int length) {
+        MEM.copyMemory(null, srcAddress, destination, ARRAY_BYTE_BASE_OFFSET + ARRAY_BYTE_INDEX_SCALE * offset, length);
+    }
+
+    @Override
     public void setMemory(long address, long lengthBytes, byte value) {
         MEM.setMemory(address, lengthBytes, value);
     }
