@@ -121,11 +121,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final OperationBackupHandler operationBackupHandler;
     final BackpressureRegulator backpressureRegulator;
     final long defaultCallTimeoutMillis;
+    final SerializationService serializationService;
 
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
-    private final SerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {

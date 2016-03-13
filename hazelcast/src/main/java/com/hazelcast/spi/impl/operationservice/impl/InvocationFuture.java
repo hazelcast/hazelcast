@@ -17,9 +17,12 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
@@ -121,7 +124,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 @Override
                 public void run() {
                     try {
-                        Object resp = resolveApplicationResponse(response);
+                        Object resp = resolve(response);
 
                         if (resp == null || !(resp instanceof Throwable)) {
                             callback.onResponse((E) resp);
@@ -184,7 +187,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             operationService.invocationRegistry.deregister(invocation);
         }
 
-
         notifyCallbacks(callbackChain);
         return true;
     }
@@ -224,8 +226,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        Object unresolvedResponse = waitForResponse(timeout, unit);
-        return (E) resolveApplicationResponseOrThrowException(unresolvedResponse);
+        Object response = waitForResponse(timeout, unit);
+        return (E) resolveAndThrow(response);
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
@@ -334,45 +336,30 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return timeoutMs;
     }
 
-    private Object resolveApplicationResponseOrThrowException(Object unresolvedResponse)
-            throws ExecutionException, InterruptedException, TimeoutException {
-
-        Object response = resolveApplicationResponse(unresolvedResponse);
+    private Object resolveAndThrow(Object unresolvedResponse) throws ExecutionException, InterruptedException, TimeoutException {
+        Object response = resolve(unresolvedResponse);
 
         if (response == null || !(response instanceof Throwable)) {
             return response;
-        }
-
-        if (response instanceof ExecutionException) {
+        } else if (response instanceof ExecutionException) {
             throw (ExecutionException) response;
-        }
-
-        if (response instanceof TimeoutException) {
+        } else if (response instanceof TimeoutException) {
             throw (TimeoutException) response;
-        }
-
-        if (response instanceof InterruptedException) {
+        } else if (response instanceof InterruptedException) {
             throw (InterruptedException) response;
-        }
-
-        if (response instanceof Error) {
+        } else if (response instanceof Error) {
             throw (Error) response;
+        } else {
+            throw new ExecutionException((Throwable) response);
         }
-
-        // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
-        throw new ExecutionException((Throwable) response);
     }
 
-    private Object resolveApplicationResponse(Object unresolvedResponse) {
+    private Object resolve(Object unresolvedResponse) {
         if (unresolvedResponse == NULL_RESPONSE) {
             return null;
-        }
-
-        if (unresolvedResponse == TIMEOUT_RESPONSE) {
+        } else if (unresolvedResponse == TIMEOUT_RESPONSE) {
             return new TimeoutException("Call " + invocation + " encountered a timeout");
-        }
-
-        if (unresolvedResponse == INTERRUPTED_RESPONSE) {
+        } else if (unresolvedResponse == INTERRUPTED_RESPONSE) {
             return new InterruptedException("Call " + invocation + " was interrupted");
         }
 
@@ -386,10 +373,20 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         if (response instanceof Throwable) {
             Throwable throwable = ((Throwable) response);
-            if (invocation.remote) {
-                fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+            try {
+                SerializationService serializationService = operationService.serializationService;
+                // Exception needs cloning since stacktrace is modified, otherwise same exception shared between threads.
+                Throwable clonedThrowable = serializationService.toObject(serializationService.toData(throwable));
+                fixRemoteStackTrace(clonedThrowable, Thread.currentThread().getStackTrace());
+                return clonedThrowable;
+            } catch (HazelcastSerializationException e) {
+                // It can happen that the exceptions fails cloning, in that case return the original unmodified exception
+                operationService.logger.warning("Failed to clone exception", throwable);
+                return e;
+            } catch (HazelcastInstanceNotActiveException e) {
+                // In case of a shutdown, lets return the HazelcastInstanceNotActiveException
+                return e;
             }
-            return throwable;
         }
 
         return response;
@@ -407,7 +404,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public boolean isDone() {
-         return responseAvailable(response);
+        return responseAvailable(response);
     }
 
     @Override
