@@ -350,7 +350,7 @@
     <suppress checks="NPathComplexity" files="com/hazelcast/util/executor/DelegatingFuture"/>
 
     <!-- written by Doug Lea  -->
-    <suppress checks="" files="com/hazelcast/internal/util/ThreadLocalRandom"/>
+    <suppress checks="MagicNumber|DeclarationOrder" files="com/hazelcast/internal/util/ThreadLocalRandom"/>
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>

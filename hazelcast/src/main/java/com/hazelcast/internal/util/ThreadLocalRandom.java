@@ -50,15 +50,38 @@ import java.util.Random;
  * @author Doug Lea
  */
 public class ThreadLocalRandom extends Random {
+
     // same constants as Random, but must be redeclared because private
-    private static final long multiplier = 0x5DEECE66DL;
-    private static final long addend = 0xBL;
-    private static final long mask = (1L << 48) - 1;
+    private static final long MULTIPLIER = 0x5DEECE66DL;
+    private static final long ADDEND = 0xBL;
+    private static final long MASK = (1L << 48) - 1;
+    private static final long serialVersionUID = -5851777807851030925L;
+    /**
+     * The actual ThreadLocal
+     */
+    private static final ThreadLocal<ThreadLocalRandom> LOCALRANDOM =
+            new ThreadLocal<ThreadLocalRandom>() {
+                protected ThreadLocalRandom initialValue() {
+                    return new ThreadLocalRandom();
+                }
+            };
 
     /**
      * The random seed. We can't use super.seed.
      */
     private long rnd;
+
+    // Padding to help avoid memory contention among seed updates in
+    // different TLRs in the common case that they are located near
+    // each other.
+    private long pad0;
+    private long pad1;
+    private long pad2;
+    private long pad3;
+    private long pad4;
+    private long pad5;
+    private long pad6
+    private long pad7;
 
     /**
      * Initialization flag to permit calls to setSeed to succeed only
@@ -67,22 +90,6 @@ public class ThreadLocalRandom extends Random {
      * unintentionally impact other usages by the thread.
      */
     boolean initialized;
-
-    // Padding to help avoid memory contention among seed updates in
-    // different TLRs in the common case that they are located near
-    // each other.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-
-    /**
-     * The actual ThreadLocal
-     */
-    private static final ThreadLocal<ThreadLocalRandom> localRandom =
-            new ThreadLocal<ThreadLocalRandom>() {
-                protected ThreadLocalRandom initialValue() {
-                    return new ThreadLocalRandom();
-                }
-            };
-
 
     /**
      * Constructor called only by localRandom.initialValue.
@@ -98,7 +105,7 @@ public class ThreadLocalRandom extends Random {
      * @return the current thread's {@code ThreadLocalRandom}
      */
     public static ThreadLocalRandom current() {
-        return localRandom.get();
+        return LOCALRANDOM.get();
     }
 
     /**
@@ -108,14 +115,15 @@ public class ThreadLocalRandom extends Random {
      * @throws UnsupportedOperationException always
      */
     public void setSeed(long seed) {
-        if (initialized)
+        if (initialized) {
             throw new UnsupportedOperationException();
-        rnd = (seed ^ multiplier) & mask;
+        }
+        rnd = (seed ^ MULTIPLIER) & MASK;
     }
 
     protected int next(int bits) {
-        rnd = (rnd * multiplier + addend) & mask;
-        return (int) (rnd >>> (48-bits));
+        rnd = (rnd * MULTIPLIER + ADDEND) & MASK;
+        return (int) (rnd >>> (48 - bits));
     }
 
     /**
@@ -129,8 +137,9 @@ public class ThreadLocalRandom extends Random {
      * to bound
      */
     public int nextInt(int least, int bound) {
-        if (least >= bound)
+        if (least >= bound) {
             throw new IllegalArgumentException();
+        }
         return nextInt(bound - least) + least;
     }
 
@@ -144,8 +153,9 @@ public class ThreadLocalRandom extends Random {
      * @throws IllegalArgumentException if n is not positive
      */
     public long nextLong(long n) {
-        if (n <= 0)
+        if (n <= 0) {
             throw new IllegalArgumentException("n must be positive");
+        }
         // Divide n by two until small enough for nextInt. On each
         // iteration (at most 31 of them but usually much less),
         // randomly choose both whether to include high bit in result
@@ -156,8 +166,9 @@ public class ThreadLocalRandom extends Random {
             int bits = next(2);
             long half = n >>> 1;
             long nextn = ((bits & 2) == 0) ? half : n - half;
-            if ((bits & 1) == 0)
+            if ((bits & 1) == 0) {
                 offset += n - nextn;
+            }
             n = nextn;
         }
         return offset + nextInt((int) n);
@@ -174,8 +185,9 @@ public class ThreadLocalRandom extends Random {
      * to bound
      */
     public long nextLong(long least, long bound) {
-        if (least >= bound)
+        if (least >= bound) {
             throw new IllegalArgumentException();
+        }
         return nextLong(bound - least) + least;
     }
 
@@ -189,8 +201,9 @@ public class ThreadLocalRandom extends Random {
      * @throws IllegalArgumentException if n is not positive
      */
     public double nextDouble(double n) {
-        if (n <= 0)
+        if (n <= 0) {
             throw new IllegalArgumentException("n must be positive");
+        }
         return nextDouble() * n;
     }
 
@@ -205,10 +218,9 @@ public class ThreadLocalRandom extends Random {
      * to bound
      */
     public double nextDouble(double least, double bound) {
-        if (least >= bound)
+        if (least >= bound) {
             throw new IllegalArgumentException();
+        }
         return nextDouble() * (bound - least) + least;
     }
-
-    private static final long serialVersionUID = -5851777807851030925L;
 }
