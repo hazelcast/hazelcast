@@ -20,28 +20,11 @@ package com.hazelcast.internal.util.hashslot;
  * Cursor over assigned hash slots in a {@link HashSlotArray8byteKey}.
  * Initially the cursor's location is before the first slot and the cursor is invalid.
  */
-public interface HashSlotCursor8byteKey {
-    /**
-     * Resets the cursor to the initial state.
-     */
-    void reset();
-
-    /**
-     * Advance to the next assigned slot.
-     * @return {@code true} if the cursor advanced. If {@code false} is returned, the cursor is now invalid.
-     * @throws IllegalStateException if a previous call to advance() already returned false.
-     */
-    boolean advance();
+public interface HashSlotCursor8byteKey extends HashSlotCursor {
 
     /**
      * @return the key of the current slot.
      * @throws IllegalStateException if the cursor is invalid.
      */
     long key();
-
-    /**
-     * @return Address of the current slot's value block.
-     * @throws IllegalStateException if the cursor is invalid.
-     */
-    long valueAddress();
 }

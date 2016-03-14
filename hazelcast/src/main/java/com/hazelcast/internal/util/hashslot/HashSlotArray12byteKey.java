@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.util.hashslot;
 
-import com.hazelcast.nio.Disposable;
 import com.hazelcast.internal.memory.MemoryAllocator;
 
 /**
  * Specialization of {@link HashSlotArray} to the case where the key consists of a {@code long}
  * and an {@code int} value and the value part is a block whose size is 4 + multiple of 8 (including zero).
  */
-public interface HashSlotArray12byteKey extends Disposable {
+public interface HashSlotArray12byteKey extends HashSlotArray {
 
     /**
      * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the array.
