@@ -26,7 +26,6 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -57,8 +56,9 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         checkNotNull(unit, "unit can't be null");
 
-        AwaitOperation op = new AwaitOperation(name, unit.toMillis(timeout));
-        Future<Boolean> f = invoke(op);
+        Operation op = new AwaitOperation(name, unit.toMillis(timeout))
+                .setPartitionId(partitionId);
+        Future<Boolean> f = invokeOnPartition(op);
         try {
             return f.get();
         } catch (ExecutionException e) {
@@ -68,15 +68,17 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     @Override
     public void countDown() {
-        CountDownOperation op = new CountDownOperation(name);
-        InternalCompletableFuture f = invoke(op);
+        Operation op = new CountDownOperation(name)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture f = invokeOnPartition(op);
         f.join();
     }
 
     @Override
     public int getCount() {
-        GetCountOperation op = new GetCountOperation(name);
-        InternalCompletableFuture<Integer> f = invoke(op);
+        Operation op = new GetCountOperation(name)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Integer> f = invokeOnPartition(op);
         return f.join();
     }
 
@@ -84,15 +86,10 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     public boolean trySetCount(int count) {
         checkNotNegative(count, "count can't be negative");
 
-        SetCountOperation op = new SetCountOperation(name, count);
-        InternalCompletableFuture<Boolean> f = invoke(op);
+        Operation op = new SetCountOperation(name, count)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Boolean> f = invokeOnPartition(op);
         return f.join();
-    }
-
-    private InternalCompletableFuture invoke(Operation op) {
-        NodeEngine nodeEngine = getNodeEngine();
-        OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(CountDownLatchService.SERVICE_NAME, op, partitionId);
     }
 
     @Override

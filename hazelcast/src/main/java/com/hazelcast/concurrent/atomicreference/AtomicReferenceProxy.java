@@ -33,9 +33,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicReferenceService>
@@ -50,15 +48,6 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
-    private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation, NodeEngine nodeEngine) {
-        try {
-            OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(AtomicReferenceService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable throwable) {
-            throw rethrow(throwable);
-        }
-    }
-
     @Override
     public void alter(IFunction<E, E> function) {
         asyncAlter(function).join();
@@ -68,9 +57,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     public InternalCompletableFuture<Void> asyncAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new AlterOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new AlterOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -82,9 +71,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     public InternalCompletableFuture<E> asyncAlterAndGet(IFunction<E, E> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new AlterAndGetOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new AlterAndGetOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -96,9 +85,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     public InternalCompletableFuture<E> asyncGetAndAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new GetAndAlterOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new GetAndAlterOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -110,9 +99,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     public <R> InternalCompletableFuture<R> asyncApply(IFunction<E, R> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new ApplyOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new ApplyOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -132,9 +121,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<Boolean> asyncCompareAndSet(E expect, E update) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new CompareAndSetOperation(name, nodeEngine.toData(expect), nodeEngine.toData(update));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new CompareAndSetOperation(name, toData(expect), toData(update))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -144,8 +133,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<E> asyncGet() {
-        Operation operation = new GetOperation(name);
-        return asyncInvoke(operation, getNodeEngine());
+        Operation operation = new GetOperation(name)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -155,9 +145,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<Boolean> asyncContains(E value) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new ContainsOperation(name, nodeEngine.toData(value));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new ContainsOperation(name, toData(value))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -167,9 +157,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<Void> asyncSet(E newValue) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new SetOperation(name, nodeEngine.toData(newValue));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new SetOperation(name, toData(newValue))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -179,9 +169,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<E> asyncGetAndSet(E newValue) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new GetAndSetOperation(name, nodeEngine.toData(newValue));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new GetAndSetOperation(name, toData(newValue))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -191,9 +181,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<E> asyncSetAndGet(E update) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new SetAndGetOperation(name, nodeEngine.toData(update));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new SetAndGetOperation(name, toData(update))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -203,8 +193,9 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public InternalCompletableFuture<Boolean> asyncIsNull() {
-        Operation operation = new IsNullOperation(name);
-        return asyncInvoke(operation, getNodeEngine());
+        Operation operation = new IsNullOperation(name)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override

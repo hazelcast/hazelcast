@@ -32,8 +32,6 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -46,17 +44,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-    }
-
-    private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
-        try {
-            OperationService operationService = getNodeEngine().getOperationService();
-            //noinspection unchecked
-            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(
-                    AtomicLongService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
     }
 
     @Override
@@ -80,8 +67,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public InternalCompletableFuture<Long> asyncAddAndGet(long delta) {
-        Operation operation = new AddAndGetOperation(name, delta);
-        return asyncInvoke(operation);
+        Operation operation = new AddAndGetOperation(name, delta)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -91,8 +79,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public InternalCompletableFuture<Boolean> asyncCompareAndSet(long expect, long update) {
-        Operation operation = new CompareAndSetOperation(name, expect, update);
-        return asyncInvoke(operation);
+        Operation operation = new CompareAndSetOperation(name, expect, update)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -102,8 +91,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public InternalCompletableFuture<Void> asyncSet(long newValue) {
-        Operation operation = new SetOperation(name, newValue);
-        return asyncInvoke(operation);
+        Operation operation = new SetOperation(name, newValue)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -113,8 +103,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public InternalCompletableFuture<Long> asyncGetAndSet(long newValue) {
-        Operation operation = new GetAndSetOperation(name, newValue);
-        return asyncInvoke(operation);
+        Operation operation = new GetAndSetOperation(name, newValue)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -124,8 +115,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public InternalCompletableFuture<Long> asyncGetAndAdd(long delta) {
-        Operation operation = new GetAndAddOperation(name, delta);
-        return asyncInvoke(operation);
+        Operation operation = new GetAndAddOperation(name, delta)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -145,8 +137,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public InternalCompletableFuture<Long> asyncGet() {
-        GetOperation operation = new GetOperation(name);
-        return asyncInvoke(operation);
+        Operation operation = new GetOperation(name)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -178,8 +171,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     public InternalCompletableFuture<Void> asyncAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
 
-        Operation operation = new AlterOperation(name, function);
-        return asyncInvoke(operation);
+        Operation operation = new AlterOperation(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -191,8 +185,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     public InternalCompletableFuture<Long> asyncAlterAndGet(IFunction<Long, Long> function) {
         isNotNull(function, "function");
 
-        Operation operation = new AlterAndGetOperation(name, function);
-        return asyncInvoke(operation);
+        Operation operation = new AlterAndGetOperation(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -204,8 +199,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     public InternalCompletableFuture<Long> asyncGetAndAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
 
-        Operation operation = new GetAndAlterOperation(name, function);
-        return asyncInvoke(operation);
+        Operation operation = new GetAndAlterOperation(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
@@ -217,8 +213,9 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     public <R> InternalCompletableFuture<R> asyncApply(IFunction<Long, R> function) {
         isNotNull(function, "function");
 
-        Operation operation = new ApplyOperation<R>(name, function);
-        return asyncInvoke(operation);
+        Operation operation = new ApplyOperation<R>(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override

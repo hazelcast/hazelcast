@@ -117,6 +117,15 @@ public interface OperationService {
 
     <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
 
+    /**
+     * Executes an operation on a partition.
+     *
+     * @param op the operation
+     * @param <E> the return type of the operation response
+     * @return the future.
+     */
+    <E> InternalCompletableFuture<E> invokeOnPartition(Operation op);
+
     <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);

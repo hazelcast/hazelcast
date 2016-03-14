@@ -27,16 +27,15 @@ import com.hazelcast.spi.Operation;
  */
 public final class PartitionInvocation extends Invocation {
 
-    public PartitionInvocation(OperationServiceImpl operationService, String serviceName, Operation op, int partitionId,
-                               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                               ExecutionCallback callback, boolean resultDeserialized) {
-        super(operationService, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
+    public PartitionInvocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
+                               long callTimeout, ExecutionCallback callback, boolean resultDeserialized) {
+        super(operationService, op, tryCount, tryPauseMillis,
                 callTimeout, callback, resultDeserialized);
     }
 
     @Override
     public Address getTarget() {
-        return getPartition().getReplicaAddress(replicaIndex);
+        return getPartition().getReplicaAddress(op.getReplicaIndex());
     }
 
     @Override

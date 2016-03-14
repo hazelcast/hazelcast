@@ -972,10 +972,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return serializationService.toObject(obj);
     }
 
-    protected Data toData(Object obj) {
-        return serializationService.toData(obj);
-    }
-
     protected Data toData(Object o, PartitioningStrategy partitioningStrategy) {
         return serializationService.toData(o, partitioningStrategy);
     }

@@ -44,12 +44,15 @@ public class InvocationBuilderImpl extends InvocationBuilder {
 
     @Override
     public InternalCompletableFuture invoke() {
+        op.setServiceName(serviceName);
+
         if (target == null) {
-            return new PartitionInvocation(operationService, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, getTargetExecutionCallback(), resultDeserialized).invoke();
+            op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+            return new PartitionInvocation(operationService, op, tryCount, tryPauseMillis, callTimeout,
+                    getTargetExecutionCallback(), resultDeserialized).invoke();
         } else {
-            return new TargetInvocation(operationService, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, getTargetExecutionCallback(), resultDeserialized).invoke();
+            return new TargetInvocation(operationService, op, target, tryCount, tryPauseMillis, callTimeout,
+                    getTargetExecutionCallback(), resultDeserialized).invoke();
         }
     }
 }
