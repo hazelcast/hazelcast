@@ -41,7 +41,7 @@ public interface HashSlotArray8byteKey extends HashSlotArray {
      * @param key the key
      * @return address of the value block or
      * {@link MemoryAllocator#NULL_ADDRESS MemoryAllocator.NULL_ADDRESS}
-     * if no mapping for {@code (key1, key2)} exists.
+     * if no mapping for {@code key} exists.
      */
     long get(long key);
 
