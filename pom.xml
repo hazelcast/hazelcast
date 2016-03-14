@@ -863,7 +863,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
-                                -Dhazelcast.test.use.network=true
+                                -Dhazelcast.test.use.network=false
                                 -Djavax.management.builder.initial=${javax.management.builder.initial}
                                 -DCacheManagerImpl=${CacheManagerImpl}
                                 -Djavax.cache.Cache=${CacheImpl}
