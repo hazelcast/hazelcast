@@ -48,7 +48,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, getPartitionId(remote));
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
     @Test
@@ -63,7 +63,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, partitionId);
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
     @Test
@@ -82,7 +82,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");
-        f.getSafely();
+        f.join();
     }
 
     @Test
@@ -101,7 +101,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");
-        f.getSafely();
+        f.join();
     }
 
     @Test
@@ -120,7 +120,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");
-        f.getSafely();
+        f.join();
     }
 
     @Test
@@ -134,7 +134,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
         InternalCompletableFuture f = operationService.invokeOnTarget(null, outerOperation, getAddress(remote));
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class Invocation_NestedRemoteTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
         InternalCompletableFuture f = operationService.invokeOnTarget(null, outerOperation, getAddress(remote));
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
 }

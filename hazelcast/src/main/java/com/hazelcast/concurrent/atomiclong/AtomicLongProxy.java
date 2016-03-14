@@ -75,7 +75,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long addAndGet(long delta) {
-        return asyncAddAndGet(delta).getSafely();
+        return asyncAddAndGet(delta).join();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        return asyncCompareAndSet(expect, update).getSafely();
+        return asyncCompareAndSet(expect, update).join();
     }
 
     @Override
@@ -97,7 +97,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public void set(long newValue) {
-        asyncSet(newValue).getSafely();
+        asyncSet(newValue).join();
     }
 
     @Override
@@ -108,7 +108,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long getAndSet(long newValue) {
-        return asyncGetAndSet(newValue).getSafely();
+        return asyncGetAndSet(newValue).join();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long getAndAdd(long delta) {
-        return asyncGetAndAdd(delta).getSafely();
+        return asyncGetAndAdd(delta).join();
     }
 
     @Override
@@ -130,7 +130,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long decrementAndGet() {
-        return asyncDecrementAndGet().getSafely();
+        return asyncDecrementAndGet().join();
     }
 
     @Override
@@ -140,7 +140,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long get() {
-        return asyncGet().getSafely();
+        return asyncGet().join();
     }
 
     @Override
@@ -151,7 +151,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long incrementAndGet() {
-        return asyncIncrementAndGet().getSafely();
+        return asyncIncrementAndGet().join();
     }
 
     @Override
@@ -161,7 +161,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long getAndIncrement() {
-        return asyncGetAndIncrement().getSafely();
+        return asyncGetAndIncrement().join();
     }
 
     @Override
@@ -171,7 +171,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public void alter(IFunction<Long, Long> function) {
-        asyncAlter(function).getSafely();
+        asyncAlter(function).join();
     }
 
     @Override
@@ -184,7 +184,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
-        return asyncAlterAndGet(function).getSafely();
+        return asyncAlterAndGet(function).join();
     }
 
     @Override
@@ -197,7 +197,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
-        return asyncGetAndAlter(function).getSafely();
+        return asyncGetAndAlter(function).join();
     }
 
     @Override
@@ -210,7 +210,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
-        return asyncApply(function).getSafely();
+        return asyncApply(function).join();
     }
 
     @Override

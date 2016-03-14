@@ -70,14 +70,14 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     public void countDown() {
         CountDownOperation op = new CountDownOperation(name);
         InternalCompletableFuture f = invoke(op);
-        f.getSafely();
+        f.join();
     }
 
     @Override
     public int getCount() {
         GetCountOperation op = new GetCountOperation(name);
         InternalCompletableFuture<Integer> f = invoke(op);
-        return f.getSafely();
+        return f.join();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
         SetCountOperation op = new SetCountOperation(name, count);
         InternalCompletableFuture<Boolean> f = invoke(op);
-        return f.getSafely();
+        return f.join();
     }
 
     private InternalCompletableFuture invoke(Operation op) {

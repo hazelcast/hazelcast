@@ -105,7 +105,7 @@ public class CacheProxy<K, V>
         OperationService operationService = getNodeEngine().getOperationService();
         int partitionId = getPartitionId(getNodeEngine(), k);
         InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-        return f.getSafely();
+        return f.join();
     }
 
     @Override
@@ -236,7 +236,7 @@ public class CacheProxy<K, V>
             OperationService operationService = getNodeEngine().getOperationService();
             int partitionId = getPartitionId(getNodeEngine(), keyData);
             final InternalCompletableFuture<T> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
-            final T safely = f.getSafely();
+            final T safely = f.join();
             waitCompletionLatch(completionId);
             return safely;
         } catch (CacheException ce) {

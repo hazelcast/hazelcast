@@ -275,7 +275,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
             completedCall.incrementAndGet();
 
             try {
-                Long result = (Long) f.getSafely();
+                Long result = (Long) f.join();
 
                 if (!expectedResult.equals(result)) {
                     failedOperationCount.incrementAndGet();

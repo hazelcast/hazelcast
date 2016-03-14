@@ -247,7 +247,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         HashSet<SerializableXID> xids = new HashSet<SerializableXID>();
         xids.addAll(xaService.getPreparedXids());
         for (InternalCompletableFuture<SerializableList> future : futureList) {
-            SerializableList xidSet = future.getSafely();
+            SerializableList xidSet = future.join();
             for (Data xidData : xidSet) {
                 SerializableXID xid = nodeEngine.toObject(xidData);
                 xids.add(xid);

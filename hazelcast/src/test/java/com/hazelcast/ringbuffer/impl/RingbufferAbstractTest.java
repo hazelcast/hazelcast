@@ -11,12 +11,10 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.AbstractHazelcastClassRunner;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runners.model.FrameworkMethod;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -764,7 +762,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         });
 
         InternalCompletableFuture f = (InternalCompletableFuture) ringbuffer.readManyAsync(0, 1, 1, null);
-        f.getSafely();
+        f.join();
     }
     // ===================== misc ==========================
 

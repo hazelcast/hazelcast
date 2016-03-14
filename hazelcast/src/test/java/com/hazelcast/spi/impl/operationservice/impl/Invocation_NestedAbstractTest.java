@@ -49,7 +49,7 @@ public abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport
                 f = operationService.invokeOnTarget(null, innerOperation, getNodeEngine().getThisAddress());
             }
 
-            result = f.getSafely();
+            result = f.join();
         }
 
         @Override

@@ -257,7 +257,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
                 .setCallTimeout(callTimeout).invoke();
 
         try {
-            future.getSafely();
+            future.join();
             fail("Invocation should failed with timeout!");
         } catch (OperationTimeoutException ignored) {
         }
@@ -265,7 +265,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         IsLockedOperation isLockedOperation = new IsLockedOperation(new InternalLockNamespace(key),
                 nodeEngine.toData(key), 1);
         Boolean isLocked = (Boolean) operationService
-                .invokeOnPartition(null, isLockedOperation, partitionId).getSafely();
+                .invokeOnPartition(null, isLockedOperation, partitionId).join();
         assertFalse(isLocked);
     }
 

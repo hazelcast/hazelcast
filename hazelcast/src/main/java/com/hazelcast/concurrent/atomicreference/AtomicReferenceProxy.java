@@ -61,7 +61,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public void alter(IFunction<E, E> function) {
-        asyncAlter(function).getSafely();
+        asyncAlter(function).join();
     }
 
     @Override
@@ -75,7 +75,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public E alterAndGet(IFunction<E, E> function) {
-        return asyncAlterAndGet(function).getSafely();
+        return asyncAlterAndGet(function).join();
     }
 
     @Override
@@ -89,7 +89,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public E getAndAlter(IFunction<E, E> function) {
-        return asyncGetAndAlter(function).getSafely();
+        return asyncGetAndAlter(function).join();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public <R> R apply(IFunction<E, R> function) {
-        return asyncApply(function).getSafely();
+        return asyncApply(function).join();
     }
 
     @Override
@@ -117,7 +117,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public void clear() {
-        asyncClear().getSafely();
+        asyncClear().join();
     }
 
     @Override
@@ -127,7 +127,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return asyncCompareAndSet(expect, update).getSafely();
+        return asyncCompareAndSet(expect, update).join();
     }
 
     @Override
@@ -139,7 +139,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public E get() {
-        return asyncGet().getSafely();
+        return asyncGet().join();
     }
 
     @Override
@@ -150,7 +150,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public boolean contains(E expected) {
-        return asyncContains(expected).getSafely();
+        return asyncContains(expected).join();
     }
 
     @Override
@@ -162,7 +162,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public void set(E newValue) {
-        asyncSet(newValue).getSafely();
+        asyncSet(newValue).join();
     }
 
     @Override
@@ -174,7 +174,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public E getAndSet(E newValue) {
-        return asyncGetAndSet(newValue).getSafely();
+        return asyncGetAndSet(newValue).join();
     }
 
     @Override
@@ -186,7 +186,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public E setAndGet(E update) {
-        return asyncSetAndGet(update).getSafely();
+        return asyncSetAndGet(update).join();
     }
 
     @Override
@@ -198,7 +198,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public boolean isNull() {
-        return asyncIsNull().getSafely();
+        return asyncIsNull().join();
     }
 
     @Override

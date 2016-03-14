@@ -57,7 +57,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
         InitOperation operation = new InitOperation(name, permits);
         InternalCompletableFuture<Boolean> future = invoke(operation);
-        return future.getSafely();
+        return future.join();
     }
 
     @Override
@@ -82,14 +82,14 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     public int availablePermits() {
         AvailableOperation operation = new AvailableOperation(name);
         InternalCompletableFuture<Integer> future = invoke(operation);
-        return future.getSafely();
+        return future.join();
     }
 
     @Override
     public int drainPermits() {
         DrainOperation operation = new DrainOperation(name);
         InternalCompletableFuture<Integer> future = invoke(operation);
-        return future.getSafely();
+        return future.join();
     }
 
     @Override
@@ -98,7 +98,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
         ReduceOperation operation = new ReduceOperation(name, reduction);
         InternalCompletableFuture<Object> future = invoke(operation);
-        future.getSafely();
+        future.join();
     }
 
     @Override
@@ -112,7 +112,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
         ReleaseOperation operation = new ReleaseOperation(name, permits);
         InternalCompletableFuture future = invoke(operation);
-        future.getSafely();
+        future.join();
     }
 
     @Override

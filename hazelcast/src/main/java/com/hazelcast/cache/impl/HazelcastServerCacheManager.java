@@ -112,7 +112,7 @@ public class HazelcastServerCacheManager
         InternalCompletableFuture<CacheConfig<K, V>> f =
                 operationService.invokeOnPartition(CacheService.SERVICE_NAME,
                                                    cacheCreateConfigOperation, partitionId);
-        return f.getSafely();
+        return f.join();
     }
 
     @Override
@@ -166,7 +166,7 @@ public class HazelcastServerCacheManager
         InternalCompletableFuture future =
                 operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
         if (syncCreate) {
-            return (CacheConfig<K, V>) future.getSafely();
+            return (CacheConfig<K, V>) future.join();
         } else {
             return currentCacheConfig;
         }
@@ -184,7 +184,7 @@ public class HazelcastServerCacheManager
         InternalCompletableFuture<CacheConfig> f =
                 nodeEngine.getOperationService()
                           .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
-        return f.getSafely();
+        return f.join();
     }
 
     @Override
