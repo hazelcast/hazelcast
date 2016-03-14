@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
@@ -49,7 +48,7 @@ import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECO
  * 2) Should it be retried
  * 3) How many times it is retried
  */
-public class ClientInvocation implements Runnable, ExecutionCallback {
+public class ClientInvocation implements Runnable {
 
     public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     protected static final int UNASSIGNED_PARTITION = -1;
@@ -216,7 +215,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
 
     private void rescheduleInvocation() {
         ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
-        executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS, this);
+        executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     protected boolean shouldRetry() {
@@ -283,16 +282,4 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
                 || t instanceof AuthenticationException;
     }
 
-
-    @Override
-    public void onResponse(Object response) {
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        if (LOGGER.isFinestEnabled()) {
-            LOGGER.finest("Failure during retry ", t);
-        }
-        clientInvocationFuture.setResponse(t);
-    }
 }
