@@ -16,22 +16,23 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
@@ -48,7 +49,6 @@ import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperat
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -307,16 +307,29 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
+        op.setServiceName(serviceName)
+                .setPartitionId(partitionId)
+                .setReplicaIndex(DEFAULT_REPLICA_INDEX);
+
         return new PartitionInvocation(
-                this, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
-                DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+                this, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+                DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op) {
+        return new PartitionInvocation(
+                this, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return new TargetInvocation(this, serviceName, op, target, DEFAULT_TRY_COUNT,
+        op.setServiceName(serviceName);
+
+        return new TargetInvocation(this, op, target, DEFAULT_TRY_COUNT,
                 DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
@@ -324,8 +337,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     @SuppressWarnings("unchecked")
     public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
-        new PartitionInvocation(this, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
-                DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+        op.setServiceName(serviceName).setPartitionId(partitionId).setReplicaIndex(DEFAULT_REPLICA_INDEX);
+
+        new PartitionInvocation(this, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
 

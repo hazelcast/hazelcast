@@ -107,9 +107,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     final OperationServiceImpl operationService;
     final InvocationFuture future;
     final ILogger logger;
-    final String serviceName;
-    final int partitionId;
-    final int replicaIndex;
     final int tryCount;
     final long tryPauseMillis;
     final boolean deserialize;
@@ -122,16 +119,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
-    Invocation(OperationServiceImpl operationService, String serviceName, Operation op, int partitionId,
-               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
-               boolean deserialize) {
+    Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis, long callTimeout,
+               ExecutionCallback callback, boolean deserialize) {
         this.operationService = operationService;
         this.logger = operationService.invocationLogger;
         this.nodeEngine = operationService.nodeEngine;
-        this.serviceName = serviceName;
         this.op = op;
-        this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
@@ -144,7 +137,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     protected abstract Address getTarget();
 
     IPartition getPartition() {
-        return nodeEngine.getPartitionService().getPartition(partitionId);
+        return nodeEngine.getPartitionService().getPartition(op.getPartitionId());
     }
 
     private long getCallTimeout(long callTimeout) {
@@ -196,10 +189,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         try {
             setCallTimeout(op, callTimeout);
             setCallerAddress(op, nodeEngine.getThisAddress());
-            op.setNodeEngine(nodeEngine)
-                    .setServiceName(serviceName)
-                    .setPartitionId(partitionId)
-                    .setReplicaIndex(replicaIndex);
+            op.setNodeEngine(nodeEngine);
 
             boolean isAllowed = operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op, isAsync);
             if (!isAllowed && !isMigrationOperation(op)) {
@@ -256,7 +246,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         } else {
             executor.runOnCallingThreadIfPossible(op);
         }
-
     }
 
     private void doInvokeRemote() {
@@ -305,19 +294,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         targetMember = clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
-            notifyError(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
-            return false;
-        }
-
-        if (op.getPartitionId() != partitionId) {
-            notifyError(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
-                    + " is not equal to the partition id of invocation: " + partitionId));
-            return false;
-        }
-
-        if (op.getReplicaIndex() != replicaIndex) {
-            notifyError(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
-                    + " is not equal to the replica index of invocation: " + replicaIndex));
+            notifyError(
+                    new TargetNotMemberException(invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
             return false;
         }
 
@@ -347,8 +325,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return;
         }
 
-        notifyError(new WrongTargetException(thisAddress, null, partitionId,
-                replicaIndex, op.getClass().getName(), serviceName));
+        notifyError(new WrongTargetException(thisAddress, null, op.getPartitionId(),
+                op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));
     }
 
     @Override
@@ -630,10 +608,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         return "Invocation{"
-                + "serviceName='" + serviceName + '\''
                 + ", op=" + op
-                + ", partitionId=" + partitionId
-                + ", replicaIndex=" + replicaIndex
                 + ", tryCount=" + tryCount
                 + ", tryPauseMillis=" + tryPauseMillis
                 + ", invokeCount=" + invokeCount

@@ -18,24 +18,22 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.Operation;
 
 public class TotalOrderedTopicProxy extends TopicProxy {
 
     private final int partitionId;
-    private final OperationService operationService;
 
     public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-        this.operationService = nodeEngine.getOperationService();
     }
 
     @Override
     public void publish(Object message) {
-        NodeEngine nodeEngine = getNodeEngine();
-        PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
-        InternalCompletableFuture f = operationService.invokeOnPartition(TopicService.SERVICE_NAME, operation, partitionId);
+        Operation operation = new PublishOperation(getName(), toData(message))
+                .setPartitionId(partitionId);
+        InternalCompletableFuture f = invokeOnPartition(operation);
         f.join();
     }
 }

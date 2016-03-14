@@ -24,6 +24,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 /**
  * Abstract DistributedObject implementation. Useful to provide basic functionality.
+ *
  * @param <S>
  */
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
@@ -56,7 +57,15 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         postDestroy();
     }
 
-    protected int getPartitionId(Data key) {
+    protected final Data toData(Object object) {
+        return getNodeEngine().toData(object);
+    }
+
+    protected final <E> InternalCompletableFuture<E> invokeOnPartition(Operation operation) {
+        return getNodeEngine().getOperationService().invokeOnPartition(operation);
+    }
+
+    protected final int getPartitionId(Data key) {
         return getNodeEngine().getPartitionService().getPartitionId(key);
     }
 

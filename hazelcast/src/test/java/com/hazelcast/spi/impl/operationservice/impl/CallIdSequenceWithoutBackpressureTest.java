@@ -118,6 +118,6 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(operationService, null, op, 0, 0, 0, 0, 0, null, false);
+        return new PartitionInvocation(operationService, op, 0, 0, 0, null, false);
     }
 }

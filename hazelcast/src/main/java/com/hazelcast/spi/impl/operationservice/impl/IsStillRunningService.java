@@ -78,7 +78,7 @@ public class IsStillRunningService {
             Operation isStillExecuting = createCheckOperation(invocation);
 
             Invocation inv = new TargetInvocation(
-                    invocation.operationService, invocation.serviceName, isStillExecuting,
+                    invocation.operationService, isStillExecuting,
                     invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
             Future f = inv.invoke();
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
@@ -126,7 +126,7 @@ public class IsStillRunningService {
         Operation op = invocation.op;
         if (op instanceof TraceableOperation) {
             TraceableOperation traceable = (TraceableOperation) op;
-            return new TraceableIsStillExecutingOperation(invocation.serviceName, traceable.getTraceIdentifier());
+            return new TraceableIsStillExecutingOperation(op.getServiceName(), traceable.getTraceIdentifier());
         } else {
             return new IsStillExecutingOperation(op.getCallId(), op.getPartitionId());
         }
@@ -261,7 +261,7 @@ public class IsStillRunningService {
         @Override
         public void run() {
             Invocation inv = new TargetInvocation(
-                    invocation.operationService, invocation.serviceName, isStillRunningOperation,
+                    invocation.operationService, isStillRunningOperation,
                     invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, true);
 
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
