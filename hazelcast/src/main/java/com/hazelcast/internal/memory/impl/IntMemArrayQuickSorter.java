@@ -25,16 +25,12 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
  * {@link QuickSorter} implementation for a memory block which stores an array of {@code int}s.
  * Memory is accessed using the provided {@link MemoryAccessor}.
  */
-public class IntMemArrayQuickSorter extends QuickSorter {
-
-    private final MemoryAccessor mem;
-    private final long baseAddress;
+public class IntMemArrayQuickSorter extends MemArrayQuickSorter {
 
     private int pivot;
 
     public IntMemArrayQuickSorter(MemoryAccessor mem, long baseAddress) {
-        this.mem = mem;
-        this.baseAddress = baseAddress;
+        super(mem, baseAddress);
     }
 
     @Override
