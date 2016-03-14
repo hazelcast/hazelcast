@@ -17,22 +17,20 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -40,30 +38,16 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
-    private static final ExecutionCallback FAILURE_LOGGING_EXECUTION_CALLBACK = new ExecutionCallback() {
-        @Override
-        public void onResponse(Object response) {
-
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            LOGGER.warning("Rejected internal execution on scheduledExecutor", t);
-        }
-    };
 
     private final ExecutorService userExecutor;
-    private final ExecutorService internalExecutor;
-    private final ScheduledExecutorService scheduledExecutor;
+    private final ScheduledExecutorService internalExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
-
-        internalExecutor = new ThreadPoolExecutor(2, 2, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(),
+        internalExecutor = new ScheduledThreadPoolExecutor(3,
                 new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -83,8 +67,6 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                     }
                 });
 
-        scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-                new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
 
     }
 
@@ -124,43 +106,21 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
      * @param command
      * @param delay
      * @param unit
-     * @param executionCallback
      * @return scheduledFuture
      */
-    public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit,
-                                       final ExecutionCallback executionCallback) {
-        return scheduledExecutor.schedule(new Runnable() {
-            public void run() {
-                executeInternalSafely(command, executionCallback);
-            }
-        }, delay, unit);
+    @Override
+    public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+        return internalExecutor.schedule(command, delay, unit);
     }
 
     @Override
-    public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
-        return scheduledExecutor.schedule(new Runnable() {
-            public void run() {
-                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
-            }
-        }, delay, unit);
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
-            }
-        }, initialDelay, period, unit);
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return internalExecutor.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
-            public void run() {
-                executeInternalSafely(command, FAILURE_LOGGING_EXECUTION_CALLBACK);
-            }
-        }, initialDelay, period, unit);
+        return internalExecutor.scheduleWithFixedDelay(command, initialDelay, period, unit);
     }
 
     @Override
@@ -169,17 +129,8 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public void shutdown() {
-        shutdownExecutor("scheduled", scheduledExecutor);
         shutdownExecutor("user", userExecutor);
         shutdownExecutor("internal", internalExecutor);
-    }
-
-    private void executeInternalSafely(Runnable command, ExecutionCallback executionCallback) {
-        try {
-            submitInternal(command).andThen(executionCallback);
-        } catch (RejectedExecutionException e) {
-            executionCallback.onFailure(e);
-        }
     }
 
     private void shutdownExecutor(String name, ExecutorService executor) {
