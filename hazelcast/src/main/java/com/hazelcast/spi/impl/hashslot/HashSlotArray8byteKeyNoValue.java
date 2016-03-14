@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.hashslot;
 
-import com.hazelcast.spi.memory.MemoryManager;
+import com.hazelcast.internal.memory.MemoryManager;
 
 /**
  * Specialization of {@link HashSlotArray8byteKeyImpl} to the case of zero-length value. Suitable for a {@code long} set

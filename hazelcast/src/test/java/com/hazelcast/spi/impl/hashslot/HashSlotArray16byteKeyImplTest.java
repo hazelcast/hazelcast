@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.hashslot;
 
-import com.hazelcast.spi.memory.MemoryAccessor;
-import com.hazelcast.spi.impl.memory.HeapMemoryManager;
+import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Random;
 
-import static com.hazelcast.spi.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap.DEFAULT_LOAD_FACTOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

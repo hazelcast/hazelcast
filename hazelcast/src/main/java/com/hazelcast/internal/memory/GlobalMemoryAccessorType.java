@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.memory;
 
-import com.hazelcast.spi.impl.memory.AlignmentAwareMemoryAccessor;
-import com.hazelcast.spi.impl.memory.StandardMemoryAccessor;
+import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
+import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
 
 /**
  * Types of {@link GlobalMemoryAccessor} implementations.

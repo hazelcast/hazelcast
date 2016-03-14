@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.hashslot;
 
-import com.hazelcast.spi.memory.MemoryAllocator;
-import com.hazelcast.spi.memory.MemoryManager;
+import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.spi.hashslot.HashSlotArray16byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
 

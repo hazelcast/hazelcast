@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.hashslot;
 
-import com.hazelcast.spi.impl.memory.HeapMemoryManager;
-import com.hazelcast.spi.memory.MemoryManager;
+import com.hazelcast.internal.memory.impl.HeapMemoryManager;
+import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.spi.hashslot.HashSlotArray16byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.Random;
 
-import static com.hazelcast.spi.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;

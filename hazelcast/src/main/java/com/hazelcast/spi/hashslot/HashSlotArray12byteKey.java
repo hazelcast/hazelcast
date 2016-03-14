@@ -17,7 +17,7 @@
 package com.hazelcast.spi.hashslot;
 
 import com.hazelcast.nio.Disposable;
-import com.hazelcast.spi.memory.MemoryAllocator;
+import com.hazelcast.internal.memory.MemoryAllocator;
 
 /**
  * Specialization of {@link HashSlotArray} to the case where the key consists of a {@code long}

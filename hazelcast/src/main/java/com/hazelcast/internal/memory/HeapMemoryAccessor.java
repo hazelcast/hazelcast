@@ -18,6 +18,9 @@ package com.hazelcast.internal.memory;
 
 import java.lang.reflect.Field;
 
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
+
 /**
  * Accessor of Java heap memory. Heap must be addressed as an offset from a given object's base address.
  */
@@ -26,92 +29,92 @@ public interface HeapMemoryAccessor extends ByteAccessStrategy<Object> {
     /**
      * Base offset of boolean[]
      */
-    int ARRAY_BOOLEAN_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(boolean[].class) : -1;
+    int ARRAY_BOOLEAN_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(boolean[].class) : -1;
 
     /**
      * Base offset of byte[]
      */
-    int ARRAY_BYTE_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(byte[].class) : -1;
+    int ARRAY_BYTE_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(byte[].class) : -1;
 
     /**
      * Base offset of short[]
      */
-    int ARRAY_SHORT_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(short[].class) : -1;
+    int ARRAY_SHORT_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(short[].class) : -1;
 
     /**
      * Base offset of char[]
      */
-    int ARRAY_CHAR_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(char[].class) : -1;
+    int ARRAY_CHAR_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(char[].class) : -1;
 
     /**
      * Base offset of int[]
      */
 
-    int ARRAY_INT_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(int[].class) : -1;
+    int ARRAY_INT_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(int[].class) : -1;
     /**
      * Base offset of float[]
      */
 
-    int ARRAY_FLOAT_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(float[].class) : -1;
+    int ARRAY_FLOAT_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(float[].class) : -1;
     /**
      * Base offset of long[]
      */
-    int ARRAY_LONG_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(long[].class) : -1;
+    int ARRAY_LONG_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(long[].class) : -1;
 
     /**
      * Base offset of double[]
      */
-    int ARRAY_DOUBLE_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(double[].class) : -1;
+    int ARRAY_DOUBLE_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(double[].class) : -1;
 
     /**
      * Base offset of any type of Object[]
      */
-    int ARRAY_OBJECT_BASE_OFFSET = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(Object[].class) : -1;
+    int ARRAY_OBJECT_BASE_OFFSET = MEM_AVAILABLE ? MEM.arrayBaseOffset(Object[].class) : -1;
 
     /**
      * Index scale of boolean[]
      */
-    int ARRAY_BOOLEAN_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(boolean[].class) : -1;
+    int ARRAY_BOOLEAN_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(boolean[].class) : -1;
 
     /**
      * Index scale of byte[]
      */
-    int ARRAY_BYTE_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(byte[].class) : -1;
+    int ARRAY_BYTE_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(byte[].class) : -1;
 
     /**
      * Index scale of short[]
      */
-    int ARRAY_SHORT_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(short[].class) : -1;
+    int ARRAY_SHORT_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(short[].class) : -1;
 
     /**
      * Index scale of char[]
      */
-    int ARRAY_CHAR_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(char[].class) : -1;
+    int ARRAY_CHAR_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(char[].class) : -1;
 
     /**
      * Index scale of int[]
      */
-    int ARRAY_INT_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(int[].class) : -1;
+    int ARRAY_INT_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(int[].class) : -1;
 
     /**
      * Index scale of float[]
      */
-    int ARRAY_FLOAT_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(float[].class) : -1;
+    int ARRAY_FLOAT_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(float[].class) : -1;
 
     /**
      * Index scale of long[]
      */
-    int ARRAY_LONG_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(long[].class) : -1;
+    int ARRAY_LONG_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(long[].class) : -1;
 
     /**
      * Index scale of double[]
      */
-    int ARRAY_DOUBLE_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(double[].class) : -1;
+    int ARRAY_DOUBLE_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(double[].class) : -1;
 
     /**
      * Index scale of any type of Object[]
      */
-    int ARRAY_OBJECT_INDEX_SCALE = GlobalMemoryAccessorRegistry.MEM_AVAILABLE ? GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(Object[].class) : -1;
+    int ARRAY_OBJECT_INDEX_SCALE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : -1;
 
 
     /**

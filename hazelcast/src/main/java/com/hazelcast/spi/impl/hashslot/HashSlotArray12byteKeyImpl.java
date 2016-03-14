@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.hashslot;
 import com.hazelcast.spi.hashslot.HashSlotArray12byteKey;
 import com.hazelcast.spi.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor12byteKey;
-import com.hazelcast.spi.memory.MemoryManager;
+import com.hazelcast.internal.memory.MemoryManager;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.util.HashUtil.fastIntMix;

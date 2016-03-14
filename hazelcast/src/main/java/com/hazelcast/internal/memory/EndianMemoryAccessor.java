@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.memory;
 
-import com.hazelcast.spi.impl.memory.BigEndianMemoryAccessor;
-import com.hazelcast.spi.impl.memory.LittleEndianMemoryAccessor;
-import com.hazelcast.spi.impl.memory.AlignmentUtil;
+import com.hazelcast.internal.memory.impl.BigEndianMemoryAccessor;
+import com.hazelcast.internal.memory.impl.LittleEndianMemoryAccessor;
+
+import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
+import static com.hazelcast.internal.memory.impl.AlignmentUtil.IS_PLATFORM_BIG_ENDIAN;
 
 /**
  * Accesses global memory (Java heap and native memory) using a specific, not necessarily native endianness.
@@ -30,12 +32,12 @@ public interface EndianMemoryAccessor extends MemoryAccessor, HeapMemoryAccessor
     /**
      * The big-endian accessor instance.
      */
-    EndianMemoryAccessor MEM_BE = AlignmentUtil.IS_PLATFORM_BIG_ENDIAN ? GlobalMemoryAccessorRegistry.MEM : new BigEndianMemoryAccessor();
+    EndianMemoryAccessor MEM_BE = IS_PLATFORM_BIG_ENDIAN ? MEM : new BigEndianMemoryAccessor();
 
     /**
      * The little-endian accessor instance.
      */
-    EndianMemoryAccessor MEM_LE = AlignmentUtil.IS_PLATFORM_BIG_ENDIAN ? new LittleEndianMemoryAccessor() : GlobalMemoryAccessorRegistry.MEM;
+    EndianMemoryAccessor MEM_LE = IS_PLATFORM_BIG_ENDIAN ? new LittleEndianMemoryAccessor() : MEM;
 
     /**
      * @return true if this accessor is big-endian; false if little-endian

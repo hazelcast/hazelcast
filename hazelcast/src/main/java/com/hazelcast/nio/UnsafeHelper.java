@@ -16,9 +16,9 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.spi.memory.GlobalMemoryAccessorRegistry;
+import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.MemoryAccessor;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;

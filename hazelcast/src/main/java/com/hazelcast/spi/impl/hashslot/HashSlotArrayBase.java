@@ -20,11 +20,11 @@ import com.hazelcast.spi.hashslot.HashSlotArray;
 import com.hazelcast.spi.hashslot.HashSlotCursor12byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.spi.hashslot.HashSlotCursor8byteKey;
-import com.hazelcast.spi.memory.MemoryAccessor;
-import com.hazelcast.spi.memory.MemoryAllocator;
-import com.hazelcast.spi.memory.MemoryManager;
+import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.memory.MemoryManager;
 
-import static com.hazelcast.spi.memory.MemoryAllocator.NULL_ADDRESS;
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.util.HashUtil.fastLongMix;
 
 /**
