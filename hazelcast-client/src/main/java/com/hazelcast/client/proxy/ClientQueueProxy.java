@@ -62,6 +62,11 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
+/**
+ * Proxy implementation of {@link IQueue}.
+ *
+ * @param <E> the type of elements in this queue
+ */
 public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy implements IQueue<E> {
 
     public ClientQueueProxy(String serviceName, String name) {
@@ -350,7 +355,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters = QueueCompareAndRemoveAllCodec.decodeResponse(response);
+        QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters =
+                QueueCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
@@ -359,7 +365,8 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(c, getSerializationService());
         ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
-        QueueCompareAndRetainAllCodec.ResponseParameters resultParameters = QueueCompareAndRetainAllCodec.decodeResponse(response);
+        QueueCompareAndRetainAllCodec.ResponseParameters resultParameters =
+                QueueCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 

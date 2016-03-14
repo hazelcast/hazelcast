@@ -92,7 +92,7 @@
 
     <!-- Client -->
     <!-- TODO: we need to get these wildcard suppressions fixed -->
-    <suppress checks="" files="com/hazelcast/client/proxy/ClientQueueProxy"/>
+    <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientQueueProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientListProxy"/>
     <suppress checks="" files="com/hazelcast/client/proxy/ClientMultiMapProxy"/>
     <suppress checks="" files="com/hazelcast/client/proxy/ClientMapProxy"/>
