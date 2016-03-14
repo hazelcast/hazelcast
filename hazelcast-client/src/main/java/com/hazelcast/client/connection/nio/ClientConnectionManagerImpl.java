@@ -63,7 +63,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -80,19 +79,6 @@ import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
-
-    private static final AuthenticationCallback dummyAuthCallback = new AuthenticationCallback() {
-        @Override
-        public void onSuccess(Connection connection) {
-
-        }
-
-        @Override
-        public void onFailure(Throwable exception) {
-
-        }
-    };
-
     private final NonBlockingIOThreadOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new NonBlockingIOThreadOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
@@ -116,8 +102,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
-    private final Set<Address> connectionsInProgress =
-            Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
+            new ConcurrentHashMap<Address, AuthenticationFuture>();
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
@@ -223,31 +209,40 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public Connection getOrConnect(Address address, boolean asOwner) throws IOException {
-        BlockingCallback blockingCallback = new BlockingCallback();
-        Connection connection = getOrTriggerConnectInternal(address, asOwner, blockingCallback);
-        if (connection != null) {
-            return connection;
-        }
         try {
-            return blockingCallback.get();
+            while (true) {
+                Connection connection = getConnection(address, asOwner);
+                if (connection != null) {
+                    return connection;
+                }
+                AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
+                connection = firstCallback.get();
+                if (!asOwner) {
+                    return connection;
+                }
+                if (firstCallback.authenticatedAsOwner) {
+                    return connection;
+                }
+            }
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private static class BlockingCallback implements AuthenticationCallback {
+
+    private static class AuthenticationFuture {
 
         private final CountDownLatch countDownLatch = new CountDownLatch(1);
         private Connection connection;
         private Throwable throwable;
+        private boolean authenticatedAsOwner;
 
-        @Override
-        public void onSuccess(Connection connection) {
+        public void onSuccess(Connection connection, boolean asOwner) {
             this.connection = connection;
+            this.authenticatedAsOwner = asOwner;
             countDownLatch.countDown();
         }
 
-        @Override
         public void onFailure(Throwable throwable) {
             this.throwable = throwable;
             countDownLatch.countDown();
@@ -262,19 +257,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    interface AuthenticationCallback {
-        void onSuccess(Connection connection);
-
-        void onFailure(Throwable exception);
-    }
-
     @Override
     public Connection getOrTriggerConnect(Address target, boolean asOwner) {
-        return getOrTriggerConnectInternal(target, asOwner, dummyAuthCallback);
+        Connection connection = getConnection(target, asOwner);
+        if (connection != null) {
+            return connection;
+        }
+        triggerConnect(target, asOwner);
+        return null;
     }
 
-    private Connection getOrTriggerConnectInternal(Address target, boolean asOwner,
-                                                   AuthenticationCallback callback) {
+    private Connection getConnection(Address target, boolean asOwner) {
         target = addressTranslator.translate(target);
 
         if (target == null) {
@@ -284,20 +277,25 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ClientConnection connection = connections.get(target);
 
         if (connection != null) {
-            if (asOwner && connection.isAuthenticatedAsOwner()) {
-                return connection;
-            }
             if (!asOwner) {
                 return connection;
             }
+            if (connection.isAuthenticatedAsOwner()) {
+                return connection;
+            }
         }
+        return null;
+    }
 
-        if (connectionsInProgress.add(target)) {
+    private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
+        AuthenticationFuture callback = new AuthenticationFuture();
+        AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
+        if (firstCallback == null) {
             ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
             executionService.executeInternal(new InitConnectionTask(target, asOwner, callback));
+            return callback;
         }
-
-        return null;
+        return firstCallback;
     }
 
     private void fireConnectionAddedEvent(ClientConnection connection) {
@@ -438,7 +436,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private void authenticate(final Address target, final ClientConnection connection,
                               final boolean asOwner,
-                              final AuthenticationCallback callback) {
+                              final AuthenticationFuture callback) {
         SerializationService ss = client.getSerializationService();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         ClientPrincipal principal = clusterService.getPrincipal();
@@ -477,7 +475,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                             clusterService.setPrincipal(new ClientPrincipal(result.uuid, result.ownerUuid));
                         }
                         authenticated(target, connection);
-                        callback.onSuccess(connection);
+                        callback.onSuccess(connection, asOwner);
                         break;
                     case CREDENTIALS_FAILED:
                         AuthenticationException e = new AuthenticationException("Invalid credentials!");
@@ -505,9 +503,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private final Address target;
         private final boolean asOwner;
-        private final AuthenticationCallback callback;
+        private final AuthenticationFuture callback;
 
-        InitConnectionTask(Address target, boolean asOwner, AuthenticationCallback callback) {
+        InitConnectionTask(Address target, boolean asOwner, AuthenticationFuture callback) {
             this.target = target;
             this.asOwner = asOwner;
             this.callback = callback;
