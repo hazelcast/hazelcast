@@ -54,6 +54,7 @@ public class GroupProperties extends HazelcastProperties {
     @Deprecated
     public static final String PROP_PHONE_HOME_ENABLED = GroupProperty.PHONE_HOME_ENABLED.getName();
     @Deprecated
+    @SuppressWarnings("checkstyle:constantname")
     public static final String PROP_PREFER_IPv4_STACK = GroupProperty.PREFER_IPv4_STACK.getName();
     @Deprecated
     public static final String PROP_IO_THREAD_COUNT = GroupProperty.IO_THREAD_COUNT.getName();

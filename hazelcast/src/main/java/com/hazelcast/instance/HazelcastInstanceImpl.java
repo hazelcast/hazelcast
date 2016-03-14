@@ -86,10 +86,11 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-@SuppressWarnings("unchecked")
 @PrivateApi
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class HazelcastInstanceImpl implements HazelcastInstance {
 
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Node node;
 
     final ILogger logger;
@@ -349,6 +350,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         ProxyService proxyService = node.nodeEngine.getProxyService();
         return (T) proxyService.getDistributedObject(serviceName, name);

@@ -151,11 +151,6 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/instance/"/>
     <suppress checks="JavadocType" files="com/hazelcast/instance/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/instance/"/>
-    <suppress checks="ConstantName" files="com/hazelcast/instance/GroupProperties"/>
-    <suppress checks="MethodCount|ClassFanOutComplexity|VisibilityModifier" files="com/hazelcast/instance/HazelcastInstanceImpl"/>
-    <suppress checks="MethodCount" files="com/hazelcast/instance/HazelcastInstanceProxy"/>
-    <suppress checks="MethodCount" files="com/hazelcast/instance/MemberImpl"/>
-    <suppress checks="VisibilityModifier|ClassDataAbstractionCoupling|NPathComplexity|CyclomaticComplexity|ClassFanOutComplexity|JavadocType|MethodCount|ExecutableStatementCount|EmptyBlockCheck" files="com/hazelcast/instance/Node"/>
 
     <!-- SPI -->
     <suppress checks="MethodCount|NPathComplexity|MagicNumber" files="com/hazelcast/spi/Operation"/>

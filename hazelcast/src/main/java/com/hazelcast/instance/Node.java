@@ -19,13 +19,6 @@ package com.hazelcast.instance;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.ConfigCheck;
-import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
-import com.hazelcast.internal.cluster.impl.JoinRequest;
-import com.hazelcast.internal.cluster.impl.MulticastJoiner;
-import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
@@ -41,7 +34,16 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ConfigCheck;
+import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.cluster.impl.MulticastJoiner;
+import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -49,9 +51,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -65,8 +65,8 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.PhoneHome;
+import com.hazelcast.util.UuidUtil;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -76,74 +76,67 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
+import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
+        "checkstyle:classfanoutcomplexity"})
 public class Node {
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
 
-    public final NodeEngineImpl nodeEngine;
+    public final HazelcastInstanceImpl hazelcastInstance;
 
+    public final Config config;
+    public final GroupProperties groupProperties;
+
+    public final NodeEngineImpl nodeEngine;
     public final ClientEngineImpl clientEngine;
 
     public final InternalPartitionServiceImpl partitionService;
-
     public final ClusterServiceImpl clusterService;
-
     public final MulticastService multicastService;
-
     public final DiscoveryService discoveryService;
+    public final TextCommandServiceImpl textCommandService;
+    public final LoggingServiceImpl loggingService;
 
     public final ConnectionManager connectionManager;
 
-    public final TextCommandServiceImpl textCommandService;
-
-    public final Config config;
-
-    public final GroupProperties groupProperties;
-
     public final Address address;
-
     public final MemberImpl localMember;
-
-    public final HazelcastInstanceImpl hazelcastInstance;
-
-    public final LoggingServiceImpl loggingService;
 
     public final SecurityContext securityContext;
 
     private final ILogger logger;
 
     private final AtomicBoolean joined = new AtomicBoolean(false);
-
-    private volatile NodeState state;
-
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
+    private final PhoneHome phoneHome = new PhoneHome();
+
     private final SerializationService serializationService;
-
-    private volatile Address masterAddress;
-
-    private final Joiner joiner;
+    private final ClassLoader configClassLoader;
 
     private final NodeExtension nodeExtension;
 
-    private ManagementCenterService managementCenterService;
-
-    private final ClassLoader configClassLoader;
-
     private final BuildInfo buildInfo;
-
-    private final PhoneHome phoneHome = new PhoneHome();
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
+    private final Joiner joiner;
+
     private final boolean liteMember;
 
+    private ManagementCenterService managementCenterService;
+
+    private volatile NodeState state;
+
+    private volatile Address masterAddress;
+
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
@@ -166,7 +159,7 @@ public class Node {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
             localMember = new MemberImpl(address, true, createMemberUuid(address),
-                                            hazelcastInstance, memberAttributes, liteMember);
+                    hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
@@ -192,6 +185,7 @@ public class Node {
             try {
                 serverSocketChannel.close();
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
             throw ExceptionUtil.rethrow(e);
         }
@@ -221,6 +215,7 @@ public class Node {
         return factory.newDiscoveryService(settings);
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private void initializeListeners(Config config) {
         for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
             Object listener = listenerCfg.getImplementation();
@@ -360,6 +355,7 @@ public class Node {
         phoneHome.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
         if (logger.isFinestEnabled()) {
@@ -398,11 +394,13 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
         } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
         }
 
         try {
             discoveryService.destroy();
         } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
         }
 
         try {
@@ -454,6 +452,7 @@ public class Node {
 
     /**
      * Indicates that node is not shutting down or it has not already shut down
+     *
      * @return true if node is not shutting down or it has not already shut down
      */
     public boolean isRunning() {

@@ -68,6 +68,7 @@ import java.util.concurrent.ConcurrentMap;
  * </li>
  * </ol>
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class HazelcastInstanceProxy implements HazelcastInstance, SerializationServiceSupport {
     protected volatile HazelcastInstanceImpl original;
     private final String name;
