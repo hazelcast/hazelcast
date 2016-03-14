@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.hashslot;
+package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryManager;
 
-import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_CAPACITY;
-import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
 
 /**
  * Twin-key hash slot array with zero-width value. Suitable for a twin-long set implementation.

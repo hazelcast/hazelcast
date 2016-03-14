@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;
 
 /**
  * Cursor over assigned slots in a {@link HashSlotArray16byteKey}. Initially the cursor's location is

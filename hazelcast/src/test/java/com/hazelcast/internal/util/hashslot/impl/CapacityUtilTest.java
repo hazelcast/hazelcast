@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.hashslot;
+package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -25,8 +25,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.spi.impl.hashslot.CapacityUtil.nextCapacity;
-import static com.hazelcast.spi.impl.hashslot.CapacityUtil.roundCapacity;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.nextCapacity;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.roundCapacity;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

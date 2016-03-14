@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;
 
 import com.hazelcast.nio.Disposable;
-import com.hazelcast.spi.impl.hashslot.HashSlotArray16byteKeyNoValue;
-import com.hazelcast.spi.impl.hashslot.HashSlotArray8byteKeyNoValue;
+import com.hazelcast.internal.util.hashslot.impl.HashSlotArray16byteKeyNoValue;
+import com.hazelcast.internal.util.hashslot.impl.HashSlotArray8byteKeyNoValue;
 import com.hazelcast.internal.memory.MemoryAccessor;
 
 /** <p>
@@ -47,13 +47,13 @@ import com.hazelcast.internal.memory.MemoryAccessor;
  *     Memory layout
  * </h3> <p>
  * The base address, returned by {@link #address()}, is the addres of the first slot in the array.
- * It is preceded by the header of size {@value com.hazelcast.spi.impl.hashslot.HashSlotArrayBase#HEADER_SIZE}
+ * It is preceded by the header of size {@value com.hazelcast.internal.util.hashslot.impl.HashSlotArrayBase#HEADER_SIZE}
  * which holds the metadata
  * that pertains to the structure as a whole ({@code capacity}, {@code size}, and {@code expandAt}).
  * A slot consists of the key part and the value part, in that order, and the size of a slot is exactly the sum of the
  * sizes of the key and value parts. The size of the memory block that backs the entire structure is equal to
- * {@value com.hazelcast.spi.impl.hashslot.HashSlotArrayBase#HEADER_SIZE} + ({@link #capacity()} * slot size), and
- * its base address is {@link #address()} - {@value com.hazelcast.spi.impl.hashslot.HashSlotArrayBase#HEADER_SIZE}.
+ * {@value com.hazelcast.internal.util.hashslot.impl.HashSlotArrayBase#HEADER_SIZE} + ({@link #capacity()} * slot size), and
+ * its base address is {@link #address()} - {@value com.hazelcast.internal.util.hashslot.impl.HashSlotArrayBase#HEADER_SIZE}.
  * </p><p>
  * A special value must be reserved to mark an <emph>unassigned</emph> slot. The offset of the marker
  * in the slot can be customized, as well as the choice of the special value.

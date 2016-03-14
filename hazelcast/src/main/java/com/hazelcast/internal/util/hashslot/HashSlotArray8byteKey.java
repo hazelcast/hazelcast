@@ -14,50 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
 
 /**
- * Specialization of {@link HashSlotArray} to the case where the key consists of two {@code long} values
+ * Specialization of {@link HashSlotArray} to the case where the key is a single {@code long} value
  * and the value part is a block whose size is a multiple of 8 (including zero).
  */
-public interface HashSlotArray16byteKey extends HashSlotArray {
+public interface HashSlotArray8byteKey extends HashSlotArray {
 
     /**
-     * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the array.
+     * Ensures that there is a mapping from the given key to a slot in the array.
      * The {@code abs} of the returned integer is the address of the slot's value block.
      * The returned integer is positive if a new slot had to be assigned and negative
      * if the slot was already assigned.
      *
-     * @param key1 key part 1
-     * @param key2 key part 2
+     * @param key the key
      * @return address of value block
      */
-    long ensure(long key1, long key2);
+    long ensure(long key);
 
     /**
-     * Returns the address of the value block mapped by {@code (key1, key2)}.
+     * Returns the address of the value block mapped by the given key.
      *
-     * @param key1 key part 1
-     * @param key2 key part 2
+     * @param key the key
      * @return address of the value block or
      * {@link MemoryAllocator#NULL_ADDRESS MemoryAllocator.NULL_ADDRESS}
      * if no mapping for {@code (key1, key2)} exists.
      */
-    long get(long key1, long key2);
+    long get(long key);
 
     /**
-     * Removes the mapping for {@code (key1, key2)}, if any.
+     * Removes the mapping for the given key.
      *
-     * @param key1 key part 1
-     * @param key2 key part 2
-     * @return true if there was a mapping, false otherwise
+     * @param key the key
+     * @return true if a mapping existed and was removed, false otherwise
      */
-    boolean remove(long key1, long key2);
+    boolean remove(long key);
 
     /**
      * Returns a cursor over all assigned slots in this array.
      */
-    HashSlotCursor16byteKey cursor();
+    HashSlotCursor8byteKey cursor();
 }

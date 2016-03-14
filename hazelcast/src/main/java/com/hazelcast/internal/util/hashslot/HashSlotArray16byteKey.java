@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;
 
-import com.hazelcast.nio.Disposable;
 import com.hazelcast.internal.memory.MemoryAllocator;
 
 /**
- * Specialization of {@link HashSlotArray} to the case where the key consists of a {@code long}
- * and an {@code int} value and the value part is a block whose size is 4 + multiple of 8 (including zero).
+ * Specialization of {@link HashSlotArray} to the case where the key consists of two {@code long} values
+ * and the value part is a block whose size is a multiple of 8 (including zero).
  */
-public interface HashSlotArray12byteKey extends Disposable {
+public interface HashSlotArray16byteKey extends HashSlotArray {
 
     /**
      * Ensures that there is a mapping from {@code (key1, key2)} to a slot in the array.
@@ -35,7 +34,7 @@ public interface HashSlotArray12byteKey extends Disposable {
      * @param key2 key part 2
      * @return address of value block
      */
-    long ensure(long key1, int key2);
+    long ensure(long key1, long key2);
 
     /**
      * Returns the address of the value block mapped by {@code (key1, key2)}.
@@ -46,7 +45,7 @@ public interface HashSlotArray12byteKey extends Disposable {
      * {@link MemoryAllocator#NULL_ADDRESS MemoryAllocator.NULL_ADDRESS}
      * if no mapping for {@code (key1, key2)} exists.
      */
-    long get(long key1, int key2);
+    long get(long key1, long key2);
 
     /**
      * Removes the mapping for {@code (key1, key2)}, if any.
@@ -55,10 +54,10 @@ public interface HashSlotArray12byteKey extends Disposable {
      * @param key2 key part 2
      * @return true if there was a mapping, false otherwise
      */
-    boolean remove(long key1, int key2);
+    boolean remove(long key1, long key2);
 
     /**
      * Returns a cursor over all assigned slots in this array.
      */
-    HashSlotCursor12byteKey cursor();
+    HashSlotCursor16byteKey cursor();
 }

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.hashslot;
+package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryAllocator;
 import com.hazelcast.internal.memory.MemoryManager;
-import com.hazelcast.spi.hashslot.HashSlotArray16byteKey;
-import com.hazelcast.spi.hashslot.HashSlotCursor16byteKey;
+import com.hazelcast.internal.util.hashslot.HashSlotArray16byteKey;
+import com.hazelcast.internal.util.hashslot.HashSlotCursor16byteKey;
 
-import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_CAPACITY;
-import static com.hazelcast.spi.impl.hashslot.CapacityUtil.DEFAULT_LOAD_FACTOR;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
 import static com.hazelcast.util.QuickMath.modPowerOfTwo;
 
 /**

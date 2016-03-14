@@ -20,4 +20,4 @@
  * to interact with a {@link com.hazelcast.internal.memory.MemoryManager MemoryManager}
  * for memory allocation and access.
  */
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;

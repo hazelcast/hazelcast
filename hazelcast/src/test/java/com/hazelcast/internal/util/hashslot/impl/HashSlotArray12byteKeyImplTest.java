@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.hashslot;
+package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.impl.HeapMemoryManager;
-import com.hazelcast.spi.hashslot.HashSlotCursor12byteKey;
+import com.hazelcast.internal.util.hashslot.HashSlotCursor12byteKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
