@@ -78,7 +78,7 @@ public class IsStillRunningService {
             Operation isStillExecuting = createCheckOperation(invocation);
 
             Invocation inv = new TargetInvocation(
-                    invocation.nodeEngine, invocation.serviceName, isStillExecuting,
+                    invocation.operationService, invocation.serviceName, isStillExecuting,
                     invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
             Future f = inv.invoke();
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
@@ -261,7 +261,7 @@ public class IsStillRunningService {
         @Override
         public void run() {
             Invocation inv = new TargetInvocation(
-                    invocation.nodeEngine, invocation.serviceName, isStillRunningOperation,
+                    invocation.operationService, invocation.serviceName, isStillRunningOperation,
                     invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, true);
 
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);

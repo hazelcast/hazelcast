@@ -37,6 +37,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
@@ -195,6 +196,11 @@ public abstract class HazelcastTestSupport {
     public static InternalOperationService getOperationService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.nodeEngine.getOperationService();
+    }
+
+    public static OperationServiceImpl getOperationServiceImpl(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return (OperationServiceImpl) node.nodeEngine.getOperationService();
     }
 
     public static InternalPartitionService getPartitionService(HazelcastInstance hz) {

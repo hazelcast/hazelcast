@@ -42,7 +42,7 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         warmUpPartitions(local);
         nodeEngine = getNodeEngineImpl(local);
 
-        operationService = (OperationServiceImpl) getOperationService(local);
+        operationService = getOperationServiceImpl(local);
         invocationRegistry = operationService.invocationRegistry;
     }
 
@@ -51,7 +51,7 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, op.getPartitionId(), 0, 0, 0, 0, null, false);
+        Invocation invocation = new PartitionInvocation(operationService, null, op, op.getPartitionId(), 0, 0, 0, 0, null, false);
         invocation.invTarget = getAddress(local);
         return invocation;
     }

@@ -234,6 +234,7 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        return new PartitionInvocation(operationService, null, op, 0, 0, 0, 0, 0, null, false);
     }
 }

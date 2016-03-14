@@ -103,31 +103,31 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     // A flag to prevent multiple responses to be send tot he Invocation. Only needed for local operations.
     volatile Boolean responseReceived = FALSE;
 
-    final long callTimeout;
     final NodeEngineImpl nodeEngine;
+    final OperationServiceImpl operationService;
+    final InvocationFuture future;
+    final ILogger logger;
     final String serviceName;
     final int partitionId;
     final int replicaIndex;
     final int tryCount;
     final long tryPauseMillis;
-    final ILogger logger;
     final boolean deserialize;
+    final long callTimeout;
+
     boolean remote;
     Address invTarget;
     MemberImpl targetMember;
-    final InvocationFuture future;
-    final OperationServiceImpl operationService;
 
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
-
-    Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+    Invocation(OperationServiceImpl operationService, String serviceName, Operation op, int partitionId,
                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
                boolean deserialize) {
-        this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+        this.operationService = operationService;
         this.logger = operationService.invocationLogger;
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = operationService.nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;

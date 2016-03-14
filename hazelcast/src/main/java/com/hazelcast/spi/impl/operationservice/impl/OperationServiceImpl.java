@@ -278,7 +278,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         if (partitionId < 0) {
             throw new IllegalArgumentException("Partition id cannot be negative!");
         }
-        return new InvocationBuilderImpl(nodeEngine, serviceName, op, partitionId);
+        return new InvocationBuilderImpl(this, serviceName, op, partitionId);
     }
 
     @Override
@@ -286,7 +286,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         if (target == null) {
             throw new IllegalArgumentException("Target cannot be null!");
         }
-        return new InvocationBuilderImpl(nodeEngine, serviceName, op, target);
+        return new InvocationBuilderImpl(this, serviceName, op, target);
     }
 
     @Override
@@ -308,7 +308,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         return new PartitionInvocation(
-                nodeEngine, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
+                this, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
                 DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
@@ -316,7 +316,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return new TargetInvocation(nodeEngine, serviceName, op, target, DEFAULT_TRY_COUNT,
+        return new TargetInvocation(this, serviceName, op, target, DEFAULT_TRY_COUNT,
                 DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
@@ -324,7 +324,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     @SuppressWarnings("unchecked")
     public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
-        new PartitionInvocation(nodeEngine, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
+        new PartitionInvocation(this, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
                 DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
