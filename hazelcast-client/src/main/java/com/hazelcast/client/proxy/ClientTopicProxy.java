@@ -32,6 +32,11 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
+/**
+ * Proxy implementation of {@link ITopic}.
+ *
+ * @param <E> message type
+ */
 public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements ITopic<E> {
 
     public ClientTopicProxy(String serviceName, String objectId) {

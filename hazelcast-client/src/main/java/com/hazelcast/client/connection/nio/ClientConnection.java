@@ -42,6 +42,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
+/**
+ * Client implementation of {@link Connection}.
+ * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
+ */
 public class ClientConnection implements Connection {
 
     protected final int connectionId;

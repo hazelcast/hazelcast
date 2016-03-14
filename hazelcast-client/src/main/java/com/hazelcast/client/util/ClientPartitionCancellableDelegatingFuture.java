@@ -28,6 +28,13 @@ import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
+/**
+ * A DelegatingFuture that can cancel a Runnable/Callable that is executed by an
+ * {@link com.hazelcast.core.IExecutorService}.
+ * It does this by sending a Cancellation Request to the remote partition owner and then cancelling the running task.
+ *
+ * @param <T> Type of returned object from the get method of this class.
+ */
 public class ClientPartitionCancellableDelegatingFuture<T> extends ClientCancellableDelegatingFuture<T> {
 
     private final int partitionId;

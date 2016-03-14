@@ -52,6 +52,9 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Proxy implementation of {@link TransactionalMap} interface.
+ *
+ * @param <K> key
+ * @param <V> value
  */
 public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements TransactionalMap<K, V> {
 

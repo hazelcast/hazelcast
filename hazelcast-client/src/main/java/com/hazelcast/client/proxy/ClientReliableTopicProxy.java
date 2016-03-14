@@ -52,6 +52,14 @@ import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAM
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+/**
+ * Reliable proxy implementation of {@link ITopic}.
+ * <p/>
+ * Unlike other topics, a reliable topic has its own {@link com.hazelcast.ringbuffer.Ringbuffer} to store events and
+ * has its own executor to process events.
+ *
+ * @param <E> message type
+ */
 public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     private static final int MAX_BACKOFF = 2000;

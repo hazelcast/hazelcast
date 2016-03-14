@@ -25,6 +25,9 @@ import com.hazelcast.core.ICountDownLatch;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Proxy implementation of {@link ICountDownLatch}.
+ */
 public class ClientCountDownLatchProxy extends PartitionSpecificClientProxy implements ICountDownLatch {
 
     public ClientCountDownLatchProxy(String serviceName, String objectId) {

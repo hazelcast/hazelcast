@@ -35,6 +35,9 @@ import com.hazelcast.core.IFunction;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
+/**
+ * Proxy implementation of {@link IAtomicLong}.
+ */
 public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implements IAtomicLong {
 
     public ClientAtomicLongProxy(String serviceName, String objectId) {

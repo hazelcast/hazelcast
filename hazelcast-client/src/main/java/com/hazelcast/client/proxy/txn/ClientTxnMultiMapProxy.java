@@ -34,6 +34,11 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Proxy implementation of {@link TransactionalMultiMap}
+ * @param <K> key
+ * @param <V> value
+ */
 public class ClientTxnMultiMapProxy<K, V>
         extends ClientTxnProxy
         implements TransactionalMultiMap<K, V> {

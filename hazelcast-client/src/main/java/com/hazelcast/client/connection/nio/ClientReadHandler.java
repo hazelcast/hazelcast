@@ -27,6 +27,11 @@ import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
+/**
+ * ClientReadHandler gets called by an IO-thread when there is data available to read.
+ * It then reads out the data from the socket into a bytebuffer and hands it over to the {@link ClientMessageBuilder}
+ * to get processed.
+ */
 public class ClientReadHandler
         extends AbstractClientSelectionHandler {
 

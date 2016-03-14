@@ -34,6 +34,9 @@ import java.util.concurrent.locks.Condition;
 
 import static com.hazelcast.util.Preconditions.checkPositive;
 
+/**
+ * Proxy implementation of {@link ILock}.
+ */
 public class ClientLockProxy extends PartitionSpecificClientProxy implements ILock {
 
     public ClientLockProxy(String serviceName, String objectId) {

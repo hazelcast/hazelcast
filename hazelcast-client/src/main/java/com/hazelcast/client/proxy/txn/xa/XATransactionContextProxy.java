@@ -47,6 +47,14 @@ import javax.transaction.xa.Xid;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
+ * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
+ * <p/>
+ * Provides client instance and client connection proxies that need to be accessed for sending invocations.
+ * <p/>
+ * XA implementation of {@link com.hazelcast.client.spi.ClientTransactionContext}
+ */
 public class XATransactionContextProxy implements ClientTransactionContext {
 
     final ClientTransactionManagerServiceImpl transactionManager;

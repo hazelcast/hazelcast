@@ -51,6 +51,11 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
+/**
+ * Proxy implementation of {@link Ringbuffer}.
+ *
+ * @param <E> the type of elements in this ringbuffer
+ */
 public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<E> {
 
     private static final ClientMessageDecoder ADD_ASYNC_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {

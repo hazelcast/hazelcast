@@ -30,6 +30,10 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
+/**
+ * Base class for Client proxies.
+ * Allows the Client to proxy operations through Nodes
+ */
 public abstract class ClientProxy implements DistributedObject {
 
     protected final String name;

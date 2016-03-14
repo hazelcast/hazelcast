@@ -24,6 +24,10 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 /***
  * This is interface which provides capability for Hazelcast client factories customization;
  * It's implementation can be changed and passed to the HazelcastClientManager's constructors;
+ *
+ * @param <T> type of {@link HazelcastClientInstanceImpl}
+ * @param <V> type of {@link HazelcastClientProxy}
+ * @param <C> type of {@link ClientConfig}
  */
 public interface HazelcastClientFactory<T extends HazelcastClientInstanceImpl,
         V extends HazelcastClientProxy,

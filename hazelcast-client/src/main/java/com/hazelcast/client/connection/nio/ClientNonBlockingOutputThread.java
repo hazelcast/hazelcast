@@ -23,7 +23,9 @@ import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
-
+/**
+ * ClientNonBlockingOutputThread facilitates non-blocking writing for Hazelcast Clients.
+ */
 public final class ClientNonBlockingOutputThread extends NonBlockingIOThread {
 
     public ClientNonBlockingOutputThread(ThreadGroup threadGroup, String threadName, ILogger logger,

@@ -31,6 +31,9 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Proxy implementation of {@link ICondition}.
+ */
 public class ClientConditionProxy extends PartitionSpecificClientProxy implements ICondition {
 
     private final String conditionId;

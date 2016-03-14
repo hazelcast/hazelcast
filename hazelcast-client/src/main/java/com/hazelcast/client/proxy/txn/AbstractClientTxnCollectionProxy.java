@@ -19,7 +19,9 @@ package com.hazelcast.client.proxy.txn;
 import com.hazelcast.client.spi.ClientTransactionContext;
 
 /**
- * @ali 9/4/13
+ * Abstract proxy collection implementation of {@link com.hazelcast.transaction.TransactionalObject}.
+ *
+ * @param <E> the type of elements in this collection
  */
 public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy {
 

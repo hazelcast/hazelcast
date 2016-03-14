@@ -60,6 +60,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+/**
+ * Proxy implementation of {@link IList}.
+ *
+ * @param <E> the type of elements in this list
+ */
 public class ClientListProxy<E> extends PartitionSpecificClientProxy implements IList<E> {
 
     public ClientListProxy(String serviceName, String name) {

@@ -25,6 +25,10 @@ import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
+/**
+ * The AbstractClientSelectionHandler gets called by an IO-thread when there data available to read,
+ * or space available to write.
+ */
 public abstract class AbstractClientSelectionHandler implements SelectionHandler, Runnable {
 
     protected final ILogger logger;

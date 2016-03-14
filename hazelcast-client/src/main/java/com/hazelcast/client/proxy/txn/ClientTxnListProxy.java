@@ -27,6 +27,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
 
+/**
+ * Proxy implementation of {@link TransactionalList}.
+ *
+ * @param <E> the type of elements in this list
+ */
 public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalList<E> {
 
     public ClientTxnListProxy(String name, ClientTransactionContext transactionContext) {

@@ -28,6 +28,9 @@ import com.hazelcast.core.ISemaphore;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Proxy implementation of {@link ISemaphore}.
+ */
 public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implements ISemaphore {
 
     public ClientSemaphoreProxy(String serviceName, String objectId) {
