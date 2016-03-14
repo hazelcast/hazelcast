@@ -171,7 +171,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         reset();
 
         for (ObjectConsumer consumer : consumers) {
-            if (consumer.isShuffled()) {
+            if (!consumer.isShuffled()) {
                 consumer.close();
             }
         }
