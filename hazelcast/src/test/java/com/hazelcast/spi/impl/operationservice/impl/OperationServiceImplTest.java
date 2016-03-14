@@ -189,7 +189,7 @@ public class OperationServiceImplTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("invocations should be empty", 0, operationService.invocationsRegistry.size());
+                assertEquals("invocations should be empty", 0, operationService.invocationRegistry.size());
             }
         });
     }

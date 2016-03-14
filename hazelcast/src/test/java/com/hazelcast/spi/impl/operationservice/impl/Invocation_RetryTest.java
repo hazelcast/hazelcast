@@ -18,7 +18,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.lang.reflect.Field;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.Future;
 import org.junit.Test;
@@ -103,7 +102,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Iterator<Invocation> invocations = operationService.invocationsRegistry.iterator();
+                Iterator<Invocation> invocations = operationService.invocationRegistry.iterator();
                 assertFalse(invocations.hasNext());
             }
         });

@@ -42,7 +42,7 @@ public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
 
     public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
         InternalOperationService operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationsRegistry();
+        this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         this.logger = nodeEngine.getLogger(PendingInvocationsPlugin.class);
         GroupProperties props = nodeEngine.getGroupProperties();
         this.periodMillis = props.getMillis(PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS);

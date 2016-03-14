@@ -111,11 +111,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     final int tryCount;
     final long tryPauseMillis;
     final ILogger logger;
-    final boolean resultDeserialized;
+    final boolean deserialize;
     boolean remote;
     Address invTarget;
     MemberImpl targetMember;
-    final InvocationFuture invocationFuture;
+    final InvocationFuture future;
     final OperationServiceImpl operationService;
 
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
@@ -124,7 +124,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
-               boolean resultDeserialized) {
+               boolean deserialize) {
         this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = operationService.invocationLogger;
         this.nodeEngine = nodeEngine;
@@ -135,8 +135,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.invocationFuture = new InvocationFuture(operationService, this, callback);
-        this.resultDeserialized = resultDeserialized;
+        this.future = new InvocationFuture(operationService, this, callback);
+        this.deserialize = deserialize;
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -176,7 +176,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     public final InvocationFuture invoke() {
         invokeInternal(false);
-        return invocationFuture;
+        return future;
     }
 
     public final void invokeAsync() {
@@ -234,7 +234,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         setInvocationTime(op, nodeEngine.getClusterService().getClusterClock().getClusterTime());
-        operationService.invocationsRegistry.register(this);
+        operationService.invocationRegistry.register(this);
         if (remote) {
             doInvokeRemote();
         } else {
@@ -262,7 +262,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     private void doInvokeRemote() {
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
-            operationService.invocationsRegistry.deregister(this);
+            operationService.invocationRegistry.deregister(this);
             notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
@@ -379,7 +379,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-        invocationFuture.set(response);
+        future.set(response);
     }
 
     @Override
@@ -447,7 +447,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // We are going to notify the future that a response is available. This can happen when:
         // - we had a regular operation (so no backups we need to wait for) that completed.
         // - we had a backup-aware operation that has completed, but also all its backups have completed.
-        invocationFuture.set(value);
+        future.set(value);
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -494,16 +494,16 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // We are the lucky ones since we just managed to complete the last backup for this invocation and since the
         // pendingResponse is set, we can set it on the future.
-        invocationFuture.set(pendingResponse);
+        future.set(pendingResponse);
     }
 
     boolean checkInvocationTimeout() {
-        long maxCallTimeout = invocationFuture.getMaxCallTimeout();
+        long maxCallTimeout = future.getMaxCallTimeout();
         long expirationTime = op.getInvocationTime() + maxCallTimeout;
 
-        boolean done = invocationFuture.isDone();
+        boolean done = future.isDone();
         boolean hasResponse = pendingResponse != null;
-        boolean hasWaitingThreads = invocationFuture.getWaitingThreadsCount() > 0;
+        boolean hasWaitingThreads = future.getWaitingThreadsCount() > 0;
         boolean notExpired = maxCallTimeout == Long.MAX_VALUE
                 || expirationTime < 0
                 || expirationTime >= Clock.currentTimeMillis();
@@ -539,7 +539,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void handleContinueWait() {
-        invocationFuture.set(WAIT_RESPONSE);
+        future.set(WAIT_RESPONSE);
     }
 
     private void handleRetry(Object cause) {
@@ -551,16 +551,16 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             }
         }
 
-        operationService.invocationsRegistry.deregister(this);
+        operationService.invocationRegistry.deregister(this);
 
-        if (invocationFuture.interrupted) {
-            invocationFuture.set(INTERRUPTED_RESPONSE);
+        if (future.interrupted) {
+            future.set(INTERRUPTED_RESPONSE);
             return;
         }
 
-        if (!invocationFuture.set(WAIT_RESPONSE)) {
+        if (!future.set(WAIT_RESPONSE)) {
             logger.finest("Cannot retry " + toString() + ", because a different response is already set: "
-                    + invocationFuture.response);
+                    + future.response);
             return;
         }
 
@@ -605,12 +605,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        invocationFuture.set(pendingResponse);
+        future.set(pendingResponse);
         return true;
     }
 
     private void resetAndReInvoke() {
-        operationService.invocationsRegistry.deregister(this);
+        operationService.invocationRegistry.deregister(this);
         invokeCount = 0;
         pendingResponse = null;
         pendingResponseReceivedMillis = -1;

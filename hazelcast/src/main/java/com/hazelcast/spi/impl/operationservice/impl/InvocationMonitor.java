@@ -221,7 +221,7 @@ public class InvocationMonitor {
         }
 
         private boolean isDone(Invocation invocation) {
-            return invocation.invocationFuture.isDone();
+            return invocation.future.isDone();
         }
 
         private void detectSlowInvocation(long now, Invocation invocation) {

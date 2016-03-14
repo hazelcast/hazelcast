@@ -169,7 +169,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                             + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
                 }
 
-                operationService.invocationsRegistry.deregister(invocation);
+                operationService.invocationRegistry.deregister(invocation);
                 return false;
             }
 
@@ -181,7 +181,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             callbackHead = null;
             notifyAll();
 
-            operationService.invocationsRegistry.deregister(invocation);
+            operationService.invocationRegistry.deregister(invocation);
         }
 
 
@@ -372,7 +372,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         Object response = unresolvedResponse;
-        if (invocation.resultDeserialized && response instanceof Data) {
+        if (invocation.deserialize && response instanceof Data) {
             response = invocation.nodeEngine.toObject(response);
             if (response == null) {
                 return null;

@@ -97,7 +97,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
-    final InvocationRegistry invocationsRegistry;
+    final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
@@ -144,10 +144,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
-        this.invocationsRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
+        this.invocationRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
 
         this.invocationMonitor = new InvocationMonitor(
-                invocationsRegistry,
+                invocationRegistry,
                 logger,
                 groupProperties,
                 node.getHazelcastThreadGroup(),
@@ -162,7 +162,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 new ResponsePacketHandlerImpl(
                         logger,
                         node.getSerializationService(),
-                        invocationsRegistry));
+                        invocationRegistry));
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
@@ -204,8 +204,8 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return slowOperationDetector.getSlowOperationDTOs();
     }
 
-    public InvocationRegistry getInvocationsRegistry() {
-        return invocationsRegistry;
+    public InvocationRegistry getInvocationRegistry() {
+        return invocationRegistry;
     }
 
     @Override
@@ -231,7 +231,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     @Override
     public int getRemoteOperationsCount() {
-        return invocationsRegistry.size();
+        return invocationRegistry.size();
     }
 
     @Probe(name = "queue.size", level = MANDATORY)
@@ -435,12 +435,12 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     public void reset() {
-        invocationsRegistry.reset();
+        invocationRegistry.reset();
     }
 
     public void shutdown() {
         logger.finest("Shutting down OperationService");
-        invocationsRegistry.shutdown();
+        invocationRegistry.shutdown();
         operationExecutor.shutdown();
         responsePacketExecutor.shutdown();
         slowOperationDetector.shutdown();

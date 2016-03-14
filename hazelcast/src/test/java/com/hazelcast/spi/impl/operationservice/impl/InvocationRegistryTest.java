@@ -41,7 +41,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         nodeEngine = getNodeEngineImpl(local);
 
         operationService = (OperationServiceImpl) getOperationService(local);
-        invocationRegistry = operationService.invocationsRegistry;
+        invocationRegistry = operationService.invocationRegistry;
     }
 
     private Invocation newInvocation() {
@@ -164,7 +164,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
 
         invocationRegistry.reset();
 
-        InvocationFuture f = invocation.invocationFuture;
+        InvocationFuture f = invocation.future;
         try {
             f.get();
             fail();
@@ -183,7 +183,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.shutdown();
 
-        InvocationFuture f = invocation.invocationFuture;
+        InvocationFuture f = invocation.future;
         try {
             f.getSafely();
             fail();
