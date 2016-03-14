@@ -32,7 +32,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,7 +49,6 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore //https://github.com/hazelcast/hazelcast/issues/7693
 public class ClientTransactionalMapQuorumTest extends HazelcastTestSupport {
 
     static PartitionedCluster cluster;
