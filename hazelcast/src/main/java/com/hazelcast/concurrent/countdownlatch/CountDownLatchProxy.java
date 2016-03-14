@@ -44,7 +44,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         super(nodeEngine, null);
         this.name = name;
         Data nameAsPartitionAwareData = getNameAsPartitionAwareData();
-        partitionId = nodeEngine.getPartitionService().getPartitionId(nameAsPartitionAwareData);
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nameAsPartitionAwareData);
     }
 
     @Override
