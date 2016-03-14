@@ -1,11 +1,27 @@
-package com.hazelcast.spi.hashslot;
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.memory.HeapMemoryManager;
+import com.hazelcast.internal.memory.impl.HeapMemoryManager;
+import com.hazelcast.internal.util.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
-import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,8 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Random;
 
-import static com.hazelcast.memory.MemoryAllocator.NULL_ADDRESS;
-import static org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap.DEFAULT_INITIAL_CAPACITY;
+import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap.DEFAULT_LOAD_FACTOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,7 +40,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class HashSlotArrayTwinKeyImplTest {
+public class HashSlotArray16byteKeyImplTest {
 
     // Value length must be at least 16 bytes, as required by the test's logic
     private static final int VALUE_LENGTH = 16;
@@ -33,13 +48,13 @@ public class HashSlotArrayTwinKeyImplTest {
     private final Random random = new Random();
     private HeapMemoryManager memMgr;
     private MemoryAccessor mem;
-    private HashSlotArrayTwinKeyImpl hsa;
+    private HashSlotArray16byteKeyImpl hsa;
 
     @Before
     public void setUp() throws Exception {
         memMgr = new HeapMemoryManager(32 << 20);
         mem = memMgr.getAccessor();
-        hsa = new HashSlotArrayTwinKeyImpl(0L, memMgr, VALUE_LENGTH);
+        hsa = new HashSlotArray16byteKeyImpl(0L, memMgr, VALUE_LENGTH);
         hsa.gotoNew();
     }
 
@@ -210,7 +225,7 @@ public class HashSlotArrayTwinKeyImplTest {
         final HeapMemoryManager mgr2 = new HeapMemoryManager(memMgr);
         final int initialCapacity = 4;
         final int factor = 13;
-        hsa = new HashSlotArrayTwinKeyImpl(0, memMgr, mgr2.getAllocator(),
+        hsa = new HashSlotArray16byteKeyImpl(0, memMgr, mgr2.getAllocator(),
                 VALUE_LENGTH, initialCapacity, DEFAULT_LOAD_FACTOR);
         hsa.gotoNew();
         for (int i = 1; i <= 2 * initialCapacity; i++) {
@@ -246,27 +261,27 @@ public class HashSlotArrayTwinKeyImplTest {
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_key1_withoutAdvance() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.key1();
     }
 
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_key2_withoutAdvance() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.key2();
     }
 
     @Test(expected = AssertionError.class)
     @RequireAssertEnabled
     public void testCursor_valueAddress_withoutAdvance() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.valueAddress();
     }
 
     @Test
     public void testCursor_advance_whenEmpty() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         assertFalse(cursor.advance());
     }
 
@@ -274,7 +289,7 @@ public class HashSlotArrayTwinKeyImplTest {
     public void testCursor_advance() {
         insert(randomKey(), randomKey());
 
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         assertTrue(cursor.advance());
         assertFalse(cursor.advance());
     }
@@ -284,7 +299,7 @@ public class HashSlotArrayTwinKeyImplTest {
     public void testCursor_advance_afterAdvanceReturnsFalse() {
         insert(randomKey(), randomKey());
 
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.advance();
         cursor.advance();
 
@@ -301,7 +316,7 @@ public class HashSlotArrayTwinKeyImplTest {
         final long key2 = randomKey();
         insert(key1, key2);
 
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.advance();
         assertEquals(key1, cursor.key1());
     }
@@ -312,7 +327,7 @@ public class HashSlotArrayTwinKeyImplTest {
         final long key2 = randomKey();
         insert(key1, key2);
 
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.advance();
         assertEquals(key2, cursor.key2());
     }
@@ -321,35 +336,35 @@ public class HashSlotArrayTwinKeyImplTest {
     public void testCursor_valueAddress() {
         final long valueAddress = insert(randomKey(), randomKey());
 
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         cursor.advance();
         assertEquals(valueAddress, cursor.valueAddress());
     }
 
     @Test(expected = AssertionError.class)
     public void testCursor_advance_whenDisposed() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.advance();
     }
 
     @Test(expected = AssertionError.class)
     public void testCursor_key1_whenDisposed() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.key1();
     }
 
     @Test(expected = AssertionError.class)
     public void testCursor_key2_whenDisposed() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.key2();
     }
 
     @Test(expected = AssertionError.class)
     public void testCursor_valueAddress_whenDisposed() {
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         hsa.dispose();
         cursor.valueAddress();
     }
@@ -365,7 +380,7 @@ public class HashSlotArrayTwinKeyImplTest {
             insert(key1, key2);
         }
         boolean[] verifiedKeys = new boolean[k];
-        HashSlotCursorTwinKey cursor = hsa.cursor();
+        HashSlotCursor16byteKey cursor = hsa.cursor();
         while (cursor.advance()) {
             long key1 = cursor.key1();
             long key2 = cursor.key2();

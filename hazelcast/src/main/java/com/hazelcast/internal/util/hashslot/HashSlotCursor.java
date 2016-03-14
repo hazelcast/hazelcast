@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;
 
 /**
- * Cursor over assigned hash slots in a {@link HashSlotArray}.
- * Initially the cursor's location is before the first slot and the cursor is invalid.
+ * Cursor over assigned slots in a {@link HashSlotArray}. Initially the cursor's location is
+ * before the first slot and the cursor is invalid.
  */
 public interface HashSlotCursor {
+
     /**
      * Resets the cursor to the initial state.
      */
     void reset();
 
     /**
-     * Advance to the next assigned slot.
-     * @return {@code true} if the cursor advanced. If {@code false} is returned, the cursor is now invalid.
+     * Advances to the next assigned slot.
+     * @return true if the cursor advanced. If false is returned, the cursor is now invalid.
      * @throws IllegalStateException if a previous call to advance() already returned false.
      */
     boolean advance();
-
-    /**
-     * @return the key of the current slot.
-     * @throws IllegalStateException if the cursor is invalid.
-     */
-    long key();
 
     /**
      * @return Address of the current slot's value block.

@@ -16,13 +16,15 @@
 
 package com.hazelcast.internal.memory.impl;
 
+import com.hazelcast.internal.memory.MemoryAccessor;
+
 import java.lang.reflect.Field;
 
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE;
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
 /**
- * Standard {@link com.hazelcast.internal.memory.MemoryAccessor} implementations
+ * Standard {@link MemoryAccessor} implementations
  * that directly uses {@link sun.misc.Unsafe} for accessing to memory.
  */
 @SuppressWarnings("checkstyle:methodcount")

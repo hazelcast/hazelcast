@@ -17,7 +17,6 @@
 package com.hazelcast.internal.memory.impl;
 
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
-import static com.hazelcast.internal.memory.impl.EndiannessUtil.NATIVE_ACCESS;
 
 /**
  * Provides big-endian access on a natively little-endian platform.
@@ -31,124 +30,124 @@ public class BigEndianMemoryAccessor extends EndianAccessorBase {
 
     @Override
     public char getChar(Object base, long offset) {
-        return EndiannessUtil.readCharB(NATIVE_ACCESS, base, offset);
+        return EndiannessUtil.readCharB(EndiannessUtil.NATIVE_ACCESS, base, offset);
     }
 
     @Override
     public void putChar(Object base, long offset, char x) {
-        EndiannessUtil.writeCharB(NATIVE_ACCESS, base, offset, x);
+        EndiannessUtil.writeCharB(EndiannessUtil.NATIVE_ACCESS, base, offset, x);
     }
 
     @Override
     public short getShort(Object base, long offset) {
-        return EndiannessUtil.readShortB(NATIVE_ACCESS, base, offset);
+        return EndiannessUtil.readShortB(EndiannessUtil.NATIVE_ACCESS, base, offset);
     }
 
     @Override
     public void putShort(Object base, long offset, short x) {
-        EndiannessUtil.writeShortB(NATIVE_ACCESS, base, offset, x);
+        EndiannessUtil.writeShortB(EndiannessUtil.NATIVE_ACCESS, base, offset, x);
     }
 
     @Override
     public int getInt(Object base, long offset) {
-        return EndiannessUtil.readIntB(NATIVE_ACCESS, base, offset);
+        return EndiannessUtil.readIntB(EndiannessUtil.NATIVE_ACCESS, base, offset);
     }
 
     @Override
     public void putInt(Object base, long offset, int x) {
-        EndiannessUtil.writeIntB(NATIVE_ACCESS, base, offset, x);
+        EndiannessUtil.writeIntB(EndiannessUtil.NATIVE_ACCESS, base, offset, x);
     }
 
     @Override
     public float getFloat(Object base, long offset) {
-        return EndiannessUtil.readFloatB(NATIVE_ACCESS, base, offset);
+        return EndiannessUtil.readFloatB(EndiannessUtil.NATIVE_ACCESS, base, offset);
     }
 
     @Override
     public void putFloat(Object base, long offset, float x) {
-        EndiannessUtil.writeFloatB(NATIVE_ACCESS, base, offset, x);
+        EndiannessUtil.writeFloatB(EndiannessUtil.NATIVE_ACCESS, base, offset, x);
     }
 
     @Override
     public long getLong(Object base, long offset) {
-        return EndiannessUtil.readLongB(NATIVE_ACCESS, base, offset);
+        return EndiannessUtil.readLongB(EndiannessUtil.NATIVE_ACCESS, base, offset);
     }
 
     @Override
     public void putLong(Object base, long offset, long x) {
-        EndiannessUtil.writeLongB(NATIVE_ACCESS, base, offset, x);
+        EndiannessUtil.writeLongB(EndiannessUtil.NATIVE_ACCESS, base, offset, x);
     }
 
     @Override
     public double getDouble(Object base, long offset) {
-        return EndiannessUtil.readDoubleB(NATIVE_ACCESS, base, offset);
+        return EndiannessUtil.readDoubleB(EndiannessUtil.NATIVE_ACCESS, base, offset);
     }
 
     @Override
     public void putDouble(Object base, long offset, double x) {
-        EndiannessUtil.writeDoubleB(NATIVE_ACCESS, base, offset, x);
+        EndiannessUtil.writeDoubleB(EndiannessUtil.NATIVE_ACCESS, base, offset, x);
     }
 
 
 
     @Override
     public char getChar(long address) {
-        return EndiannessUtil.readCharB(NATIVE_ACCESS, null, address);
+        return EndiannessUtil.readCharB(EndiannessUtil.NATIVE_ACCESS, null, address);
     }
 
     @Override
     public void putChar(long address, char x) {
-        EndiannessUtil.writeCharB(NATIVE_ACCESS, null, address, x);
+        EndiannessUtil.writeCharB(EndiannessUtil.NATIVE_ACCESS, null, address, x);
     }
 
     @Override
     public short getShort(long address) {
-        return EndiannessUtil.readShortB(NATIVE_ACCESS, null, address);
+        return EndiannessUtil.readShortB(EndiannessUtil.NATIVE_ACCESS, null, address);
     }
 
     @Override
     public void putShort(long address, short x) {
-        EndiannessUtil.writeShortB(NATIVE_ACCESS, null, address, x);
+        EndiannessUtil.writeShortB(EndiannessUtil.NATIVE_ACCESS, null, address, x);
     }
 
     @Override
     public int getInt(long address) {
-        return EndiannessUtil.readIntB(NATIVE_ACCESS, null, address);
+        return EndiannessUtil.readIntB(EndiannessUtil.NATIVE_ACCESS, null, address);
     }
 
     @Override
     public void putInt(long address, int x) {
-        EndiannessUtil.writeIntB(NATIVE_ACCESS, null, address, x);
+        EndiannessUtil.writeIntB(EndiannessUtil.NATIVE_ACCESS, null, address, x);
     }
 
     @Override
     public float getFloat(long address) {
-        return EndiannessUtil.readFloatB(NATIVE_ACCESS, null, address);
+        return EndiannessUtil.readFloatB(EndiannessUtil.NATIVE_ACCESS, null, address);
     }
 
     @Override
     public void putFloat(long address, float x) {
-        EndiannessUtil.writeFloatB(NATIVE_ACCESS, null, address, x);
+        EndiannessUtil.writeFloatB(EndiannessUtil.NATIVE_ACCESS, null, address, x);
     }
 
     @Override
     public long getLong(long address) {
-        return EndiannessUtil.readLongB(NATIVE_ACCESS, null, address);
+        return EndiannessUtil.readLongB(EndiannessUtil.NATIVE_ACCESS, null, address);
     }
 
     @Override
     public void putLong(long address, long x) {
-        EndiannessUtil.writeLongB(NATIVE_ACCESS, null, address, x);
+        EndiannessUtil.writeLongB(EndiannessUtil.NATIVE_ACCESS, null, address, x);
     }
 
     @Override
     public double getDouble(long address) {
-        return EndiannessUtil.readDoubleB(NATIVE_ACCESS, null, address);
+        return EndiannessUtil.readDoubleB(EndiannessUtil.NATIVE_ACCESS, null, address);
     }
 
     @Override
     public void putDouble(long address, double x) {
-        EndiannessUtil.writeDoubleB(NATIVE_ACCESS, null, address, x);
+        EndiannessUtil.writeDoubleB(EndiannessUtil.NATIVE_ACCESS, null, address, x);
     }
 
     @Override

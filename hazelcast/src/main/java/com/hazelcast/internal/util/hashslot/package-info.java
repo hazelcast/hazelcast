@@ -15,6 +15,9 @@
  */
 
 /**
- * Off-heap hash slot arrays.
+ * Contains a family of interfaces that provide a common base for various
+ * kinds of open-addressed hashtable implementations. The APIs are designed
+ * to interact with a {@link com.hazelcast.internal.memory.MemoryManager MemoryManager}
+ * for memory allocation and access.
  */
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;

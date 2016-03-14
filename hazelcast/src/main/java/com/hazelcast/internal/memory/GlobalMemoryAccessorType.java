@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.memory;
 
+import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
+import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
+
 /**
  * Types of {@link GlobalMemoryAccessor} implementations.
  */
@@ -26,7 +29,7 @@ public enum GlobalMemoryAccessorType {
      * Requesting unaligned memory access from this instance will result in low-level JVM crash on
      * platforms which only support aligned access.
      *
-     * @see com.hazelcast.internal.memory.impl.StandardMemoryAccessor
+     * @see StandardMemoryAccessor
      */
     STANDARD,
 
@@ -35,7 +38,7 @@ public enum GlobalMemoryAccessorType {
      * by splitting a larger-size memory operation into several smaller-size ones
      * (which have finer-grained alignment requirements).
      *
-     * @see com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor
+     * @see AlignmentAwareMemoryAccessor
      */
     ALIGNMENT_AWARE,
 

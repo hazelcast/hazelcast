@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.memory;
+package com.hazelcast.internal.memory.impl;
 
-/**
- * Resets  the state of  object
- */
-public interface Resetable {
-    /**
-     * Resets the state
-     */
-    void reset();
+import org.junit.ClassRule;
+
+public abstract class UnsafeDependentMemoryAccessorTest {
+
+    @ClassRule
+    public static final TestIgnoreRuleAccordingToUnsafeAvailability UNSAFE_AVAILABILITY_RULE
+            = new TestIgnoreRuleAccordingToUnsafeAvailability();
+
 }

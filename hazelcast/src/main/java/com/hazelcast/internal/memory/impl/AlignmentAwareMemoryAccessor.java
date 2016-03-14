@@ -18,15 +18,6 @@ package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.IS_PLATFORM_BIG_ENDIAN;
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.check2BytesAligned;
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.check4BytesAligned;
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.check8BytesAligned;
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.checkReferenceAligned;
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.is2BytesAligned;
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.is4BytesAligned;
-import static com.hazelcast.internal.memory.impl.AlignmentUtil.is8BytesAligned;
-import static com.hazelcast.internal.memory.impl.EndiannessUtil.NATIVE_ACCESS;
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
 /**
@@ -67,91 +58,91 @@ public final class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
 
     @Override
     public char getChar(long address) {
-        return is2BytesAligned(address) ? super.getChar(address)
-                : EndiannessUtil.readChar(NATIVE_ACCESS, null, address, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is2BytesAligned(address) ? super.getChar(address)
+                : EndiannessUtil.readChar(EndiannessUtil.NATIVE_ACCESS, null, address, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putChar(long address, char x) {
-        if (is2BytesAligned(address)) {
+        if (AlignmentUtil.is2BytesAligned(address)) {
             super.putChar(address, x);
         } else {
-            EndiannessUtil.writeChar(NATIVE_ACCESS, null, address, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeChar(EndiannessUtil.NATIVE_ACCESS, null, address, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public short getShort(long address) {
-        return is2BytesAligned(address) ? super.getShort(address)
-                : EndiannessUtil.readShort(NATIVE_ACCESS, null, address, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is2BytesAligned(address) ? super.getShort(address)
+                : EndiannessUtil.readShort(EndiannessUtil.NATIVE_ACCESS, null, address, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putShort(long address, short x) {
-        if (is2BytesAligned(address)) {
+        if (AlignmentUtil.is2BytesAligned(address)) {
             super.putShort(address, x);
         } else {
-            EndiannessUtil.writeShort(NATIVE_ACCESS, null, address, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeShort(EndiannessUtil.NATIVE_ACCESS, null, address, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public int getInt(long address) {
-        return is4BytesAligned(address) ? super.getInt(address)
-                : EndiannessUtil.readInt(NATIVE_ACCESS, null, address, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is4BytesAligned(address) ? super.getInt(address)
+                : EndiannessUtil.readInt(EndiannessUtil.NATIVE_ACCESS, null, address, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putInt(long address, int x) {
-        if (is4BytesAligned(address)) {
+        if (AlignmentUtil.is4BytesAligned(address)) {
             super.putInt(address, x);
         } else {
-            EndiannessUtil.writeInt(NATIVE_ACCESS, null, address, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeInt(EndiannessUtil.NATIVE_ACCESS, null, address, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public float getFloat(long address) {
-        return is4BytesAligned(address) ? super.getFloat(address)
-                : EndiannessUtil.readFloat(NATIVE_ACCESS, null, address, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is4BytesAligned(address) ? super.getFloat(address)
+                : EndiannessUtil.readFloat(EndiannessUtil.NATIVE_ACCESS, null, address, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putFloat(long address, float x) {
-        if (is4BytesAligned(address)) {
+        if (AlignmentUtil.is4BytesAligned(address)) {
             super.putFloat(address, x);
         } else {
-            EndiannessUtil.writeFloat(NATIVE_ACCESS, null, address, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeFloat(EndiannessUtil.NATIVE_ACCESS, null, address, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public long getLong(long address) {
-        return is8BytesAligned(address) ? super.getLong(address)
-                : EndiannessUtil.readLong(NATIVE_ACCESS, null, address, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is8BytesAligned(address) ? super.getLong(address)
+                : EndiannessUtil.readLong(EndiannessUtil.NATIVE_ACCESS, null, address, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putLong(long address, long x) {
-        if (is8BytesAligned(address)) {
+        if (AlignmentUtil.is8BytesAligned(address)) {
             super.putLong(address, x);
         } else {
-            EndiannessUtil.writeLong(NATIVE_ACCESS, null, address, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeLong(EndiannessUtil.NATIVE_ACCESS, null, address, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public double getDouble(long address) {
-        return is8BytesAligned(address) ? super.getDouble(address)
-                : EndiannessUtil.readDouble(NATIVE_ACCESS, null, address, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is8BytesAligned(address) ? super.getDouble(address)
+                : EndiannessUtil.readDouble(EndiannessUtil.NATIVE_ACCESS, null, address, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putDouble(long address, double x) {
-        if (is8BytesAligned(address)) {
+        if (AlignmentUtil.is8BytesAligned(address)) {
             super.putDouble(address, x);
         } else {
-            EndiannessUtil.writeDouble(NATIVE_ACCESS, null, address, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeDouble(EndiannessUtil.NATIVE_ACCESS, null, address, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
@@ -161,109 +152,109 @@ public final class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
 
     @Override
     public char getCharVolatile(long address) {
-        check2BytesAligned(address);
+        AlignmentUtil.check2BytesAligned(address);
         return super.getCharVolatile(address);
     }
 
     @Override
     public void putCharVolatile(long address, char x) {
-        check2BytesAligned(address);
+        AlignmentUtil.check2BytesAligned(address);
         super.putCharVolatile(address, x);
     }
 
     @Override
     public short getShortVolatile(long address) {
-        check2BytesAligned(address);
+        AlignmentUtil.check2BytesAligned(address);
         return super.getShortVolatile(address);
     }
 
     @Override
     public void putShortVolatile(long address, short x) {
-        check2BytesAligned(address);
+        AlignmentUtil.check2BytesAligned(address);
         super.putShortVolatile(address, x);
     }
 
     @Override
     public int getIntVolatile(long address) {
-        check4BytesAligned(address);
+        AlignmentUtil.check4BytesAligned(address);
         return super.getIntVolatile(address);
     }
 
     @Override
     public void putIntVolatile(long address, int x) {
-        check4BytesAligned(address);
+        AlignmentUtil.check4BytesAligned(address);
         super.putIntVolatile(address, x);
     }
 
     @Override
     public float getFloatVolatile(long address) {
-        check4BytesAligned(address);
+        AlignmentUtil.check4BytesAligned(address);
         return super.getFloatVolatile(address);
     }
 
     @Override
     public void putFloatVolatile(long address, float x) {
-        check4BytesAligned(address);
+        AlignmentUtil.check4BytesAligned(address);
         super.putFloatVolatile(address, x);
     }
 
     @Override
     public long getLongVolatile(long address) {
-        check8BytesAligned(address);
+        AlignmentUtil.check8BytesAligned(address);
         return super.getLongVolatile(address);
     }
 
     @Override
     public void putLongVolatile(long address, long x) {
-        check8BytesAligned(address);
+        AlignmentUtil.check8BytesAligned(address);
         super.putLongVolatile(address, x);
     }
 
     @Override
     public double getDoubleVolatile(long address) {
-        check8BytesAligned(address);
+        AlignmentUtil.check8BytesAligned(address);
         return super.getDoubleVolatile(address);
     }
 
     @Override
     public void putDoubleVolatile(long address, double x) {
-        check8BytesAligned(address);
+        AlignmentUtil.check8BytesAligned(address);
         super.putDoubleVolatile(address, x);
     }
 
     @Override
     public void putOrderedInt(long address, int x) {
-        check4BytesAligned(address);
+        AlignmentUtil.check4BytesAligned(address);
         super.putOrderedInt(address, x);
     }
 
     @Override
     public void putOrderedLong(long address, long x) {
-        check8BytesAligned(address);
+        AlignmentUtil.check8BytesAligned(address);
         super.putOrderedLong(address, x);
     }
 
     @Override
     public void putOrderedObject(long address, Object x) {
-        checkReferenceAligned(address);
+        AlignmentUtil.checkReferenceAligned(address);
         super.putOrderedObject(address, x);
     }
 
     @Override
     public boolean compareAndSwapInt(long address, int expected, int x) {
-        check4BytesAligned(address);
+        AlignmentUtil.check4BytesAligned(address);
         return super.compareAndSwapInt(address, expected, x);
     }
 
     @Override
     public boolean compareAndSwapLong(long address, long expected, long x) {
-        check8BytesAligned(address);
+        AlignmentUtil.check8BytesAligned(address);
         return super.compareAndSwapLong(address, expected, x);
     }
 
     @Override
     public boolean compareAndSwapObject(long address, Object expected, Object x) {
-        checkReferenceAligned(address);
+        AlignmentUtil.checkReferenceAligned(address);
         return super.compareAndSwapObject(address, expected, x);
     }
 
@@ -275,103 +266,103 @@ public final class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
 
     @Override
     public Object getObject(Object base, long offset) {
-        checkReferenceAligned(offset);
+        AlignmentUtil.checkReferenceAligned(offset);
         return super.getObject(base, offset);
     }
 
     @Override
     public void putObject(Object base, long offset, Object x) {
-        checkReferenceAligned(offset);
+        AlignmentUtil.checkReferenceAligned(offset);
         super.putObject(base, offset, x);
     }
 
     @Override
     public char getChar(Object base, long offset) {
-        return is2BytesAligned(offset) ? super.getChar(base, offset)
-                : EndiannessUtil.readChar(NATIVE_ACCESS, base, offset, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is2BytesAligned(offset) ? super.getChar(base, offset)
+                : EndiannessUtil.readChar(EndiannessUtil.NATIVE_ACCESS, base, offset, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putChar(Object base, long offset, char x) {
-        if (is2BytesAligned(offset)) {
+        if (AlignmentUtil.is2BytesAligned(offset)) {
             super.putChar(base, offset, x);
         } else {
-            EndiannessUtil.writeChar(NATIVE_ACCESS, base, offset, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeChar(EndiannessUtil.NATIVE_ACCESS, base, offset, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public short getShort(Object base, long offset) {
-        return is2BytesAligned(offset) ? super.getShort(base, offset)
-                : EndiannessUtil.readShort(NATIVE_ACCESS, base, offset, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is2BytesAligned(offset) ? super.getShort(base, offset)
+                : EndiannessUtil.readShort(EndiannessUtil.NATIVE_ACCESS, base, offset, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putShort(Object base, long offset, short x) {
-        if (is2BytesAligned(offset)) {
+        if (AlignmentUtil.is2BytesAligned(offset)) {
             super.putShort(base, offset, x);
         } else {
-            EndiannessUtil.writeShort(NATIVE_ACCESS, base, offset, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeShort(EndiannessUtil.NATIVE_ACCESS, base, offset, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public int getInt(Object base, long offset) {
-        return is4BytesAligned(offset) ? super.getInt(base, offset)
-                : EndiannessUtil.readInt(NATIVE_ACCESS, base, offset, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is4BytesAligned(offset) ? super.getInt(base, offset)
+                : EndiannessUtil.readInt(EndiannessUtil.NATIVE_ACCESS, base, offset, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putInt(Object base, long offset, int x) {
-        if (is4BytesAligned(offset)) {
+        if (AlignmentUtil.is4BytesAligned(offset)) {
             super.putInt(base, offset, x);
         } else {
-            EndiannessUtil.writeInt(NATIVE_ACCESS, base, offset, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeInt(EndiannessUtil.NATIVE_ACCESS, base, offset, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public float getFloat(Object base, long offset) {
-        return is4BytesAligned(offset) ? super.getFloat(base, offset)
-                : EndiannessUtil.readFloat(NATIVE_ACCESS, base, offset, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is4BytesAligned(offset) ? super.getFloat(base, offset)
+                : EndiannessUtil.readFloat(EndiannessUtil.NATIVE_ACCESS, base, offset, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putFloat(Object base, long offset, float x) {
-        if (is4BytesAligned(offset)) {
+        if (AlignmentUtil.is4BytesAligned(offset)) {
             super.putFloat(base, offset, x);
         } else {
-            EndiannessUtil.writeFloat(NATIVE_ACCESS, base, offset, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeFloat(EndiannessUtil.NATIVE_ACCESS, base, offset, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public long getLong(Object base, long offset) {
-        return is8BytesAligned(offset) ? super.getLong(base, offset)
-                : EndiannessUtil.readLong(NATIVE_ACCESS, base, offset, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is8BytesAligned(offset) ? super.getLong(base, offset)
+                : EndiannessUtil.readLong(EndiannessUtil.NATIVE_ACCESS, base, offset, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putLong(Object base, long offset, long x) {
-        if (is8BytesAligned(offset)) {
+        if (AlignmentUtil.is8BytesAligned(offset)) {
             super.putLong(base, offset, x);
         } else {
-            EndiannessUtil.writeLong(NATIVE_ACCESS, base, offset, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeLong(EndiannessUtil.NATIVE_ACCESS, base, offset, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
     @Override
     public double getDouble(Object base, long offset) {
-        return is8BytesAligned(offset) ? super.getDouble(base, offset)
-                : EndiannessUtil.readDouble(NATIVE_ACCESS, base, offset, IS_PLATFORM_BIG_ENDIAN);
+        return AlignmentUtil.is8BytesAligned(offset) ? super.getDouble(base, offset)
+                : EndiannessUtil.readDouble(EndiannessUtil.NATIVE_ACCESS, base, offset, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
     }
 
     @Override
     public void putDouble(Object base, long offset, double x) {
-        if (is8BytesAligned(offset)) {
+        if (AlignmentUtil.is8BytesAligned(offset)) {
             super.putDouble(base, offset, x);
         } else {
-            EndiannessUtil.writeDouble(NATIVE_ACCESS, base, offset, x, IS_PLATFORM_BIG_ENDIAN);
+            EndiannessUtil.writeDouble(EndiannessUtil.NATIVE_ACCESS, base, offset, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
 
@@ -381,121 +372,121 @@ public final class AlignmentAwareMemoryAccessor extends StandardMemoryAccessor {
 
     @Override
     public Object getObjectVolatile(Object base, long offset) {
-        checkReferenceAligned(offset);
+        AlignmentUtil.checkReferenceAligned(offset);
         return super.getObjectVolatile(base, offset);
     }
 
     @Override
     public void putObjectVolatile(Object base, long offset, Object x) {
-        checkReferenceAligned(offset);
+        AlignmentUtil.checkReferenceAligned(offset);
         super.putObjectVolatile(base, offset, x);
     }
 
     @Override
     public char getCharVolatile(Object base, long offset) {
-        check2BytesAligned(offset);
+        AlignmentUtil.check2BytesAligned(offset);
         return super.getCharVolatile(base, offset);
     }
 
     @Override
     public void putCharVolatile(Object base, long offset, char x) {
-        check2BytesAligned(offset);
+        AlignmentUtil.check2BytesAligned(offset);
         super.putCharVolatile(base, offset, x);
     }
 
     @Override
     public short getShortVolatile(Object base, long offset) {
-        check2BytesAligned(offset);
+        AlignmentUtil.check2BytesAligned(offset);
         return super.getShortVolatile(base, offset);
     }
 
     @Override
     public void putShortVolatile(Object base, long offset, short x) {
-        check2BytesAligned(offset);
+        AlignmentUtil.check2BytesAligned(offset);
         super.putShortVolatile(base, offset, x);
     }
 
     @Override
     public int getIntVolatile(Object base, long offset) {
-        check4BytesAligned(offset);
+        AlignmentUtil.check4BytesAligned(offset);
         return super.getIntVolatile(base, offset);
     }
 
     @Override
     public void putIntVolatile(Object base, long offset, int x) {
-        check4BytesAligned(offset);
+        AlignmentUtil.check4BytesAligned(offset);
         super.putIntVolatile(base, offset, x);
     }
 
     @Override
     public float getFloatVolatile(Object base, long offset) {
-        check4BytesAligned(offset);
+        AlignmentUtil.check4BytesAligned(offset);
         return super.getFloatVolatile(base, offset);
     }
 
     @Override
     public void putFloatVolatile(Object base, long offset, float x) {
-        check4BytesAligned(offset);
+        AlignmentUtil.check4BytesAligned(offset);
         super.putFloatVolatile(base, offset, x);
     }
 
     @Override
     public long getLongVolatile(Object base, long offset) {
-        check8BytesAligned(offset);
+        AlignmentUtil.check8BytesAligned(offset);
         return super.getLongVolatile(base, offset);
     }
 
     @Override
     public void putLongVolatile(Object base, long offset, long x) {
-        check8BytesAligned(offset);
+        AlignmentUtil.check8BytesAligned(offset);
         super.putLongVolatile(base, offset, x);
     }
 
     @Override
     public double getDoubleVolatile(Object base, long offset) {
-        check8BytesAligned(offset);
+        AlignmentUtil.check8BytesAligned(offset);
         return super.getDoubleVolatile(base, offset);
     }
 
     @Override
     public void putDoubleVolatile(Object base, long offset, double x) {
-        check8BytesAligned(offset);
+        AlignmentUtil.check8BytesAligned(offset);
         super.putDoubleVolatile(base, offset, x);
     }
 
     @Override
     public void putOrderedInt(Object base, long offset, int x) {
-        check4BytesAligned(offset);
+        AlignmentUtil.check4BytesAligned(offset);
         super.putOrderedInt(base, offset, x);
     }
 
     @Override
     public void putOrderedLong(Object base, long offset, long x) {
-        check8BytesAligned(offset);
+        AlignmentUtil.check8BytesAligned(offset);
         super.putOrderedLong(base, offset, x);
     }
 
     @Override
     public void putOrderedObject(Object base, long offset, Object x) {
-        checkReferenceAligned(offset);
+        AlignmentUtil.checkReferenceAligned(offset);
         super.putOrderedObject(base, offset, x);
     }
 
     @Override
     public boolean compareAndSwapInt(Object base, long offset, int expected, int x) {
-        check4BytesAligned(offset);
+        AlignmentUtil.check4BytesAligned(offset);
         return super.compareAndSwapInt(base, offset, expected, x);
     }
 
     @Override
     public boolean compareAndSwapLong(Object base, long offset, long expected, long x) {
-        check8BytesAligned(offset);
+        AlignmentUtil.check8BytesAligned(offset);
         return super.compareAndSwapLong(base, offset, expected, x);
     }
 
     @Override
     public boolean compareAndSwapObject(Object base, long offset, Object expected, Object x) {
-        checkReferenceAligned(offset);
+        AlignmentUtil.checkReferenceAligned(offset);
         return super.compareAndSwapObject(base, offset, expected, x);
     }
 }

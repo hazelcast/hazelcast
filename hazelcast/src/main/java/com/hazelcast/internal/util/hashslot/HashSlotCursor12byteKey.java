@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.memory.impl;
+package com.hazelcast.internal.util.hashslot;
 
-import com.hazelcast.test.AutoRegisteredTestRule;
+/**
+ * Cursor over assigned slots in a {@link HashSlotArray12byteKey}. Initially the cursor's location is
+ * before the first slot and the cursor is invalid.
+ */
+public interface HashSlotCursor12byteKey extends HashSlotCursor {
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+    /**
+     * @return key part 1 of current slot.
+     * @throws IllegalStateException if the cursor is invalid.
+     */
+    long key1();
 
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-@Retention(RUNTIME)
-@Target(ElementType.METHOD)
-@AutoRegisteredTestRule(testRule = TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport.class)
-public @interface RequiresUnalignedMemoryAccessSupport {
+    /**
+     * @return key part 2 of current slot.
+     * @throws IllegalStateException if the cursor is invalid.
+     */
+    int key2();
 }

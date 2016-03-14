@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.hashslot;
+package com.hazelcast.internal.util.hashslot;
 
 /**
- * Cursor over assigned slots in a {@link HashSlotArrayTwinKey}. Initially the cursor's location is
+ * Cursor over assigned slots in a {@link HashSlotArray16byteKey}. Initially the cursor's location is
  * before the first map entry and the cursor is invalid.
  */
-public interface HashSlotCursorTwinKey {
-    /**
-     * Resets the cursor to the initial state.
-     */
-    void reset();
-
-    /**
-     * Advances to the next assigned slot.
-     * @return true if the cursor advanced. If false is returned, the cursor is now invalid.
-     * @throws IllegalStateException if a previous call to advance() already returned false.
-     */
-    boolean advance();
+public interface HashSlotCursor16byteKey extends HashSlotCursor {
 
     /**
      * @return key part 1 of current slot.
@@ -44,10 +33,4 @@ public interface HashSlotCursorTwinKey {
      * @throws IllegalStateException if the cursor is invalid.
      */
     long key2();
-
-    /**
-     * @return Address of the current slot's value block.
-     * @throws IllegalStateException if the cursor is invalid.
-     */
-    long valueAddress();
 }

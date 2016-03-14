@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.memory;
-
-import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.nio.Disposable;
+package com.hazelcast.internal.util.hashslot;
 
 /**
- * Contract to allocate and access memory in an abstract address space, which is not necessarily the
- * underlying CPU's native address space. Memory allocated from the {@link MemoryAllocator} must be
- * accessed through the {@link MemoryAccessor}.
+ * Cursor over assigned hash slots in a {@link HashSlotArray8byteKey}.
+ * Initially the cursor's location is before the first slot and the cursor is invalid.
  */
-public interface MemoryManager extends Disposable {
+public interface HashSlotCursor8byteKey extends HashSlotCursor {
 
     /**
-     * @return the associated {@link MemoryAllocator}
+     * @return the key of the current slot.
+     * @throws IllegalStateException if the cursor is invalid.
      */
-    MemoryAllocator getAllocator();
-
-    /**
-     * @return the associated {@link MemoryAccessor}
-     */
-    MemoryAccessor getAccessor();
+    long key();
 }

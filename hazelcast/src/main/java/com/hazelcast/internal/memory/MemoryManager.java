@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.memory.impl;
+package com.hazelcast.internal.memory;
 
-import com.hazelcast.test.AutoRegisteredTestRule;
+import com.hazelcast.nio.Disposable;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+/**
+ * Contract to allocate and access memory in an abstract address space, which is not necessarily the
+ * underlying CPU's native address space. Memory allocated from the {@link MemoryAllocator} must be
+ * accessed through the {@link MemoryAccessor}.
+ */
+public interface MemoryManager extends Disposable {
 
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+    /**
+     * @return the associated {@link MemoryAllocator}
+     */
+    MemoryAllocator getAllocator();
 
-@Retention(RUNTIME)
-@Target(ElementType.METHOD)
-@AutoRegisteredTestRule(testRule = TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport.class)
-public @interface RequiresUnalignedMemoryAccessSupport {
+    /**
+     * @return the associated {@link MemoryAccessor}
+     */
+    MemoryAccessor getAccessor();
 }

@@ -17,10 +17,9 @@
 package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.EndianMemoryAccessor;
+import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 
 import java.lang.reflect.Field;
-
-import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 
 /**
  * Base class for big- and little-endian implementations.
@@ -29,71 +28,71 @@ abstract class EndianAccessorBase implements EndianMemoryAccessor {
 
     @Override
     public long objectFieldOffset(Field field) {
-        return MEM.objectFieldOffset(field);
+        return GlobalMemoryAccessorRegistry.MEM.objectFieldOffset(field);
     }
 
     @Override
     public int arrayBaseOffset(Class<?> arrayClass) {
-        return MEM.arrayBaseOffset(arrayClass);
+        return GlobalMemoryAccessorRegistry.MEM.arrayBaseOffset(arrayClass);
     }
 
     @Override
     public int arrayIndexScale(Class<?> arrayClass) {
-        return MEM.arrayIndexScale(arrayClass);
+        return GlobalMemoryAccessorRegistry.MEM.arrayIndexScale(arrayClass);
     }
 
     @Override
     public void copyMemory(Object srcObj, long srcOffset, Object destObj, long destOffset, long lengthBytes) {
-        MEM.copyMemory(srcObj, srcOffset, destObj, destOffset, lengthBytes);
+        GlobalMemoryAccessorRegistry.MEM.copyMemory(srcObj, srcOffset, destObj, destOffset, lengthBytes);
     }
 
     @Override
     public Object getObject(Object base, long offset) {
-        return MEM.getObject(base, offset);
+        return GlobalMemoryAccessorRegistry.MEM.getObject(base, offset);
     }
 
     @Override
     public void putObject(Object base, long offset, Object x) {
-        MEM.putObject(base, offset, x);
+        GlobalMemoryAccessorRegistry.MEM.putObject(base, offset, x);
     }
 
     @Override
     public boolean getBoolean(Object base, long offset) {
-        return MEM.getBoolean(base, offset);
+        return GlobalMemoryAccessorRegistry.MEM.getBoolean(base, offset);
     }
 
     @Override
     public void putBoolean(Object base, long offset, boolean x) {
-        MEM.putBoolean(base, offset, x);
+        GlobalMemoryAccessorRegistry.MEM.putBoolean(base, offset, x);
     }
 
     @Override
     public byte getByte(Object base, long offset) {
-        return MEM.getByte(base, offset);
+        return GlobalMemoryAccessorRegistry.MEM.getByte(base, offset);
     }
 
     @Override
     public void putByte(Object base, long offset, byte x) {
-        MEM.putByte(base, offset, x);
+        GlobalMemoryAccessorRegistry.MEM.putByte(base, offset, x);
     }
 
     @Override
     public boolean getBoolean(long address) {
-        return MEM.getBoolean(address);
+        return GlobalMemoryAccessorRegistry.MEM.getBoolean(address);
     }
 
     @Override
     public void putBoolean(long address, boolean x) {
-        MEM.putBoolean(address, x);
+        GlobalMemoryAccessorRegistry.MEM.putBoolean(address, x);
     }
 
     @Override
     public byte getByte(long address) {
-        return MEM.getByte(address);
+        return GlobalMemoryAccessorRegistry.MEM.getByte(address);
     }
 
     @Override
     public void putByte(long address, byte x) {
-        MEM.putByte(address, x);
+        GlobalMemoryAccessorRegistry.MEM.putByte(address, x);
     }
 }

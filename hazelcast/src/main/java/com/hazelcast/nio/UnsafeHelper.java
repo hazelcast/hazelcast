@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.internal.memory.MemoryAccessor;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -37,9 +38,9 @@ import static com.hazelcast.util.QuickMath.normalize;
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
  * </p>
- * @deprecated Use {@link com.hazelcast.internal.memory.MemoryAccessor} instead due to following reasons:
+ * @deprecated Use {@link MemoryAccessor} instead due to following reasons:
  * <p>
- * Deprecated to {@link com.hazelcast.internal.memory.MemoryAccessor} due to following reasons:
+ * Deprecated to {@link MemoryAccessor} due to following reasons:
  * <ul>
  *     <li>
  *          Preventing hard-dependency to {@link sun.misc.Unsafe}/

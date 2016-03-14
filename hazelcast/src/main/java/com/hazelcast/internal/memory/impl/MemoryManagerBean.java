@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.memory;
+package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.memory.MemoryManager;
 
 /**
  * Simp]e implementation of {@link MemoryManager} which aggregates the
