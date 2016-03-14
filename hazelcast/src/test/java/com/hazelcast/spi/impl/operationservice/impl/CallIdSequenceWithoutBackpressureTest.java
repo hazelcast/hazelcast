@@ -29,11 +29,13 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
 
     private HazelcastInstance hz;
     private NodeEngineImpl nodeEngine;
+    private OperationServiceImpl operationService;
 
     @Before
     public void setup() {
         hz = createHazelcastInstance();
         nodeEngine = getNode(hz).nodeEngine;
+        operationService = getOperationServiceImpl(hz);
     }
 
     @Test
@@ -116,6 +118,6 @@ public class CallIdSequenceWithoutBackpressureTest extends HazelcastTestSupport 
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
+        return new PartitionInvocation(operationService, null, op, 0, 0, 0, 0, 0, null, false);
     }
 }

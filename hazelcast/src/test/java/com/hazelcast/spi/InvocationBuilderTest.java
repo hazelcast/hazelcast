@@ -21,24 +21,24 @@ public class InvocationBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void getTargetExecutionCallback_whenNull() {
-        InvocationBuilder builder = new MockInvocationBuilder(null, null, null, 0, null);
+        InvocationBuilder builder = new MockInvocationBuilder(null, null, 0, null);
 
         assertNull(builder.getTargetExecutionCallback());
     }
 
     @Test
     public void getTargetExecutionCallback_whenExecutionCallbackInstance() {
-        InvocationBuilder invocationBuilder = new MockInvocationBuilder(null, null, null, 0, null);
+        InvocationBuilder builder = new MockInvocationBuilder(null, null, 0, null);
 
-        ExecutionCallback executionCallback = mock(ExecutionCallback.class);
-        invocationBuilder.setExecutionCallback(executionCallback);
+        ExecutionCallback callback = mock(ExecutionCallback.class);
+        builder.setExecutionCallback(callback);
 
-        assertSame(executionCallback, invocationBuilder.getTargetExecutionCallback());
+        assertSame(callback, builder.getTargetExecutionCallback());
     }
 
     class MockInvocationBuilder extends InvocationBuilder {
-        public MockInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId, Address target) {
-            super(nodeEngine, serviceName, op, partitionId, target);
+        public MockInvocationBuilder(String serviceName, Operation op, int partitionId, Address target) {
+            super(serviceName, op, partitionId, target);
         }
 
         @Override

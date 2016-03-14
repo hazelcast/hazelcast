@@ -20,33 +20,35 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
  */
 public class InvocationBuilderImpl extends InvocationBuilder {
 
-    public InvocationBuilderImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
-        this(nodeEngine, serviceName, op, partitionId, null);
+    private final OperationServiceImpl operationService;
+
+    public InvocationBuilderImpl(OperationServiceImpl operationService, String serviceName, Operation op, int partitionId) {
+        this(operationService, serviceName, op, partitionId, null);
     }
 
-    public InvocationBuilderImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-        this(nodeEngine, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
+    public InvocationBuilderImpl(OperationServiceImpl operationService, String serviceName, Operation op, Address target) {
+        this(operationService, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
     }
 
-    private InvocationBuilderImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+    private InvocationBuilderImpl(OperationServiceImpl operationService, String serviceName, Operation op,
                                   int partitionId, Address target) {
-        super(nodeEngine, serviceName, op, partitionId, target);
+        super(serviceName, op, partitionId, target);
+        this.operationService = operationService;
     }
 
     @Override
     public InternalCompletableFuture invoke() {
         if (target == null) {
-            return new PartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
+            return new PartitionInvocation(operationService, serviceName, op, partitionId, replicaIndex,
                     tryCount, tryPauseMillis, callTimeout, getTargetExecutionCallback(), resultDeserialized).invoke();
         } else {
-            return new TargetInvocation(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
+            return new TargetInvocation(operationService, serviceName, op, target, tryCount, tryPauseMillis,
                     callTimeout, getTargetExecutionCallback(), resultDeserialized).invoke();
         }
     }

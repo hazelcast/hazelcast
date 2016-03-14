@@ -21,7 +21,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
@@ -31,10 +30,10 @@ public final class TargetInvocation extends Invocation {
 
     private final Address target;
 
-    public TargetInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+    public TargetInvocation(OperationServiceImpl operationService, String serviceName, Operation op,
                             Address target, int tryCount, long tryPauseMillis, long callTimeout,
                             ExecutionCallback callback, boolean resultDeserialized) {
-        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
+        super(operationService, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
                 tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized);
         this.target = target;
     }

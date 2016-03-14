@@ -71,7 +71,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         started.countDown();
 
         PartitionInvocation invocation = new PartitionInvocation(
-                getNodeEngineImpl(hz), null, isStillExecutingOperation, partitionId, 0, 0, 0, 0, null, false);
+                getOperationServiceImpl(hz), null, isStillExecutingOperation, partitionId, 0, 0, 0, 0, null, false);
 
         boolean result = isStillRunningService.isOperationExecuting(invocation);
         assertFalse(result);
@@ -182,7 +182,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
 
         final IsStillRunningService isStillRunningService = operationService.getIsStillRunningService();
 
-        final TargetInvocation invocation = new TargetInvocation(getNodeEngineImpl(hz1), null,
+        final TargetInvocation invocation = new TargetInvocation(getOperationServiceImpl(hz1), null,
                 new DummyOperation(callTimeoutMillis * 10), remoteAddress, 0, 0,
                 callTimeoutMillis, null, true);
         final InvocationFuture future = invocation.invoke();
@@ -221,7 +221,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         // invoke on the "remote" member
         Address remoteAddress = getNode(hz2).getThisAddress();
 
-        TargetInvocation invocation = new TargetInvocation(getNodeEngineImpl(hz1), null,
+        TargetInvocation invocation = new TargetInvocation(getOperationServiceImpl(hz1), null,
                 new DummyOperation(1), remoteAddress, 0, 0,
                 callTimeoutMillis, null, true);
         final InvocationFuture future = invocation.invoke();
