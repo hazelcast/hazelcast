@@ -82,17 +82,7 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
-    private final ILogger logger;
-
-    private final AtomicBoolean joined = new AtomicBoolean(false);
-
-    private volatile NodeState state;
-
-    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
-
-    private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
-
-    private final SerializationService serializationService;
+    private static final int THREAD_SLEEP_DURATION_MS = 500;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -118,19 +108,31 @@ public class Node {
 
     public final MemberImpl localMember;
 
-    private volatile Address masterAddress;
-
     public final HazelcastInstanceImpl hazelcastInstance;
 
     public final LoggingServiceImpl loggingService;
+
+    public final SecurityContext securityContext;
+
+    private final ILogger logger;
+
+    private final AtomicBoolean joined = new AtomicBoolean(false);
+
+    private volatile NodeState state;
+
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
+
+    private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
+
+    private final SerializationService serializationService;
+
+    private volatile Address masterAddress;
 
     private final Joiner joiner;
 
     private final NodeExtension nodeExtension;
 
     private ManagementCenterService managementCenterService;
-
-    public final SecurityContext securityContext;
 
     private final ClassLoader configClassLoader;
 
@@ -140,12 +142,7 @@ public class Node {
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
-
     private final boolean liteMember;
-
-    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
-        return nodeContext.createNodeExtension(this);
-    }
 
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
@@ -168,7 +165,8 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address), hazelcastInstance, memberAttributes, liteMember);
+            localMember = new MemberImpl(address, true, createMemberUuid(address),
+                                            hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
@@ -274,6 +272,10 @@ public class Node {
                 logger.warning(error, t);
             }
         }
+    }
+
+    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
+        return nodeContext.createNodeExtension(this);
     }
 
     public ManagementCenterService getManagementCenterService() {
@@ -465,7 +467,7 @@ public class Node {
         logger.info("Node is already shutting down... Waiting for shutdown process to complete...");
         while (state != NodeState.SHUT_DOWN) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(THREAD_SLEEP_DURATION_MS);
             } catch (InterruptedException e) {
                 logger.warning("Interrupted while waiting for shutdown!");
                 return;
