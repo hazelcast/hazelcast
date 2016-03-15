@@ -14,59 +14,57 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.memory.impl;
+package com.hazelcast.internal.util.sort;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.util.sort.QuickSorter;
 
-import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
 /**
  * {@link QuickSorter} implementation for a memory block which stores an array of {@code int}s.
  * Memory is accessed using the provided {@link MemoryAccessor}.
  */
-public class LongMemArrayQuickSorter extends MemArrayQuickSorter {
+public class IntMemArrayQuickSorter extends MemArrayQuickSorter {
 
-    private long pivot;
+    private int pivot;
 
-    public LongMemArrayQuickSorter(MemoryAccessor mem, long baseAddress) {
+    public IntMemArrayQuickSorter(MemoryAccessor mem, long baseAddress) {
         super(mem, baseAddress);
     }
 
     @Override
     protected void loadPivot(long index) {
-        pivot = longAtIndex(index);
+        pivot = intAtIndex(index);
     }
 
     @Override
     protected boolean isLessThanPivot(long index) {
-        return longAtIndex(index) < pivot;
+        return intAtIndex(index) < pivot;
     }
 
     @Override
     protected boolean isGreaterThanPivot(long index) {
-        return longAtIndex(index) > pivot;
+        return intAtIndex(index) > pivot;
     }
 
     @Override
     protected void swap(long index1, long index2) {
         final long addrOfIndex1 = addrOfIndex(index1);
         final long addrOfIndex2 = addrOfIndex(index2);
-        final long tmp = longAtAddress(addrOfIndex1);
-        mem.putLong(addrOfIndex1, longAtAddress(addrOfIndex2));
-        mem.putLong(addrOfIndex2, tmp);
+        final int tmp = intAtAddress(addrOfIndex1);
+        mem.putInt(addrOfIndex1, intAtAddress(addrOfIndex2));
+        mem.putInt(addrOfIndex2, tmp);
     }
 
     private long addrOfIndex(long index) {
-        return baseAddress + LONG_SIZE_IN_BYTES * index;
+        return baseAddress + INT_SIZE_IN_BYTES * index;
     }
 
-    private long longAtIndex(long index) {
-        return longAtAddress(addrOfIndex(index));
+    private int intAtIndex(long index) {
+        return intAtAddress(addrOfIndex(index));
     }
 
-    private long longAtAddress(long address) {
-        return mem.getLong(address);
+    private int intAtAddress(long address) {
+        return mem.getInt(address);
     }
-
 }

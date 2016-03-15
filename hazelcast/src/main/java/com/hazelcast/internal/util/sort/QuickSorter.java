@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.memory;
+package com.hazelcast.internal.util.sort;
 
 /** <p>
  * Base class for QuickSort implementations. Works with an abstract notion of a mutable array of
