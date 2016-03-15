@@ -9,7 +9,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.IMapEvent;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EventLostEvent;
@@ -23,9 +23,10 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -264,7 +265,8 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
             }
             Object value = getValueOrOldValue(eventData);
             Data keyData = eventData.getKeyData();
-            QueryEntry entry = new QueryEntry(serializationService, keyData, value, Extractors.empty());
+            QueryEntry entry = new QueryEntry((InternalSerializationService) serializationService,
+                    keyData, value, Extractors.empty());
             return filter.eval(entry);
         }
 

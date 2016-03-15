@@ -7,7 +7,7 @@ import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheScheduler
 import com.hazelcast.client.impl.querycache.subscriber.ClientSubscriberContext;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
@@ -16,6 +16,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 
@@ -60,8 +61,8 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     }
 
     @Override
-    public SerializationService getSerializationService() {
-        return clientContext.getSerializationService();
+    public InternalSerializationService getSerializationService() {
+        return (InternalSerializationService) clientContext.getSerializationService();
     }
 
     @Override
