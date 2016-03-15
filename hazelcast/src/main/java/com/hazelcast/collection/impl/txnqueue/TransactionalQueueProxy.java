@@ -54,7 +54,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         checkNotNull(unit, "TimeUnit should not be null.");
 
         checkTransactionState();
-        Data data = getNodeEngine().toData(e);
+        Data data = toData(e);
         return offerInternal(data, unit.toMillis(timeout));
     }
 

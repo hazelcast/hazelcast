@@ -61,7 +61,15 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return getNodeEngine().toData(object);
     }
 
-    protected final <E> InternalCompletableFuture<E> invokeOnPartition(Operation operation) {
+    protected final <E> E toObject(Data object) {
+        return getNodeEngine().toObject(object);
+    }
+
+    protected final <E> E toObject(Object object) {
+        return getNodeEngine().toObject(object);
+    }
+
+    protected  <E> InternalCompletableFuture<E> invokeOnPartition(Operation operation) {
         return getNodeEngine().getOperationService().invokeOnPartition(operation);
     }
 

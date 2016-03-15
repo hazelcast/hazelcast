@@ -23,21 +23,21 @@ import com.hazelcast.collection.impl.collection.operations.CollectionCompareAndR
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionGetAllOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOperation;
-import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -50,7 +50,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -98,69 +97,73 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
 
     public boolean add(E e) {
         checkObjectNotNull(e);
-        final Data value = getNodeEngine().toData(e);
-        final CollectionAddOperation operation = new CollectionAddOperation(name, value);
-        final Boolean result = invoke(operation);
-        return result;
+
+        Operation operation = new CollectionAddOperation(name, toData(e))
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     public boolean remove(Object o) {
         checkObjectNotNull(o);
 
-        final Data value = getNodeEngine().toData(o);
-        final CollectionRemoveOperation operation = new CollectionRemoveOperation(name, value);
-        final Boolean result = invoke(operation);
-        return result;
+        Operation operation = new CollectionRemoveOperation(name, toData(o))
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     public int size() {
-        final CollectionSizeOperation operation = new CollectionSizeOperation(name);
-        final Integer result = invoke(operation);
-        return result;
+        Operation operation = new CollectionSizeOperation(name)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Integer) invokeOnPartition(operation).join();
     }
 
     public boolean isEmpty() {
-        final CollectionIsEmptyOperation operation = new CollectionIsEmptyOperation(name);
-        final Boolean result = invoke(operation);
-        return result;
+        Operation operation = new CollectionIsEmptyOperation(name)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     public boolean contains(Object o) {
         checkObjectNotNull(o);
 
         Set<Data> valueSet = new HashSet<Data>(1);
-        valueSet.add(getNodeEngine().toData(o));
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
-        final Boolean result = invoke(operation);
-        return result;
+        valueSet.add(toData(o));
+        Operation operation = new CollectionContainsOperation(name, valueSet)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     public boolean containsAll(Collection<?> c) {
         checkObjectNotNull(c);
 
         Set<Data> valueSet = new HashSet<Data>(c.size());
-        final NodeEngine nodeEngine = getNodeEngine();
         for (Object o : c) {
             checkObjectNotNull(o);
-            valueSet.add(nodeEngine.toData(o));
+            valueSet.add(toData(o));
         }
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
-        final Boolean result = invoke(operation);
-        return result;
+        Operation operation = new CollectionContainsOperation(name, valueSet)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     public boolean addAll(Collection<? extends E> c) {
         checkObjectNotNull(c);
 
         List<Data> valueList = new ArrayList<Data>(c.size());
-        final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {
             checkObjectNotNull(e);
-            valueList.add(nodeEngine.toData(e));
+            valueList.add(toData(e));
         }
-        final CollectionAddAllOperation operation = new CollectionAddAllOperation(name, valueList);
-        final Boolean result = invoke(operation);
-        return result;
+        Operation operation = new CollectionAddAllOperation(name, valueList)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     public boolean retainAll(Collection<?> c) {
@@ -175,19 +178,21 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         checkObjectNotNull(c);
 
         Set<Data> valueSet = new HashSet<Data>(c.size());
-        final NodeEngine nodeEngine = getNodeEngine();
         for (Object o : c) {
             checkObjectNotNull(o);
-            valueSet.add(nodeEngine.toData(o));
+            valueSet.add(toData(o));
         }
-        final CollectionCompareAndRemoveOperation operation = new CollectionCompareAndRemoveOperation(name, retain, valueSet);
-        final Boolean result = invoke(operation);
-        return result;
+        Operation operation = new CollectionCompareAndRemoveOperation(name, retain, valueSet)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     public void clear() {
-        final CollectionClearOperation operation = new CollectionClearOperation(name);
-        invoke(operation);
+        Operation operation = new CollectionClearOperation(name)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        invokeOnPartition(operation).join();
     }
 
     public Iterator<E> iterator() {
@@ -203,8 +208,10 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     private Collection<E> getAll() {
-        CollectionGetAllOperation operation = new CollectionGetAllOperation(name);
-        SerializableList result = invoke(operation);
+        Operation operation = new CollectionGetAllOperation(name)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        SerializableList result = (SerializableList) invokeOnPartition(operation).join();
         List<Data> collection = result.getCollection();
         SerializationService serializationService = getNodeEngine().getSerializationService();
         return new UnmodifiableLazyList<E>(collection, serializationService);
@@ -220,16 +227,6 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public boolean removeItemListener(String registrationId) {
         EventService eventService = getNodeEngine().getEventService();
         return eventService.deregisterListener(getServiceName(), name, registrationId);
-    }
-
-    protected <T> T invoke(CollectionOperation operation) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
-            return nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
     }
 
     protected void checkObjectNotNull(Object o) {

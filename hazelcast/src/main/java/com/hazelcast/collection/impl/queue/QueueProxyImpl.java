@@ -61,6 +61,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         try {
             return offer(e, 0, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
+            //todo: interrupt is consumed
             return false;
         }
     }
@@ -72,8 +73,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public boolean offer(E e, long timeout, TimeUnit timeUnit) throws InterruptedException {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data data = nodeEngine.toData(e);
+        Data data = toData(e);
         return offerInternal(data, timeUnit.toMillis(timeout));
     }
 
@@ -84,22 +84,19 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public E poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Object data = pollInternal(timeUnit.toMillis(timeout));
-        return nodeEngine.toObject(data);
+        Object data = pollInternal(timeUnit.toMillis(timeout));
+        return toObject(data);
     }
 
     @Override
     public boolean remove(Object o) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data data = nodeEngine.toData(o);
+        Data data = toData(o);
         return removeInternal(data);
     }
 
     @Override
     public boolean contains(Object o) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data data = nodeEngine.toData(o);
+        Data data = toData(o);
         List<Data> dataSet = new ArrayList<Data>(1);
         dataSet.add(data);
         return containsInternal(dataSet);
@@ -115,10 +112,9 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         checkNotNull(objects, "Collection is null");
         checkFalse(this.equals(objects), "Can not drain to same Queue");
 
-        final NodeEngine nodeEngine = getNodeEngine();
         Collection<Data> dataList = drainInternal(i);
         for (Data data : dataList) {
-            E e = nodeEngine.toObject(data);
+            E e = toObject(data);
             objects.add(e);
         }
         return dataList.size();
@@ -154,9 +150,8 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public E peek() {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Object data = peekInternal();
-        return nodeEngine.toObject(data);
+        Object data = peekInternal();
+        return toObject(data);
     }
 
     @Override
@@ -213,20 +208,18 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     }
 
     private List<Data> getDataList(Collection<?> objects) {
-        final NodeEngine nodeEngine = getNodeEngine();
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
-            dataList.add(nodeEngine.toData(o));
+            dataList.add(toData(o));
         }
         return dataList;
     }
 
     private List<Data> toDataList(Collection<?> objects) {
-        final NodeEngine nodeEngine = getNodeEngine();
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
             checkNotNull(o, "Object is null");
-            dataList.add(nodeEngine.toData(o));
+            dataList.add(toData(o));
         }
         return dataList;
     }

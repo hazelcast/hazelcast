@@ -26,9 +26,10 @@ import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.core.IList;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
@@ -54,17 +55,18 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         checkObjectNotNull(e);
         checkIndexNotNegative(index);
 
-        final Data value = getNodeEngine().toData(e);
-        final ListAddOperation operation = new ListAddOperation(name, index, value);
-        invoke(operation);
+        Operation operation = new ListAddOperation(name, index, toData(e))
+                .setPartitionId(partitionId);
+        invokeOnPartition(operation).join();
     }
 
     @Override
     public E get(int index) {
         checkIndexNotNegative(index);
 
-        final ListGetOperation operation = new ListGetOperation(name, index);
-        return invoke(operation);
+        Operation operation = new ListGetOperation(name, index)
+                .setPartitionId(partitionId);
+        return (E) invokeOnPartition(operation).join();
     }
 
     @Override
@@ -72,17 +74,18 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         checkObjectNotNull(element);
         checkIndexNotNegative(index);
 
-        final Data value = getNodeEngine().toData(element);
-        final ListSetOperation operation = new ListSetOperation(name, index, value);
-        return invoke(operation);
+        Operation operation = new ListSetOperation(name, index, toData(element))
+                .setPartitionId(partitionId);
+        return (E) invokeOnPartition(operation).join();
     }
 
     @Override
     public E remove(int index) {
         checkIndexNotNegative(index);
 
-        final ListRemoveOperation operation = new ListRemoveOperation(name, index);
-        return invoke(operation);
+        Operation operation = new ListRemoveOperation(name, index)
+                .setPartitionId(partitionId);
+        return (E) invokeOnPartition(operation).join();
     }
 
     @Override
@@ -98,10 +101,9 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     private int indexOfInternal(boolean last, Object o) {
         checkObjectNotNull(o);
 
-        final Data value = getNodeEngine().toData(o);
-        final ListIndexOfOperation operation = new ListIndexOfOperation(name, last, value);
-        final Integer result = invoke(operation);
-        return result;
+        Operation operation = new ListIndexOfOperation(name, last, toData(o))
+                .setPartitionId(partitionId);
+        return (Integer) invokeOnPartition(operation).join();
     }
 
     @Override
@@ -110,14 +112,13 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
         checkIndexNotNegative(index);
 
         List<Data> valueList = new ArrayList<Data>(c.size());
-        final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {
             checkObjectNotNull(e);
-            valueList.add(nodeEngine.toData(e));
+            valueList.add(toData(e));
         }
-        final ListAddAllOperation operation = new ListAddAllOperation(name, index, valueList);
-        final Boolean result = invoke(operation);
-        return result;
+        Operation operation = new ListAddAllOperation(name, index, valueList)
+                .setPartitionId(partitionId);
+        return (Boolean) invokeOnPartition(operation).join();
     }
 
     @Override
@@ -133,8 +134,9 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
 
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
-        ListSubOperation operation = new ListSubOperation(name, fromIndex, toIndex);
-        SerializableList result = invoke(operation);
+        Operation operation = new ListSubOperation(name, fromIndex, toIndex)
+                .setPartitionId(partitionId);
+        SerializableList result = (SerializableList) invokeOnPartition(operation).join();
         List<Data> collection = result.getCollection();
         SerializationService serializationService = getNodeEngine().getSerializationService();
         return new UnmodifiableLazyList<E>(collection, serializationService);
