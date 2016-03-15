@@ -21,7 +21,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -68,7 +68,7 @@ public class SystemClockChangeTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws Exception {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
         shutdownIsolatedNode();
         resetClock();
     }

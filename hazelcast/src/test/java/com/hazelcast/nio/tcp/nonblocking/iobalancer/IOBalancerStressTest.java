@@ -21,7 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
@@ -56,7 +56,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Repeat(25)

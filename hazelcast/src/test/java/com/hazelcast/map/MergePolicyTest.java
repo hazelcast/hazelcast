@@ -11,7 +11,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
@@ -40,7 +40,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
