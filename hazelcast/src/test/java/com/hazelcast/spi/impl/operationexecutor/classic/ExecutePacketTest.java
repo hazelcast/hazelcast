@@ -2,8 +2,8 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,7 +40,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler)ExecutePacketTest.this.responsePacketHandler;
+                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) ExecutePacketTest.this.responsePacketHandler;
                 responsePacketHandler.packets.contains(packet);
                 responsePacketHandler.responses.contains(normalResponse);
             }

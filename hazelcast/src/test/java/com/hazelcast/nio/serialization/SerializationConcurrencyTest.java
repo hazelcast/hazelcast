@@ -16,10 +16,10 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -118,7 +118,7 @@ public class SerializationConcurrencyTest {
 
         private String street;
 
-        private int no ;
+        private int no;
 
         public Address() {
         }
@@ -230,9 +230,9 @@ public class SerializationConcurrencyTest {
 
     static class PortableAddress implements Portable {
 
-        private String street ;
+        private String street;
 
-        private int no ;
+        private int no;
 
         public PortableAddress() {
         }

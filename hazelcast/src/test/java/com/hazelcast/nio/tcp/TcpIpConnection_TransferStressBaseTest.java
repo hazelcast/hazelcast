@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * This test will concurrently write to a single connection and check if all the data transmitted, is received
  * on the other side.
- *
+ * <p/>
  * In the past we had some issues with packet not getting written. So this test will write various size packets (from small
  * to very large).
  */
@@ -105,7 +105,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
                 logger.info("writer last write time millis : " + writer.getLastWriteTimeMillis());
 
                 logger.info("reader total frames handled   : " + reader.getNormalFramesReadCounter().get()
-                                                               + reader.getPriorityFramesReadCounter().get());
+                        + reader.getPriorityFramesReadCounter().get());
                 logger.info("reader last read time millis  : " + reader.getLastReadTimeMillis());
 
                 assertEquals(expectedNormalPackets, reader.getNormalFramesReadCounter().get());
@@ -190,7 +190,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
                     continue;
                 }
 
-                for (;;) {
+                for (; ; ) {
                     sleep(random.nextInt(5));
                     if (getUsage() < 10 || stop.get()) {
                         break;

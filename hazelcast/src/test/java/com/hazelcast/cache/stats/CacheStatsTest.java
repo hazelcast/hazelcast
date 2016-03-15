@@ -9,7 +9,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -414,10 +413,10 @@ public class CacheStatsTest extends CacheTestSupport {
             CacheManager cm = cp.getCacheManager();
             cache = createCache(cacheName);
             ICache<Integer, String> c = cm.getCache(cacheName).unwrap(ICache.class);
-            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics(), c.getLocalCacheStatistics() };
+            allStats = new CacheStatistics[]{cache.getLocalCacheStatistics(), c.getLocalCacheStatistics()};
         } else {
             cache = createCache(cacheName);
-            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics() };
+            allStats = new CacheStatistics[]{cache.getLocalCacheStatistics()};
         }
 
         final int ENTRY_COUNT = 100;
@@ -431,7 +430,7 @@ public class CacheStatsTest extends CacheTestSupport {
         if (triggerMigration && instance2 != null) {
             // Shutdown the second instance to trigger migration so first instance will be owner of all partitions.
             instance2.shutdown();
-            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics() };
+            allStats = new CacheStatistics[]{cache.getLocalCacheStatistics()};
 
             assertOwnedEntryCount(ENTRY_COUNT, allStats);
         }
@@ -462,7 +461,7 @@ public class CacheStatsTest extends CacheTestSupport {
             CachingProvider cp = getCachingProvider(instance2);
             CacheManager cm = cp.getCacheManager();
             ICache<Integer, String> c = cm.getCache(cacheName).unwrap(ICache.class);
-            allStats = new CacheStatistics[]{ cache.getLocalCacheStatistics(), c.getLocalCacheStatistics() };
+            allStats = new CacheStatistics[]{cache.getLocalCacheStatistics(), c.getLocalCacheStatistics()};
 
             assertOwnedEntryCount(ENTRY_COUNT, allStats);
         }
@@ -489,7 +488,7 @@ public class CacheStatsTest extends CacheTestSupport {
         }
         return ownedEntryCount;
     }
-    
+
     private void assertOwnedEntryCount(final int expectedEntryCount, final CacheStatistics... statsList) {
         assertTrueEventually(new AssertTask() {
             @Override

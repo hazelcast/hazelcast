@@ -52,5 +52,7 @@ public class TestSerializerHook implements SerializerHook {
         public SampleIdentifiedDataSerializable read(ObjectDataInput in) throws IOException {
             return null;
         }
-    };
+    }
+
+    ;
 }

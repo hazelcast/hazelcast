@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class IndexesTest {
 
-    final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testAndWithSingleEntry() throws Exception {

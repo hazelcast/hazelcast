@@ -33,8 +33,8 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.LifecycleServiceImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -235,7 +235,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -255,7 +255,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext2.nearCache.get(
-                                    nearCacheTestContext2.serializationService.toData(key)));
+                            nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
         }
@@ -270,7 +270,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -280,9 +280,9 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     protected void putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat inMemoryFormat) {
         Config config = createConfig();
         config.setProperty(GroupProperties.PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE,
-                           String.valueOf(Integer.MAX_VALUE));
+                String.valueOf(Integer.MAX_VALUE));
         config.setProperty(GroupProperties.PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS,
-                           String.valueOf(Integer.MAX_VALUE));
+                String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance instanceToShutdown = hazelcastFactory.newHazelcastInstance(config);
 
         warmUpPartitions(serverInstance, instanceToShutdown);
@@ -310,7 +310,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
             final String exceptedValue = entry.getValue();
             final String actualValue =
                     nearCacheTestContext1.nearCache.get(
-                        nearCacheTestContext1.serializationService.toData(key));
+                            nearCacheTestContext1.serializationService.toData(key));
             assertEquals(exceptedValue, actualValue);
         }
 
@@ -338,7 +338,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext1.nearCache.get(
-                                    nearCacheTestContext1.serializationService.toData(key)));
+                            nearCacheTestContext1.serializationService.toData(key)));
                 }
             });
         }
@@ -365,7 +365,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -385,7 +385,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext2.nearCache.get(
-                                    nearCacheTestContext2.serializationService.toData(key)));
+                            nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
         }
@@ -412,7 +412,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertEquals(value,
-                                 nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.nearCache.get(
                                     nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
@@ -429,7 +429,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
                 @Override
                 public void run() throws Exception {
                     assertNull(nearCacheTestContext2.nearCache.get(
-                                    nearCacheTestContext2.serializationService.toData(key)));
+                            nearCacheTestContext2.serializationService.toData(key)));
                 }
             });
         }

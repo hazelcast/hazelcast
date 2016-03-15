@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class LifeCycleListenerTest extends HazelcastTestSupport{
+public class LifeCycleListenerTest extends HazelcastTestSupport {
 
     @Test(timeout = 15 * 1000)
     public void testListenerNoDeadLock() throws Exception {
@@ -48,7 +48,7 @@ public class LifeCycleListenerTest extends HazelcastTestSupport{
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    static class MyLifecycleListener implements LifecycleListener{
+    static class MyLifecycleListener implements LifecycleListener {
 
         private CountDownLatch latch;
 
@@ -58,7 +58,7 @@ public class LifeCycleListenerTest extends HazelcastTestSupport{
 
         @Override
         public void stateChanged(LifecycleEvent event) {
-            if( event.getState() == LifecycleEvent.LifecycleState.STARTED){
+            if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
                 Hazelcast.getHazelcastInstanceByName("_hzInstance_1_dev");
                 latch.countDown();
             }

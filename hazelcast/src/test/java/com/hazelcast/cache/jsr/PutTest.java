@@ -28,7 +28,7 @@ public class PutTest
         extends org.jsr107.tck.PutTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

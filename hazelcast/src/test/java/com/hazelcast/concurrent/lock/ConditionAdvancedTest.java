@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConditionAdvancedTest extends HazelcastTestSupport{
+public class ConditionAdvancedTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testInterruptionDuringWaiting() throws InterruptedException {

@@ -90,6 +90,7 @@ public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
             public int getPartitionId() {
                 return partitionId;
             }
+
             @Override
             public void run() {
             }

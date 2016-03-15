@@ -38,7 +38,12 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -162,9 +167,9 @@ public class MemberListTest {
 
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections. <String, Object> emptyMap()));
-        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections. <String, Object> emptyMap()));
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections. <String, Object> emptyMap()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
         n2.clusterService.updateMembers(members);
         n2.setMasterAddress(m2.getAddress());
 
@@ -202,8 +207,8 @@ public class MemberListTest {
         final Node n2 = TestUtil.getNode(h2);
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections. <String, Object> emptyMap()));
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections. <String, Object> emptyMap()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
         n2.clusterService.updateMembers(members);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
@@ -286,9 +291,9 @@ public class MemberListTest {
             }
         }
         throw
-            new IllegalStateException("Unable to create " + instanceCount
-                    + " instances from base port " + basePort
-                    + " at " + INSTANCE_CREATE_ATTEMPT_COUNT);
+                new IllegalStateException("Unable to create " + instanceCount
+                        + " instances from base port " + basePort
+                        + " at " + INSTANCE_CREATE_ATTEMPT_COUNT);
     }
 
     private static List<Config> buildConfigurations(int configCount, int basePort) {

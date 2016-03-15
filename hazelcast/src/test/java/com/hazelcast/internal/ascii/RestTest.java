@@ -56,20 +56,20 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class RestTest extends HazelcastTestSupport{
+public class RestTest extends HazelcastTestSupport {
 
     final static Config config = new XmlConfigBuilder().build();
 
     @Before
     public void setup() throws IOException {
-        config.setProperty(GroupProperty.REST_ENABLED.getName(),"true");
+        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
     }
 
     @After
     public void tearDown() throws IOException {
         Hazelcast.shutdownAll();
     }
-    
+
     @Test
     public void testTtl_issue1783() throws IOException, InterruptedException {
         String name = "map";
@@ -234,8 +234,8 @@ public class RestTest extends HazelcastTestSupport{
             @Override
             public void run()
                     throws Exception {
-            assertEquals(ClusterState.FROZEN, instance1.getCluster().getClusterState());
-            assertEquals(ClusterState.FROZEN, instance2.getCluster().getClusterState());
+                assertEquals(ClusterState.FROZEN, instance1.getCluster().getClusterState());
+                assertEquals(ClusterState.FROZEN, instance2.getCluster().getClusterState());
             }
         });
     }

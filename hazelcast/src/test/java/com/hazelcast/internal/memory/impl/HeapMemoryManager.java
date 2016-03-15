@@ -161,40 +161,63 @@ public class HeapMemoryManager implements MemoryManager {
             Arrays.fill(storage, fromIndex, fromIndex + (int) lengthBytes, value);
         }
 
-        @Override public boolean getBoolean(long address) {
+        @Override
+        public boolean getBoolean(long address) {
             throw new UnsupportedOperationException();
         }
-        @Override public void putBoolean(long address, boolean x) {
+
+        @Override
+        public void putBoolean(long address, boolean x) {
             throw new UnsupportedOperationException();
         }
-        @Override public byte getByte(long address) {
+
+        @Override
+        public byte getByte(long address) {
             throw new UnsupportedOperationException();
         }
-        @Override public void putByte(long address, byte x) {
+
+        @Override
+        public void putByte(long address, byte x) {
             throw new UnsupportedOperationException();
         }
-        @Override public char getChar(long address) {
+
+        @Override
+        public char getChar(long address) {
             throw new UnsupportedOperationException();
         }
-        @Override public void putChar(long address, char x) {
+
+        @Override
+        public void putChar(long address, char x) {
             throw new UnsupportedOperationException();
         }
-        @Override public short getShort(long address) {
+
+        @Override
+        public short getShort(long address) {
             throw new UnsupportedOperationException();
         }
-        @Override public void putShort(long address, short x) {
+
+        @Override
+        public void putShort(long address, short x) {
             throw new UnsupportedOperationException();
         }
-        @Override public float getFloat(long address) {
+
+        @Override
+        public float getFloat(long address) {
             throw new UnsupportedOperationException();
         }
-        @Override public void putFloat(long address, float x) {
+
+        @Override
+        public void putFloat(long address, float x) {
             throw new UnsupportedOperationException();
         }
-        @Override public double getDouble(long address) {
+
+        @Override
+        public double getDouble(long address) {
             throw new UnsupportedOperationException();
         }
-        @Override public void putDouble(long address, double x) {
+
+        @Override
+        public void putDouble(long address, double x) {
             throw new UnsupportedOperationException();
         }
     }

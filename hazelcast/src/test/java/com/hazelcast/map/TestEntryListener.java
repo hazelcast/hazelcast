@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MapEvent;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestEntryListener implements EntryListener, HazelcastInstanceAware {

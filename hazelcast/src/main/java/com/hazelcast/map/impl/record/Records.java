@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
 
@@ -54,7 +54,7 @@ public final class Records {
     /**
      * Get current cached value from the record.
      * This method protects you against accidental exposure of cached value mutex into rest of the code.
-     *
+     * <p/>
      * Use it instead of raw {@link Record#getCachedValueUnsafe()} See
      * {@link #getValueOrCachedValue(Record, SerializationService)}
      * for details.
@@ -63,7 +63,7 @@ public final class Records {
      * @return
      */
     public static Object getCachedValue(Record record) {
-        for (;;) {
+        for (; ; ) {
             Object cachedValue = record.getCachedValueUnsafe();
             if (!(cachedValue instanceof Thread)) {
                 return cachedValue;
@@ -80,16 +80,16 @@ public final class Records {
      * Return cached value where appropriate, otherwise return the actual value.
      * Value caching makes sense when:
      * <ul>
-     *     <li>Portable serialization is not used</li>
-     *     <li>OBJECT InMemoryFormat is not used</li>
+     * <li>Portable serialization is not used</li>
+     * <li>OBJECT InMemoryFormat is not used</li>
      * </ul>
-     *
+     * <p/>
      * If Record does not contain cached value and is found appropriate (see above) then new cache value is created
      * by de-serializing the {@link Record#getValue()}
-     *
+     * <p/>
      * The newly de-deserialized value may not be stored into the Record cache when the record has been modified
      * while the method was running.
-     *
+     * <p/>
      * WARNING: This method may temporarily set an arbitrary object into the Record cache - this object acts as mutex.
      * The mutex should never be returned to the outside world. Use {@link #getCachedValue(Record)} instead of raw
      * {@link Record#getCachedValueUnsafe()} to protect from accidental mutex exposure to the user-code.
@@ -104,7 +104,7 @@ public final class Records {
             //record does not support caching at all
             return record.getValue();
         }
-        for (;;) {
+        for (; ; ) {
             if (cachedValue == null) {
                 Object valueBeforeCas = record.getValue();
                 if (!shouldCache(valueBeforeCas)) {
@@ -170,7 +170,6 @@ public final class Records {
      * currentThread inside cachedValue acts as "deserialization in-progress" marker
      * if the actual deserialized value is instance of Thread then we need to wrap it
      * otherwise it might be mistaken for the "deserialization in-progress" marker.
-     *
      */
     private static final class ThreadWrapper extends Thread {
         private final Thread wrappedValue;

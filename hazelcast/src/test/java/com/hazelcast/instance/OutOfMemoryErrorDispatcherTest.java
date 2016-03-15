@@ -48,7 +48,7 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void onOutOfMemory(){
+    public void onOutOfMemory() {
         OutOfMemoryError oome = new OutOfMemoryError();
         OutOfMemoryHandler handler = mock(OutOfMemoryHandler.class);
         when(handler.shouldHandle(oome)).thenReturn(Boolean.TRUE);
@@ -66,7 +66,7 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
         verify(handler).onOutOfMemory(oome, registeredInstances);
         //make sure that the registered instances are removed.
         assertArrayEquals(new HazelcastInstance[]{}, OutOfMemoryErrorDispatcher.current());
-     }
+    }
 
     @Test
     public void register() {
@@ -216,7 +216,7 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
     }
 
     private void test_DefaultOutOfMemoryHandler_using_accessor(MemoryInfoAccessor memoryInfoAccessor,
-            VerificationMode verificationMode) {
+                                                               VerificationMode verificationMode) {
 
         OutOfMemoryError oome = new OutOfMemoryError();
 

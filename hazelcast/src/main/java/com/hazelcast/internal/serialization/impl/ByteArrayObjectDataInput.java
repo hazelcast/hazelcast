@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
@@ -42,17 +42,17 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     int mark;
 
-    final SerializationService service;
+    final InternalSerializationService service;
 
     char[] charBuffer;
 
     private final boolean bigEndian;
 
-    ByteArrayObjectDataInput(byte[] data, SerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataInput(byte[] data, InternalSerializationService service, ByteOrder byteOrder) {
         this(data, 0, service, byteOrder);
     }
 
-    ByteArrayObjectDataInput(byte[] data, int offset, SerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.service = service;

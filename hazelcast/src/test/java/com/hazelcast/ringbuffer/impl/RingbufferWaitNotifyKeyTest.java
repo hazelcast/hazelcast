@@ -16,21 +16,21 @@ public class RingbufferWaitNotifyKeyTest {
 
     @Test
     public void test_equals() {
-        test_equals(new RingbufferWaitNotifyKey("peter","java"),
-                new RingbufferWaitNotifyKey("peter","java"),true);
-        test_equals(new RingbufferWaitNotifyKey("peter","java"),
-                new RingbufferWaitNotifyKey("peter","c#"),false);
-        test_equals(new RingbufferWaitNotifyKey("peter","java"),
-                new RingbufferWaitNotifyKey("talip","java"),false);
-        test_equals(new RingbufferWaitNotifyKey("peter","java"),
-                new RingbufferWaitNotifyKey("talip","c#"),false);
-        test_equals(new RingbufferWaitNotifyKey("peter","java"),
+        test_equals(new RingbufferWaitNotifyKey("peter", "java"),
+                new RingbufferWaitNotifyKey("peter", "java"), true);
+        test_equals(new RingbufferWaitNotifyKey("peter", "java"),
+                new RingbufferWaitNotifyKey("peter", "c#"), false);
+        test_equals(new RingbufferWaitNotifyKey("peter", "java"),
+                new RingbufferWaitNotifyKey("talip", "java"), false);
+        test_equals(new RingbufferWaitNotifyKey("peter", "java"),
+                new RingbufferWaitNotifyKey("talip", "c#"), false);
+        test_equals(new RingbufferWaitNotifyKey("peter", "java"),
                 "", false);
-        test_equals(new RingbufferWaitNotifyKey("peter","java"),
-                 null, false);
+        test_equals(new RingbufferWaitNotifyKey("peter", "java"),
+                null, false);
 
-        RingbufferWaitNotifyKey key = new RingbufferWaitNotifyKey("peter","java");
-        test_equals(key,key, true);
+        RingbufferWaitNotifyKey key = new RingbufferWaitNotifyKey("peter", "java");
+        test_equals(key, key, true);
     }
 
     public void test_equals(Object key1, Object key2, boolean equals) {

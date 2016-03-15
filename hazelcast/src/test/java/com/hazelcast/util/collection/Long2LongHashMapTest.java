@@ -49,34 +49,40 @@ public class Long2LongHashMapTest {
 
     private Long2LongHashMap map = new Long2LongHashMap(MISSING_VALUE);
 
-    @Test public void shouldInitiallyBeEmpty() {
+    @Test
+    public void shouldInitiallyBeEmpty() {
         assertEquals(0, map.size());
         assertTrue(map.isEmpty());
     }
 
-    @Test public void getShouldReturnMissingValueWhenEmpty() {
+    @Test
+    public void getShouldReturnMissingValueWhenEmpty() {
         assertEquals(MISSING_VALUE, map.get(1L));
     }
 
-    @Test public void getShouldReturnMissingValueWhenThereIsNoElement() {
+    @Test
+    public void getShouldReturnMissingValueWhenThereIsNoElement() {
         map.put(1L, 1L);
 
         assertEquals(MISSING_VALUE, map.get(2L));
     }
 
-    @Test public void getShouldReturnPutValues() {
+    @Test
+    public void getShouldReturnPutValues() {
         map.put(1L, 1L);
 
         assertEquals(1L, map.get(1L));
     }
 
-    @Test public void putShouldReturnOldValue() {
+    @Test
+    public void putShouldReturnOldValue() {
         map.put(1L, 1L);
 
         assertEquals(1L, map.put(1L, 2L));
     }
 
-    @Test public void clearShouldResetSize() {
+    @Test
+    public void clearShouldResetSize() {
         map.put(1L, 1L);
         map.put(100L, 100L);
 
@@ -86,7 +92,8 @@ public class Long2LongHashMapTest {
         assertTrue(map.isEmpty());
     }
 
-    @Test public void clearShouldRemoveValues() {
+    @Test
+    public void clearShouldRemoveValues() {
         map.put(1L, 1L);
         map.put(100L, 100L);
 
@@ -96,7 +103,8 @@ public class Long2LongHashMapTest {
         assertEquals(MISSING_VALUE, map.get(100L));
     }
 
-    @Test public void forEachShouldLoopOverEveryElement() {
+    @Test
+    public void forEachShouldLoopOverEveryElement() {
         map.put(1L, 1L);
         map.put(100L, 100L);
 
@@ -109,7 +117,8 @@ public class Long2LongHashMapTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-    @Test public void cursorShouldLoopOverEveryElement() {
+    @Test
+    public void cursorShouldLoopOverEveryElement() {
         map.put(1L, 1L);
         map.put(100L, 100L);
         final LongLongCursor cursor = map.cursor();
@@ -121,41 +130,48 @@ public class Long2LongHashMapTest {
         assertEquals(100L, cursor.value());
     }
 
-    @Test public void shouldNotContainKeyOfAMissingKey() {
+    @Test
+    public void shouldNotContainKeyOfAMissingKey() {
         assertFalse(map.containsKey(1L));
     }
 
-    @Test public void shouldContainKeyOfAPresentKey() {
+    @Test
+    public void shouldContainKeyOfAPresentKey() {
         map.put(1L, 1L);
 
         assertTrue(map.containsKey(1L));
     }
 
-    @Test public void shouldNotContainValueForAMissingEntry() {
+    @Test
+    public void shouldNotContainValueForAMissingEntry() {
         assertFalse(map.containsValue(1L));
     }
 
-    @Test public void shouldContainValueForAPresentEntry() {
+    @Test
+    public void shouldContainValueForAPresentEntry() {
         map.put(1L, 1L);
 
         assertTrue(map.containsValue(1L));
     }
 
-    @Test public void shouldExposeValidKeySet() {
+    @Test
+    public void shouldExposeValidKeySet() {
         map.put(1L, 1L);
         map.put(2L, 2L);
 
         assertCollectionContainsElements(map.keySet());
     }
 
-    @Test public void shouldExposeValidValueSet() {
+    @Test
+    public void shouldExposeValidValueSet() {
         map.put(1L, 1L);
         map.put(2L, 2L);
 
         assertCollectionContainsElements(map.values());
     }
 
-    @Test public void shouldPutAllMembersOfAnotherHashMap() {
+    @Test
+    public void shouldPutAllMembersOfAnotherHashMap() {
         map.put(1L, 1L);
         map.put(2L, 3L);
 
@@ -172,7 +188,8 @@ public class Long2LongHashMapTest {
         assertEquals(4, map.get(3L));
     }
 
-    @Test public void entrySetShouldContainEntries() {
+    @Test
+    public void entrySetShouldContainEntries() {
         map.put(1L, 1L);
         map.put(2L, 3L);
 
@@ -188,17 +205,20 @@ public class Long2LongHashMapTest {
         assertFalse(it.hasNext());
     }
 
-    @Test public void removeShouldReturnMissing() {
+    @Test
+    public void removeShouldReturnMissing() {
         assertEquals(MISSING_VALUE, map.remove(1L));
     }
 
-    @Test public void removeShouldReturnValueRemoved() {
+    @Test
+    public void removeShouldReturnValueRemoved() {
         map.put(1L, 2L);
 
         assertEquals(2L, map.remove(1L));
     }
 
-    @Test public void removeShouldRemoveEntry() {
+    @Test
+    public void removeShouldRemoveEntry() {
         map.put(1L, 2L);
 
         map.remove(1L);
@@ -208,7 +228,8 @@ public class Long2LongHashMapTest {
         assertFalse(map.containsValue(2L));
     }
 
-    @Test public void shouldOnlyRemoveTheSpecifiedEntry() {
+    @Test
+    public void shouldOnlyRemoveTheSpecifiedEntry() {
         for (int i = 0; i < 8; i++) {
             map.put(i, i * 2);
         }
@@ -223,7 +244,8 @@ public class Long2LongHashMapTest {
         }
     }
 
-    @Test public void shouldResizeWhenMoreElementsAreAdded() {
+    @Test
+    public void shouldResizeWhenMoreElementsAreAdded() {
         for (int key = 0; key < 100; key++) {
             final int value = key * 2;
             assertEquals(MISSING_VALUE, map.put(key, value));
@@ -231,7 +253,8 @@ public class Long2LongHashMapTest {
         }
     }
 
-    @Test public void toStringShouldReportAllEntries() {
+    @Test
+    public void toStringShouldReportAllEntries() {
         map.put(1, 2);
         map.put(3, 4);
         assertEquals("{3->4 1->2}", map.toString());

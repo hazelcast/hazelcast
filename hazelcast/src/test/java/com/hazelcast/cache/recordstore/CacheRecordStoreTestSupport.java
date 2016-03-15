@@ -26,10 +26,10 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
@@ -87,7 +87,7 @@ public abstract class CacheRecordStoreTestSupport
         CacheConfig cacheConfig = createCacheConfig(cacheName, inMemoryFormat);
         cacheService.putCacheConfigIfAbsent(cacheConfig);
         return new CacheRecordStore(CACHE_NAME_PREFIX + cacheName, partitionId, nodeEngine,
-                                    (AbstractCacheService) cacheService);
+                (AbstractCacheService) cacheService);
     }
 
     protected ICacheRecordStore createCacheRecordStore(HazelcastInstance instance, InMemoryFormat inMemoryFormat) {

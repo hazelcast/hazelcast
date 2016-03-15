@@ -104,6 +104,7 @@ public class FlyweightTest {
         assertThat(byteBuffer.get(10), is((byte) 0x98));
         assertThat(byteBuffer.get(11), is((byte) 0xBA));
     }
+
     @Test
     public void shouldDecodeLong() {
         flyweight.set(0x12345678l);

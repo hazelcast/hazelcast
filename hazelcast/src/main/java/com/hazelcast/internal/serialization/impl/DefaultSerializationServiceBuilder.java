@@ -26,7 +26,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.internal.serialization.InputOutputFactory;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -206,7 +206,7 @@ public class DefaultSerializationServiceBuilder
     }
 
     @Override
-    public SerializationService build() {
+    public InternalSerializationService build() {
         initVersions();
         if (config != null) {
             addConfigDataSerializableFactories(dataSerializableFactories, config, classLoader);
@@ -215,7 +215,7 @@ public class DefaultSerializationServiceBuilder
         }
 
         InputOutputFactory inputOutputFactory = createInputOutputFactory();
-        SerializationService ss = createSerializationService(inputOutputFactory);
+        InternalSerializationService ss = createSerializationService(inputOutputFactory);
 
         registerSerializerHooks(ss);
 
@@ -258,7 +258,7 @@ public class DefaultSerializationServiceBuilder
         }
     }
 
-    protected SerializationService createSerializationService(InputOutputFactory inputOutputFactory) {
+    protected InternalSerializationService createSerializationService(InputOutputFactory inputOutputFactory) {
         switch (version) {
             case 1:
                 SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
@@ -275,7 +275,7 @@ public class DefaultSerializationServiceBuilder
         }
     }
 
-    private void registerSerializerHooks(SerializationService ss) {
+    private void registerSerializerHooks(InternalSerializationService ss) {
         SerializerHookLoader serializerHookLoader = new SerializerHookLoader(config, classLoader);
         Map<Class, Object> serializers = serializerHookLoader.getSerializers();
         for (Map.Entry<Class, Object> entry : serializers.entrySet()) {

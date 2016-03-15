@@ -2,8 +2,8 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -313,12 +313,12 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
         assertEquals(10, gauge.read());
     }
 
-    public  interface SomeInterface{
+    public interface SomeInterface {
         @Probe
         int method();
     }
 
-    public static class SomeInterfaceImplementation implements SomeInterface{
+    public static class SomeInterfaceImplementation implements SomeInterface {
         @Override
         public int method() {
             return 10;
@@ -339,12 +339,12 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
 
     public static abstract class ClassWithGauges {
         @Probe
-        int method(){
+        int method() {
             return 10;
         }
 
         @Probe
-        int field=10;
+        int field = 10;
     }
 
     public static class SubclassWithGauges extends ClassWithGauges {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,14 +25,15 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -169,7 +169,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static Packet toPacket(HazelcastInstance local, HazelcastInstance remote, Operation operation) {
-        SerializationService serializationService = getSerializationService(local);
+        InternalSerializationService serializationService = getSerializationService(local);
         ConnectionManager connectionManager = getConnectionManager(local);
 
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
@@ -188,7 +188,7 @@ public abstract class HazelcastTestSupport {
         return node.clusterService;
     }
 
-    public static SerializationService getSerializationService(HazelcastInstance hz) {
+    public static InternalSerializationService getSerializationService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.getSerializationService();
     }

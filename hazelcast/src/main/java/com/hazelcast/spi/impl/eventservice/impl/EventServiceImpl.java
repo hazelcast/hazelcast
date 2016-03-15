@@ -22,7 +22,8 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -40,7 +41,6 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
 
 import java.io.Closeable;
@@ -56,10 +56,10 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 public class EventServiceImpl implements InternalEventService {
 
@@ -91,12 +91,12 @@ public class EventServiceImpl implements InternalEventService {
     private final MwCounter totalFailures = newMwCounter();
     @Probe(name = "rejectedCount")
     private final MwCounter rejectedCount = newMwCounter();
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.logger = nodeEngine.getLogger(EventService.class.getName());
         GroupProperties groupProperties = nodeEngine.getNode().getGroupProperties();
         this.eventThreadCount = groupProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);

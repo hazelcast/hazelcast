@@ -25,7 +25,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.JavaDefaultSerializers;
@@ -34,6 +34,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -80,25 +81,25 @@ public class SerializationTest
         globalSerializerConfig.setOverrideJavaSerialization(true);
         final AtomicInteger writeCounter = new AtomicInteger();
         final AtomicInteger readCounter = new AtomicInteger();
-        final JavaDefaultSerializers.JavaSerializer javaSerializer = new JavaDefaultSerializers.JavaSerializer(true,false);
+        final JavaDefaultSerializers.JavaSerializer javaSerializer = new JavaDefaultSerializers.JavaSerializer(true, false);
         SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
                 globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
                     public void write(ObjectDataOutput out, Object v) throws IOException {
                         writeCounter.incrementAndGet();
-                        if(v instanceof Serializable){
+                        if (v instanceof Serializable) {
                             out.writeBoolean(true);
                             javaSerializer.write(out, v);
-                        } else if(v instanceof DummyValue){
+                        } else if (v instanceof DummyValue) {
                             out.writeBoolean(false);
-                            out.writeUTF(((DummyValue)v).s);
-                            out.writeInt(((DummyValue)v).k);
+                            out.writeUTF(((DummyValue) v).s);
+                            out.writeInt(((DummyValue) v).k);
                         }
                     }
 
                     public Object read(ObjectDataInput in) throws IOException {
                         readCounter.incrementAndGet();
                         boolean java = in.readBoolean();
-                        if(java) {
+                        if (java) {
                             return javaSerializer.read(in);
                         }
                         return new DummyValue(in.readUTF(), in.readInt());
@@ -173,7 +174,7 @@ public class SerializationTest
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
         operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
         OperationAccessor.setCallId(operation, 12345);
@@ -296,7 +297,7 @@ public class SerializationTest
         byte[] array = new byte[1024];
         new Random().nextBytes(array);
         Data data = ss.toData(array);
-        byte[] deserialized =  ss.toObject(data);
+        byte[] deserialized = ss.toObject(data);
         assertArrayEquals(array, deserialized);
     }
 
@@ -364,7 +365,7 @@ public class SerializationTest
         Properties properties = new Properties();
         properties.put(key, value);
         Data data = serializationService.toData(properties);
-        
+
         Properties output = serializationService.toObject(data);
         assertEquals(value, output.get(key));
     }
@@ -377,37 +378,37 @@ public class SerializationTest
     public void testCompressionOnExternalizables() throws Exception {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
         String test = "test";
-        ExternalizableString ex = new ExternalizableString(test);  
+        ExternalizableString ex = new ExternalizableString(test);
         Data data = serializationService.toData(ex);
-        
+
         ExternalizableString actual = serializationService.toObject(data);
         assertEquals(test, actual.value);
     }
-    
+
     private static class ExternalizableString implements Externalizable {
-        
-        String value; 
-        
+
+        String value;
+
         public ExternalizableString() {
-            
+
         }
-        
+
         public ExternalizableString(String value) {
             this.value = value;
         }
-        
+
         @Override
         public void writeExternal(ObjectOutput out) throws IOException {
-            out.writeUTF(value);            
+            out.writeUTF(value);
         }
 
         @Override
         public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-            value = in.readUTF();           
+            value = in.readUTF();
         }
-        
+
     }
-    
+
     @Test
     public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
         String uuid = UuidUtil.newUnsecureUuidString();

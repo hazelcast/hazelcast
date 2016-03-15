@@ -22,7 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -105,8 +105,8 @@ public class DefaultNodeExtension implements NodeExtension {
         return null;
     }
 
-    public SerializationService createSerializationService() {
-        SerializationService ss;
+    public InternalSerializationService createSerializationService() {
+        InternalSerializationService ss;
         try {
             Config config = node.getConfig();
             ClassLoader configClassLoader = node.getConfigClassLoader();
@@ -120,7 +120,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
             byte version = (byte) node.groupProperties.getInteger(GroupProperty.SERIALIZATION_VERSION);
 
-            ss = builder.setClassLoader(configClassLoader)
+            ss = (InternalSerializationService) builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(hazelcastInstance.managedContext)
                     .setPartitioningStrategy(partitioningStrategy)

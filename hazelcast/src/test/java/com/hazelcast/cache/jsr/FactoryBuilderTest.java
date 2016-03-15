@@ -28,7 +28,7 @@ public class FactoryBuilderTest
         extends javax.cache.configuration.FactoryBuilderTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

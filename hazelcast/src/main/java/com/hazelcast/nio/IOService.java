@@ -23,7 +23,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.WriteHandler;
@@ -131,7 +131,7 @@ public interface IOService {
 
     Object toObject(Data data);
 
-    SerializationService getSerializationService();
+    InternalSerializationService getSerializationService();
 
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 

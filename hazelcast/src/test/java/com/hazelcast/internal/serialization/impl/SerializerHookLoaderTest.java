@@ -17,7 +17,6 @@ import static org.junit.Assert.assertNotNull;
 
 /**
  * SerializerHookLoader Tester.
- *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})

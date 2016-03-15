@@ -42,7 +42,7 @@ public class ClusterRollingRestartTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "clusterState:{0},partitionAssignmentType:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {ClusterState.FROZEN, PartitionAssignmentType.NEVER},
                 {ClusterState.PASSIVE, PartitionAssignmentType.NEVER},
                 {ClusterState.FROZEN, PartitionAssignmentType.AT_THE_END},

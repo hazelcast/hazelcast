@@ -2,7 +2,6 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;

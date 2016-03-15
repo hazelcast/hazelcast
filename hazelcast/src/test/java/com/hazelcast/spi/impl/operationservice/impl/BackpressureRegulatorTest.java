@@ -148,7 +148,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         for (int iteration = 0; iteration < 10; iteration++) {
             int initialSyncDelay = regulator.syncDelay((Operation) op);
             int remainingSyncDelay = initialSyncDelay - 1;
-            for (int k = 0; k < initialSyncDelay-1; k++) {
+            for (int k = 0; k < initialSyncDelay - 1; k++) {
                 boolean result = regulator.isSyncForced(op);
                 assertFalse("no sync force expected", result);
 

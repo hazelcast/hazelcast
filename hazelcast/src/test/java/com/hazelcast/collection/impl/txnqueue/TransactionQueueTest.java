@@ -81,7 +81,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         context.commitTransaction();
 
         int size = f.get();
-        assertEquals(itemCount-1, size);
+        assertEquals(itemCount - 1, size);
     }
 
     @Test

@@ -4,10 +4,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.test.AssertTask;
@@ -15,7 +14,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,7 +35,7 @@ public class OverloadedConnectionsPluginTest extends AbstractPerformanceMonitorP
     private HazelcastInstance remote;
     private volatile boolean stop;
     private String remoteKey;
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void setup() throws InterruptedException {
@@ -87,14 +85,14 @@ public class OverloadedConnectionsPluginTest extends AbstractPerformanceMonitorP
     }
 
     @Test
-    public void toKey(){
+    public void toKey() {
         assertToKey(DummyOperation.class.getName(), new DummyOperation());
         assertToKey(Integer.class.getName(), new Integer(10));
-        assertToKey(Backup.class.getName()+"#"+DummyOperation.class.getName(),
-                new Backup(new DummyOperation(), getAddress(local),new long[0],true));
+        assertToKey(Backup.class.getName() + "#" + DummyOperation.class.getName(),
+                new Backup(new DummyOperation(), getAddress(local), new long[0], true));
     }
 
-    private void assertToKey(String key, Object object){
+    private void assertToKey(String key, Object object) {
         Packet packet = new Packet(serializationService.toBytes(object));
         assertEquals(key, plugin.toKey(packet));
     }

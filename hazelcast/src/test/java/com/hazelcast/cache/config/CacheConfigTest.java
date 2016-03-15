@@ -21,10 +21,14 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.XmlConfigBuilder;
@@ -40,11 +44,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -417,37 +416,37 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setAsyncBackupCount_whenItsNegative(){
+    public void setAsyncBackupCount_whenItsNegative() {
         CacheConfig config = new CacheConfig();
         config.setAsyncBackupCount(-1);
     }
 
     @Test
-    public void setAsyncBackupCount_whenItsZero (){
+    public void setAsyncBackupCount_whenItsZero() {
         CacheConfig config = new CacheConfig();
         config.setAsyncBackupCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setAsyncBackupCount_whenTooLarge (){
+    public void setAsyncBackupCount_whenTooLarge() {
         CacheConfig config = new CacheConfig();
         config.setAsyncBackupCount(200); //max allowed is 6..
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setBackupCount_whenItsNegative(){
+    public void setBackupCount_whenItsNegative() {
         CacheConfig config = new CacheConfig();
         config.setBackupCount(-1);
     }
 
     @Test
-    public void setBackupCount_whenItsZero(){
+    public void setBackupCount_whenItsZero() {
         CacheConfig config = new CacheConfig();
         config.setBackupCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setBackupCount_whenTooLarge(){
+    public void setBackupCount_whenTooLarge() {
         CacheConfig config = new CacheConfig();
         config.setBackupCount(200); //max allowed is 6..
     }

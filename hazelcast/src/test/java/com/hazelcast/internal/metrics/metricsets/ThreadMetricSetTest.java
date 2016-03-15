@@ -32,7 +32,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void utilityConstructor(){
+    public void utilityConstructor() {
         assertUtilityConstructor(ThreadMetricSet.class);
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
@@ -36,10 +36,10 @@ public class Indexes {
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
     private volatile boolean hasIndex;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private Extractors extractors;
 
-    public Indexes(SerializationService serializationService, Extractors extractors) {
+    public Indexes(InternalSerializationService serializationService, Extractors extractors) {
         this.serializationService = serializationService;
         this.extractors = extractors;
     }

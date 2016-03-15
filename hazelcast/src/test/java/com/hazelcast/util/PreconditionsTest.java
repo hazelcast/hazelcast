@@ -68,8 +68,8 @@ public class PreconditionsTest {
         checkBackupCount(MAX_BACKUP_COUNT, 0, true);
         checkBackupCount(0, MAX_BACKUP_COUNT, true);
         checkBackupCount(MAX_BACKUP_COUNT, 1, false);
-        checkBackupCount(MAX_BACKUP_COUNT+1, 0, false);
-        checkBackupCount(0, MAX_BACKUP_COUNT+1, false);
+        checkBackupCount(MAX_BACKUP_COUNT + 1, 0, false);
+        checkBackupCount(0, MAX_BACKUP_COUNT + 1, false);
     }
 
     public void checkBackupCount(int newBackupCount, int currentAsyncBackupCount, boolean success) {

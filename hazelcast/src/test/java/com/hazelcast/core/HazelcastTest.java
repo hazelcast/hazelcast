@@ -16,6 +16,16 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import static com.hazelcast.core.Hazelcast.getAllHazelcastInstances;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
@@ -23,24 +33,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastTest extends HazelcastTestSupport {
 
     @Before
     @After
-    public void cleanup(){
+    public void cleanup() {
         Hazelcast.shutdownAll();
         assertEquals(emptySet(), getAllHazelcastInstances());
     }

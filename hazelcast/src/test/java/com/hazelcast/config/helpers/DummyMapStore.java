@@ -1,6 +1,7 @@
 package com.hazelcast.config.helpers;
 
 import com.hazelcast.core.MapStore;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -8,7 +9,8 @@ import java.util.Set;
 
 public class DummyMapStore implements MapStore<Object, Object> {
 
-    public DummyMapStore(){}
+    public DummyMapStore() {
+    }
 
     @Override
     public void store(Object key, Object value) {

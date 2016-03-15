@@ -17,13 +17,13 @@
 package com.hazelcast.internal.serialization.impl;
 
 
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -40,13 +40,13 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
 /**
  * The {@link StreamSerializer} that handles:
  * <ol>
- *     <li>{@link DataSerializable}</li>
- *     <li>{@link IdentifiedDataSerializable}</li>
+ * <li>{@link DataSerializable}</li>
+ * <li>{@link IdentifiedDataSerializable}</li>
  * </ol>
- *
+ * <p/>
  * Due to the operation responding on deserialization errors this class
  * has a dependency to {@link com.hazelcast.nio.IOUtil#extractOperationCallId(com.hazelcast.nio.serialization.Data,
- * com.hazelcast.internal.serialization.SerializationService)}.
+ * com.hazelcast.internal.serialization.InternalSerializationService)}.
  * If the way the DataSerializer serializes values is changed the extract method needs to be changed too!
  */
 final class DataSerializableSerializer implements StreamSerializer<DataSerializable> {

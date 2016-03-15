@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractSerializationCompatibilityTest {
 
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
 
     @Test
     public void testSampleEncodeDecode() throws IOException {

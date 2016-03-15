@@ -390,7 +390,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
 
     }
 
-    public static class MaxValueChecker implements ValueChecker  {
+    public static class MaxValueChecker implements ValueChecker {
 
         private final int maxValue;
 

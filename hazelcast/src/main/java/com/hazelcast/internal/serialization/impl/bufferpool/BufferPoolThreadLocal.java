@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 
@@ -80,11 +80,11 @@ import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 public final class BufferPoolThreadLocal {
 
     private final ThreadLocal<WeakReference<BufferPool>> threadLocal = new ThreadLocal<WeakReference<BufferPool>>();
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final BufferPoolFactory bufferPoolFactory;
     private final Map<Thread, BufferPool> strongReferences = new ConcurrentReferenceHashMap<Thread, BufferPool>(WEAK, STRONG);
 
-    public BufferPoolThreadLocal(SerializationService serializationService, BufferPoolFactory bufferPoolFactory) {
+    public BufferPoolThreadLocal(InternalSerializationService serializationService, BufferPoolFactory bufferPoolFactory) {
         this.serializationService = serializationService;
         this.bufferPoolFactory = bufferPoolFactory;
     }

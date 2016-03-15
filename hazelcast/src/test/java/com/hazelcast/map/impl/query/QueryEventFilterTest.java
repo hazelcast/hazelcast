@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -201,7 +201,6 @@ public class QueryEventFilterTest {
 
         assertFalse(filter1.equals(filter2));
     }
-
 
 
     private QueryableEntry mockEntryWithKeyData(Data key) {

@@ -205,7 +205,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         BasicTestCallable task = new BasicTestCallable();
         String key = generateKeyOwnedBy(instance1);
         ICompletableFuture<String> future = (ICompletableFuture<String>) executorService.submitToKeyOwner(task, key);
-        assertEquals(BasicTestCallable.RESULT, future.get());;
+        assertEquals(BasicTestCallable.RESULT, future.get());
+        ;
 
         final CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
         future.andThen(callback);
@@ -662,7 +663,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         try {
             future1.get(2, TimeUnit.SECONDS);
             fail("SleepingTask should not return response");
-        }catch (TimeoutException ignored) {
+        } catch (TimeoutException ignored) {
 
         } catch (Exception e) {
             if (e.getCause() instanceof RejectedExecutionException) {

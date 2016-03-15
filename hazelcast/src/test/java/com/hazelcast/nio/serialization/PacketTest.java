@@ -16,10 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -28,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.nio.Packet.FLAG_EVENT;
 import static com.hazelcast.nio.Packet.FLAG_OP;
@@ -77,7 +77,7 @@ public class PacketTest {
     }
 
     private void testPacketWriteRead(Object originalObject) throws IOException {
-        SerializationService ss = createSerializationServiceBuilder().build();
+        InternalSerializationService ss = (InternalSerializationService) createSerializationServiceBuilder().build();
         byte[] originalPayload = ss.toBytes(originalObject);
 
         ByteBuffer buffer = ByteBuffer.allocate(originalPayload.length * 2);

@@ -130,7 +130,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         assertOpenEventually(latch);
     }
 
-    private  HazelcastInstance newInstance() {
+    private HazelcastInstance newInstance() {
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setBackupCount(2);

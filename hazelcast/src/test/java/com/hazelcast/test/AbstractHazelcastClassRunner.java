@@ -83,7 +83,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         boolean threadCPUTimeInfoAvailable = false;
         if (threadMXBean.isThreadCpuTimeSupported()) {
-            try  {
+            try {
                 threadMXBean.setThreadCpuTimeEnabled(true);
                 threadCPUTimeInfoAvailable = true;
             } catch (Throwable t) {
@@ -93,7 +93,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
         boolean threadContentionInfoAvailable = false;
         if (threadMXBean.isThreadContentionMonitoringSupported()) {
-            try  {
+            try {
                 threadMXBean.setThreadContentionMonitoringEnabled(true);
                 threadContentionInfoAvailable = true;
             } catch (Throwable t) {

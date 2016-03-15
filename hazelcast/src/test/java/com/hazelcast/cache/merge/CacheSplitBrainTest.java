@@ -17,7 +17,6 @@ import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -302,7 +301,7 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         String key = generateKeyOwnedBy(h1);
         cache1.put(key, "value");
 
-        cache2.put(key,Integer.valueOf(1));
+        cache2.put(key, Integer.valueOf(1));
 
         // Allow merge process to continue
         mergeBlockingLatch.countDown();

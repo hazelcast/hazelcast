@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class RawDataPortable implements Portable {
 
     long l;

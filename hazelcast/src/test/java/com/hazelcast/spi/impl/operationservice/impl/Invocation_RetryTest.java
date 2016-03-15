@@ -17,14 +17,14 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.lang.reflect.Field;
-import java.util.Iterator;
-import java.util.concurrent.Future;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import java.lang.reflect.Field;
+import java.util.Iterator;
+import java.util.concurrent.Future;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 

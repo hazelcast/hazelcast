@@ -60,7 +60,7 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
         closeConnectionBetween(h2, h3);
 
         assertOpenEventually(memberShipListener.latch);
-        assertClusterSizeEventually(2,h1);
+        assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
         assertClusterSizeEventually(1, h3);
 

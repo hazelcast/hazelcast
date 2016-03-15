@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,11 +39,11 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     int pos;
 
-    final SerializationService service;
+    final InternalSerializationService service;
 
     private final boolean isBigEndian;
 
-    ByteArrayObjectDataOutput(int size, SerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
         this.initialSize = size;
         this.buffer = new byte[size];
         this.service = service;

@@ -146,7 +146,7 @@ public class BasicCacheLiteMemberTest
         final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
         MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
                 new MutableCacheEntryListenerConfiguration<Integer, String>(
-                FactoryBuilder.factoryOf(listener), null, true, true);
+                        FactoryBuilder.factoryOf(listener), null, true, true);
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
@@ -229,7 +229,7 @@ public class BasicCacheLiteMemberTest
 
     public static class SimpleEntryListener<K, V>
             implements CacheEntryListener<K, V>, CacheEntryCreatedListener<K, V>, CacheEntryUpdatedListener<K, V>,
-                       CacheEntryRemovedListener<K, V>, CacheEntryExpiredListener<K, V>, Serializable {
+            CacheEntryRemovedListener<K, V>, CacheEntryExpiredListener<K, V>, Serializable {
 
         public AtomicInteger created = new AtomicInteger();
         public AtomicInteger expired = new AtomicInteger();

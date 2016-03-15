@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientMessageAccumulatorTest {
 
 
-    private static final byte[] BYTE_DATA = new byte[] { 0, 0, 24, 0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0 ,0, 0, 0, 0, 0, 0, 0 };
+    private static final byte[] BYTE_DATA = new byte[]{0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     private static final int OFFSET = 2;
 
     @Before
@@ -56,7 +56,7 @@ public class ClientMessageAccumulatorTest {
     @Test
     public void shouldNotAccumulateInCompleteFrameSize() {
         ClientMessage accumulator = ClientMessage.create();
-        final byte[] array = new byte[]{1,2,3};
+        final byte[] array = new byte[]{1, 2, 3};
         final ByteBuffer inBuffer = ByteBuffer.wrap(array);
         assertFalse(accumulator.readFrom(inBuffer));
         assertFalse(accumulator.isComplete());
@@ -64,6 +64,7 @@ public class ClientMessageAccumulatorTest {
 
     /**
      * setup the wrapped bytebuffer to point to this clientMessages data
+     *
      * @return
      */
     static ByteBuffer accumulatedByteBuffer(final ClientProtocolBuffer buffer, int index) {

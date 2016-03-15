@@ -21,11 +21,11 @@ public class DummyOperation extends AbstractOperation {
     @Override
     public void run() throws Exception {
         if (value instanceof Runnable) {
-            ((Runnable)value).run();
+            ((Runnable) value).run();
             result = value;
-        }else if(value instanceof Callable){
-            result = ((Callable)value).call();
-        }else{
+        } else if (value instanceof Callable) {
+            result = ((Callable) value).call();
+        } else {
             result = value;
         }
     }

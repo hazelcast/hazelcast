@@ -23,7 +23,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class QueueEvictionTest extends HazelcastTestSupport{
+public class QueueEvictionTest extends HazelcastTestSupport {
 
 
     //what are you testing? The intent is not clear

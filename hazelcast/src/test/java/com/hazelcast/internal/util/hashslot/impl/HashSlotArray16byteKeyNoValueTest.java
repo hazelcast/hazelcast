@@ -145,7 +145,7 @@ public class HashSlotArray16byteKeyNoValueTest {
             assertTrue(hsa.ensure(key1, key2) > 0);
         }
 
-        for (int i = mod; i <= k ; i += mod) {
+        for (int i = mod; i <= k; i += mod) {
             long key1 = (long) i;
             long key2 = key1 * factor;
             assertTrue(hsa.remove(key1, key2));

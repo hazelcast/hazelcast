@@ -15,12 +15,12 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DefaultSocketChannelWrapperFactoryTest extends HazelcastTestSupport{
+public class DefaultSocketChannelWrapperFactoryTest extends HazelcastTestSupport {
 
     private DefaultSocketChannelWrapperFactory factory;
 
     @Before
-    public void setup(){
+    public void setup() {
         factory = new DefaultSocketChannelWrapperFactory();
     }
 
@@ -33,7 +33,7 @@ public class DefaultSocketChannelWrapperFactoryTest extends HazelcastTestSupport
     }
 
     @Test
-    public void isSSlEnabled(){
+    public void isSSlEnabled() {
         boolean result = factory.isSSlEnabled();
         assertFalse(result);
     }

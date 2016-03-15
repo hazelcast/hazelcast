@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization;
 
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -25,23 +24,18 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
 
-public interface SerializationService extends Disposable {
+public interface InternalSerializationService extends SerializationService, Disposable {
 
     byte VERSION_1 = 1;
-
-    <B extends Data> B toData(Object obj);
-
-    <B extends Data> B toData(Object obj, PartitioningStrategy strategy);
 
     byte[] toBytes(Object obj);
 
     byte[] toBytes(Object obj, PartitioningStrategy strategy);
-
-    <T> T toObject(Object data);
 
     void writeObject(ObjectDataOutput out, Object obj);
 
@@ -62,8 +56,6 @@ public interface SerializationService extends Disposable {
     PortableContext getPortableContext();
 
     ClassLoader getClassLoader();
-
-    ManagedContext getManagedContext();
 
     ByteOrder getByteOrder();
 

@@ -130,8 +130,8 @@ public class ClassAndFieldDefinitionTest {
         FieldDefinition field0 = classDefinition.getField(0);
         FieldDefinition field = classDefinition.getField("f1");
 
-        FieldDefinitionImpl fd = new FieldDefinitionImpl(9,"name", FieldType.PORTABLE, 5,6);
-        FieldDefinitionImpl fd_nullName = new FieldDefinitionImpl(10,null, FieldType.PORTABLE, 15,16);
+        FieldDefinitionImpl fd = new FieldDefinitionImpl(9, "name", FieldType.PORTABLE, 5, 6);
+        FieldDefinitionImpl fd_nullName = new FieldDefinitionImpl(10, null, FieldType.PORTABLE, 15, 16);
 
         assertEquals(field, field0);
 
@@ -156,10 +156,10 @@ public class ClassAndFieldDefinitionTest {
 
     @Test
     public void testFieldDef_equal_hashCode() throws Exception {
-        FieldDefinitionImpl fd0 = new FieldDefinitionImpl(0,"name", FieldType.BOOLEAN);
-        FieldDefinitionImpl fd0_1 = new FieldDefinitionImpl(0,"name", FieldType.INT);
-        FieldDefinitionImpl fd1 = new FieldDefinitionImpl(1,"name", FieldType.BOOLEAN);
-        FieldDefinitionImpl fd2 = new FieldDefinitionImpl(0,"namex", FieldType.BOOLEAN);
+        FieldDefinitionImpl fd0 = new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN);
+        FieldDefinitionImpl fd0_1 = new FieldDefinitionImpl(0, "name", FieldType.INT);
+        FieldDefinitionImpl fd1 = new FieldDefinitionImpl(1, "name", FieldType.BOOLEAN);
+        FieldDefinitionImpl fd2 = new FieldDefinitionImpl(0, "namex", FieldType.BOOLEAN);
 
         assertNotEquals(fd0, fd0_1);
         assertNotEquals(fd0, fd1);
@@ -172,6 +172,6 @@ public class ClassAndFieldDefinitionTest {
 
     @Test
     public void testFieldDef_toString() throws Exception {
-        assertNotNull(new FieldDefinitionImpl(0,"name", FieldType.BOOLEAN).toString());
+        assertNotNull(new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN).toString());
     }
 }

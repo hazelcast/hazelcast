@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -33,7 +33,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * {@link com.hazelcast.map.EntryBackupProcessor#processBackup(Map.Entry)}} methods.
  * <p/>
  * <STRONG>Note that this implementation is not synchronized and is not thread-safe.</STRONG>
- *
+ * <p/>
  * LazyMapEntry itself is serializable as long as the object representations of both key and value are serializable.
  * After serialization objects are resolved using injected SerializationService. De-serialized LazyMapEntry
  * does contain object representation only Data representations and SerializationService is set to null. In other

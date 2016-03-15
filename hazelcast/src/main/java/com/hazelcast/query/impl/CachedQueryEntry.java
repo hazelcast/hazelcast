@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -34,11 +34,11 @@ public class CachedQueryEntry extends QueryableEntry {
     public CachedQueryEntry() {
     }
 
-    public CachedQueryEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public CachedQueryEntry(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
         init(serializationService, key, value, extractors);
     }
 
-    public void init(SerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public void init(InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }

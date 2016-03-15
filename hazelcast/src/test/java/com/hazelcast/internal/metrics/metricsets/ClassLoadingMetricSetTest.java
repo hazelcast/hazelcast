@@ -32,7 +32,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void utilityConstructor(){
+    public void utilityConstructor() {
         assertUtilityConstructor(ClassLoadingMetricSet.class);
     }
 

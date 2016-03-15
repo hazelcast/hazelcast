@@ -40,13 +40,14 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class XMLConfigWithSystemPropertyTest {
 
-    @Before @After
+    @Before
+    @After
     public void beforeAndAfter() {
         System.clearProperty("hazelcast.config");
     }
 
     @Test
-    public void testConfigurationWithFile() throws Exception{
+    public void testConfigurationWithFile() throws Exception {
         URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
         assertNotNull(url);
         String decodedURL = URLDecoder.decode(url.getFile(), "UTF-8");

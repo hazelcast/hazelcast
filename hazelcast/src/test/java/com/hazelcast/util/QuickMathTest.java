@@ -30,7 +30,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link QuickMath} class.
- *
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

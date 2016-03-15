@@ -1,11 +1,11 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.AssertTask;
@@ -30,7 +30,7 @@ public class AsyncResponsePacketHandlerTest extends HazelcastTestSupport {
 
     private PacketHandler responsePacketHandler;
     private AsyncResponsePacketHandler asyncHandler;
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void setup() {
@@ -80,7 +80,7 @@ public class AsyncResponsePacketHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenShutdown(){
+    public void whenShutdown() {
         asyncHandler.shutdown();
 
         final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)));

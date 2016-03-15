@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.nearcache;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * Context to hold all required external services and utilities to be used by

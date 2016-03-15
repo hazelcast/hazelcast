@@ -12,9 +12,9 @@ import org.junit.runner.RunWith;
 public class ExecuteOperationTest extends AbstractClassicOperationExecutorTest {
 
     @Test(expected = NullPointerException.class)
-    public void test_whenNull(){
+    public void test_whenNull() {
         initExecutor();
 
-        executor.execute((Operation)null);
+        executor.execute((Operation) null);
     }
 }

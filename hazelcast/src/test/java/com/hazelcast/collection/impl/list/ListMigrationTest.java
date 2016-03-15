@@ -11,14 +11,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ListMigrationTest extends HazelcastTestSupport{
+public class ListMigrationTest extends HazelcastTestSupport {
 
     private List list;
     private HazelcastInstance local;

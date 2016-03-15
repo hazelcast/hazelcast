@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.OperationAccessor;
@@ -71,7 +71,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     private static final int SIZE = 3;
 
     private static TestHazelcastInstanceFactory hazelcastInstanceFactory;
-    private static SerializationService serializationService;
+    private static InternalSerializationService serializationService;
 
     @BeforeClass
     public static void setUp() {

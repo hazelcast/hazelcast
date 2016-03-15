@@ -28,7 +28,7 @@ public class CacheMXBeanTest
         extends org.jsr107.tck.management.CacheMXBeanTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

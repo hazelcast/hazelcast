@@ -17,7 +17,6 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.OutboundFrame;
@@ -26,6 +25,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.nio.tcp.spinning.SpinningSocketWriter;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.util.ItemCounter;

@@ -1,7 +1,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -44,7 +44,7 @@ public class AbstractSerializationServiceTest {
     public void setup() {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
         abstractSerializationService = (AbstractSerializationService) defaultSerializationServiceBuilder
-                .setVersion(SerializationService.VERSION_1).build();
+                .setVersion(InternalSerializationService.VERSION_1).build();
     }
 
     @Test

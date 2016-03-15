@@ -35,12 +35,13 @@ import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import java.util.concurrent.CountDownLatch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -225,7 +226,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
         map1.put(key, "value");
 
         ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
-        map2.put(key,Integer.valueOf(1));
+        map2.put(key, Integer.valueOf(1));
 
         assertOpenEventually(lifeCycleListener.latch);
         assertClusterSizeEventually(2, h1);

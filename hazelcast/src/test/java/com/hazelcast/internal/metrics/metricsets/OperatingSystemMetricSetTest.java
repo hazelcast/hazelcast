@@ -36,7 +36,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void utilityConstructor(){
+    public void utilityConstructor() {
         assertUtilityConstructor(OperatingSystemMetricSet.class);
     }
 

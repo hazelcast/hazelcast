@@ -34,7 +34,6 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -147,10 +146,6 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         final String uuid = getPrincipal().getUuid();
         return new ClientImpl(uuid, inetSocketAddress);
-    }
-
-    SerializationService getSerializationService() {
-        return client.getSerializationService();
     }
 
     @Override

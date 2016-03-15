@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -25,20 +25,19 @@ import static org.mockito.Mockito.verify;
 
 /**
  * ByteArrayObjectDataOutput Tester.
- *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ByteArrayObjectDataOutputTest {
 
-    private SerializationService mockSerializationService;
+    private InternalSerializationService mockSerializationService;
     private ByteArrayObjectDataOutput out;
 
     private static byte[] TEST_DATA = new byte[]{1, 2, 3};
 
     @Before
     public void before() throws Exception {
-        mockSerializationService = mock(SerializationService.class);
+        mockSerializationService = mock(InternalSerializationService.class);
         out = new ByteArrayObjectDataOutput(10, mockSerializationService, ByteOrder.BIG_ENDIAN);
     }
 
@@ -293,7 +292,7 @@ public class ByteArrayObjectDataOutputTest {
     @Test
     public void testWriteObject() throws Exception {
         out.writeObject("TEST");
-        verify(mockSerializationService).writeObject(out,"TEST");
+        verify(mockSerializationService).writeObject(out, "TEST");
     }
 
     @Test
@@ -334,8 +333,8 @@ public class ByteArrayObjectDataOutputTest {
         out.buffer = null;
         byte[] arrayWhenBufferNull = out.toByteArray();
 
-        assertArrayEquals(new byte[0],arrayWhenPosZero);
-        assertArrayEquals(new byte[0],arrayWhenBufferNull);
+        assertArrayEquals(new byte[0], arrayWhenPosZero);
+        assertArrayEquals(new byte[0], arrayWhenBufferNull);
     }
 
     @Test
@@ -354,9 +353,9 @@ public class ByteArrayObjectDataOutputTest {
 
     @Test
     public void testClear_bufferLen_lt_initX8() throws Exception {
-        out.ensureAvailable(10*10);
+        out.ensureAvailable(10 * 10);
         out.clear();
-        assertEquals(10*8, out.available());
+        assertEquals(10 * 8, out.available());
     }
 
     @Test

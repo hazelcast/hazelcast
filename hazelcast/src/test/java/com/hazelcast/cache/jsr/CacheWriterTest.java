@@ -28,7 +28,7 @@ public class CacheWriterTest
         extends org.jsr107.tck.integration.CacheWriterTest {
 
     @AfterClass
-    public static void cleanupJsr(){
+    public static void cleanupJsr() {
         JstTestUtil.cleanup();
     }
 }

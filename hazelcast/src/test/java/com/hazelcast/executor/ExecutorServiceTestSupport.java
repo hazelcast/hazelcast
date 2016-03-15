@@ -96,7 +96,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void onResponse(T response) {
             if (!result.compareAndSet(null, response)) {
-                System.out.println("New response received after result is set. Response: " + response +  " Resuilt: " + result.get());
+                System.out.println("New response received after result is set. Response: " + response + " Resuilt: " + result.get());
             }
             latch.countDown();
         }
@@ -104,7 +104,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void onFailure(Throwable t) {
             if (!result.compareAndSet(null, t)) {
-                System.out.println("Failure received after result is set. Failure: " + t +  " Resuilt: " + result.get());
+                System.out.println("Failure received after result is set. Failure: " + t + " Resuilt: " + result.get());
             }
             latch.countDown();
         }
@@ -122,7 +122,8 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
             implements Callable<String>, Serializable, PartitionAware {
         public static String RESULT = "Task completed";
 
-        @Override public String call() {
+        @Override
+        public String call() {
             return RESULT;
         }
 
@@ -139,11 +140,13 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         public SleepingTask(long sleepSeconds) {
             this.sleepSeconds = sleepSeconds;
         }
+
         @Override
         public Boolean call() throws InterruptedException {
             sleepAtLeastSeconds((int) sleepSeconds);
             return true;
         }
+
         @Override
         public Object getPartitionKey() {
             return "key";
@@ -158,6 +161,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
             Future future = instance.getExecutorService("NestedExecutorTask").submit(new BasicTestCallable());
             return (String) future.get();
         }
+
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             instance = hazelcastInstance;
@@ -171,6 +175,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         public Member call() throws Exception {
             return localMember;
         }
+
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             localMember = hazelcastInstance.getCluster().getLocalMember();
@@ -187,7 +192,8 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
     static class HazelcastInstanceAwareRunnable implements Runnable, HazelcastInstanceAware, Serializable {
         private transient boolean initializeCalled;
 
-        @Override public void run() {
+        @Override
+        public void run() {
             if (!initializeCalled) {
                 fail("setHazelcastInstance() was not called");
             }
@@ -218,7 +224,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public void run() {
-            if(!instance.getCluster().getLocalMember().getUuid().equals(uuid)) {
+            if (!instance.getCluster().getLocalMember().getUuid().equals(uuid)) {
                 instance.getAtomicLong(name).incrementAndGet();
             }
         }
@@ -287,7 +293,9 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         public CountDownLatch getLatch() {
             return latch;
         }
-    };
+    }
+
+    ;
 
     static class BooleanSuccessResponseCountingCallback
             implements ExecutionCallback<Boolean> {

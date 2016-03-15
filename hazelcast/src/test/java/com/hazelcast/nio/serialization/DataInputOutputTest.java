@@ -16,11 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -68,7 +68,7 @@ public class DataInputOutputTest {
     }
 
     private void testDataStreams(Object object, ByteOrder byteOrder, boolean allowUnsafe) throws IOException {
-        SerializationService ss = createSerializationServiceBuilder()
+        InternalSerializationService ss = createSerializationServiceBuilder()
                 .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(byteOrder).build();
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();

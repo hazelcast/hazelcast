@@ -41,7 +41,7 @@ class MockNodeContext implements NodeContext {
     private final Object joinerLock;
 
     public MockNodeContext(CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes,
-            Address thisAddress, Object joinerLock) {
+                           Address thisAddress, Object joinerLock) {
         this.joinAddresses = addresses;
         this.nodes = nodes;
         this.thisAddress = thisAddress;

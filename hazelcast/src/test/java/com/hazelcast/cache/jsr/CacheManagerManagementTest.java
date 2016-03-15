@@ -28,7 +28,7 @@ public class CacheManagerManagementTest
         extends org.jsr107.tck.management.CacheManagerManagementTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

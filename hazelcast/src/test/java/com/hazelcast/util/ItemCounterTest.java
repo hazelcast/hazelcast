@@ -44,11 +44,11 @@ public class ItemCounterTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testKeySet(){
-        counter.add("key1",1);
-        counter.add("key2",1);
+    public void testKeySet() {
+        counter.add("key1", 1);
+        counter.add("key2", 1);
 
-        assertEquals(new HashSet(asList("key1","key2")), counter.keySet());
+        assertEquals(new HashSet(asList("key1", "key2")), counter.keySet());
     }
 
     @Test

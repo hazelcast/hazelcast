@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * MorphingPortableReader Tester.
- *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})

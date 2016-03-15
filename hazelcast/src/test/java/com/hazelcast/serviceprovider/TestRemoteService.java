@@ -1,7 +1,7 @@
 package com.hazelcast.serviceprovider;
 
-import com.hazelcast.spi.RemoteService;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.spi.RemoteService;
 
 public class TestRemoteService implements RemoteService {
     public static final String SERVICE_NAME = "TestRemoteService";

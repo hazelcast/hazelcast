@@ -16,12 +16,12 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
@@ -35,6 +35,7 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.MapUtil;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;

@@ -28,7 +28,7 @@ public class TypesTest
         extends org.jsr107.tck.TypesTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

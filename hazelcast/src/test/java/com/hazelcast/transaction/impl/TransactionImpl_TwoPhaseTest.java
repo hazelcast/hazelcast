@@ -211,7 +211,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
         try {
             tx.commit();
             fail();
-        }catch (TransactionException expected){
+        } catch (TransactionException expected) {
         }
 
         tx.rollback();
