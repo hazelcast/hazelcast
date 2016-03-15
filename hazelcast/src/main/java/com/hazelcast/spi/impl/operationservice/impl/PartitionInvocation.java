@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.partition.IPartition;
 
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
@@ -35,12 +36,13 @@ public final class PartitionInvocation extends Invocation {
 
     @Override
     public Address getTarget() {
-        return getPartition().getReplicaAddress(op.getReplicaIndex());
+        IPartition partition = nodeEngine.getPartitionService().getPartition(op.getPartitionId());
+        return partition.getReplicaAddress(op.getReplicaIndex());
     }
 
     @Override
     ExceptionAction onException(Throwable t) {
-        final ExceptionAction action = op.onInvocationException(t);
+        ExceptionAction action = op.onInvocationException(t);
         return action != null ? action : ExceptionAction.THROW_EXCEPTION;
     }
 }

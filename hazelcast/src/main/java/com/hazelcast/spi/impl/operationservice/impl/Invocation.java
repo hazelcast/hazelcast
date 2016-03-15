@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
@@ -46,7 +45,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
@@ -65,6 +63,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.logging.Level.FINEST;
@@ -136,10 +135,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     protected abstract Address getTarget();
 
-    IPartition getPartition() {
-        return nodeEngine.getPartitionService().getPartition(op.getPartitionId());
-    }
-
     private long getCallTimeout(long callTimeout) {
         if (callTimeout > 0) {
             return callTimeout;
@@ -168,15 +163,15 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     public final InvocationFuture invoke() {
-        invokeInternal(false);
+        invoke0(false);
         return future;
     }
 
     public final void invokeAsync() {
-        invokeInternal(true);
+        invoke0(true);
     }
 
-    private void invokeInternal(boolean isAsync) {
+    private void invoke0(boolean isAsync) {
         if (invokeCount > 0) {
             // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
@@ -205,7 +200,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         if (e instanceof RetryableException) {
             notifyError(e);
         } else {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -249,8 +244,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void doInvokeRemote() {
-        boolean sent = operationService.send(op, invTarget);
-        if (!sent) {
+        if (!operationService.send(op, invTarget)) {
             operationService.invocationRegistry.deregister(this);
             notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
@@ -266,7 +260,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return true;
         }
 
-        final NodeState state = nodeEngine.getNode().getState();
+        NodeState state = nodeEngine.getNode().getState();
         boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
         if (!allowed) {
             notifyError(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
@@ -281,11 +275,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      * @return true if the initialization was a success.
      */
     boolean initInvocationTarget() {
-        Address thisAddress = nodeEngine.getThisAddress();
-
         invTarget = getTarget();
 
-        final ClusterService clusterService = nodeEngine.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
             notifyWithExceptionWhenTargetIsNull();
@@ -299,18 +291,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-        remote = !thisAddress.equals(invTarget);
+        remote = !nodeEngine.getThisAddress().equals(invTarget);
         return true;
     }
 
     private void notifyWithExceptionWhenTargetIsNull() {
-        Address thisAddress = nodeEngine.getThisAddress();
         ClusterService clusterService = nodeEngine.getClusterService();
-
-        if (!nodeEngine.isRunning()) {
-            notifyError(new HazelcastInstanceNotActiveException());
-            return;
-        }
 
         ClusterState clusterState = clusterService.getClusterState();
         if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
@@ -325,7 +311,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return;
         }
 
-        notifyError(new WrongTargetException(thisAddress, null, op.getPartitionId(),
+        notifyError(new WrongTargetException(
+                nodeEngine.getThisAddress(), null, op.getPartitionId(),
                 op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));
     }
 
@@ -336,28 +323,19 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                     + ", current-response: : " + response);
         }
 
-        if (response == null) {
-            response = NULL_RESPONSE;
-        }
+        response = response == null ? NULL_RESPONSE : response;
 
         if (response instanceof CallTimeoutResponse) {
             notifyCallTimeout();
-            return;
-        }
-
-        if (response instanceof ErrorResponse || response instanceof Throwable) {
+        } else if (response instanceof ErrorResponse || response instanceof Throwable) {
             notifyError(response);
-            return;
-        }
-
-        if (response instanceof NormalResponse) {
+        } else if (response instanceof NormalResponse) {
             NormalResponse normalResponse = (NormalResponse) response;
             notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
-            return;
+        } else {
+            // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
+            future.complete(response);
         }
-
-        // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-        future.complete(response);
     }
 
     @Override
