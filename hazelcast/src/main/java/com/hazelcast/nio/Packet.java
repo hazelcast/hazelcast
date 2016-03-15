@@ -92,9 +92,11 @@ public final class Packet extends HeapData implements OutboundFrame {
      * Sets a particular flag. The other flags will not be touched.
      *
      * @param flag the flag to set
+     * @return this (for fluent interface)
      */
-    public void setFlag(int flag) {
+    public Packet setFlag(int flag) {
         flags = (short) (flags | flag);
+        return this;
     }
 
     /**
@@ -104,9 +106,11 @@ public final class Packet extends HeapData implements OutboundFrame {
      * it makes doing bit shifting logic since you need to down cast to a short all the time.*
      *
      * @param flags the flags.
+     * @return this (for fluent interface)
      */
-    public void setAllFlags(int flags) {
+    public Packet setAllFlags(int flags) {
         this.flags = (short) flags;
+        return this;
     }
 
     /**
