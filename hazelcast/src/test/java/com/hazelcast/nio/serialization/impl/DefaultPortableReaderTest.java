@@ -69,6 +69,11 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void portable_portableArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
+        assertArrayEquals((PORSCHE.wheels), reader(PORSCHE).readPortableArray("wheels[any]"));
+    }
+
+    @Test
     public void portableArrayInTheMiddle_portableArrayAtTheEnd_wholeArrayFetched() throws IOException {
         assertArrayEquals(((WheelPortable) PORSCHE.wheels[0]).chips, reader(PORSCHE).readPortableArray("wheels[0].chips"));
     }
@@ -92,6 +97,39 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
     @Test
     public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched() throws IOException {
         assertArrayEquals(((WheelPortable) PORSCHE.wheels[0]).serial, reader(PORSCHE).readIntArray("wheels[0].serial"));
+    }
+
+    @Test
+    public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
+        assertArrayEquals(((WheelPortable) PORSCHE.wheels[0]).serial, reader(PORSCHE).readIntArray("wheels[0].serial[any]"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd() throws IOException {
+        assertArrayEquals(new int[]{12, 12}, reader(PORSCHE).readIntArray("wheels[any].serial[1]"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd2() throws IOException {
+        Portable[] expected = new Portable[]{ ((WheelPortable) PORSCHE.wheels[0]).chip, ((WheelPortable) PORSCHE.wheels[1]).chip };
+        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chip"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
+        Portable[] expected = new Portable[]{ ((WheelPortable) PORSCHE.wheels[0]).chips[1], ((WheelPortable) PORSCHE.wheels[1]).chips[1] };
+        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chips[1]"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd4() throws IOException {
+        Portable[] expected = ((WheelPortable) PORSCHE.wheels[0]).chips;
+        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[0].chips[any]"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd5() throws IOException {
+        assertArrayEquals(new String[]{"front", "rear"}, reader(PORSCHE).readUTFArray("wheels[any].name"));
     }
 
     @Test
