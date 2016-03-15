@@ -23,20 +23,19 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveR
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -63,23 +62,21 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         checkTransactionActive();
         checkObjectNotNull(e);
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data value = nodeEngine.toData(e);
-        CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), null);
-        try {
-            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
-            Long itemId = f.get();
-            if (itemId != null) {
-                if (!itemIdSet.add(itemId)) {
-                    throw new TransactionException("Duplicate itemId: " + itemId);
-                }
-                getCollection().add(new CollectionItem(itemId, value));
-                CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
-                putToRecord(op);
-                return true;
+        Data value = toData(e);
+        Operation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), null)
+                .setServiceName(getServiceName())
+                .setPartitionId(partitionId);
+
+        InternalCompletableFuture<Long> f = invokeOnPartition(operation);
+        Long itemId = f.join();
+        if (itemId != null) {
+            if (!itemIdSet.add(itemId)) {
+                throw new TransactionException("Duplicate itemId: " + itemId);
             }
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            getCollection().add(new CollectionItem(itemId, value));
+            CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
+            putToRecord(op);
+            return true;
         }
         return false;
     }
@@ -105,8 +102,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         checkTransactionActive();
         checkObjectNotNull(e);
 
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data value = nodeEngine.toData(e);
+        final Data value = toData(e);
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         long reservedItemId = -1;
         while (iterator.hasNext()) {
@@ -116,31 +112,25 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 break;
             }
         }
-        final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(
-                name,
-                reservedItemId,
-                value,
-                tx.getTxnId());
-        try {
-            final OperationService operationService = nodeEngine.getOperationService();
-            Future<CollectionItem> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-            CollectionItem item = f.get();
-            if (item != null) {
-                if (reservedItemId == item.getItemId()) {
-                    iterator.remove();
-                    removeFromRecord(reservedItemId);
-                    itemIdSet.remove(reservedItemId);
-                    return true;
-                }
-                if (!itemIdSet.add(item.getItemId())) {
-                    throw new TransactionException("Duplicate itemId: " + item.getItemId());
-                }
-                CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
-                putToRecord(op);
+
+        Operation operation = new CollectionReserveRemoveOperation(name, reservedItemId, value, tx.getTxnId())
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+        InternalCompletableFuture<CollectionItem> f = invokeOnPartition(operation);
+        CollectionItem item = f.join();
+        if (item != null) {
+            if (reservedItemId == item.getItemId()) {
+                iterator.remove();
+                removeFromRecord(reservedItemId);
+                itemIdSet.remove(reservedItemId);
                 return true;
             }
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            if (!itemIdSet.add(item.getItemId())) {
+                throw new TransactionException("Duplicate itemId: " + item.getItemId());
+            }
+            CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
+            putToRecord(op);
+            return true;
         }
         return false;
     }
@@ -148,14 +138,13 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
     public int size() {
         checkTransactionActive();
 
-        CollectionSizeOperation operation = new CollectionSizeOperation(name);
-        try {
-            Future<Integer> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
-            Integer size = f.get();
-            return size + getCollection().size();
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+        Operation operation = new CollectionSizeOperation(name)
+                .setPartitionId(partitionId)
+                .setServiceName(getServiceName());
+
+        InternalCompletableFuture<Integer> f = invokeOnPartition(operation);
+        Integer size = f.join();
+        return size + getCollection().size();
     }
 
     protected void checkTransactionActive() {

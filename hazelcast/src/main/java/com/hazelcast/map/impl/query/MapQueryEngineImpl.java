@@ -479,11 +479,10 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(partitionIds.size());
         for (Integer partitionId : partitionIds) {
-            Operation op = new QueryPartitionOperation(mapName, predicate, iterationType);
-            op.setPartitionId(partitionId);
+            Operation op = new QueryPartitionOperation(mapName, predicate, iterationType)
+                    .setPartitionId(partitionId);
             try {
-                Future<QueryResult> future = operationService
-                        .invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
+                Future<QueryResult> future = operationService.invokeOnPartition(op);
                 futures.add(future);
             } catch (Throwable t) {
                 throw rethrow(t);
