@@ -121,7 +121,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 @Override
                 public void run() {
                     try {
-                        Object resp = resolveApplicationResponse(response);
+                        Object resp = resolve(response);
 
                         if (resp == null || !(resp instanceof Throwable)) {
                             callback.onResponse((E) resp);
@@ -184,7 +184,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             operationService.invocationRegistry.deregister(invocation);
         }
 
-
         notifyCallbacks(callbackChain);
         return true;
     }
@@ -225,7 +224,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     @Override
     public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         Object unresolvedResponse = waitForResponse(timeout, unit);
-        return (E) resolveApplicationResponseOrThrowException(unresolvedResponse);
+        return (E) resolveOrThrow(unresolvedResponse);
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
@@ -334,45 +333,30 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return timeoutMs;
     }
 
-    private Object resolveApplicationResponseOrThrowException(Object unresolvedResponse)
-            throws ExecutionException, InterruptedException, TimeoutException {
-
-        Object response = resolveApplicationResponse(unresolvedResponse);
+    private Object resolveOrThrow(Object unresolvedResponse) throws ExecutionException, InterruptedException, TimeoutException {
+        Object response = resolve(unresolvedResponse);
 
         if (response == null || !(response instanceof Throwable)) {
             return response;
-        }
-
-        if (response instanceof ExecutionException) {
+        } else if (response instanceof ExecutionException) {
             throw (ExecutionException) response;
-        }
-
-        if (response instanceof TimeoutException) {
+        } else if (response instanceof TimeoutException) {
             throw (TimeoutException) response;
-        }
-
-        if (response instanceof InterruptedException) {
+        } else if (response instanceof InterruptedException) {
             throw (InterruptedException) response;
-        }
-
-        if (response instanceof Error) {
+        } else if (response instanceof Error) {
             throw (Error) response;
+        } else {
+            throw new ExecutionException((Throwable) response);
         }
-
-        // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
-        throw new ExecutionException((Throwable) response);
     }
 
-    private Object resolveApplicationResponse(Object unresolvedResponse) {
+    private Object resolve(Object unresolvedResponse) {
         if (unresolvedResponse == NULL_RESPONSE) {
             return null;
-        }
-
-        if (unresolvedResponse == TIMEOUT_RESPONSE) {
+        } else if (unresolvedResponse == TIMEOUT_RESPONSE) {
             return new TimeoutException("Call " + invocation + " encountered a timeout");
-        }
-
-        if (unresolvedResponse == INTERRUPTED_RESPONSE) {
+        } else if (unresolvedResponse == INTERRUPTED_RESPONSE) {
             return new InterruptedException("Call " + invocation + " was interrupted");
         }
 
@@ -407,7 +391,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public boolean isDone() {
-         return responseAvailable(response);
+        return responseAvailable(response);
     }
 
     @Override
