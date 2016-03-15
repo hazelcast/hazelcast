@@ -354,9 +354,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         switch (onException(cause)) {
-            case CONTINUE_WAIT:
-                handleContinueWait();
-                break;
             case THROW_EXCEPTION:
                 notifyNormalResponse(cause, 0);
                 break;
@@ -492,10 +489,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                     + " backups-expected:" + backupsExpected
                     + " backups-completed: " + backupsCompleted);
         }
-    }
-
-    private void handleContinueWait() {
-        future.complete(WAIT_RESPONSE);
     }
 
     private void handleRetry(Object cause) {
