@@ -42,16 +42,23 @@ final class PartitionReplicaVersions {
         return versions;
     }
 
+    boolean isStale(long[] newVersions, int currentReplica) {
+        int index = currentReplica - 1;
+        long currentVersion = versions[index];
+        long newVersion = newVersions[index];
+        return currentVersion > newVersion;
+    }
+
     boolean update(long[] newVersions, int currentReplica) {
         int index = currentReplica - 1;
-        long current = versions[index];
-        long next = newVersions[index];
-        boolean valid = (current == next - 1);
+        long currentVersion = versions[index];
+        long nextVersion = newVersions[index];
+        boolean valid = (currentVersion == nextVersion - 1);
         if (valid) {
             set(newVersions, currentReplica);
-            current = next;
+            currentVersion = nextVersion;
         }
-        return current >= next;
+        return currentVersion >= nextVersion;
     }
 
     void set(long[] newVersions, int fromReplica) {
