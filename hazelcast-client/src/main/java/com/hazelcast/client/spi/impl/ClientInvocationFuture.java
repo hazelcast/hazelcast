@@ -34,6 +34,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
+
 public class ClientInvocationFuture implements ICompletableFuture<ClientMessage> {
 
     protected static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
@@ -125,7 +127,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     private ClientMessage resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
         if (response instanceof Throwable) {
-            ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+            fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
                 throw (ExecutionException) response;
             }

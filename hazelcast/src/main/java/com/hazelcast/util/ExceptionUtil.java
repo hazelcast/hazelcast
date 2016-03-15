@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutionException;
  */
 public final class ExceptionUtil {
 
-    private static final String EXCEPTION_SEPARATOR = "------ End remote and begin local stack-trace ------";
+    private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
     private static final String EXCEPTION_MESSAGE_SEPARATOR = "------ %MSG% ------";
 
     //we don't want instances
@@ -129,17 +129,17 @@ public final class ExceptionUtil {
     }
 
     /**
-     * This method changes the given remote cause, and it adds the also given local stacktrace.<br/>
+     * This method changes the given async cause, and it adds the also given local stacktrace.<br/>
      * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
-     * that instead of the given remoteCause itself.
+     * that instead of the given asyncCause itself.
      *
-     * @param remoteCause         the remotely generated exception
+     * @param asyncCause         the async exception
      * @param localSideStackTrace the local stacktrace to add to the exception stacktrace
      */
-    public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace) {
-        Throwable throwable = remoteCause;
-        if (remoteCause instanceof ExecutionException && throwable.getCause() != null) {
+    public static void fixAsyncStackTrace(Throwable asyncCause, StackTraceElement[] localSideStackTrace) {
+        Throwable throwable = asyncCause;
+        if (asyncCause instanceof ExecutionException && throwable.getCause() != null) {
             throwable = throwable.getCause();
         }
 
@@ -152,21 +152,21 @@ public final class ExceptionUtil {
     }
 
     /**
-     * This method changes the given remote cause, and it adds the also given local stacktrace separated by the
+     * This method changes the given async cause, and it adds the also given local stacktrace separated by the
      * supplied exception message.<br/>
      * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
      * that instead of the given remoteCause itself.
      *
-     * @param remoteCause           the remotely generated exception
+     * @param asyncCause           the async exception
      * @param localSideStackTrace   the local stacktrace to add to the exceptions stacktrace
      * @param localExceptionMessage a special exception message which is added to the stacktrace
      */
-    public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace,
-                                           String localExceptionMessage) {
+    public static void fixAsyncStackTrace(Throwable asyncCause, StackTraceElement[] localSideStackTrace,
+                                          String localExceptionMessage) {
 
-        Throwable throwable = remoteCause;
-        if (remoteCause instanceof ExecutionException && throwable.getCause() != null) {
+        Throwable throwable = asyncCause;
+        if (asyncCause instanceof ExecutionException && throwable.getCause() != null) {
             throwable = throwable.getCause();
         }
 
