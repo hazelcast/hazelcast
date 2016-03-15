@@ -230,9 +230,9 @@ public class MapKeyLoader {
         if (lastBatch) {
             state.nextOrStay(State.LOADED);
             if (exception != null) {
-                loadFinished.setResult(exception);
+                loadFinished.complete(exception);
             } else {
-                loadFinished.setResult(true);
+                loadFinished.complete(true);
             }
         } else if (state.is(State.LOADED)) {
             state.next(State.LOADING);
@@ -266,7 +266,7 @@ public class MapKeyLoader {
             if (state.is(State.LOADING)) {
                 // previous loading was in progress. cancel and start from scratch
                 state.next(State.NOT_LOADED);
-                loadFinished.setResult(false);
+                loadFinished.complete(false);
             }
         }
 
@@ -392,7 +392,7 @@ public class MapKeyLoader {
 
         private LoadFinishedFuture(Boolean result) {
             this();
-            setResult(result);
+            complete(result);
         }
 
         private LoadFinishedFuture() {
@@ -410,14 +410,14 @@ public class MapKeyLoader {
         @Override
         public void onResponse(Boolean loaded) {
             if (loaded) {
-                setResult(loaded);
+                complete(loaded);
             }
             // if not loaded yet we wait for the last batch to arrive
         }
 
         @Override
         public void onFailure(Throwable t) {
-            setResult(t);
+            complete(t);
         }
 
         @Override
@@ -426,8 +426,8 @@ public class MapKeyLoader {
         }
 
         @Override
-        protected void setResult(Object result) {
-            super.setResult(result);
+        protected void complete(Object result) {
+            super.complete(result);
         }
 
         @Override

@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.util.VeryAbstractCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -37,15 +38,16 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 
 /**
  * A base {@link ICompletableFuture} implementation that may be explicitly completed by setting its
- * value through setResult.
+ * value through complete.
  * Implements the logic of cancellation and callbacks execution.
  *
  * @param <V> The result type returned by this Future's {@code get} method
  */
 @SuppressFBWarnings(value = "NN_NAKED_NOTIFY", justification = "State handled with CAS, naked notify correct")
-public abstract class AbstractCompletableFuture<V> implements ICompletableFuture<V> {
+public abstract class AbstractCompletableFuture<V> extends VeryAbstractCompletableFuture<V> {
 
-    private static final Object INITIAL_STATE = new ExecutionCallbackNode(null, null, null);
+    private static final ExecutionCallbackNode INITIAL_STATE = new ExecutionCallbackNode(null, null, null);
+
     private static final Object CANCELLED_STATE = new Object();
 
     private static final AtomicReferenceFieldUpdater<AbstractCompletableFuture, Object> STATE
@@ -56,24 +58,15 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     // if the state is an instance of the former, then the future is not done. Otherwise it is.
     // The reason for this abuse of the type system is to deal with the head node and the result
     // in a single cas. Using a single cas prevent a thread that calls and then do this concurrently
-    // with a thread that calls setResult.
+    // with a thread that calls complete.
     private volatile Object state = INITIAL_STATE;
-
-    private final ILogger logger;
-    private final Executor defaultExecutor;
 
     protected AbstractCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
         this(nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR), logger);
     }
 
     protected AbstractCompletableFuture(Executor defaultExecutor, ILogger logger) {
-        this.defaultExecutor = defaultExecutor;
-        this.logger = logger;
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<V> callback) {
-        andThen(callback, defaultExecutor);
+        super(defaultExecutor, logger);
     }
 
     @Override
@@ -233,7 +226,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
     }
 
-    protected void setResult(Object result) {
+    protected void complete(Object result) {
         for (; ; ) {
             Object currentState = this.state;
 
@@ -291,57 +284,6 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     private void notifyThreadsWaitingOnGet() {
         synchronized (this) {
             notifyAll();
-        }
-    }
-
-    private void runAsynchronous(ExecutionCallbackNode head, Object result) {
-        while (head != INITIAL_STATE) {
-            runAsynchronous(head.callback, head.executor, result);
-            head = head.next;
-        }
-    }
-
-    private void runAsynchronous(ExecutionCallback<V> callback, Executor executor, Object result) {
-        executor.execute(new ExecutionCallbackRunnable<V>(getClass(), result, callback, logger));
-    }
-
-    private static final class ExecutionCallbackNode<E> {
-        final ExecutionCallback<E> callback;
-        final Executor executor;
-        final ExecutionCallbackNode<E> next;
-
-        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
-            this.callback = callback;
-            this.executor = executor;
-            this.next = next;
-        }
-    }
-
-    private static final class ExecutionCallbackRunnable<V> implements Runnable {
-        private final Class<?> caller;
-        private final Object result;
-        private final ExecutionCallback<V> callback;
-        private final ILogger logger;
-
-        public ExecutionCallbackRunnable(Class<?> caller, Object result, ExecutionCallback<V> callback, ILogger logger) {
-            this.caller = caller;
-            this.result = result;
-            this.callback = callback;
-            this.logger = logger;
-        }
-
-        @Override
-        public void run() {
-            try {
-                if (result instanceof Throwable) {
-                    callback.onFailure((Throwable) result);
-                } else {
-                    callback.onResponse((V) result);
-                }
-            } catch (Throwable cause) {
-                logger.severe("Failed asynchronous execution of execution callback: " + callback
-                        + "for call " + caller, cause);
-            }
         }
     }
 }

@@ -17,17 +17,16 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.util.VeryAbstractCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -47,7 +46,7 @@ import static java.lang.Math.min;
  *
  * @param <E>
  */
-final class InvocationFuture<E> implements InternalCompletableFuture<E> {
+final class InvocationFuture<E> extends VeryAbstractCompletableFuture<E> implements InternalCompletableFuture<E> {
 
     private static final int MAX_CALL_TIMEOUT_EXTENSION = 60 * 1000;
 
@@ -67,6 +66,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private volatile ExecutionCallbackNode<E> callbackHead;
 
     InvocationFuture(OperationServiceImpl operationService, Invocation invocation, ExecutionCallback callback) {
+        super(operationService.asyncExecutor, operationService.invocationLogger);
         this.invocation = invocation;
         this.operationService = operationService;
 
@@ -90,7 +90,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         synchronized (this) {
             if (responseAvailable(response)) {
-                runAsynchronous(callback, executor);
+                runAsynchronous(callback, executor, response);
                 return;
             }
 
@@ -108,35 +108,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         return true;
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<E> callback) {
-        andThen(callback, operationService.asyncExecutor);
-    }
-
-    private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
-        try {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Object resp = resolve(response);
-
-                        if (resp == null || !(resp instanceof Throwable)) {
-                            callback.onResponse((E) resp);
-                        } else {
-                            callback.onFailure((Throwable) resp);
-                        }
-                    } catch (Throwable cause) {
-                        invocation.logger.severe("Failed asynchronous execution of execution callback: " + callback
-                                + "for call " + invocation, cause);
-                    }
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            invocation.logger.warning("Execution of callback: " + callback + " is rejected!", e);
-        }
     }
 
     /**
@@ -184,15 +155,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             operationService.invocationRegistry.deregister(invocation);
         }
 
-        notifyCallbacks(callbackChain);
+        runAsynchronous(callbackChain, response);
         return true;
-    }
-
-    private void notifyCallbacks(ExecutionCallbackNode<E> callbackChain) {
-        while (callbackChain != null) {
-            runAsynchronous(callbackChain.callback, callbackChain.executor);
-            callbackChain = callbackChain.next;
-        }
     }
 
     @Override
@@ -203,22 +167,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             invocation.logger.severe("Unexpected timeout while processing " + this, e);
             return null;
         }
-    }
-
-    @Override
-    public E join() {
-        try {
-            //this method is quite inefficient when there is unchecked exception, because it will be wrapped
-            //in a ExecutionException, and then it is unwrapped again.
-            return get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    @Override
-    public E getSafely() {
-        return join();
     }
 
     @Override
@@ -351,7 +299,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-    private Object resolve(Object unresolvedResponse) {
+    @Override
+    protected Object resolve(Object unresolvedResponse) {
         if (unresolvedResponse == NULL_RESPONSE) {
             return null;
         } else if (unresolvedResponse == TIMEOUT_RESPONSE) {
@@ -397,17 +346,5 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     @Override
     public String toString() {
         return "InvocationFuture{invocation=" + invocation.toString() + ", response=" + response + ", done=" + isDone() + '}';
-    }
-
-    private static final class ExecutionCallbackNode<E> {
-        private final ExecutionCallback<E> callback;
-        private final Executor executor;
-        private final ExecutionCallbackNode<E> next;
-
-        private ExecutionCallbackNode(ExecutionCallback<E> callback, Executor executor, ExecutionCallbackNode<E> next) {
-            this.callback = callback;
-            this.executor = executor;
-            this.next = next;
-        }
     }
 }

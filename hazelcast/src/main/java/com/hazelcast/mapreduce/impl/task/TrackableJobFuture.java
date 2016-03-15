@@ -62,10 +62,10 @@ public class TrackableJobFuture<V>
     }
 
     @Override
-    public void setResult(Object result) {
+    public void complete(Object result) {
         Object finalResult = result;
         if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
-            super.setResult(new ExecutionException((Throwable) finalResult));
+            super.complete(new ExecutionException((Throwable) finalResult));
             return;
         }
         // If collator is available we need to execute it now
@@ -80,7 +80,7 @@ public class TrackableJobFuture<V>
         if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
             finalResult = new ExecutionException((Throwable) finalResult);
         }
-        super.setResult(finalResult);
+        super.complete(finalResult);
     }
 
     @Override

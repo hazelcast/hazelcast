@@ -77,7 +77,7 @@ public class StartProcessingJobOperation<K>
             TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
             if (future != null) {
                 Exception exception = new CancellationException("Operation was cancelled by the user");
-                future.setResult(exception);
+                future.complete(exception);
             }
             return;
         }
