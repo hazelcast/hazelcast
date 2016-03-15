@@ -59,6 +59,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.createJobProcessInformation;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 
 /**
  * The JobSupervisor is the overall control instance of a map reduce job. There is one JobSupervisor per
@@ -151,7 +152,7 @@ public class JobSupervisor {
 
         if (future != null) {
             // Might be already cancelled by another members exception
-            ExceptionUtil.fixRemoteStackTrace(throwable, Thread.currentThread().getStackTrace(),
+            fixAsyncStackTrace(throwable, Thread.currentThread().getStackTrace(),
                     "Operation failed on node: " + remoteAddress);
             future.setResult(throwable);
         }
