@@ -68,11 +68,11 @@ public class CompletableFutureTask<V> extends AbstractCompletableFuture<V> imple
                 } catch (Throwable ex) {
                     result = new ExecutionException(ex);
                 } finally {
-                    setResult(result);
+                    complete(result);
                 }
             }
         } finally {
-            // runner must be non-null until state is settled in setResult() to
+            // runner must be non-null until state is settled in complete() to
             // prevent concurrent calls to run()
             runner = null;
         }

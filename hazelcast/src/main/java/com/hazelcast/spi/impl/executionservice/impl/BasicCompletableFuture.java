@@ -61,15 +61,15 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
         } catch (InterruptedException ex) {
             sneakyThrow(ex);
         } catch (ExecutionException ex) {
-            setResult(ex);
+            complete(ex);
             throw ex;
         } catch (CancellationException ex) {
-            setResult(ex);
+            complete(ex);
             throw ex;
         } catch (Throwable t) {
             result = t;
         }
-        setResult(result);
+        complete(result);
         return result;
     }
 

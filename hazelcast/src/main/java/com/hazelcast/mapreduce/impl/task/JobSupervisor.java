@@ -153,7 +153,7 @@ public class JobSupervisor {
             // Might be already cancelled by another members exception
             ExceptionUtil.fixRemoteStackTrace(throwable, Thread.currentThread().getStackTrace(),
                     "Operation failed on node: " + remoteAddress);
-            future.setResult(throwable);
+            future.complete(throwable);
         }
     }
 
@@ -172,7 +172,7 @@ public class JobSupervisor {
 
         if (future != null) {
             // Might be already cancelled by another members exception
-            future.setResult(exception);
+            future.complete(exception);
         }
 
         return true;
@@ -511,7 +511,7 @@ public class JobSupervisor {
                 jobTracker.unregisterMapCombineTask(jobId);
                 jobTracker.unregisterReducerTask(jobId);
                 mapReduceService.destroyJobSupervisor(jobSupervisor);
-                future.setResult(finalResult);
+                future.complete(finalResult);
             }
         }
     }

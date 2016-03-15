@@ -143,7 +143,7 @@ public class ClientMapReduceProxy
                                 response = collator.collate(((Map) response).entrySet());
                             }
                         } finally {
-                            completableFuture.setResult(response);
+                            completableFuture.complete(response);
                             trackableJobs.remove(jobId);
                         }
                     }
@@ -155,7 +155,7 @@ public class ClientMapReduceProxy
                             if (t instanceof ExecutionException && t.getCause() instanceof CancellationException) {
                                 t = t.getCause();
                             }
-                            completableFuture.setResult(t);
+                            completableFuture.complete(t);
                         } finally {
                             trackableJobs.remove(jobId);
                         }
@@ -259,8 +259,8 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        protected void setResult(Object result) {
-            super.setResult(result);
+        protected void complete(Object result) {
+            super.complete(result);
         }
 
     }
