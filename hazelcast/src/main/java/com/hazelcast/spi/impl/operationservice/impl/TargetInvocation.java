@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
@@ -30,10 +29,9 @@ public final class TargetInvocation extends Invocation {
 
     private final Address target;
 
-    public TargetInvocation(OperationServiceImpl operationService, Operation op,
-                            Address target, int tryCount, long tryPauseMillis, long callTimeout,
-                            ExecutionCallback callback, boolean resultDeserialized) {
-        super(operationService, op, tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized);
+    public TargetInvocation(OperationServiceImpl operationService, Operation op, Address target, int tryCount,
+                            long tryPauseMillis, long callTimeout, boolean deserialize) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeout, deserialize);
         this.target = target;
     }
 
