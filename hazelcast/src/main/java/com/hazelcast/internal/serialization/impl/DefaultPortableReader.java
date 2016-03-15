@@ -446,10 +446,9 @@ public class DefaultPortableReader implements PortableReader {
         }
 
         final Portable[] portables = new Portable[position.getLen()];
-        for (int i = 0; i < position.getLen(); i++) {
-            int start = in.readInt(position.getStreamPosition() + i * Bits.INT_SIZE_IN_BYTES);
-            in.position(start);
-            portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
+        for (int index = 0; index < position.getLen(); index++) {
+            in.position(PortablePositionNavigator.getArrayCellPosition(position, index, in));
+            portables[index] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
         }
         return portables;
     }
@@ -459,16 +458,16 @@ public class DefaultPortableReader implements PortableReader {
         for (int i = 0; i < portables.length; i++) {
             PortablePosition position = positions.get(i);
             if(position.getIndex() >= 0) {
-                int start = in.readInt(position.getStreamPosition() + position.getIndex() * Bits.INT_SIZE_IN_BYTES);
-                in.position(start);
+                // portable at the expression leaf IS located in an array
+                in.position(position.getStreamPosition());
                 portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
             } else {
+                // portable at the expression leaf NOT located in an array
                 in.position(position.getStreamPosition());
                 if (!position.isNull()) {
                     portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
                 }
             }
-
         }
         return portables;
     }

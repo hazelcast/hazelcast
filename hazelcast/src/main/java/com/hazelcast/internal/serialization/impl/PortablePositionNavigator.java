@@ -21,24 +21,24 @@ public class PortablePositionNavigator {
 
     private static final Pattern NESTED_PATH_SPLITTER = Pattern.compile("\\.");
 
+    private static final boolean SINGLE_CELL_ACCESS = true;
+    private static final boolean WHOLE_ARRAY_ACCESS = false;
+
     private BufferObjectDataInput in;
     private int offset;
     private int finalPosition;
     private ClassDefinition cd;
     private PortableSerializer serializer;
 
-    public int getFinalPosition() {
-        return finalPosition;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    //    PortableSinglePosition singleResult = new PortableSinglePosition();
-//    PortableMultiPosition multiResult = new PortableMultiPosition();
+    // PortableSinglePosition singleResult = new PortableSinglePosition();
+    // PortableMultiPosition multiResult = new PortableMultiPosition();
     Stack<NavigationFrame> frames = new Stack<NavigationFrame>();
 
+    /**
+     * @param in
+     * @param cd
+     * @param serializer
+     */
     public void init(BufferObjectDataInput in, ClassDefinition cd, PortableSerializer serializer) {
         this.in = in;
         this.cd = cd;
@@ -55,109 +55,43 @@ public class PortablePositionNavigator {
         this.serializer = serializer;
     }
 
+    private void initFieldCountAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
+        int fieldCount;
+        try {
+            // final position after portable is read
+            finalPosition = in.readInt();
+            fieldCount = in.readInt();
+        } catch (IOException e) {
+            throw new HazelcastSerializationException(e);
+        }
+        if (fieldCount != cd.getFieldCount()) {
+            throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);
+        }
+        offset = in.position();
+    }
+
+    /**
+     * @param fieldName
+     * @param type
+     * @return
+     * @throws IOException
+     */
     public PortablePosition findPositionOfPrimitiveObject(String fieldName, FieldType type) throws IOException {
         PortablePosition position = findFieldPosition(fieldName, type);
         adjustForPrimitiveArrayAccess(fieldName, (PortableSinglePosition) position);
         return position;
     }
 
+    /**
+     * @param fieldName
+     * @param type
+     * @return
+     * @throws IOException
+     */
     public PortablePosition findPositionOfPrimitiveArray(String fieldName, FieldType type) throws IOException {
         PortablePosition position = findFieldPosition(fieldName, type);
         adjustForPrimitiveArrayAccess(fieldName, (PortableSinglePosition) position);
         return position;
-    }
-
-    public PortablePosition findPositionOfPortableObject(String fieldName) throws IOException {
-        PortablePosition pos = findFieldPosition(fieldName, FieldType.PORTABLE);
-        if (pos.isMultiPosition()) {
-            throw new RuntimeException("Not a PortableSinglePosition");
-        }
-        if (pos.getIndex() < 0) {
-            return readPortable((PortableSinglePosition) pos);
-        } else {
-            return readPortableFromArray((PortableSinglePosition) pos, fieldName);
-        }
-    }
-
-    private PortablePosition readPortable(PortableSinglePosition pos) throws IOException {
-        in.position(pos.position);
-
-        pos.isNull = in.readBoolean();
-        pos.factoryId = in.readInt();
-        pos.classId = in.readInt();
-        pos.position = in.position();
-
-        // TODO -> we need the read FieldDefinition here
-        // checkFactoryAndClass(fd, factoryId, classId);
-
-        return pos;
-    }
-
-    private PortablePosition readPortableFromArray(PortableSinglePosition pos, String path) throws IOException {
-
-        in.position(pos.getStreamPosition());
-
-        int len = in.readInt();
-        int factoryId = in.readInt();
-        int classId = in.readInt();
-        if (len == Bits.NULL_ARRAY_LENGTH) {
-            throw new HazelcastSerializationException("The array " + path + " is null!");
-        }
-
-//        checkFactoryAndClass(fd, factoryId, classId);
-        if (len > 0) {
-            final int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
-            in.position(offset);
-            int portablePosition = in.readInt();
-            in.position(portablePosition);
-
-            pos.len = len;
-            pos.factoryId = factoryId;
-            pos.classId = classId;
-            pos.position = portablePosition;
-            return pos;
-
-        } else {
-            throw new HazelcastSerializationException("The array " + path + " is empty!");
-        }
-    }
-
-    public PortablePosition findPositionOfPortableArray(String fieldName) throws IOException {
-        PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(fieldName, FieldType.PORTABLE_ARRAY);
-        if (position.isMultiPosition()) {
-            for (int i = 0; i < position.asMultiPosition().size(); i++) {
-                PortableSinglePosition p = (PortableSinglePosition) position.asMultiPosition().get(i);
-                if(p.index >= 0) {
-                    adjustForPortableArrayAccess(p);
-                } else {
-                    readPortable(p);
-                }
-            }
-        } else {
-            adjustForPortableArrayAccess(position);
-        }
-
-        return position;
-    }
-
-    private void adjustForPortableArrayAccess(PortableSinglePosition position) throws IOException {
-        in.position(position.position);
-        final int currentPos = in.position();
-        try {
-            int len = in.readInt();
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-
-            position.len = len;
-            position.factoryId = factoryId;
-            position.classId = classId;
-            position.position = in.position();
-
-            // TODO
-//            checkFactoryAndClass(fd, factoryId, classId);
-        } finally {
-            in.position(currentPos);
-        }
     }
 
     private void adjustForPrimitiveArrayAccess(String fieldName, PortableSinglePosition position) throws IOException {
@@ -184,20 +118,82 @@ public class PortablePositionNavigator {
         }
     }
 
-    private void initFieldCountAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
-        int fieldCount;
-        try {
-            // final position after portable is read
-            finalPosition = in.readInt();
-            fieldCount = in.readInt();
-        } catch (IOException e) {
-            throw new HazelcastSerializationException(e);
+    /**
+     * @param fieldName
+     * @return
+     * @throws IOException
+     */
+    public PortablePosition findPositionOfPortableObject(String fieldName) throws IOException {
+        PortablePosition pos = findFieldPosition(fieldName, FieldType.PORTABLE);
+        if (pos.getIndex() < 0) {
+            return adjustForPortableFieldAccess((PortableSinglePosition) pos);
+        } else {
+            return adjustForPortableArrayAccess((PortableSinglePosition) pos, SINGLE_CELL_ACCESS, fieldName);
         }
-        if (fieldCount != cd.getFieldCount()) {
-            throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);
-        }
+    }
 
-        offset = in.position();
+    private PortablePosition adjustForPortableFieldAccess(PortableSinglePosition pos) throws IOException {
+        in.position(pos.position);
+
+        pos.isNull = in.readBoolean();
+        pos.factoryId = in.readInt();
+        pos.classId = in.readInt();
+        pos.position = in.position();
+
+        // TODO -> we need the read FieldDefinition here
+        // checkFactoryAndClass(pos.fd, pos.factoryId, pos.classId);
+
+        return pos;
+    }
+
+    private PortablePosition adjustForPortableArrayAccess(PortableSinglePosition pos, boolean singleCellAccess,
+                                                          String path) throws IOException {
+        in.position(pos.getStreamPosition());
+
+        int len = in.readInt();
+        int factoryId = in.readInt();
+        int classId = in.readInt();
+
+        pos.len = len;
+        pos.factoryId = factoryId;
+        pos.classId = classId;
+        pos.position = in.position();
+
+//        checkFactoryAndClass(fd, factoryId, classId);
+        if (singleCellAccess) {
+            if (len == Bits.NULL_ARRAY_LENGTH) {
+                throw new HazelcastSerializationException("The array " + path + " is null!");
+            } else if (len > 0) {
+                int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
+                in.position(offset);
+                pos.position = in.readInt(); // portable position
+            } else {
+                throw new HazelcastSerializationException("The array " + path + " is empty!");
+            }
+        }
+        return pos;
+    }
+
+    /**
+     * @param fieldName
+     * @return
+     * @throws IOException
+     */
+    public PortablePosition findPositionOfPortableArray(String fieldName) throws IOException {
+        PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(fieldName, FieldType.PORTABLE_ARRAY);
+        if (position.isMultiPosition()) {
+            for (int i = 0; i < position.asMultiPosition().size(); i++) {
+                PortableSinglePosition pos = (PortableSinglePosition) position.asMultiPosition().get(i);
+                if (pos.getIndex() < 0) {
+                    adjustForPortableFieldAccess(pos);
+                } else {
+                    adjustForPortableArrayAccess(pos, SINGLE_CELL_ACCESS, fieldName);
+                }
+            }
+        } else {
+            adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, fieldName);
+        }
+        return position;
     }
 
     private int readPositionFromMetadata(FieldDefinition fd) throws IOException {
@@ -207,7 +203,7 @@ public class PortablePositionNavigator {
         return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
     }
 
-    public PortablePosition findFieldPosition(String nestedPath, FieldType type) throws IOException {
+    private PortablePosition findFieldPosition(String nestedPath, FieldType type) throws IOException {
         String[] pathTokens = NESTED_PATH_SPLITTER.split(nestedPath);
         List<PortablePosition> positions = new ArrayList<PortablePosition>();
 
@@ -253,7 +249,6 @@ public class PortablePositionNavigator {
             offset = element.streamOffset;
             cd = element.cd;
         }
-
 
         String token = pathTokens[pathTokenIndex];
         String field = extractAttributeNameNameWithoutArguments(token);
@@ -310,6 +305,7 @@ public class PortablePositionNavigator {
         return null;
     }
 
+
     private int getCurrentArrayLength(FieldDefinition fd) throws IOException {
         int cpos = in.position();
         try {
@@ -328,6 +324,7 @@ public class PortablePositionNavigator {
     private boolean isPathTokenWithAnyQuantifier(String pathToken) {
         return pathToken.endsWith("[any]");
     }
+
 
     private PortablePosition readPositionOfCurrentElement(PortableSinglePosition result, FieldDefinition fd) throws IOException {
         result.fd = fd;
@@ -387,22 +384,9 @@ public class PortablePositionNavigator {
         initFieldCountAndOffset(in, cd);
     }
 
-    private static class NavigationFrame {
-        final ClassDefinition cd;
-
-        final int pathTokenIndex;
-        final int arrayIndex;
-
-        final int streamPosition;
-        final int streamOffset;
-
-        public NavigationFrame(ClassDefinition cd, int pathTokenIndex, int arrayIndex, int streamPosition, int streamOffset) {
-            this.cd = cd;
-            this.pathTokenIndex = pathTokenIndex;
-            this.arrayIndex = arrayIndex;
-            this.streamPosition = streamPosition;
-            this.streamOffset = streamOffset;
-        }
+    static int getArrayCellPosition(PortablePosition arrayPosition, int index, BufferObjectDataInput in)
+            throws IOException {
+        return in.readInt(arrayPosition.getStreamPosition() + index * Bits.INT_SIZE_IN_BYTES);
     }
 
     private HazelcastSerializationException unknownFieldException(String fieldName) {
@@ -426,5 +410,31 @@ public class PortablePositionNavigator {
         }
     }
 
+    public int getFinalPosition() {
+        return finalPosition;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+
+    private static class NavigationFrame {
+        final ClassDefinition cd;
+
+        final int pathTokenIndex;
+        final int arrayIndex;
+
+        final int streamPosition;
+        final int streamOffset;
+
+        public NavigationFrame(ClassDefinition cd, int pathTokenIndex, int arrayIndex, int streamPosition, int streamOffset) {
+            this.cd = cd;
+            this.pathTokenIndex = pathTokenIndex;
+            this.arrayIndex = arrayIndex;
+            this.streamPosition = streamPosition;
+            this.streamOffset = streamOffset;
+        }
+    }
 
 }
