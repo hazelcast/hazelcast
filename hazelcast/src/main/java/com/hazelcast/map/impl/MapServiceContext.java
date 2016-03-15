@@ -24,11 +24,9 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 import java.util.Map;
@@ -122,6 +120,4 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     MapOperationProvider getMapOperationProvider(String name);
 
     Extractors getExtractors(String mapName);
-
-    void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 }

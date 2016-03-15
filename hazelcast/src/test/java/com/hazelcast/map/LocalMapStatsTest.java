@@ -3,6 +3,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MultiMap;
@@ -20,9 +21,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -55,6 +61,59 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testTryPutSuccess() {
+        IMap<Integer, Integer> map = getMap();
+        LocalMapStats localMapStats = map.getLocalMapStats();
+
+        boolean success = map.tryPut(1, 1, 100, TimeUnit.MILLISECONDS);
+
+        if (success) {
+            assertTrue(localMapStats.getLastUpdateTime() > 0);
+        }
+    }
+
+    @Test
+    public void testTryPutFail() {
+        IMap<Integer, Integer> map = getMap();
+        map.lock(1);
+
+        boolean success = map.tryPut(1, 1, 100, TimeUnit.MILLISECONDS);
+
+        LocalMapStats localMapStats = map.getLocalMapStats();
+
+        if (!success) {
+            assertEquals(0, localMapStats.getLastUpdateTime());
+        }
+    }
+
+    @Test
+    public void testPutIfAbsent() {
+        IMap<Integer, Integer> map = getMap();
+
+        map.putIfAbsent(1, 1);
+
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        long lastAccessTime = localMapStats.getLastAccessTime();
+        long lastUpdateTime = localMapStats.getLastUpdateTime();
+
+        assertTrue(lastUpdateTime > 0);
+        assertEquals(0, lastAccessTime);
+
+        map.putIfAbsent(1, 5);
+        assertEquals(lastUpdateTime, localMapStats.getLastUpdateTime());
+        assertTrue(localMapStats.getLastAccessTime() > 0);
+    }
+
+    @Test
+    public void testPutTransient() {
+        IMap<Integer, Integer> map = getMap();
+        map.putTransient(1, 1, 0, TimeUnit.MILLISECONDS);
+
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertTrue(localMapStats.getLastUpdateTime() > 0);
+    }
+
+    @Test
     public void testPutAsync() throws Exception {
         IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
@@ -83,6 +142,25 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetAllAndHitsGenerated() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        long lastAccessTime = localMapStats.getLastAccessTime();
+        assertEquals(0, localMapStats.getHits());
+
+        Set<Integer> keys = new HashSet<Integer>();
+        for (int i = 0; i < 50; i++) {
+            keys.add(i);
+        }
+        map.getAll(keys);
+        assertEquals(50, localMapStats.getHits());
+        assertTrue(lastAccessTime < localMapStats.getLastAccessTime());
+    }
+
+    @Test
     public void testGetAsyncAndHitsGenerated() throws Exception {
         final IMap<Integer, Integer> map = getMap();
         for (int i = 0; i < 100; i++) {
@@ -99,6 +177,71 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 assertEquals(100, localMapStats.getHits());
             }
         });
+    }
+
+    @Test
+    public void testSet() {
+        IMap<Integer, Integer> map = getMap();
+        map.set(1, 1);
+
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertTrue(localMapStats.getLastUpdateTime() > 0);
+    }
+
+    @Test
+    public void testSetAsync() {
+        final IMap<Integer, Integer> map = getMap();
+        map.setAsync(1, 42);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                final LocalMapStats localMapStats = map.getLocalMapStats();
+                assertTrue(localMapStats.getLastUpdateTime() > 0);
+            }
+        });
+    }
+
+    @Test
+    public void testReplace() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        long lastUpdateTime = localMapStats.getLastUpdateTime();
+
+        map.replace(1, 3);
+        long lastUpdateTime2 = localMapStats.getLastUpdateTime();
+        assertTrue(lastUpdateTime2 >= lastUpdateTime);
+
+        // Last value not 123, not updated
+        map.replace(7, 123, 12);
+        long lastUpdateTime3 = localMapStats.getLastUpdateTime();
+        assertEquals(lastUpdateTime2, lastUpdateTime3);
+
+        map.replace(7, 7, 12);
+        long lastUpdateTime4 = localMapStats.getLastUpdateTime();
+        assertTrue(lastUpdateTime4 >= lastUpdateTime3);
+    }
+
+    @Test
+    public void testContains_IncrementsHits() {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(0, localMapStats.getHits());
+
+        map.containsKey(13);
+        assertEquals(1, localMapStats.getHits());
+
+        map.containsValue(77);
+        assertEquals(2, localMapStats.getHits());
     }
 
     @Test
@@ -174,13 +317,13 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertTrue(lastAccessTime >= startTime);
 
         Thread.sleep(5);
-        map.put(key, "value2");
+        map.get(key);
         long lastAccessTime2 = map.getLocalMapStats().getLastAccessTime();
         assertTrue(lastAccessTime2 > lastAccessTime);
     }
 
     @Test
-    public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
+    public void testLastUpdateTime_updatedConcurrently() throws InterruptedException {
         final long startTime = Clock.currentTimeMillis();
         final IMap<String, String> map = getMap();
 
@@ -196,7 +339,6 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             public void run() {
                 sleepAtLeastMillis(1);
                 map.put(key, "value2");
-                map.getLocalMapStats(); // causes the local stats object to update
             }
         }).start();
 
@@ -206,6 +348,47 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             public void run()
                     throws Exception {
                 assertTrue(localMapStats.getLastUpdateTime() > lastUpdateTime);
+            }
+        });
+    }
+
+    @Test
+    public void testLastUpdateTime_withEntryProcessor() {
+        final IMap<String, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(Integer.toString(i), i);
+        }
+
+        long lastUpdateTimeInitial = map.getLocalMapStats().getLastUpdateTime();
+
+        map.executeOnKey("3", new IncrementingEntryProcessor());
+        final long lastUpdateTime2 = map.getLocalMapStats().getLastUpdateTime();
+        assertTrue(lastUpdateTime2 > lastUpdateTimeInitial);
+
+        final AtomicLong lastUpdateTime3 = new AtomicLong(0);
+        map.submitToKey("17", new IncrementingEntryProcessor());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                lastUpdateTime3.set(map.getLocalMapStats().getLastUpdateTime());
+                assertTrue(lastUpdateTime3.get() > lastUpdateTime2);
+            }
+        });
+
+        map.submitToKey("42", new IncrementingEntryProcessor(), new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        });
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long lastUpdateTime = map.getLocalMapStats().getLastUpdateTime();
+                assertTrue(lastUpdateTime > lastUpdateTime3.get());
             }
         });
     }
@@ -260,6 +443,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 assertEquals(5000, localMapStats.getPutOperationCount());
+                assertTrue(localMapStats.getLastUpdateTime() > 0);
             }
         });
 
@@ -347,5 +531,24 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     private <K, V> IMap<K, V> getMap() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         return instance.getMap(randomString());
+    }
+
+    private static class IncrementingEntryProcessor
+            implements EntryProcessor, EntryBackupProcessor, Serializable {
+
+        public Object process(Map.Entry entry) {
+            sleepSeconds(1);
+            Integer value = (Integer) entry.getValue();
+            entry.setValue(value + 1);
+            return value + 1;
+        }
+
+        public EntryBackupProcessor getBackupProcessor() {
+            return IncrementingEntryProcessor.this;
+        }
+
+        public void processBackup(Map.Entry entry) {
+            entry.setValue((Integer) entry.getValue() + 1);
+        }
     }
 }
