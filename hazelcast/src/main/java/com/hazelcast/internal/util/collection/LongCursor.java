@@ -14,23 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util.hashslot;
+package com.hazelcast.internal.util.collection;
 
 /**
- * Cursor over assigned slots in a {@link HashSlotArray}. Initially the cursor's location is
- * before the first slot and the cursor is invalid. The cursor becomes invalid again after a
- * call to {@link #advance()} return {@code false}. It is illegal to call any methods except
- * {@link #reset} on an invalid cursor.
+ * Cursor over a collection of {@code long} values. Initially the cursor's location is
+ * before the first element and the cursor is invalid. The cursor becomes invalid again after a
+ * call to {@link #advance()} returns {@code false}. After {@link advance} returns {@code false},
+ * it is illegal to call any methods except {@link #reset}.
  */
-public interface HashSlotCursor {
+public interface LongCursor {
 
     /**
-     * Resets the cursor to the initial state.
-     */
-    void reset();
-
-    /**
-     * Advances to the next assigned slot. It is illegal to call this method after a previous
+     * Advances to the next {@code long} element. It is illegal to call this method after a previous
      * call returned {@code false}. An {@code AssertionError} may be thrown.
      *
      * @return {@code true} if the cursor advanced. If {@code false} is returned, the cursor is now invalid.
@@ -38,7 +33,12 @@ public interface HashSlotCursor {
     boolean advance();
 
     /**
-     * @return Address of the current slot's value block.
+     * @return the {@code long} value at the cursor's current position
      */
-    long valueAddress();
+    long value();
+
+    /**
+     * Resets the cursor to the inital state.
+     */
+    void reset();
 }

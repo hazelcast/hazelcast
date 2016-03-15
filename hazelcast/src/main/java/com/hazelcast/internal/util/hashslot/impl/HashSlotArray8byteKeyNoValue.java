@@ -18,6 +18,9 @@ package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryManager;
 
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_CAPACITY;
+import static com.hazelcast.internal.util.hashslot.impl.CapacityUtil.DEFAULT_LOAD_FACTOR;
+
 /**
  * Specialization of {@link HashSlotArray8byteKeyImpl} to the case of zero-length value. Suitable for a {@code long} set
  * implementation. Unassigned sentinel is kept at the start of the slot, i.e., in the key part.
@@ -25,12 +28,12 @@ import com.hazelcast.internal.memory.MemoryManager;
  */
 public class HashSlotArray8byteKeyNoValue extends HashSlotArray8byteKeyImpl {
 
-    public HashSlotArray8byteKeyNoValue(long unassignedSentinel, MemoryManager mm, int valueLength,
+    public HashSlotArray8byteKeyNoValue(long unassignedSentinel, MemoryManager mm,
                                         int initialCapacity, float loadFactor) {
-        super(unassignedSentinel, 0L, mm, valueLength, initialCapacity, loadFactor);
+        super(unassignedSentinel, 0L, mm, 0, initialCapacity, loadFactor);
     }
 
-    public HashSlotArray8byteKeyNoValue(long unassignedSentinel, MemoryManager mm, int valueLength) {
-        super(unassignedSentinel, 0L, mm, valueLength, CapacityUtil.DEFAULT_CAPACITY, CapacityUtil.DEFAULT_LOAD_FACTOR);
+    public HashSlotArray8byteKeyNoValue(long unassignedSentinel, MemoryManager mm) {
+        super(unassignedSentinel, 0L, mm, 0, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 }

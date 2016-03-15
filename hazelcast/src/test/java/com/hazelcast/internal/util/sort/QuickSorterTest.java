@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.memory.impl;
+package com.hazelcast.internal.util.sort;
 
 import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

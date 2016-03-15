@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.memory.impl;
+package com.hazelcast.internal.util.sort;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.util.sort.QuickSorter;
 
 /**
  * Base class for {@link QuickSorter} implementations on a memory block accessed by a
@@ -39,8 +38,10 @@ public abstract class MemArrayQuickSorter extends QuickSorter {
 
     /**
      * Sets the base address to the supplied address.
+     * @return {@code this}
      */
-    public void setBaseAddress(long baseAddress) {
+    public MemArrayQuickSorter gotoAddress(long baseAddress) {
         this.baseAddress = baseAddress;
+        return this;
     }
 }
