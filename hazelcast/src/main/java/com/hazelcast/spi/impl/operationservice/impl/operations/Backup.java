@@ -86,16 +86,23 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public void beforeRun() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();
-        IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-        Address owner = partition.getReplicaAddress(getReplicaIndex());
-        if (nodeEngine.getThisAddress().equals(owner)) {
-            return;
-        }
+        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
+        ILogger logger = getLogger();
 
-        valid = false;
-        final ILogger logger = getLogger();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+        IPartition partition = partitionService.getPartition(partitionId);
+        Address owner = partition.getReplicaAddress(getReplicaIndex());
+        if (!nodeEngine.getThisAddress().equals(owner)) {
+            valid = false;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+            }
+        } else if (partitionService.isPartitionReplicaVersionStale(getPartitionId(), replicaVersions, getReplicaIndex())) {
+            valid = false;
+            if (logger.isFineEnabled()) {
+                long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
+                logger.fine("Ignoring stale backup! Current-versions: " + Arrays.toString(currentVersions)
+                        + ", Backup-versions: " + Arrays.toString(replicaVersions));
+            }
         }
     }
 
