@@ -28,7 +28,10 @@ import java.util.concurrent.ExecutionException;
  */
 public final class ExceptionUtil {
 
-    private static final String EXCEPTION_SEPARATOR = "------ End remote and begin local stack-trace ------";
+    /**
+     * Separator for local/remote stacktrace.
+     */
+    public static final String EXCEPTION_SEPARATOR = "------ End remote and begin local stack-trace ------";
     private static final String EXCEPTION_MESSAGE_SEPARATOR = "------ %MSG% ------";
 
     //we don't want instances

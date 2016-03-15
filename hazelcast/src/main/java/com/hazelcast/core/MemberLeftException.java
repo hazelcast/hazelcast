@@ -35,7 +35,6 @@ public class MemberLeftException extends ExecutionException implements Retryable
     public MemberLeftException() {
     }
 
-
     public MemberLeftException(String message) {
         super(message);
     }
@@ -47,6 +46,7 @@ public class MemberLeftException extends ExecutionException implements Retryable
 
     /**
      * Returns the member that left the cluster
+     *
      * @return the member that left the cluster
      */
     public Member getMember() {
@@ -56,24 +56,26 @@ public class MemberLeftException extends ExecutionException implements Retryable
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
 
-        Address address = member.getAddress();
-        String host  = address.getHost();
-        int port = address.getPort();
-
-        out.writeUTF(member.getUuid());
-        out.writeUTF(host);
-        out.writeInt(port);
-        out.writeBoolean(member.isLiteMember());
+        if (member == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            out.writeUTF(member.getUuid());
+            out.writeUTF(member.getAddress().getHost());
+            out.writeInt(member.getAddress().getPort());
+            out.writeBoolean(member.isLiteMember());
+        }
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
-        String uuid = in.readUTF();
-        String host = in.readUTF();
-        int port = in.readInt();
-        boolean liteMember = in.readBoolean();
-
-        member = new MemberImpl(new Address(host, port), false, uuid, null, null, liteMember);
+        if (in.readBoolean()) {
+            String uuid = in.readUTF();
+            String host = in.readUTF();
+            int port = in.readInt();
+            boolean liteMember = in.readBoolean();
+            member = new MemberImpl(new Address(host, port), false, uuid, null, null, liteMember);
+        }
     }
 }
