@@ -17,9 +17,9 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplicaChangeReason;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;

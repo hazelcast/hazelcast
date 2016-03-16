@@ -61,7 +61,7 @@ public class DistributedMapperMapReduceTest
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
-                                                             .reducer(new TestReducerFactory()).submit();
+                .reducer(new TestReducerFactory()).submit();
 
         // Precalculate results
         int[] expectedResults = new int[4];
@@ -96,8 +96,8 @@ public class DistributedMapperMapReduceTest
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Long>> future = job.mapper(new GroupingTestMapper())
-                                                          .combiner(new TestIntermediateCombinerFactory())
-                                                          .reducer(new TestIntermediateReducerFactory()).submit();
+                .combiner(new TestIntermediateCombinerFactory())
+                .reducer(new TestIntermediateReducerFactory()).submit();
 
         // Pre-calculate results
         int[] expectedResults = new int[4];
@@ -132,7 +132,7 @@ public class DistributedMapperMapReduceTest
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
-                                                .reducer(new TestReducerFactory()).submit(new TestCollator());
+                .reducer(new TestReducerFactory()).submit(new TestCollator());
 
         // Precalculate result
         int expectedResult = 0;
@@ -170,7 +170,7 @@ public class DistributedMapperMapReduceTest
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
-                                                             .reducer(new TestReducerFactory()).submit();
+                .reducer(new TestReducerFactory()).submit();
 
         future.andThen(new ExecutionCallback<Map<String, Integer>>() {
             @Override
@@ -222,7 +222,7 @@ public class DistributedMapperMapReduceTest
         JobTracker tracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
-                                                .reducer(new TestReducerFactory()).submit(new TestCollator());
+                .reducer(new TestReducerFactory()).submit(new TestCollator());
 
         future.andThen(new ExecutionCallback<Integer>() {
             @Override

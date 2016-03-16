@@ -97,7 +97,7 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
 
 
     public void assertEmpty(Queue q) {
-        assertEquals("expecting an empty queue, but the queue is:"+q,0, q.size());
+        assertEquals("expecting an empty queue, but the queue is:" + q, 0, q.size());
     }
 
     public void assertContent(Queue q, Object... expected) {

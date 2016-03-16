@@ -19,9 +19,9 @@ package com.hazelcast.instance;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -33,6 +33,7 @@ import java.util.List;
 public final class TestUtil {
 
     static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
     private TestUtil() {
     }
 
@@ -66,7 +67,7 @@ public final class TestUtil {
         hz.getLifecycleService().terminate();
     }
 
-    public static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {
+    public static void warmUpPartitions(HazelcastInstance... instances) throws InterruptedException {
         for (HazelcastInstance instance : instances) {
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {

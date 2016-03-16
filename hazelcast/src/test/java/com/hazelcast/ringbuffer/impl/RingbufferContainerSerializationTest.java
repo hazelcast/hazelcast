@@ -3,7 +3,7 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
  * This test verifies that the RingbufferContainer can serialize itself
  * correctly using different in memory formats and using enabling/disabling
  * TTL.
- *
+ * <p/>
  * This test also forces a delay between the serialization and deserialization. If a ringbuffer is configured
  * with a ttl, we don't want to send over the actual expiration time, because on a different member in the
  * cluster, there could be a big time difference which can lead to the ringbuffer immediately cleaning or cleaning
@@ -45,7 +45,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
 
     private static final int CLOCK_DIFFERENCE_MS = 2000;
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void setup() {

@@ -32,7 +32,7 @@ public class DummyPayload implements IdentifiedDataSerializable {
         return bytes;
     }
 
-    public long getReferenceId(){
+    public long getReferenceId() {
         return referenceId;
     }
 

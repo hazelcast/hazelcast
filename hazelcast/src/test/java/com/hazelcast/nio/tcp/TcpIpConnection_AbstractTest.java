@@ -3,7 +3,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -28,7 +28,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
 
     protected ILogger logger;
     protected LoggingServiceImpl loggingService;
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
 
     protected Address addressA;
     protected TcpIpConnectionManager connManagerA;
@@ -66,7 +66,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         connManagerC = newConnectionManager(addressC.getPort(), metricsRegistryC);
         ioServiceC = (MockIOService) connManagerB.getIoService();
 
-        serializationService = new DefaultSerializationServiceBuilder()
+        serializationService = (InternalSerializationService) new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
     }

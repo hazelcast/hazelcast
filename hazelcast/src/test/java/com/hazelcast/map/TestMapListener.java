@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestMapListener implements EntryAddedListener, EntryRemovedListener, HazelcastInstanceAware {

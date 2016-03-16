@@ -25,12 +25,12 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.HashMap;
@@ -49,7 +49,7 @@ class CacheSplitBrainHandler {
     private final CachePartitionSegment[] segments;
     private final CacheMergePolicyProvider mergePolicyProvider;
 
-    CacheSplitBrainHandler(NodeEngine nodeEngine, Map<String, CacheConfig> configs, CachePartitionSegment[] segments)  {
+    CacheSplitBrainHandler(NodeEngine nodeEngine, Map<String, CacheConfig> configs, CachePartitionSegment[] segments) {
         this.nodeEngine = nodeEngine;
         this.configs = configs;
         this.segments = segments;

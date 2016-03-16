@@ -19,12 +19,11 @@ package com.hazelcast.util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -59,6 +58,6 @@ public class StateMachineTest {
     @Test
     public void testStaysAtState_whenAlreadyThere() {
         machine.nextOrStay(State.A);
-        assertTrue( machine.is(State.A) );
+        assertTrue(machine.is(State.A));
     }
 }

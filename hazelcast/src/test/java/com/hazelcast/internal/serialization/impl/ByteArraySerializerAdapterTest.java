@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -26,11 +26,11 @@ public class ByteArraySerializerAdapterTest {
     private ByteArraySerializerAdapter adapter;
     private ConstantSerializers.TheByteArraySerializer serializer;
 
-    private SerializationService mockSerializationService;
+    private InternalSerializationService mockSerializationService;
 
     @Before
     public void setUp() {
-        mockSerializationService = mock(SerializationService.class);
+        mockSerializationService = mock(InternalSerializationService.class);
         serializer = new ConstantSerializers.TheByteArraySerializer();
         adapter = new ByteArraySerializerAdapter(serializer);
     }

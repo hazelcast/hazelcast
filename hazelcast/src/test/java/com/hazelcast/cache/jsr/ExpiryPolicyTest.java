@@ -28,7 +28,7 @@ public class ExpiryPolicyTest
         extends javax.cache.expiry.ExpiryPolicyTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

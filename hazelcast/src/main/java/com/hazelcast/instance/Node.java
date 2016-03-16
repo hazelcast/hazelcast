@@ -44,7 +44,7 @@ import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
@@ -117,7 +117,7 @@ public class Node {
 
     private final PhoneHome phoneHome = new PhoneHome();
 
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClassLoader configClassLoader;
 
     private final NodeExtension nodeExtension;
@@ -277,7 +277,7 @@ public class Node {
         return managementCenterService;
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

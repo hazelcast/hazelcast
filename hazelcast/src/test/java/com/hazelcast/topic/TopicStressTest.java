@@ -28,11 +28,11 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * This test creates a cluster of HazelcastInstances and a bunch of Topics.
- *
+ * <p/>
  * On each instance, there is a listener for each topic.
- *
+ * <p/>
  * There is a bunch of threads, that selects a random instance with a random topic to publish a message (int) on.
- *
+ * <p/>
  * To verify that everything is fine, we expect that the total messages send by each topic is the same as the total
  * sum of messages receives by the topic listeners.
  */
@@ -78,7 +78,7 @@ public class TopicStressTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout=RUNNING_TIME_SECONDS*2*1000)
+    @Test(timeout = RUNNING_TIME_SECONDS * 2 * 1000)
     public void test() throws Exception {
         startLatch.countDown();
         System.out.printf("Test is going to run for %s seconds\n", RUNNING_TIME_SECONDS);

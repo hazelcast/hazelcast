@@ -28,7 +28,7 @@ public class CachingProviderClassLoaderTest
         extends org.jsr107.tck.spi.CachingProviderClassLoaderTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

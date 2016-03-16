@@ -36,7 +36,7 @@ public class DiscoveryJoinerTest {
     private HazelcastInstance hz;
 
     @Before
-    public void init() throws Exception{
+    public void init() throws Exception {
         discoveryNodes = new ArrayList<DiscoveryNode>(2);
         Address publicAddress = new Address("127.0.0.1", 50001);
         Address privateAddress = new Address("127.0.0.2", 50001);
@@ -47,22 +47,23 @@ public class DiscoveryJoinerTest {
         factory = new TestHazelcastInstanceFactory(1);
         hz = factory.newHazelcastInstance();
     }
+
     @After
     public void cleanup() {
         factory.terminateAll();
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_public_address () throws Exception {
-        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz),service, true);
+    public void test_DiscoveryJoiner_returns_public_address() throws Exception {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, true);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
         assertEquals("[Address[127.0.0.1]:50001, Address[127.0.0.1]:50002]", addresses.toString());
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_private_address () throws Exception {
-        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz),service, false);
+    public void test_DiscoveryJoiner_returns_private_address() throws Exception {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
         assertEquals("[Address[127.0.0.2]:50001, Address[127.0.0.2]:50002]", addresses.toString());

@@ -43,26 +43,41 @@ public class IdleStrategyTest {
 
     @Parameters(name = "manyToOne == {0}")
     public static Collection<Object[]> params() {
-        return asList(new Object[][] { {NO_OP}, {BUSY_SPIN}, {BACK_OFF} });
+        return asList(new Object[][]{{NO_OP}, {BUSY_SPIN}, {BACK_OFF}});
     }
 
-    @Parameter public StrategyToTest strategyToTest;
+    @Parameter
+    public StrategyToTest strategyToTest;
 
     private IdleStrategy idler;
 
-    @Before public void setup() {
+    @Before
+    public void setup() {
         this.idler = strategyToTest.create();
     }
 
     enum StrategyToTest {
-        NO_OP     { IdleStrategy create() { return new NoOpIdleStrategy(); } },
-        BUSY_SPIN { IdleStrategy create() { return new BusySpinIdleStrategy(); } },
-        BACK_OFF  { IdleStrategy create() { return new BackoffIdleStrategy(1, 1, 1, 2); } }
-        ;
+        NO_OP {
+            IdleStrategy create() {
+                return new NoOpIdleStrategy();
+            }
+        },
+        BUSY_SPIN {
+            IdleStrategy create() {
+                return new BusySpinIdleStrategy();
+            }
+        },
+        BACK_OFF {
+            IdleStrategy create() {
+                return new BackoffIdleStrategy(1, 1, 1, 2);
+            }
+        };
+
         abstract IdleStrategy create();
     }
 
-    @Test public void when_idle_thenReturnTrueEventually() {
+    @Test
+    public void when_idle_thenReturnTrueEventually() {
         for (int i = 0; i < MAX_CALLS; i++) {
             if (idler.idle(i)) {
                 return;

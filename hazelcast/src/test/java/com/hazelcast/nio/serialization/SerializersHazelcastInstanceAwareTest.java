@@ -45,7 +45,7 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
         config.getSerializationConfig().addPortableFactory(1, factory);
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,PortablePerson> map = instance.getMap("map");
+        Map<String, PortablePerson> map = instance.getMap("map");
 
         map.put("1", new PortablePerson());
         PortablePerson person = map.get("1");
@@ -59,7 +59,7 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
                 .addPortableFactoryClass(1, HazelcastInstanceAwarePortableFactory.class.getName());
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,PortablePerson> map = instance.getMap("map");
+        Map<String, PortablePerson> map = instance.getMap("map");
         map.put("1", new PortablePerson());
         PortablePerson person = map.get("1");
         assertNotNull("HazelcastInstance should have been set", person.hz);
@@ -73,7 +73,7 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
         config.getSerializationConfig().addDataSerializableFactory(1, factory);
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,DataSerializablePerson> map = instance.getMap("map");
+        Map<String, DataSerializablePerson> map = instance.getMap("map");
         map.put("1", new DataSerializablePerson());
         DataSerializablePerson person = map.get("1");
         assertNotNull("HazelcastInstance should have been set", person.hz);
@@ -83,11 +83,11 @@ public class SerializersHazelcastInstanceAwareTest extends HazelcastTestSupport 
     public void testDataSerializableFactoryClass() {
         Config config = new Config();
         config.getSerializationConfig().addDataSerializableFactoryClass(1,
-                                                                        HazelcastInstanceAwareDataSerializableFactory.class
-                                                                                .getName());
+                HazelcastInstanceAwareDataSerializableFactory.class
+                        .getName());
 
         HazelcastInstance instance = createHazelcastInstance(config);
-        Map<String,DataSerializablePerson> map = instance.getMap("map");
+        Map<String, DataSerializablePerson> map = instance.getMap("map");
         map.put("1", new DataSerializablePerson());
         DataSerializablePerson person = map.get("1");
         assertNotNull("HazelcastInstance should have been set", person.hz);

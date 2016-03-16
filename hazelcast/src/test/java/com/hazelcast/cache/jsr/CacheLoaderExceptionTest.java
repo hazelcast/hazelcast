@@ -28,7 +28,7 @@ public class CacheLoaderExceptionTest
         extends javax.cache.integration.CacheLoaderExceptionTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

@@ -185,9 +185,9 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         });
     }
 
-    private class CountingEntryListener<K,V> extends EntryAdapter<K,V> {
+    private class CountingEntryListener<K, V> extends EntryAdapter<K, V> {
         private final AtomicInteger addedCount = new AtomicInteger();
-        private final AtomicInteger  removedCount = new AtomicInteger();
+        private final AtomicInteger removedCount = new AtomicInteger();
 
         public void entryAdded(EntryEvent<K, V> event) {
             addedCount.incrementAndGet();
@@ -216,7 +216,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        for (int i=0; i<2; i++) {
+        for (int i = 0; i < 2; i++) {
             TransactionContext ctx1 = instance1.newTransactionContext();
             ctx1.beginTransaction();
             BaseMultiMap<Long, Long> txProfileTasks1 = ctx1.getMultiMap(mapName);

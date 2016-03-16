@@ -9,7 +9,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-/** MapLoader that pauses once while loading keys until resumed using {@link #resume()} **/
+/**
+ * MapLoader that pauses once while loading keys until resumed using {@link #resume()}
+ **/
 public class PausingMapLoader<K, V> implements MapLoader<K, V> {
 
     private MapLoader<K, V> delegate;

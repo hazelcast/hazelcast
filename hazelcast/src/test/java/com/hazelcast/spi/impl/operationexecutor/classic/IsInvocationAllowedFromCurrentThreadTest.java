@@ -164,7 +164,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        int wrongPartition = partitionOperation.getPartitionId()+1;
+        int wrongPartition = partitionOperation.getPartitionId() + 1;
         PartitionSpecificCallable task = new PartitionSpecificCallable(wrongPartition) {
             @Override
             public Object call() {
@@ -183,7 +183,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        int wrongPartition = partitionOperation.getPartitionId()+1;
+        int wrongPartition = partitionOperation.getPartitionId() + 1;
         PartitionSpecificCallable task = new PartitionSpecificCallable(wrongPartition) {
             @Override
             public Object call() {

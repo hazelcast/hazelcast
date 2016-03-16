@@ -154,7 +154,7 @@ public class MapReduceLiteMemberTest
             throws Exception {
         Job<Integer, Integer> job = populateMapAndCreateJob(instance, randomMapName(), 10000);
         ICompletableFuture<Integer> future = job.onKeys(50).mapper(new MapReduceTest.TestMapper())
-                                                .submit(new MapReduceTest.GroupingTestCollator());
+                .submit(new MapReduceTest.GroupingTestCollator());
 
         int result = future.get();
 
@@ -178,7 +178,7 @@ public class MapReduceLiteMemberTest
         JobTracker tracker = instance.getJobTracker(mapName);
         Job<Integer, Integer> job = populateMapAndCreateJob(instance, mapName, 10000);
         JobCompletableFuture<Map<String, Integer>> future = job.chunkSize(10).mapper(new MapReduceTest.GroupingTestMapper())
-                                                               .reducer(new MapReduceTest.TestReducerFactory()).submit();
+                .reducer(new MapReduceTest.TestReducerFactory()).submit();
 
         final TrackableJob trackableJob = tracker.getTrackableJob(future.getJobId());
         final JobProcessInformation processInformation = trackableJob.getJobProcessInformation();
@@ -209,7 +209,7 @@ public class MapReduceLiteMemberTest
             throws Exception {
         Job<Integer, Integer> job = populateMapAndCreateJob(instance, randomMapName(), 100);
         ICompletableFuture<Integer> future = job.mapper(new MapReduceTest.GroupingTestMapper())
-                                                .submit(new MapReduceTest.GroupingTestCollator());
+                .submit(new MapReduceTest.GroupingTestCollator());
 
         int result = future.get();
 
@@ -227,8 +227,8 @@ public class MapReduceLiteMemberTest
             throws Exception {
         Job<Integer, Integer> job = populateMapAndCreateJob(instance, randomMapName(), 100);
         ICompletableFuture<Integer> future = job.mapper(new MapReduceTest.GroupingTestMapper())
-                                                .reducer(new MapReduceTest.TestReducerFactory())
-                                                .submit(new MapReduceTest.TestCollator());
+                .reducer(new MapReduceTest.TestReducerFactory())
+                .submit(new MapReduceTest.TestCollator());
 
         int result = future.get();
 

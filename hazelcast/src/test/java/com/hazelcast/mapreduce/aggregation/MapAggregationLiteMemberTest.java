@@ -65,7 +65,7 @@ public class MapAggregationLiteMemberTest
     public static void testMaxAggregation(final HazelcastInstance instance) {
         final int size = 2000;
         List<Integer> numbers = new ArrayList<Integer>(size);
-        for (int i=0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
             numbers.add(i);
         }
 

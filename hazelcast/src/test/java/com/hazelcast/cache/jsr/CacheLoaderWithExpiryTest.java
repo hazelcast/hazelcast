@@ -28,7 +28,7 @@ public class CacheLoaderWithExpiryTest
         extends org.jsr107.tck.integration.CacheLoaderWithExpiryTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

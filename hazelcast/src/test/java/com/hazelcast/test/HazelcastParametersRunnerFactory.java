@@ -67,7 +67,7 @@ public class HazelcastParametersRunnerFactory implements ParametersRunnerFactory
     }
 
     protected HazelcastParallelClassRunner getParallelClassRunner(Class<?> testClass, Object[] parameters,
-            String testName) throws InitializationError {
+                                                                  String testName) throws InitializationError {
         return new HazelcastParallelClassRunner(testClass, parameters, testName);
     }
 }

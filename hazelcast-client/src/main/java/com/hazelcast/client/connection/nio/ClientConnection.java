@@ -20,7 +20,6 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -57,7 +56,6 @@ public class ClientConnection implements Connection {
     private final ClientReadHandler readHandler;
     private final SocketChannelWrapper socketChannelWrapper;
     private final ClientConnectionManager connectionManager;
-    private final SerializationService serializationService;
     private final LifecycleService lifecycleService;
 
     private volatile Address remoteEndpoint;
@@ -68,7 +66,6 @@ public class ClientConnection implements Connection {
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = client.getConnectionManager();
-        this.serializationService = client.getSerializationService();
         this.lifecycleService = client.getLifecycleService();
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
@@ -82,7 +79,6 @@ public class ClientConnection implements Connection {
     public ClientConnection(HazelcastClientInstanceImpl client,
                             int connectionId) throws IOException {
         this.connectionManager = client.getConnectionManager();
-        this.serializationService = client.getSerializationService();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
         writeHandler = null;
@@ -101,10 +97,6 @@ public class ClientConnection implements Connection {
 
     public int getPendingPacketCount() {
         return pendingPacketCount.get();
-    }
-
-    public SerializationService getSerializationService() {
-        return serializationService;
     }
 
     @Override

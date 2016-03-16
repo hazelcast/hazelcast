@@ -55,7 +55,7 @@ class TestBundleContext implements BundleContext {
 
     @Override
     public Bundle[] getBundles() {
-        return new Bundle[] {testBundle};
+        return new Bundle[]{testBundle};
     }
 
     @Override

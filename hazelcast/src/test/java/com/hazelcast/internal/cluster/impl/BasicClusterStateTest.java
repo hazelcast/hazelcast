@@ -23,8 +23,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -44,8 +44,8 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Map;
 
-import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -332,7 +332,7 @@ public class BasicClusterStateTest
     public void changeClusterState_transaction_mustBe_TWO_PHASE() {
         HazelcastInstance hz = createHazelcastInstance();
         hz.getCluster()
-          .changeClusterState(ClusterState.FROZEN, new TransactionOptions().setTransactionType(TransactionType.LOCAL));
+                .changeClusterState(ClusterState.FROZEN, new TransactionOptions().setTransactionType(TransactionType.LOCAL));
     }
 
     @Test

@@ -467,9 +467,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
 
-        assertTrue(instance1.getCluster().getMembers().size()==3);
-        assertTrue(instance2.getCluster().getMembers().size()==3);
-        assertTrue(instance3.getCluster().getMembers().size()==3);
+        assertTrue(instance1.getCluster().getMembers().size() == 3);
+        assertTrue(instance2.getCluster().getMembers().size() == 3);
+        assertTrue(instance3.getCluster().getMembers().size() == 3);
 
         IMap<Integer, Integer> map = instance1.getMap("testBackupMapEntryProcessorAllKeys");
         int size = 100;

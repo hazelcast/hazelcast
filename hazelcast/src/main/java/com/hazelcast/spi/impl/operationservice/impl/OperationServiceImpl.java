@@ -26,7 +26,7 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -125,7 +125,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
@@ -133,7 +133,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
         this.metricsRegistry = nodeEngine.getMetricsRegistry();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
         GroupProperties groupProperties = node.getGroupProperties();

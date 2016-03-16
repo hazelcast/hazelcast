@@ -16,8 +16,8 @@ public class MancenterServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if(req.getPathInfo().contains("memberStateCheck")) {
-            if(memberState != null) {
+        if (req.getPathInfo().contains("memberStateCheck")) {
+            if (memberState != null) {
                 resp.getWriter().write(memberState.toJson().toString());
             } else {
                 resp.getWriter().write("");

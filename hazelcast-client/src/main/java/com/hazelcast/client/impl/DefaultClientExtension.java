@@ -29,7 +29,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -59,8 +59,8 @@ public class DefaultClientExtension implements ClientExtension {
     public void afterStart(HazelcastClientInstanceImpl client) {
     }
 
-    public SerializationService createSerializationService(byte version) {
-        SerializationService ss;
+    public InternalSerializationService createSerializationService(byte version) {
+        InternalSerializationService ss;
         try {
             ClientConfig config = client.getClientConfig();
             ClassLoader configClassLoader = config.getClassLoader();

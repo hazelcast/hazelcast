@@ -89,7 +89,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 600000)
-    public void asyncInvocation_and_syncBackups() throws Exception{
+    public void asyncInvocation_and_syncBackups() throws Exception {
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {
@@ -108,7 +108,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 600000)
-    public void asyncInvocation_and_asyncBackups()throws Exception {
+    public void asyncInvocation_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {

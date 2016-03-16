@@ -23,6 +23,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.nio.ByteOrder;
 
@@ -62,5 +63,5 @@ public interface SerializationServiceBuilder {
 
     SerializationServiceBuilder setInitialOutputBufferSize(int initialOutputBufferSize);
 
-    SerializationService build();
+    <T extends SerializationService> T build();
 }

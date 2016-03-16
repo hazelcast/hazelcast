@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class StringSerializationTest {
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     private final static String TEST_DATA_TURKISH = "Pijamalı hasta, yağız şoföre çabucak güvendi.";
     private final static String TEST_DATA_JAPANESE = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
@@ -99,7 +99,7 @@ public class StringSerializationTest {
         String allstr = new String(allChars);
         byte[] expected = allstr.getBytes(Charset.forName("utf8"));
         byte[] bytes = serializationService.toBytes(allstr);
-        byte[] actual = Arrays.copyOfRange(bytes, HeapData.DATA_OFFSET + Bits.INT_SIZE_IN_BYTES, bytes.length );
+        byte[] actual = Arrays.copyOfRange(bytes, HeapData.DATA_OFFSET + Bits.INT_SIZE_IN_BYTES, bytes.length);
         assertArrayEquals(expected, actual);
     }
 

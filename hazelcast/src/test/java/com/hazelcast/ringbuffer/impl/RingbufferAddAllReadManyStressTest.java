@@ -12,7 +12,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -21,7 +20,6 @@ import org.junit.runner.RunWith;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
@@ -131,7 +129,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
         @Override
         public void doRun() throws Throwable {
-             while (!stop.get()) {
+            while (!stop.get()) {
                 LinkedList<Long> items = makeBatch();
                 addAll(items);
             }

@@ -2,8 +2,8 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -83,7 +83,7 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.field");
         object.field = 10;
-        assertEquals(object.field, gauge.read(),0.1);
+        assertEquals(object.field, gauge.read(), 0.1);
     }
 
     public class PrimitiveDoubleField {
@@ -158,12 +158,12 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         assertEquals(10, gauge.read());
     }
 
-    public static class SuperClass{
+    public static class SuperClass {
         @Probe
         int field;
     }
 
-    public static class Subclass extends SuperClass{
+    public static class Subclass extends SuperClass {
 
     }
 }

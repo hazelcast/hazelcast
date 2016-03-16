@@ -21,6 +21,6 @@ public class AddressTest {
 
     @Test(expected = NullPointerException.class)
     public void newAddress_InetSocketAddress_whenNull() throws UnknownHostException {
-        new Address((InetSocketAddress)null);
+        new Address((InetSocketAddress) null);
     }
 }

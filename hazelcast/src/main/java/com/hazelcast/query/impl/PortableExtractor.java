@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.QueryException;
 
 import java.io.IOException;
@@ -63,7 +63,7 @@ final class PortableExtractor {
     private PortableExtractor() {
     }
 
-    public static Comparable extractValue(SerializationService serializationService, Data data, String fieldName)
+    public static Comparable extractValue(InternalSerializationService serializationService, Data data, String fieldName)
             throws IOException {
         PortableContext context = serializationService.getPortableContext();
         PortableFieldExtractor fieldExtractor = getFieldExtractor(context, data, fieldName);

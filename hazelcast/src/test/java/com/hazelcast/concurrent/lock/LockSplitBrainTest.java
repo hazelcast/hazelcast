@@ -58,8 +58,8 @@ public class LockSplitBrainTest extends HazelcastTestSupport {
             }
         });
 
-        closeConnectionBetween(h1,h3);
-        closeConnectionBetween(h2,h3);
+        closeConnectionBetween(h1, h3);
+        closeConnectionBetween(h2, h3);
 
         assertOpenEventually(memberShipListener.latch);
         assertClusterSizeEventually(2, h1);

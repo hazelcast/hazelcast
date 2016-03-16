@@ -2,8 +2,6 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.test.HazelcastTestSupport;
 
-import java.io.StringWriter;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

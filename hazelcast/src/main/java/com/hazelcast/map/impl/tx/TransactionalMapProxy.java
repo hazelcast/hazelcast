@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.MapQueryEngine;
@@ -29,9 +29,10 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.IterationType;
 
@@ -314,7 +315,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 Object value = (entry.getValue().value instanceof Data)
                         ? toObjectIfNeeded(entry.getValue().value) : entry.getValue().value;
 
-                QueryableEntry queryEntry = new CachedQueryEntry(serializationService, keyData, value, extractors);
+                QueryableEntry queryEntry = new CachedQueryEntry((InternalSerializationService) serializationService,
+                        keyData, value, extractors);
                 // apply predicate on txMap
                 if (predicate.apply(queryEntry)) {
                     Object keyObject = serializationService.toObject(keyData);
@@ -369,7 +371,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                     keyWontBeIncluded.add(keyObject);
                 }
                 Object entryValue = entry.getValue().value;
-                QueryableEntry queryEntry = new CachedQueryEntry(serializationService, entry.getKey(), entryValue, extractors);
+                QueryableEntry queryEntry = new CachedQueryEntry((InternalSerializationService) serializationService,
+                        entry.getKey(), entryValue, extractors);
                 if (predicate.apply(queryEntry)) {
                     valueSet.add(queryEntry.getValue());
                 }

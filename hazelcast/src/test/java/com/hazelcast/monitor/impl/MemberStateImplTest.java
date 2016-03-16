@@ -80,7 +80,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
         assertNotNull(deserialized.getLocalExecutorStats("executorStats").toString());
         assertNotNull(deserialized.getLocalReplicatedMapStats("replicatedMapStats").toString());
-        assertEquals(1,deserialized.getLocalReplicatedMapStats("replicatedMapStats").getPutOperationCount());
+        assertEquals(1, deserialized.getLocalReplicatedMapStats("replicatedMapStats").getPutOperationCount());
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());
         assertEquals(5, deserialized.getLocalCacheStats("cacheStats").getCacheHits());
         assertNotNull(deserialized.getRuntimeProps());

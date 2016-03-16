@@ -146,6 +146,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
      * Start two nodes.
      * One node in a new thread prepares tx and shutdowns. Check if remaining node can recover tx or not.
      * <p/>
+     *
      * @throws XAException
      */
     @Test

@@ -14,31 +14,31 @@ import static org.junit.Assert.assertEquals;
 public class HashUtilTest {
 
     @Test
-    public void hashToIndex_whenHashPositive(){
+    public void hashToIndex_whenHashPositive() {
         assertEquals(hashToIndex(20, 100), 20);
         assertEquals(hashToIndex(420, 100), 20);
     }
 
     @Test
-    public void hashToIndex_whenHashZero(){
+    public void hashToIndex_whenHashZero() {
         int result = hashToIndex(420, 100);
         assertEquals(20, result);
     }
 
     @Test
-    public void hashToIndex_whenHashNegative(){
+    public void hashToIndex_whenHashNegative() {
         int result = hashToIndex(-420, 100);
         assertEquals(20, result);
     }
 
     @Test
-    public void hashToIndex_whenHashIntegerMinValue(){
+    public void hashToIndex_whenHashIntegerMinValue() {
         int result = hashToIndex(Integer.MIN_VALUE, 100);
         assertEquals(0, result);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void hashToIndex_whenItemCountZero(){
+    public void hashToIndex_whenItemCountZero() {
         hashToIndex(Integer.MIN_VALUE, 0);
     }
 }

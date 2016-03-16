@@ -20,12 +20,12 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.TraceableOperation;
 import com.hazelcast.util.ExceptionUtil;
 

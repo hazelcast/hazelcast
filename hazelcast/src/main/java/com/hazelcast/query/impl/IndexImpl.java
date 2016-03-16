@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -43,10 +43,10 @@ public class IndexImpl implements Index {
 
     private volatile TypeConverter converter;
 
-    private final SerializationService ss;
+    private final InternalSerializationService ss;
     private final Extractors extractors;
 
-    public IndexImpl(String attributeName, boolean ordered, SerializationService ss, Extractors extractors) {
+    public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors) {
         this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;

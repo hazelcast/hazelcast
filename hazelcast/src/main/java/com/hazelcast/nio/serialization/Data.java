@@ -16,10 +16,11 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.spi.serialization.SerializationService;
+
 /**
  * Data is basic unit of serialization. It stores binary form of an object serialized
- * by {@link com.hazelcast.internal.serialization.SerializationService#toData(Object)}.
- *
+ * by {@link SerializationService#toData(Object)}.
  */
 public interface Data {
 
@@ -40,6 +41,7 @@ public interface Data {
 
     /**
      * Returns the total size of Data in bytes
+     *
      * @return total size
      */
     int totalSize();
@@ -68,18 +70,20 @@ public interface Data {
      * @return partition hash
      * @see com.hazelcast.core.PartitionAware
      * @see com.hazelcast.core.PartitioningStrategy
-     * @see com.hazelcast.internal.serialization.SerializationService#toData(Object, com.hazelcast.core.PartitioningStrategy)
+     * @see SerializationService#toData(Object, com.hazelcast.core.PartitioningStrategy)
      */
     int getPartitionHash();
 
     /**
      * Returns true if Data has partition hash, false otherwise.
+     *
      * @return true if Data has partition hash, false otherwise.
      */
     boolean hasPartitionHash();
 
     /**
      * Returns 64-bit hash code for this Data object.
+     *
      * @return 64-bit hash code
      */
     long hash64();

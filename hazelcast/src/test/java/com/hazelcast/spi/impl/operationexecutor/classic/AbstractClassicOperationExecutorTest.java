@@ -9,18 +9,18 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -54,7 +54,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
     protected HazelcastThreadGroup threadGroup;
     protected DefaultNodeExtension nodeExtension;
     protected OperationRunnerFactory handlerFactory;
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
     protected PacketHandler responsePacketHandler;
     protected ClassicOperationExecutor executor;
     protected Config config;
@@ -62,7 +62,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
     @Before
     public void setup() throws Exception {
-        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte)1));
+        loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte) 1));
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = new Config();

@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -22,18 +22,17 @@ import static org.mockito.Mockito.mock;
 
 /**
  * UnsafeObjectDataOutput Tester.
- *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class UnsafeObjectDataOutputTest {
 
-    private SerializationService mockSerializationService;
+    private InternalSerializationService mockSerializationService;
     private UnsafeObjectDataOutput out;
 
     @Before
     public void before() throws Exception {
-        mockSerializationService = mock(SerializationService.class);
+        mockSerializationService = mock(InternalSerializationService.class);
         out = new UnsafeObjectDataOutput(100, mockSerializationService);
     }
 

@@ -25,9 +25,13 @@ import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 import javax.cache.Cache;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,7 +47,7 @@ public class CacheCreationTest {
     private static final int THREAD_COUNT = 4;
 
     @BeforeClass
-    public static void init() throws Exception{
+    public static void init() throws Exception {
         final URL configUrl1 = CacheCreationTest.class.getClassLoader().getResource("test-hazelcast-real-jcache.xml");
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(configUrl1.getFile());
         hzConfig = configBuilder.build();
@@ -93,7 +97,7 @@ public class CacheCreationTest {
                 @Override
                 public void run() {
                     HazelcastServerCachingProvider cachingProvider = createCachingProvider(hzConfig);
-                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache"+finalI);
+                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache" + finalI);
                     cache.get(1);
                     latch.countDown();
                 }
@@ -103,7 +107,7 @@ public class CacheCreationTest {
         executorService.shutdown();
     }
 
-    private HazelcastServerCachingProvider createCachingProvider(Config hzConfig){
+    private HazelcastServerCachingProvider createCachingProvider(Config hzConfig) {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
         HazelcastServerCachingProvider cachingProvider =
                 HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);

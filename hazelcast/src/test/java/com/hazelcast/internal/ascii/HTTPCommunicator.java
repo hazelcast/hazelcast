@@ -181,7 +181,7 @@ public class HTTPCommunicator {
         /** post the data */
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
-        String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8")+
+        String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8") +
                 "&" + URLEncoder.encode(newState, "UTF-8");
         writer.write(data);
         writer.close();
@@ -202,7 +202,7 @@ public class HTTPCommunicator {
         }
     }
 
-    private String doPost(final String url, String ... params) throws IOException {
+    private String doPost(final String url, String... params) throws IOException {
         /** set up the http connection parameters */
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("POST");
@@ -215,8 +215,8 @@ public class HTTPCommunicator {
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         String data = "";
-        for ( String param : params){
-            data +=  URLEncoder.encode(param, "UTF-8") + "&";
+        for (String param : params) {
+            data += URLEncoder.encode(param, "UTF-8") + "&";
         }
         writer.write(data);
         writer.close();

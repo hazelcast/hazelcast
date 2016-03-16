@@ -10,7 +10,9 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Executor;
 
-import static com.hazelcast.config.ReliableTopicConfig.*;
+import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE;
+import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_STATISTICS_ENABLED;
+import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_TOPIC_OVERLOAD_POLICY;
 import static com.hazelcast.topic.TopicOverloadPolicy.DISCARD_NEWEST;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -48,7 +50,7 @@ public class ReliableTopicConfigTest {
         assertSame(original.getExecutor(), copy.getExecutor());
         assertEquals(original.getReadBatchSize(), copy.getReadBatchSize());
         assertEquals(original.isStatisticsEnabled(), copy.isStatisticsEnabled());
-        assertEquals(original.getTopicOverloadPolicy(),copy.getTopicOverloadPolicy());
+        assertEquals(original.getTopicOverloadPolicy(), copy.getTopicOverloadPolicy());
     }
 
     @Test
@@ -65,7 +67,7 @@ public class ReliableTopicConfigTest {
         assertSame(original.getExecutor(), copy.getExecutor());
         assertEquals(original.getReadBatchSize(), copy.getReadBatchSize());
         assertEquals(original.isStatisticsEnabled(), copy.isStatisticsEnabled());
-        assertEquals(original.getTopicOverloadPolicy(),copy.getTopicOverloadPolicy());
+        assertEquals(original.getTopicOverloadPolicy(), copy.getTopicOverloadPolicy());
     }
 
     // ==================== setTopicOverflowPolicy =============================

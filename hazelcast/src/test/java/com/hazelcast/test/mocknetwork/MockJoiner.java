@@ -17,14 +17,15 @@
 
 package com.hazelcast.test.mocknetwork;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
-import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import org.junit.Assert;
+
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.junit.Assert;
 
 class MockJoiner extends AbstractJoiner {
 

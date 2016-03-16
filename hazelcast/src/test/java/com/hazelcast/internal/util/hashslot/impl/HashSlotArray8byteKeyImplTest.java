@@ -139,7 +139,7 @@ public class HashSlotArray8byteKeyImplTest {
             insert(key);
         }
 
-        for (int i = mod; i <= k ; i += mod) {
+        for (int i = mod; i <= k; i += mod) {
             long key = (long) i;
             assertTrue(hsa.remove(key));
         }

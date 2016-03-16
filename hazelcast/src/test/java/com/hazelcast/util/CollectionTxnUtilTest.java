@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.collection.impl.CollectionTxnUtil;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -121,7 +121,7 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteRead() throws IOException {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         BufferObjectDataOutput out = ss.createObjectDataOutput();
         CollectionTxnUtil.write(out, operationList);
         BufferObjectDataInput in = ss.createObjectDataInput(out.toByteArray());

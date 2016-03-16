@@ -42,7 +42,7 @@ public abstract class CountDownLatchAbstractTest extends HazelcastTestSupport {
         latch = newInstance();
     }
 
-    protected ICountDownLatch newInstance(){
+    protected ICountDownLatch newInstance() {
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
@@ -109,7 +109,6 @@ public abstract class CountDownLatchAbstractTest extends HazelcastTestSupport {
     }
 
     // ================= destroy =================================================
-
 
 
     // ================= await =================================================

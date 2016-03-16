@@ -8,8 +8,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -86,7 +85,7 @@ public class RawProtocolAuthenticationTest {
         String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
 
         final ClientMessage authMessage = ClientAuthenticationCodec.encodeRequest(username, pass, null, null,
-                true, ClientTypes.JAVA, SerializationService.VERSION_1);
+                true, ClientTypes.JAVA, InternalSerializationService.VERSION_1);
         authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final ClientProtocolBuffer byteBuffer = authMessage.buffer();
@@ -97,7 +96,7 @@ public class RawProtocolAuthenticationTest {
 
         do {
             int read = channel.read(socketBuffer);
-            if(read < 0) {
+            if (read < 0) {
                 throw new EOFException();
             }
             socketBuffer.flip();
@@ -133,7 +132,7 @@ public class RawProtocolAuthenticationTest {
         String pass = "TheInvalidPassword";
 
         final ClientMessage authMessage = ClientAuthenticationCodec
-                .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, SerializationService.VERSION_1);
+                .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, InternalSerializationService.VERSION_1);
         authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final ClientProtocolBuffer byteBuffer = authMessage.buffer();
@@ -144,7 +143,7 @@ public class RawProtocolAuthenticationTest {
 
         do {
             int read = channel.read(socketBuffer);
-            if(read < 0) {
+            if (read < 0) {
                 throw new EOFException();
             }
             socketBuffer.flip();
@@ -191,7 +190,7 @@ public class RawProtocolAuthenticationTest {
 
         do {
             int read = channel.read(socketBuffer);
-            if(read < 0) {
+            if (read < 0) {
                 throw new EOFException();
             }
             socketBuffer.flip();
@@ -238,7 +237,7 @@ public class RawProtocolAuthenticationTest {
 
         do {
             int read = channel.read(socketBuffer);
-            if(read < 0) {
+            if (read < 0) {
                 throw new EOFException();
             }
             socketBuffer.flip();

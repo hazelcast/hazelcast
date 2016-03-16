@@ -30,14 +30,14 @@ public class TestIgnoreRuleAccordingToUnalignedMemoryAccessSupport implements Te
     @Override
     public Statement apply(Statement base, final Description description) {
         if (description.getAnnotation(RequiresUnalignedMemoryAccessSupport.class) != null
-            && !AlignmentUtil.isUnalignedAccessAllowed()) {
-                return new Statement() {
-                    @Override
-                    public void evaluate() throws Throwable {
-                        LOGGER.finest("Ignoring `" + description.getClassName()
-                                + "` because unaligned memory access is not supported in this platform");
-                    }
-                };
+                && !AlignmentUtil.isUnalignedAccessAllowed()) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    LOGGER.finest("Ignoring `" + description.getClassName()
+                            + "` because unaligned memory access is not supported in this platform");
+                }
+            };
         }
         return base;
     }

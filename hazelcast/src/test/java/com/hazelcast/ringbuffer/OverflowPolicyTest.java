@@ -17,7 +17,7 @@ import static org.junit.Assert.assertSame;
 public class OverflowPolicyTest {
 
     @Test
-    public void test(){
+    public void test() {
         assertSame(FAIL, OverflowPolicy.getById(FAIL.getId()));
         assertSame(OVERWRITE, OverflowPolicy.getById(OVERWRITE.getId()));
         assertNull(OverflowPolicy.getById(-1));

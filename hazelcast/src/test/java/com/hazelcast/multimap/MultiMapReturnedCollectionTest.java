@@ -124,8 +124,6 @@ public class MultiMapReturnedCollectionTest extends HazelcastTestSupport {
     }
 
 
-
-
     private MultiMap<Integer, Integer> createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType collectionType, int nodeCount) {
         String multiMapName = randomMapName();
         Config config = new Config();

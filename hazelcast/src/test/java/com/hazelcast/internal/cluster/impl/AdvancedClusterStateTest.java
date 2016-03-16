@@ -26,9 +26,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -560,6 +560,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
 
         protected void beforePrepare() {
         }
+
         protected void afterPrepare() {
         }
     }
@@ -607,37 +608,59 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void begin() throws IllegalStateException {tx.begin();}
+        public void begin() throws IllegalStateException {
+            tx.begin();
+        }
 
         @Override
-        public void prepare() throws TransactionException {tx.prepare();}
+        public void prepare() throws TransactionException {
+            tx.prepare();
+        }
 
         @Override
-        public void commit() throws TransactionException, IllegalStateException {tx.commit();}
+        public void commit() throws TransactionException, IllegalStateException {
+            tx.commit();
+        }
 
         @Override
-        public void rollback() throws IllegalStateException {tx.rollback();}
+        public void rollback() throws IllegalStateException {
+            tx.rollback();
+        }
 
         @Override
-        public String getTxnId() {return tx.getTxnId();}
+        public String getTxnId() {
+            return tx.getTxnId();
+        }
 
         @Override
-        public State getState() {return tx.getState();}
+        public State getState() {
+            return tx.getState();
+        }
 
         @Override
-        public long getTimeoutMillis() {return tx.getTimeoutMillis();}
+        public long getTimeoutMillis() {
+            return tx.getTimeoutMillis();
+        }
 
         @Override
-        public void add(TransactionLogRecord record) {tx.add(record);}
+        public void add(TransactionLogRecord record) {
+            tx.add(record);
+        }
 
         @Override
-        public void remove(Object key) {tx.remove(key);}
+        public void remove(Object key) {
+            tx.remove(key);
+        }
 
         @Override
-        public TransactionLogRecord get(Object key) {return tx.get(key);}
+        public TransactionLogRecord get(Object key) {
+            return tx.get(key);
+        }
 
         @Override
-        public String getOwnerUuid() {return tx.getOwnerUuid();}
+        public String getOwnerUuid() {
+            return tx.getOwnerUuid();
+        }
 
         @Override
         public boolean isOriginatedFromClient() {

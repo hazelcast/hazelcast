@@ -19,10 +19,9 @@ package com.hazelcast.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.collection.BiInt2ObjectMap.EntryConsumer;
 import com.hazelcast.util.function.Consumer;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.core.CombinableMatcher;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +42,8 @@ import static org.junit.Assert.assertThat;
 public class BiInt2ObjectMapTest {
     private final BiInt2ObjectMap<String> map = new BiInt2ObjectMap<String>();
 
-    @Test public void shouldInitialiseUnderlyingImplementation() {
+    @Test
+    public void shouldInitialiseUnderlyingImplementation() {
         final int initialCapacity = 10;
         final double loadFactor = 0.6;
         final BiInt2ObjectMap<String> map = new BiInt2ObjectMap<String>(initialCapacity, loadFactor);
@@ -53,11 +53,13 @@ public class BiInt2ObjectMapTest {
         assertThat(map.loadFactor(), is(loadFactor));
     }
 
-    @Test public void shouldReportEmpty() {
+    @Test
+    public void shouldReportEmpty() {
         assertThat(map.isEmpty(), is(true));
     }
 
-    @Test public void shouldPutItem() {
+    @Test
+    public void shouldPutItem() {
         final String testValue = "Test";
         final int keyPartA = 3;
         final int keyPartB = 7;
@@ -66,7 +68,8 @@ public class BiInt2ObjectMapTest {
         assertThat(map.size(), is(1));
     }
 
-    @Test public void shouldPutAndGetItem() {
+    @Test
+    public void shouldPutAndGetItem() {
         final String testValue = "Test";
         final int keyPartA = 3;
         final int keyPartB = 7;
@@ -75,14 +78,16 @@ public class BiInt2ObjectMapTest {
         assertThat(map.get(keyPartA, keyPartB), is(testValue));
     }
 
-    @Test public void shouldReturnNullWhenNotFoundItem() {
+    @Test
+    public void shouldReturnNullWhenNotFoundItem() {
         final int keyPartA = 3;
         final int keyPartB = 7;
 
         assertNull(map.get(keyPartA, keyPartB));
     }
 
-    @Test public void shouldRemoveItem() {
+    @Test
+    public void shouldRemoveItem() {
         final String testValue = "Test";
         final int keyPartA = 3;
         final int keyPartB = 7;
@@ -92,7 +97,8 @@ public class BiInt2ObjectMapTest {
         assertNull(map.get(keyPartA, keyPartB));
     }
 
-    @Test public void shouldIterateValues() {
+    @Test
+    public void shouldIterateValues() {
         final Set<String> expectedSet = new HashSet<String>();
         final int count = 7;
 
@@ -105,7 +111,8 @@ public class BiInt2ObjectMapTest {
         final Set<String> actualSet = new HashSet<String>();
 
         map.forEach(new Consumer<String>() {
-            @Override public void accept(String s) {
+            @Override
+            public void accept(String s) {
                 actualSet.add(s);
             }
         });
@@ -113,7 +120,8 @@ public class BiInt2ObjectMapTest {
         assertThat(actualSet, equalTo(expectedSet));
     }
 
-    @Test public void shouldIterateEntries() {
+    @Test
+    public void shouldIterateEntries() {
         final Set<EntryCapture<String>> expectedSet = new HashSet<EntryCapture<String>>();
         final int count = 7;
 
@@ -126,7 +134,8 @@ public class BiInt2ObjectMapTest {
         final Set<EntryCapture<String>> actualSet = new HashSet<EntryCapture<String>>();
 
         map.forEach(new EntryConsumer<String>() {
-            @Override public void accept(int keyPartA, int keyPartB, String value) {
+            @Override
+            public void accept(int keyPartA, int keyPartB, String value) {
                 actualSet.add(new EntryCapture<String>(keyPartA, keyPartB, value));
             }
         });

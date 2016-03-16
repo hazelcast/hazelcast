@@ -28,7 +28,7 @@ public class StoreByValueTest
         extends org.jsr107.tck.StoreByValueTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

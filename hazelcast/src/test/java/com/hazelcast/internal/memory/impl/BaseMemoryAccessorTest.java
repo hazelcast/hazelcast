@@ -20,7 +20,6 @@ import com.hazelcast.internal.memory.GlobalMemoryAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ExceptionUtil;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,8 +30,8 @@ import sun.misc.Unsafe;
 import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -181,7 +180,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
             assertEquals((byte) (i * i), memoryAccessor.getByte(destinationAddress + i));
         }
 
-        byte[] src = new byte[] {0x11, 0x22, 0x33, 0x44};
+        byte[] src = new byte[]{0x11, 0x22, 0x33, 0x44};
         byte[] dest = new byte[src.length];
 
         memoryAccessor.copyMemory(src, ARRAY_BYTE_BASE_OFFSET, dest, ARRAY_BYTE_BASE_OFFSET, src.length);
@@ -308,19 +307,23 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         try {
             memoryAccessor.putCharVolatile(address, 'A');
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getCharVolatile(address);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.putCharVolatile(sampleObject, objectOffset, 'A');
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getCharVolatile(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
 
@@ -360,19 +363,23 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         try {
             memoryAccessor.putShortVolatile(address, (short) 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getShortVolatile(address);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.putShortVolatile(sampleObject, objectOffset, (short) 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getShortVolatile(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -410,19 +417,23 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         try {
             memoryAccessor.putIntVolatile(address, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getIntVolatile(address);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.putIntVolatile(sampleObject, objectOffset, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getIntVolatile(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
 
@@ -461,19 +472,23 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         try {
             memoryAccessor.putFloatVolatile(address, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getFloatVolatile(address);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.putFloatVolatile(sampleObject, objectOffset, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getFloatVolatile(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
 
@@ -512,19 +527,23 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         try {
             memoryAccessor.putLongVolatile(address, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getLongVolatile(address);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.putLongVolatile(sampleObject, objectOffset, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getLongVolatile(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
 
@@ -564,19 +583,23 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         try {
             memoryAccessor.putDoubleVolatile(address, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getDoubleVolatile(address);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.putDoubleVolatile(sampleObject, objectOffset, 1);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getDoubleVolatile(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -599,19 +622,23 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         try {
             memoryAccessor.putObjectVolatile(sampleObject, objectOffset, value);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getObjectVolatile(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.putObject(sampleObject, objectOffset, value);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             memoryAccessor.getObject(sampleObject, objectOffset);
             fail();
-        } catch (IllegalArgumentException ignored) { }
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
 

@@ -1,13 +1,12 @@
 package com.hazelcast.map;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
@@ -47,15 +46,16 @@ public class MergePolicySerializationTest extends HazelcastTestSupport {
         int partitionId = nodeEngine.getPartitionService().getPartitionId("key");
         Data dataKey = mapServiceContext.toData("key");
 
-        RecordStore recordStore = mapServiceContext.getRecordStore(partitionId,name);
+        RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        EntryView<String, MyObject> mergingEntryView = new SimpleEntryView("key",new MyObject());
+        EntryView<String, MyObject> mergingEntryView = new SimpleEntryView("key", new MyObject());
         recordStore.merge(dataKey, mergingEntryView, mergePolicy);
 
         int deSerializedCount = myObjectExisting.deserializedCount;
         assertEquals(0, deSerializedCount);
 
     }
+
     private static class MyObject implements DataSerializable {
         static int serializedCount = 0;
         static int deserializedCount = 0;

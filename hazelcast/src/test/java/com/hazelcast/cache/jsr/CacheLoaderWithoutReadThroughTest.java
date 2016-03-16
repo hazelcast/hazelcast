@@ -28,7 +28,7 @@ public class CacheLoaderWithoutReadThroughTest
         extends org.jsr107.tck.integration.CacheLoaderWithoutReadThroughTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

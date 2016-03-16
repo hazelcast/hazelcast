@@ -20,7 +20,6 @@ import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
 
@@ -659,7 +659,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
         // init queue store.
         final QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         final SerializationService serializationService = nodeEngine.getSerializationService();
-        this.store = QueueStoreWrapper.create(name, storeConfig, serializationService);
+        ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+        this.store = QueueStoreWrapper.create(name, storeConfig, serializationService, classLoader);
     }
 
     long nextId() {

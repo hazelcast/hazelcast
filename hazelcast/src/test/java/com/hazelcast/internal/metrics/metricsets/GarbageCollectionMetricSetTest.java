@@ -30,7 +30,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void utilityConstructor(){
+    public void utilityConstructor() {
         assertUtilityConstructor(GarbageCollectionMetricSet.class);
     }
 
@@ -41,7 +41,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 gcStats.run();
-                 assertEquals(gcStats.minorCount, gauge.read(), 1);
+                assertEquals(gcStats.minorCount, gauge.read(), 1);
             }
         });
     }
@@ -49,7 +49,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
     @Test
     public void minorTime() throws InterruptedException {
         final LongGauge gauge = metricsRegistry.newLongGauge("gc.minorTime");
-         assertTrueEventually(new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 gcStats.run();

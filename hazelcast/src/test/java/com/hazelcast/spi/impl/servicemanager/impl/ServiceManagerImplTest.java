@@ -8,8 +8,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -50,7 +50,7 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
         serviceManager.start();
     }
 
-    static class FooService implements ManagedService, ConfigurableService{
+    static class FooService implements ManagedService, ConfigurableService {
         volatile boolean initCalled;
         volatile boolean configureCalled;
 

@@ -46,7 +46,7 @@ public class DefaultScheduleQueueStressTest extends HazelcastTestSupport {
     private class ProducerThread extends TestThread {
         private volatile long produced;
 
-        public ProducerThread(){
+        public ProducerThread() {
             super("ProducerThread");
         }
 
@@ -71,7 +71,7 @@ public class DefaultScheduleQueueStressTest extends HazelcastTestSupport {
     private class ConsumerThread extends TestThread {
         volatile long consumed = 0;
 
-        public ConsumerThread(int id){
+        public ConsumerThread(int id) {
             super("ConsumerThread-" + id);
         }
 
@@ -79,7 +79,7 @@ public class DefaultScheduleQueueStressTest extends HazelcastTestSupport {
         public void doRun() throws Throwable {
             for (; ; ) {
                 Object item = queue.take();
-                if(item == POISON_PILL){
+                if (item == POISON_PILL) {
                     break;
                 }
                 consumed++;

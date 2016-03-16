@@ -21,12 +21,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -87,7 +87,7 @@ public interface NodeEngine {
      */
     ProxyService getProxyService();
 
-   /**
+    /**
      * Gets the WanReplicationService.
      *
      * @return the WanReplicationService.
@@ -226,6 +226,7 @@ public interface NodeEngine {
 
     /**
      * Indicates that node is not shutting down or it has not already shut down
+     *
      * @return true if node is not shutting down or it has not already shut down
      */
     boolean isRunning();

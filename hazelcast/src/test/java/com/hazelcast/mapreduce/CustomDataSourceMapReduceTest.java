@@ -72,8 +72,8 @@ public class CustomDataSourceMapReduceTest
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(new CustomKeyValueSource());
         ICompletableFuture<Map<String, Integer>> completableFuture = job.chunkSize(10).mapper(new CustomMapper())
-                                                                        .combiner(new CustomCombinerFactory())
-                                                                        .reducer(new CustomReducerFactory()).submit();
+                .combiner(new CustomCombinerFactory())
+                .reducer(new CustomReducerFactory()).submit();
 
         Map<String, Integer> result = completableFuture.get();
 

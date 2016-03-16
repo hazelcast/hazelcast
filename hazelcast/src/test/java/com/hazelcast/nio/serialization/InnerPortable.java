@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class InnerPortable implements Portable {
 
     byte[] bb;

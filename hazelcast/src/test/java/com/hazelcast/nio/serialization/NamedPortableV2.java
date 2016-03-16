@@ -3,8 +3,8 @@ package com.hazelcast.nio.serialization;
 import java.io.IOException;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class NamedPortableV2 extends NamedPortable implements VersionedPortable {
 
     private int v;

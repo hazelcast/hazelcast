@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,13 +27,13 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class SerializationWithUnSafeV1CompatibilityTest extends AbstractSerializationCompatibilityTest{
+public class SerializationWithUnSafeV1CompatibilityTest extends AbstractSerializationCompatibilityTest {
 
     @Before
     public void setup() {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
         serializationService = defaultSerializationServiceBuilder
-                .setVersion(SerializationService.VERSION_1)
+                .setVersion(InternalSerializationService.VERSION_1)
                 .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, new PortableTest.TestPortableFactory())
                 .setAllowUnsafe(true)
                 .setUseNativeByteOrder(true)

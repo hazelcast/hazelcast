@@ -20,8 +20,8 @@ public class FailOnTimeoutStatement extends Statement {
     /**
      * Creates an instance wrapping the given statement with the given timeout in milliseconds.
      *
-     * @param name name of the thread to be used for evaluating the statement
-     * @param statement the statement to wrap
+     * @param name          name of the thread to be used for evaluating the statement
+     * @param statement     the statement to wrap
      * @param timeoutMillis the timeout in milliseconds
      */
     public FailOnTimeoutStatement(String name, Statement statement, long timeoutMillis) {

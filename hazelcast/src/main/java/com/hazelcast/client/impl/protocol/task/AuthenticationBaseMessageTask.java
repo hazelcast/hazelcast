@@ -209,7 +209,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
     }
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, String uuid, String ownerUuid,
-            byte serializationVersion);
+                                                byte serializationVersion);
 
     protected abstract boolean isOwnerConnection();
 

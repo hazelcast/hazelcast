@@ -20,24 +20,24 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.InputOutputFactory;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.nio.ByteOrder;
 
 final class UnsafeInputOutputFactory implements InputOutputFactory {
 
     @Override
-    public BufferObjectDataInput createInput(Data data, SerializationService service) {
+    public BufferObjectDataInput createInput(Data data, InternalSerializationService service) {
         return new UnsafeObjectDataInput(data.toByteArray(), HeapData.DATA_OFFSET, service);
     }
 
     @Override
-    public BufferObjectDataInput createInput(byte[] buffer, SerializationService service) {
+    public BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service) {
         return new UnsafeObjectDataInput(buffer, service);
     }
 
     @Override
-    public BufferObjectDataOutput createOutput(int size, SerializationService service) {
+    public BufferObjectDataOutput createOutput(int size, InternalSerializationService service) {
         return new UnsafeObjectDataOutput(size, service);
     }
 

@@ -16,37 +16,37 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.monitors.BuildInfoPlugin;
 import com.hazelcast.internal.monitors.ConfigPropertiesPlugin;
+import com.hazelcast.internal.monitors.MetricsPlugin;
 import com.hazelcast.internal.monitors.OverloadedConnectionsPlugin;
 import com.hazelcast.internal.monitors.PendingInvocationsPlugin;
-import com.hazelcast.internal.monitors.MetricsPlugin;
 import com.hazelcast.internal.monitors.PerformanceMonitor;
 import com.hazelcast.internal.monitors.SlowOperationPlugin;
 import com.hazelcast.internal.monitors.SystemPropertiesPlugin;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -130,7 +130,7 @@ public class NodeEngineImpl implements NodeEngine {
                 node.groupProperties);
     }
 
-     class ConnectionManagerPacketHandler implements PacketHandler {
+    class ConnectionManagerPacketHandler implements PacketHandler {
         // ConnectionManager is only available after the NodeEngineImpl is available.
         @Override
         public void handle(Packet packet) throws Exception {

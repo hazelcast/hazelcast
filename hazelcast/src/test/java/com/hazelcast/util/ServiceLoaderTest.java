@@ -198,7 +198,7 @@ public class ServiceLoaderTest {
         Class<ServiceLoaderSpacesTestInterface> type = ServiceLoaderSpacesTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderSpacesTestInterface";
 
-        ClassLoader given = new URLClassLoader(new URL[] { new URL(ClassLoader.getSystemResource("test with spaces").toExternalForm().replace("%20", " ") + "/") });
+        ClassLoader given = new URLClassLoader(new URL[]{new URL(ClassLoader.getSystemResource("test with spaces").toExternalForm().replace("%20", " ") + "/")});
 
         Set<ServiceLoaderSpacesTestInterface> implementations = new HashSet<ServiceLoaderSpacesTestInterface>();
         Iterator<ServiceLoaderSpacesTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);

@@ -7,7 +7,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.*;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_PRIMITIVE;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_LONG_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_MAP;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -16,12 +22,12 @@ import static org.junit.Assert.assertTrue;
 public class ProbeUtilsTest extends HazelcastTestSupport {
 
     @Test
-    public void testPrivateConstructor(){
+    public void testPrivateConstructor() {
         assertUtilityConstructor(ProbeUtils.class);
     }
 
     @Test
-    public void isDouble(){
+    public void isDouble() {
         assertTrue(ProbeUtils.isDouble(TYPE_DOUBLE_NUMBER));
         assertTrue(ProbeUtils.isDouble(TYPE_DOUBLE_PRIMITIVE));
 

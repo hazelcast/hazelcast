@@ -28,7 +28,7 @@ public class CacheWriterExceptionTest
         extends javax.cache.integration.CacheWriterExceptionTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

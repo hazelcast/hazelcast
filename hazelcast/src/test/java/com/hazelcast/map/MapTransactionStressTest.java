@@ -332,6 +332,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 {
                     setPartitionId(0);
                 }
+
                 @Override
                 public void run() throws Exception {
                     LockSupport.parkNanos(10000);
@@ -349,6 +350,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                 {
                     setPartitionId(0);
                 }
+
                 @Override
                 public void run() throws Exception {
                 }

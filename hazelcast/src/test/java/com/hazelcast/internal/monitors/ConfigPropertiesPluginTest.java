@@ -31,7 +31,7 @@ public class ConfigPropertiesPluginTest extends AbstractPerformanceMonitorPlugin
     }
 
     @Test
-    public void testGetPeriodMillis(){
+    public void testGetPeriodMillis() {
         assertEquals(STATIC, plugin.getPeriodMillis());
     }
 

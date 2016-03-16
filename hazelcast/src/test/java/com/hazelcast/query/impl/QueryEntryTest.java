@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryEntryTest extends HazelcastTestSupport {
 
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
 
     @Before
     public void before() {
@@ -252,7 +252,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
         return new QueryEntry();
     }
 
-    protected void init(Object entry, SerializationService serializationService, Data key, Object value, Extractors extractors) {
+    protected void init(Object entry, InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
         ((QueryEntry) entry).init(serializationService, key, value, extractors);
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -61,7 +61,7 @@ public final class SerializationUtil {
         throw new HazelcastSerializationException(e);
     }
 
-    static SerializerAdapter createSerializerAdapter(Serializer serializer, SerializationService serializationService) {
+    static SerializerAdapter createSerializerAdapter(Serializer serializer, InternalSerializationService serializationService) {
         final SerializerAdapter s;
         if (serializer instanceof StreamSerializer) {
             s = new StreamSerializerAdapter(serializationService, (StreamSerializer) serializer);
@@ -100,11 +100,11 @@ public final class SerializationUtil {
         return version;
     }
 
-    public static ObjectDataOutputStream createObjectDataOutputStream(OutputStream out, SerializationService ss) {
+    public static ObjectDataOutputStream createObjectDataOutputStream(OutputStream out, InternalSerializationService ss) {
         return new ObjectDataOutputStream(out, ss);
     }
 
-    public static ObjectDataInputStream createObjectDataInputStream(InputStream in, SerializationService ss) {
+    public static ObjectDataInputStream createObjectDataInputStream(InputStream in, InternalSerializationService ss) {
         return new ObjectDataInputStream(in, ss);
     }
 

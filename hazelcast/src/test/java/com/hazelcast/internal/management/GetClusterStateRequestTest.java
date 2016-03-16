@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class GetClusterStateRequestTest extends HazelcastTestSupport{
+public class GetClusterStateRequestTest extends HazelcastTestSupport {
 
     private HazelcastInstance hz;
     private Cluster cluster;

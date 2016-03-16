@@ -13,7 +13,6 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * UnsafeObjectDataInput Tester.
- *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})

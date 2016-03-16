@@ -113,7 +113,7 @@ public class ComplexDataStructure {
     public static Person person(String name, Limb... limbs) {
         Person person = new Person();
         person.name = name;
-        if(limbs.length > 0) {
+        if (limbs.length > 0) {
             person.limbs_list.addAll(Arrays.asList(limbs));
         } else {
             person.limbs_list = null;

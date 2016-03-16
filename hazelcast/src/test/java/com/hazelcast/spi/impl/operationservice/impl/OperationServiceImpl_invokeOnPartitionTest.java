@@ -42,7 +42,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
     private HazelcastInstance remote;
 
     @Before
-    public void setup(){
+    public void setup() {
         HazelcastInstance[] nodes = createHazelcastInstanceFactory(2).newInstances();
         warmUpPartitions(nodes);
 
@@ -52,7 +52,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
     }
 
     @Test
-    public void whenLocalPartition(){
+    public void whenLocalPartition() {
         String expected = "foobar";
         DummyOperation operation = new DummyOperation(expected);
 
@@ -62,7 +62,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
     }
 
     @Test
-    public void whenRemotePartition(){
+    public void whenRemotePartition() {
         String expected = "foobar";
         DummyOperation operation = new DummyOperation(expected);
 

@@ -19,7 +19,6 @@ package com.hazelcast.util.collection;
 
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -45,14 +44,16 @@ import static org.junit.Assert.assertThat;
 public class Long2ObjectHashMapTest {
     private final Long2ObjectHashMap<String> longToObjectMap = new Long2ObjectHashMap<String>();
 
-    @Test public void shouldDoPutAndThenGet() {
+    @Test
+    public void shouldDoPutAndThenGet() {
         final String value = "Seven";
         longToObjectMap.put(7, value);
 
         assertThat(longToObjectMap.get(7), is(value));
     }
 
-    @Test public void shouldReplaceExistingValueForTheSameKey() {
+    @Test
+    public void shouldReplaceExistingValueForTheSameKey() {
         final long key = 7;
         final String value = "Seven";
         longToObjectMap.put(key, value);
@@ -65,7 +66,8 @@ public class Long2ObjectHashMapTest {
         assertThat(valueOf(longToObjectMap.size()), is(valueOf(1)));
     }
 
-    @Test public void shouldGrowWhenThresholdExceeded() {
+    @Test
+    public void shouldGrowWhenThresholdExceeded() {
         final double loadFactor = 0.5d;
         final Long2ObjectHashMap<String> map = new Long2ObjectHashMap<String>(32, loadFactor);
         for (int i = 0; i < 16; i++) {
@@ -87,7 +89,8 @@ public class Long2ObjectHashMapTest {
 
     }
 
-    @Test public void shouldHandleCollisionAndThenLinearProbe() {
+    @Test
+    public void shouldHandleCollisionAndThenLinearProbe() {
         final double loadFactor = 0.5d;
         final Long2ObjectHashMap<String> map = new Long2ObjectHashMap<String>(32, loadFactor);
         final long key = 7;
@@ -103,7 +106,8 @@ public class Long2ObjectHashMapTest {
         assertThat(loadFactor, closeTo(map.loadFactor(), 0.0));
     }
 
-    @Test public void shouldClearCollection() {
+    @Test
+    public void shouldClearCollection() {
         for (int i = 0; i < 15; i++) {
             longToObjectMap.put(i, Long.toString(i));
         }
@@ -117,7 +121,8 @@ public class Long2ObjectHashMapTest {
         Assert.assertNull(longToObjectMap.get(1));
     }
 
-    @Test public void shouldCompactCollection() {
+    @Test
+    public void shouldCompactCollection() {
         final int totalItems = 50;
         for (int i = 0; i < totalItems; i++) {
             longToObjectMap.put(i, Long.toString(i));
@@ -133,7 +138,8 @@ public class Long2ObjectHashMapTest {
         assertThat(valueOf(longToObjectMap.capacity()), lessThan(valueOf(capacityBeforeCompaction)));
     }
 
-    @Test public void shouldContainValue() {
+    @Test
+    public void shouldContainValue() {
         final long key = 7;
         final String value = "Seven";
 
@@ -143,7 +149,8 @@ public class Long2ObjectHashMapTest {
         Assert.assertFalse(longToObjectMap.containsValue("NoKey"));
     }
 
-    @Test public void shouldContainKey() {
+    @Test
+    public void shouldContainKey() {
         final long key = 7;
         final String value = "Seven";
 
@@ -153,7 +160,8 @@ public class Long2ObjectHashMapTest {
         Assert.assertFalse(longToObjectMap.containsKey(0));
     }
 
-    @Test public void shouldRemoveEntry() {
+    @Test
+    public void shouldRemoveEntry() {
         final long key = 7;
         final String value = "Seven";
 
@@ -166,7 +174,8 @@ public class Long2ObjectHashMapTest {
         Assert.assertFalse(longToObjectMap.containsKey(key));
     }
 
-    @Test public void shouldRemoveEntryAndCompactCollisionChain() {
+    @Test
+    public void shouldRemoveEntryAndCompactCollisionChain() {
         final long key = 12;
         final String value = "12";
 
@@ -182,7 +191,8 @@ public class Long2ObjectHashMapTest {
         assertThat(longToObjectMap.remove(key), is(value));
     }
 
-    @Test public void shouldIterateValues() {
+    @Test
+    public void shouldIterateValues() {
         final Collection<String> initialSet = new HashSet<String>();
 
         for (int i = 0; i < 11; i++) {
@@ -196,7 +206,8 @@ public class Long2ObjectHashMapTest {
         assertThat(copyToSet, is(initialSet));
     }
 
-    @Test public void shouldIterateKeysGettingLongAsPrimitive() {
+    @Test
+    public void shouldIterateKeysGettingLongAsPrimitive() {
         final Collection<Long> initialSet = new HashSet<Long>();
 
         for (int i = 0; i < 11; i++) {
@@ -214,7 +225,8 @@ public class Long2ObjectHashMapTest {
         assertThat(copyToSet, is(initialSet));
     }
 
-    @Test public void shouldIterateKeys() {
+    @Test
+    public void shouldIterateKeys() {
         final Collection<Long> initialSet = new HashSet<Long>();
 
         for (int i = 0; i < 11; i++) {
@@ -228,7 +240,8 @@ public class Long2ObjectHashMapTest {
         assertThat(copyToSet, is(initialSet));
     }
 
-    @Test public void shouldIterateAndHandleRemove() {
+    @Test
+    public void shouldIterateAndHandleRemove() {
         final Collection<Long> initialSet = new HashSet<Long>();
 
         final int count = 11;
@@ -256,7 +269,8 @@ public class Long2ObjectHashMapTest {
         assertThat(valueOf(copyOfSet.size()), is(valueOf(reducedSetSize)));
     }
 
-    @Test public void shouldIterateEntries() {
+    @Test
+    public void shouldIterateEntries() {
         final int count = 11;
         for (int i = 0; i < count; i++) {
             final String value = Long.toString(i);
@@ -275,7 +289,8 @@ public class Long2ObjectHashMapTest {
         assertThat(longToObjectMap.get(7), equalTo(testValue));
     }
 
-    @Test public void shouldGenerateStringRepresentation() {
+    @Test
+    public void shouldGenerateStringRepresentation() {
         final int[] testEntries = {3, 1, 19, 7, 11, 12, 7};
 
         for (final int testEntry : testEntries) {

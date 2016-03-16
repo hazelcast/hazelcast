@@ -102,7 +102,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         config.setProperty("hazelcast.socket.bind.any", "false");
         final NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.setPort(5701).setPortAutoIncrement(true)
-                     .getInterfaces().addInterface("127.0.0.1").setEnabled(true);
+                .getInterfaces().addInterface("127.0.0.1").setEnabled(true);
         final JoinConfig joinConfig = networkConfig.getJoin();
         joinConfig.getMulticastConfig().setEnabled(false);
         joinConfig.getAwsConfig().setEnabled(false);

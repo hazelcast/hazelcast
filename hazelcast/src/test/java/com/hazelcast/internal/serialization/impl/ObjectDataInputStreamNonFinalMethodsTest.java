@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -27,7 +27,7 @@ public class ObjectDataInputStreamNonFinalMethodsTest {
 
     final static byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-    private SerializationService mockSerializationService;
+    private InternalSerializationService mockSerializationService;
     private ObjectDataInputStream in;
     private DataInputStream dataInputSpy;
     private ByteArrayInputStream inputStream;
@@ -36,7 +36,7 @@ public class ObjectDataInputStreamNonFinalMethodsTest {
     @Before
     public void before() throws Exception {
         byteOrder = BIG_ENDIAN;
-        mockSerializationService = mock(SerializationService.class);
+        mockSerializationService = mock(InternalSerializationService.class);
         when(mockSerializationService.getByteOrder()).thenReturn(byteOrder);
 
         inputStream = new ByteArrayInputStream(INIT_DATA);

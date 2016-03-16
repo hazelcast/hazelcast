@@ -66,11 +66,11 @@ public class XmlConfigImportVariableReplacementTest {
     public void readVariables() {
         String xml =
                 "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
-                "    <semaphore name=\"${name}\">\n" +
-                "        <initial-permits>${initial.permits}</initial-permits>\n" +
-                "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
-                "    </semaphore>" +
-                "</hazelcast>";
+                        "    <semaphore name=\"${name}\">\n" +
+                        "        <initial-permits>${initial.permits}</initial-permits>\n" +
+                        "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
+                        "    </semaphore>" +
+                        "</hazelcast>";
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
@@ -91,13 +91,13 @@ public class XmlConfigImportVariableReplacementTest {
         FileOutputStream os = new FileOutputStream(file);
         String networkConfig =
                 HAZELCAST_START_TAG +
-                "    <network>\n" +
-                "        <join>\n" +
-                "            <multicast enabled=\"false\"/>\n" +
-                "            <tcp-ip enabled=\"true\"/>\n" +
-                "        </join>\n" +
-                "    </network>\n" +
-                "</hazelcast>";
+                        "    <network>\n" +
+                        "        <join>\n" +
+                        "            <multicast enabled=\"false\"/>\n" +
+                        "            <tcp-ip enabled=\"true\"/>\n" +
+                        "        </join>\n" +
+                        "    </network>\n" +
+                        "</hazelcast>";
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_START_TAG +
@@ -270,10 +270,10 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("network");
         final String networkConfig =
                 "    <network>\n" +
-                "        <join>\n" +
-                "            <tcp-ip enabled=\"true\"/>\n" +
-                "        </join>\n" +
-                "    </network>\n";
+                        "        <join>\n" +
+                        "            <tcp-ip enabled=\"true\"/>\n" +
+                        "        </join>\n" +
+                        "    </network>\n";
         buildConfig(HAZELCAST_START_TAG + networkConfig + networkConfig + "</hazelcast>", null);
     }
 
@@ -282,9 +282,9 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("group");
         final String groupConfig =
                 "    <group>\n" +
-                "        <name>foobar</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>\n";
+                        "        <name>foobar</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>\n";
         buildConfig(HAZELCAST_START_TAG + groupConfig + groupConfig + "</hazelcast>", null);
     }
 
@@ -300,8 +300,8 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("properties");
         final String propertiesConfig =
                 "    <properties>\n" +
-                "        <property name='foo'>fooval</property>\n" +
-                "    </properties>\n";
+                        "        <property name='foo'>fooval</property>\n" +
+                        "    </properties>\n";
         buildConfig(HAZELCAST_START_TAG + propertiesConfig + propertiesConfig + "</hazelcast>", null);
     }
 
@@ -310,10 +310,10 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("partition-group");
         final String partitionConfig =
                 "   <partition-group>\n" +
-                "      <member-group>\n" +
-                "          <interface>foo</interface>\n" +
-                "      </member-group>\n" +
-                "   </partition-group>\n";
+                        "      <member-group>\n" +
+                        "          <interface>foo</interface>\n" +
+                        "      </member-group>\n" +
+                        "   </partition-group>\n";
         buildConfig(HAZELCAST_START_TAG + partitionConfig + partitionConfig + "</hazelcast>", null);
     }
 
@@ -322,8 +322,8 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("listeners");
         final String listenersConfig =
                 "   <listeners>" +
-                "        <listener>foo</listener>\n\n" +
-                "   </listeners>\n";
+                        "        <listener>foo</listener>\n\n" +
+                        "   </listeners>\n";
         buildConfig(HAZELCAST_START_TAG + listenersConfig + listenersConfig + "</hazelcast>", null);
     }
 
@@ -332,20 +332,20 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("serialization");
         final String serializationConfig =
                 "       <serialization>\n" +
-                "        <portable-version>0</portable-version>\n" +
-                "        <data-serializable-factories>\n" +
-                "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n" +
-                "            </data-serializable-factory>\n" +
-                "        </data-serializable-factories>\n" +
-                "        <portable-factories>\n" +
-                "            <portable-factory factory-id=\"1\">com.hazelcast.examples.PortableFactory</portable-factory>\n" +
-                "        </portable-factories>\n" +
-                "        <serializers>\n" +
-                "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n" +
-                "            <serializer type-class=\"com.hazelcast.examples.DummyType\" class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n" +
-                "        </serializers>\n" +
-                "        <check-class-def-errors>true</check-class-def-errors>\n" +
-                "    </serialization>\n";
+                        "        <portable-version>0</portable-version>\n" +
+                        "        <data-serializable-factories>\n" +
+                        "            <data-serializable-factory factory-id=\"1\">com.hazelcast.examples.DataSerializableFactory\n" +
+                        "            </data-serializable-factory>\n" +
+                        "        </data-serializable-factories>\n" +
+                        "        <portable-factories>\n" +
+                        "            <portable-factory factory-id=\"1\">com.hazelcast.examples.PortableFactory</portable-factory>\n" +
+                        "        </portable-factories>\n" +
+                        "        <serializers>\n" +
+                        "            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>\n" +
+                        "            <serializer type-class=\"com.hazelcast.examples.DummyType\" class-name=\"com.hazelcast.examples.SerializerFactory\"/>\n" +
+                        "        </serializers>\n" +
+                        "        <check-class-def-errors>true</check-class-def-errors>\n" +
+                        "    </serialization>\n";
         buildConfig(HAZELCAST_START_TAG + serializationConfig + serializationConfig + "</hazelcast>", null);
     }
 
@@ -354,11 +354,11 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("services");
         final String servicesConfig =
                 "   <services>       " +
-                "       <service enabled=\"true\">\n" +
-                "            <name>custom-service</name>\n" +
-                "            <class-name>com.hazelcast.examples.MyService</class-name>\n" +
-                "        </service>\n" +
-                "   </services>";
+                        "       <service enabled=\"true\">\n" +
+                        "            <name>custom-service</name>\n" +
+                        "            <class-name>com.hazelcast.examples.MyService</class-name>\n" +
+                        "        </service>\n" +
+                        "   </services>";
         buildConfig(HAZELCAST_START_TAG + servicesConfig + servicesConfig + "</hazelcast>", null);
     }
 
@@ -374,8 +374,8 @@ public class XmlConfigImportVariableReplacementTest {
         expectDuplicateElementError("member-attributes");
         final String memberAttConfig =
                 "    <member-attributes>\n" +
-                "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
-                "    </member-attributes>\n";
+                        "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
+                        "    </member-attributes>\n";
         buildConfig(HAZELCAST_START_TAG + memberAttConfig + memberAttConfig + "</hazelcast>", null);
     }
 
