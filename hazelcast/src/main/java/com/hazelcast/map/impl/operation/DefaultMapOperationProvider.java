@@ -220,8 +220,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean initialLoad) {
-        return new PutAllOperation(name, mapEntries, initialLoad);
+    public MapOperation createPutAllOperation(String name, MapEntries mapEntries) {
+        return new PutAllOperation(name, mapEntries);
     }
 
     @Override

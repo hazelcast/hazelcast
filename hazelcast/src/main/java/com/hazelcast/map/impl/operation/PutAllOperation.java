@@ -44,7 +44,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         BackupAwareOperation, MutatingOperation {
 
     private MapEntries mapEntries;
-    private boolean initialLoad;
     private List<Map.Entry<Data, Data>> backupEntries;
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
@@ -52,10 +51,9 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     public PutAllOperation() {
     }
 
-    public PutAllOperation(String name, MapEntries mapEntries, boolean initialLoad) {
+    public PutAllOperation(String name, MapEntries mapEntries) {
         super(name);
         this.mapEntries = mapEntries;
-        this.initialLoad = initialLoad;
     }
 
     @Override
@@ -72,12 +70,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         Data dataKey = entry.getKey();
         Data dataValue = entry.getValue();
 
-        Object oldValue = null;
-        if (initialLoad) {
-            recordStore.putFromLoad(dataKey, dataValue, DEFAULT_TTL);
-        } else {
-            oldValue = recordStore.put(dataKey, dataValue, DEFAULT_TTL);
-        }
+        Object oldValue = recordStore.put(dataKey, dataValue, DEFAULT_TTL);
         mapServiceContext.interceptAfterPut(name, dataValue);
         EntryEventType eventType = oldValue == null ? ADDED : UPDATED;
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
@@ -156,13 +149,11 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mapEntries);
-        out.writeBoolean(initialLoad);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapEntries = in.readObject();
-        initialLoad = in.readBoolean();
     }
 }

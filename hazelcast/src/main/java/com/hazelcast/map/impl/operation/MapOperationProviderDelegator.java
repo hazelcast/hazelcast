@@ -133,8 +133,8 @@ public abstract class MapOperationProviderDelegator implements MapOperationProvi
     }
 
     @Override
-    public MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean initialLoad) {
-        return getDelegate().createPutAllOperation(name, mapEntries, initialLoad);
+    public MapOperation createPutAllOperation(String name, MapEntries mapEntries) {
+        return getDelegate().createPutAllOperation(name, mapEntries);
     }
 
     @Override
