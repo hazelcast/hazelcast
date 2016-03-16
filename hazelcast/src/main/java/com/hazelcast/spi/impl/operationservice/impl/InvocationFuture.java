@@ -37,7 +37,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTE
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.TIMEOUT_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
-import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
+import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.Math.min;
 
@@ -370,9 +370,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         if (response instanceof Throwable) {
             Throwable throwable = ((Throwable) response);
-            if (invocation.remote) {
-                fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
-            }
+            fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             return throwable;
         }
 
