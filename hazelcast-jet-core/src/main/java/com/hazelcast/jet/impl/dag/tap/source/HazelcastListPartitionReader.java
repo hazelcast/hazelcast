@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.dag.tap.source;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.TupleIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
@@ -36,6 +35,7 @@ import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrat
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.List;
 

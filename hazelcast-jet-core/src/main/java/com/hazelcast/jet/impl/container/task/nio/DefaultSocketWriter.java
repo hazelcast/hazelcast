@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.container.task.nio;
 
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.data.io.SocketWriter;
@@ -63,11 +64,15 @@ public class DefaultSocketWriter
 
         this.applicationContext = applicationContext;
 
-        this.membersBytes = applicationContext.getNodeEngine().getSerializationService().toBytes(
+        InternalSerializationService serializationService = (InternalSerializationService) applicationContext
+                .getNodeEngine().getSerializationService();
+
+        this.membersBytes = serializationService
+                .toBytes(
                 applicationContext.getLocalJetAddress()
         );
 
-        this.applicationNameBytes = applicationContext.getNodeEngine().getSerializationService().toBytes(
+        this.applicationNameBytes = serializationService.toBytes(
                 applicationContext.getName()
         );
 

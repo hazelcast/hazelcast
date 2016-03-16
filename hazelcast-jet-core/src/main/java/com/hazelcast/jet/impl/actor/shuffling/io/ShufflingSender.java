@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ContainerTask;
@@ -55,7 +56,8 @@ public class ShufflingSender extends AbstractHazelcastWriter {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         this.containerID = containerContext.getID();
         String applicationName = containerContext.getApplicationContext().getName();
-        this.applicationNameBytes = nodeEngine.getSerializationService().toBytes(applicationName);
+        this.applicationNameBytes = ((InternalSerializationService) nodeEngine.getSerializationService())
+                .toBytes(applicationName);
         this.containerContext = containerContext;
 
         this.ringBufferActor = new RingBufferActor(
@@ -75,7 +77,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
         this.dataOutputStream = new ObjectDataOutputStream(
                 this.serializer,
-                nodeEngine.getSerializationService()
+                (InternalSerializationService)nodeEngine.getSerializationService()
         );
 
         this.senderObjectWriter = new SenderObjectWriter(this.objectWriterFactory);

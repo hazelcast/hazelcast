@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet.spi.data.tuple;
 
-import com.hazelcast.internal.serialization.SerializationService;
+
+import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * Represents abstract converter from Java-representation onto the tuple representation;
