@@ -1512,6 +1512,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    @Override
+    public boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex) {
+        PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
+        return partitionVersion.isStale(versions, replicaIndex);
+    }
+
     // called in operation threads
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     @Override
