@@ -8,7 +8,8 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Pattern;
@@ -32,7 +33,7 @@ public class PortablePositionNavigator {
 
     // PortableSinglePosition singleResult = new PortableSinglePosition();
     // PortableMultiPosition multiResult = new PortableMultiPosition();
-    Stack<NavigationFrame> frames = new Stack<NavigationFrame>();
+    Stack<NavigationFrame> multiPositions = new Stack<NavigationFrame>();
 
     /**
      * @param in
@@ -205,51 +206,67 @@ public class PortablePositionNavigator {
 
     private PortablePosition findFieldPosition(String nestedPath, FieldType type) throws IOException {
         String[] pathTokens = NESTED_PATH_SPLITTER.split(nestedPath);
-        List<PortablePosition> positions = new ArrayList<PortablePosition>();
 
-        PortablePosition p = null;
+        PortablePosition result = null;
         for (int i = 0; i < pathTokens.length; i++) {
-            p = x(pathTokens, i, nestedPath, frames, null);
-        }
-        if (p != null) {
-            positions.add(p);
-        }
-
-        while (!frames.isEmpty()) {
-            NavigationFrame frame = frames.pop();
-
-            for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
-                p = x(pathTokens, i, nestedPath, frames, frame);
-                frame = null;
-            }
-            if (p != null) {
-                positions.add(p);
+            result = processPath(pathTokens, i, nestedPath, null);
+            if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
+                break;
             }
         }
+        if (result == null && multiPositions.isEmpty()) {
+            throw unknownFieldException(nestedPath);
+        }
 
-        // TODO -> enable type checking
+
+        if (multiPositions.isEmpty()) {
+            //        if (fd.getType() != type) {
+            //            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
+            //        }
+            return result;
+        } else {
+
+            List<PortablePosition> positions = new LinkedList<PortablePosition>();
+            if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
+//                break;
+            } else if(result != null) {
+                positions.add(result);
+            }
+
+            while (!multiPositions.isEmpty()) {
+                NavigationFrame frame = multiPositions.pop();
+                setupForFrame(frame);
+                for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
+                    result = processPath(pathTokens, i, nestedPath, frame);
+                    if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
+                        continue;
+                    }
+                    frame = null;
+                }
+                if (result == null) {
+                    throw unknownFieldException(nestedPath);
+                }
+                if (result.isMultiPosition() && result.asMultiPosition().size() == 0) {
+                    continue;
+                }
+                positions.add(result);
+            }
+
+            // TODO -> enable type checking
 //        if (fd.getType() != type) {
 //            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
 //        }
-
-        // TODO
-        if (positions.size() == 1) {
-            return positions.get(0);
-        } else {
             return new PortableMultiPosition(positions);
         }
-
-
-        // TODO
-        // throw unknownFieldException(nestedPath);
     }
 
-    private PortablePosition x(String[] pathTokens, int pathTokenIndex, String nestedPath, Stack<NavigationFrame> stack, NavigationFrame element) throws IOException {
-        if (element != null) {
-            offset = element.streamOffset;
-            cd = element.cd;
-        }
+    private void setupForFrame(NavigationFrame frame) {
+        offset = frame.streamOffset;
+        cd = frame.cd;
+    }
 
+    private PortablePosition processPath(String[] pathTokens, int pathTokenIndex, String nestedPath,
+                                         NavigationFrame frame) throws IOException {
         String token = pathTokens[pathTokenIndex];
         String field = extractAttributeNameNameWithoutArguments(token);
         FieldDefinition fd = cd.getField(field);
@@ -265,55 +282,78 @@ public class PortablePositionNavigator {
             }
             advanceToNextTokenFromNonArrayElement(fd, token);
         } else if (isPathTokenWithAnyQuantifier(token)) {
-            if (last) {
-                // [any] at the end -> we just return the whole array as if without [any]
-                return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
-            }
+            // this is an optimisation for the case where there's one [any] and it's at the end
+//            if (last && multiPositions.isEmpty()) {
+//                // [any] at the end -> we just return the whole array as if without [any]
+//                return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
+//            }
             if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-
-                if (element == null) {
+                if (frame == null) {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
-                        // return empty array indicator
-                    } else if (len == 1) {
-                        advanceToNextTokenFromPortableArrayElement(fd, 0, field);
+                        // dead pill -> [any] used with empty array, so no need to process further
+                        return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
                     } else {
-                        for (int k = 1; k < len; k++) {
-
-                            NavigationFrame frame = new NavigationFrame(cd, pathTokenIndex, k, in.position(), this.offset);
-                            stack.add(frame);
+                        populatePendingNavigationFrames(pathTokenIndex, len);
+                        if(last) {
+                            return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
                         }
                         advanceToNextTokenFromPortableArrayElement(fd, 0, field);
                     }
                 } else {
-                    advanceToNextTokenFromPortableArrayElement(fd, element.arrayIndex, field);
+                    if(last) {
+                        return readPositionOfCurrentElement(new PortableSinglePosition(), fd, frame.arrayIndex);
+                    }
+                    advanceToNextTokenFromPortableArrayElement(fd, frame.arrayIndex, field);
                 }
-
             } else {
-                throw wrongUseOfAnyOperationException(nestedPath);
+                if(frame == null) {
+                    if (last) {
+                        int len = getCurrentArrayLength(fd);
+                        if (len == 0) {
+                            // dead pill -> [any] used with empty array, so no need to process further
+                            return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
+                        } else {
+                            populatePendingNavigationFrames(pathTokenIndex, len);
+                            return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
+                        }
+                    }
+                    throw wrongUseOfAnyOperationException(nestedPath);
+                } else {
+                    if(last) {
+                        return readPositionOfCurrentElement(new PortableSinglePosition(), fd, frame.arrayIndex);
+                    }
+                    throw wrongUseOfAnyOperationException(nestedPath);
+                }
             }
         } else {
-            int kindex = Integer.valueOf(extractArgumentsFromAttributeName(token));
+            int index = Integer.valueOf(extractArgumentsFromAttributeName(token));
             if (last) {
-                return readPositionOfCurrentElement(new PortableSinglePosition(), fd, kindex);
+                return readPositionOfCurrentElement(new PortableSinglePosition(), fd, index);
             }
             if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-                advanceToNextTokenFromPortableArrayElement(fd, kindex, field);
+                advanceToNextTokenFromPortableArrayElement(fd, index, field);
             }
         }
 
         return null;
     }
 
+    private void populatePendingNavigationFrames(int pathTokenIndex, int len) {
+        // populate "recursive" multi-positions
+        for (int k = 1; k < len; k++) {
+            multiPositions.add(new NavigationFrame(cd, pathTokenIndex, k, in.position(), this.offset));
+        }
+    }
 
     private int getCurrentArrayLength(FieldDefinition fd) throws IOException {
-        int cpos = in.position();
+        int originalPos = in.position();
         try {
             int pos = readPositionFromMetadata(fd);
             in.position(pos);
             return in.readInt();
         } finally {
-            in.position(cpos);
+            in.position(originalPos);
         }
     }
 
@@ -417,7 +457,6 @@ public class PortablePositionNavigator {
     public int getOffset() {
         return offset;
     }
-
 
     private static class NavigationFrame {
         final ClassDefinition cd;

@@ -21,6 +21,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderTest.WheelPortable.w;
@@ -31,7 +32,11 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class DefaultPortableReaderTest extends HazelcastTestSupport {
 
-    private static final CarPortable PORSCHE = new CarPortable("Porsche", new EnginePortable(300), w("front"), w("rear"));
+    private static final CarPortable NON_EMPTY_PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
+            w("front", true), w("rear", true));
+
+    private static final CarPortable PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
+            w("front", false), w("rear", false));
 
     @Test
     public void primitiveAttribute() throws IOException {
@@ -91,7 +96,6 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
     @Test(expected = HazelcastSerializationException.class)
     public void portableArrayFirst_primitiveArrayAtTheEnd2() throws IOException {
         reader(PORSCHE).readInt("wheels[0].serial[1].x");
-
     }
 
     @Test
@@ -101,7 +105,12 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
 
     @Test
     public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
-        assertArrayEquals(((WheelPortable) PORSCHE.wheels[0]).serial, reader(PORSCHE).readIntArray("wheels[0].serial[any]"));
+        // TODO cleanup
+        int[] result = reader(PORSCHE).readIntArray("wheels[0].serial[any]");
+        int[] expected = ((WheelPortable) PORSCHE.wheels[0]).serial.clone();
+        Arrays.sort(result);
+        Arrays.sort(expected);
+        assertArrayEquals(expected, result);
     }
 
     @Test
@@ -111,13 +120,13 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd2() throws IOException {
-        Portable[] expected = new Portable[]{ ((WheelPortable) PORSCHE.wheels[0]).chip, ((WheelPortable) PORSCHE.wheels[1]).chip };
+        Portable[] expected = new Portable[]{((WheelPortable) PORSCHE.wheels[0]).chip, ((WheelPortable) PORSCHE.wheels[1]).chip};
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chip"));
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
-        Portable[] expected = new Portable[]{ ((WheelPortable) PORSCHE.wheels[0]).chips[1], ((WheelPortable) PORSCHE.wheels[1]).chips[1] };
+        Portable[] expected = new Portable[]{((WheelPortable) PORSCHE.wheels[0]).chips[1], ((WheelPortable) PORSCHE.wheels[1]).chips[1]};
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chips[1]"));
     }
 
@@ -131,6 +140,41 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd5() throws IOException {
         assertArrayEquals(new String[]{"front", "rear"}, reader(PORSCHE).readUTFArray("wheels[any].name"));
     }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd6() throws IOException {
+        assertArrayEquals(new int[]{}, reader(PORSCHE).readIntArray("wheels[1].emptyChips[any].power"));
+    }
+
+//    @Test
+//    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd7() throws IOException {
+//        assertArrayEquals(null, reader(PORSCHE).readIntArray("wheels[1].nullChips[any].power"));
+//    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8() throws IOException {
+        assertArrayEquals(new Portable[]{}, reader(PORSCHE).readPortableArray("wheels[1].emptyChips[any]"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8a() throws IOException {
+        assertArrayEquals(new Portable[]{}, reader(PORSCHE).readPortableArray("wheels[any].emptyChips[any]"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd9() throws IOException {
+        assertArrayEquals(new Portable[]{}, reader(PORSCHE).readPortableArray("wheels[1].emptyChips"));
+    }
+
+//    @Test
+//    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd10() throws IOException {
+//        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips[any]"));
+//    }
+//
+//    @Test
+//    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd11() throws IOException {
+//        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips"));
+//    }
 
     @Test
     public void portableArrayAtTheEnd_oneElementFetched() throws IOException {
@@ -162,6 +206,9 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
 
         HazelcastInstanceProxy hz = (HazelcastInstanceProxy) createHazelcastInstance(config);
         IMap map = hz.getMap("stealingMap");
+
+        // makes sure that proper class definitions are registered
+        map.put(NON_EMPTY_PORSCHE.toString(), NON_EMPTY_PORSCHE);
 
         map.put(portable.toString(), portable);
         EntryStealingProcessor processor = new EntryStealingProcessor();
@@ -200,14 +247,6 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
         public EnginePortable engine;
         public Portable[] wheels;
         public String[] model;
-
-        public CarPortable(String name, EnginePortable engine) {
-            this.name = name;
-            this.engine = engine;
-            this.wheels = new Portable[]{new WheelPortable("FL"), new WheelPortable("FR"),
-                    new WheelPortable("RL"), new WheelPortable("RR")};
-            this.model = new String[]{"911", "GT"};
-        }
 
         public CarPortable(String name, EnginePortable engine, WheelPortable... wheels) {
             this.name = name;
@@ -367,12 +406,21 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
         public String name;
         public ChipPortable chip;
         public Portable chips[];
+        public Portable emptyChips[];
+        public Portable nullChips[];
         public int serial[];
 
-        public WheelPortable(String name) {
+        public WheelPortable(String name, boolean nonNull) {
             this.name = name;
             this.chip = new ChipPortable(100);
             this.chips = new Portable[]{new ChipPortable(20), new ChipPortable(40)};
+            if (nonNull) {
+                this.emptyChips = new Portable[]{new ChipPortable(20)};
+                this.nullChips = new Portable[]{new ChipPortable(20)};
+            } else {
+                this.emptyChips = new Portable[]{};
+                this.nullChips = null;
+            }
             this.serial = new int[]{41, 12, 79, 18, 102};
         }
 
@@ -391,6 +439,8 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
             writer.writeUTF("name", name);
             writer.writePortable("chip", chip);
             writer.writePortableArray("chips", chips);
+            writer.writePortableArray("emptyChips", emptyChips);
+            writer.writePortableArray("nullChips", nullChips);
             writer.writeIntArray("serial", serial);
         }
 
@@ -398,11 +448,13 @@ public class DefaultPortableReaderTest extends HazelcastTestSupport {
             name = reader.readUTF("name");
             chip = reader.readPortable("chip");
             chips = reader.readPortableArray("chips");
+            emptyChips = reader.readPortableArray("emptyChips");
+            nullChips = reader.readPortableArray("nullChips");
             serial = reader.readIntArray("serial");
         }
 
-        public static WheelPortable w(String name) {
-            return new WheelPortable(name);
+        public static WheelPortable w(String name, boolean nonNull) {
+            return new WheelPortable(name, nonNull);
         }
 
         @Override
