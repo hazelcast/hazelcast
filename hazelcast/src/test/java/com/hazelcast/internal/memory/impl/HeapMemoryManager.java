@@ -43,6 +43,8 @@ public class HeapMemoryManager implements MemoryManager {
 
     private int heapTop = HEAP_BOTTOM;
 
+    private int lastAllocatedAddress;
+
     private int usedMemory;
 
     public HeapMemoryManager(int size) {
@@ -78,11 +80,14 @@ public class HeapMemoryManager implements MemoryManager {
 
         @Override
         public long allocate(long size) {
+            assertFitsInt(size);
             final long bytesFree = storage.length - toStorageIndex(heapTop);
             if (size > bytesFree) {
-                throw new OutOfMemoryError(String.format("Asked to allocate %d, free bytes left %d", size, bytesFree));
+                throw new OutOfMemoryError(String.format("Asked to allocate %d, free bytes left %d",
+                        size, bytesFree));
             }
             final long addr = heapTop;
+            lastAllocatedAddress = heapTop;
             heapTop += size;
             usedMemory += size;
             allocatedAddrs.put(addr, size);
@@ -91,12 +96,36 @@ public class HeapMemoryManager implements MemoryManager {
 
         @Override
         public long reallocate(long address, long currentSize, long newSize) {
-            throw new UnsupportedOperationException();
+            assertFitsInt(address);
+            assertFitsInt(currentSize);
+            assertFitsInt(newSize);
+            validateBlock(address, currentSize);
+            final long sizeDelta = newSize - currentSize;
+            final long newAddress;
+            if (address == lastAllocatedAddress) {
+                heapTop += sizeDelta;
+                newAddress = address;
+            } else {
+                newAddress = allocate(newSize);
+                System.arraycopy(storage, (int) address, storage, (int) newAddress,
+                        (int) Math.min(currentSize, newSize));
+                allocatedAddrs.remove(address);
+            }
+            usedMemory += sizeDelta;
+            return newAddress;
         }
 
         @Override
         public void free(long address, long size) {
-            final long allocatedSize = allocatedAddrs.remove(address);
+            assertFitsInt(address);
+            assertFitsInt(size);
+            validateBlock(address, size);
+            allocatedAddrs.remove(address);
+            usedMemory -= size;
+        }
+
+        private void validateBlock(long address, long size) {
+            final long allocatedSize = allocatedAddrs.get(address);
             if (allocatedSize == -1) {
                 throw new AssertionFailedError(String.format("Address %d was not allocated", address));
             }
@@ -104,20 +133,36 @@ public class HeapMemoryManager implements MemoryManager {
                 throw new AssertionFailedError(String.format(
                         "Allocated size at %d was %d, but tried to free %d bytes", address, allocatedSize, size));
             }
-            usedMemory -= size;
         }
 
         @Override
         public void dispose() {
             storage = null;
         }
+
     }
 
-    private static long toStorageIndex(long addr) {
+    static void assertFitsInt(long arg) {
+        assert arg > 0 && arg <= Integer.MAX_VALUE : "argument outside of legal range: " + arg;
+    }
+
+    static long toStorageIndex(long addr) {
         return addr - HEAP_BOTTOM;
     }
 
     class Accessor implements MemoryAccessor {
+
+        @Override
+        public byte getByte(long address) {
+            assertFitsInt(address);
+            return storage[(int) toStorageIndex(address)];
+        }
+
+        @Override
+        public void putByte(long address, byte x) {
+            assertFitsInt(address);
+            storage[(int) toStorageIndex(address)] = x;
+        }
 
         @Override
         public int getInt(long address) {
@@ -168,16 +213,6 @@ public class HeapMemoryManager implements MemoryManager {
 
         @Override
         public void putBoolean(long address, boolean x) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public byte getByte(long address) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putByte(long address, byte x) {
             throw new UnsupportedOperationException();
         }
 
