@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.data.tuple;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -248,7 +249,8 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
         if (size == 1) {
             return nodeEngine.getSerializationService().toData(this.data[offset], calculationStrategy.getPartitioningStrategy());
         } else {
-            BufferObjectDataOutput output = nodeEngine.getSerializationService().createObjectDataOutput();
+            BufferObjectDataOutput output = ((InternalSerializationService) nodeEngine.getSerializationService())
+                    .createObjectDataOutput();
 
             for (int i = 0; i < size - 1; i++) {
                 try {

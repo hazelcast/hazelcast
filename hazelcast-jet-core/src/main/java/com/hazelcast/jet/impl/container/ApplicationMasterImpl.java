@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.container;
 
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.application.ApplicationException;
 import com.hazelcast.jet.api.container.ContainerContext;
@@ -50,10 +51,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -92,7 +93,8 @@ public class ApplicationMasterImpl extends
     ) {
         super(STATE_MACHINE_FACTORY, applicationContext.getNodeEngine(), applicationContext);
         this.discoveryService = discoveryService;
-        this.applicationNameBytes = getNodeEngine().getSerializationService().toBytes(applicationContext.getName());
+        this.applicationNameBytes = getNodeEngine().getSerializationService()
+                .toData(applicationContext.getName()).toByteArray();
     }
 
     @Override
@@ -322,7 +324,7 @@ public class ApplicationMasterImpl extends
             return null;
         }
 
-        return getNodeEngine().getSerializationService().toBytes(reason);
+        return ((InternalSerializationService) getNodeEngine().getSerializationService()).toBytes(reason);
     }
 
     @Override

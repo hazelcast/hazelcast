@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.actor.shuffling.io;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
@@ -45,7 +46,7 @@ public class ChunkedOutputStream extends OutputStream {
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
         String applicationName = containerContext.getApplicationContext().getName();
         NodeEngine nodeEngine = containerContext.getApplicationContext().getNodeEngine();
-        this.applicationNameBytes = nodeEngine.getSerializationService().toBytes(applicationName);
+        this.applicationNameBytes = ((InternalSerializationService)nodeEngine.getSerializationService()).toBytes(applicationName);
         this.containerID = containerContext.getID();
     }
 

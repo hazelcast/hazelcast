@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.container.task.nio;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.container.ContainerTask;
 import com.hazelcast.jet.api.container.ProcessingContainer;
@@ -62,7 +62,7 @@ public class DefaultSocketReader
 
         this.jetAddress = jetAddress;
         this.applicationContext = applicationContext;
-        SerializationService serializationService = applicationContext.getNodeEngine().getSerializationService();
+        InternalSerializationService serializationService = (InternalSerializationService) applicationContext.getNodeEngine().getSerializationService();
         this.applicationNameBytes = serializationService.toBytes(this.applicationContext.getName());
         this.chunkSize = applicationContext.getJetApplicationConfig().getChunkSize();
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
@@ -341,10 +341,10 @@ public class DefaultSocketReader
 
         if (processingContainer == null) {
             this.logger.warning("No such container with containerId="
-                            + packet.getContainerId()
-                            + " jetPacket="
-                            + packet
-                            + ". Application will be interrupted."
+                    + packet.getContainerId()
+                    + " jetPacket="
+                    + packet
+                    + ". Application will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_CONTAINER_FAILURE;
@@ -354,12 +354,12 @@ public class DefaultSocketReader
 
         if (containerTask == null) {
             this.logger.warning("No such task in container with containerId="
-                            + packet.getContainerId()
-                            + " taskId="
-                            + packet.getTaskID()
-                            + " jetPacket="
-                            + packet
-                            + ". Application will be interrupted."
+                    + packet.getContainerId()
+                    + " taskId="
+                    + packet.getTaskID()
+                    + " jetPacket="
+                    + packet
+                    + ". Application will be interrupted."
             );
 
             return JetPacket.HEADER_JET_DATA_NO_TASK_FAILURE;

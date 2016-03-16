@@ -20,7 +20,6 @@ package com.hazelcast.jet.impl.dag.tap.source;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.TupleIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
@@ -39,6 +38,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.serialization.SerializationService;
 
 public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<Tuple<K, V>> {
     private final MapConfig mapConfig;

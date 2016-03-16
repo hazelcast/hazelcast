@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.TupleIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
@@ -34,6 +33,7 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Iterator;
