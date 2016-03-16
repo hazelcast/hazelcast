@@ -37,11 +37,11 @@ import static com.hazelcast.util.QuickMath.modPowerOfTwo;
  */
 public class HashSlotArray16byteKeyImpl extends HashSlotArrayBase implements HashSlotArray16byteKey {
 
-    private static final int KEY_LENGTH = 16;
+    private static final int KEY_SIZE = 16;
 
     public HashSlotArray16byteKeyImpl(long nullSentinel, MemoryManager memMgr, MemoryAllocator auxMalloc, int valueLength,
                                       int initialCapacity, float loadFactor) {
-        this(nullSentinel, KEY_LENGTH, memMgr, auxMalloc, valueLength, initialCapacity, loadFactor);
+        this(nullSentinel, KEY_SIZE, memMgr, auxMalloc, valueLength, initialCapacity, loadFactor);
         assert valueLengthValid(valueLength) : "Invalid value length: " + valueLength;
     }
 
@@ -58,12 +58,17 @@ public class HashSlotArray16byteKeyImpl extends HashSlotArrayBase implements Has
             long nullSentinel, long offsetOfNullSentinel, MemoryManager mm, MemoryAllocator auxMalloc,
             int valueLength, int initialCapacity, float loadFactor
     ) {
-        super(nullSentinel, offsetOfNullSentinel, mm, auxMalloc, KEY_LENGTH, valueLength,
+        super(nullSentinel, offsetOfNullSentinel, mm, auxMalloc, KEY_SIZE, valueLength,
                 initialCapacity, loadFactor);
-        assert modPowerOfTwo(valueLength, VALUE_LENGTH_GRANULARITY) == 0
+        assert modPowerOfTwo(valueLength, VALUE_SIZE_GRANULARITY) == 0
                 : "Value length must be a positive multiple of 8, but was " + valueLength;
     }
 
+
+    @Override
+    public int keySize() {
+        return KEY_SIZE;
+    }
 
     /**
      * {@inheritDoc}
@@ -100,10 +105,10 @@ public class HashSlotArray16byteKeyImpl extends HashSlotArrayBase implements Has
     }
 
     public static long addrOfValueAt(long slotBase) {
-        return slotBase + KEY_LENGTH;
+        return slotBase + KEY_SIZE;
     }
 
     public static long valueAddr2slotBase(long valueAddr) {
-        return valueAddr - KEY_LENGTH;
+        return valueAddr - KEY_SIZE;
     }
 }

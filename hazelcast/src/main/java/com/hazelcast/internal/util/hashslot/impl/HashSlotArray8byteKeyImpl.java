@@ -38,11 +38,11 @@ import static com.hazelcast.util.QuickMath.modPowerOfTwo;
  */
 public class HashSlotArray8byteKeyImpl extends HashSlotArrayBase implements HashSlotArray8byteKey {
 
-    private static final int KEY_LENGTH = 8;
+    private static final int KEY_SIZE = 8;
 
     public HashSlotArray8byteKeyImpl(long unassignedSentinel, MemoryManager mm, int valueLength,
                                      int initialCapacity, float loadFactor) {
-        this(unassignedSentinel, KEY_LENGTH, mm, valueLength, initialCapacity, loadFactor);
+        this(unassignedSentinel, KEY_SIZE, mm, valueLength, initialCapacity, loadFactor);
         assert valueLength > 0 : "Attempted to instantiate HashSlotArrayImpl with zero value length";
     }
 
@@ -54,10 +54,15 @@ public class HashSlotArray8byteKeyImpl extends HashSlotArrayBase implements Hash
     protected HashSlotArray8byteKeyImpl(long unassignedSentinel, long offsetOfUnassignedSentinel,
                                         MemoryManager mm, int valueLength, int initialCapacity, float loadFactor
     ) {
-        super(unassignedSentinel, offsetOfUnassignedSentinel, mm, null, KEY_LENGTH, valueLength,
+        super(unassignedSentinel, offsetOfUnassignedSentinel, mm, null, KEY_SIZE, valueLength,
                 initialCapacity, loadFactor);
-        assert modPowerOfTwo(valueLength, VALUE_LENGTH_GRANULARITY) == 0
-                : "Value length must be a positive multiple of 8, but was " + valueLength;
+        assert modPowerOfTwo(valueLength, VALUE_SIZE_GRANULARITY) == 0
+                : "Value size must be a positive multiple of 8, but was " + valueLength;
+    }
+
+    @Override
+    public int keySize() {
+        return KEY_SIZE;
     }
 
     /**
