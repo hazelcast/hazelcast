@@ -223,7 +223,7 @@ public final class JetUtil {
     public static JetApplicationConfig resolveJetClientApplicationConfig(final HazelcastClientInstanceImpl client,
                                                                          final JetApplicationConfig jetApplicationConfig,
                                                                          final String name) {
-        return resolveJetApplicationConfig(client.getConfig(), jetApplicationConfig, name);
+        return resolveJetApplicationConfig(client.getClientConfig(), jetApplicationConfig, name);
     }
 
     private static <T> JetApplicationConfig resolveJetApplicationConfig(final T hazelcastConfig,
