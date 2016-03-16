@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
 import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.IConcurrentMap;
@@ -68,9 +69,11 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
             );
         }
     };
+    private final ILogger logger;
 
     public JetApplicationManagerImpl(final NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.logger = this.getNodeEngine().getLogger(JetApplicationManager.class);
 
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
@@ -152,6 +155,7 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
 
             while (port <= MAX_PORT) {
                 try {
+                    logger.info("Trying to bind " + host + ":" + port);
                     this.serverSocketChannel.bind(new InetSocketAddress(host, port));
                     success = true;
                     break;
