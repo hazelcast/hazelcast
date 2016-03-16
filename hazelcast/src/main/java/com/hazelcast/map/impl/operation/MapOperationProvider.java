@@ -71,7 +71,7 @@ public interface MapOperationProvider {
 
     MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues);
 
-    MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean initialLoad);
+    MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
     MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence);
 

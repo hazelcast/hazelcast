@@ -119,9 +119,9 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
     }
 
     @Override
-    public MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean initialLoad) {
+    public MapOperation createPutAllOperation(String name, MapEntries mapEntries) {
         checkWanReplicationQueues(name);
-        return getDelegate().createPutAllOperation(name, mapEntries, initialLoad);
+        return getDelegate().createPutAllOperation(name, mapEntries);
     }
 
     @Override
