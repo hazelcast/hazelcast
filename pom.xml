@@ -871,6 +871,12 @@
                                 -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
+                            <includes>
+                                <include>**/**.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/jsr/**.java</exclude>
+                            </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                             </groups>
