@@ -170,7 +170,7 @@ public class ThreadLocalRandom extends Random {
      * @param least the least value returned
      * @param bound the upper bound (exclusive)
      * @return the next value
-     * @throws IllegalArgumentException if least greater than or equal
+     * @throws IllegalArgumentException if least is greater than or equal
      * to bound
      */
     public long nextLong(long least, long bound) {
@@ -201,7 +201,7 @@ public class ThreadLocalRandom extends Random {
      * @param least the least value returned
      * @param bound the upper bound (exclusive)
      * @return the next value
-     * @throws IllegalArgumentException if least greater than or equal
+     * @throws IllegalArgumentException if least is greater than or equal
      * to bound
      */
     public double nextDouble(double least, double bound) {

@@ -41,7 +41,7 @@ public interface MemoryAccessor {
      * Reads the byte value from given address.
      *
      * @param address the address where byte value will be read from
-     * @return the read value
+     * @return the byte value that was read
      */
     byte getByte(long address);
 
@@ -57,7 +57,7 @@ public interface MemoryAccessor {
      * Reads the char value from given address.
      *
      * @param address the address where char value will be read from
-     * @return the read value
+     * @return the char value that was read
      */
     char getChar(long address);
 
@@ -73,7 +73,7 @@ public interface MemoryAccessor {
      * Reads the short value from given address.
      *
      * @param address the address where short value will be read from
-     * @return the read value
+     * @return the short value that was read
      */
     short getShort(long address);
 
@@ -89,7 +89,7 @@ public interface MemoryAccessor {
      * Reads the int value from given address.
      *
      * @param address the address where int value will be read from
-     * @return the read value
+     * @return the int value that was read
      */
     int getInt(long address);
 
@@ -105,7 +105,7 @@ public interface MemoryAccessor {
      * Reads the float value from given address.
      *
      * @param address the address where float value will be read from
-     * @return the read value
+     * @return the float value that was read
      */
     float getFloat(long address);
 
@@ -121,7 +121,7 @@ public interface MemoryAccessor {
      * Reads the long value from given address.
      *
      * @param address the address where long value will be read from
-     * @return the read value
+     * @return the long value that was read
      */
     long getLong(long address);
 
@@ -137,7 +137,7 @@ public interface MemoryAccessor {
      * Reads the double value from given address.
      *
      * @param address the address where double value will be read from
-     * @return the read value
+     * @return the double value that was read
      */
     double getDouble(long address);
 
@@ -174,7 +174,7 @@ public interface MemoryAccessor {
      *
      * @param srcAddress address of the first byte to copy
      * @param destination the destination byte array
-     * @param offset array index wher the first byte will be written
+     * @param offset array index where the first byte will be written
      * @param length number of bytes to copy
      */
     void copyToByteArray(long srcAddress, byte[] destination, int offset, int length);

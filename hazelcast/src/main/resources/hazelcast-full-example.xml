@@ -47,7 +47,7 @@ https://hazelcast.org/documentation/.
 <!--
     Specifies the name and password for a cluster group you create.
     Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to 
-    create a simple security. They are also referenced in the WAN Replication configurationfa. 
+    create a simple security. They are also referenced in the WAN Replication configuration. 
 -->
     <group>
         <name>dev</name>

@@ -49,14 +49,14 @@ public interface Joiner {
      * If the address already is blacklisted, the call is ignored
      *
      * @param address   the address to blacklist.
-     * @param permanent if blacklist is permanent or not
+     * @param permanent true if blacklist is permanent, false if not.
      * @throws java.lang.NullPointerException if address is null.
      * @see #isBlacklisted(com.hazelcast.nio.Address)
      */
     void blacklist(Address address, boolean permanent);
 
     /**
-     * Removes an address from the blacklist if it's temporarily blacklisted.
+     * Removes an address from the blacklist if it is temporarily blacklisted.
      * This method has no effect if given address is not blacklisted. Permanent blacklists
      * cannot be undone.
      * <p/>
