@@ -23,6 +23,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
@@ -48,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -292,6 +294,55 @@ public class JoinStressTest extends HazelcastTestSupport {
                 return new DelayedMemberInfoUpdateOperation();
             }
             return super.create(typeId);
+        }
+    }
+
+    @Test(timeout = 300000)
+    public void testJoinWhenMemberClosedInBetween() throws InterruptedException {
+        //Test is expecting to all can join safely.
+        // On the failed case the last opened instance throws java.lang.IllegalStateException: Node failed to start!
+        Config config = new Config();
+        HazelcastInstance i1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance i2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance i3 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance i4 = Hazelcast.newHazelcastInstance(config);
+
+        final IMap<Integer, Integer> map = i4.getMap("a");
+        int numThreads = 40;
+        final int loop = 5000;
+
+        Thread[] threads = new Thread[numThreads];
+        for (int i = 0; i < numThreads; i++) {
+            threads[i] = new Thread(new Runnable() {
+                public void run() {
+                    Random random = new Random();
+                    for (int j = 0; j < loop; j++) {
+                        int op = random.nextInt(3);
+                        if (op == 0) {
+                            map.put(j, j);
+                        } else if (op == 1) {
+                            Integer val = map.remove(j);
+                            assert val == null || val.equals(j);
+                        } else {
+                            Integer val = map.get(j);
+                            assert val == null || val.equals(j);
+                        }
+
+                    }
+                }
+            });
+            threads[i].start();
+        }
+
+        i1.shutdown();
+        i2.shutdown();
+        i3.shutdown();
+
+        //Should not throw java.lang.IllegalStateException: Node failed to start!
+        Hazelcast.newHazelcastInstance(config);
+
+        for (int i = 0; i < numThreads; i++) {
+            threads[i].join();
         }
     }
 }
