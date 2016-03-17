@@ -3,6 +3,8 @@ import ClientMessage = require('../ClientMessage');
 import ImmutableLazyDataList = require('./ImmutableLazyDataList');
 import {BitsUtil} from '../BitsUtil';
 import Address = require('../Address');
+import {AddressCodec} from './AddressCodec';
+import {MemberCodec} from './MemberCodec';
 import {Data} from '../serialization/Data';
 import {${model.parentName}MessageType} from './${model.parentName}MessageType';
 
@@ -41,7 +43,7 @@ static encodeRequest(<#list model.requestParams as param>${util.convertToNodeTyp
 <#if model.responseParams?has_content>
 static decodeResponse(clientMessage : ClientMessage,  toObjectFunction: (data: Data) => any = null){
     // Decode response from client message
-    var parameters :any = { <#list model.responseParams as p>'${util.convertToNodeType(p.name)}' : null}<#if p_has_next>, </#if></#list> };
+    var parameters :any = { <#list model.responseParams as p>'${util.convertToNodeType(p.name)}' : null <#if p_has_next>, </#if></#list> };
 <#list model.responseParams as p>
 <@getterText varName=util.convertToNodeType(p.name) type=p.type isNullable=p.nullable/>
 </#list>
@@ -219,7 +221,7 @@ if(clientMessage.readBoolean() !== true){
         </#switch>
         <#break >
     <#case "CUSTOM">
-    <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = ${util.getTypeCodec(varType)?split(".")?last}.decode(clientMessage)
+    <#if !isEvent>parameters['${varName}']<#else>${varName}</#if> = ${util.getTypeCodec(varType)?split(".")?last}.decode(clientMessage);
         <#break >
     <#case "COLLECTION">
     <#case "ARRAY">
@@ -234,7 +236,8 @@ if(clientMessage.readBoolean() !== true){
     <#else>${varName} = [];
     </#if>
     for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
-                            var <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true isCollection=true/>
+        var ${itemVariableName} : ${util.getNodeTsType(itemVariableType)};
+        <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true isCollection=true isDefined=true/>
         ${varName}.push(${itemVariableName})
     }
 <#if !isEvent || isCollection>
@@ -248,12 +251,14 @@ if(clientMessage.readBoolean() !== true){
         <#local valueType = util.getSecondGenericParameterType(varType)>
         <#local keyVariableName= "${varName}Key">
         <#local valVariableName= "${varName}Val">
-    var ${sizeVariableName} = clientMessage.readInt();
-    ${varName} = {}
-    for ${indexVariableName} in xrange(0,${sizeVariableName}):
-            <@getterTextInternal varName=keyVariableName varType=keyType isEvent=true />
-            <@getterTextInternal varName=valVariableName varType=valueType isEvent=true />
-        ${varName}[${keyVariableName}] = ${valVariableName}
+    var ${sizeVariableName} = clientMessage.readInt32();
+    var ${varName} :any = {};
+    for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
+    var  ${keyVariableName} : any;
+    <@getterTextInternal varName=keyVariableName varType=keyType isEvent=true isDefined=false/>
+        <@getterTextInternal varName=valVariableName varType=valueType isEvent=true isDefined=false/>
+        ${varName}[${keyVariableName}] = ${valVariableName};
         <#if !isEvent>parameters['${varName}'] = ${varName};</#if>
+    }
 </#switch>
 </#macro>
