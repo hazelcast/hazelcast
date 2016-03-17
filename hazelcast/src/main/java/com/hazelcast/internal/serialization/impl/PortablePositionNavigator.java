@@ -8,10 +8,11 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractArgumentsFromAttributeName;
@@ -33,7 +34,7 @@ public class PortablePositionNavigator {
 
     // PortableSinglePosition singleResult = new PortableSinglePosition();
     // PortableMultiPosition multiResult = new PortableMultiPosition();
-    Stack<NavigationFrame> multiPositions = new Stack<NavigationFrame>();
+    Deque<NavigationFrame> multiPositions = new ArrayDeque<NavigationFrame>();
 
     /**
      * @param in
@@ -79,7 +80,7 @@ public class PortablePositionNavigator {
      */
     public PortablePosition findPositionOfPrimitiveObject(String fieldName, FieldType type) throws IOException {
         PortablePosition position = findFieldPosition(fieldName, type);
-        adjustForPrimitiveArrayAccess(fieldName, (PortableSinglePosition) position);
+        adjustForNonPortableArrayAccess(fieldName, type, (PortableSinglePosition) position);
         return position;
     }
 
@@ -91,31 +92,125 @@ public class PortablePositionNavigator {
      */
     public PortablePosition findPositionOfPrimitiveArray(String fieldName, FieldType type) throws IOException {
         PortablePosition position = findFieldPosition(fieldName, type);
-        adjustForPrimitiveArrayAccess(fieldName, (PortableSinglePosition) position);
+        adjustForNonPortableArrayAccess(fieldName, type, (PortableSinglePosition) position);
         return position;
     }
 
-    private void adjustForPrimitiveArrayAccess(String fieldName, PortableSinglePosition position) throws IOException {
+    private void adjustForNonPortableArrayAccess(String fieldName, FieldType type, PortableSinglePosition position) throws IOException {
         if (position.isMultiPosition()) {
-            for (int i = 0; i < position.asMultiPosition().size(); i++) {
-                PortableSinglePosition p = (PortableSinglePosition) position.asMultiPosition().get(i);
-                adjustPositionForPrimitiveArrayAccess(fieldName, p);
-            }
+            adjustPositionForMultiCellNonPortableArrayAccess(fieldName, type, position);
         } else {
-            adjustPositionForPrimitiveArrayAccess(fieldName, position);
+            adjustPositionForSingleCellNonPortableArrayAccess(fieldName, type, position);
         }
     }
 
-    private void adjustPositionForPrimitiveArrayAccess(String fieldName, PortableSinglePosition position) throws IOException {
+    /**
+     * IMPORTANT:
+     * Multi-position given as method parameter may contain positions from multiple arrays.
+     * Due to array access optimisations This method expects that the positions among all positions of a
+     * single array are sorted by stream-offset.
+     */
+    private void adjustPositionForMultiCellNonPortableArrayAccess(String fieldName, FieldType type, PortablePosition position) throws IOException {
+        List<PortablePosition> positions = position.asMultiPosition();
+
+        int arrayPosition = -1;
+        int arrayIndex = 0;
+        int arrayLen = 0;
+        for (int i = 0; i < positions.size(); i++) {
+            PortableSinglePosition p = (PortableSinglePosition) positions.get(i);
+            if (p.index < 0) {
+                continue;
+            }
+
+            if (arrayPosition != p.getStreamPosition()) {
+                // advance to next array, begin from index 0
+                arrayPosition = p.getStreamPosition();
+
+                // validate the arrays length
+                in.position(p.getStreamPosition());
+                arrayLen = in.readInt();
+            }
+            validatePositionIndexInBound(fieldName, arrayLen, p);
+
+            if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
+                while (p.index > arrayIndex) {
+                    int indexElementLen = in.readInt();
+                    in.position(in.position() + indexElementLen);
+                    arrayIndex++;
+                }
+                p.position = in.position();
+            } else {
+                p.position = in.position() + p.index * getTypeElementSizeInBytes(type);
+            }
+        }
+    }
+
+    private void adjustPositionForSingleCellNonPortableArrayAccess(String fieldName, FieldType type, PortableSinglePosition position) throws IOException {
         if (position.index >= 0) {
             in.position(position.getStreamPosition());
-            int len = in.readInt();
-            if (len == NULL_ARRAY_LENGTH) {
-                throw new HazelcastSerializationException("The array " + fieldName + " is null!");
+            int arrayLen = in.readInt();
+            validatePositionIndexInBound(fieldName, arrayLen, position);
+
+            if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
+                int currentIndex = 0;
+                while (position.index > currentIndex) {
+                    int indexElementLen = in.readInt();
+                    in.position(in.position() + indexElementLen);
+                    currentIndex++;
+                }
+                position.position = in.position();
+            } else {
+                position.position = in.position() + position.index * getTypeElementSizeInBytes(type);
             }
-            final int coffset = in.position() + position.index * Bits.INT_SIZE_IN_BYTES;
-            // We are returning since you cannot extract further from a primitive field
-            position.position = coffset;
+        }
+    }
+
+    private void validatePositionIndexInBound(String fieldName, int arrayLen, PortableSinglePosition position) throws IOException {
+        if (arrayLen == NULL_ARRAY_LENGTH) {
+            throw new HazelcastSerializationException("The array " + fieldName + " is null!");
+        }
+        if (position.index > arrayLen) {
+            throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
+        }
+    }
+
+    // TODO -> translate plural types to singular types and validate
+    static int getTypeElementSizeInBytes(FieldType type) {
+        switch (type) {
+            case BYTE:
+                return Bits.BYTE_SIZE_IN_BYTES;
+            case BYTE_ARRAY:
+                return Bits.BYTE_SIZE_IN_BYTES;
+            case SHORT:
+                return Bits.SHORT_SIZE_IN_BYTES;
+            case SHORT_ARRAY:
+                return Bits.SHORT_SIZE_IN_BYTES;
+            case INT:
+                return Bits.INT_SIZE_IN_BYTES;
+            case INT_ARRAY:
+                return Bits.INT_SIZE_IN_BYTES;
+            case LONG:
+                return Bits.LONG_SIZE_IN_BYTES;
+            case LONG_ARRAY:
+                return Bits.LONG_SIZE_IN_BYTES;
+            case FLOAT:
+                return Bits.FLOAT_SIZE_IN_BYTES;
+            case FLOAT_ARRAY:
+                return Bits.FLOAT_SIZE_IN_BYTES;
+            case DOUBLE:
+                return Bits.DOUBLE_SIZE_IN_BYTES;
+            case DOUBLE_ARRAY:
+                return Bits.DOUBLE_SIZE_IN_BYTES;
+            case BOOLEAN:
+                return Bits.BOOLEAN_SIZE_IN_BYTES;
+            case BOOLEAN_ARRAY:
+                return Bits.BOOLEAN_SIZE_IN_BYTES;
+            case CHAR:
+                return Bits.CHAR_SIZE_IN_BYTES;
+            case CHAR_ARRAY:
+                return Bits.CHAR_SIZE_IN_BYTES;
+            default:
+                throw new RuntimeException("Unsupported type " + type);
         }
     }
 
@@ -183,8 +278,9 @@ public class PortablePositionNavigator {
     public PortablePosition findPositionOfPortableArray(String fieldName) throws IOException {
         PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(fieldName, FieldType.PORTABLE_ARRAY);
         if (position.isMultiPosition()) {
-            for (int i = 0; i < position.asMultiPosition().size(); i++) {
-                PortableSinglePosition pos = (PortableSinglePosition) position.asMultiPosition().get(i);
+            List<PortablePosition> positions = position.asMultiPosition();
+            for (int i = 0; i < positions.size(); i++) {
+                PortableSinglePosition pos = (PortableSinglePosition) positions.get(i);
                 if (pos.getIndex() < 0) {
                     adjustForPortableFieldAccess(pos);
                 } else {
@@ -229,12 +325,12 @@ public class PortablePositionNavigator {
             List<PortablePosition> positions = new LinkedList<PortablePosition>();
             if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
 //                break;
-            } else if(result != null) {
+            } else if (result != null) {
                 positions.add(result);
             }
 
             while (!multiPositions.isEmpty()) {
-                NavigationFrame frame = multiPositions.pop();
+                NavigationFrame frame = multiPositions.pollFirst();
                 setupForFrame(frame);
                 for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
                     result = processPath(pathTokens, i, nestedPath, frame);
@@ -295,19 +391,19 @@ public class PortablePositionNavigator {
                         return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
                     } else {
                         populatePendingNavigationFrames(pathTokenIndex, len);
-                        if(last) {
+                        if (last) {
                             return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
                         }
                         advanceToNextTokenFromPortableArrayElement(fd, 0, field);
                     }
                 } else {
-                    if(last) {
+                    if (last) {
                         return readPositionOfCurrentElement(new PortableSinglePosition(), fd, frame.arrayIndex);
                     }
                     advanceToNextTokenFromPortableArrayElement(fd, frame.arrayIndex, field);
                 }
             } else {
-                if(frame == null) {
+                if (frame == null) {
                     if (last) {
                         int len = getCurrentArrayLength(fd);
                         if (len == 0) {
@@ -320,7 +416,7 @@ public class PortablePositionNavigator {
                     }
                     throw wrongUseOfAnyOperationException(nestedPath);
                 } else {
-                    if(last) {
+                    if (last) {
                         return readPositionOfCurrentElement(new PortableSinglePosition(), fd, frame.arrayIndex);
                     }
                     throw wrongUseOfAnyOperationException(nestedPath);
