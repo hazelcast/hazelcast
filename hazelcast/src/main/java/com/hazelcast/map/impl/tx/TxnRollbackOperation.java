@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,6 +54,18 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));
         }
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof TransactionException) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("failed to execute:" + this, e);
+            }
+            return;
+        }
+        super.logError(e);
     }
 
     @Override
