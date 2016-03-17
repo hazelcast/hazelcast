@@ -45,6 +45,4 @@ public interface ClientInvocationService {
 
     void handleClientMessage(ClientMessage message, Connection connection);
 
-    void cleanConnectionResources(ClientConnection connection);
-
 }

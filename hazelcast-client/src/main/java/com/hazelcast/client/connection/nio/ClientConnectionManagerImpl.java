@@ -362,10 +362,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             for (ConnectionListener connectionListener : connectionListeners) {
                 connectionListener.connectionRemoved(conn);
             }
-
-        } else {
-            ClientInvocationService invocationService = client.getInvocationService();
-            invocationService.cleanConnectionResources((ClientConnection) connection);
         }
     }
 

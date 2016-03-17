@@ -49,7 +49,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -742,7 +741,6 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         }
     }
 
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/7582
     @Test
     public void testClusterShutdown_thenCheckOperationsNotHanging() throws Exception {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
