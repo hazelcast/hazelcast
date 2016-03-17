@@ -81,11 +81,7 @@ public class HeapMemoryManager implements MemoryManager {
         @Override
         public long allocate(long size) {
             assertFitsInt(size);
-            final long bytesFree = storage.length - toStorageIndex(heapTop);
-            if (size > bytesFree) {
-                throw new OutOfMemoryError(String.format("Asked to allocate %d, free bytes left %d",
-                        size, bytesFree));
-            }
+            assureEnoughMemoryLeft(size);
             final long addr = heapTop;
             lastAllocatedAddress = heapTop;
             heapTop += size;
@@ -100,19 +96,20 @@ public class HeapMemoryManager implements MemoryManager {
             assertFitsInt(currentSize);
             assertFitsInt(newSize);
             validateBlock(address, currentSize);
-            final long sizeDelta = newSize - currentSize;
-            final long newAddress;
             if (address == lastAllocatedAddress) {
+                final long sizeDelta = newSize - currentSize;
+                assureEnoughMemoryLeft(sizeDelta);
+                allocatedAddrs.put(address, newSize);
                 heapTop += sizeDelta;
-                newAddress = address;
+                usedMemory += sizeDelta;
+                return address;
             } else {
-                newAddress = allocate(newSize);
+                final long newAddress = allocate(newSize);
                 System.arraycopy(storage, (int) address, storage, (int) newAddress,
                         (int) Math.min(currentSize, newSize));
-                allocatedAddrs.remove(address);
+                free0(address, currentSize);
+                return newAddress;
             }
-            usedMemory += sizeDelta;
-            return newAddress;
         }
 
         @Override
@@ -120,8 +117,19 @@ public class HeapMemoryManager implements MemoryManager {
             assertFitsInt(address);
             assertFitsInt(size);
             validateBlock(address, size);
-            allocatedAddrs.remove(address);
-            usedMemory -= size;
+            free0(address, size);
+        }
+
+        @Override
+        public void dispose() {
+            storage = null;
+        }
+
+        private void assureEnoughMemoryLeft(long size) {
+            final long bytesFree = storage.length - toStorageIndex(heapTop);
+            if (size > bytesFree) {
+                throw new OutOfMemoryError(String.format("Asked to allocate %d, free bytes left %d", size, bytesFree));
+            }
         }
 
         private void validateBlock(long address, long size) {
@@ -135,9 +143,9 @@ public class HeapMemoryManager implements MemoryManager {
             }
         }
 
-        @Override
-        public void dispose() {
-            storage = null;
+        private void free0(long address, long size) {
+            allocatedAddrs.remove(address);
+            usedMemory -= size;
         }
 
     }
