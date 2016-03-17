@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
@@ -119,7 +118,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     volatile int invokeCount;
 
     Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis, long callTimeout,
-               ExecutionCallback callback, boolean deserialize) {
+               boolean deserialize) {
         this.operationService = operationService;
         this.logger = operationService.invocationLogger;
         this.nodeEngine = operationService.nodeEngine;
@@ -127,8 +126,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.future = new InvocationFuture(operationService, this, callback);
         this.deserialize = deserialize;
+        this.future = new InvocationFuture(operationService, this);
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -167,8 +166,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         return future;
     }
 
-    public final void invokeAsync() {
+    public final InvocationFuture invokeAsync() {
         invoke0(true);
+        return future;
     }
 
     private void invoke0(boolean isAsync) {
