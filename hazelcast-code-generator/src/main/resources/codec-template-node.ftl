@@ -41,7 +41,7 @@ static encodeRequest(<#list model.requestParams as param>${util.convertToNodeTyp
 <#if model.responseParams?has_content>
 static decodeResponse(clientMessage : ClientMessage,  toObjectFunction: (data: Data) => any = null){
     // Decode response from client message
-    var parameters :any = {};
+    var parameters :any = { <#list model.responseParams as p>'${util.convertToNodeType(p.name)}' : null}<#if p_has_next>, </#if></#list> };
 <#list model.responseParams as p>
 <@getterText varName=util.convertToNodeType(p.name) type=p.type isNullable=p.nullable/>
 </#list>
