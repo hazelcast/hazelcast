@@ -289,6 +289,7 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getGroupProperties();
     }
 
+    @Override
     public <T> T getService(String serviceName) {
         T service = serviceManager.getService(serviceName);
         if (service == null) {
