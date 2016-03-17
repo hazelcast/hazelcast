@@ -20,58 +20,56 @@ import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.Disposable;
 
 /**
- * Memory Allocator allocates/free memory blocks from/to OS like C malloc()/free()
+ * Manages the usage of an address space by allocating and freeing blocks of addresses.
  */
 public interface MemoryAllocator extends Disposable {
 
     /**
-     * NULL pointer address.
+     * The special value that does not correspond to an actual address and signals the absence
+     * of an address.
      */
     long NULL_ADDRESS = 0L;
 
     /**
-     * Allocates memory directly from OS, like C malloc().
-     * Content of the memory block will be initialized to zero.
+     * Allocates a block of addresses with the requested size and returns the base address of the
+     * block. The contents of the block will be initialized to the zero value.
      * <p>
-     * Complement of {@link #free(long, long)}.
+     * Guarantees that no subsequent call to {@code allocate()} will allocate a block which
+     * overlaps the currently allocated block. The guarantee holds until the block is
+     * {@link #free(long, long)}'d.
      *
-     * @param size requested size of memory block
-     * @return address of memory block
-     * @throws NativeOutOfMemoryError if not enough memory is available
+     * @param size size of the block to allocate
+     * @return the base address of the allocated block
+     * @throws NativeOutOfMemoryError if there is not enough free memory to satisfy the reallocation request.
      */
     long allocate(long size);
 
     /**
-     * Reallocates given memory block. Resizes it to the new size, like C realloc().
-     * <p>
-     * The reallocation is done by either:
-     * <ol>
-     * <li>Expanding the existing block, if possible.
-     * The contents of the block remain unchanged up to the lesser of the new and old sizes.</li>
-     * <li>Allocating a new memory block of newSize,
-     * copying memory area with size equal the lesser of the new and the old sizes,
-     * and freeing the old block.</li>
-     * </ol>
-     * <p>
-     * If new size is greater than current size then contents
-     * of the new part will be initialized to zero.
+     * Accepts the base address and size of a previously allocated block and "reallocates" it by either:
+     * <ol><li>
+     *     Resizing the existing block, if possible. The contents of the block remain unchanged up to the
+     *     lesser of the new and old sizes.
+     * </li><li>
+     *     Allocating a new block of {@code newSize}, copying the contents of the old block
+     *     into it (up to the new block's size), then freeing the old block.
+     * </li></ol>
+     * The part of the new block which extends beyond the size of the current block (if any) will be
+     * initialized to the zero value.
      *
-     * @param address     address of memory block
-     * @param currentSize current size of memory block
-     * @param newSize     requested size of memory block
-     * @return address of memory block
-     * @throws NativeOutOfMemoryError if not enough memory is available
+     * @param address     base address of the block
+     * @param currentSize size of the block
+     * @param newSize     requested new block size
+     * @return base address of the reallocated block
+     * @throws NativeOutOfMemoryError if there is not enough free memory to satisfy the reallocation request.
      */
     long reallocate(long address, long currentSize, long newSize);
 
     /**
-     * Gives allocated memory block back to OS, like C free().
-     * <p>
-     * <p>
-     * Complement of {@link #allocate(long)}.
+     * Accepts the base address and size of a previously allocated block and sets it free. All the addresses
+     * contained in the block are free to be allocated by future allocation/reallocation requests.
      *
-     * @param address address of memory block
-     * @param size    size of memory block
+     * @param address base address of the block
+     * @param size    size of the block
      */
     void free(long address, long size);
 }

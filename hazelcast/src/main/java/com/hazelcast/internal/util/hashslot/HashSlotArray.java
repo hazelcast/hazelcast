@@ -62,6 +62,16 @@ import com.hazelcast.internal.memory.MemoryAccessor;
 public interface HashSlotArray extends Disposable {
 
     /**
+     * @return the size, in bytes, of the key part of each slot.
+     */
+    int keySize();
+
+    /**
+     * @return the size, in bytes, of the value part of each slot.
+     */
+    int valueSize();
+
+    /**
      * @return current base address of this flyweight
      */
     long address();

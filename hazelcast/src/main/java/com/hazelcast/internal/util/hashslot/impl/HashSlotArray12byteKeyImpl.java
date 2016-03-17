@@ -39,11 +39,11 @@ import static com.hazelcast.util.QuickMath.modPowerOfTwo;
  */
 public final class HashSlotArray12byteKeyImpl extends HashSlotArrayBase implements HashSlotArray12byteKey {
 
-    private static final int KEY_LENGTH = 12;
+    private static final int KEY_SIZE = 12;
 
     public HashSlotArray12byteKeyImpl(int unassignedSentinel, MemoryManager mm, int valueLength,
                                       int initialCapacity, float loadFactor) {
-        this(unassignedSentinel, KEY_LENGTH, mm, valueLength, initialCapacity, loadFactor);
+        this(unassignedSentinel, KEY_SIZE, mm, valueLength, initialCapacity, loadFactor);
         assert valueLength > 0 : "Attempted to instantiate HashSlotArrayImpl with zero value length";
     }
 
@@ -55,11 +55,16 @@ public final class HashSlotArray12byteKeyImpl extends HashSlotArrayBase implemen
     private HashSlotArray12byteKeyImpl(int unassignedSentinel, long offsetOfUnassignedSentinel, MemoryManager mm,
                                        int valueLength, int initialCapacity, float loadFactor
     ) {
-        super(unassignedSentinel, offsetOfUnassignedSentinel, mm, null, KEY_LENGTH, valueLength,
+        super(unassignedSentinel, offsetOfUnassignedSentinel, mm, null, KEY_SIZE, valueLength,
                 initialCapacity, loadFactor);
         assert valueLength >= INT_SIZE_IN_BYTES
-                && modPowerOfTwo(valueLength - INT_SIZE_IN_BYTES, VALUE_LENGTH_GRANULARITY) == 0
+                && modPowerOfTwo(valueLength - INT_SIZE_IN_BYTES, VALUE_SIZE_GRANULARITY) == 0
                 : "Value length must be 4 plus a positive multiple of 8, but was " + valueLength;
+    }
+
+    @Override
+    public int keySize() {
+        return KEY_SIZE;
     }
 
     /**

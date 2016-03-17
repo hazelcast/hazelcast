@@ -31,14 +31,14 @@ import static com.hazelcast.util.HashUtil.fastLongMix;
  * Implementation of {@link HashSlotArray}, common to all its subtype implementations.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class HashSlotArrayBase implements HashSlotArray {
+public abstract class HashSlotArrayBase implements HashSlotArray {
 
     public static final int HEADER_SIZE = 0x18;
     public static final int CAPACITY_OFFSET = -0x8;
     public static final int SIZE_OFFSET = -0x10;
     public static final int EXPAND_AT_OFFSET = -0x18;
 
-    protected static final int VALUE_LENGTH_GRANULARITY = 8;
+    protected static final int VALUE_SIZE_GRANULARITY = 8;
     protected static final int KEY_1_OFFSET = 0;
     protected static final int KEY_2_OFFSET = 8;
 
@@ -130,6 +130,11 @@ public class HashSlotArrayBase implements HashSlotArray {
 
 
     // These public final methods implement the general HashSlotArray interface
+
+    @Override
+    public int valueSize() {
+        return valueLength;
+    }
 
     @Override
     public final long address() {
