@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
 import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.IConcurrentMap;
@@ -68,15 +69,16 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
             );
         }
     };
+    private final ILogger logger;
 
     public JetApplicationManagerImpl(final NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.logger = this.getNodeEngine().getLogger(JetApplicationManager.class);
 
         try {
-            this.serverSocketChannel = ServerSocketChannel.open();
             String host = nodeEngine.getLocalMember().getAddress().getHost();
-            int port = bindSocketChannel(this.serverSocketChannel, host);
-            this.localJetAddress = new Address(host, port);
+            this.serverSocketChannel = bindSocketChannel(host);
+            this.localJetAddress = new Address(host, this.serverSocketChannel.socket().getLocalPort());
 
             JetApplicationConfig defaultJetConfig =
                     JetUtil.resolveJetDefaultApplicationConfig(nodeEngine);
@@ -144,31 +146,24 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
         return taskList;
     }
 
-    private int bindSocketChannel(ServerSocketChannel serverSocketChannel, String host) {
+    private ServerSocketChannel bindSocketChannel(String host) {
         try {
-            serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             int port = JetApplicationConfig.DEFAULT_PORT;
-            boolean success = false;
-
             while (port <= MAX_PORT) {
+                logger.info("Trying to bind " + host + ":" + port);
+                ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
                 try {
-                    this.serverSocketChannel.bind(new InetSocketAddress(host, port));
-                    success = true;
-                    break;
-                } catch (java.nio.channels.AlreadyBoundException e) {
-                    port += JetApplicationConfig.PORT_AUTO_INCREMENT;
-                } catch (java.net.BindException e) {
+                    serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                    serverSocketChannel.bind(new InetSocketAddress(host, port));
+                    serverSocketChannel.configureBlocking(false);
+                    return serverSocketChannel;
+                } catch (java.nio.channels.AlreadyBoundException | java.net.BindException e) {
+                    serverSocketChannel.close();
                     port += JetApplicationConfig.PORT_AUTO_INCREMENT;
                 }
             }
-
-            if (!success) {
-                throw new RuntimeException("Jet was not able to bind to any port");
-            }
-
-            this.serverSocketChannel.configureBlocking(false);
-            return port;
-        } catch (Exception e) {
+            throw new RuntimeException("Jet was not able to bind to any port");
+        } catch (IOException e) {
             throw JetUtil.reThrow(e);
         }
     }
