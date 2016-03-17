@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
@@ -30,7 +29,6 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -40,7 +38,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -119,7 +116,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     volatile int invokeCount;
 
     Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis, long callTimeout,
-               ExecutionCallback callback, boolean deserialize) {
+               boolean deserialize) {
         this.operationService = operationService;
         this.logger = operationService.invocationLogger;
         this.nodeEngine = operationService.nodeEngine;
@@ -127,7 +124,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.future = new InvocationFuture(operationService, this, callback);
+        this.future = new InvocationFuture(operationService, this);
         this.deserialize = deserialize;
     }
 
@@ -167,8 +164,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         return future;
     }
 
-    public final void invokeAsync() {
+    public final InvocationFuture invokeAsync() {
         invoke0(true);
+        return future;
     }
 
     private void invoke0(boolean isAsync) {
@@ -228,18 +226,15 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void doInvokeLocal(boolean isAsync) {
-        if (op.getCallerUuid() == null) {
-            op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        }
-
-        responseReceived = FALSE;
+        op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
         op.setOperationResponseHandler(this);
 
-        OperationExecutor executor = operationService.operationExecutor;
+        responseReceived = FALSE;
+
         if (isAsync) {
-            executor.execute(op);
+            operationService.operationExecutor.execute(op);
         } else {
-            executor.runOnCallingThreadIfPossible(op);
+            operationService.operationExecutor.runOnCallingThreadIfPossible(op);
         }
     }
 
@@ -286,8 +281,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         targetMember = clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
-            notifyError(
-                    new TargetNotMemberException(invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
+            notifyError(new TargetNotMemberException(
+                    invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
             return false;
         }
 
@@ -344,14 +339,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     void notifyError(Object error) {
-        assert error != null;
-
-        Throwable cause;
-        if (error instanceof Throwable) {
-            cause = (Throwable) error;
-        } else {
-            cause = ((ErrorResponse) error).getCause();
-        }
+        Throwable cause = error instanceof Throwable
+                ? (Throwable) error
+                : ((ErrorResponse) error).getCause();
 
         switch (onException(cause)) {
             case THROW_EXCEPTION:
@@ -372,9 +362,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     void notifyNormalResponse(Object value, int expectedBackups) {
-        if (value == null) {
-            value = NULL_RESPONSE;
-        }
+        value = value == null ? NULL_RESPONSE : value;
 
         //if a regular response came and there are backups, we need to wait for the backs.
         //when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
@@ -504,21 +492,13 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         if (future.interrupted) {
             future.complete(INTERRUPTED_RESPONSE);
-            return;
-        }
-
-        if (!future.complete(WAIT_RESPONSE)) {
-            logger.finest("Cannot retry " + toString() + ", because a different response is already set: "
-                    + future.response);
-            return;
-        }
-
-        ExecutionService ex = nodeEngine.getExecutionService();
-        // fast retry for the first few invocations
-        if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+        } else if (!future.complete(WAIT_RESPONSE)) {
+            logger.finest("Cannot retry " + toString() + ", because a different response is already set: " + future.response);
+        } else if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+            // fast retry for the first few invocations
             operationService.asyncExecutor.execute(this);
         } else {
-            ex.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
+            nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
         }
     }
 

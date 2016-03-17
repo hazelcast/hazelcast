@@ -63,6 +63,7 @@ public class IsStillRunningService {
 
     /**
      * Checks if an operation is still running.
+     *
      * @param invocation The invocation for this operation.
      * @return true if the operation is running, false otherwise.
      */
@@ -79,7 +80,7 @@ public class IsStillRunningService {
 
             Invocation inv = new TargetInvocation(
                     invocation.operationService, isStillExecuting,
-                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, true);
             Future f = inv.invoke();
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
             executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
@@ -134,10 +135,11 @@ public class IsStillRunningService {
 
     /**
      * Checks if an operation is still running.
+     *
      * @param callerAddress The caller address for this operation.
-     * @param callerUuid The caller Uuid for this operation.
-     * @param serviceName The service name for this operation.
-     * @param identifier The object identifier for this operation.
+     * @param callerUuid    The caller Uuid for this operation.
+     * @param serviceName   The service name for this operation.
+     * @param identifier    The object identifier for this operation.
      * @return true if the operation is running, false otherwise.
      */
     public boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
@@ -158,8 +160,9 @@ public class IsStillRunningService {
      * If the partition id isn't set, then we iterate over all generic-operationthread and check if one of them is running
      * the given operation. So this is more expensive, but in most cases this should not be an issue since most of the data
      * is hot in cache.
-     * @param callerAddress The caller address for this operation.
-     * @param partitionId The id of the partition where this operation resides.
+     *
+     * @param callerAddress   The caller address for this operation.
+     * @param partitionId     The id of the partition where this operation resides.
      * @param operationCallId The call id for this operation.
      * @return true if the operation is running, false otherwise.
      */
@@ -262,7 +265,11 @@ public class IsStillRunningService {
         public void run() {
             Invocation inv = new TargetInvocation(
                     invocation.operationService, isStillRunningOperation,
-                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, true);
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, true);
+
+            if (callback != null) {
+                inv.future.andThen(callback);
+            }
 
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
             inv.invoke();
