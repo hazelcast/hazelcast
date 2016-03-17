@@ -23,8 +23,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -110,15 +108,15 @@ public class CacheListenerTest extends HazelcastTestSupport {
             shutdown.set(true);
             if (!latch.await(shutdownWaitTimeInSeconds, TimeUnit.SECONDS)) {
                 fail("Cache operations have not finished in "
-                     + (ASSERT_TRUE_EVENTUALLY_TIMEOUT + shutdownWaitTimeInSeconds)
-                     + " seconds when sync listener is present!");
+                        + (ASSERT_TRUE_EVENTUALLY_TIMEOUT + shutdownWaitTimeInSeconds)
+                        + " seconds when sync listener is present!");
             }
         }
         assertEquals(actualPutCount.get(), counter.get());
     }
 
     @Test(timeout = 30000)
-    public void testPutIfAbsentWithSyncListener_whenEntryExists(){
+    public void testPutIfAbsentWithSyncListener_whenEntryExists() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -135,7 +133,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testReplaceWithSyncListener_whenEntryNotExists(){
+    public void testReplaceWithSyncListener_whenEntryNotExists() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -150,7 +148,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testReplaceIfSameWithSyncListener_whenEntryNotExists(){
+    public void testReplaceIfSameWithSyncListener_whenEntryNotExists() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -165,7 +163,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testReplaceIfSameWithSyncListener_whenValueIsNotSame(){
+    public void testReplaceIfSameWithSyncListener_whenValueIsNotSame() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -182,7 +180,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testRemoveWithSyncListener_whenEntryNotExists(){
+    public void testRemoveWithSyncListener_whenEntryNotExists() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -197,7 +195,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testRemoveIfSameWithSyncListener_whenEntryNotExists(){
+    public void testRemoveIfSameWithSyncListener_whenEntryNotExists() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -212,7 +210,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testRemoveIfSameWithSyncListener_whenValueIsNotSame(){
+    public void testRemoveIfSameWithSyncListener_whenValueIsNotSame() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -229,7 +227,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testGetAndReplaceWithSyncListener_whenEntryNotExists(){
+    public void testGetAndReplaceWithSyncListener_whenEntryNotExists() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -244,7 +242,7 @@ public class CacheListenerTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testGetAndRemoveWithSyncListener_whenEntryNotExists(){
+    public void testGetAndRemoveWithSyncListener_whenEntryNotExists() {
         CachingProvider cachingProvider = getCachingProvider();
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -258,7 +256,6 @@ public class CacheListenerTest extends HazelcastTestSupport {
         cache.getAndRemove(randomString());
     }
 
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/7527
     @Test
     public void testSyncListener_shouldNotHang_whenHazelcastInstanceShutdown() {
         CachingProvider provider = getCachingProvider();
@@ -301,9 +298,9 @@ public class CacheListenerTest extends HazelcastTestSupport {
         CacheManager cacheManager = provider.getCacheManager();
 
         CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
-                        .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<String, String>(
-                                        FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true,
-                                        true));
+                .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<String, String>(
+                        FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true,
+                        true));
 
         final Cache<String, String> cache = cacheManager.createCache(cacheName, config);
 
@@ -335,8 +332,8 @@ public class CacheListenerTest extends HazelcastTestSupport {
 
     public static class TestListener
             implements CacheEntryCreatedListener<String, String>,
-                       CacheEntryUpdatedListener<String, String>,
-                       Serializable {
+            CacheEntryUpdatedListener<String, String>,
+            Serializable {
 
         private final AtomicInteger counter;
 

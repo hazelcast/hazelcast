@@ -59,6 +59,7 @@ public class ClientConnection implements Connection, Closeable {
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
     private boolean isAuthenticatedAsOwner;
+    private volatile long closedTime;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -209,6 +210,7 @@ public class ClientConnection implements Connection, Closeable {
         if (!live.compareAndSet(true, false)) {
             return;
         }
+        closedTime = System.currentTimeMillis();
         String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + '[' + t.getMessage() + ']';
@@ -283,5 +285,9 @@ public class ClientConnection implements Connection, Closeable {
                 + ", socketChannel=" + socketChannelWrapper
                 + ", remoteEndpoint=" + remoteEndpoint
                 + '}';
+    }
+
+    public long getClosedTime() {
+        return closedTime;
     }
 }
