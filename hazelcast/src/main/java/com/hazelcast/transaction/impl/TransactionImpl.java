@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
@@ -61,7 +62,6 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.logging.Level.WARNING;
 
 public class TransactionImpl implements Transaction {
 
@@ -108,8 +108,8 @@ public class TransactionImpl implements Transaction {
         this.checkThreadAccess = txOwnerUuid == null;
 
         this.logger = nodeEngine.getLogger(getClass());
-        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", WARNING);
-        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.FINEST);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.FINEST);
         this.originatedFromClient = originatedFromClient;
     }
 
@@ -130,8 +130,8 @@ public class TransactionImpl implements Transaction {
         this.checkThreadAccess = false;
 
         this.logger = nodeEngine.getLogger(getClass());
-        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", WARNING);
-        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.FINEST);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.FINEST);
     }
 
     @Override
