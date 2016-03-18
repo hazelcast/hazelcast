@@ -70,7 +70,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         }
     }
 
-    private boolean put(Map.Entry<Data, Data> entry) {
+    private void put(Map.Entry<Data, Data> entry) {
         Data dataKey = entry.getKey();
         Data dataValue = entry.getValue();
 
@@ -103,8 +103,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         evict();
 
         addInvalidation(dataKey);
-
-        return true;
     }
 
     private void addInvalidation(Data dataKey) {
