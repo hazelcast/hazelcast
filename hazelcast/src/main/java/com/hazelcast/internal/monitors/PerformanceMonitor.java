@@ -60,10 +60,28 @@ public class PerformanceMonitor {
         this.hzThreadGroup = hzThreadGroup;
         this.logger = logger;
         this.properties = properties;
-        this.enabled = properties.getBoolean(PERFORMANCE_MONITOR_ENABLED);
+        this.enabled = isEnabled(properties);
+        if (enabled) {
+            logger.info("PerformanceMonitor is enabled");
+        }
         this.singleLine = !properties.getBoolean(PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
     }
 
+    private boolean isEnabled(HazelcastProperties properties) {
+        String s = properties.getString(PERFORMANCE_MONITOR_ENABLED);
+        if (s != null) {
+            return properties.getBoolean(PERFORMANCE_MONITOR_ENABLED);
+        }
+
+        // check for the old property name.
+        s = properties.get("hazelcast.performance.monitoring.enabled");
+        if (s != null) {
+            logger.warning("Don't use deprecated 'hazelcast.performance.monitoring.enabled' "
+                    + "but use '" + PERFORMANCE_MONITOR_ENABLED.getName() + "' instead. "
+                    + "The former name will be removed in Hazelcast 3.8.");
+        }
+        return Boolean.parseBoolean(s);
+    }
 
     /**
      * Registers a MonitorTask to it will be scheduled.
