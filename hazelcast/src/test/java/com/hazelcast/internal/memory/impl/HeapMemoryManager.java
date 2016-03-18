@@ -162,14 +162,19 @@ public class HeapMemoryManager implements MemoryManager {
 
         @Override
         public byte getByte(long address) {
-            assertFitsInt(address);
+            assertAllocated(address);
             return storage[(int) toStorageIndex(address)];
         }
 
         @Override
         public void putByte(long address, byte x) {
-            assertFitsInt(address);
+            assertAllocated(address);
             storage[(int) toStorageIndex(address)] = x;
+        }
+
+        private void assertAllocated(long address) {
+            assert address >= HEAP_BOTTOM && address < heapTop : String.format(
+                    "Attempted to access unallocated address %,d. Heap top is %,d", address, heapTop);
         }
 
         @Override
