@@ -60,6 +60,13 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
     }
 
+    @Test(timeout = 20000)
+    public void test_getAttributeNames_AfterGetAttribute() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("read", serverPort1, cookieStore);
+        assertEquals("", executeRequest("names", serverPort1, cookieStore));
+    }
+
     @Test(timeout = 60000)
     public void test_update_server2_and_fetch_server1() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();

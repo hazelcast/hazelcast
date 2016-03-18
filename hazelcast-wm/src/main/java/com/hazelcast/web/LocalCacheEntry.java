@@ -123,4 +123,33 @@ public class LocalCacheEntry {
     public Object getValue() {
         return value;
     }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalCacheEntry that = (LocalCacheEntry) o;
+
+        if (reload != that.reload || removed != that.removed || dirty != that.dirty || transientEntry != that.transientEntry) {
+            return false;
+        }
+        return !(value != null ? !value.equals(that.value) : that.value != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (reload ? 1 : 0);
+        result = 31 * result + (removed ? 1 : 0);
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (dirty ? 1 : 0);
+        result = 31 * result + (transientEntry ? 1 : 0);
+        return result;
+    }
 }
