@@ -20,7 +20,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.exception.ResponseNotSentException;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -31,9 +30,9 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
  * to that operation.
  */
 public final class RemoteInvocationResponseHandler implements OperationResponseHandler {
-    private final InternalOperationService operationService;
+    private final OperationServiceImpl operationService;
 
-    public RemoteInvocationResponseHandler(InternalOperationService operationService) {
+    public RemoteInvocationResponseHandler(OperationServiceImpl operationService) {
         this.operationService = operationService;
     }
 
@@ -52,7 +51,7 @@ public final class RemoteInvocationResponseHandler implements OperationResponseH
 
         if (!operationService.send(response, operation.getCallerAddress())) {
             throw new ResponseNotSentException("Cannot send response: " + obj + " to " + conn.getEndPoint()
-                + ". Op: " + operation);
+                    + ". Op: " + operation);
         }
     }
 
