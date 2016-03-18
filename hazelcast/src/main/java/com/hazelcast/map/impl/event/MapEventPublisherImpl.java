@@ -36,8 +36,8 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationPublisher;
 
@@ -263,6 +263,11 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     public void hintMapEvent(Address caller, String mapName, EntryEventType eventType,
                              int numberOfEntriesAffected, int partitionId) {
         // NOP
+    }
+
+    @Override
+    public boolean hasEventListener(String mapName) {
+        return eventService.hasEventRegistration(SERVICE_NAME, mapName);
     }
 
     protected Collection<EventRegistration> getRegistrations(String mapName) {

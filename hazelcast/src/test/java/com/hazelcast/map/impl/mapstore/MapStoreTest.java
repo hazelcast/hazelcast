@@ -39,6 +39,7 @@ import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.RecordingMapStore;
 import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWithCounter;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.test.AssertTask;
@@ -70,10 +71,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -974,6 +977,41 @@ public class MapStoreTest extends AbstractMapStoreTest {
         });
 
         assertEquals(1, mapStore.getLoadCount());
+    }
+
+    @Test
+    public void testMapListener_containsOldValue_afterPutAll() {
+        Config config = newConfig(new SimpleMapStore<Integer, Integer>());
+
+        HazelcastInstance member = createHazelcastInstance(config);
+        IMap<Integer, Integer> imap = member.getMap(randomName());
+
+        // 1. first value is 1.
+        imap.put(1, 1);
+
+        final AtomicReference<Integer> oldValue = new AtomicReference<Integer>();
+        imap.addEntryListener(new EntryUpdatedListener<Integer, Integer>() {
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                oldValue.set(event.getOldValue());
+            }
+        }, true);
+
+        // 2. second value is 2.
+        HashMap<Integer, Integer> batch = new HashMap<Integer, Integer>();
+        batch.put(1, 2);
+
+        imap.putAll(batch);
+
+        // expect oldValue equals 1.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Integer value = oldValue.get();
+                assertNotNull(value);
+                assertEquals(1, value.intValue());
+            }
+        });
     }
 
     private Config newConfig(Object storeImpl) {
