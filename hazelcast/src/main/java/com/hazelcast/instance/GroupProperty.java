@@ -104,6 +104,15 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.health.monitoring.threshold.cpu.percentage", 70);
 
     /**
+     * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
+     * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
+     * <p/>
+     * By default only mandatory probes are being tracked
+     */
+    public static final HazelcastProperty PERFORMANCE_METRICS_LEVEL
+            = new HazelcastProperty("hazelcast.performance.metric.level", ProbeLevel.MANDATORY.name());
+
+    /**
      * Use the performance monitor to see internal performance metrics. Currently this is quite
      * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
      * the future, all kinds of new metrics will be added.
@@ -115,18 +124,9 @@ public final class GroupProperty {
      * The default is false.
      */
     public static final HazelcastProperty PERFORMANCE_MONITOR_ENABLED
-            = new HazelcastProperty("hazelcast.performance.monitoring.enabled", false);
+            = new HazelcastProperty("hazelcast.performance.monitor.enabled", false);
 
-    /**
-     * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
-     * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
-     * <p/>
-     * By default only mandatory probes are being tracked
-     */
-    public static final HazelcastProperty PERFORMANCE_METRICS_LEVEL
-            = new HazelcastProperty("hazelcast.performance.metric.level", ProbeLevel.MANDATORY.name());
-
-    /**
+     /**
      * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
      * <p/>
      * This property sets the maximum size in MB for a single file.
