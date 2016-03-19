@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractAttributeNameNameWithoutArguments;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 public class PortablePositionNavigator {
 
@@ -149,7 +148,14 @@ public class PortablePositionNavigator {
         if (position.index >= 0) {
             in.position(position.getStreamPosition());
             int arrayLen = in.readInt();
-            validatePositionIndexInBound(fieldName, arrayLen, position);
+
+            //
+            if(arrayLen == Bits.NULL_ARRAY_LENGTH) {
+                throw new IllegalArgumentException("The array is null in " + fieldName);
+            }
+            if (position.index > arrayLen - 1) {
+                throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
+            }
 
             if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
                 int currentIndex = 0;
@@ -166,10 +172,7 @@ public class PortablePositionNavigator {
     }
 
     private void validatePositionIndexInBound(String fieldName, int arrayLen, PortableSinglePosition position) throws IOException {
-        if (arrayLen == NULL_ARRAY_LENGTH) {
-            throw new HazelcastSerializationException("The array " + fieldName + " is null!");
-        }
-        if (position.index > arrayLen) {
+        if (position.index > arrayLen - 1) {
             throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
         }
     }
@@ -306,7 +309,13 @@ public class PortablePositionNavigator {
         PortablePosition result = null;
         for (int i = 0; i < pathTokens.length; i++) {
             result = processPath(pathTokens, i, nestedPath, null);
+            // poision pill for for multipositions
             if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
+                break;
+            }
+
+            // poision pill for for singleposistions
+            if (result != null && !result.isMultiPosition() && (result.isNull() || result.getLen() == -1)) {
                 break;
             }
         }
@@ -387,8 +396,13 @@ public class PortablePositionNavigator {
                 if (frame == null) {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
-                        // dead pill -> [any] used with empty array, so no need to process further
+                        // poison pill -> [any] used with empty array, so no need to process further
                         return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
+                    } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                        // poison pill -> [any] used with null array, so no need to process further
+                        PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
+                        pos.isNull = true;
+                        return pos;
                     } else {
                         populatePendingNavigationFrames(pathTokenIndex, len);
                         if (last) {
@@ -407,8 +421,13 @@ public class PortablePositionNavigator {
                     if (last) {
                         int len = getCurrentArrayLength(fd);
                         if (len == 0) {
-                            // dead pill -> [any] used with empty array, so no need to process further
+                            // poison pill -> [any] used with empty array, so no need to process further
                             return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
+                        } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                            // poison pill -> [any] used with null array, so no need to process further
+                            PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
+                            pos.isNull = true;
+                            return pos;
                         } else {
                             populatePendingNavigationFrames(pathTokenIndex, len);
                             return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
@@ -424,11 +443,36 @@ public class PortablePositionNavigator {
             }
         } else {
             int index = Integer.valueOf(extractArgumentsFromAttributeName(token));
+            int len = getCurrentArrayLength(fd);
+
             if (last) {
-                return readPositionOfCurrentElement(new PortableSinglePosition(), fd, index);
+                if (len == 0) {
+                    PortableSinglePosition pos = new PortableSinglePosition();
+                    pos.len = -1;
+                    return pos;
+                } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                    // poison pill -> [any] used with null array, so no need to process further
+                    PortableSinglePosition pos = new PortableSinglePosition();
+                    pos.isNull = true;
+                    return pos;
+                } else {
+                    return readPositionOfCurrentElement(new PortableSinglePosition(), fd, index);
+                }
             }
             if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-                advanceToNextTokenFromPortableArrayElement(fd, index, field);
+                if (len == 0) {
+                    // poison pill
+                    PortableSinglePosition pos = new PortableSinglePosition();
+                    pos.len = -1;
+                    return pos;
+                } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                    // poison pill
+                    PortableSinglePosition pos = new PortableSinglePosition();
+                    pos.isNull = true;
+                    return pos;
+                } else {
+                    advanceToNextTokenFromPortableArrayElement(fd, index, field);
+                }
             }
         }
 

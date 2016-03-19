@@ -12,7 +12,7 @@ class PortableSinglePosition implements PortablePosition {
 
     // used for portables only
     boolean isNull = false;
-    int len = -1;
+    int len = 0;
     int factoryId;
     int classId;
 
