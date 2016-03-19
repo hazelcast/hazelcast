@@ -92,18 +92,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
     }
 
-    @Probe(name = "interestedOps", level = DEBUG)
-    private long interestOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.interestOps();
-    }
-
-    @Probe(name = "readyOps", level = DEBUG)
-    private long readyOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.readyOps();
-    }
-
     @Override
     public int totalFramesPending() {
         return writeQueue.size() + urgentWriteQueue.size();

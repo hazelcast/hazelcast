@@ -82,18 +82,6 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
         return Math.max(currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Probe(name = "interestedOps", level = DEBUG)
-    private long interestOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.interestOps();
-    }
-
-    @Probe(name = "readyOps", level = DEBUG)
-    private long readyOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.readyOps();
-    }
-
     @Override
     public Counter getNormalFramesReadCounter() {
         return normalFramesRead;
