@@ -84,7 +84,7 @@ public class PerformanceMonitor {
     }
 
     /**
-     * Registers a PerformanceMonitorPlugin to it will be scheduled.
+     * Registers a PerformanceMonitorPlugin.
      *
      * This method is threadsafe.
      *
