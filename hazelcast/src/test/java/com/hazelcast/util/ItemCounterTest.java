@@ -52,6 +52,15 @@ public class ItemCounterTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDescendingKeys() {
+        counter.add("key1", 2);
+        counter.add("key2", 3);
+        counter.add("key3", 1);
+
+        assertEquals(asList("key2", "key1", "key3"), counter.descendingKeys());
+    }
+
+    @Test
     public void testGet_returnsZeroWhenEmpty() throws Exception {
         long count = counter.get(new Object());
         assertEquals(0, count);

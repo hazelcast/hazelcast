@@ -56,7 +56,6 @@ public class InvocationMonitor {
     private static final int SCAN_DELAY_MILLIS = 1000;
 
     private final long backupTimeoutMillis;
-    private final long slowInvocationThresholdMs;
     private final InvocationRegistry invocationRegistry;
     private final ExecutionService executionService;
     private final InvocationMonitorThread monitorThread;
@@ -73,20 +72,11 @@ public class InvocationMonitor {
         this.logger = logger;
         this.executionService = executionService;
         this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
-        this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
         this.monitorThread = new InvocationMonitorThread(hzThreadGroup);
 
         metricsRegistry.scanAndRegister(this, "operation.invocations");
 
         monitorThread.start();
-    }
-
-    private long initSlowInvocationThresholdMs(GroupProperties props) {
-        long thresholdMs = props.getMillis(GroupProperty.SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS);
-        if (thresholdMs > -1) {
-            logger.info("Slow invocation detector enabled, using threshold: " + thresholdMs + " ms");
-        }
-        return thresholdMs;
     }
 
     public void shutdown() {
@@ -200,8 +190,6 @@ public class InvocationMonitor {
                     continue;
                 }
 
-                detectSlowInvocation(now, invocation);
-
                 if (checkInvocationTimeout(invocation)) {
                     invocationTimeouts++;
                 }
@@ -222,16 +210,6 @@ public class InvocationMonitor {
 
         private boolean isDone(Invocation invocation) {
             return invocation.future.isDone();
-        }
-
-        private void detectSlowInvocation(long now, Invocation invocation) {
-            if (slowInvocationThresholdMs > 0) {
-                long durationMs = now - invocation.op.getInvocationTime();
-                if (durationMs > slowInvocationThresholdMs) {
-                    logger.info("Slow invocation: duration=" + durationMs + " ms, operation="
-                            + invocation.op.getClass().getName() + " inv:" + invocation);
-                }
-            }
         }
 
         private boolean checkInvocationTimeout(Invocation invocation) {
