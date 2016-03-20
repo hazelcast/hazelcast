@@ -27,7 +27,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.internal.util.counters.SwCounter;
 
@@ -144,7 +143,6 @@ public class InvocationMonitor {
                 return;
             }
 
-            long now = Clock.currentTimeMillis();
             int backupTimeouts = 0;
             int invocationTimeouts = 0;
             int invocationCount = 0;
