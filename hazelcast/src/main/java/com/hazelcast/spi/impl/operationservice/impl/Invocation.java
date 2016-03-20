@@ -90,6 +90,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Operation op;
 
+    // The first time this invocation got executed. This field is used to determine how long an invocation has actually
+    // been running.
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
+
     // The time in millis when the response of the primary has been received.
     volatile long pendingResponseReceivedMillis = -1;
     // contains the pending response from the primary. It is pending because it could be that backups need to complete.

@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
+import com.hazelcast.internal.monitors.InvocationPlugin;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
@@ -188,6 +189,20 @@ public final class GroupProperty {
     public static final HazelcastProperty PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD
             = new HazelcastProperty("hazelcast.performance.monitor.pending.invocations.threshold", 1);
 
+
+    /**
+     * The sample period in seconds for the {@link InvocationPlugin}.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    public static final HazelcastProperty PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS
+            = new HazelcastProperty("hazelcast.performance.monitor.invocation.sample.period.seconds", 0, SECONDS);
+
+    /**
+     * The threshold in seconds for the {@link InvocationPlugin} to consider an invocation to be slow.
+     */
+    public static final HazelcastProperty PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS
+            = new HazelcastProperty("hazelcast.performance.monitor.invocation.slow.threshold.seconds", 5, SECONDS);
 
     /**
      * The period in seconds the PerformanceMonitor OverloadedConnectionPlugin runs.
@@ -512,13 +527,9 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.slow.operation.detector.stacktrace.logging.enabled", false);
 
     /**
-     * Defines a threshold above which a running invocation in {@link com.hazelcast.spi.OperationService} is considered
-     * to be slow. Any slow invocation will be logged.
-     * <p/>
-     * This is an experimental feature and we do not provide any backwards compatibility guarantees on it.
-     * <p/>
-     * The default is -1 indicating there is no detection.
-     */
+     * Property isn't used anymore, use {@link #PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS}.
+      */
+    @Deprecated
     public static final HazelcastProperty SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
             = new HazelcastProperty("hazelcast.slow.invocation.detector.threshold.millis", -1, MILLISECONDS);
 

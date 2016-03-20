@@ -33,6 +33,7 @@ import com.hazelcast.internal.monitors.MetricsPlugin;
 import com.hazelcast.internal.monitors.OverloadedConnectionsPlugin;
 import com.hazelcast.internal.monitors.PendingInvocationsPlugin;
 import com.hazelcast.internal.monitors.PerformanceMonitor;
+import com.hazelcast.internal.monitors.InvocationPlugin;
 import com.hazelcast.internal.monitors.SlowOperationPlugin;
 import com.hazelcast.internal.monitors.SystemPropertiesPlugin;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -164,6 +165,7 @@ public class NodeEngineImpl implements NodeEngine {
         performanceMonitor.register(new PendingInvocationsPlugin(this));
         performanceMonitor.register(new MetricsPlugin(this));
         performanceMonitor.register(new SlowOperationPlugin(this));
+        performanceMonitor.register(new InvocationPlugin(this));
     }
 
     @Override
