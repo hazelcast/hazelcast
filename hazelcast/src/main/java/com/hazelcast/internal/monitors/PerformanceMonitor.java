@@ -84,7 +84,7 @@ public class PerformanceMonitor {
     }
 
     /**
-     * Registers a MonitorTask to it will be scheduled.
+     * Registers a PerformanceMonitorPlugin to it will be scheduled.
      *
      * This method is threadsafe.
      *
@@ -92,11 +92,11 @@ public class PerformanceMonitor {
      *
      * If the PerformanceMonitor is disabled, the call is ignored.
      *
-     * @param plugin the monitorTask to register
-     * @throws NullPointerException if monitorTask is null.
+     * @param plugin the plugin to register
+     * @throws NullPointerException if plugin is null.
      */
     public void register(PerformanceMonitorPlugin plugin) {
-        checkNotNull(plugin, "monitorTask can't be null");
+        checkNotNull(plugin, "plugin can't be null");
 
         if (!enabled) {
             return;
