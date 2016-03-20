@@ -579,7 +579,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         return "Invocation{"
-                + ", op=" + op
+                + "op=" + op
                 + ", tryCount=" + tryCount
                 + ", tryPauseMillis=" + tryPauseMillis
                 + ", invokeCount=" + invokeCount
