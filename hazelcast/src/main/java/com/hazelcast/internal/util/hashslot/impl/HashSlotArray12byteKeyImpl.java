@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.util.hashslot.impl;
 
+import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray12byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor12byteKey;
-import com.hazelcast.internal.memory.MemoryManager;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.util.HashUtil.fastIntMix;

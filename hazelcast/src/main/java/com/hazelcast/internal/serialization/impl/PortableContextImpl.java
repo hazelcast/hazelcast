@@ -17,6 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -26,8 +28,6 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.PortableContext;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 

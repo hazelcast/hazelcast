@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.MemberAttributeOperationType;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

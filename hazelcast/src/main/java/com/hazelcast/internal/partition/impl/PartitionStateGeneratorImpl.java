@@ -18,11 +18,11 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.PartitionStateGenerator;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.SingleMemberGroup;
 
