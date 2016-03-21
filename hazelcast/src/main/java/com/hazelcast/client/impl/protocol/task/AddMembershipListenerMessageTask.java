@@ -19,15 +19,15 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
