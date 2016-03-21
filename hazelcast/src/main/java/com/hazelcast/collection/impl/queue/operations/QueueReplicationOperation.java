@@ -16,14 +16,14 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
+import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.collection.impl.queue.QueueContainer;
-import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 

@@ -17,15 +17,15 @@
 package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
+import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.BlockingOperation;
 
 /**
  * Pool operation for Queue.
