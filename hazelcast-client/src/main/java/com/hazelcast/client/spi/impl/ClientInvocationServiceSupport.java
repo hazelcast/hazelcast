@@ -169,7 +169,9 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     public void shutdown() {
         isShutdown = true;
         responseThread.interrupt();
-        callIdMap.clear();
+        CleanResourcesTask cleanResourcesTask = new CleanResourcesTask();
+        cleanResourcesTask.run();
+        assert callIdMap.isEmpty();
     }
 
     private class CleanResourcesTask implements Runnable {
