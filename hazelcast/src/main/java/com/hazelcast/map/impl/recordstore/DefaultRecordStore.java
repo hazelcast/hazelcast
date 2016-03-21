@@ -344,6 +344,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public int getLockedEntryCount() {
+        return lockStore.getLockedEntryCount();
+    }
+
+    @Override
     public Record loadRecordOrNull(Data key, boolean backup) {
         Record record = null;
         final Object value = mapDataStore.load(key);

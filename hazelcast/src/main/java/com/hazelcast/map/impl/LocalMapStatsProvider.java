@@ -20,20 +20,17 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -120,46 +117,17 @@ public class LocalMapStatsProvider {
     protected void addOwnerPartitionStats(LocalMapStatsImpl stats,
                                           LocalMapOnDemandCalculatedStats onDemandStats,
                                           String mapName, int partitionId) {
+
         RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
         if (!hasRecords(recordStore)) {
             return;
         }
-        int lockedEntryCount = 0;
-        long lastAccessTime = 0;
-        long lastUpdateTime = 0;
-        long hits = 0;
 
-        Iterator<Record> iterator = recordStore.iterator();
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Data key = record.getKey();
-
-            hits += record.getHits();
-            lockedEntryCount += isLocked(key, recordStore);
-            lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
-            lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
-        }
-
-        onDemandStats.incrementLockedEntryCount(lockedEntryCount);
-        onDemandStats.incrementHits(hits);
+        onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getHeapCost());
         onDemandStats.incrementHeapCost(recordStore.getHeapCost());
         onDemandStats.incrementOwnedEntryCount(recordStore.size());
-
-        stats.setLastAccessTime(lastAccessTime);
-        stats.setLastUpdateTime(lastUpdateTime);
-    }
-
-    /**
-     * Return 1 if locked, otherwise 0.
-     * Used to find {@link LocalMapStatsImpl#lockedEntryCount}.
-     */
-    protected int isLocked(Data key, RecordStore recordStore) {
-        if (recordStore.isLocked(key)) {
-            return 1;
-        }
-        return 0;
     }
 
     /**
@@ -264,9 +232,7 @@ public class LocalMapStatsProvider {
         onDemandStats.incrementHeapCost(nearCacheHeapCost);
     }
 
-    protected static class LocalMapOnDemandCalculatedStats {
-
-        protected long hits;
+    public static class LocalMapOnDemandCalculatedStats {
 
         protected long ownedEntryCount;
         protected long backupEntryCount;
@@ -282,10 +248,6 @@ public class LocalMapStatsProvider {
 
         public void setBackupCount(int backupCount) {
             this.backupCount = backupCount;
-        }
-
-        public void incrementHits(long hits) {
-            this.hits += hits;
         }
 
         public void incrementOwnedEntryCount(long ownedEntryCount) {
@@ -318,7 +280,6 @@ public class LocalMapStatsProvider {
 
         public void copyValuesTo(LocalMapStatsImpl stats) {
             stats.setBackupCount(backupCount);
-            stats.setHits(hits);
             stats.setOwnedEntryCount(ownedEntryCount);
             stats.setBackupEntryCount(backupEntryCount);
             stats.setOwnedEntryMemoryCost(ownedEntryMemoryCost);
@@ -327,7 +288,5 @@ public class LocalMapStatsProvider {
             stats.setLockedEntryCount(lockedEntryCount);
             stats.setDirtyEntryCount(dirtyEntryCount);
         }
-
     }
-
 }

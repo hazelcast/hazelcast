@@ -68,24 +68,60 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getCreationTime();
 
     /**
-     * Returns the last access (read) time of the locally owned entries.
+     * Returns the last access (read) time of the map caused by this node.
+     * Only the operations which cause a get operation will update this:
      *
-     * @return last access (read) time of the locally owned entries.
+     * <ul>
+     *     <li>IMap#get</li>
+     *     <li>IMap#containsKey</li>
+     *     <li>IMap#containsValue</li>
+     *     <li>IMap#getAll</li>
+     *     <li>IMap#getAsync</li>
+     *     <li>IMap#putIfAbsent</li>
+     * </ul><br>
+     *
+     * @return last access (read) time of the map caused by this node.
      */
     long getLastAccessTime();
 
 
     /**
-     * Returns the last update time of the locally owned entries.
+     * Returns the last update time of the map caused by this node.
+     * These operations will update this:
      *
-     * @return last update time of the locally owned entries.
+     * <ul>
+     *     <li>IMap#put</li>
+     *     <li>IMap#tryPut</li>
+     *     <li>IMap#putTransient</li>
+     *     <li>IMap#replace</li>
+     *     <li>IMap#set</li>
+     *     <li>IMap#putAll</li>
+     *     <li>IMap#executeOnKey</li>
+     *     <li>IMap#executeOnKeys</li>
+     *     <li>IMap#submitToKey</li>
+     *     <li>IMap#executeOnEntries</li>
+     *     <li>IMap#putAsync</li>
+     *     <li>IMap#setAsync</li>
+     * </ul><br>
+     *
+     * @return last update time of the map caused by this node.
      */
     long getLastUpdateTime();
 
     /**
-     * Returns the number of hits (reads) of the locally owned entries.
+     * Returns the number of hits (reads) of the map caused by this node.
+     * Only the operations which cause a get operation will update this:
      *
-     * @return number of hits (reads) of the locally owned entries.
+     * <ul>
+     *     <li>IMap#get</li>
+     *     <li>IMap#containsKey</li>
+     *     <li>IMap#containsValue</li>
+     *     <li>IMap#getAll</li>
+     *     <li>IMap#getAsync</li>
+     *     <li>IMap#putIfAbsent</li>
+     * </ul><br>
+     *
+     * @return number of hits (reads) of the map caused by this node.
      */
     long getHits();
 

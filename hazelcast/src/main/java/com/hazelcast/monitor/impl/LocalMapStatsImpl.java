@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.MapStatsCounter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
 
@@ -31,7 +32,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 /**
  * Default implementation of {@link LocalMapStats}
  */
-public class LocalMapStatsImpl implements LocalMapStats {
+public class LocalMapStatsImpl implements LocalMapStats, MapStatsCounter {
 
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME =
             newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
@@ -47,6 +48,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "putCount");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> REMOVE_COUNT =
             newUpdater(LocalMapStatsImpl.class, "removeCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> HIT_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "hits");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_GET_LATENCIES =
             newUpdater(LocalMapStatsImpl.class, "totalGetLatencies");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> TOTAL_PUT_LATENCIES =
@@ -168,6 +171,15 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return hits;
     }
 
+    public void incrementHits() {
+        HIT_COUNT.incrementAndGet(this);
+    }
+
+    public void incrementHits(long hits) {
+        HIT_COUNT.addAndGet(this, hits);
+    }
+
+    // For testing purposes
     public void setHits(long hits) {
         this.hits = hits;
     }
@@ -301,6 +313,70 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
+    public void updateContainsStats(long startTime) {
+        incrementHits();
+        setLastAccessTime(startTime);
+    }
+
+    @Override
+    public void updateGetStats(long startTime, Object result) {
+        long now = getNow();
+        final long duration = now - startTime;
+        incrementGets(duration);
+
+        if (result != null) {
+            incrementHits();
+            setLastAccessTime(now);
+        }
+    }
+
+    @Override
+    public void updateGetStats(long startTime, long hits) {
+        incrementHits(hits);
+        setLastAccessTime(startTime);
+    }
+
+    @Override
+    public void updatePutStats(long startTime) {
+        updatePutStats(startTime, 1);
+    }
+
+    @Override
+    public void updatePutStats(long startTime, long putCount) {
+        long now = getNow();
+        final long duration = now - startTime;
+        incrementPuts(putCount, duration);
+        setLastUpdateTime(now);
+    }
+
+    @Override
+    public void updateEntryProcessorStats(long startTime) {
+        setLastUpdateTime(startTime);
+    }
+
+    @Override
+    public void updateRemoveStats(long startTime) {
+        long now = getNow();
+        final long duration = now - startTime;
+        incrementRemoves(duration);
+    }
+
+    @Override
+    public void updatePutIfAbsentStats(long startTime, Object result) {
+        long now = getNow();
+        final long duration = now - startTime;
+
+        if (result == null) {
+            incrementPuts(duration);
+            setLastUpdateTime(now);
+        } else {
+            incrementGets(duration);
+            incrementHits();
+            setLastAccessTime(now);
+        }
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("getCount", getCount);
@@ -388,5 +464,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", dirtyEntryCount=" + dirtyEntryCount
                 + ", heapCost=" + heapCost
                 + '}';
+    }
+
+    private long getNow() {
+        return System.currentTimeMillis();
     }
 }

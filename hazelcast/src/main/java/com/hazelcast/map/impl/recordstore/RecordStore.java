@@ -215,6 +215,8 @@ public interface RecordStore<R extends Record> {
 
     String getLockOwnerInfo(Data key);
 
+    int getLockedEntryCount();
+
     boolean containsValue(Object testValue);
 
     Object evict(Data key, boolean backup);

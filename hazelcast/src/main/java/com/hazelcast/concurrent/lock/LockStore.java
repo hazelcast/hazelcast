@@ -36,6 +36,8 @@ public interface LockStore {
 
     int getLockCount(Data key);
 
+    int getLockedEntryCount();
+
     long getRemainingLeaseTime(Data key);
 
     boolean canAcquireLock(Data key, String caller, long threadId);

@@ -433,6 +433,11 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         assertTrue(locked);
     }
 
+    @Test
+    public void testLockCount() {
+        lock();
+        assertEquals(1, lockStore.getLockedEntryCount());
+    }
 
     private boolean lock() {
         return lockStore.lock(key, callerId, threadId, referenceId, leaseTime);
