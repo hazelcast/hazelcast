@@ -18,12 +18,12 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyPredicate;

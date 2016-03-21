@@ -16,23 +16,21 @@
 
 package com.hazelcast.client.impl;
 
-import java.util.Iterator;
-
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.DefaultMessageTaskFactoryProvider;
+import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
+import com.hazelcast.client.impl.protocol.task.MessageTask;
+import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
-
-import java.lang.reflect.Constructor;
-
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.MessageTask;
-import com.hazelcast.client.impl.protocol.MessageTaskFactory;
-import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
-import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
-import com.hazelcast.client.impl.protocol.DefaultMessageTaskFactoryProvider;
+
+import java.lang.reflect.Constructor;
+import java.util.Iterator;
 
 public class CompositeMessageTaskFactory implements MessageTaskFactory {
     private static final String FACTORY_ID = "com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider";

@@ -17,8 +17,8 @@
 package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
