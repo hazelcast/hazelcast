@@ -17,8 +17,8 @@
 package com.hazelcast.nio.ascii;
 
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.WriteHandler;
 
 import java.nio.ByteBuffer;
 import java.util.Map;

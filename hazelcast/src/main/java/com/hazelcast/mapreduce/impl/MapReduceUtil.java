@@ -29,13 +29,13 @@ import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.MemberAssigningJobProcessInformationImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 

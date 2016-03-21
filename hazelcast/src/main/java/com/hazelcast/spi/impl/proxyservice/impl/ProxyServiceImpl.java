@@ -21,6 +21,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.Operation;
@@ -37,7 +38,6 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.internal.util.counters.MwCounter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,11 +51,11 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {

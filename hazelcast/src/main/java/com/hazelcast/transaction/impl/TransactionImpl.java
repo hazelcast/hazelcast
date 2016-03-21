@@ -16,8 +16,8 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;

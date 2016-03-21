@@ -17,6 +17,7 @@
 package com.hazelcast.quorum;
 
 import com.hazelcast.core.Member;
+
 import java.util.Collection;
 
 /**

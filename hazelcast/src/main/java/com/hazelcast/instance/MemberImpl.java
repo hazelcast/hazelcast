@@ -16,11 +16,11 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOperation;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

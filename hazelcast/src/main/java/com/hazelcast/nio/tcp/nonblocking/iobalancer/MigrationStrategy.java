@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 
 /**
  * Decides if a {@link MigratableHandler handler} migration should be attempted

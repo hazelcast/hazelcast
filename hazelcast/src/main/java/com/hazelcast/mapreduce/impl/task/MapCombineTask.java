@@ -33,8 +33,8 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;

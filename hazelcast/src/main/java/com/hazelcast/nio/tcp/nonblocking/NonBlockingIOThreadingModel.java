@@ -23,8 +23,8 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

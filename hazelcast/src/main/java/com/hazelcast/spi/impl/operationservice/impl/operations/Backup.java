@@ -16,15 +16,14 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -33,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

@@ -16,11 +16,11 @@
 
 package com.hazelcast.quorum.impl;
 
-import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;

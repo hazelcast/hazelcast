@@ -25,8 +25,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.TraceableOperation;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;

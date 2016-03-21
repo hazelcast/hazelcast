@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-
 import com.hazelcast.spi.NamedOperation;
+
 import java.io.IOException;
 
 public abstract class AbstractNamedOperation extends AbstractOperation implements NamedOperation {

@@ -23,10 +23,10 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import javax.cache.CacheException;
 import java.io.IOException;

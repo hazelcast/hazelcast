@@ -17,8 +17,8 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.HazelcastInstance;
 
 /***
  * Default implementation for Hazelcast instance factory;

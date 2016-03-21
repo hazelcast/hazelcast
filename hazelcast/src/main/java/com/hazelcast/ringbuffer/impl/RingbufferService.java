@@ -19,7 +19,6 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -29,6 +28,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.HashMap;
 import java.util.Iterator;

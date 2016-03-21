@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.transaction.impl.xa.XATransactionDTO;
 import com.hazelcast.transaction.impl.xa.XATransaction;
+import com.hazelcast.transaction.impl.xa.XATransactionDTO;
 
 import java.io.IOException;
 import java.util.ArrayList;

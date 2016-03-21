@@ -16,11 +16,11 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;

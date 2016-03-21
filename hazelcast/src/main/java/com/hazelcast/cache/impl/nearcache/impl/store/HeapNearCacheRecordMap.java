@@ -16,11 +16,11 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
+import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
+import com.hazelcast.cache.impl.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
-import com.hazelcast.cache.impl.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
 public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>

@@ -16,10 +16,10 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TOPIC_DS_FACTORY;

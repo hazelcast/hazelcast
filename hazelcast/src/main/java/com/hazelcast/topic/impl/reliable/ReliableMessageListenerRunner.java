@@ -27,8 +27,8 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 
 
