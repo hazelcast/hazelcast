@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.util.sort;
 
-import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
