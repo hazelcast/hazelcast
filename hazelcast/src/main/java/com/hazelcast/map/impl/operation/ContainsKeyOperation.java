@@ -20,10 +20,10 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.BlockingOperation;
 
 public class ContainsKeyOperation extends KeyBasedMapOperation implements ReadonlyOperation, BlockingOperation {
 

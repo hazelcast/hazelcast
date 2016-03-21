@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.EventFilter;
+
 import java.io.IOException;
 
 public class EntryEventFilter implements EventFilter, DataSerializable {

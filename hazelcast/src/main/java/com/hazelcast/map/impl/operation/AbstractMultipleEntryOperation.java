@@ -29,9 +29,9 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
 import java.util.AbstractMap;

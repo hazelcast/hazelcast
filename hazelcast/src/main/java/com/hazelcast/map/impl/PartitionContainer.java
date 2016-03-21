@@ -21,11 +21,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 

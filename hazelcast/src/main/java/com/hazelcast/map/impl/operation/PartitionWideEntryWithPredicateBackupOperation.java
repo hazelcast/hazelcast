@@ -20,6 +20,7 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
+
 import java.io.IOException;
 
 public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWideEntryBackupOperation {
