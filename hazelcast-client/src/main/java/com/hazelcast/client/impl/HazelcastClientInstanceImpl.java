@@ -326,6 +326,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
     }
 
+    @Override
+    public String getProperty(String name) {
+        return clientProperties.get(name);
+    }
+
+    @Override
     public Config getConfig() {
         throw new UnsupportedOperationException("Client cannot access cluster config!");
     }
@@ -601,5 +607,4 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             discoveryService.destroy();
         }
     }
-
 }

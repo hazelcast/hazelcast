@@ -256,6 +256,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     }
 
     @Override
+    public String getProperty(String name) {
+        return getClient().getProperty(name);
+    }
+
+    @Override
     public void shutdown() {
         getLifecycleService().shutdown();
     }

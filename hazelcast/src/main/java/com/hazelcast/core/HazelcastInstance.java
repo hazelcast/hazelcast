@@ -176,10 +176,9 @@ public interface HazelcastInstance {
      * Returned endpoint will be a {@link Member} instance for cluster nodes
      * and a {@link Client} instance for clients.
      *
+     * @return the local {@link Endpoint} which this HazelcastInstance belongs to
      * @see Member
      * @see Client
-     *
-     * @return the local {@link Endpoint} which this HazelcastInstance belongs to
      */
     Endpoint getLocalEndpoint();
 
@@ -202,9 +201,8 @@ public interface HazelcastInstance {
      * and returns the result of the task.
      *
      * @param task the transactional task to be executed
-     * @param <T> return type of task
+     * @param <T>  return type of task
      * @return result of the transactional task
-     *
      * @throws TransactionException if an error occurs during transaction.
      */
     <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
@@ -214,10 +212,9 @@ public interface HazelcastInstance {
      * and returns the result of the task.
      *
      * @param options options for this transactional task
-     * @param task task to be executed
-     * @param <T> return type of task
+     * @param task    task to be executed
+     * @param <T>     return type of task
      * @return result of the transactional task
-     *
      * @throws TransactionException if an error occurs during transaction.
      */
     <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
@@ -363,10 +360,9 @@ public interface HazelcastInstance {
     LifecycleService getLifecycleService();
 
     /**
-     *
      * @param serviceName name of the service
-     * @param name name of the object
-     * @param <T> type of the DistributedObject
+     * @param name        name of the object
+     * @param <T>         type of the DistributedObject
      * @return DistributedObject created by the service
      */
     <T extends DistributedObject> T getDistributedObject(String serviceName, String name);
@@ -390,6 +386,14 @@ public interface HazelcastInstance {
      * @return the xaResource.
      */
     HazelcastXAResource getXAResource();
+
+    /**
+     * Gets the effective value of a named property if it has been configured or its default value otherwise.
+     *
+     * @param name property name
+     * @return effective value of the property
+     */
+    String getProperty(String name);
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

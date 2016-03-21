@@ -260,6 +260,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
+    public String getProperty(String name) {
+        return getOriginal().getProperty(name);
+    }
+
+    @Override
     public void shutdown() {
         getLifecycleService().shutdown();
     }
@@ -303,5 +308,3 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
     }
 }
-
-

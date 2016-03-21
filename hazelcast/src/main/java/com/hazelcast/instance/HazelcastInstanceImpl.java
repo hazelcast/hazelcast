@@ -382,6 +382,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    public String getProperty(String name) {
+        return node.getGroupProperties().get(name);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
