@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.internal.properties.GroupProperty;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Properties;
 import java.util.Set;

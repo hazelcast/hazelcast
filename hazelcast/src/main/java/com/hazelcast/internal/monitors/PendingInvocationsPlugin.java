@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.ItemCounter;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -63,7 +63,7 @@ public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
         InternalOperationService operationService = nodeEngine.getOperationService();
         this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         this.logger = nodeEngine.getLogger(PendingInvocationsPlugin.class);
-        GroupProperties props = nodeEngine.getGroupProperties();
+        HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);
         this.threshold = props.getInteger(THRESHOLD);
     }

@@ -26,7 +26,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -38,6 +37,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -114,12 +114,12 @@ public class NodeIOService implements IOService {
 
     @Override
     public boolean isMemcacheEnabled() {
-        return node.groupProperties.getBoolean(GroupProperty.MEMCACHE_ENABLED);
+        return node.getProperties().getBoolean(GroupProperty.MEMCACHE_ENABLED);
     }
 
     @Override
     public boolean isRestEnabled() {
-        return node.groupProperties.getBoolean(GroupProperty.REST_ENABLED);
+        return node.getProperties().getBoolean(GroupProperty.REST_ENABLED);
     }
 
     @Override
@@ -167,69 +167,69 @@ public class NodeIOService implements IOService {
 
     @Override
     public boolean isSocketBind() {
-        return node.groupProperties.getBoolean(GroupProperty.SOCKET_CLIENT_BIND);
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BIND);
     }
 
     @Override
     public boolean isSocketBindAny() {
-        return node.groupProperties.getBoolean(GroupProperty.SOCKET_CLIENT_BIND_ANY);
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BIND_ANY);
     }
 
     @Override
     public int getSocketReceiveBufferSize() {
-        return node.getGroupProperties().getInteger(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE);
+        return node.getProperties().getInteger(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE);
     }
 
     @Override
     public int getSocketSendBufferSize() {
-        return node.getGroupProperties().getInteger(GroupProperty.SOCKET_SEND_BUFFER_SIZE);
+        return node.getProperties().getInteger(GroupProperty.SOCKET_SEND_BUFFER_SIZE);
     }
 
     @Override
     public boolean isSocketBufferDirect() {
-        return node.getGroupProperties().getBoolean(GroupProperty.SOCKET_BUFFER_DIRECT);
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_BUFFER_DIRECT);
     }
 
     @Override
     public int getSocketClientReceiveBufferSize() {
-        int clientSendBuffer = node.getGroupProperties().getInteger(GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE);
+        int clientSendBuffer = node.getProperties().getInteger(GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE);
         return clientSendBuffer != -1 ? clientSendBuffer : getSocketReceiveBufferSize();
     }
 
     @Override
     public int getSocketClientSendBufferSize() {
-        int clientReceiveBuffer = node.getGroupProperties().getInteger(GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE);
+        int clientReceiveBuffer = node.getProperties().getInteger(GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE);
         return clientReceiveBuffer != -1 ? clientReceiveBuffer : getSocketReceiveBufferSize();
     }
 
     @Override
     public int getSocketLingerSeconds() {
-        return node.getGroupProperties().getSeconds(GroupProperty.SOCKET_LINGER_SECONDS);
+        return node.getProperties().getSeconds(GroupProperty.SOCKET_LINGER_SECONDS);
     }
 
     @Override
     public int getSocketConnectTimeoutSeconds() {
-        return node.getGroupProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
+        return node.getProperties().getSeconds(GroupProperty.SOCKET_CONNECT_TIMEOUT_SECONDS);
     }
 
     @Override
     public boolean getSocketKeepAlive() {
-        return node.getGroupProperties().getBoolean(GroupProperty.SOCKET_KEEP_ALIVE);
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_KEEP_ALIVE);
     }
 
     @Override
     public boolean getSocketNoDelay() {
-        return node.getGroupProperties().getBoolean(GroupProperty.SOCKET_NO_DELAY);
+        return node.getProperties().getBoolean(GroupProperty.SOCKET_NO_DELAY);
     }
 
     @Override
     public int getInputSelectorThreadCount() {
-        return node.groupProperties.getInteger(GroupProperty.IO_INPUT_THREAD_COUNT);
+        return node.getProperties().getInteger(GroupProperty.IO_INPUT_THREAD_COUNT);
     }
 
     @Override
     public int getOutputSelectorThreadCount() {
-        return node.groupProperties.getInteger(GroupProperty.IO_OUTPUT_THREAD_COUNT);
+        return node.getProperties().getInteger(GroupProperty.IO_OUTPUT_THREAD_COUNT);
     }
 
     @Override
@@ -243,17 +243,17 @@ public class NodeIOService implements IOService {
 
     @Override
     public long getConnectionMonitorInterval() {
-        return node.groupProperties.getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL);
+        return node.getProperties().getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL);
     }
 
     @Override
     public int getConnectionMonitorMaxFaults() {
-        return node.groupProperties.getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS);
+        return node.getProperties().getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS);
     }
 
     @Override
     public int getBalancerIntervalSeconds() {
-        return node.groupProperties.getSeconds(GroupProperty.IO_BALANCER_INTERVAL_SECONDS);
+        return node.getProperties().getSeconds(GroupProperty.IO_BALANCER_INTERVAL_SECONDS);
     }
 
     @Override

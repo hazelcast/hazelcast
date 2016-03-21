@@ -23,13 +23,13 @@ import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
 import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
@@ -94,24 +94,26 @@ public class ClusterHeartbeatManager {
         clusterClock = clusterService.getClusterClock();
         logger = node.getLogger(getClass());
 
-        maxNoHeartbeatMillis = node.groupProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
-        maxNoMasterConfirmationMillis = node.groupProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
+        HazelcastProperties hazelcastProperties = node.getProperties();
+        maxNoHeartbeatMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
+        maxNoMasterConfirmationMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
 
-        heartbeatIntervalMillis = getHeartBeatInterval(node.groupProperties);
+        heartbeatIntervalMillis = getHeartBeatInterval(hazelcastProperties);
         pingIntervalMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
-        icmpEnabled = node.groupProperties.getBoolean(GroupProperty.ICMP_ENABLED);
-        icmpTtl = node.groupProperties.getInteger(GroupProperty.ICMP_TTL);
-        icmpTimeoutMillis = (int) node.groupProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
+        icmpEnabled = hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED);
+        icmpTtl = hazelcastProperties.getInteger(GroupProperty.ICMP_TTL);
+        icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
     }
 
-    private static long getHeartBeatInterval(GroupProperties groupProperties) {
-        long heartbeatInterval = groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+    private static long getHeartBeatInterval(HazelcastProperties hazelcastProperties) {
+        long heartbeatInterval = hazelcastProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
     }
 
     void init() {
         ExecutionService executionService = nodeEngine.getExecutionService();
+        HazelcastProperties hazelcastProperties = node.getProperties();
 
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
@@ -119,7 +121,7 @@ public class ClusterHeartbeatManager {
             }
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
-        long masterConfirmationInterval = node.groupProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
+        long masterConfirmationInterval = hazelcastProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
         masterConfirmationInterval = (masterConfirmationInterval > 0 ? masterConfirmationInterval : 1);
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
@@ -127,7 +129,7 @@ public class ClusterHeartbeatManager {
             }
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
 
-        long memberListPublishInterval = node.groupProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
+        long memberListPublishInterval = hazelcastProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
         memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {

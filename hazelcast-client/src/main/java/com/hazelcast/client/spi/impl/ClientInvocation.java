@@ -20,7 +20,6 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.internal.properties.ClientProperties;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
@@ -31,12 +30,13 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.internal.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
  * ClientInvocation handles routing of a request from client
@@ -78,8 +78,8 @@ public class ClientInvocation implements Runnable {
         this.address = address;
         this.connection = connection;
 
-        ClientProperties clientProperties = client.getClientProperties();
-        long waitTime = clientProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
+        HazelcastProperties hazelcastProperties = client.getProperties();
+        long waitTime = hazelcastProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
         long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
         retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
 

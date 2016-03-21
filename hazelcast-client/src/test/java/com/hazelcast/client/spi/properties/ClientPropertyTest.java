@@ -1,4 +1,4 @@
-package com.hazelcast.client.internal.properties;
+package com.hazelcast.client.spi.properties;
 
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;

@@ -32,7 +32,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -56,6 +55,7 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -84,7 +84,7 @@ public class TimedMemberStateFactory {
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
         Node node = instance.node;
-        maxVisibleInstanceCount = node.groupProperties.getInteger(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT);
+        maxVisibleInstanceCount = node.getProperties().getInteger(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT);
         cacheServiceEnabled = isCacheServiceEnabled();
     }
 

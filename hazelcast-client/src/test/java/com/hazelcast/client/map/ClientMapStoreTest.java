@@ -10,8 +10,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.ReachedMaxSizeException;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -335,8 +335,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    private int getMaxCapacity(HazelcastInstance node) {
-        return getNode(node).getNodeEngine().getGroupProperties().getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
+    private int getMaxCapacity(HazelcastInstance instance) {
+        return getNode(instance).getProperties().getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
     }
 
     @Test

@@ -26,6 +26,7 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Collection;
 import java.util.Map;
@@ -1223,11 +1224,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys contained in this map.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet();
 
@@ -1240,11 +1241,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values();
 
@@ -1257,11 +1258,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys mappings in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet();
 
@@ -1277,13 +1278,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result key set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is null
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet(Predicate predicate);
 
@@ -1299,13 +1300,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result entry set of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is null
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
@@ -1321,13 +1322,13 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result value collection of the query.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @throws NullPointerException             if the predicate is null
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values(Predicate predicate);
 
@@ -1347,11 +1348,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned keys.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
@@ -1371,12 +1372,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      * This method is always executed by a distributed query,
      * so it may throw a {@link QueryResultSizeExceededException}
-     * if {@link com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
+     * if {@link GroupProperty#QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return keys of matching locally owned entries.
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @see com.hazelcast.internal.properties.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+     * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet(Predicate predicate);
 

@@ -53,7 +53,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         this.name = name;
 
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name),
-                LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties()));
+                LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getProperties()));
     }
 
     @Override

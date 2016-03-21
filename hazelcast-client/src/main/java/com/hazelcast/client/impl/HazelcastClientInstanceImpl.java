@@ -13,8 +13,6 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
-import com.hazelcast.client.internal.properties.ClientProperties;
-import com.hazelcast.client.internal.properties.ClientProperty;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -37,6 +35,7 @@ import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.listener.ClientNonSmartListenerService;
 import com.hazelcast.client.spi.impl.listener.ClientSmartListenerService;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -74,7 +73,6 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
@@ -102,6 +100,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -130,7 +130,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final short protocolVersion = ClientMessage.VERSION;
 
-    private final ClientProperties clientProperties;
+    private final HazelcastProperties properties;
     private final int id = CLIENT_ID.getAndIncrement();
     private final String instanceName;
     private final ClientConfig config;
@@ -175,7 +175,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         credentials = initCredentials(config);
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
-        clientProperties = new ClientProperties(config);
+        properties = new HazelcastProperties(config.getProperties());
 
         metricsRegistry = initMetricsRegistry();
         serializationService = clientExtension.createSerializationService((byte) -1);
@@ -202,11 +202,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         String name = "performance-client-" + id + "-" + currentTimeMillis();
         ILogger logger = loggingService.getLogger(PerformanceMonitor.class);
         HazelcastThreadGroup hzThreadGroup = new HazelcastThreadGroup(getName(), logger, config.getClassLoader());
-        return new PerformanceMonitor(name, logger, hzThreadGroup, clientProperties);
+        return new PerformanceMonitor(name, logger, hzThreadGroup, properties);
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
-        ProbeLevel probeLevel = clientProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel probeLevel = properties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
         return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), probeLevel);
     }
 
@@ -224,7 +224,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             addressProviders.add(new DiscoveryAddressProvider(discoveryService, loggingService));
         }
 
-        if (clientProperties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED)) {
+        if (properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED)) {
             discoveryService.start();
         }
 
@@ -316,8 +316,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private ClientListenerServiceImpl initListenerService() {
-        int eventQueueCapacity = clientProperties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
-        int eventThreadCount = clientProperties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
+        int eventQueueCapacity = properties.getInteger(ClientProperty.EVENT_QUEUE_CAPACITY);
+        int eventThreadCount = properties.getInteger(ClientProperty.EVENT_THREAD_COUNT);
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
             return new ClientSmartListenerService(this, eventThreadCount, eventQueueCapacity);
@@ -349,11 +349,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         performanceMonitor.start();
         performanceMonitor.register(
-                new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), clientProperties));
+                new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
         performanceMonitor.register(
                 new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
         performanceMonitor.register(
-                new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, clientProperties));
+                new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
@@ -369,8 +369,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         throw new UnsupportedOperationException("Client cannot access cluster config!");
     }
 
-    public ClientProperties getClientProperties() {
-        return clientProperties;
+    public HazelcastProperties getProperties() {
+        return properties;
     }
 
     @Override

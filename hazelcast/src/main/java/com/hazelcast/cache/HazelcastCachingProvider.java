@@ -17,10 +17,10 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;

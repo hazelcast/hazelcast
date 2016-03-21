@@ -17,8 +17,6 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
@@ -27,6 +25,8 @@ import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -233,8 +233,8 @@ public class StoreWorker implements Runnable {
     }
 
     private long getReplicaWaitTimeMillis() {
-        GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
-        return groupProperties.getMillis(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
+        HazelcastProperties hazelcastProperties = mapServiceContext.getNodeEngine().getProperties();
+        return hazelcastProperties.getMillis(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS);
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {

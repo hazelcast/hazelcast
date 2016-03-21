@@ -18,8 +18,6 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -28,6 +26,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -63,8 +63,8 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        expiryDelayMillis = groupProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        expiryDelayMillis = hazelcastProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
         evictor = mapContainer.getEvictor();
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();

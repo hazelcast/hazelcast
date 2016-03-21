@@ -22,8 +22,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -41,6 +39,8 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -100,10 +100,10 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         this.nodeEngine = nodeEngine;
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.logger = nodeEngine.getLogger(EventService.class.getName());
-        GroupProperties groupProperties = nodeEngine.getNode().getGroupProperties();
-        this.eventThreadCount = groupProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
-        this.eventQueueCapacity = groupProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
-        this.eventQueueTimeoutMs = groupProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        this.eventThreadCount = hazelcastProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
+        this.eventQueueCapacity = hazelcastProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
+        this.eventQueueTimeoutMs = hazelcastProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
         int eventSyncFrequency;
         try {
             eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));

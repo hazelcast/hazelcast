@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.properties;
+package com.hazelcast.spi.properties;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.BuildInfo;
@@ -32,6 +32,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the name and default value for Hazelcast properties.
  */
+@SuppressWarnings("checkstyle:javadocvariable")
 public final class GroupProperty {
 
     /**

@@ -18,10 +18,11 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
-import com.hazelcast.internal.properties.HazelcastProperties;
-import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -35,7 +36,7 @@ public class MetricsPlugin extends PerformanceMonitorPlugin {
      *
      * The MetricsPlugin does nothing more than frequently writing the content of the MetricsRegistry
      * to the logfile. For debugging purposes make sure the
-     * {@link com.hazelcast.internal.properties.GroupProperty#PERFORMANCE_METRICS_LEVEL} is set to debug.
+     * {@link GroupProperty#PERFORMANCE_METRICS_LEVEL} is set to debug.
      *
      * This plugin is very cheap to use.
      *
@@ -50,7 +51,7 @@ public class MetricsPlugin extends PerformanceMonitorPlugin {
     private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getNode().groupProperties);
+        this(nodeEngine.getLogger(MetricsPlugin.class), nodeEngine.getMetricsRegistry(), nodeEngine.getProperties());
     }
 
     public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry, HazelcastProperties properties) {

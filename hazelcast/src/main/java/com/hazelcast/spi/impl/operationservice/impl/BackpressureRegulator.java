@@ -16,20 +16,20 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Random;
 
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static java.lang.Math.max;
 import static java.lang.Math.round;
 
@@ -80,7 +80,7 @@ public class BackpressureRegulator {
     private final int maxConcurrentInvocations;
     private final int backoffTimeoutMs;
 
-    public BackpressureRegulator(GroupProperties properties, ILogger logger) {
+    public BackpressureRegulator(HazelcastProperties properties, ILogger logger) {
         this.enabled = properties.getBoolean(GroupProperty.BACKPRESSURE_ENABLED);
         this.disabled = !enabled;
         this.partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
@@ -102,7 +102,7 @@ public class BackpressureRegulator {
         }
     }
 
-    private int getSyncWindow(GroupProperties props) {
+    private int getSyncWindow(HazelcastProperties props) {
         int syncWindow = props.getInteger(BACKPRESSURE_SYNCWINDOW);
         if (enabled && syncWindow <= 0) {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_SYNCWINDOW + "' with a value smaller than 1");
@@ -110,7 +110,7 @@ public class BackpressureRegulator {
         return syncWindow;
     }
 
-    private int getBackoffTimeoutMs(GroupProperties props) {
+    private int getBackoffTimeoutMs(HazelcastProperties props) {
         int backoffTimeoutMs = (int) props.getMillis(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
         if (enabled && backoffTimeoutMs < 0) {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
@@ -119,7 +119,7 @@ public class BackpressureRegulator {
         return backoffTimeoutMs;
     }
 
-    private int getMaxConcurrentInvocations(GroupProperties props) {
+    private int getMaxConcurrentInvocations(HazelcastProperties props) {
         int invocationsPerPartition = props.getInteger(BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION);
         if (invocationsPerPartition < 1) {
             throw new IllegalArgumentException("Can't have '" + BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION

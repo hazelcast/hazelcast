@@ -2,12 +2,12 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -22,9 +22,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
-import static com.hazelcast.internal.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -221,13 +221,13 @@ public class QueryResultSizeLimiterTest {
         config.setProperty(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(maxLocalPartitionLimitForPreCheck));
         config.setProperty(PARTITION_COUNT.getName(), valueOf(partitionCount));
 
-        GroupProperties groupProperties = new GroupProperties(config);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
         InternalPartitionService partitionService = mock(InternalPartitionService.class);
         when(partitionService.getPartitionCount()).thenReturn(partitionCount);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
-        when(nodeEngine.getGroupProperties()).thenReturn(groupProperties);
+        when(nodeEngine.getProperties()).thenReturn(hazelcastProperties);
         when(nodeEngine.getPartitionService()).thenReturn(partitionService);
 
         RecordStore recordStore = mock(RecordStore.class);

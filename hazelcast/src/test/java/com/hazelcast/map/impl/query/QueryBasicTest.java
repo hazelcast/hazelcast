@@ -6,8 +6,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
@@ -24,6 +22,8 @@ import com.hazelcast.query.SampleObjects.State;
 import com.hazelcast.query.SampleObjects.Value;
 import com.hazelcast.query.SampleObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -59,7 +59,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     @Test
     public void testPredicatedEvaluatedSingleThreadedByDefault() {
         Config config = getConfig();
-        GroupProperties properties = new GroupProperties(config);
+        HazelcastProperties properties = new HazelcastProperties(config);
         boolean parallelEvaluation = properties.getBoolean(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
         assertEquals(false, parallelEvaluation);
     }

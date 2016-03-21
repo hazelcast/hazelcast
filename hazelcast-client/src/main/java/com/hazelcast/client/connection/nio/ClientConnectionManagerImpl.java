@@ -31,7 +31,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
-import com.hazelcast.client.internal.properties.ClientProperties;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -56,6 +55,7 @@ import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -75,8 +75,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
-import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_INTERVAL;
-import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
@@ -123,11 +123,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         final int connTimeout = networkConfig.getConnectionTimeout();
         connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
-        ClientProperties clientProperties = client.getClientProperties();
-        long timeout = clientProperties.getMillis(HEARTBEAT_TIMEOUT);
+        HazelcastProperties hazelcastProperties = client.getProperties();
+        long timeout = hazelcastProperties.getMillis(HEARTBEAT_TIMEOUT);
         this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
 
-        long interval = clientProperties.getMillis(HEARTBEAT_INTERVAL);
+        long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
         heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();

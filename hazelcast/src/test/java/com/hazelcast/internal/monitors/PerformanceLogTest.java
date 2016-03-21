@@ -6,8 +6,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -71,10 +71,9 @@ public class PerformanceLogTest extends HazelcastTestSupport {
 
     @Test
     public void testDisabledByDefault() {
-        GroupProperties groupProperties = new GroupProperties(new Config());
-        assertFalse(groupProperties.getBoolean(PerformanceMonitor.ENABLED));
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(new Config());
+        assertFalse(hazelcastProperties.getBoolean(PerformanceMonitor.ENABLED));
     }
-
 
     @Test
     public void testRollover() {

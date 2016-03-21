@@ -61,9 +61,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.internal.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
@@ -104,7 +104,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
         this.localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        this.parallelEvaluation = nodeEngine.getGroupProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
+        this.parallelEvaluation = nodeEngine.getProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
         this.executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
     }
 

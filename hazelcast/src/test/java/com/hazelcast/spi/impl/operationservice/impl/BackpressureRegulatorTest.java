@@ -1,13 +1,13 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -17,8 +17,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -40,8 +40,8 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     @Test
     public void testBackPressureDisabledByDefault() {
         Config config = new Config();
-        GroupProperties groupProperties = new GroupProperties(config);
-        BackpressureRegulator regulator = new BackpressureRegulator(groupProperties, logger);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        BackpressureRegulator regulator = new BackpressureRegulator(hazelcastProperties, logger);
         assertFalse(regulator.isEnabled());
     }
 
@@ -50,9 +50,9 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "true");
         config.setProperty(BACKPRESSURE_SYNCWINDOW.getName(), "0");
-        GroupProperties groupProperties = new GroupProperties(config);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
-        new BackpressureRegulator(groupProperties, logger);
+        new BackpressureRegulator(hazelcastProperties, logger);
     }
 
     @Test
@@ -60,8 +60,8 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "true");
         config.setProperty(BACKPRESSURE_SYNCWINDOW.getName(), "1");
-        GroupProperties groupProperties = new GroupProperties(config);
-        BackpressureRegulator regulator = new BackpressureRegulator(groupProperties, logger);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        BackpressureRegulator regulator = new BackpressureRegulator(hazelcastProperties, logger);
         for (int k = 0; k < 1000; k++) {
             PartitionSpecificOperation op = new PartitionSpecificOperation(10);
             assertTrue(regulator.isSyncForced(op));
@@ -74,8 +74,8 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     public void newCallIdSequence_whenBackPressureEnabled() {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "true");
-        GroupProperties groupProperties = new GroupProperties(config);
-        BackpressureRegulator backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
 
         CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
 
@@ -87,8 +87,8 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     public void newCallIdSequence_whenBackPressureDisabled() {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
-        GroupProperties groupProperties = new GroupProperties(config);
-        BackpressureRegulator backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        BackpressureRegulator backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
 
         CallIdSequence callIdSequence = backpressureRegulator.newCallIdSequence();
 
@@ -270,14 +270,14 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "true");
         config.setProperty(BACKPRESSURE_SYNCWINDOW.getName(), String.valueOf(SYNC_WINDOW));
-        GroupProperties groupProperties = new GroupProperties(config);
-        return new BackpressureRegulator(groupProperties, logger);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        return new BackpressureRegulator(hazelcastProperties, logger);
     }
 
     private BackpressureRegulator newDisabledBackPressureService() {
         Config config = new Config();
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
-        GroupProperties groupProperties = new GroupProperties(config);
-        return new BackpressureRegulator(groupProperties, logger);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        return new BackpressureRegulator(hazelcastProperties, logger);
     }
 }

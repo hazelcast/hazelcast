@@ -19,12 +19,12 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
 import java.util.concurrent.TimeUnit;
@@ -48,15 +48,15 @@ public class ClientHeartbeatMonitor implements Runnable {
     public ClientHeartbeatMonitor(ClientEndpointManagerImpl endpointManager,
                                   ClientEngine clientEngine,
                                   ExecutionService executionService,
-                                  GroupProperties groupProperties) {
+                                  HazelcastProperties hazelcastProperties) {
         this.clientEndpointManager = endpointManager;
         this.clientEngine = clientEngine;
         this.executionService = executionService;
-        this.heartbeatTimeoutSeconds = getHeartBeatTimeout(groupProperties);
+        this.heartbeatTimeoutSeconds = getHeartBeatTimeout(hazelcastProperties);
     }
 
-    private long getHeartBeatTimeout(GroupProperties groupProperties) {
-        long configuredTimeout = groupProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
+    private long getHeartBeatTimeout(HazelcastProperties hazelcastProperties) {
+        long configuredTimeout = hazelcastProperties.getSeconds(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS);
         if (configuredTimeout > 0) {
             return configuredTimeout;
         }

@@ -28,7 +28,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -40,6 +39,7 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.map.impl.MapConfigValidator.checkInMemoryFormat;

@@ -28,7 +28,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
-import com.hazelcast.client.internal.properties.ClientProperties;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
@@ -78,6 +77,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -95,7 +95,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.internal.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start- and runtime by registering
@@ -299,8 +299,8 @@ public final class ProxyManager {
     }
 
     private long getRetryCountLimit() {
-        ClientProperties clientProperties = client.getClientProperties();
-        int waitTime = clientProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
+        HazelcastProperties hazelcastProperties = client.getProperties();
+        int waitTime = hazelcastProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
         long retryTimeoutInSeconds = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
         return retryTimeoutInSeconds / ClientInvocation.RETRY_WAIT_TIME_IN_SECONDS;
     }

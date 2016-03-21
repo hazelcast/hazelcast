@@ -131,7 +131,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     // this method is overridden in another context.
     MapQueryEngineImpl createMapQueryEngine() {
-        return new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getGroupProperties()));
+        return new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getProperties()));
     }
 
     // this method is overridden in another context.

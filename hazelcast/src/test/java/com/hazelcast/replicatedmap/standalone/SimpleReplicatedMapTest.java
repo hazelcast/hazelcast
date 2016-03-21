@@ -24,8 +24,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.LinkedList;
 import java.util.List;

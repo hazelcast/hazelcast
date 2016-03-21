@@ -25,9 +25,9 @@ import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.operations.MasterClaimOperation;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
@@ -59,7 +59,7 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public TcpIpJoiner(Node node) {
         super(node);
-        int tryCount = node.groupProperties.getInteger(GroupProperty.TCP_JOIN_PORT_TRY_COUNT);
+        int tryCount = node.getProperties().getInteger(GroupProperty.TCP_JOIN_PORT_TRY_COUNT);
         if (tryCount <= 0) {
             throw new IllegalArgumentException(String.format("%s should be greater than zero! Current value: %d",
                     GroupProperty.TCP_JOIN_PORT_TRY_COUNT, tryCount));
@@ -79,7 +79,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     public void doJoin() {
         final Address targetAddress = getTargetAddress();
         if (targetAddress != null) {
-            long maxJoinMergeTargetMillis = node.getGroupProperties().getMillis(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS);
+            long maxJoinMergeTargetMillis = node.getProperties().getMillis(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS);
             joinViaTargetMember(targetAddress, maxJoinMergeTargetMillis);
             if (!node.joined()) {
                 joinViaPossibleMembers();

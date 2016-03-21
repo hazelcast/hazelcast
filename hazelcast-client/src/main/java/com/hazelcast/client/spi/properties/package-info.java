@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the private Hazelcast client properties implementation.
+ * Contains the Hazelcast client properties implementation.
  */
-package com.hazelcast.client.internal.properties;
+package com.hazelcast.client.spi.properties;

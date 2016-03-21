@@ -21,7 +21,6 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -34,15 +33,16 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -90,7 +90,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
 
-    public OperationExecutorImpl(GroupProperties properties,
+    public OperationExecutorImpl(HazelcastProperties properties,
                                  LoggingService loggerService,
                                  Address thisAddress,
                                  OperationRunnerFactory operationRunnerFactory,
@@ -109,7 +109,8 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         this.genericThreads = initGenericThreads(threadGroup, nodeExtension);
     }
 
-    private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
+    private OperationRunner[] initPartitionOperationRunners(HazelcastProperties properties,
+                                                            OperationRunnerFactory handlerFactory) {
         OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(PARTITION_COUNT)];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = handlerFactory.createPartitionRunner(partitionId);
@@ -117,7 +118,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return operationRunners;
     }
 
-    private OperationRunner[] initGenericOperationRunners(GroupProperties properties, OperationRunnerFactory runnerFactory) {
+    private OperationRunner[] initGenericOperationRunners(HazelcastProperties properties, OperationRunnerFactory runnerFactory) {
         int threadCount = properties.getInteger(GENERIC_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
             // default generic operation thread count
@@ -134,7 +135,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return operationRunners;
     }
 
-    private PartitionOperationThread[] initPartitionThreads(GroupProperties properties, HazelcastThreadGroup threadGroup,
+    private PartitionOperationThread[] initPartitionThreads(HazelcastProperties properties, HazelcastThreadGroup threadGroup,
                                                             NodeExtension nodeExtension) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);

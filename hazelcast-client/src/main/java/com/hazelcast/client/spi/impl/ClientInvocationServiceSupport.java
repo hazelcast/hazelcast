@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.internal.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
+import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 
 
@@ -71,7 +71,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
         this.client = client;
-        int maxAllowedConcurrentInvocations = client.getClientProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
+        int maxAllowedConcurrentInvocations = client.getProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
         callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
         invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
 

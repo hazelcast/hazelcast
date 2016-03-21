@@ -20,12 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
@@ -156,13 +156,13 @@ public interface NodeEngine {
     ClassLoader getConfigClassLoader();
 
     /**
-     * Returns the GroupProperties.
+     * Returns the HazelcastProperties.
      * <p/>
      * The returned value will never change and will never be null.
      *
-     * @return the GroupProperties
+     * @return the HazelcastProperties
      */
-    GroupProperties getGroupProperties();
+    HazelcastProperties getProperties();
 
     /**
      * Gets the logger for a given name.
