@@ -21,6 +21,7 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
 import java.util.Map;
 
 public class CollectionClearOperation extends CollectionBackupAwareOperation {
