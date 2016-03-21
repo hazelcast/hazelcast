@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.internal.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
@@ -58,7 +56,6 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
-    private final int heartBeatInterval;
 
     private final Address address;
     private final int partitionId;
@@ -88,9 +85,6 @@ public class ClientInvocation implements Runnable {
 
         logger = ((ClientInvocationServiceSupport) invocationService).invocationLogger;
         clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
-
-        int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
-        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
@@ -225,27 +219,12 @@ public class ClientInvocation implements Runnable {
         return connection != null;
     }
 
-    boolean isConnectionHealthy(long elapsed) {
-        if (elapsed >= heartBeatInterval) {
-            if (sendConnection != null) {
-                return sendConnection.isHeartBeating();
-            } else {
-                return true;
-            }
-        }
-        return true;
-    }
-
     public EventHandler getEventHandler() {
         return handler;
     }
 
     public void setEventHandler(EventHandler handler) {
         this.handler = handler;
-    }
-
-    public int getHeartBeatInterval() {
-        return heartBeatInterval;
     }
 
     public boolean shouldBypassHeartbeatCheck() {
@@ -276,8 +255,6 @@ public class ClientInvocation implements Runnable {
     }
 
     public static boolean isRetryable(Throwable t) {
-        return t instanceof IOException
-                || t instanceof HazelcastInstanceNotActiveException
-                || t instanceof AuthenticationException;
+        return t instanceof IOException || t instanceof HazelcastInstanceNotActiveException;
     }
 }

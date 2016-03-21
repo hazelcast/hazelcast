@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -124,7 +125,7 @@ public abstract class AbstractMessageTask<P>
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
-            exception = new AuthenticationException(message);
+            exception = new RetryableHazelcastException(new AuthenticationException(message));
         } else {
             exception = new HazelcastInstanceNotActiveException();
         }
