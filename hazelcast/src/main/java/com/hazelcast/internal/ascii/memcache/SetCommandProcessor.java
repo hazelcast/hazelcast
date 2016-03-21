@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 
 import java.io.UnsupportedEncodingException;

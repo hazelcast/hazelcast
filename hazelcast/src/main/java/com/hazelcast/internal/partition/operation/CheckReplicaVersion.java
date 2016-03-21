@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 

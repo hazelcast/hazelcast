@@ -20,17 +20,16 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationEvent.MigrationStatus;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.PartitionReplicaChangeReason;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
-import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.PartitionReplicaChangeReason;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -40,6 +39,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,10 +47,10 @@ import java.util.Collection;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.COMPLETED;
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
-import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.partition.PartitionReplicaChangeReason.MEMBER_REMOVED;
+import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 
 // Runs locally when the node becomes owner of a partition

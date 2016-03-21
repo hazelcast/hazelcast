@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

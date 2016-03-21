@@ -19,10 +19,10 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 public final class HasOngoingMigration extends AbstractOperation implements AllowedDuringPassiveState {
 

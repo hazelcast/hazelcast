@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.util.hashslot.impl;
 
+import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.MemoryAllocator;
+import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor12byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor16byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
-import com.hazelcast.internal.memory.MemoryAccessor;
-import com.hazelcast.internal.memory.MemoryAllocator;
-import com.hazelcast.internal.memory.MemoryManager;
 
 import static com.hazelcast.internal.memory.MemoryAllocator.NULL_ADDRESS;
 import static com.hazelcast.util.HashUtil.fastLongMix;
