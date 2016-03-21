@@ -24,9 +24,9 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.MemoryInfoAccessor;
 
 import java.util.ArrayList;
