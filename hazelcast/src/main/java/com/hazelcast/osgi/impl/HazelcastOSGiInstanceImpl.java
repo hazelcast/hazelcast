@@ -253,6 +253,11 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
+    public String getProperty(String name) {
+        return delegatedInstance.getProperty(name);
+    }
+
+    @Override
     public void shutdown() {
         delegatedInstance.shutdown();
     }
@@ -309,5 +314,4 @@ class HazelcastOSGiInstanceImpl
         sb.append('}');
         return sb.toString();
     }
-
 }
