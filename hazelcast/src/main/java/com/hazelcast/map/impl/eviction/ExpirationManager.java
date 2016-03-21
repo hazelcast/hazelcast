@@ -20,10 +20,11 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.ClearExpiredOperation;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -159,7 +160,9 @@ public class ExpirationManager {
 
         private int getMaxCleanupOperationCountInOneRound() {
             final int times = 3;
-            return times * ExpirationManager.this.nodeEngine.getOperationService().getPartitionOperationThreadCount();
+            InternalOperationService opService
+                    = (InternalOperationService) ExpirationManager.this.nodeEngine.getOperationService();
+            return times * opService.getPartitionOperationThreadCount();
         }
 
         private boolean isContainerEmpty(PartitionContainer container) {

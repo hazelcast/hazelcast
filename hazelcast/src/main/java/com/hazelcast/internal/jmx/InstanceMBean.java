@@ -23,7 +23,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     private static final int INITIAL_CAPACITY = 3;
+
     final Config config;
     final Cluster cluster;
     private NodeMBean nodeMBean;
@@ -63,13 +65,13 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         cluster = hazelcastInstance.getCluster();
         Node node = hazelcastInstance.node;
         ExecutionService executionService = node.nodeEngine.getExecutionService();
-        OperationService operationService = node.nodeEngine.getOperationService();
+        InternalOperationService operationService = node.nodeEngine.getOperationService();
         createMBeans(hazelcastInstance, managementService, node, executionService, operationService);
         registerMBeans();
     }
 
     private void createMBeans(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService, Node node,
-                              ExecutionService executionService, OperationService operationService) {
+                              ExecutionService executionService, InternalOperationService operationService) {
         nodeMBean = new NodeMBean(hazelcastInstance, node, managementService);
         connectionManagerMBean = new ConnectionManagerMBean(hazelcastInstance, node.connectionManager, service);
         eventServiceMBean = new EventServiceMBean(hazelcastInstance, node.nodeEngine.getEventService(), service);
