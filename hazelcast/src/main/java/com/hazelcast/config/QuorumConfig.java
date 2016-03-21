@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumType;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.nearcache.impl;
 
-import com.hazelcast.internal.eviction.EvictableStore;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
+import com.hazelcast.internal.eviction.EvictableStore;
 
 import java.util.concurrent.ConcurrentMap;
 

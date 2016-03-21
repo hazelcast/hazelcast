@@ -26,6 +26,7 @@ import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.mapreduce.impl.SetKeyValueSource;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.Beta;
+
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;

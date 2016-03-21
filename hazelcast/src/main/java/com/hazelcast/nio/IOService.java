@@ -17,17 +17,17 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.spi.EventService;
 
 import java.util.Collection;

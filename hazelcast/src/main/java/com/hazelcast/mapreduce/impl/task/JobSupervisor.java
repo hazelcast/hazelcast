@@ -16,8 +16,8 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;

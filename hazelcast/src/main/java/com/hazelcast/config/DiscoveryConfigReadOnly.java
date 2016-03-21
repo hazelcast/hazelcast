@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.NodeFilter;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
 /**
  * Readonly version of {@link DiscoveryConfig}

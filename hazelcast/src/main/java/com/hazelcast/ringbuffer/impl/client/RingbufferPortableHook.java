@@ -16,11 +16,11 @@
 
 package com.hazelcast.ringbuffer.impl.client;
 
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.PortableHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
 import java.util.Collection;
 

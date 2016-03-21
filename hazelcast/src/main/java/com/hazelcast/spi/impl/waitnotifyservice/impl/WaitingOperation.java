@@ -18,10 +18,10 @@ package com.hazelcast.spi.impl.waitnotifyservice.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
