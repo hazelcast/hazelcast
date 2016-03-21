@@ -19,8 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -58,7 +58,7 @@ public class MapDestroyTest extends HazelcastTestSupport {
         // while a map is being destroyed which can result in a memory leak. This will be overhauled as part of
         // object lifecycle revamp.
         // For more details, see: https://github.com/hazelcast/hazelcast/issues/7132
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(Integer.MAX_VALUE));
         instance1 = factory.newHazelcastInstance(config);
         instance2 = factory.newHazelcastInstance(config);
     }

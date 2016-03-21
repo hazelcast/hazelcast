@@ -30,9 +30,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.LifecycleServiceImpl;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
@@ -46,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -279,9 +279,8 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected void putToCacheAndGetInvalidationEventWhenNodeShutdown(InMemoryFormat inMemoryFormat) {
         Config config = createConfig();
-        config.setProperty(GroupProperties.PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE,
-                String.valueOf(Integer.MAX_VALUE));
-        config.setProperty(GroupProperties.PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS,
+        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE));
+        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(),
                 String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance instanceToShutdown = hazelcastFactory.newHazelcastInstance(config);
 

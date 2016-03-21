@@ -21,7 +21,6 @@ import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -29,6 +28,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
+import com.hazelcast.client.internal.properties.ClientProperties;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
@@ -95,7 +95,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.internal.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start- and runtime by registering

@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -38,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.internal.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 /**
  * Sends cache invalidation events in batch or single as configured.
@@ -104,8 +104,8 @@ class CacheEventHandler {
             case EXPIRED:
                 final CacheEventData cacheEventData =
                         new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
-                                               cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
-                                               cacheEventContext.isOldValueAvailable());
+                                cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
+                                cacheEventContext.isOldValueAvailable());
                 CacheEventSet eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(cacheEventData);
                 eventData = eventSet;
@@ -113,12 +113,12 @@ class CacheEventHandler {
             case EVICTED:
             case INVALIDATED:
                 eventData = new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
-                                                   null, null, false);
+                        null, null, false);
                 break;
             case COMPLETED:
                 CacheEventData completedEventData =
                         new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
-                                               cacheEventContext.getDataValue(), null, false);
+                                cacheEventContext.getDataValue(), null, false);
                 eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(completedEventData);
                 eventData = eventSet;
@@ -128,7 +128,7 @@ class CacheEventHandler {
                         "Event Type not defined to create an eventData during publish : " + eventType.name());
         }
         eventService.publishEvent(ICacheService.SERVICE_NAME, candidates,
-                                  eventData, cacheEventContext.getOrderKey());
+                eventData, cacheEventContext.getOrderKey());
     }
 
     void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
@@ -175,7 +175,7 @@ class CacheEventHandler {
         if (registrations.isEmpty()) {
             return;
         }
-        InvalidationEventQueue invalidationMessageQueue =  invalidationMessageMap.get(name);
+        InvalidationEventQueue invalidationMessageQueue = invalidationMessageMap.get(name);
         if (invalidationMessageQueue == null) {
             InvalidationEventQueue newInvalidationMessageQueue = new InvalidationEventQueue();
             invalidationMessageQueue = invalidationMessageMap.putIfAbsent(name, newInvalidationMessageQueue);
@@ -212,7 +212,7 @@ class CacheEventHandler {
                         eventService.getRegistrations(ICacheService.SERVICE_NAME, cacheName);
                 if (!registrations.isEmpty()) {
                     eventService.publishEvent(ICacheService.SERVICE_NAME, registrations,
-                                              batchInvalidationMessage, cacheName.hashCode());
+                            batchInvalidationMessage, cacheName.hashCode());
                 }
             } finally {
                 invalidationMessageQueue.release();

@@ -55,7 +55,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
@@ -1207,7 +1207,7 @@ public class ClientMapNearCacheTest {
 
     protected Config newConfig() {
         Config config = new Config();
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, String.valueOf(batchInvalidationEnabled));
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), String.valueOf(batchInvalidationEnabled));
         return config;
     }
 

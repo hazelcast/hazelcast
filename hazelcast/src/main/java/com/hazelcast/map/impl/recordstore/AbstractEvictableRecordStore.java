@@ -18,8 +18,8 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;

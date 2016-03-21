@@ -6,7 +6,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
@@ -145,12 +145,12 @@ public class TestMapUsingMapStoreBuilder<K, V> {
                 .setInMemoryFormat(inMemoryFormat);
 
         if (writeBehindQueueCapacity > 0) {
-            config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY, String.valueOf(writeBehindQueueCapacity));
+            config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(writeBehindQueueCapacity));
         }
 
-        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         if (backupDelaySeconds > 0) {
-            config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, String.valueOf(backupDelaySeconds));
+            config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getName(), String.valueOf(backupDelaySeconds));
         }
 
         // nodes

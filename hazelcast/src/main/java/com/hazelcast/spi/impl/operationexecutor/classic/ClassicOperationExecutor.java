@@ -16,11 +16,11 @@
 
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -348,7 +348,8 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
     }
 
-    @Override public void runOnAllPartitionThreads(Runnable task) {
+    @Override
+    public void runOnAllPartitionThreads(Runnable task) {
         checkNotNull(task, "task can't be null");
 
         for (OperationThread partitionOperationThread : partitionOperationThreads) {

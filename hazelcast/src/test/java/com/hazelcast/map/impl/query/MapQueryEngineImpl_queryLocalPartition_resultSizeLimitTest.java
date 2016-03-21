@@ -3,7 +3,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.TruePredicate;
@@ -37,8 +37,8 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     public void setup() {
         Config config = new Config();
         // we reduce the number of partitions to speed up content generation
-        config.setProperty(GroupProperty.PARTITION_COUNT, "" + PARTITION_COUNT);
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT, "" + RESULT_SIZE_LIMIT);
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "" + PARTITION_COUNT);
+        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "" + RESULT_SIZE_LIMIT);
 
         hz = createHazelcastInstance(config);
         map = hz.getMap(randomName());

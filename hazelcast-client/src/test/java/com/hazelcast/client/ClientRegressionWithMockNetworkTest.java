@@ -17,8 +17,8 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.config.ClientSecurityConfig;
+import com.hazelcast.client.internal.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
@@ -723,7 +723,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         //retry to connect to cluster forever(never shutdown the client)
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         //Retry all requests forever(until client is shutdown)
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> map = client.getMap(randomMapName());
@@ -749,7 +749,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         //Retry all requests
         clientConfig.getNetworkConfig().setRedoOperation(true);
         //Retry all requests forever(until client is shutdown)
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Object, Object> map = client.getMap(randomMapName());

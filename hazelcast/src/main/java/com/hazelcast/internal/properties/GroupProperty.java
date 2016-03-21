@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.internal.properties;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
 import com.hazelcast.internal.monitors.InvocationPlugin;
@@ -24,7 +26,6 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -32,7 +33,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the name and default value for Hazelcast properties.
  */
-@PrivateApi
 public final class GroupProperty {
 
     /**
@@ -188,7 +188,6 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD
             = new HazelcastProperty("hazelcast.performance.monitor.pending.invocations.threshold", 1);
-
 
     /**
      * The sample period in seconds for the {@link InvocationPlugin}.

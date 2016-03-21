@@ -17,10 +17,10 @@
 package com.hazelcast.client.heartbeat;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.internal.properties.ClientProperty;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.client.test.TestClientRegistry;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -56,8 +56,8 @@ public class ClientHeartbeatTest extends HazelcastTestSupport {
     public void testHeartbeatStoppedEvent() throws InterruptedException {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT, "3000");
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL, "500");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "3000");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
@@ -82,8 +82,8 @@ public class ClientHeartbeatTest extends HazelcastTestSupport {
     public void testInvocation_whenHeartbeatStopped() throws InterruptedException {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT, "3000");
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL, "500");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "3000");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
@@ -98,8 +98,8 @@ public class ClientHeartbeatTest extends HazelcastTestSupport {
     public void testAsyncInvocation_whenHeartbeatStopped() throws InterruptedException {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT, "3000");
-        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL, "500");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "3000");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 

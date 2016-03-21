@@ -19,9 +19,9 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -283,7 +283,7 @@ public class BackupTest extends HazelcastTestSupport {
         final String name = MAP_NAME;
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL, "5");
+        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "5");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
@@ -572,7 +572,7 @@ public class BackupTest extends HazelcastTestSupport {
     @Test
     public void testGracefulShutdown_Issue2804() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT, "1111");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1111");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 

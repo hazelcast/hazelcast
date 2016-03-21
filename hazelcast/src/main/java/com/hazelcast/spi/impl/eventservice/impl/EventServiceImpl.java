@@ -17,13 +17,13 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

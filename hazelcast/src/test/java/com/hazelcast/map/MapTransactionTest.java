@@ -29,9 +29,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperation;
@@ -440,7 +440,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     @Test
     public void testTxnGetForUpdateTxnFails() throws TransactionException {
         Config config = getConfig();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "5000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "5000");
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);

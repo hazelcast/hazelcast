@@ -22,7 +22,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -87,7 +87,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         mapStoreConfig.setImplementation(mapStore).setWriteDelaySeconds(3000);
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "0");
+        config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getName(), "0");
         config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance member1 = factory.newHazelcastInstance(config);

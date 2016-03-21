@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -35,7 +35,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(BACKPRESSURE_ENABLED, "false");
+        config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
         local = createHazelcastInstance(config);
         warmUpPartitions(local);
         nodeEngine = getNodeEngineImpl(local);

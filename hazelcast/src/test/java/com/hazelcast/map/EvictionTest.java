@@ -27,7 +27,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -341,7 +341,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final int size = 10;
         final String mapName = "testEvictionPerPartition";
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         final MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(EvictionPolicy.LRU);
         mc.setEvictionPercentage(50);
@@ -371,7 +371,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final String mapName = randomMapName("_testEvictionLRU_statisticsDisabled_");
 
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         MapConfig mc = cfg.getMapConfig(mapName);
         mc.setStatisticsEnabled(false);
         mc.setEvictionPolicy(EvictionPolicy.LRU);
@@ -449,7 +449,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final String mapName = randomMapName("testEvictionLFU2");
 
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         MapConfig mc = cfg.getMapConfig(mapName);
         mc.setEvictionPolicy(EvictionPolicy.LFU);
         mc.setEvictionPercentage(90);
@@ -558,7 +558,7 @@ public class EvictionTest extends HazelcastTestSupport {
         final String name = "testMapRecordIdleEvictionOnMigration";
 
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         MapConfig mapConfig = cfg.getMapConfig(name);
         int maxIdleSeconds = 30;
         int size = 100;
@@ -901,7 +901,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         Config config = newConfigWithTTL(mapName, ttlSeconds);
         // use a long delay for testing purposes.
-        config.setProperty(GroupProperty.MAP_EXPIRY_DELAY_SECONDS, String.valueOf(TimeUnit.HOURS.toSeconds(1)));
+        config.setProperty(GroupProperty.MAP_EXPIRY_DELAY_SECONDS.getName(), String.valueOf(TimeUnit.HOURS.toSeconds(1)));
 
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance[] instances = factory.newInstances(config);

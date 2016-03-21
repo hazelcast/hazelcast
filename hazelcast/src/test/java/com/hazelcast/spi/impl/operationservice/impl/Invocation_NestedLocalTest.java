@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -81,8 +81,8 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
     @Test
     public void invokeOnPartition_outerLocal_innerSameInstance_callsDifferentPartition_mappedToSameThread() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT, "2");
-        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "2");
+        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         HazelcastInstance local = createHazelcastInstance(config);
         final OperationService operationService = getOperationService(local);
 

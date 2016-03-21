@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastProperty;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperty.QUERY_OPTIMIZER_TYPE;
+import static com.hazelcast.internal.properties.GroupProperty.QUERY_OPTIMIZER_TYPE;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;

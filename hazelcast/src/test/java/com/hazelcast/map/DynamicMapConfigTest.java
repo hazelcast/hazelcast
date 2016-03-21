@@ -22,8 +22,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -61,7 +61,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
 
         HazelcastInstance node = createHazelcastInstance(config);
 

@@ -24,8 +24,8 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.mapstore.MapStoreTest.TestMapStore;
 import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.FailAwareMapStore;
 import com.hazelcast.query.SampleObjects.Employee;
@@ -90,7 +90,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         TestMapStore testMapStore = new TestMapStore(size * 2, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
-        config.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(size);
         MapConfig mapConfig = config.getMapConfig("default");

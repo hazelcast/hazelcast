@@ -17,7 +17,7 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.HazelcastProperties;
+import com.hazelcast.internal.properties.HazelcastProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 

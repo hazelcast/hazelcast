@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
 import static java.lang.String.format;
 
 /**

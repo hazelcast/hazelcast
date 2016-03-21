@@ -6,8 +6,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
@@ -763,7 +763,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     @Test
     public void testQueryPortableObject_parallel() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION, "true");
+        config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION.getName(), "true");
         testQueryUsingPortableObject(config, randomMapName());
     }
 

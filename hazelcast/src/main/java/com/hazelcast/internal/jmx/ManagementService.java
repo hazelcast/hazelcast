@@ -19,8 +19,8 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 
 import javax.management.MBeanServer;

@@ -20,10 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -239,8 +239,8 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
                 .addProperty(BACKUP_COUNT_PROP, String.valueOf(backupCount));
 
         config.getServicesConfig().addServiceConfig(serviceConfig);
-        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(PARTITION_COUNT));
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, String.valueOf(PARALLEL_REPLICATIONS));
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(PARALLEL_REPLICATIONS));
         return config;
     }
 

@@ -3,12 +3,12 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.DefaultNodeExtension;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.Logger;
@@ -66,9 +66,9 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT, "10");
-        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT, "10");
-        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT, "10");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "10");
+        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "10");
+        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "10");
         thisAddress = new Address("localhost", 5701);
         threadGroup = new HazelcastThreadGroup(
                 "foo",

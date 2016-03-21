@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
+import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.List;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
+import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS;
+import static com.hazelcast.internal.properties.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**

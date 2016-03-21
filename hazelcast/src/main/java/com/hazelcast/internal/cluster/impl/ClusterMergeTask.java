@@ -17,9 +17,9 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.util.Clock;
@@ -41,7 +41,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * to merge and then triggers join process to the new cluster.
  * It is triggered on every member in the cluster when the master member detects
  * another cluster to join which it thinks current cluster is split from.
- *
  */
 class ClusterMergeTask implements Runnable {
 

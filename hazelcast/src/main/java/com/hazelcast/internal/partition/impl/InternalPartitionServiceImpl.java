@@ -24,7 +24,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationEvent.MigrationStatus;
 import com.hazelcast.core.MigrationListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
@@ -52,6 +51,7 @@ import com.hazelcast.internal.partition.operation.PromoteFromBackupOperation;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
 import com.hazelcast.internal.partition.operation.ResetReplicaVersionOperation;
 import com.hazelcast.internal.partition.operation.SyncReplicaVersion;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -2106,7 +2106,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         private void doRun() throws InterruptedException {
             boolean migrating = false;
-            for (; ;) {
+            for (; ; ) {
                 if (!isMigrationAllowed()) {
                     break;
                 }

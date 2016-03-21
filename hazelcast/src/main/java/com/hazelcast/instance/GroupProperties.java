@@ -17,20 +17,16 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.properties.GroupProperty;
 
 /**
- * Container for configured Hazelcast properties ({@see GroupProperty}).
+ * Container for configured Hazelcast properties.
  * <p/>
- * A {@link GroupProperty} can be set as:
- * <p><ul>
- * <li>an environmental variable using {@link System#setProperty(String, String)}</li>
- * <li>the programmatic configuration using {@link Config#setProperty(String, String)}</li>
- * <li>the XML configuration
- * {@see http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties}</li>
- * </ul></p>
- * <p/>
- * The old property definitions are deprecated since Hazelcast 3.6. Please use the new {@link GroupProperty} definitions instead.
+ * The old property definitions are deprecated since Hazelcast 3.6.
+ * The whole class is deprecated since Hazelcast 3.7.
+ * This is private API, don't use it.
  */
+@Deprecated
 @SuppressWarnings("unused")
 public class GroupProperties extends HazelcastProperties {
 
@@ -261,6 +257,7 @@ public class GroupProperties extends HazelcastProperties {
      *
      * @param config {@link Config} used to configure the {@link GroupProperty} values.
      */
+    @Deprecated
     public GroupProperties(Config config) {
         super(config.getProperties());
     }

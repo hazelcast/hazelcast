@@ -18,8 +18,8 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;

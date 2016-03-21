@@ -133,7 +133,6 @@ public class ClientConfig {
      * @param name  property name
      * @param value value of the property
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     * @see {@link com.hazelcast.client.config.ClientProperties} for properties that is used to configure client
      */
     public ClientConfig setProperty(String name, String value) {
         properties.put(name, value);
@@ -143,9 +142,13 @@ public class ClientConfig {
     /**
      * Gets a {@link HazelcastProperty} already set or from system properties if not exists.
      *
+     * Deprecated since Hazelcast 3.7, use {@link #getProperty(String)} instead.
+     *
      * @param property {@link HazelcastProperty} to get
      * @return value of the property
+     * @deprecated since Hazelcast 3.7
      */
+    @Deprecated
     public String getProperty(HazelcastProperty property) {
         return getProperty(property.getName());
     }
@@ -153,11 +156,14 @@ public class ClientConfig {
     /**
      * Sets the value of a {@link HazelcastProperty}.
      *
+     * Deprecated since Hazelcast 3.7, use {@link #setProperty(String, String)} instead.
+     *
      * @param property {@link HazelcastProperty} to set
      * @param value    value of the property
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
-     * @see {@link com.hazelcast.client.config.ClientProperties} for properties that is used to configure client
+     * @deprecated since Hazelcast 3.7
      */
+    @Deprecated
     public ClientConfig setProperty(HazelcastProperty property, String value) {
         return setProperty(property.getName(), value);
     }

@@ -1,5 +1,7 @@
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.internal.properties.ClientProperties;
+import com.hazelcast.client.internal.properties.ClientProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -31,7 +33,7 @@ public class ClientPropertiesTest {
 
     @Test
     public void setProperty_ensureHighestPriorityOfConfig() {
-        config.setProperty(ClientProperty.EVENT_THREAD_COUNT, "1000");
+        config.setProperty(ClientProperty.EVENT_THREAD_COUNT.getName(), "1000");
         ClientProperty.EVENT_THREAD_COUNT.setSystemProperty("5000");
 
         ClientProperties ClientProperties = new ClientProperties(config);
@@ -86,7 +88,7 @@ public class ClientPropertiesTest {
 
     @Test
     public void getTimeUnit() {
-        config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, "300");
+        config.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "300");
         ClientProperties ClientProperties = new ClientProperties(config);
 
         assertEquals(300, ClientProperties.getSeconds(ClientProperty.INVOCATION_TIMEOUT_SECONDS));
