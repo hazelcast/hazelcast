@@ -19,8 +19,6 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
@@ -34,6 +32,8 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
