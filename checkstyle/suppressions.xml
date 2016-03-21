@@ -98,6 +98,7 @@
     <suppress checks="FileLengthCheck|MethodCount|ClassFanOutComplexity" files="com/hazelcast/client/proxy/ClientMapProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
+    <suppress checks="MethodCount|ClassDataAbstractionCoupling|ClassFanOutComplexity|ExecutableStatementCount" files="com/hazelcast/client/impl/HazelcastClientInstance"/>
     <suppress checks="" files="com/hazelcast/client/impl/HazelcastClientProxy"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/client/proxy/ClientExecutorServiceProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientExecutorServiceProxy"/>
