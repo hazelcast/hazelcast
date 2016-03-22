@@ -48,6 +48,7 @@ public final class CodeGenerationUtils {
         put("int","number");
         put("com.hazelcast.nio.Address", "Address");
         put("java.util.List", "any");
+        put("java.util.Collection", "any[]");
         put("java.util.Set", "any");
         put("long", "number");
     }};

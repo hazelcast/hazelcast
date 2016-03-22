@@ -6,6 +6,7 @@ import Address = require('../Address');
 import {AddressCodec} from './AddressCodec';
 import {MemberCodec} from './MemberCodec';
 import {Data} from '../serialization/Data';
+import {EntryViewCodec} from './EntryViewCodec';
 import {${model.parentName}MessageType} from './${model.parentName}MessageType';
 
 var REQUEST_TYPE = ${model.parentName}MessageType.${model.parentName?upper_case}_${model.name?upper_case};
@@ -112,26 +113,27 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     dataSize += BitsUtil.INT_SIZE_IN_BYTES;
         <#local genericType= util.getGenericType(type)>
         <#local n= varName>
-    for( var ${varName}Item in ${varName}){
-        <@sizeTextInternal varName="${n}Item"  type=genericType />
-    }
+
+    ${varName}.foreach((${varName}Item : any) => {
+    <@sizeTextInternal varName="${n}Item"  type=genericType />
+    });
         <#break >
     <#case "ARRAY">
     data_size += BitsUtil.INT_SIZE_IN_BYTES
         <#local genericType= util.getArrayType(type)>
         <#local n= varName>
-    for(var ${varName}Item in ${varName}){
-        <@sizeTextInternal varName="${n}Item"  type=genericType />
-    }
+    ${varName}.foreach((${varName}Item : any) => {
+    <@sizeTextInternal varName="${n}Item"  type=genericType />
+    });
         <#break >
     <#case "MAP">
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
         <#local n= varName>
-    for(var entry in ${varName}){
+        ${varName}.foreach((entry : any) => {
         <@sizeTextInternal varName="entry.key"  type=keyType />
         <@sizeTextInternal varName="entry.val"  type=valueType />
-    }
+        });
 </#switch>
 </#macro>
 
@@ -161,26 +163,30 @@ static handle(clientMessage : ClientMessage, <#list model.events as event>handle
     clientMessage.appendInt32(${varName}.length);
         <#local itemType= util.getGenericType(type)>
         <#local itemTypeVar= varName + "Item">
-    for(var ${itemTypeVar} in ${varName}) {
-    <@setterTextInternal varName=itemTypeVar type=itemType />
-    }
+
+    ${varName}.foreach((${itemTypeVar} : any) => {
+        <@setterTextInternal varName=itemTypeVar type=itemType />
+    });
+    
     </#if>
     <#if cat == "ARRAY">
     clientMessage.appendInt32(${varName}.length);
         <#local itemType= util.getArrayType(type)>
         <#local itemTypeVar= varName + "Item">
-    for(var ${itemTypeVar} in ${varName}){
-    <@setterTextInternal varName=itemTypeVar  type=itemType />
-    }
+
+    ${varName}.foreach((${itemTypeVar} : any) => {
+        <@setterTextInternal varName=itemTypeVar type=itemType />
+    });
+    
     </#if>
     <#if cat == "MAP">
         <#local keyType = util.getFirstGenericParameterType(type)>
         <#local valueType = util.getSecondGenericParameterType(type)>
     clientMessage.appendInt32(${varName}.length);
-    for(var entry in ${varName}){
-    <@setterTextInternal varName="entry.key"  type=keyType />
-    <@setterTextInternal varName="entry.val"  type=valueType />
-    }
+    ${varName}.foreach((entry : any) => {
+        <@setterTextInternal varName="entry.key"  type=keyType />
+        <@setterTextInternal varName="entry.val"  type=valueType />
+    });
     </#if>
 </#macro>
 
@@ -235,7 +241,7 @@ if(clientMessage.readBoolean() !== true){
     var ${varName} : any = [];
     <#else>${varName} = [];
     </#if>
-    for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
+    for(var ${indexVariableName} = 0 ;  ${indexVariableName} < ${sizeVariableName} ; ${indexVariableName}++){
         var ${itemVariableName} : ${util.getNodeTsType(itemVariableType)};
         <@getterTextInternal varName=itemVariableName varType=itemVariableType isEvent=true isCollection=true isDefined=true/>
         ${varName}.push(${itemVariableName})
@@ -253,7 +259,7 @@ if(clientMessage.readBoolean() !== true){
         <#local valVariableName= "${varName}Val">
     var ${sizeVariableName} = clientMessage.readInt32();
     var ${varName} :any = {};
-    for(var ${indexVariableName} = 0 ;  ${indexVariableName} <= ${sizeVariableName} ; ${indexVariableName}++){
+    for(var ${indexVariableName} = 0 ;  ${indexVariableName} < ${sizeVariableName} ; ${indexVariableName}++){
     var  ${keyVariableName} : any;
     <@getterTextInternal varName=keyVariableName varType=keyType isEvent=true isDefined=false/>
         <@getterTextInternal varName=valVariableName varType=valueType isEvent=true isDefined=false/>
