@@ -40,13 +40,11 @@ import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionE
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.CombinedJetException;
-import com.hazelcast.jet.spi.application.ApplicationListener;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -208,45 +206,15 @@ public class ApplicationMasterImpl extends
     }
 
     private void addToExecutionMailBox(Object object) {
-        List<ApplicationListener> listeners = getApplicationContext().getApplicationListeners();
-        List<Throwable> errors = new ArrayList<Throwable>(listeners.size());
-
-        System.out.println("addToExecutionMailBox.1 " + getApplicationContext().getName());
-
-        try {
-            invokeListeners(listeners, errors);
-        } finally {
-            addToMailBox(object, errors);
-        }
-
-        System.out.println("addToExecutionMailBox.2 " + getApplicationContext().getName());
+        addToMailBox(object);
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    private void addToMailBox(Object object, List<Throwable> errors) {
+    private void addToMailBox(Object object) {
         BlockingQueue<Object> executionMailBox = this.executionMailBox.get();
 
         if (executionMailBox != null) {
-            if (errors.size() > 0) {
-                if ((object != null) && (object instanceof Throwable)) {
-                    errors.add((Throwable) object);
-                }
-
-                CombinedJetException exception = new CombinedJetException(errors);
-                executionMailBox.offer(exception);
-            } else {
-                executionMailBox.offer(object);
-            }
-        }
-    }
-
-    private void invokeListeners(List<ApplicationListener> listeners, List<Throwable> errors) {
-        for (ApplicationListener listener : listeners) {
-            try {
-                listener.onApplicationExecuted(getApplicationContext());
-            } catch (Throwable e) {
-                errors.add(e);
-            }
+            executionMailBox.offer(object);
         }
     }
 

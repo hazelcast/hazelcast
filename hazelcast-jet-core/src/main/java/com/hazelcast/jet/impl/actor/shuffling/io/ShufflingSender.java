@@ -77,7 +77,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
 
         this.dataOutputStream = new ObjectDataOutputStream(
                 this.serializer,
-                (InternalSerializationService)nodeEngine.getSerializationService()
+                (InternalSerializationService) nodeEngine.getSerializationService()
         );
 
         this.senderObjectWriter = new SenderObjectWriter(this.objectWriterFactory);

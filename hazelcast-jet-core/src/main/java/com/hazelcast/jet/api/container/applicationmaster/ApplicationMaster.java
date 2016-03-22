@@ -85,7 +85,6 @@ public interface ApplicationMaster extends Container<ApplicationMasterEvent, App
 
     /**
      * @param vertex the vertex to get the container for
-     *
      * @return - processing container for the corresponding vertex;
      */
     ProcessingContainer getContainerByVertex(Vertex vertex);

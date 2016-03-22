@@ -46,7 +46,8 @@ public class ChunkedOutputStream extends OutputStream {
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
         String applicationName = containerContext.getApplicationContext().getName();
         NodeEngine nodeEngine = containerContext.getApplicationContext().getNodeEngine();
-        this.applicationNameBytes = ((InternalSerializationService)nodeEngine.getSerializationService()).toBytes(applicationName);
+        this.applicationNameBytes =
+                ((InternalSerializationService) nodeEngine.getSerializationService()).toBytes(applicationName);
         this.containerID = containerContext.getID();
     }
 
