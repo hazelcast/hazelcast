@@ -42,6 +42,7 @@ import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
+import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
 public class MorphingPortableReader extends DefaultPortableReader {
 
@@ -273,6 +274,16 @@ public class MorphingPortableReader extends DefaultPortableReader {
         }
         validateTypeCompatibility(fd, SHORT_ARRAY);
         return super.readShortArray(fieldName);
+    }
+
+    @Override
+    public String[] readUTFArray(String fieldName) throws IOException {
+        FieldDefinition fd = cd.getField(fieldName);
+        if (fd == null) {
+            return null;
+        }
+        validateTypeCompatibility(fd, UTF_ARRAY);
+        return super.readUTFArray(fieldName);
     }
 
     @Override
