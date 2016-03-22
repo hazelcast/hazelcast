@@ -501,8 +501,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      *
      * @return true if there is a timeout detected, false otherwise.
      */
-    boolean detectAndHandleTimeout(long heartBeatTimeoutMs) {
-        HeartbeatTimeout heartbeatTimeout = detectTimeout(heartBeatTimeoutMs);
+    boolean detectAndHandleTimeout(long heartbeatTimeoutMillis) {
+        HeartbeatTimeout heartbeatTimeout = detectTimeout(heartbeatTimeoutMillis);
 
         if (heartbeatTimeout == YES) {
             future.complete(HEARTBEAT_TIMEOUT);
@@ -512,7 +512,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
     }
 
-    HeartbeatTimeout detectTimeout(long heartBeatTimeoutMs) {
+    HeartbeatTimeout detectTimeout(long heartbeatTimeoutMillis) {
         if (pendingResponse != VOID) {
             // if there is a response, then we won't timeout.
             return NO__RESPONSE_AVAILABLE;
@@ -538,8 +538,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // at least 6 minutes before it is timing out.
         long lastHeartbeatMillis = this.lastHeartbeatMillis;
         long heartBeatExpirationTimeMillis = lastHeartbeatMillis == 0
-                ? op.getInvocationTime() + callTimeoutMillis + heartBeatTimeoutMs
-                : lastHeartbeatMillis + heartBeatTimeoutMs;
+                ? op.getInvocationTime() + callTimeoutMillis + heartbeatTimeoutMillis
+                : lastHeartbeatMillis + heartbeatTimeoutMillis;
 
         if (heartBeatExpirationTimeMillis > currentTimeMillis) {
             return NO__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
