@@ -21,7 +21,7 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 /**
  * A {@link PerformanceLogWriter} that writes using a single line. Useful for automatic analysis e.g. using grep.
  */
-public class SingleLinePerformanceLogWriter extends PerformanceLogWriter {
+class SingleLinePerformanceLogWriter extends PerformanceLogWriter {
 
     private boolean firstEntry = true;
 

@@ -49,17 +49,16 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * {@link GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
+ * {@link com.hazelcast.internal.properties.GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
  * Threshold: Percentage of max memory currently in use
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
+ * {@link com.hazelcast.internal.properties.GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
  * Threshold: CPU system/process load
  */
 public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
-    private static final int PERCENTAGE_INT_MULTIPLIER = 100;
     private static final double THRESHOLD_PERCENTAGE_INVOCATIONS = 70;
     private static final double THRESHOLD_INVOCATIONS = 1000;
 
@@ -162,7 +161,7 @@ public class HealthMonitor {
                 return;
             }
 
-            // we only log the hint once.
+            // we only log the hint once
             performanceLogHint = false;
 
             logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
@@ -279,7 +278,7 @@ public class HealthMonitor {
             memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read() / runtimeMaxMemory.read();
         }
 
-        public boolean exceedsThreshold() {
+        boolean exceedsThreshold() {
             if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
                 return true;
             }
@@ -381,6 +380,8 @@ public class HealthMonitor {
                     .append(numberToUnit(runtimeUsedMemory.read())).append(", ");
             sb.append("heap.memory.free=")
                     .append(numberToUnit(runtimeFreeMemory.read())).append(", ");
+            sb.append("heap.memory.available=")
+                    .append(numberToUnit(runtimeAvailableMemory.read())).append(", ");
             sb.append("heap.memory.total=")
                     .append(numberToUnit(runtimeTotalMemory.read())).append(", ");
             sb.append("heap.memory.max=")
@@ -498,19 +499,19 @@ public class HealthMonitor {
      * @param p the given number
      * @return a string of the given number as a format float with two decimal places and a period
      */
-    public static String percentageString(double p) {
+    private static String percentageString(double p) {
         return format("%.2f%%", p);
     }
 
-    public static String numberToUnit(long number) {
-        //CHECKSTYLE:OFF
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static String numberToUnit(long number) {
         for (int i = 6; i > 0; i--) {
-            double step = Math.pow(1024, i); // 1024 is for 1024 kb is 1 MB etc
+            // 1024 is for 1024 kb is 1 MB etc
+            double step = Math.pow(1024, i);
             if (number > step) {
                 return format("%3.1f%s", number / step, UNITS[i]);
             }
         }
-        //CHECKSTYLE:ON
         return Long.toString(number);
     }
 }

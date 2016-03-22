@@ -53,7 +53,6 @@ public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
     public static final HazelcastProperty THRESHOLD
             = new HazelcastProperty("hazelcast.performance.monitor.pending.invocations.threshold", 1);
 
-
     private final InvocationRegistry invocationRegistry;
     private final ItemCounter<Class> occurrenceMap = new ItemCounter<Class>();
     private final long periodMillis;

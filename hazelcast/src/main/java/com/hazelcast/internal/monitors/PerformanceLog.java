@@ -44,7 +44,7 @@ final class PerformanceLog {
     private static final int ONE_MB = 1024 * 1024;
     private static final int INITIAL_CHAR_BUFF_SIZE = 4 * 1024;
 
-    // points to the file where the log content is written to.
+    // points to the file where the log content is written to
     volatile File file;
 
     private final PerformanceMonitor performanceMonitor;
@@ -57,7 +57,7 @@ final class PerformanceLog {
     private int maxRollingFileCount;
     private int maxRollingFileSizeBytes;
     private final PerformanceLogWriter logWriter;
-    // calling File.length generates a lot of litter; so we'll track it ourselves.
+    // calling File.length generates a lot of litter; so we'll track it ourselves
     private long fileLength;
 
     PerformanceLog(PerformanceMonitor performanceMonitor) {
@@ -69,7 +69,7 @@ final class PerformanceLog {
         this.fileName = performanceMonitor.fileName + "-%03d.log";
 
         this.maxRollingFileCount = performanceMonitor.properties.getInteger(MAX_ROLLED_FILE_COUNT);
-        // we accept a float so it becomes easier to testing to create a small file.
+        // we accept a float so it becomes easier to testing to create a small file
         this.maxRollingFileSizeBytes = round(
                 ONE_MB * performanceMonitor.properties.getFloat(MAX_ROLLED_FILE_SIZE_MB));
 
@@ -139,7 +139,7 @@ final class PerformanceLog {
         index++;
 
         File file = new File(format(fileName, index - maxRollingFileCount));
-        // we don't care if the file was deleted or not.
+        // we don't care if the file was deleted or not
         file.delete();
     }
 }

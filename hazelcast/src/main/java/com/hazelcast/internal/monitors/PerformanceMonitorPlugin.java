@@ -30,12 +30,12 @@ public abstract class PerformanceMonitorPlugin {
     /**
      * Indicates that a plugin should be run once per performance log file.
      */
-    protected static final long STATIC = -1;
+    static final long STATIC = -1;
 
     /**
      * Indicates that the plugin is disabled.
      */
-    protected static final long DISABLED = 0;
+    static final long DISABLED = 0;
 
     /**
      * Returns the period of executing the monitor in millis.

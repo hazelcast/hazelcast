@@ -74,8 +74,8 @@ public class OverloadedConnectionsPlugin extends PerformanceMonitorPlugin {
             = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.threshold", 10000);
 
     /**
-     * The number of samples to take from a single overloaded connection. Increasing the number of packes gives
-     * more accurracy of the content, but it will come at greater price.
+     * The number of samples to take from a single overloaded connection. Increasing the number of packages gives
+     * more accuracy of the content, but it will come at greater price.
      */
     public static final HazelcastProperty SAMPLES
             = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.samples", 1000);
