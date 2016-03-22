@@ -45,7 +45,10 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     private final Object mutex = new Object();
     private Throwable error;
     private V deserializedValue;
-    private volatile Object response;
+    /**
+     * mutex object is used as an initial NIL value
+     */
+    private volatile Object response = mutex;
     private volatile boolean done;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
@@ -111,9 +114,9 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException,
             ExecutionException, TimeoutException {
-        if (!done || response == null) {
+        if (!done || !isResponseSet()) {
             synchronized (mutex) {
-                if (!done || response == null) {
+                if (!done || !isResponseSet()) {
                     try {
                         response = resolveMessageToValue(future.get(timeout, unit));
                         if (deserializedValue == null) {
@@ -155,15 +158,12 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
         // If value is already deserialized, use it.
         if (deserializedValue != null) {
             return deserializedValue;
-        } else {
-            // Otherwise, it is possible that received data may not be deserialized
-            // if "shouldDeserializeData" flag is not true in any of registered "DelegatingExecutionCallback".
-            // So, be sure that value is deserialized before returning to caller.
-            if (response != null) {
-                deserializedValue = serializationService.toObject(response);
-            }
-            return deserializedValue;
         }
+        // Otherwise, it is possible that received data may not be deserialized
+        // if "shouldDeserializeData" flag is not true in any of registered "DelegatingExecutionCallback".
+        // So, be sure that value is deserialized before returning to caller.
+        deserializedValue = serializationService.toObject(response);
+        return deserializedValue;
     }
 
     private Object resolveMessageToValue(ClientMessage message) {
@@ -182,6 +182,10 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
         return future;
     }
 
+    private boolean isResponseSet() {
+        return response != mutex;
+    }
+
     class DelegatingExecutionCallback<T> implements ExecutionCallback<ClientMessage> {
 
         private final ExecutionCallback<T> callback;
@@ -194,9 +198,9 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
 
         @Override
         public void onResponse(ClientMessage message) {
-            if (!done || response == null) {
+            if (!done || !isResponseSet()) {
                 synchronized (mutex) {
-                    if (!done || response == null) {
+                    if (!done || !isResponseSet()) {
                         response = resolveMessageToValue(message);
                         if (shouldDeserializeData && deserializedValue == null) {
                             deserializedValue = serializationService.toObject(response);
