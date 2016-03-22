@@ -148,11 +148,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 client.getName() + ".ClientInSelector",
                 loggingService.getLogger(NonBlockingIOThread.class),
                 OUT_OF_MEMORY_HANDLER);
+        client.getMetricsRegistry().scanAndRegister(inputThread, "tcp." + inputThread.getName());
+
         outputThread = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientOutSelector",
                 loggingService.getLogger(ClientNonBlockingOutputThread.class),
                 OUT_OF_MEMORY_HANDLER);
+        client.getMetricsRegistry().scanAndRegister(outputThread, "tcp." + outputThread.getName());
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {

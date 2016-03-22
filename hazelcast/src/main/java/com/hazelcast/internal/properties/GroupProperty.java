@@ -21,7 +21,6 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
-import com.hazelcast.internal.monitors.InvocationPlugin;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
@@ -112,136 +111,6 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty PERFORMANCE_METRICS_LEVEL
             = new HazelcastProperty("hazelcast.performance.metric.level", ProbeLevel.MANDATORY.name());
-
-    /**
-     * Use the performance monitor to see internal performance metrics. Currently this is quite
-     * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
-     * the future, all kinds of new metrics will be added.
-     * <p/>
-     * The performance monitor logs all metrics into the log file.
-     * <p/>
-     * For more detailed information, please check the PERFORMANCE_METRICS_LEVEL.
-     * <p/>
-     * The default is false.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_ENABLED
-            = new HazelcastProperty("hazelcast.performance.monitor.enabled", false);
-
-     /**
-     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
-     * <p/>
-     * This property sets the maximum size in MB for a single file.
-     * <p/>
-     * Every HazelcastInstance will get its own history of log files.
-     * <p/>
-     * The default is 10.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB
-            = new HazelcastProperty("hazelcast.performance.monitor.max.rolled.file.size.mb", 10);
-
-    /**
-     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
-     * <p/>
-     * This property sets the maximum number of rolling files to keep on disk.
-     * <p/>
-     * The default is 10.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT
-            = new HazelcastProperty("hazelcast.performance.monitor.max.rolled.file.count", 10);
-
-    /**
-     * If a human friendly, but more difficult to parse, output format should be selected for dumping the metrics.
-     * <p/>
-     * The default is true.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT
-            = new HazelcastProperty("hazelcast.performance.monitor.human.friendly.format", true);
-
-    /**
-     * The period in seconds the PerformanceMonitor SlowOperationPlugin runs.
-     *
-     * With the slow operation plugin, slow executing operation can be found. This is done by checking
-     * on the caller side which operations take a lot of time executing.
-     *
-     * This plugin is very cheap to use.
-     *
-     * If set to 0, the plugin is disabled.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS
-            = new HazelcastProperty("hazelcast.performance.monitor.slowoperations.period.seconds", 60, SECONDS);
-
-    /**
-     * The period in seconds the PerformanceMonitor PendingInvocationPlugin runs.
-     *
-     * With the pending invocation plugins an aggregation is made per type of operation how many pending
-     * invocations there are.
-     *
-     * This plugin is very cheap to use.
-     *
-     * If set to 0, the plugin is disabled.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS
-            = new HazelcastProperty("hazelcast.performance.monitor.pending.invocations.period.seconds", 0, SECONDS);
-
-    /**
-     * The minimum number of invocations per type of operation before it start logging this particular operation.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD
-            = new HazelcastProperty("hazelcast.performance.monitor.pending.invocations.threshold", 1);
-
-    /**
-     * The sample period in seconds for the {@link InvocationPlugin}.
-     *
-     * If set to 0, the plugin is disabled.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS
-            = new HazelcastProperty("hazelcast.performance.monitor.invocation.sample.period.seconds", 0, SECONDS);
-
-    /**
-     * The threshold in seconds for the {@link InvocationPlugin} to consider an invocation to be slow.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_INVOCATION_SLOW_THRESHOLD_SECONDS
-            = new HazelcastProperty("hazelcast.performance.monitor.invocation.slow.threshold.seconds", 5, SECONDS);
-
-    /**
-     * The period in seconds the PerformanceMonitor OverloadedConnectionPlugin runs.
-     *
-     * With the OverloadedConnectionsPlugin one can see what is going on inside a connection with a huge
-     * number of pending packets. It makes use of sampling to give some impression of the content.
-     *
-     * This plugin can be very expensive to use and should only be used as a debugging aid; should not be
-     * used in production due to the fact that packets could be deserialized.
-     *
-     * If set to 0, the plugin is disabled.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS
-            = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.period.seconds", 0, SECONDS);
-
-    /**
-     * The minimum number of packets in the connection before it is considered to be overloaded.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD
-            = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.threshold", 10000);
-
-    /**
-     * The number of samples to take from a single overloaded connection. Increasing the number of packes gives
-     * more accurracy of the content, but it will come at greater price.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES
-            = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.samples", 1000);
-
-    /**
-     * The period in seconds the PerformanceMonitor MetricsPlugin runs.
-     *
-     * The MetricsPlugin does nothing more than frequently writing the content of the MetricsRegistry
-     * to the logfile. For debugging purposes make sure the {@link #PERFORMANCE_METRICS_LEVEL} is set to debug.
-     *
-     * This plugin is very cheap to use.
-     *
-     * If set to 0, the plugin is disabled.
-     */
-    public static final HazelcastProperty PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS
-            = new HazelcastProperty("hazelcast.performance.monitor.metrics.period.seconds", 60, SECONDS);
 
     /**
      * The number of threads doing socket input and the number of threads doing socket output.
@@ -526,8 +395,8 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.slow.operation.detector.stacktrace.logging.enabled", false);
 
     /**
-     * Property isn't used anymore, use {@link #PERFORMANCE_MONITOR_INVOCATION_SAMPLE_PERIOD_SECONDS}.
-      */
+     * Property isn't used anymore.
+     */
     @Deprecated
     public static final HazelcastProperty SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
             = new HazelcastProperty("hazelcast.slow.invocation.detector.threshold.millis", -1, MILLISECONDS);

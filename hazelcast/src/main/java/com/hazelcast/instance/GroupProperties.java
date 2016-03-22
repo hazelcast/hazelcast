@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.properties.GroupProperty;
+import com.hazelcast.internal.monitors.PerformanceMonitor;
 
 /**
  * Container for configured Hazelcast properties.
@@ -37,16 +38,16 @@ public class GroupProperties extends HazelcastProperties {
     @Deprecated
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName();
     @Deprecated
-    public static final String PROP_PERFORMANCE_MONITOR_ENABLED = GroupProperty.PERFORMANCE_MONITOR_ENABLED.getName();
+    public static final String PROP_PERFORMANCE_MONITOR_ENABLED = PerformanceMonitor.ENABLED.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB
-            = GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB.getName();
+            = PerformanceMonitor.MAX_ROLLED_FILE_SIZE_MB.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT
-            = GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT.getName();
+            = PerformanceMonitor.MAX_ROLLED_FILE_COUNT.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT
-            = GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT.getName();
+            = PerformanceMonitor.HUMAN_FRIENDLY_FORMAT.getName();
     @Deprecated
     public static final String PROP_PHONE_HOME_ENABLED = GroupProperty.PHONE_HOME_ENABLED.getName();
     @Deprecated

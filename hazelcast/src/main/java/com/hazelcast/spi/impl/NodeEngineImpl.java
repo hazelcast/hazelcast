@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -72,6 +74,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_METRICS_LEVEL;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be
@@ -107,8 +110,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.loggingService = node.loggingService;
         this.serializationService = node.getSerializationService();
         this.logger = node.getLogger(NodeEngine.class.getName());
-        ProbeLevel probeLevel = node.getGroupProperties().getEnum(PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
-        this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
+        this.metricsRegistry = newMetricRegistry(node);
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManagerImpl(this);
         this.executionService = new ExecutionServiceImpl(this);
@@ -124,8 +126,22 @@ public class NodeEngineImpl implements NodeEngine {
                 wanReplicationService,
                 new ConnectionManagerPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
-        this.performanceMonitor = new PerformanceMonitor(
-                node.hazelcastInstance,
+        this.performanceMonitor = newPerformanceMonitor();
+    }
+
+    private MetricsRegistryImpl newMetricRegistry(Node node) {
+        ProbeLevel probeLevel = node.getGroupProperties().getEnum(PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        return new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
+    }
+
+    private PerformanceMonitor newPerformanceMonitor() {
+        Member localMember = node.getLocalMember();
+        Address address = localMember.getAddress();
+        String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
+        String name = "performance-" + addressString + "-" + currentTimeMillis();
+
+        return new PerformanceMonitor(
+                name,
                 loggingService.getLogger(PerformanceMonitor.class),
                 node.getHazelcastThreadGroup(),
                 node.groupProperties);

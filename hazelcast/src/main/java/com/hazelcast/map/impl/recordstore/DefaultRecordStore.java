@@ -237,7 +237,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void clearPartition(boolean onShutdown) {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             final DefaultObjectNamespace namespace
                     = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);

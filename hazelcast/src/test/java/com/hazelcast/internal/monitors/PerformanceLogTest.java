@@ -26,10 +26,6 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -45,10 +41,10 @@ public class PerformanceLogTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PERFORMANCE_MONITOR_ENABLED.getName(), "true");
-        config.setProperty(PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS.getName(), "1");
-        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB.getName(), "0.2");
-        config.setProperty(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT.getName(), "3");
+        config.setProperty(PerformanceMonitor.ENABLED.getName(), "true");
+        config.setProperty(PerformanceMonitor.MAX_ROLLED_FILE_SIZE_MB.getName(), "0.2");
+        config.setProperty(PerformanceMonitor.MAX_ROLLED_FILE_COUNT.getName(), "3");
+        config.setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
@@ -76,7 +72,7 @@ public class PerformanceLogTest extends HazelcastTestSupport {
     @Test
     public void testDisabledByDefault() {
         GroupProperties groupProperties = new GroupProperties(new Config());
-        assertFalse(groupProperties.getBoolean(PERFORMANCE_MONITOR_ENABLED));
+        assertFalse(groupProperties.getBoolean(PerformanceMonitor.ENABLED));
     }
 
 

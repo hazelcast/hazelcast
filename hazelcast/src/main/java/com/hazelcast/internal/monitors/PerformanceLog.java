@@ -16,10 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedWriter;
@@ -31,12 +28,11 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
+import static com.hazelcast.internal.monitors.PerformanceMonitor.MAX_ROLLED_FILE_COUNT;
+import static com.hazelcast.internal.monitors.PerformanceMonitor.MAX_ROLLED_FILE_SIZE_MB;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.Math.round;
 import static java.lang.String.format;
-import static java.lang.System.currentTimeMillis;
 
 /**
  * Represents the PerformanceLogFile.
@@ -53,7 +49,7 @@ final class PerformanceLog {
 
     private final PerformanceMonitor performanceMonitor;
     private final ILogger logger;
-    private final String pathname;
+    private final String fileName;
 
     private char[] charBuff = new char[INITIAL_CHAR_BUFF_SIZE];
     private int index;
@@ -70,27 +66,20 @@ final class PerformanceLog {
                 ? new SingleLinePerformanceLogWriter()
                 : new MultiLinePerformanceLogWriter();
         this.logger = performanceMonitor.logger;
-        this.pathname = getPathName(performanceMonitor.hazelcastInstance);
+        this.fileName = performanceMonitor.fileName + "-%03d.log";
 
-        this.maxRollingFileCount = performanceMonitor.properties.getInteger(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT);
+        this.maxRollingFileCount = performanceMonitor.properties.getInteger(MAX_ROLLED_FILE_COUNT);
         // we accept a float so it becomes easier to testing to create a small file.
         this.maxRollingFileSizeBytes = round(
-                ONE_MB * performanceMonitor.properties.getFloat(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB));
+                ONE_MB * performanceMonitor.properties.getFloat(MAX_ROLLED_FILE_SIZE_MB));
 
         logger.finest("maxRollingFileSizeBytes:" + maxRollingFileSizeBytes + " maxRollingFileCount:" + maxRollingFileCount);
-    }
-
-    private static String getPathName(HazelcastInstance hazelcastInstance) {
-        Member localMember = hazelcastInstance.getCluster().getLocalMember();
-        Address address = localMember.getAddress();
-        String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
-        return "performance-" + addressString + "-" + currentTimeMillis() + "-%03d.log";
     }
 
     public void render(PerformanceMonitorPlugin plugin) {
         try {
             if (file == null) {
-                file = new File(format(pathname, index));
+                file = new File(format(fileName, index));
                 bufferedWriter = newWriter();
                 renderStaticPlugins();
             }
@@ -149,7 +138,7 @@ final class PerformanceLog {
         fileLength = 0;
         index++;
 
-        File file = new File(format(pathname, index - maxRollingFileCount));
+        File file = new File(format(fileName, index - maxRollingFileCount));
         // we don't care if the file was deleted or not.
         file.delete();
     }
