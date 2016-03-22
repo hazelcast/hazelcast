@@ -39,11 +39,12 @@ public class ClientMessageBuilder {
         this.delegate = delegate;
     }
 
-    public void onData(final ByteBuffer buffer) {
+    public int onData(final ByteBuffer buffer) {
+        int messagesCreated = 0;
         while (buffer.hasRemaining()) {
             final boolean complete = message.readFrom(buffer);
             if (!complete) {
-                return;
+                return messagesCreated;
             }
 
             //MESSAGE IS COMPLETE HERE
@@ -51,6 +52,7 @@ public class ClientMessageBuilder {
                 //HANDLE-MESSAGE
                 handleMessage(message);
                 message = ClientMessage.create();
+                messagesCreated++;
                 continue;
             }
 
@@ -79,7 +81,10 @@ public class ClientMessageBuilder {
             }
 
             message = ClientMessage.create();
+            messagesCreated++;
         }
+
+        return messagesCreated;
     }
 
     private void handleMessage(ClientMessage message) {

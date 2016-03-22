@@ -42,10 +42,11 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     // this field is set during construction and is meant for the probes so that the read/write handler can
     // indicate which thread they are currently bound to.
     @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
-    int id;
+    public int id;
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();

@@ -18,6 +18,8 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
@@ -26,6 +28,11 @@ import com.hazelcast.util.Clock;
 import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static java.lang.Math.max;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * ClientReadHandler gets called by an IO-thread when there is data available to read.
@@ -37,6 +44,10 @@ public class ClientReadHandler
 
     private final ByteBuffer buffer;
     private final ClientMessageBuilder builder;
+    @Probe(name = "messagesRead")
+    private final SwCounter messagesRead = newSwCounter();
+    @Probe(name = "bytesRead")
+    private final SwCounter bytesRead = newSwCounter();
 
     private volatile long lastHandle;
 
@@ -54,6 +65,11 @@ public class ClientReadHandler
         });
     }
 
+    @Probe(name = "idleTimeMs", level = DEBUG)
+    private long idleTimeMs() {
+        return max(currentTimeMillis() - lastHandle, 0);
+    }
+
     @Override
     public void run() {
         registerOp(SelectionKey.OP_READ);
@@ -61,6 +77,8 @@ public class ClientReadHandler
 
     @Override
     public void handle() throws Exception {
+        eventCount.inc();
+
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             if (logger.isFinestEnabled()) {
@@ -76,10 +94,11 @@ public class ClientReadHandler
             }
             return;
         }
+        bytesRead.inc(readBytes);
 
         buffer.flip();
 
-        builder.onData(buffer);
+        messagesRead.inc(builder.onData(buffer));
 
         if (buffer.hasRemaining()) {
             buffer.compact();
