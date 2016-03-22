@@ -19,12 +19,32 @@ package com.hazelcast.jet.impl.statemachine.application;
 import com.hazelcast.jet.api.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.api.statemachine.application.ApplicationStateMachineRequestProcessor;
 import com.hazelcast.jet.impl.application.ApplicationContextImpl;
+import com.hazelcast.jet.spi.CombinedJetException;
+import com.hazelcast.jet.spi.application.ApplicationListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DefaultApplicationStateMachineRequestProcessor implements ApplicationStateMachineRequestProcessor {
     private final ApplicationContextImpl applicationContext;
 
     public DefaultApplicationStateMachineRequestProcessor(ApplicationContextImpl applicationContext) {
         this.applicationContext = applicationContext;
+    }
+
+    private List<Throwable> invokeListeners() {
+        List<ApplicationListener> listeners = applicationContext.getApplicationListeners();
+        List<Throwable> errors = new ArrayList<Throwable>(listeners.size());
+
+        for (ApplicationListener listener : listeners) {
+            try {
+                listener.onApplicationExecuted(applicationContext);
+            } catch (Throwable e) {
+                errors.add(e);
+            }
+        }
+
+        return errors;
     }
 
     @Override
@@ -39,7 +59,15 @@ public class DefaultApplicationStateMachineRequestProcessor implements Applicati
                 || (event == ApplicationEvent.INTERRUPTION_FAILURE)
                 || (event == ApplicationEvent.INTERRUPTION_SUCCESS)
                 ) {
-            this.applicationContext.getExecutorContext().getNetworkTaskContext().destroy();
+            try {
+                List<Throwable> listeners = invokeListeners();
+
+                if (listeners.size() > 0) {
+                    throw new CombinedJetException(listeners);
+                }
+            } finally {
+                this.applicationContext.getExecutorContext().getNetworkTaskContext().destroy();
+            }
         }
     }
 }

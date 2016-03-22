@@ -81,7 +81,10 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
 
         this.packetBuffers = new DefaultObjectIOStream<JetPacket>(new JetPacket[chunkSize]);
         this.chunkReceiver = new ChunkedInputStream(this.packetBuffers);
-        this.in = new ObjectDataInputStream(this.chunkReceiver, (InternalSerializationService) nodeEngine.getSerializationService());
+        this.in = new ObjectDataInputStream(
+                this.chunkReceiver,
+                (InternalSerializationService) nodeEngine.getSerializationService()
+        );
         this.receiverObjectReader = new ReceiverObjectReader(
                 this.in,
                 containerTask.getTaskContext().getObjectReaderFactory()
