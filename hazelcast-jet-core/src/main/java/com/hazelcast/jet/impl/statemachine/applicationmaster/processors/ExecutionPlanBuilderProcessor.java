@@ -182,7 +182,9 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
             Class[] argsClasses = new Class[args.length];
 
             for (Object obj : args) {
-                argsClasses[i++] = obj.getClass();
+                if (obj != null) {
+                    argsClasses[i++] = obj.getClass();
+                }
             }
 
             Constructor<ContainerProcessorFactory> resultConstructor = null;
@@ -191,7 +193,8 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
                 if (constructor.getParameterTypes().length == argsClasses.length) {
                     boolean valid = true;
                     for (int idx = 0; idx < argsClasses.length; idx++) {
-                        if (!constructor.getParameterTypes()[idx].isAssignableFrom(argsClasses[idx])) {
+                        Class argsClass = argsClasses[idx];
+                        if (argsClass != null && !constructor.getParameterTypes()[idx].isAssignableFrom(argsClass)) {
                             valid = false;
                             break;
                         }
