@@ -29,11 +29,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * A {@link PerformanceMonitorPlugin} that displays the content of the {@link MetricsRegistry}.
  */
 public class MetricsPlugin extends PerformanceMonitorPlugin {
+
     /**
      * The period in seconds the PerformanceMonitor MetricsPlugin runs.
      *
      * The MetricsPlugin does nothing more than frequently writing the content of the MetricsRegistry
-     * to the logfile. For debugging purposes make sure the {@link #PERFORMANCE_METRICS_LEVEL} is set to debug.
+     * to the logfile. For debugging purposes make sure the
+     * {@link com.hazelcast.internal.properties.GroupProperty#PERFORMANCE_METRICS_LEVEL} is set to debug.
      *
      * This plugin is very cheap to use.
      *

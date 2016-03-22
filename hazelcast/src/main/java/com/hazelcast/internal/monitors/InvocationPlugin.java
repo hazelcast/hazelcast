@@ -54,8 +54,6 @@ public class InvocationPlugin extends PerformanceMonitorPlugin {
     public static final HazelcastProperty SLOW_THRESHOLD_SECONDS
             = new HazelcastProperty("hazelcast.performance.monitor.invocation.slow.threshold.seconds", 5, SECONDS);
 
-
-
     private final InvocationRegistry invocationRegistry;
     private final long samplePeriodMillis;
     private final long thresholdMillis;

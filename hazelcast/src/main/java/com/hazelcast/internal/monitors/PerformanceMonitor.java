@@ -36,6 +36,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * The actual logic to provide such insights, is placed in the {@link PerformanceMonitorPlugin}.
  */
 public class PerformanceMonitor {
+
     /**
      * Use the performance monitor to see internal performance metrics. Currently this is quite
      * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
@@ -117,7 +118,7 @@ public class PerformanceMonitor {
             return properties.getBoolean(ENABLED);
         }
 
-        // check for the old property name.
+        // check for the old property name
         s = properties.get("hazelcast.performance.monitoring.enabled");
         if (s != null) {
             logger.warning("Don't use deprecated 'hazelcast.performance.monitoring.enabled' "
@@ -200,10 +201,11 @@ public class PerformanceMonitor {
         }
     }
 
-    class MonitorTaskRunnable implements Runnable {
+    private class MonitorTaskRunnable implements Runnable {
+
         private final PerformanceMonitorPlugin plugin;
 
-        public MonitorTaskRunnable(PerformanceMonitorPlugin plugin) {
+        MonitorTaskRunnable(PerformanceMonitorPlugin plugin) {
             this.plugin = plugin;
         }
 
@@ -214,6 +216,7 @@ public class PerformanceMonitor {
     }
 
     private class PerformanceMonitorThreadFactory implements ThreadFactory {
+
         @Override
         public Thread newThread(Runnable target) {
             return new Thread(

@@ -32,7 +32,7 @@ import static java.util.Calendar.YEAR;
 /**
  * A {@link PerformanceLogWriter} that writes over multiple lines. Useful for human reading.
  */
-public class MultiLinePerformanceLogWriter extends PerformanceLogWriter {
+class MultiLinePerformanceLogWriter extends PerformanceLogWriter {
 
     private static final String STR_LONG_MIN_VALUE = String.format("%,d", Long.MIN_VALUE);
 
@@ -79,7 +79,7 @@ public class MultiLinePerformanceLogWriter extends PerformanceLogWriter {
         sb.append(value);
     }
 
-    // NumberFormat generates a lot of litter. Hence the need for this custom formatting.
+    // we can't rely on NumberFormat since it generates a ton of garbage
     @SuppressWarnings("checkstyle:magicnumber")
     void writeLong(long value) {
         if (value == Long.MIN_VALUE) {
@@ -146,7 +146,7 @@ public class MultiLinePerformanceLogWriter extends PerformanceLogWriter {
         sb.append(LINE_SEPARATOR);
     }
 
-    // we can't rely on DateFormat since it generates a ton of garbage.
+    // we can't rely on DateFormat since it generates a ton of garbage
     private void appendDateTime() {
         date.setTime(System.currentTimeMillis());
         calendar.setTime(date);

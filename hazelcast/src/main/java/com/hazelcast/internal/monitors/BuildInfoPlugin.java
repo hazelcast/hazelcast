@@ -47,7 +47,7 @@ public class BuildInfoPlugin extends PerformanceMonitorPlugin {
     public void run(PerformanceLogWriter writer) {
         writer.startSection("BuildInfo");
         writer.writeKeyValueEntry("Build", buildInfo.getBuild());
-        // we convert to string to prevent formatting the number.
+        // we convert to string to prevent formatting the number
         writer.writeKeyValueEntry("BuildNumber", "" + buildInfo.getBuildNumber());
         writer.writeKeyValueEntry("Revision", buildInfo.getRevision());
         writer.writeKeyValueEntry("Version", buildInfo.getVersion());
