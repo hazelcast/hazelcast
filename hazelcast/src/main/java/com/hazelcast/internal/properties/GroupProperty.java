@@ -74,6 +74,10 @@ public final class GroupProperty {
      * The number of generic operation handler threads per Member.
      * <p/>
      * The default is -1, which means that the value is determined dynamically.
+     *
+     * On top of the regular generic operation-threads, the system will also create some generic operation-threads dedicated for
+     * high priority tasks. This is done to prevent a high priority task being delayed because all generic operation-threads are
+     * busy executing regular generic operations.
      */
     public static final HazelcastProperty GENERIC_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.generic.thread.count", -1);

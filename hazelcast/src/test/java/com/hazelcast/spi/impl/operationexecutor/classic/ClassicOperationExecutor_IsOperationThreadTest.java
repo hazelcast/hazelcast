@@ -1,17 +1,19 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.spi.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
+import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class IsOperationThreadTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_IsOperationThreadTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test
     public void test_whenCallingFromNonOperationThread() {
@@ -35,14 +37,14 @@ public class IsOperationThreadTest extends AbstractClassicOperationExecutorTest 
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
     public void test_whenCallingFromGenericOperationThread() {
         initExecutor();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 return executor.isOperationThread();
@@ -51,6 +53,6 @@ public class IsOperationThreadTest extends AbstractClassicOperationExecutorTest 
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 }

@@ -15,7 +15,9 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -33,15 +35,55 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
         queue = new DefaultScheduleQueue(normalQueue, priorityQueue);
     }
 
+    // ================== poll =====================
+
+    @Test
+    public void poll_whenEmpty() {
+        Object task = queue.poll();
+
+        assertNull(task);
+    }
+
+    @Test
+    public void poll_whenOnlyPriorityTask() {
+        Object task = new Object();
+        queue.addUrgent(task);
+
+        assertSame(task, queue.poll());
+        assertNull(queue.poll());
+    }
+
+    @Test
+    public void poll_whenOnlyOrdinaryTask() {
+        Object task = new Object();
+        queue.add(task);
+
+        assertSame(task, queue.poll());
+        assertNull(queue.poll());
+    }
+
+    @Test
+    public void poll_whenPriorityAndOrdinaryTask() {
+        Object ordinaryTask = new Object();
+        queue.add(ordinaryTask);
+        Object priorityTask = new Object();
+        queue.addUrgent(priorityTask);
+
+        assertSame(priorityTask, queue.poll());
+        assertSame(ordinaryTask, queue.poll());
+        assertNull(queue.poll());
+    }
+
     // ================== add =====================
 
     @Test(expected = NullPointerException.class)
-    public void test_add_whenNull() {
+    public void add_whenNull() {
         queue.add(null);
     }
 
     @Test
-    public void test_add_whenPriority() {
+    public void add_whenPriority() {
+
         Object task = new Object();
         queue.addUrgent(task);
 
@@ -53,8 +95,9 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_add_whenNormal() {
+    public void add_whenNormal() {
         Object task = new Object();
+
         queue.add(task);
 
         assertContent(normalQueue, task);
@@ -67,7 +110,7 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
     // ================== take =====================
 
     @Test
-    public void test_take_priorityIsRetrievedFirst() throws InterruptedException {
+    public void take_priorityIsRetrievedFirst() throws InterruptedException {
         Object priorityTask1 = "priority1";
         Object priorityTask2 = "priority2";
         Object priorityTask3 = "priority4";
@@ -100,8 +143,7 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
         assertEquals("expecting an empty queue, but the queue is:" + q, 0, q.size());
     }
 
-    public void assertContent(Queue q, Object... expected) {
-        List actual = new LinkedList(q);
-        assertEquals(Arrays.asList(expected), actual);
+    private void assertContent(Queue q, Object... expected) {
+        assertEquals(asList(expected), new LinkedList(q));
     }
 }

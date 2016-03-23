@@ -10,12 +10,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class GetOperationRunnerTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_GetOperationRunnerTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNull() {
@@ -55,7 +56,7 @@ public class GetOperationRunnerTest extends AbstractClassicOperationExecutorTest
 
 
         final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation(nestedOp);
-        op.setPartitionId(Operation.GENERIC_PARTITION_ID);
+        op.setPartitionId(GENERIC_PARTITION_ID);
 
         executor.execute(op);
 

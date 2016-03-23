@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.AssertTask;
@@ -11,6 +10,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_ExecutePacketTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullPacket() {
@@ -40,7 +40,8 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) ExecutePacketTest.this.responsePacketHandler;
+                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler)
+                        ClassicOperationExecutor_ExecutePacketTest.this.responsePacketHandler;
                 responsePacketHandler.packets.contains(packet);
                 responsePacketHandler.responses.contains(normalResponse);
             }
@@ -70,7 +71,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
     public void test_whenGenericOperationPacket() {
         initExecutor();
 
-        final DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
+        final DummyOperation operation = new DummyOperation(GENERIC_PARTITION_ID);
         final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
         packet.setFlag(Packet.FLAG_OP);
         executor.execute(packet);

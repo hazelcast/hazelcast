@@ -125,7 +125,7 @@ public abstract class OperationThread extends HazelcastManagedThread {
         }
     }
 
-    private void process(Object task) {
+    protected void process(Object task) {
         processedTotalCount.inc();
 
         if (task instanceof Operation) {

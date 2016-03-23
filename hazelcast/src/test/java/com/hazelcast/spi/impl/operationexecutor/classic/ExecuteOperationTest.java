@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ExecuteOperationTest extends AbstractClassicOperationExecutorTest {
+public class ExecuteOperationTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNull() {

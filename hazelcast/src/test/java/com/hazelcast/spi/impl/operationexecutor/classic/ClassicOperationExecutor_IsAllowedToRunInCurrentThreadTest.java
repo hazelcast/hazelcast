@@ -10,12 +10,15 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_IsAllowedToRunInCurrentThreadTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullOperation() {
@@ -52,7 +55,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -70,7 +73,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -89,7 +92,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, Boolean.FALSE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 
 
@@ -112,7 +115,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation(0);
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 return executor.isAllowedToRunInCurrentThread(partitionOperation);
@@ -121,7 +124,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.FALSE);
+        assertEqualsEventually(task, FALSE);
     }
 
     @Test
@@ -139,7 +142,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -158,7 +161,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.FALSE);
+        assertEqualsEventually(task, FALSE);
     }
 
     @Test
@@ -177,6 +180,6 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, Boolean.FALSE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 }

@@ -53,12 +53,18 @@ public interface ScheduleQueue {
     /**
      * Takes an item from this queue. If no item is available, the call blocks.
      * <p/>
-     * This method should always be called by the same thread.
      *
      * @return the taken item.
      * @throws InterruptedException if the thread is interrupted while waiting.
      */
     Object take() throws InterruptedException;
+
+    /**
+     * Polls the queue for an item.
+     *
+     * @return the removed item, or null if no item is available.
+     */
+    Object poll();
 
     /**
      * returns the number of normal operations pending.

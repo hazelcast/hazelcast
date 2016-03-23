@@ -12,11 +12,13 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
+import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_RunOnCallingThreadTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNull() {
@@ -42,10 +44,11 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
         config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
         initExecutor();
 
-        final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
+        final DummyOperationRunner genericOperationHandler =
+                ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 executor.runOnCallingThread(genericOperation);
@@ -102,9 +105,9 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
             public Boolean call() throws Exception {
                 try {
                     executor.runOnCallingThread(genericOperation);
-                    return Boolean.FALSE;
+                    return false;
                 } catch (IllegalThreadStateException e) {
-                    return Boolean.TRUE;
+                    return true;
                 }
             }
         });
@@ -112,7 +115,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, Boolean.TRUE);
+        assertEqualsEventually(futureTask, TRUE);
     }
 
     @Test(expected = IllegalThreadStateException.class)
@@ -130,21 +133,21 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 try {
                     executor.runOnCallingThread(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
-                    return Boolean.TRUE;
+                    return TRUE;
                 }
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -161,14 +164,14 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
                     executor.runOnCallingThread(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
-                    return Boolean.TRUE;
+                    return TRUE;
                 }
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -182,13 +185,13 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
             @Override
             public Object call() {
                 executor.runOnCallingThread(partitionOperation);
-                return Boolean.TRUE;
+                return TRUE;
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -209,9 +212,9 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
             public Boolean call() throws Exception {
                 try {
                     executor.runOnCallingThread(partitionOperation);
-                    return Boolean.FALSE;
+                    return false;
                 } catch (IllegalThreadStateException e) {
-                    return Boolean.TRUE;
+                    return true;
                 }
             }
         });
@@ -219,6 +222,6 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, Boolean.TRUE);
+        assertEqualsEventually(futureTask, TRUE);
     }
 }

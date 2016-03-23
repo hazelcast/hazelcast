@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
+public class OperationThreadTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test
     public void testOOME_whenDeserializing() throws Exception {
