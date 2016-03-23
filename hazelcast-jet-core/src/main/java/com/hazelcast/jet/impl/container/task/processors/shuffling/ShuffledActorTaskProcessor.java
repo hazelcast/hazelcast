@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.container.task.processors.shuffling;
 
+import com.hazelcast.jet.api.actor.ObjectConsumer;
 import com.hazelcast.jet.api.actor.ObjectProducer;
 import com.hazelcast.jet.api.container.ContainerContext;
 import com.hazelcast.jet.api.container.ContainerTask;
@@ -29,6 +30,7 @@ import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.data.DataReader;
+import com.hazelcast.jet.spi.data.DataWriter;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
 import com.hazelcast.nio.Address;
 
@@ -42,8 +44,10 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     private final boolean hasActiveProducers;
     private int nextReceiverIdx;
     private boolean receiversClosed;
+    private boolean receiversProduced;
 
     public ShuffledActorTaskProcessor(ObjectProducer[] producers,
+                                      ObjectConsumer[] consumers,
                                       ContainerProcessor processor,
                                       ContainerContext containerContext,
                                       ProcessorContext processorContext,
@@ -55,7 +59,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         List<ObjectProducer> receivers = new ArrayList<ObjectProducer>();
         ApplicationMaster applicationMaster = containerContext.getApplicationContext().getApplicationMaster();
 
-        this.hasActiveProducers = defineHasActiveChannels(producers, containerContext);
+        this.hasActiveProducers = hasActiveProducers(producers, consumers, containerContext);
         ProcessingContainer processingContainer = applicationMaster.getContainerByVertex(containerContext.getVertex());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
 
@@ -71,34 +75,46 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         this.receivers = receivers.toArray(new ObjectProducer[receivers.size()]);
     }
 
-    private boolean defineHasActiveChannels(ObjectProducer[] producers, ContainerContext containerContext) {
-        boolean hasActiveChannels = false;
+    //If task doesn't have active producers it will be automatically closed
+    private boolean hasActiveProducers(ObjectProducer[] producers,
+                                       ObjectConsumer[] consumers,
+                                       ContainerContext containerContext) {
+        boolean hasActiveProducers = false;
 
         //Check if we will receive objects from input channels
         for (ObjectProducer producer : producers) {
             if (producer instanceof DataReader) {
-                hasActiveChannels = true;
+                hasActiveProducers = true;
+            }
+        }
+
+        // If vertex has output DataWriters  -
+        // it means that it can read data from corresponding Shuffling readers
+        // So it will have active producers
+        for (ObjectConsumer consumer : consumers) {
+            if (consumer instanceof DataWriter) {
+                hasActiveProducers = true;
             }
         }
 
         for (Edge edge : containerContext.getVertex().getInputEdges()) {
             if (edge.getShufflingStrategy() == null) {
-                hasActiveChannels = true;
+                hasActiveProducers = true;
             } else {
                 Address[] shufflingAddresses = edge.getShufflingStrategy().getShufflingAddress(containerContext);
 
                 if (shufflingAddresses != null) {
                     if (searchAddress(shufflingAddresses, containerContext.getNodeEngine().getThisAddress())) {
-                        hasActiveChannels = true;
+                        hasActiveProducers = true;
                     }
                 } else {
-                    hasActiveChannels = true;
+                    hasActiveProducers = true;
                 }
             }
         }
-        return hasActiveChannels;
-    }
 
+        return hasActiveProducers;
+    }
 
     private boolean searchAddress(Address[] addresses, Address address) {
         for (Address addr : addresses) {
@@ -147,10 +163,14 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
                     this.receivedTupleStream.reset();
                 }
             } else {
+                receiversProduced = false;
                 success = true;
             }
 
             success = success && super.process();
+
+            produced = receiversProduced || produced;
+
             return success;
         }
     }
@@ -168,6 +188,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     private boolean processReceivers() throws Exception {
         int lastIdx = 0;
         int startFrom = this.receiversClosed ? 0 : this.nextReceiverIdx;
+        boolean produced = false;
 
         for (int i = startFrom; i < this.receivers.length; i++) {
             lastIdx = i;
@@ -176,16 +197,18 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
             Object[] outChunk = receiver.produce();
 
             if (!JetUtil.isEmpty(outChunk)) {
-                this.produced = true;
+                produced = true;
                 this.receivedTupleStream.consumeChunk(outChunk, receiver.lastProducedCount());
 
                 if (!this.receiverConsumerProcessor.onChunk(this.receivedTupleStream)) {
                     this.nextReceiverIdx = (lastIdx + 1) % this.receivers.length;
+                    this.receiversProduced = true;
                     return false;
                 }
             }
         }
 
+        this.receiversProduced = produced;
         this.nextReceiverIdx = (lastIdx + 1) % this.receivers.length;
         return true;
     }
