@@ -310,10 +310,11 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
             }
 
             for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
-                for (WaitingOperation waitingOp : q) {
+                while (it.hasNext()) {
                     if (Thread.interrupted()) {
                         return true;
                     }
+                    WaitingOperation waitingOp = it.next();
                     if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
                         Address targetAddress = getTargetAddress(waitingOp);
                         if (!waitingOp.validatesTarget() || nodeEngine.getThisAddress().equals(targetAddress)) {
@@ -326,6 +327,7 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
                                 waitingOp.getClass().getName(), waitingOp.getServiceName());
                             OperationResponseHandler responseHandler = waitingOp.getOperation().getOperationResponseHandler();
                             responseHandler.sendResponse(waitingOp.getOperation(), wte);
+                            it.remove();
                         }
                     }
                 }
