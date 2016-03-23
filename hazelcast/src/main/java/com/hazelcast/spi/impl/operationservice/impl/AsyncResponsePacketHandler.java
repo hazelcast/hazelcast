@@ -17,20 +17,23 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.util.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * The AsyncResponsePacketHandler is a PacketHandler that asynchronously process operation-response packets.
@@ -44,9 +47,13 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * deal with the response can be rather expensive currently.
  */
 public class AsyncResponsePacketHandler implements PacketHandler {
+    private static final long IDLE_MAX_SPINS = 20;
+    private static final long IDLE_MAX_YIELDS = 50;
+    private static final long IDLE_MIN_PARK_NS = NANOSECONDS.toNanos(1);
+    private static final long IDLE_MAX_PARK_NS = MICROSECONDS.toNanos(100);
 
     private final ResponseThread responseThread;
-    private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
+    private final BlockingQueue<Packet> workQueue;
     private final ILogger logger;
 
     public AsyncResponsePacketHandler(HazelcastThreadGroup threadGroup,
@@ -54,6 +61,8 @@ public class AsyncResponsePacketHandler implements PacketHandler {
                                       PacketHandler responsePacketHandler) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler);
+        this.workQueue = new MPSCQueue<Packet>(responseThread, new BackoffIdleStrategy(
+                IDLE_MAX_SPINS, IDLE_MAX_YIELDS, IDLE_MIN_PARK_NS, IDLE_MAX_PARK_NS));
         responseThread.start();
     }
 

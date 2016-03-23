@@ -104,6 +104,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final OperationExecutor operationExecutor;
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
+    final InternalSerializationService serializationService;
 
     @Probe(name = "completed.count", level = MANDATORY)
     final AtomicLong completedOperationsCount = new AtomicLong();
@@ -121,8 +122,8 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     private final SlowOperationDetector slowOperationDetector;
     private final AsyncResponsePacketHandler responsePacketExecutor;
-    private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
+    private final ResponsePacketHandlerImpl responsePacketHandler;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -146,13 +147,14 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
+        this.responsePacketHandler = new ResponsePacketHandlerImpl(
+                logger,
+                node.getSerializationService(),
+                invocationRegistry);
         this.responsePacketExecutor = new AsyncResponsePacketHandler(
                 node.getHazelcastThreadGroup(),
                 logger,
-                new ResponsePacketHandlerImpl(
-                        logger,
-                        node.getSerializationService(),
-                        invocationRegistry));
+                responsePacketHandler);
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
