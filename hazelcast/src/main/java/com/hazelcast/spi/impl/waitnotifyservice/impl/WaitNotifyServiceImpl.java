@@ -314,9 +314,8 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
                         return true;
                     }
                     if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
-                        if (localNodeIsValidTarget(waitingOp)) {
-                            invalidate(waitingOp);
-                        } else {
+                        invalidate(waitingOp);
+                        if (!localNodeIsValidTarget(waitingOp)) {
                             logger.warning("Removing waiting operation " + waitingOp +
                                     " from queue since local node is not the target");
                             q.remove(waitingOp);
