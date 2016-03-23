@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -313,11 +314,27 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
                         return true;
                     }
                     if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
-                        invalidate(waitingOp);
+                        if (localNodeIsValidTarget(waitingOp)) {
+                            invalidate(waitingOp);
+                        } else {
+                            logger.warning("Removing waiting operation " + waitingOp +
+                                    " from queue since local node is not the target");
+                            q.remove(waitingOp);
+                        }
                     }
                 }
             }
             return false;
         }
+    }
+
+    private boolean localNodeIsValidTarget(WaitingOperation waitingOp) {
+        if (!waitingOp.validatesTarget()) {
+            return true;
+        }
+        int partitionId = waitingOp.getPartitionId();
+        InternalPartition internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
+        Address owner = internalPartition.getReplicaAddress(waitingOp.getReplicaIndex());
+        return nodeEngine.getNode().getThisAddress().equals(owner);
     }
 }
