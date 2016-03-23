@@ -30,6 +30,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -314,13 +315,17 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
                         return true;
                     }
                     if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
-                        if (localNodeIsValidTarget(waitingOp)) {
-                            invalidate(waitingOp);
+                        Address targetAddress = getTargetAddress(waitingOp);
+                        if (!waitingOp.validatesTarget() || nodeEngine.getThisAddress().equals(targetAddress)) {
+                            invalidate(waitingOp);    
                         } else {
-                            logger.warning("Removing waiting operation " + waitingOp +
-                                    " from queue since local node is not the target");
-                            q.remove(waitingOp);
-                            waitingOp.getOperation().getResponseHandler().sendResponse(new IllegalStateException("Wrong target"));
+                            logger.warning("Removing operation " + waitingOp +
+                                " from queue because the local node is not the target and returning exception to invoker");
+                            WrongTargetException wte = new WrongTargetException(nodeEngine.getThisAddress(), targetAddress,
+                                waitingOp.getPartitionId(), waitingOp.getReplicaIndex(),
+                                waitingOp.getClass().getName(), waitingOp.getServiceName());
+                            OperationResponseHandler responseHandler = waitingOp.getOperation().getOperationResponseHandler();
+                            responseHandler.sendResponse(waitingOp.getOperation(), wte);
                         }
                     }
                 }
@@ -329,13 +334,9 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
         }
     }
 
-    private boolean localNodeIsValidTarget(WaitingOperation waitingOp) {
-        if (!waitingOp.validatesTarget()) {
-            return true;
-        }
+    private Address getTargetAddress(WaitingOperation waitingOp) {
         int partitionId = waitingOp.getPartitionId();
         InternalPartition internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
-        Address owner = internalPartition.getReplicaAddress(waitingOp.getReplicaIndex());
-        return nodeEngine.getNode().getThisAddress().equals(owner);
+        return internalPartition.getReplicaAddress(waitingOp.getReplicaIndex());
     }
 }
