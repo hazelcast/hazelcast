@@ -53,7 +53,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "state");
 
     volatile boolean interrupted;
-    volatile Object state;
+    volatile Object state = VOID;
 
     final Invocation invocation;
 
@@ -82,7 +82,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
         //todo: hack to make sure executor is available
-        if(executor == null){
+        if (executor == null) {
             executor = invocation.operationService.asyncExecutor;
         }
 
@@ -124,6 +124,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      */
     public boolean complete(Object value) {
         assert !(value instanceof Response) : "unexpected response found: " + value;
+
 
         for (; ; ) {
             Object oldState = state;
@@ -367,6 +368,11 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return false;
     }
 
+    @Override
+    public boolean isDone() {
+        return isDone(state);
+    }
+
     private boolean isDone(Object state) {
         if (state == null) {
             return true;
@@ -376,11 +382,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 || state.getClass() == Waiter.class
                 || state instanceof Thread
                 || state instanceof ExecutionCallback);
-    }
-
-    @Override
-    public boolean isDone() {
-        return isDone(state);
     }
 
     @Override

@@ -121,4 +121,8 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
 
         assertInstanceOf(ExpectedRuntimeException.class, captor.getValue());
     }
+
+    public void whenMultipleWaiters(){
+
+    }
 }

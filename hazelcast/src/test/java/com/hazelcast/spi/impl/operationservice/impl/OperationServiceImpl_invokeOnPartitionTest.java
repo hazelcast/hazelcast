@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -52,33 +53,37 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
     }
 
     @Test
-    public void whenLocalPartition() {
+    public void whenLocalPartition() throws InterruptedException {
         String expected = "foobar";
-        DummyOperation operation = new DummyOperation(expected);
+        Operation operation = new DummyOperation(expected)
+                .setPartitionId(getPartitionId(local));
 
-        InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
-                null, operation, getPartitionId(local));
-        assertEquals(expected, invocation.join());
+        InvocationFuture<String> future = (InvocationFuture)operationService.invokeOnPartition(operation);
+
+        Thread.sleep(1000);
+        System.out.println(future.state);
+        assertEquals(expected, future.join());
     }
 
     @Test
     public void whenRemotePartition() {
         String expected = "foobar";
-        DummyOperation operation = new DummyOperation(expected);
+        Operation operation = new DummyOperation(expected)
+                .setPartitionId(getPartitionId(remote));
 
-        InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
-                null, operation, getPartitionId(remote));
-        assertEquals(expected, invocation.join());
+        InvocationFuture<String> future = (InvocationFuture)operationService.invokeOnPartition(operation);
+
+        assertEquals(expected, future.join());
     }
 
     @Test
     public void whenExceptionThrownInOperationRun() {
-        DummyOperation operation = new DummyOperation(new ExceptionThrowingCallable());
-        InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
-                null, operation, getPartitionId(remote));
+        Operation operation = new DummyOperation(new ExceptionThrowingCallable())
+                .setPartitionId(getPartitionId(remote));
+        InvocationFuture<String> future = (InvocationFuture)operationService.invokeOnPartition(operation);
 
         try {
-            invocation.join();
+            future.join();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }
