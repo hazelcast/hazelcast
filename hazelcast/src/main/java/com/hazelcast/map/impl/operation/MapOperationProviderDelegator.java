@@ -149,9 +149,9 @@ public abstract class MapOperationProviderDelegator implements MapOperationProvi
     }
 
     @Override
-    public MapOperation createTxnLockAndGetOperation(String name, Data dataKey,
-                                                     long timeout, long ttl, String ownerUuid, boolean shouldLoad) {
-        return getDelegate().createTxnLockAndGetOperation(name, dataKey, timeout, ttl, ownerUuid, shouldLoad);
+    public MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout,
+                                                     long ttl, String ownerUuid, boolean shouldLoad, boolean blockReads) {
+        return getDelegate().createTxnLockAndGetOperation(name, dataKey, timeout, ttl, ownerUuid, shouldLoad, blockReads);
     }
 
     @Override

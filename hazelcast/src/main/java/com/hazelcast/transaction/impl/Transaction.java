@@ -17,20 +17,9 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions.TransactionType;
 
 public interface Transaction {
-
-    enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
-    }
 
     void begin() throws IllegalStateException;
 
@@ -55,4 +44,18 @@ public interface Transaction {
     String getOwnerUuid();
 
     boolean isOriginatedFromClient();
+
+    TransactionType getTransactionType();
+
+    enum State {
+        NO_TXN,
+        ACTIVE,
+        PREPARING,
+        PREPARED,
+        COMMITTING,
+        COMMITTED,
+        COMMIT_FAILED,
+        ROLLING_BACK,
+        ROLLED_BACK
+    }
 }

@@ -39,20 +39,23 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
 
     private long ttl;
 
+    private boolean blockReads;
+
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, long threadId) {
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, long threadId, boolean blockReads) {
         super(name, dataKey);
         this.ttl = ttl;
         this.threadId = threadId;
+        this.blockReads = blockReads;
         setWaitTimeout(timeout);
     }
 
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (!container.txnLock(dataKey, getCallerUuid(), threadId, getCallId(), ttl)) {
+        if (!container.txnLock(dataKey, getCallerUuid(), threadId, getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
         MultiMapValue multiMapValue = getMultiMapValueOrNull();
@@ -82,12 +85,14 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(ttl);
+        out.writeBoolean(blockReads);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
+        blockReads = in.readBoolean();
     }
 
     @Override

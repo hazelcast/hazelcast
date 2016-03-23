@@ -28,6 +28,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
@@ -258,7 +259,8 @@ public abstract class TransactionalMultiMapProxySupport extends TransactionalDis
 
     private MultiMapResponse lockAndGet(Data key, long timeout, long ttl) {
         final NodeEngine nodeEngine = getNodeEngine();
-        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, ttl, getThreadId());
+        boolean blockReads = tx.getTransactionType() == TransactionType.ONE_PHASE;
+        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, ttl, getThreadId(), blockReads);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             final OperationService operationService = nodeEngine.getOperationService();

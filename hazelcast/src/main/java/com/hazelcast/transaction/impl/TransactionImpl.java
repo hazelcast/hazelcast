@@ -79,10 +79,9 @@ public class TransactionImpl implements Transaction {
     private final TransactionType transactionType;
     private final boolean checkThreadAccess;
     private final ILogger logger;
-    private Long threadId;
-
     private final String txOwnerUuid;
     private final TransactionLog transactionLog;
+    private Long threadId;
     private long timeoutMillis;
     private State state = NO_TXN;
     private long startTime;
@@ -238,10 +237,10 @@ public class TransactionImpl implements Transaction {
 
     /**
      * Checks if this Transaction needs to be prepared.
-     *
+     * <p>
      * Preparing a transaction costs time since the backup log potentially needs to be copied and
      * each logrecord needs to prepare its content (e.g. by acquiring locks). This takes time.
-     *
+     * <p>
      * If a transaction is local or if there is 1 or 0 items in the transaction log, instead of
      * preparing, we are just going to try to commit. If the lock is still acquired, the write
      * succeeds, and if the lock isn't acquired, the write fails; the same effect as a prepare
@@ -348,7 +347,7 @@ public class TransactionImpl implements Transaction {
     /**
      * Some data-structures like the Transaction List rely on (empty) backup logs to be created before any change on the
      * data-structure is made. That is why when such a data-structure is loaded, it should the creation.
-     *
+     * <p>
      * Not every data-structure, e.g. the Transactional Map, relies on it and in some cases can even skip it.
      */
     public void ensureBackupLogsExist() {
@@ -457,6 +456,11 @@ public class TransactionImpl implements Transaction {
 
     protected PurgeTxBackupLogOperation createPurgeTxBackupLogOperation() {
         return new PurgeTxBackupLogOperation(txnId);
+    }
+
+    @Override
+    public TransactionType getTransactionType() {
+        return transactionType;
     }
 
     @Override

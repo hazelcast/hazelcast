@@ -39,9 +39,9 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
         LockStore lockStore = getLockStoreOrNull();
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, leaseTime);
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, leaseTime, blockReads);
     }
 
     @Override
@@ -93,9 +93,9 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean isTransactionallyLocked(Data key) {
+    public boolean shouldBlockReads(Data key) {
         LockStore lockStore = getLockStoreOrNull();
-        return lockStore != null && lockStore.isTransactionallyLocked(key);
+        return lockStore != null && lockStore.shouldBlockReads(key);
     }
 
     @Override

@@ -171,8 +171,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
 
     @Override
     public MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String
-            ownerUuid, boolean shouldLoad) {
-        return new TxnLockAndGetOperation(name, dataKey, timeout, ttl, ownerUuid, shouldLoad);
+            ownerUuid, boolean shouldLoad, boolean blockReads) {
+        return new TxnLockAndGetOperation(name, dataKey, timeout, ttl, ownerUuid, shouldLoad, blockReads);
     }
 
     @Override

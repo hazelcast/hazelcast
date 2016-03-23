@@ -397,39 +397,39 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIsTransactionallyLocked_whenLockDoesNotExist_thenReturnFalse() {
-        boolean locked = lockStore.isTransactionallyLocked(key);
+    public void testIsBlockReads_whenLockDoesNotExist_thenReturnFalse() {
+        boolean locked = lockStore.shouldBlockReads(key);
         assertFalse(locked);
     }
 
     @Test
-    public void testIsTransactionallyLocked_whenNonTxnLocked_thenReturnFalse() {
+    public void testIsIsBlockReads_whenNonTxnLocked_thenReturnFalse() {
         lock();
-        boolean locked = lockStore.isTransactionallyLocked(key);
+        boolean locked = lockStore.shouldBlockReads(key);
         assertFalse(locked);
     }
 
     @Test
-    public void testIsTransactionallyLocked_whenTxnLocked_thenReturnTrue() {
+    public void testIsBlockReads_whenTxnLocked_thenReturnTrue() {
         txnLock();
-        boolean locked = lockStore.isTransactionallyLocked(key);
+        boolean locked = lockStore.shouldBlockReads(key);
         assertTrue(locked);
     }
 
     @Test
-    public void testIsTransactionallyLocked_whenTxnLockedAndUnlocked_thenReturnFalse() {
+    public void testIsBlockReads_whenTxnLockedAndUnlocked_thenReturnFalse() {
         txnLockAndIncreaseReferenceId();
         unlock();
-        boolean locked = lockStore.isTransactionallyLocked(key);
+        boolean locked = lockStore.shouldBlockReads(key);
         assertFalse(locked);
     }
 
     @Test
-    public void testIsTransactionallyLocked_whenTxnLockedAndAttemptedToLockFromAnotherThread_thenReturnTrue() {
+    public void testIsBlockReads_whenTxnLockedAndAttemptedToLockFromAnotherThread_thenReturnTrue() {
         txnLockAndIncreaseReferenceId();
         threadId++;
         lockAndIncreaseReferenceId();
-        boolean locked = lockStore.isTransactionallyLocked(key);
+        boolean locked = lockStore.shouldBlockReads(key);
         assertTrue(locked);
     }
 
@@ -439,7 +439,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     }
 
     private boolean txnLock() {
-        return lockStore.txnLock(key, callerId, threadId, referenceId, leaseTime);
+        return lockStore.txnLock(key, callerId, threadId, referenceId, leaseTime, true);
     }
 
     private boolean unlock() {

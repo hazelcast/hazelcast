@@ -34,20 +34,23 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     private VersionedValue response;
     private String ownerUuid;
     private boolean shouldLoad;
+    private boolean blockReads;
 
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid, boolean shouldLoad) {
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
+                                  boolean shouldLoad, boolean blockReads) {
         super(name, dataKey, ttl);
         this.ownerUuid = ownerUuid;
         this.shouldLoad = shouldLoad;
+        this.blockReads = blockReads;
         setWaitTimeout(timeout);
     }
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), getCallId(), ttl)) {
+        if (!recordStore.txnLock(getKey(), ownerUuid, getThreadId(), getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock.");
         }
         Record record = recordStore.getRecordOrNull(dataKey);
@@ -77,6 +80,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         super.writeInternal(out);
         out.writeUTF(ownerUuid);
         out.writeBoolean(shouldLoad);
+        out.writeBoolean(blockReads);
     }
 
     @Override
@@ -84,6 +88,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         super.readInternal(in);
         ownerUuid = in.readUTF();
         shouldLoad = in.readBoolean();
+        blockReads = in.readBoolean();
     }
 
     @Override

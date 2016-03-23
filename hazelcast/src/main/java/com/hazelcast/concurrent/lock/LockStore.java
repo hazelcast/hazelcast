@@ -24,7 +24,7 @@ public interface LockStore {
 
     boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime);
 
-    boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime);
+    boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads);
 
     boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime);
 
@@ -40,7 +40,7 @@ public interface LockStore {
 
     boolean canAcquireLock(Data key, String caller, long threadId);
 
-    boolean isTransactionallyLocked(Data key);
+    boolean shouldBlockReads(Data key);
 
     Set<Data> getLockedKeys();
 
