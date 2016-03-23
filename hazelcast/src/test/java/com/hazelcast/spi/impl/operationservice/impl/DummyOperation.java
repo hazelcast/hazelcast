@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 public class DummyOperation extends AbstractOperation {
     public Object value;
     public Object result;
+    public int delayMs;
 
     public DummyOperation() {
     }
@@ -20,7 +21,15 @@ public class DummyOperation extends AbstractOperation {
 
     @Override
     public void run() throws Exception {
-        if (value instanceof Runnable) {
+        if (delayMs > 0) {
+            Thread.sleep(delayMs);
+        }
+
+        System.out.println("DummyOperation executed");
+
+        if (value instanceof Exception) {
+            throw (Exception) value;
+        } else if (value instanceof Runnable) {
             ((Runnable) value).run();
             result = value;
         } else if (value instanceof Callable) {
@@ -28,6 +37,11 @@ public class DummyOperation extends AbstractOperation {
         } else {
             result = value;
         }
+    }
+
+    public DummyOperation setDelayMs(int delayMs) {
+        this.delayMs = delayMs;
+        return this;
     }
 
     @Override
@@ -39,11 +53,13 @@ public class DummyOperation extends AbstractOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(value);
+        out.writeInt(delayMs);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         value = in.readObject();
+        delayMs = in.readInt();
     }
 }

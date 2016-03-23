@@ -106,6 +106,33 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
+    public <T> T bytesToObject(byte[] bytes, int offset) {
+        BufferPool pool = bufferPoolThreadLocal.get();
+        BufferObjectDataInput in = pool.takeInputBuffer(bytes, offset);
+        in.position(offset);
+        try {
+            int typeId = in.readInt(ByteOrder.BIG_ENDIAN);
+            SerializerAdapter serializer = serializerFor(typeId);
+            if (serializer == null) {
+                if (active) {
+                    throw newHazelcastSerializationException(typeId);
+                }
+                throw new HazelcastInstanceNotActiveException();
+            }
+
+            Object obj = serializer.read(in);
+            if (managedContext != null) {
+                obj = managedContext.initialize(obj);
+            }
+            return (T) obj;
+        } catch (Throwable e) {
+            throw handleException(e);
+        } finally {
+            pool.returnInputBuffer(in);
+        }
+    }
+
+    @Override
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
         if (obj == null) {
             return null;
