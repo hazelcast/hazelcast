@@ -293,6 +293,8 @@ public enum GroupProperty implements HazelcastProperty {
     ENABLE_JMX_DETAILED("hazelcast.jmx.detailed", false),
     JMX_UPDATE_INTERVAL_SECONDS("hazelcast.jmx.update.interval.seconds", 5, SECONDS),
 
+    ITERATING_MAP_STATS_ENABLED("hazelcast.management.iterating.map.stats.enabled", true),
+
     MC_MAX_VISIBLE_INSTANCE_COUNT("hazelcast.mc.max.visible.instance.count", 100),
     MC_MAX_VISIBLE_SLOW_OPERATION_COUNT("hazelcast.mc.max.visible.slow.operations.count", 10),
     MC_URL_CHANGE_ENABLED("hazelcast.mc.url.change.enabled", true),

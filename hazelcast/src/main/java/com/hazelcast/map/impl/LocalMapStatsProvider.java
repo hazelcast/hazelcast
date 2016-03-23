@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.record.Record;
@@ -63,6 +64,8 @@ public class LocalMapStatsProvider {
     protected final InternalPartitionService partitionService;
     protected final ILogger logger;
 
+    protected final boolean iterateStats;
+
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -70,6 +73,7 @@ public class LocalMapStatsProvider {
         this.nearCacheProvider = mapServiceContext.getNearCacheProvider();
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService = nodeEngine.getPartitionService();
+        this.iterateStats = nodeEngine.getGroupProperties().getBoolean(GroupProperty.ITERATING_MAP_STATS_ENABLED);
     }
 
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
@@ -130,15 +134,17 @@ public class LocalMapStatsProvider {
         long lastUpdateTime = 0;
         long hits = 0;
 
-        Iterator<Record> iterator = recordStore.iterator();
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Data key = record.getKey();
+        if (iterateStats) {
+            Iterator<Record> iterator = recordStore.iterator();
+            while (iterator.hasNext()) {
+                Record record = iterator.next();
+                Data key = record.getKey();
 
-            hits += getHits(record);
-            lockedEntryCount += isLocked(key, recordStore);
-            lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
-            lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
+                hits += getHits(record);
+                lockedEntryCount += isLocked(key, recordStore);
+                lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
+                lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
+            }
         }
 
         onDemandStats.incrementLockedEntryCount(lockedEntryCount);
