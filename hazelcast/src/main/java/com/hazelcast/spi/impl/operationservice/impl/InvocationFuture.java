@@ -81,6 +81,11 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
+        //todo: hack to make sure executor is available
+        if(executor == null){
+            executor = invocation.operationService.asyncExecutor;
+        }
+
         try {
             executor.execute(new Runnable() {
                 @Override
@@ -110,7 +115,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     /**
      * Can be called multiple times, but only the first answer will lead to the future getting triggered. All subsequent
-     * 'set' calls are ignored.
+     * complete calls are ignored.
      *
      * @param value The type of response to offer.
      * @return <tt>true</tt> if offered response, either a final response or an internal response,
@@ -248,6 +253,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             if (oldState == VOID) {
                 // Nothing is syncing on this future, so instead of creating a Waiter, we just try
                 // the cas the thread (so no extra litter)
+
+                //todo: the right executor is lost
                 newState = target;
             } else {
                 // something already has been registered for syncing. So we need to create a Waiter.
@@ -365,14 +372,10 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             return true;
         }
 
-        if (state == VOID
+        return !(state == VOID
                 || state.getClass() == Waiter.class
                 || state instanceof Thread
-                || state instanceof ExecutionCallback) {
-            return false;
-        }
-
-        return true;
+                || state instanceof ExecutionCallback);
     }
 
     @Override
