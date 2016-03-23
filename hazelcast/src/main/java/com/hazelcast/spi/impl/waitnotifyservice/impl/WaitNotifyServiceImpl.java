@@ -314,11 +314,13 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
                         return true;
                     }
                     if (waitingOp.isValid() && waitingOp.needsInvalidation()) {
-                        invalidate(waitingOp);
-                        if (!localNodeIsValidTarget(waitingOp)) {
+                        if (localNodeIsValidTarget(waitingOp)) {
+                            invalidate(waitingOp);
+                        } else {
                             logger.warning("Removing waiting operation " + waitingOp +
                                     " from queue since local node is not the target");
                             q.remove(waitingOp);
+                            waitingOp.getOperation().getResponseHandler().sendResponse(new IllegalStateException("Wrong target"));
                         }
                     }
                 }
