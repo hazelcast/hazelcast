@@ -19,6 +19,9 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -47,6 +50,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  */
 public class ClientConnection implements Connection {
 
+    @Probe
     protected final int connectionId;
     private final AtomicBoolean live = new AtomicBoolean(true);
     private final ILogger logger;
@@ -57,15 +61,19 @@ public class ClientConnection implements Connection {
     private final SocketChannelWrapper socketChannelWrapper;
     private final ClientConnectionManager connectionManager;
     private final LifecycleService lifecycleService;
+    private final HazelcastClientInstanceImpl client;
 
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
     private boolean isAuthenticatedAsOwner;
+    @Probe(level = ProbeLevel.DEBUG)
     private volatile long closedTime;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
+
+        this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.socketChannelWrapper = socketChannelWrapper;
@@ -75,10 +83,18 @@ public class ClientConnection implements Connection {
         boolean directBuffer = client.getClientProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize(), directBuffer, clientLoggingService);
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize(), directBuffer, clientLoggingService);
+
+        MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
+        String connectionName = "tcp.connection["
+                + socket.getLocalSocketAddress() + " -> " + socket.getRemoteSocketAddress() + "]";
+        metricsRegistry.scanAndRegister(this, connectionName);
+        metricsRegistry.scanAndRegister(readHandler, connectionName + ".in");
+        metricsRegistry.scanAndRegister(writeHandler, connectionName + ".out");
     }
 
     public ClientConnection(HazelcastClientInstanceImpl client,
                             int connectionId) throws IOException {
+        this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
@@ -204,6 +220,11 @@ public class ClientConnection implements Connection {
         }
         readHandler.shutdown();
         writeHandler.shutdown();
+
+        MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
+        metricsRegistry.deregister(this);
+        metricsRegistry.deregister(writeHandler);
+        metricsRegistry.deregister(readHandler);
     }
 
     public void close(Throwable t) {

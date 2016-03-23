@@ -145,14 +145,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     protected void initializeSelectors(HazelcastClientInstanceImpl client) {
         inputThread = new NonBlockingIOThread(
                 client.getThreadGroup(),
-                client.getName() + ".ClientInSelector",
+                client.getName() + ".thread-in",
                 loggingService.getLogger(NonBlockingIOThread.class),
                 OUT_OF_MEMORY_HANDLER);
         client.getMetricsRegistry().scanAndRegister(inputThread, "tcp." + inputThread.getName());
 
         outputThread = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
-                client.getName() + ".ClientOutSelector",
+                client.getName() + ".thread-out",
                 loggingService.getLogger(ClientNonBlockingOutputThread.class),
                 OUT_OF_MEMORY_HANDLER);
         client.getMetricsRegistry().scanAndRegister(outputThread, "tcp." + outputThread.getName());
