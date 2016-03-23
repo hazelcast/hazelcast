@@ -82,7 +82,7 @@ public class DiscoverySpiTest
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.6.xsd");
+        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.7.xsd");
         Schema schema = factory.newSchema(schemaResource);
 
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);

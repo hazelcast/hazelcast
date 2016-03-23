@@ -44,6 +44,7 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -773,7 +774,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.6.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.7.xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
@@ -831,41 +832,41 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testWanConfig() {
         String xml =
                 HAZELCAST_START_TAG +
-                        "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
-                        "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
-                        "       <replication-impl>com.hazelcast.enterprise.wan.replication.WanBatchReplication</replication-impl>\n" +
-                        "       <end-points>\n" +
-                        "          <address>20.30.40.50:5701</address>\n" +
-                        "          <address>20.30.40.50:5702</address>\n" +
-                        "       </end-points>\n" +
-                        "       <acknowledge-type>ACK_ON_RECEIPT</acknowledge-type>\n" +
+                        "<wan-replication name=\"my-wan-cluster\">\n" +
+                        "    <wan-publisher group-name=\"istanbul\">\n" +
+                        "       <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n" +
                         "       <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>\n" +
-                        "       <batch-size>7</batch-size>" +
-                        "       <batch-max-delay-millis>14</batch-max-delay-millis>\n" +
                         "       <queue-capacity>21</queue-capacity>\n" +
-                        "       <response-timeout-millis>28</response-timeout-millis>\n" +
-                        "    </target-cluster>\n" +
+                        "       <properties>\n" +
+                        "           <property name=\"custom.prop.publisher\">prop.publisher</property>\n" +
+                        "       </properties>\n" +
+                        "    </wan-publisher>\n" +
+                        "    <wan-consumer>\n" +
+                        "       <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n" +
+                        "       <properties>\n" +
+                        "           <property name=\"custom.prop.consumer\">prop.consumer</property>\n" +
+                        "       </properties>\n" +
+                        "    </wan-consumer>\n" +
                         "</wan-replication>\n" +
                         "</hazelcast>";
         Config config = buildConfig(xml);
         WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
         assertNotNull(wanConfig);
-        assertTrue(wanConfig.isSnapshotEnabled());
-        List<WanTargetClusterConfig> targetClusterConfigs = wanConfig.getTargetClusterConfigs();
-        assertEquals(1, targetClusterConfigs.size());
-        WanTargetClusterConfig targetClusterConfig = targetClusterConfigs.get(0);
-        assertEquals("test-cluster-1", targetClusterConfig.getGroupName());
-        assertEquals("test-pass", targetClusterConfig.getGroupPassword());
-        List<String> targetEndpoints = targetClusterConfig.getEndpoints();
-        assertEquals(2, targetEndpoints.size());
-        assertTrue(targetEndpoints.contains("20.30.40.50:5701"));
-        assertTrue(targetEndpoints.contains("20.30.40.50:5702"));
-        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, targetClusterConfig.getAcknowledgeType());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, targetClusterConfig.getQueueFullBehavior());
-        assertEquals(7, targetClusterConfig.getBatchSize());
-        assertEquals(14, targetClusterConfig.getBatchMaxDelayMillis());
-        assertEquals(21, targetClusterConfig.getQueueCapacity());
-        assertEquals(28, targetClusterConfig.getResponseTimeoutMillis());
+
+        List<WanPublisherConfig> publisherConfigs = wanConfig.getWanPublisherConfigs();
+        assertEquals(1, publisherConfigs.size());
+        WanPublisherConfig publisherConfig = publisherConfigs.get(0);
+        assertEquals("istanbul", publisherConfig.getGroupName());
+        assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig.getClassName());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
+        assertEquals(21, publisherConfig.getQueueCapacity());
+        Map<String, Comparable> pubProperties = publisherConfig.getProperties();
+        assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
+
+        WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
+        assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
+        Map<String, Comparable> consProperties = consumerConfig.getProperties();
+        assertEquals("prop.consumer", consProperties.get("custom.prop.consumer"));
     }
 
     @Test

@@ -39,7 +39,6 @@ public final class Packet extends HeapData implements OutboundFrame {
     public static final int FLAG_OP = 1 << 0;
     public static final int FLAG_RESPONSE = 1 << 1;
     public static final int FLAG_EVENT = 1 << 2;
-    public static final int FLAG_WAN_REPLICATION = 1 << 3;
     public static final int FLAG_URGENT = 1 << 4;
     public static final int FLAG_BIND = 1 << 5;
 

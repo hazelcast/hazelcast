@@ -25,7 +25,6 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     private PacketHandler operationPacketHandler;
     private PacketHandler eventPacketHandler;
     private PacketDispatcherImpl packetDispatcher;
-    private PacketHandler wanPacketHandler;
     private PacketHandler connectionManagerPacketHandler;
 
     @Before
@@ -33,13 +32,11 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
         ILogger logger = Logger.getLogger(getClass());
         operationPacketHandler = mock(PacketHandler.class);
         eventPacketHandler = mock(PacketHandler.class);
-        wanPacketHandler = mock(PacketHandler.class);
         connectionManagerPacketHandler = mock(PacketHandler.class);
         packetDispatcher = new PacketDispatcherImpl(
                 logger,
                 operationPacketHandler,
                 eventPacketHandler,
-                wanPacketHandler,
                 connectionManagerPacketHandler
         );
     }
@@ -53,20 +50,6 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
         verify(operationPacketHandler).handle(packet);
         verifyZeroInteractions(eventPacketHandler);
-        verifyZeroInteractions(wanPacketHandler);
-        verifyZeroInteractions(connectionManagerPacketHandler);
-    }
-
-    @Test
-    public void whenWanReplicationPacket() throws Exception {
-        Packet packet = new Packet();
-        packet.setFlag(Packet.FLAG_WAN_REPLICATION);
-
-        packetDispatcher.dispatch(packet);
-
-        verify(wanPacketHandler).handle(packet);
-        verifyZeroInteractions(operationPacketHandler);
-        verifyZeroInteractions(eventPacketHandler);
         verifyZeroInteractions(connectionManagerPacketHandler);
     }
 
@@ -79,7 +62,6 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
         verify(eventPacketHandler).handle(packet);
         verifyZeroInteractions(operationPacketHandler);
-        verifyZeroInteractions(wanPacketHandler);
         verifyZeroInteractions(connectionManagerPacketHandler);
     }
 
@@ -93,7 +75,6 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
         verify(connectionManagerPacketHandler).handle(packet);
         verifyZeroInteractions(operationPacketHandler);
         verifyZeroInteractions(eventPacketHandler);
-        verifyZeroInteractions(wanPacketHandler);
     }
 
     // unrecognized packets are logged. No handlers is contacted.
@@ -106,7 +87,6 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
         verifyZeroInteractions(connectionManagerPacketHandler);
         verifyZeroInteractions(operationPacketHandler);
         verifyZeroInteractions(eventPacketHandler);
-        verifyZeroInteractions(wanPacketHandler);
     }
 
     // when one of the handlers throws an exception, the exception is logged but not rethrown

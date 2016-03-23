@@ -106,7 +106,9 @@ public enum PropertyTypeConverter implements TypeConverter {
     BOOLEAN {
         @Override
         public Comparable convert(Comparable value) {
-            if (value instanceof String) {
+            if (value instanceof Boolean) {
+                return value;
+            } else if (value instanceof String) {
                 return Boolean.parseBoolean((String) value);
             }
             throw new IllegalArgumentException("Cannot convert to boolean");

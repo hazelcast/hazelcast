@@ -34,6 +34,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -81,7 +82,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.6.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.7.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
         xml.append("<password>").append("****").append("</password>");
@@ -314,19 +315,24 @@ public class ConfigXmlGenerator {
     private void wanReplicationXmlGenerator(StringBuilder xml, Config config) {
         final Collection<WanReplicationConfig> wanRepConfigs = config.getWanReplicationConfigs().values();
         for (WanReplicationConfig wan : wanRepConfigs) {
-            xml.append("<wan-replication name=\"").append(wan.getName()).append("\" ")
-                    .append("snapshot-enabled=\"").append(wan.isSnapshotEnabled()).append("\">");
-            final List<WanTargetClusterConfig> targets = wan.getTargetClusterConfigs();
-            for (WanTargetClusterConfig t : targets) {
-                xml.append("<target-cluster group-name=\"").append(t.getGroupName())
-                        .append("\" group-password=\"").append(t.getGroupPassword()).append("\">");
-                xml.append("<replication-impl>").append(t.getReplicationImpl()).append("</replication-impl>");
-                xml.append("<end-points>");
-                final List<String> eps = t.getEndpoints();
-                for (String ep : eps) {
-                    xml.append("<address>").append(ep).append("</address>");
+            xml.append("<wan-replication name=\"").append(wan.getName()).append("\">");
+            final List<WanPublisherConfig> publisherConfigs = wan.getWanPublisherConfigs();
+            for (WanPublisherConfig p : publisherConfigs) {
+                xml.append("<wan-publisher group-name=\"").append(p.getGroupName()).append("\">")
+                        .append("<class-name>").append(p.getClassName()).append("</class-name>")
+                        .append("<queue-full-behavior>").append(p.getQueueFullBehavior()).append("</queue-full-behavior>")
+                        .append("<queue-capacity>").append(p.getQueueCapacity()).append("</queue-capacity>");
+                final Map<String, Comparable> props = p.getProperties();
+                if (!props.isEmpty()) {
+                    xml.append("<properties>");
+                    for (Map.Entry<String, Comparable> prop : props.entrySet()) {
+                        xml.append("<property name=\"").append(prop.getKey()).append("\">")
+                                .append(prop.getValue()).append("</property>");
+
+                    }
+                    xml.append("</properties>");
                 }
-                xml.append("</end-points>").append("</target-cluster>");
+                xml.append("</wan-publisher>");
             }
             xml.append("</wan-replication>");
         }

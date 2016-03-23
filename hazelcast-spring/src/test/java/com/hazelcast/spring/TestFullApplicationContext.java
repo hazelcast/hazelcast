@@ -59,9 +59,10 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
+import com.hazelcast.config.WanConsumerConfig;
+import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -569,26 +570,30 @@ public class TestFullApplicationContext {
     public void testWanReplicationConfig() {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
         assertNotNull(wcfg);
-        assertFalse(wcfg.isSnapshotEnabled());
-        assertEquals(2, wcfg.getTargetClusterConfigs().size());
-        WanTargetClusterConfig targetCfg = wcfg.getTargetClusterConfigs().get(0);
-        assertNotNull(targetCfg);
-        assertEquals("tokyo", targetCfg.getGroupName());
-        assertEquals("tokyo-pass", targetCfg.getGroupPassword());
-        assertEquals("com.hazelcast.wan.impl.WanNoDelayReplication", targetCfg.getReplicationImpl());
-        assertEquals(2, targetCfg.getEndpoints().size());
-        assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
-        assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
-        assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
-        WanTargetClusterConfig targetClusterConfig0 = wcfg.getTargetClusterConfigs().get(0);
-        WanTargetClusterConfig targetClusterConfig1 = wcfg.getTargetClusterConfigs().get(1);
-        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE, targetClusterConfig0.getAcknowledgeType());
-        assertEquals(WanAcknowledgeType.ACK_ON_RECEIPT, targetClusterConfig1.getAcknowledgeType());
-        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, targetClusterConfig0.getQueueFullBehavior());
-        assertEquals(7, targetClusterConfig0.getBatchSize());
-        assertEquals(14, targetClusterConfig0.getBatchMaxDelayMillis());
-        assertEquals(21, targetClusterConfig0.getQueueCapacity());
-        assertEquals(28, targetClusterConfig0.getResponseTimeoutMillis());
+
+        WanPublisherConfig publisherConfig = wcfg.getWanPublisherConfigs().get(0);
+        assertEquals("tokyo", publisherConfig.getGroupName());
+        assertEquals("com.hazelcast.enterprise.wan.replication.WanBatchReplication", publisherConfig.getClassName());
+        assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
+        assertEquals(1000, publisherConfig.getQueueCapacity());
+        Map<String, Comparable> publisherProps = publisherConfig.getProperties();
+        assertEquals("50", publisherProps.get("batch.size"));
+        assertEquals("3000", publisherProps.get("batch.max.delay.millis"));
+        assertEquals("false", publisherProps.get("snapshot.enabled"));
+        assertEquals("5000", publisherProps.get("response.timeout.millis"));
+        assertEquals(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE.name(), publisherProps.get("ack.type"));
+        assertEquals("pass", publisherProps.get("group.password"));
+
+        WanPublisherConfig customPublisher = wcfg.getWanPublisherConfigs().get(1);
+        assertEquals("istanbul", customPublisher.getGroupName());
+        assertEquals("com.hazelcast.wan.custom.CustomPublisher", customPublisher.getClassName());
+        Map<String, Comparable> customPublisherProps = customPublisher.getProperties();
+        assertEquals("prop.publisher", customPublisherProps.get("custom.prop.publisher"));
+
+        WanConsumerConfig consumerConfig = wcfg.getWanConsumerConfig();
+        assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
+        Map<String, Comparable> consumerProps = consumerConfig.getProperties();
+        assertEquals("prop.consumer", consumerProps.get("custom.prop.consumer"));
     }
 
     @Test

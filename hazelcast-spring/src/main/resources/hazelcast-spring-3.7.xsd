@@ -1712,64 +1712,35 @@
 
     <xs:complexType name="wan-replication">
         <xs:sequence>
-            <xs:element name="target-cluster" minOccurs="1" maxOccurs="unbounded">
+            <xs:element name="wan-publisher" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:choice minOccurs="1" maxOccurs="1">
-                            <xs:element name="replication-impl">
-                                <xs:simpleType>
-                                    <xs:restriction base="xs:string"/>
-                                </xs:simpleType>
-                            </xs:element>
-                            <xs:element name="replication-impl-object">
-                                <xs:complexType>
-                                    <xs:complexContent>
-                                        <xs:extension base="hazelcast-bean">
-                                            <xs:attribute name="ref" type="xs:string" use="required"/>
-                                        </xs:extension>
-                                    </xs:complexContent>
-                                </xs:complexType>
-                            </xs:element>
-                        </xs:choice>
-                        <xs:element name="end-points" minOccurs="1" maxOccurs="1">
-                            <xs:complexType>
-                                <xs:sequence>
-                                    <xs:element name="address" minOccurs="1" maxOccurs="unbounded">
-                                        <xs:simpleType>
-                                            <xs:restriction base="xs:string"/>
-                                        </xs:simpleType>
-                                    </xs:element>
-                                </xs:sequence>
-                            </xs:complexType>
-                        </xs:element>
-                        <xs:element name="acknowledge-type" type="wan-ack-type" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="batch-size" type="xs:integer" default="500" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="batch-max-delay-millis" type="xs:long" default="1000" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="queue-capacity" type="xs:integer" default="10000" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="response-timeout-millis" type="xs:long" default="60000" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
+                    <xs:attribute name="class-name" type="non-space-string" use="optional"/>
+                    <xs:attribute name="implementation" type="non-space-string" use="optional"/>
                     <xs:attribute name="group-name" use="required">
-                        <xs:simpleType>
-                            <xs:restriction base="xs:string"/>
-                        </xs:simpleType>
-                    </xs:attribute>
-                    <xs:attribute name="group-password" use="required">
                         <xs:simpleType>
                             <xs:restriction base="xs:string"/>
                         </xs:simpleType>
                     </xs:attribute>
                 </xs:complexType>
             </xs:element>
+            <xs:element name = "wan-consumer" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+                    </xs:sequence>
+                    <xs:attribute name="class-name" type="non-space-string" use="optional"/>
+                    <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
-            </xs:simpleType>
-        </xs:attribute>
-        <xs:attribute name="snapshot-enabled" use="optional" default="false">
-            <xs:simpleType>
-                <xs:restriction base="parameterized-boolean"/>
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
