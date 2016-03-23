@@ -151,8 +151,11 @@ public class DefaultPortableReader implements PortableReader {
         validateQuantifier(path);
         final int currentPos = in.position();
         try {
-            int pos = navigator.findPositionOfPrimitiveObject(path, FieldType.UTF).getStreamPosition();
-            in.position(pos);
+            PortablePosition position = navigator.findPositionOfPrimitiveObject(path, FieldType.UTF);
+            if (position.isNull() || position.getLen() == -1) {
+                return null;
+            }
+            in.position(position.getStreamPosition());
             return in.readUTF();
         } finally {
             in.position(currentPos);
@@ -165,12 +168,12 @@ public class DefaultPortableReader implements PortableReader {
         validateQuantifier(path);
         final int currentPos = in.position();
         try {
-            PortablePosition pos = navigator.findPositionOfPortableObject(path);
-            in.position(pos.getStreamPosition());
-            if (!pos.isNull()) {
-                return serializer.readAndInitialize(in, pos.getFactoryId(), pos.getClassId());
+            PortablePosition position = navigator.findPositionOfPortableObject(path);
+            if (position.isNull() || position.getLen() == -1) {
+                return null;
             }
-            return null;
+            in.position(position.getStreamPosition());
+            return serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
         } finally {
             in.position(currentPos);
         }
@@ -193,7 +196,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.BYTE_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiByteArray(position.asMultiPosition());
@@ -223,7 +226,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.BOOLEAN_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiBooleanArray(position.asMultiPosition());
@@ -253,7 +256,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.CHAR_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiCharArray(position.asMultiPosition());
@@ -283,7 +286,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.INT_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiIntArray(position.asMultiPosition());
@@ -313,7 +316,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.LONG_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiLongArray(position.asMultiPosition());
@@ -343,7 +346,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.DOUBLE_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiDoubleArray(position.asMultiPosition());
@@ -373,7 +376,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.FLOAT_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiFloatArray(position.asMultiPosition());
@@ -403,7 +406,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.SHORT_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiShortArray(position.asMultiPosition());
@@ -433,7 +436,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPrimitiveArray(path, FieldType.UTF_ARRAY);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiUTFArray(position.asMultiPosition());
@@ -464,7 +467,7 @@ public class DefaultPortableReader implements PortableReader {
         final int currentPos = in.position();
         try {
             PortablePosition position = navigator.findPositionOfPortableArray(fieldName);
-            if (position.isNull()) {
+            if (position.isNull() || position.getLen() == -1) {
                 return null;
             } else if (position.isMultiPosition()) {
                 return readMultiPortableArray(position.asMultiPosition());

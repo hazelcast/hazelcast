@@ -150,7 +150,7 @@ public class PortablePositionNavigator {
             int arrayLen = in.readInt();
 
             //
-            if(arrayLen == Bits.NULL_ARRAY_LENGTH) {
+            if (arrayLen == Bits.NULL_ARRAY_LENGTH) {
                 throw new IllegalArgumentException("The array is null in " + fieldName);
             }
             if (position.index > arrayLen - 1) {
@@ -234,10 +234,12 @@ public class PortablePositionNavigator {
     private PortablePosition adjustForPortableFieldAccess(PortableSinglePosition pos) throws IOException {
         in.position(pos.position);
 
-        pos.isNull = in.readBoolean();
-        pos.factoryId = in.readInt();
-        pos.classId = in.readInt();
-        pos.position = in.position();
+        if (!pos.isNull()) { // extraction returned null (poison pill)
+            pos.isNull = in.readBoolean();
+            pos.factoryId = in.readInt();
+            pos.classId = in.readInt();
+            pos.position = in.position();
+        }
 
         // TODO -> we need the read FieldDefinition here
         // checkFactoryAndClass(pos.fd, pos.factoryId, pos.classId);
@@ -248,27 +250,31 @@ public class PortablePositionNavigator {
     private PortablePosition adjustForPortableArrayAccess(PortableSinglePosition pos, boolean singleCellAccess,
                                                           String path) throws IOException {
         in.position(pos.getStreamPosition());
+        if(pos.len != -1) { // not poison pill
 
-        int len = in.readInt();
-        int factoryId = in.readInt();
-        int classId = in.readInt();
+            int len = in.readInt();
+            int factoryId = in.readInt();
+            int classId = in.readInt();
 
-        pos.len = len;
-        pos.factoryId = factoryId;
-        pos.classId = classId;
-        pos.position = in.position();
+            pos.len = len;
+            pos.factoryId = factoryId;
+            pos.classId = classId;
+            pos.position = in.position();
 
-//        checkFactoryAndClass(fd, factoryId, classId);
-        if (singleCellAccess) {
-            if (len == Bits.NULL_ARRAY_LENGTH) {
-                throw new HazelcastSerializationException("The array " + path + " is null!");
-            } else if (len > 0) {
-                int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
-                in.position(offset);
-                pos.position = in.readInt(); // portable position
-            } else {
-                throw new HazelcastSerializationException("The array " + path + " is empty!");
+            //        checkFactoryAndClass(fd, factoryId, classId);
+            if (singleCellAccess) {
+                //            if (len == Bits.NULL_ARRAY_LENGTH) {
+                //                throw new HazelcastSerializationException("The array " + path + " is null!");
+                //            } else if (len > 0) {
+                if (pos.getIndex() < len) {
+                    int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
+                    in.position(offset);
+                    pos.position = in.readInt(); // portable position
+                } else {
+                    pos.isNull = true;
+                }
             }
+            //        }
         }
         return pos;
     }
@@ -385,20 +391,19 @@ public class PortablePositionNavigator {
             if (last) {
                 return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
             }
-            advanceToNextTokenFromNonArrayElement(fd, token);
+            if (!advanceToNextTokenFromNonArrayElement(fd, token)) {
+                PortableSinglePosition pos = new PortableSinglePosition();
+                pos.isNull = true;
+                return pos;
+            }
         } else if (isPathTokenWithAnyQuantifier(token)) {
-            // this is an optimisation for the case where there's one [any] and it's at the end
-//            if (last && multiPositions.isEmpty()) {
-//                // [any] at the end -> we just return the whole array as if without [any]
-//                return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
-//            }
             if (fd.getType() == FieldType.PORTABLE_ARRAY) {
                 if (frame == null) {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
                         // poison pill -> [any] used with empty array, so no need to process further
                         return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
-                    } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                    } else if (len == Bits.NULL_ARRAY_LENGTH) {
                         // poison pill -> [any] used with null array, so no need to process further
                         PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
                         pos.isNull = true;
@@ -414,6 +419,8 @@ public class PortablePositionNavigator {
                     if (last) {
                         return readPositionOfCurrentElement(new PortableSinglePosition(), fd, frame.arrayIndex);
                     }
+
+                    // check len
                     advanceToNextTokenFromPortableArrayElement(fd, frame.arrayIndex, field);
                 }
             } else {
@@ -423,7 +430,7 @@ public class PortablePositionNavigator {
                         if (len == 0) {
                             // poison pill -> [any] used with empty array, so no need to process further
                             return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
-                        } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                        } else if (len == Bits.NULL_ARRAY_LENGTH) {
                             // poison pill -> [any] used with null array, so no need to process further
                             PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
                             pos.isNull = true;
@@ -450,8 +457,12 @@ public class PortablePositionNavigator {
                     PortableSinglePosition pos = new PortableSinglePosition();
                     pos.len = -1;
                     return pos;
-                } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                } else if (len == Bits.NULL_ARRAY_LENGTH) {
                     // poison pill -> [any] used with null array, so no need to process further
+                    PortableSinglePosition pos = new PortableSinglePosition();
+                    pos.isNull = true;
+                    return pos;
+                } else if (index >= len) {
                     PortableSinglePosition pos = new PortableSinglePosition();
                     pos.isNull = true;
                     return pos;
@@ -465,8 +476,12 @@ public class PortablePositionNavigator {
                     PortableSinglePosition pos = new PortableSinglePosition();
                     pos.len = -1;
                     return pos;
-                } else if(len == Bits.NULL_ARRAY_LENGTH) {
+                } else if (len == Bits.NULL_ARRAY_LENGTH) {
                     // poison pill
+                    PortableSinglePosition pos = new PortableSinglePosition();
+                    pos.isNull = true;
+                    return pos;
+                } else if (index >= len) {
                     PortableSinglePosition pos = new PortableSinglePosition();
                     pos.isNull = true;
                     return pos;
@@ -526,37 +541,43 @@ public class PortablePositionNavigator {
         int len = in.readInt();
         int factoryId = in.readInt();
         int classId = in.readInt();
-        if (len == Bits.NULL_ARRAY_LENGTH) {
-            throw new HazelcastSerializationException("The array " + field + " is null!");
-        }
 
         checkFactoryAndClass(fd, factoryId, classId);
-        if (len > 0) {
-            final int coffset = in.position() + index * Bits.INT_SIZE_IN_BYTES;
-            in.position(coffset);
-            int portablePosition = in.readInt();
-            in.position(portablePosition);
-            int versionId = in.readInt();
 
-            advance(factoryId, classId, versionId);
+        final int coffset = in.position() + index * Bits.INT_SIZE_IN_BYTES;
+        in.position(coffset);
+        int portablePosition = in.readInt();
+        in.position(portablePosition);
+        int versionId = in.readInt();
 
-        } else {
-            throw new HazelcastSerializationException("The array " + field + " is empty!");
-        }
+        advance(factoryId, classId, versionId);
+
+//        }
+//        else {
+//            throw new HazelcastSerializationException("The array " + field + " is empty!");
+//        }
+
     }
 
-    private void advanceToNextTokenFromNonArrayElement(FieldDefinition fd, String token) throws IOException {
+    /**
+     * @param fd
+     * @param token
+     * @return true if managed to advance, false if advance failed due to null field
+     * @throws IOException
+     */
+    private boolean advanceToNextTokenFromNonArrayElement(FieldDefinition fd, String token) throws IOException {
         int pos = readPositionFromMetadata(fd);
         in.position(pos);
         boolean isNull = in.readBoolean();
         if (isNull) {
-            throw new NullPointerException("Parent field is null: " + token);
+            return false;
         }
 
         int factoryId = in.readInt();
         int classId = in.readInt();
         int version = in.readInt();
         advance(factoryId, classId, version);
+        return true;
     }
 
     private void advance(int factoryId, int classId, int version) throws IOException {

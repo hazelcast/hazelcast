@@ -44,12 +44,41 @@ public class DefaultPortableReaderTestStructure {
 
         final String field;
 
-        static List<Method> getPrimitives() {
-            return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double /*,UTF*/);
+        static List<Method> getPrimitives(boolean withUTF) {
+            if (withUTF) {
+                return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double, UTF);
+            } else {
+                return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double);
+            }
         }
 
         static List<Method> getPrimitiveArrays() {
             return asList(ByteArray, BooleanArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray, UTFArray);
+        }
+
+        static Method getArrayMethodFor(Method method) {
+            switch (method) {
+                case Byte:
+                    return ByteArray;
+                case Boolean:
+                    return BooleanArray;
+                case Char:
+                    return CharArray;
+                case Short:
+                    return ShortArray;
+                case Int:
+                    return IntArray;
+                case Long:
+                    return LongArray;
+                case Float:
+                    return FloatArray;
+                case Double:
+                    return DoubleArray;
+                case UTF:
+                    return UTFArray;
+                default:
+                    throw new RuntimeException("Unsupported method");
+            }
         }
     }
 
@@ -329,9 +358,12 @@ public class DefaultPortableReaderTestStructure {
         public String toString() {
             String result = "";
             if (portable != null) {
-                result += portable.toString();
+                result += "portable=" + portable.toString() + ", ";
+            } else {
+                result += "portable=null, ";
             }
             if (portables != null) {
+                result += "portables=";
                 for (Portable portable : portables) {
                     result += portable.toString() + ", ";
                 }
@@ -342,9 +374,91 @@ public class DefaultPortableReaderTestStructure {
             if (portable == null && portables != null && portables.length == 0) {
                 result += "portables.length==0";
             }
-            return "GroupPortable{" + result + '}';
+            return "GroupPortable{" + result + "}";
         }
     }
+
+    static class NestedGroupPortable implements Portable {
+        final static int FACTORY_ID = 1;
+        final static int ID = 12;
+
+        Portable portable;
+        Portable[] portables;
+
+        public NestedGroupPortable() {
+        }
+
+        public NestedGroupPortable(Portable portable) {
+            this.portable = portable;
+            this.portables = new Portable[]{portable};
+        }
+
+        public NestedGroupPortable(Portable[] portables) {
+            if (portables != null && portables.length > 0) {
+                this.portable = portables[0];
+            }
+            this.portables = portables;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return ID;
+        }
+
+        @Override
+        public void writePortable(PortableWriter writer) throws IOException {
+            writer.writePortable("portable", portable);
+            writer.writePortableArray("portables", portables);
+        }
+
+        @Override
+        public void readPortable(PortableReader reader) throws IOException {
+            portable = reader.readPortable("portable");
+            portables = reader.readPortableArray("portables");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            GroupPortable that = (GroupPortable) o;
+            return Arrays.equals(portables, that.portables);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(portables);
+        }
+
+        @Override
+        public String toString() {
+            String result = "";
+            if (portable != null) {
+                result += "portable=" + portable.toString() + ", ";
+            } else {
+                result += "portable=null, ";
+            }
+            if (portables != null) {
+                result += "portables=";
+                for (Portable portable : portables) {
+                    result += portable.toString() + ", ";
+                }
+            }
+            if (portable == null && portables == null) {
+                result += "portables=null";
+            }
+            if (portable == null && portables != null && portables.length == 0) {
+                result += "portables.length==0";
+            }
+            return "NestedGroupPortable{" + result + "}";
+        }
+    }
+
 
     static class TestPortableFactory implements PortableFactory {
         final static int ID = 1;
@@ -355,6 +469,8 @@ public class DefaultPortableReaderTestStructure {
                 return new PrimitivePortable();
             else if (GroupPortable.ID == classId)
                 return new GroupPortable();
+            else if (NestedGroupPortable.ID == classId)
+                return new NestedGroupPortable();
             return null;
         }
     }

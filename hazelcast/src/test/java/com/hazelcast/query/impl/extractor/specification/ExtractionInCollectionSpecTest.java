@@ -196,6 +196,13 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    public void emptyCollection_reduced_atLeaf() {
+        execute(Input.of(HUNT_NULL_TATTOOS),
+                Query.of(Predicates.equal("limbs_[0].fingers_[any]", null), mv),
+                Expected.of(HUNT_NULL_TATTOOS));
+    }
+
+    @Test
     public void comparable_notPrimitive() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[0].fingers_[0]", finger("thumb")), mv),
