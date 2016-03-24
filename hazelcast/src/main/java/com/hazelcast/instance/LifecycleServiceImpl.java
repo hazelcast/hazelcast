@@ -22,6 +22,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
+@PrivateApi
 public class LifecycleServiceImpl implements LifecycleService {
 
     private final HazelcastInstanceImpl instance;

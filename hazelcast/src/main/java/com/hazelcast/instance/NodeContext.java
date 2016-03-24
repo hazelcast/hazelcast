@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.nio.channels.ServerSocketChannel;
 
@@ -28,6 +29,7 @@ import java.nio.channels.ServerSocketChannel;
  * to run them faster and in-parallel, it's necessary to avoid network and some heavy-weight
  * objects creations. That's why most of the tests use a special purpose NodeContext.
  */
+@PrivateApi
 public interface NodeContext {
 
     NodeExtension createNodeExtension(Node node);

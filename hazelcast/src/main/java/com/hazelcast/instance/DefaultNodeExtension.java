@@ -42,6 +42,7 @@ import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ConstructorFunction;
@@ -54,6 +55,7 @@ import java.util.Map;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
+@PrivateApi
 public class DefaultNodeExtension implements NodeExtension {
 
     protected final Node node;

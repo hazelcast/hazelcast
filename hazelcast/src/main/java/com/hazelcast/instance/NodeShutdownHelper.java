@@ -17,10 +17,12 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Helper methods for node shutdown scenarios.
  */
+@PrivateApi
 public final class NodeShutdownHelper {
 
     private NodeShutdownHelper() {

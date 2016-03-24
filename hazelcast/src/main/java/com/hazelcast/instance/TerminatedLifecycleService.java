@@ -19,7 +19,9 @@ package com.hazelcast.instance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.spi.annotation.PrivateApi;
 
+@PrivateApi
 public final class TerminatedLifecycleService implements LifecycleService {
 
     @Override

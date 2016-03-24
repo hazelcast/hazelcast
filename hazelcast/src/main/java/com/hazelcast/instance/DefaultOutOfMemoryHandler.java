@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
@@ -27,6 +28,7 @@ import com.hazelcast.util.RuntimeMemoryInfoAccessor;
  * Default OutOfMemoryHandler implementation that tries to release local resources (threads, connections, memory)
  * immediately and disconnects members from the rest of the cluster.
 */
+@PrivateApi
 public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
 
     /*

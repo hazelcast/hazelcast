@@ -26,6 +26,7 @@ import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Map;
 
@@ -33,6 +34,7 @@ import java.util.Map;
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
  * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
  */
+@PrivateApi
 public interface NodeExtension {
 
     /**

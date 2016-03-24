@@ -55,6 +55,7 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
@@ -90,6 +91,7 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity"})
+@PrivateApi
 public class Node {
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;

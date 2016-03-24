@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -24,6 +25,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * A wrapper around the {@link java.lang.ThreadGroup} that provides some additional capabilities. It is a grouping of
  * all thread creational logic throughout the system. To access the actual ThreadGroup, call {@link #getInternalThreadGroup()}.
  */
+@PrivateApi
 public final class HazelcastThreadGroup {
 
     private final ILogger logger;
