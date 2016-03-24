@@ -59,7 +59,7 @@ public interface IPartitionService extends CoreService {
      * Returns the IPartition for a given partitionId.
      * If owner of the partition is not set yet, it will trigger partition assignment.
      * <p/>
-     * The IPartition for a given partitionId wil never change; so it can be cached safely.
+     * The IPartition for a given partitionId will never change, so it can be cached safely.
      *
      * @param partitionId the partitionId
      * @return the IPartition.
@@ -71,7 +71,7 @@ public interface IPartitionService extends CoreService {
      * If owner of the partition is not set yet and {@code triggerOwnerAssignment} is true,
      * it will trigger partition assignment.
      * <p/>
-     * The IPartition for a given partitionId wil never change; so it can be cached safely.
+     * The IPartition for a given partitionId will never change, so it can be cached safely.
      *
      * @param partitionId the partitionId
      * @param triggerOwnerAssignment flag to trigger partition assignment
@@ -158,9 +158,9 @@ public interface IPartitionService extends CoreService {
     boolean hasOnGoingMigrationLocal();
 
     /**
-     * Check if this node is the owner of a  partition
+     * Check if this node is the owner of a partition
      * @param partitionId
-     * @return true if it owns the partition. false if it doesn't or partition hasn't been assigned yet.
+     * @return true if it owns the partition. false if it doesn't or the partition hasn't been assigned yet.
      */
     boolean isPartitionOwner(int partitionId);
 

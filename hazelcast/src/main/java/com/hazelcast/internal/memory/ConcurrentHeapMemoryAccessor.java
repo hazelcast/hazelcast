@@ -27,7 +27,7 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
      *
      * @param base   the object where boolean value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the boolean value that was read
      */
     boolean getBooleanVolatile(Object base, long offset);
 
@@ -43,16 +43,16 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
     /**
      * Reads the byte value as volatile from given object by its offset.
      *
-     * @param base   the object where byte value will be read from
+     * @param base   the object where the byte value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the byte value that was read
      */
     byte getByteVolatile(Object base, long offset);
 
     /**
      * Writes the byte value as volatile to given object by its offset.
      *
-     * @param base   the object where byte value will be written to
+     * @param base   the object where the byte value will be written to
      * @param offset offset from object's base to the accessed location
      * @param x      the byte value to be written
      */
@@ -63,7 +63,7 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
      *
      * @param base   the object where char value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the char value that was read
      */
     char getCharVolatile(Object base, long offset);
 
@@ -81,7 +81,7 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
      *
      * @param base   the object where short value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the short value that ws read
      */
     short getShortVolatile(Object base, long offset);
 
@@ -99,7 +99,7 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
      *
      * @param base   the object where int value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the int value that was read
      */
     int getIntVolatile(Object base, long offset);
 
@@ -117,7 +117,7 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
      *
      * @param base   the object where float value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the float value that was read
      */
     float getFloatVolatile(Object base, long offset);
 
@@ -135,7 +135,7 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
      *
      * @param base   the object where long value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the long value that was read
      */
     long getLongVolatile(Object base, long offset);
 
@@ -153,7 +153,7 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
      *
      * @param base   the object where double value will be read from
      * @param offset offset from object's base to the accessed location
-     * @return the read value
+     * @return the double value that was read
      */
     double getDoubleVolatile(Object base, long offset);
 
@@ -185,9 +185,9 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
     void putObjectVolatile(Object base, long offset, Object x);
 
     /**
-     * Compares and swaps int value to specified value atomically
-     * based by given object with given offset
-     * if and only if its current value equals to specified expected value.
+     * Compares and swaps an int value to an expected value atomically
+     * based by given object with given offset,
+     * if and only if its current value is equal to the expected value.
      *
      * @param base     the object where int value will be written to
      * @param offset   offset from object's base to the accessed location
@@ -198,9 +198,9 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
     boolean compareAndSwapInt(Object base, long offset, int expected, int x);
 
     /**
-     * Compares and swaps long value to specified value atomically
+     * Compares and swaps a long value to an expected value atomically
      * based by given object with given offset
-     * if and only if its current value equals to specified expected value.
+     * if and only if its current value equals to the expected value.
      *
      * @param base     the object where long value will be written to
      * @param offset   offset from object's base to the accessed location
@@ -211,41 +211,41 @@ public interface ConcurrentHeapMemoryAccessor extends HeapMemoryAccessor {
     boolean compareAndSwapLong(Object base, long offset, long expected, long x);
 
     /**
-     * Compares and swaps referenced object to specified object atomically
+     * Compares and swaps referenced object to expected object atomically
      * based by given owner object at given offset
-     * if and only if its current object is the specified object.
+     * if and only if its current object is the expected object.
      *
      * @param base     the owner object where the referenced object will be written to
      * @param offset   offset from object's base to the accessed location
-     * @param expected the expected current referenced object to be set new referenced object
-     * @param x        the referenced object to be written
+     * @param expected the expected current referenced object to be set to new referenced object
+     * @param x        the new referenced object that will be written
      * @return <tt>true</tt> if CAS is successful, <tt>false</tt> otherwise
      */
     boolean compareAndSwapObject(Object base, long offset, Object expected, Object x);
 
     /**
-     * Puts given int value as ordered to CPU write buffer
-     * based by given object at given offset.
+     * Puts the given int value as ordered to the CPU write buffer
+     * based by the given object at the given offset.
      *
-     * @param base   the object where int value will be written to
+     * @param base   the object where the int value will be written to
      * @param offset offset from object's base to the accessed location
      * @param x      the int value to be written
      */
     void putOrderedInt(Object base, long offset, int x);
 
     /**
-     * Puts given long value as ordered to CPU write buffer
-     * based by given object at given offset.
+     * Puts the given long value as ordered to the CPU write buffer
+     * based by the given object at the given offset.
      *
-     * @param base   the object where long value will be written to
+     * @param base   the object where the long value will be written to
      * @param offset offset from object's base to the accessed location
      * @param x      the long value to be written
      */
     void putOrderedLong(Object base, long offset, long x);
 
     /**
-     * Puts given referenced object as ordered to CPU write buffer
-     * based by given owner object at given offset.
+     * Puts the given referenced object as ordered to the CPU write buffer
+     * based by the given owner object at the given offset.
      *
      * @param base   the owner object where the referenced object will be written to
      * @param offset offset from object's base to the accessed location

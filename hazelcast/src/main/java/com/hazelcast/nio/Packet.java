@@ -99,10 +99,10 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     /**
-     * Sets all flags in 1 go. The old flags will be completely overwritten by the new flags.
+     * Sets all flags at once. The old flags will be completely overwritten by the new flags.
      *
-     * The reason this method accepts an int instead of a short, is that unfortunately Java immediately converts to ints and
-     * it makes doing bit shifting logic since you need to down cast to a short all the time.*
+     * The reason this method accepts an int instead of a short is that Java immediately converts to ints,
+     * so you would have to do bit shifting logic to down cast to a short all the time.*
      *
      * @param flags the flags.
      * @return this (for fluent interface)

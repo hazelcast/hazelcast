@@ -23,12 +23,12 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * {@link ExecutorService} which can schedule a command to run after a given delay or to execute it periodically.
+ * {@link ExecutorService} can schedule a command to run after a given delay or execute periodically.
  *
  * The {@link #scheduleWithRepetition(Runnable, long, long, TimeUnit)} has similar semantic
  * to {@link java.util.concurrent.ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}. It
- * guarantees a task won't be executed by multiple threads concurrently. The difference is that this service will simply
- * skip a scheduled execution if another thread is still running the same task instead of postponing its execution.
+ * guarantees a task won't be executed by multiple threads concurrently. The difference is that this service will
+ * skip a scheduled execution if another thread is still running the same task, instead of postponing its execution.
  * To emphasize this difference the method is called <code>scheduleWithRepetition</code>
  * instead of <code>scheduleAtFixedRate</code>
  *
@@ -57,7 +57,7 @@ public interface TaskScheduler extends ExecutorService {
     /**
      * Creates and executes a periodic action that becomes enabled first
      * after the given initial delay, and subsequently with the given
-     * period; that is executions will commence after
+     * period. Executions will commence after
      * {@code initialDelay} then {@code initialDelay+period}, then
      * {@code initialDelay + 2 * period}, and so on.
      * If any execution of this task
@@ -73,7 +73,7 @@ public interface TaskScheduler extends ExecutorService {
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
      * @throws NullPointerException if command is null
-     * @throws IllegalArgumentException if period less than or equal to zero
+     * @throws IllegalArgumentException if period is less than or equal to zero
      */
     ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit);
 
