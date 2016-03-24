@@ -29,7 +29,6 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -39,14 +38,12 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
@@ -65,6 +62,7 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOp
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
@@ -240,11 +238,10 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         responseReceived = FALSE;
         op.setOperationResponseHandler(this);
 
-        OperationExecutor executor = operationService.operationExecutor;
         if (isAsync) {
-            executor.execute(op);
+            operationService.operationExecutor.execute(op);
         } else {
-            executor.runOnCallingThreadIfPossible(op);
+            operationService.operationExecutor.runOnCallingThreadIfPossible(op);
         }
     }
 
@@ -305,20 +302,14 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         ClusterState clusterState = clusterService.getClusterState();
         if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
-            notifyError(new IllegalStateException("Partitions can't be assigned since cluster-state: "
-                    + clusterState));
-            return;
-        }
-
-        if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            notifyError(new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState));
+        } else if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
             notifyError(new NoDataMemberInClusterException(
                     "Partitions can't be assigned since all nodes in the cluster are lite members"));
-            return;
+        } else {
+            notifyError(new WrongTargetException(nodeEngine.getThisAddress(), null, op.getPartitionId(),
+                    op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));
         }
-
-        notifyError(new WrongTargetException(
-                nodeEngine.getThisAddress(), null, op.getPartitionId(),
-                op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));
     }
 
     @Override
@@ -351,12 +342,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     void notifyError(Object error) {
         assert error != null;
 
-        Throwable cause;
-        if (error instanceof Throwable) {
-            cause = (Throwable) error;
-        } else {
-            cause = ((ErrorResponse) error).getCause();
-        }
+        Throwable cause = error instanceof Throwable
+                ? (Throwable) error
+                : ((ErrorResponse) error).getCause();
 
         switch (onException(cause)) {
             case THROW_EXCEPTION:
@@ -509,21 +497,15 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         if (future.interrupted) {
             future.complete(INTERRUPTED_RESPONSE);
-            return;
-        }
-
-        if (!future.complete(WAIT_RESPONSE)) {
-            logger.finest("Cannot retry " + toString() + ", because a different response is already set: "
-                    + future.response);
-            return;
-        }
-
-        ExecutionService ex = nodeEngine.getExecutionService();
-        // fast retry for the first few invocations
-        if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
-            operationService.asyncExecutor.execute(this);
+        } else if (!future.complete(WAIT_RESPONSE)) {
+            logger.finest("Cannot retry " + toString() + ", because a different response is already set: " + future.response);
         } else {
-            ex.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
+            if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+                // fast retry for the first few invocations
+                operationService.asyncExecutor.execute(this);
+            } else {
+                nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+            }
         }
     }
 
