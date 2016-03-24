@@ -447,12 +447,14 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         long maxCallTimeout = future.getMaxCallTimeout();
         long expirationTime = op.getInvocationTime() + maxCallTimeout;
 
+        long clusterTime = nodeEngine.getClusterService().getClusterClock().getClusterTime();
+
         boolean done = future.isDone();
         boolean hasResponse = pendingResponse != null;
         boolean hasWaitingThreads = future.getWaitingThreadsCount() > 0;
         boolean notExpired = maxCallTimeout == Long.MAX_VALUE
                 || expirationTime < 0
-                || expirationTime >= Clock.currentTimeMillis();
+                || expirationTime >= clusterTime;
 
         if (hasResponse || hasWaitingThreads || notExpired || done) {
             return false;
