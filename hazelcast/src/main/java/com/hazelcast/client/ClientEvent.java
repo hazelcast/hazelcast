@@ -18,12 +18,14 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.net.InetSocketAddress;
 
 /**
  * Event used for notification of client connection and disconnection
  */
+@PrivateApi
 public class ClientEvent implements Client {
 
     private final String uuid;

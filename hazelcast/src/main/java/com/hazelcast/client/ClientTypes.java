@@ -16,9 +16,12 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Constants class that contains the different types of clients.
  */
+@PrivateApi
 public final class ClientTypes {
 
     /**

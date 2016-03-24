@@ -16,9 +16,12 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Event type used for client connection and disconnect events
  */
+@PrivateApi
 public enum ClientEventType {
     /**
      * Client Connected Event
