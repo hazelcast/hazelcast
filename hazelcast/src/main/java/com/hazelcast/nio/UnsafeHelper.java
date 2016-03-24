@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.annotation.PrivateApi;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -53,6 +54,7 @@ import static com.hazelcast.util.QuickMath.normalize;
  * </p>
  */
 @Deprecated
+@PrivateApi
 public final class UnsafeHelper {
 
     /**

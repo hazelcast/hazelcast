@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.nio.ByteBuffer;
 
@@ -32,6 +33,7 @@ import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
  *
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
+@PrivateApi
 public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;

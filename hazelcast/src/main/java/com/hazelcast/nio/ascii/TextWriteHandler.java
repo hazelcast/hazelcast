@@ -19,11 +19,13 @@ package com.hazelcast.nio.ascii;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@PrivateApi
 public class TextWriteHandler implements WriteHandler<TextCommand> {
     private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);

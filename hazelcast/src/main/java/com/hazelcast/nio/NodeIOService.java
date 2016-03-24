@@ -36,6 +36,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
@@ -44,6 +45,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@PrivateApi
 public class NodeIOService implements IOService {
 
     private final Node node;

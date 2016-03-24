@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.io.IOException;
 import java.net.Socket;
 
@@ -23,6 +25,7 @@ import java.net.Socket;
  * Member Socket Interceptor can be registered via
  * see {@link com.hazelcast.config.SocketInterceptorConfig}
  */
+@PrivateApi
 public interface MemberSocketInterceptor extends SocketInterceptor {
 
     /**
