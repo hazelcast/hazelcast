@@ -14,7 +14,9 @@ import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
+
 import java.util.concurrent.TimeUnit;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,6 +30,34 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     @BeforeClass
     public static void initCluster() throws Exception {
         JetBaseTest.initCluster(3);
+    }
+
+    @Test
+    @Repeat(500)
+    public void simpleList2ListTest() throws Exception {
+        Application application = createApplication("simpleList2ListTest");
+
+        IList sourceList = SERVER.getList(randomName());
+        IList targetList = SERVER.getList(randomName());
+
+        try {
+            DAG dag = createDAG();
+
+            int CNT = 1;
+
+            for (int i = 0; i < CNT; i++) {
+                sourceList.add(i);
+            }
+
+            Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class, 1);
+            addVertices(dag, vertex);
+            vertex.addSourceList(sourceList.getName());
+            vertex.addSinkList(targetList.getName());
+            executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+            assertEquals(CNT, targetList.size());
+        } finally {
+            application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+        }
     }
 
     @Test

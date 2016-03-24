@@ -57,6 +57,7 @@ public class ShuffledTaskProcessorFactory extends DefaultTaskProcessorFactory {
                                             int taskID) {
         return new ShuffledActorTaskProcessor(
                 producers,
+                consumers,
                 processor,
                 containerContext,
                 processorContext,
