@@ -497,14 +497,16 @@ public class DefaultPortableReader implements PortableReader {
         final Portable[] portables = new Portable[positions.size()];
         for (int i = 0; i < portables.length; i++) {
             PortablePosition position = positions.get(i);
-            if (position.getIndex() >= 0) {
+            if (position.getIndex() >= 0 || position.getLen() == -1) {
                 // portable at the expression leaf IS located in an array
-                in.position(position.getStreamPosition());
-                portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
+                if(position.getLen() > 0) {
+                    in.position(position.getStreamPosition());
+                    portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
+                }
             } else {
                 // portable at the expression leaf NOT located in an array
-                in.position(position.getStreamPosition());
                 if (!position.isNull()) {
+                    in.position(position.getStreamPosition());
                     portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
                 }
             }
