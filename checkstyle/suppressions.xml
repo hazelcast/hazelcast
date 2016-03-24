@@ -171,6 +171,7 @@
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com/hazelcast/transaction/"/>
     <suppress checks="JavadocType" files="com/hazelcast/transaction/"/>
+    <suppress checks="MethodCount" files="com/hazelcast/transaction/impl/TransactionImpl"/>
 
     <!-- Security -->
     <suppress checks="JavadocMethod" files="com/hazelcast/security/"/>

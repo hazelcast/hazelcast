@@ -78,7 +78,7 @@ public interface MapOperationProvider {
     MapOperation createTxnDeleteOperation(String name, Data dataKey, long version);
 
     MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
-                                              boolean shouldLoad);
+                                              boolean shouldLoad, boolean blockReads);
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);
 

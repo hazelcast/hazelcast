@@ -40,6 +40,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -660,6 +661,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         @Override
         public String getOwnerUuid() {
             return tx.getOwnerUuid();
+        }
+
+        @Override
+        public TransactionType getTransactionType() {
+            return tx.getTransactionType();
         }
 
         @Override
