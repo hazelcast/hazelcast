@@ -153,17 +153,17 @@ public class MaxSizeChecker {
             return false;
         }
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
-        final long total = getTotalMemory();
-        return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
+        final double maxSize = maxSizeConfig.getSize();
+        final long maxMemory = getMaxMemory();
+        return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / maxMemory);
     }
 
     private boolean isEvictableFreeHeapPercentage(final MapContainer mapContainer) {
         final long currentFreeHeapSize = getAvailableMemory();
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final double freeHeapPercentage = getApproximateMaxSize(maxSizeConfig.getSize());
-        final long total = getTotalMemory();
-        return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / total);
+        final double freeHeapPercentage = maxSizeConfig.getSize();
+        final long maxMemory = getMaxMemory();
+        return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / maxMemory);
     }
 
     private long getTotalMemory() {
