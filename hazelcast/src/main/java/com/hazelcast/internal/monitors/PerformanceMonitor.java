@@ -49,7 +49,7 @@ public class PerformanceMonitor {
      * The default is false.
      */
     public static final HazelcastProperty ENABLED
-            = new HazelcastProperty("hazelcast.performance.monitoring.enabled", false);
+            = new HazelcastProperty("hazelcast.performance.monitor.enabled", false);
 
     /**
      * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
