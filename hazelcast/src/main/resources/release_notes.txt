@@ -77,6 +77,32 @@ a `SAXParse` exception is thrown. [5528]
 
 The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
 
+*3.6.2*
+
+The following are the fixed issues for 3.6.2 release.
+
+- In Hazelcast 3.6.1, the OSGi bundle install fails. <a href="https://github.com/hazelcast/hazelcast/issues/7772" target="_blank">[7772]</a>
+- Timeout happens at the `ClientMapBasicTest`. <a href="https://github.com/hazelcast/hazelcast/issues/7718" target="_blank">[7718]</a>
+- IMap does not send invalidations to the client's near caches after `putAll`/`loadAll` operations at member side. <a href="https://github.com/hazelcast/hazelcast/issues/7715" target="_blank">[7715]</a>
+- The test `ClientXAStressTest.testCommitConcurrently` fails due to an assertion error that reads as "the size of the map is not correct". <a href="https://github.com/hazelcast/hazelcast/issues/7709" target="_blank">[7709]</a>
+- The test `ClientTransactionalMapQuorumTest` fails since it timed out. <a href="https://github.com/hazelcast/hazelcast/issues/7693" target="_blank">[7693]</a>
+- Wildcards do not work with permissions. For example, when a queue permission is defined using wildcard, i.e. `<queue-permission name="secure.*" principal="admin">` and the queue `secure.orders` is created at the client, Hazelcast throws `AccessControlException` is created using that name- <a href="https://github.com/hazelcast/hazelcast/issues/7616" target="_blank">[7616]</a>
+- The FREE_HEAP_PERCENTAGE eviction policy does not work as documented because the `EvictionChecker` is incorrectly calculating available memory percentage in `checkFreeHeapPercentageEviction`. <a href="https://github.com/hazelcast/hazelcast/issues/7599" target="_blank">[7599]</a>
+- `DiscoveryStrategy`'s `destroy()` method is not called on shutdown. <a href="https://github.com/hazelcast/hazelcast/issues/7545" target="_blank">[7545]</a>
+- The method `MapStore.storeAll()` is never called when the objects are updated with a delay. <a href="https://github.com/hazelcast/hazelcast/issues/7464" target="_blank">[7464]</a>
+- WebFilter(3.6-RC1): Session attributes are lost or overwritten with old values when using `deferred-write` by reading them. <a href="https://github.com/hazelcast/hazelcast/issues/7291" target="_blank">[7291]</a>
+- The method `HazelcastHttpSession.getAttributeNames()` returns entries that were only read but not written. <a href="https://github.com/hazelcast/hazelcast/issues/7033" target="_blank">[7033]</a>
+- Hazelcast 3.5.3 conflicts with FUSE 6.1. When Hazelcast is integrated into a system with JBoss Fuse 6.1, there appeared some warnings in the logs. <a href="https://github.com/hazelcast/hazelcast/issues/6821" target="_blank">[6821]</a>
+- An exception is thrown on the server when attempting to deserialize `HIBERNATE4_TYPE_HIBERNATE_CACHE_ENTRY` value. <a href="https://github.com/hazelcast/hazelcast/issues/6683" target="_blank">[6683]</a>
+- The test `IOBalancerMemoryLeakTest.testMemoryLeak` fails due to a socket exception that reads as "unexpected end of file from server".  <a href="https://github.com/hazelcast/hazelcast/issues/6496" target="_blank">[6496]</a>
+
+
+The following are the enhancement issues fixed for 3.6.2 release.
+
+- Hazelcast Docker images are big in size; it would be better to clean them up and reduce their sizes. <a href="https://github.com/hazelcast/hazelcast/issues/7553" target="_blank">[7553]</a>
+- It would be better to provide an `enterprise-javadoc.jar` in the Hazelcast Enterprise bundle. This way IDEs can auto-import the Javadocs for the Enterprise APIs and provide context sensitive completion/help within the IDE. <a href="https://github.com/hazelcast/hazelcast/issues/7245" target="_blank">[7245]</a>
+- Management Center WAN Replication metrics take a long time to stabilize. The responsiveness of the Outbound records/sec. metric should be improved. It currently seems to under-report WAN replication performance for 10s of seconds before reaching the same figure as the client side reported metrics.<a href="https://github.com/hazelcast/hazelcast/issues/7244" target="_blank">[7244]</a>
+
 *3.6.1 Fixes*
 
 This section lists the fixed issues for 3.6.1 release.
