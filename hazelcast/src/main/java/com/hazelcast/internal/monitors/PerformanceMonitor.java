@@ -21,7 +21,6 @@ import com.hazelcast.internal.properties.HazelcastProperties;
 import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
@@ -82,7 +81,7 @@ public class PerformanceMonitor {
             = new HazelcastProperty("hazelcast.performance.monitor.human.friendly.format", true);
 
     final boolean singleLine;
-    final com.hazelcast.internal.properties.HazelcastProperties properties;
+    final HazelcastProperties properties;
     PerformanceLog performanceLog;
     final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
             new PerformanceMonitorPlugin[0]
@@ -92,7 +91,7 @@ public class PerformanceMonitor {
     final String fileName;
 
     private final boolean enabled;
-    private ScheduledExecutorService scheduler;
+    private ScheduledThreadPoolExecutor scheduler;
     private final HazelcastThreadGroup hzThreadGroup;
 
 
@@ -187,6 +186,7 @@ public class PerformanceMonitor {
 
         this.performanceLog = new PerformanceLog(this);
         this.scheduler = new ScheduledThreadPoolExecutor(1, new PerformanceMonitorThreadFactory());
+        scheduler.setMaximumPoolSize(1);
 
         logger.info("PerformanceMonitor started");
     }
