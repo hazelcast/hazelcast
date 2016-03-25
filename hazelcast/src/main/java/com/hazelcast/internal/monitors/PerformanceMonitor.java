@@ -82,7 +82,7 @@ public class PerformanceMonitor {
             = new HazelcastProperty("hazelcast.performance.monitor.human.friendly.format", true);
 
     final boolean singleLine;
-    final com.hazelcast.internal.properties.HazelcastProperties properties;
+    final HazelcastProperties properties;
     PerformanceLog performanceLog;
     final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
             new PerformanceMonitorPlugin[0]
