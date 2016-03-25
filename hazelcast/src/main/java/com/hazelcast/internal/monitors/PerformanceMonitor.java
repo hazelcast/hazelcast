@@ -95,7 +95,6 @@ public class PerformanceMonitor {
     private ScheduledExecutorService scheduler;
     private final HazelcastThreadGroup hzThreadGroup;
 
-
     public PerformanceMonitor(
             String fileName,
             ILogger logger,
@@ -211,7 +210,12 @@ public class PerformanceMonitor {
 
         @Override
         public void run() {
-            performanceLog.render(plugin);
+            try {
+                performanceLog.render(plugin);
+            } catch (Throwable t) {
+                // we need to catch any exception; otherwise the task is going to be removed by the scheduler.
+                logger.severe(t);
+            }
         }
     }
 
