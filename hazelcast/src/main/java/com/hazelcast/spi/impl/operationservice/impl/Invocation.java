@@ -110,7 +110,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     final ILogger logger;
     final int tryCount;
     final long tryPauseMillis;
-    final boolean deserialize;
     final long callTimeout;
 
     boolean remote;
@@ -129,8 +128,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.deserialize = deserialize;
-        this.future = new InvocationFuture(operationService, this);
+        this.future = new InvocationFuture(operationService, this, deserialize);
     }
 
     abstract ExceptionAction onException(Throwable t);
