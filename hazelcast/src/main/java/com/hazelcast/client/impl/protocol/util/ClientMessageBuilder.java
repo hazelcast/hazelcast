@@ -42,7 +42,7 @@ public class ClientMessageBuilder {
     public int onData(final ByteBuffer buffer) {
         int messagesCreated = 0;
         while (buffer.hasRemaining()) {
-            final boolean complete = message.wrap(buffer);
+            final boolean complete = message.readFrom(buffer);
             if (!complete) {
                 return messagesCreated;
             }

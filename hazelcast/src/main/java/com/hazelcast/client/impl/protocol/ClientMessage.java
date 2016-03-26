@@ -362,7 +362,7 @@ public class ClientMessage
         return done;
     }
 
-    public boolean wrap(ByteBuffer src) {
+    public boolean readFrom(ByteBuffer src) {
         int frameLength = 0;
         if (this.buffer == null || this.buffer.isKaput()) {
             //init internal buffer
