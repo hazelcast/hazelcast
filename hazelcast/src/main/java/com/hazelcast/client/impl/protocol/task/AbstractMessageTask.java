@@ -57,6 +57,7 @@ public abstract class AbstractMessageTask<P>
     protected final ILogger logger;
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
+    private final int partitionId;
     protected P parameters;
     protected ClientMessage clientMessage;
     private final Node node;
@@ -72,6 +73,7 @@ public abstract class AbstractMessageTask<P>
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
+        this.partitionId = clientMessage.getPartitionId();
     }
 
     @SuppressWarnings("unchecked")
@@ -89,7 +91,7 @@ public abstract class AbstractMessageTask<P>
 
     @Override
     public int getPartitionId() {
-        return clientMessage.getPartitionId();
+        return partitionId;
     }
 
     @Override
