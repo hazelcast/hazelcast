@@ -80,7 +80,7 @@ public class IsStillRunningService {
 
             Invocation inv = new TargetInvocation(
                     invocation.operationService, isStillExecuting,
-                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, true);
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT);
             Future f = inv.invoke();
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
             executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
@@ -265,7 +265,7 @@ public class IsStillRunningService {
         public void run() {
             Invocation inv = new TargetInvocation(
                     invocation.operationService, isStillRunningOperation,
-                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, true);
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT);
 
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
             inv.invoke();

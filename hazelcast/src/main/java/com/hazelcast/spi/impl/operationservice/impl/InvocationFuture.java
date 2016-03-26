@@ -33,6 +33,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.TIMEOUT_RESPONSE;
@@ -60,15 +61,22 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     volatile Object response;
     final Invocation invocation;
 
+    private final OperationServiceImpl operationService;
     // Contains the number of threads waiting for a result from this future.
     // is updated through the WAITER_COUNT.
     private volatile int waiterCount;
-    private final OperationServiceImpl operationService;
     private volatile ExecutionCallbackNode<E> callbackHead;
+    private volatile boolean deserialize = DEFAULT_DESERIALIZE_RESULT;
 
     InvocationFuture(OperationServiceImpl operationService, Invocation invocation) {
         this.invocation = invocation;
         this.operationService = operationService;
+    }
+
+    @Override
+    public InternalCompletableFuture setDeserialize(boolean deserialize) {
+        this.deserialize = deserialize;
+        return this;
     }
 
     static long decrementTimeout(long timeout, long diff) {
@@ -357,7 +365,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         Object response = unresolvedResponse;
-        if (invocation.deserialize && response instanceof Data) {
+        if (deserialize && response instanceof Data) {
             response = invocation.nodeEngine.toObject(response);
             if (response == null) {
                 return null;
