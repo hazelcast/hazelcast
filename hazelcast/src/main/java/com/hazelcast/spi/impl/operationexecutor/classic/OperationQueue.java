@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 /**
- * The ScheduleQueue is a kind of priority queue where 'tasks' are queued for scheduling.
+ * The OperationQueue is the queue used to schedule operations/tasks on an OperationThread.
  * <p/>
  * Implementations must support Multiple-Producer Multiple-Consumers scenario as multiple
  * {@link GenericOperationThread} share a single queue.
@@ -28,7 +28,7 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
  * The ordering between normal tasks will always be FIFO. And the same goes for the ordering between
  * priority tasks, but there is no ordering guarantee between priority and normal tasks.
  */
-public interface ScheduleQueue {
+public interface OperationQueue {
 
     /**
      * Adds an task with normal priority to this queue.

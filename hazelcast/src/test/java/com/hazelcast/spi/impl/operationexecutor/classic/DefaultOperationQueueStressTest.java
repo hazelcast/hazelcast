@@ -15,9 +15,9 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class DefaultScheduleQueueStressTest extends HazelcastTestSupport {
+public class DefaultOperationQueueStressTest extends HazelcastTestSupport {
 
-    private final DefaultScheduleQueue queue = new DefaultScheduleQueue();
+    private final DefaultOperationQueue queue = new DefaultOperationQueue();
     private final AtomicBoolean stop = new AtomicBoolean();
     private final static Object POISON_PILL = new Object();
 

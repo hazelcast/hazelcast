@@ -20,9 +20,9 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DefaultScheduleQueueTest extends HazelcastTestSupport {
+public class DefaultOperationQueueTest extends HazelcastTestSupport {
 
-    private DefaultScheduleQueue queue;
+    private DefaultOperationQueue queue;
     private LinkedBlockingQueue normalQueue;
     private ConcurrentLinkedQueue priorityQueue;
 
@@ -30,7 +30,7 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
     public void setup() {
         normalQueue = new LinkedBlockingQueue();
         priorityQueue = new ConcurrentLinkedQueue();
-        queue = new DefaultScheduleQueue(normalQueue, priorityQueue);
+        queue = new DefaultOperationQueue(normalQueue, priorityQueue);
     }
 
     // ================== add =====================
@@ -46,7 +46,7 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
         queue.addUrgent(task);
 
         assertContent(priorityQueue, task);
-        assertContent(normalQueue, DefaultScheduleQueue.TRIGGER_TASK);
+        assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
         assertEquals(1, queue.prioritySize());
         assertEquals(1, queue.normalSize());
         assertEquals(2, queue.size());
@@ -92,7 +92,7 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
         assertSame(normalTask3, queue.take());
 
         assertEmpty(priorityQueue);
-        assertContent(normalQueue, DefaultScheduleQueue.TRIGGER_TASK);
+        assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
     }
 
 
