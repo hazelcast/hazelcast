@@ -31,10 +31,10 @@ public final class PartitionOperationThread extends OperationThread {
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public PartitionOperationThread(String name, int threadId,
-                                    ScheduleQueue scheduleQueue, ILogger logger,
+                                    OperationQueue queue, ILogger logger,
                                     HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
                                     OperationRunner[] partitionOperationRunners) {
-        super(name, threadId, scheduleQueue, logger, threadGroup, nodeExtension);
+        super(name, threadId, queue, logger, threadGroup, nodeExtension);
         this.partitionOperationRunners = partitionOperationRunners;
     }
 

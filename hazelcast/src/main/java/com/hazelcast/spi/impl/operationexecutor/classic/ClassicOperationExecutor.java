@@ -68,7 +68,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final PartitionOperationThread[] partitionOperationThreads;
     private final OperationRunner[] partitionOperationRunners;
 
-    private final ScheduleQueue genericScheduleQueue;
+    private final OperationQueue genericOperationQueue;
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
     private final GenericOperationThread[] genericOperationThreads;
@@ -92,7 +92,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         this.threadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
-        this.genericScheduleQueue = new DefaultScheduleQueue();
+        this.genericOperationQueue = new DefaultOperationQueue();
 
         this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
 
@@ -149,9 +149,9 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
-            ScheduleQueue scheduleQueue = new DefaultScheduleQueue();
+            OperationQueue operationQueue = new DefaultOperationQueue();
 
-            PartitionOperationThread operationThread = new PartitionOperationThread(threadName, threadId, scheduleQueue, logger,
+            PartitionOperationThread operationThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     threadGroup, nodeExtension, partitionOperationRunners);
 
             threads[threadId] = operationThread;
@@ -180,7 +180,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             OperationRunner operationRunner = genericOperationRunners[threadId];
 
             GenericOperationThread operationThread = new GenericOperationThread(
-                    threadName, threadId, genericScheduleQueue,
+                    threadName, threadId, genericOperationQueue,
                     logger, threadGroup, nodeExtension, operationRunner);
 
             threads[threadId] = operationThread;
@@ -264,7 +264,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
 
         PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
-        OperationRunner runner = partitionThread.getCurrentOperationRunner();
+        OperationRunner runner = partitionThread.getCurrentRunner();
         if (runner != null) {
             // non null runner means it's a nested call
             // in this case partitionId of both inner and outer operations have to match
@@ -295,10 +295,10 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         int size = 0;
 
         for (PartitionOperationThread t : partitionOperationThreads) {
-            size += t.scheduleQueue.normalSize();
+            size += t.queue.normalSize();
         }
 
-        size += genericScheduleQueue.normalSize();
+        size += genericOperationQueue.normalSize();
 
         return size;
     }
@@ -308,10 +308,10 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         int size = 0;
 
         for (PartitionOperationThread t : partitionOperationThreads) {
-            size += t.scheduleQueue.prioritySize();
+            size += t.queue.prioritySize();
         }
 
-        size += genericScheduleQueue.prioritySize();
+        size += genericOperationQueue.prioritySize();
         return size;
     }
 
@@ -353,7 +353,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         checkNotNull(task, "task can't be null");
 
         for (OperationThread partitionOperationThread : partitionOperationThreads) {
-            partitionOperationThread.scheduleQueue.addUrgent(task);
+            partitionOperationThread.queue.addUrgent(task);
         }
     }
 
@@ -411,23 +411,23 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         // for that thread. There won't be any partition-conflict since generic operations are allowed to be executed by
         // a partition-specific operation-runner.
         OperationThread operationThread = (OperationThread) thread;
-        return operationThread.getCurrentOperationRunner();
+        return operationThread.getCurrentRunner();
     }
 
     private void execute(Object task, int partitionId, boolean priority) {
-        ScheduleQueue scheduleQueue;
+        OperationQueue operationQueue;
 
         if (partitionId < 0) {
-            scheduleQueue = genericScheduleQueue;
+            operationQueue = genericOperationQueue;
         } else {
             OperationThread partitionOperationThread = partitionOperationThreads[toPartitionThreadIndex(partitionId)];
-            scheduleQueue = partitionOperationThread.scheduleQueue;
+            operationQueue = partitionOperationThread.queue;
         }
 
         if (priority) {
-            scheduleQueue.addUrgent(task);
+            operationQueue.addUrgent(task);
         } else {
-            scheduleQueue.add(task);
+            operationQueue.add(task);
         }
     }
 

@@ -55,10 +55,10 @@ public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test
     public void priorityPendingCount_returnScheduleQueuePrioritySize() {
-        ScheduleQueue mockScheduleQueue = mock(ScheduleQueue.class);
-        when(mockScheduleQueue.prioritySize()).thenReturn(Integer.MAX_VALUE);
+        OperationQueue mockOperationQueue = mock(OperationQueue.class);
+        when(mockOperationQueue.prioritySize()).thenReturn(Integer.MAX_VALUE);
 
-        PartitionOperationThread operationThread = createNewOperationThread(mockScheduleQueue);
+        PartitionOperationThread operationThread = createNewOperationThread(mockOperationQueue);
 
         int prioritySize = operationThread.priorityPendingCount();
         assertEquals(Integer.MAX_VALUE, prioritySize);
@@ -66,10 +66,10 @@ public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test
     public void normalPendingCount_returnScheduleQueueNormalSize() {
-        ScheduleQueue mockScheduleQueue = mock(ScheduleQueue.class);
-        when(mockScheduleQueue.normalSize()).thenReturn(Integer.MAX_VALUE);
+        OperationQueue mockOperationQueue = mock(OperationQueue.class);
+        when(mockOperationQueue.normalSize()).thenReturn(Integer.MAX_VALUE);
 
-        PartitionOperationThread operationThread = createNewOperationThread(mockScheduleQueue);
+        PartitionOperationThread operationThread = createNewOperationThread(mockOperationQueue);
 
         int normalSize = operationThread.normalPendingCount();
         assertEquals(Integer.MAX_VALUE, normalSize);
@@ -140,10 +140,10 @@ public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
         });
     }
 
-    private PartitionOperationThread createNewOperationThread(ScheduleQueue mockScheduleQueue) {
+    private PartitionOperationThread createNewOperationThread(OperationQueue mockOperationQueue) {
         ILogger mockLogger = mock(ILogger.class);
         OperationRunner[] runners = new OperationRunner[0];
-        PartitionOperationThread thread = new PartitionOperationThread("threadName", 0, mockScheduleQueue, mockLogger, threadGroup, nodeExtension, runners);
+        PartitionOperationThread thread = new PartitionOperationThread("threadName", 0, mockOperationQueue, mockLogger, threadGroup, nodeExtension, runners);
 
         return thread;
     }
