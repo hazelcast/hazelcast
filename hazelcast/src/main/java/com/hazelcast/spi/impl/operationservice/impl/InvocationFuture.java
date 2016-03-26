@@ -60,15 +60,22 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     volatile Object response;
     final Invocation invocation;
 
+    private final OperationServiceImpl operationService;
     // Contains the number of threads waiting for a result from this future.
     // is updated through the WAITER_COUNT.
     private volatile int waiterCount;
-    private final OperationServiceImpl operationService;
     private volatile ExecutionCallbackNode<E> callbackHead;
+    private volatile boolean deserialize = true;
 
     InvocationFuture(OperationServiceImpl operationService, Invocation invocation) {
         this.invocation = invocation;
         this.operationService = operationService;
+    }
+
+    @Override
+    public InternalCompletableFuture setDeserialize(boolean deserialize) {
+        this.deserialize = deserialize;
+        return this;
     }
 
     static long decrementTimeout(long timeout, long diff) {
@@ -357,7 +364,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         Object response = unresolvedResponse;
-        if (invocation.deserialize && response instanceof Data) {
+        if (deserialize && response instanceof Data) {
             response = invocation.nodeEngine.toObject(response);
             if (response == null) {
                 return null;
