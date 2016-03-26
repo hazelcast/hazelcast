@@ -43,7 +43,12 @@ import java.util.logging.Level;
 public abstract class AbstractMessageTask<P>
         implements MessageTask, SecureRequest {
 
-    protected final ClientMessage clientMessage;
+    private static final ThreadLocal<ClientMessage> MESSAGE_THREAD_LOCAL = new ThreadLocal<ClientMessage>() {
+        @Override
+        protected ClientMessage initialValue() {
+            return ClientMessage.create();
+        }
+    };
 
     protected final Connection connection;
     protected final ClientEndpoint endpoint;
@@ -53,11 +58,13 @@ public abstract class AbstractMessageTask<P>
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
     protected P parameters;
-
+    protected ClientMessage clientMessage;
+    private final int partitionId;
     private final Node node;
+    private final byte[] bytes;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        this.clientMessage = clientMessage;
+        this.bytes = clientMessage.takeByteArray();
         this.logger = node.getLogger(getClass());
         this.node = node;
         this.nodeEngine = node.nodeEngine;
@@ -66,6 +73,7 @@ public abstract class AbstractMessageTask<P>
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
+        this.partitionId = clientMessage.getPartitionId();
     }
 
     @SuppressWarnings("unchecked")
@@ -83,11 +91,14 @@ public abstract class AbstractMessageTask<P>
 
     @Override
     public int getPartitionId() {
-        return clientMessage.getPartitionId();
+        return partitionId;
     }
 
     @Override
     public void run() {
+        clientMessage = MESSAGE_THREAD_LOCAL.get();
+        clientMessage.wrap(bytes);
+
         try {
             if (endpoint == null) {
                 handleMissingEndpoint();

@@ -50,6 +50,21 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
     }
 
     @Override
+    public boolean isKaput() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void init(int size) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public byte[] takeContent() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void wrap(final byte[] buffer) {
         addressOffset = ARRAY_BASE_OFFSET;
         capacity = buffer.length;
