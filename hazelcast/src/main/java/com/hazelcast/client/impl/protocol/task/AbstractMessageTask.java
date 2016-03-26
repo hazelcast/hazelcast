@@ -57,9 +57,9 @@ public abstract class AbstractMessageTask<P>
     protected final ILogger logger;
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
-    private final int partitionId;
     protected P parameters;
     protected ClientMessage clientMessage;
+    private final int partitionId;
     private final Node node;
     private final byte[] bytes;
 
