@@ -27,6 +27,18 @@ import com.hazelcast.core.ICompletableFuture;
 public interface InternalCompletableFuture<E> extends ICompletableFuture<E> {
 
     /**
+     * Sets of the result needs to be deserialized.
+     *
+     * This call is thread-safe; but it needs to be made before any get/join/andThen calls are made.
+     *
+     * This method should be called before a call to join.
+     *
+     * @param deserialize true if deserialized, false otherwise.
+     * @return the instance
+     */
+    InternalCompletableFuture setDeserialize(boolean deserialize);
+
+    /**
      * Waits for this future to complete.
      *
      * @return the result.

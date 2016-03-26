@@ -30,9 +30,8 @@ public final class TargetInvocation extends Invocation {
     private final Address target;
 
     public TargetInvocation(OperationServiceImpl operationService, Operation op,
-                            Address target, int tryCount, long tryPauseMillis, long callTimeout,
-                            boolean resultDeserialized) {
-        super(operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+                            Address target, int tryCount, long tryPauseMillis, long callTimeout) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeout);
         this.target = target;
     }
 
