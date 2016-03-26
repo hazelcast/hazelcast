@@ -42,7 +42,7 @@ public class ClientMessageBuilder {
     public int onData(final ByteBuffer buffer) {
         int messagesCreated = 0;
         while (buffer.hasRemaining()) {
-            final boolean complete = message.readFrom(buffer);
+            final boolean complete = message.wrap(buffer);
             if (!complete) {
                 return messagesCreated;
             }
@@ -51,7 +51,8 @@ public class ClientMessageBuilder {
             if (message.isFlagSet(BEGIN_AND_END_FLAGS)) {
                 //HANDLE-MESSAGE
                 handleMessage(message);
-                message = ClientMessage.create();
+                //we don't need to create a new message, it is up to the caller to extract the content
+                message.reset();
                 messagesCreated++;
                 continue;
             }
@@ -80,7 +81,7 @@ public class ClientMessageBuilder {
                 }
             }
 
-            message = ClientMessage.create();
+            message.reset();
             messagesCreated++;
         }
 

@@ -28,6 +28,8 @@ public interface ClientProtocolBuffer {
      */
     void wrap(byte[] buffer);
 
+    boolean isKaput();
+
     /**
      * Get the underlying byte[] if one exists.
      *
@@ -171,4 +173,8 @@ public interface ClientProtocolBuffer {
      * @throws java.lang.IllegalArgumentException if the encoded bytes are greater than maxEncodedSize.
      */
     int putStringUtf8(int index, String value, int maxEncodedSize);
+
+    void init(int size);
+
+    byte[] takeContent();
 }

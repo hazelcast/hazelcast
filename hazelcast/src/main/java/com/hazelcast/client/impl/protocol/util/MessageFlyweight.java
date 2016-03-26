@@ -59,6 +59,13 @@ public class MessageFlyweight {
         return this;
     }
 
+    public MessageFlyweight wrap(int size, int offset) {
+        buffer.init(size);
+        this.offset = offset;
+        this.index = 0;
+        return this;
+    }
+
     public int index() {
         return index;
     }

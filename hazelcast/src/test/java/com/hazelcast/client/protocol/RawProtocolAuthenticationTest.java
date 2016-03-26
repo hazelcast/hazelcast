@@ -100,7 +100,7 @@ public class RawProtocolAuthenticationTest {
                 throw new EOFException();
             }
             socketBuffer.flip();
-            clientMessage.readFrom(socketBuffer);
+            clientMessage.wrap(socketBuffer);
             if (socketBuffer.hasRemaining()) {
                 socketBuffer.compact();
             } else {
@@ -147,7 +147,7 @@ public class RawProtocolAuthenticationTest {
                 throw new EOFException();
             }
             socketBuffer.flip();
-            clientMessage.readFrom(socketBuffer);
+            clientMessage.wrap(socketBuffer);
             if (socketBuffer.hasRemaining()) {
                 socketBuffer.compact();
             } else {
@@ -194,7 +194,7 @@ public class RawProtocolAuthenticationTest {
                 throw new EOFException();
             }
             socketBuffer.flip();
-            clientMessage.readFrom(socketBuffer);
+            clientMessage.wrap(socketBuffer);
             if (socketBuffer.hasRemaining()) {
                 socketBuffer.compact();
             } else {
@@ -241,7 +241,7 @@ public class RawProtocolAuthenticationTest {
                 throw new EOFException();
             }
             socketBuffer.flip();
-            clientMessage.readFrom(socketBuffer);
+            clientMessage.wrap(socketBuffer);
             if (socketBuffer.hasRemaining()) {
                 socketBuffer.compact();
             } else {

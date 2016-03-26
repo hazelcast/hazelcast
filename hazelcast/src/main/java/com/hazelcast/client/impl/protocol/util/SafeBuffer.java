@@ -28,10 +28,29 @@ import java.nio.ByteOrder;
  */
 public class SafeBuffer implements ClientProtocolBuffer {
 
+    private static final byte[] EMPTY = new byte[0];
+
     private ByteBuffer byteBuffer;
 
     public SafeBuffer(byte[] buffer) {
         wrap(buffer);
+    }
+
+    @Override
+    public boolean isKaput() {
+        return byteBuffer.array() == EMPTY;
+    }
+
+    @Override
+    public byte[] takeContent() {
+        byte[] bytes = byteBuffer.array();
+        byteBuffer.wrap(EMPTY);
+        return bytes;
+    }
+
+    @Override
+    public void init(int size) {
+        byteBuffer.wrap(new byte[size]);
     }
 
     @Override

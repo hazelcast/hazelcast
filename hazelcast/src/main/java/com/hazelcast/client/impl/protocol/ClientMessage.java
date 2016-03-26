@@ -362,9 +362,9 @@ public class ClientMessage
         return done;
     }
 
-    public boolean readFrom(ByteBuffer src) {
+    public boolean wrap(ByteBuffer src) {
         int frameLength = 0;
-        if (this.buffer == null) {
+        if (this.buffer == null || this.buffer.isKaput()) {
             //init internal buffer
             final int remaining = src.remaining();
             if (remaining < Bits.INT_SIZE_IN_BYTES) {
@@ -375,15 +375,33 @@ public class ClientMessage
             if (frameLength < HEADER_SIZE) {
                 throw new IllegalArgumentException("Client message frame length cannot be smaller than header size.");
             }
-            if (USE_UNSAFE) {
-                wrap(new UnsafeBuffer(new byte[frameLength]), 0);
+
+            if (this.buffer == null) {
+                if (USE_UNSAFE) {
+                    wrap(new UnsafeBuffer(new byte[frameLength]), 0);
+                } else {
+                    wrap(new SafeBuffer(new byte[frameLength]), 0);
+                }
             } else {
-                wrap(new SafeBuffer(new byte[frameLength]), 0);
+                buffer.init(frameLength);
             }
         }
         frameLength = frameLength > 0 ? frameLength : getFrameLength();
         accumulate(src, frameLength - index());
         return isComplete();
+    }
+
+    public byte[] takeByteArray() {
+        return buffer.takeContent();
+    }
+
+    public void wrap(byte[] bytes) {
+        buffer.wrap(bytes);
+    }
+
+    public void reset() {
+        writeOffset = 0;
+        isRetryable = false;
     }
 
     private int accumulate(ByteBuffer byteBuffer, int length) {

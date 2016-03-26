@@ -41,7 +41,7 @@ public class ClientMessageAccumulatorTest {
         ClientMessage accumulator = ClientMessage.create();
         final ByteBuffer inBuffer = ByteBuffer.wrap(BYTE_DATA);
         inBuffer.position(OFFSET);
-        accumulator.readFrom(inBuffer);
+        accumulator.wrap(inBuffer);
 
         final ByteBuffer byteBuffer = accumulatedByteBuffer(accumulator.buffer(), accumulator.index());
         assertEquals(0, byteBuffer.position());
@@ -58,7 +58,7 @@ public class ClientMessageAccumulatorTest {
         ClientMessage accumulator = ClientMessage.create();
         final byte[] array = new byte[]{1, 2, 3};
         final ByteBuffer inBuffer = ByteBuffer.wrap(array);
-        assertFalse(accumulator.readFrom(inBuffer));
+        assertFalse(accumulator.wrap(inBuffer));
         assertFalse(accumulator.isComplete());
     }
 
