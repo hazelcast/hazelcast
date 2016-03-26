@@ -74,7 +74,9 @@ public class InvocationMonitor {
         this.monitorThread = new InvocationMonitorThread(hzThreadGroup);
 
         metricsRegistry.scanAndRegister(this, "operation.invocations");
+    }
 
+    public void start() {
         monitorThread.start();
     }
 

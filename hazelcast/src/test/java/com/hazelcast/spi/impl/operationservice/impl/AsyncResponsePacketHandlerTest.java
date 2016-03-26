@@ -38,6 +38,7 @@ public class AsyncResponsePacketHandlerTest extends HazelcastTestSupport {
         HazelcastThreadGroup threadGroup = new HazelcastThreadGroup("test", logger, getClass().getClassLoader());
         responsePacketHandler = mock(PacketHandler.class);
         asyncHandler = new AsyncResponsePacketHandler(threadGroup, logger, responsePacketHandler);
+        asyncHandler.start();
         serializationService = new DefaultSerializationServiceBuilder().build();
     }
 

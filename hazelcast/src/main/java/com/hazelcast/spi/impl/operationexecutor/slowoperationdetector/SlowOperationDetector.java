@@ -67,6 +67,7 @@ public final class SlowOperationDetector {
     private final CurrentOperationData[] partitionCurrentOperationData;
 
     private final DetectorThread detectorThread;
+    private final boolean enabled;
 
     private boolean isFirstLog = true;
 
@@ -89,8 +90,8 @@ public final class SlowOperationDetector {
 
         this.genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
         this.partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
-
-        this.detectorThread = initDetectorThread(hazelcastThreadGroup, groupProperties);
+        this.enabled = groupProperties.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED);
+        this.detectorThread = newDetectorThread(hazelcastThreadGroup);
     }
 
     public List<SlowOperationDTO> getSlowOperationDTOs() {
@@ -99,6 +100,14 @@ public final class SlowOperationDetector {
             slowOperationDTOs.add(slowOperationLog.createDTO());
         }
         return slowOperationDTOs;
+    }
+
+    public void start() {
+        if (enabled) {
+            detectorThread.start();
+        } else {
+            logger.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
+        }
     }
 
     public void shutdown() {
@@ -114,14 +123,8 @@ public final class SlowOperationDetector {
         return currentOperationDataArray;
     }
 
-    private DetectorThread initDetectorThread(HazelcastThreadGroup hazelcastThreadGroup,
-                                              GroupProperties groupProperties) {
+    private DetectorThread newDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
         DetectorThread thread = new DetectorThread(hazelcastThreadGroup);
-        if (groupProperties.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED)) {
-            thread.start();
-        } else {
-            logger.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
-        }
         return thread;
     }
 
