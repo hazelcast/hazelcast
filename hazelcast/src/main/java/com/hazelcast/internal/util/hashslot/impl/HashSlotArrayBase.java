@@ -36,7 +36,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     public static final int HEADER_SIZE = 0x18;
     public static final int CAPACITY_OFFSET = -0x8;
     public static final int SIZE_OFFSET = -0x10;
-    public static final int EXPAND_AT_OFFSET = -0x18;
+    public static final int EXPAND_THRESHOLD_OFFSET = -0x18;
 
     protected static final int VALUE_SIZE_GRANULARITY = 8;
     protected static final int KEY_1_OFFSET = 0;
@@ -158,9 +158,14 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         return mem.getLong(baseAddress + SIZE_OFFSET);
     }
 
-    @Override public long capacity() {
+    @Override public final long capacity() {
         assertValid();
         return mem.getLong(baseAddress + CAPACITY_OFFSET);
+    }
+
+    @Override public final long expansionThreshold() {
+        assertValid();
+        return mem.getLong(baseAddress + EXPAND_THRESHOLD_OFFSET);
     }
 
     @Override
@@ -177,9 +182,9 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
             return false;
         }
         resizeTo(minCapacity);
-        assert expandAt() >= size() : String.format(
+        assert expansionThreshold() >= size() : String.format(
                 "trimToSize() shrunk the capacity to %,d and expandAt to %,d, which is less than the current size %,d",
-                capacity(), expandAt(), size());
+                capacity(), expansionThreshold(), size());
         return true;
     }
 
@@ -215,7 +220,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     protected final long ensure0(long key1, long key2) {
         assertValid();
         final long size = size();
-        if (size == expandAt()) {
+        if (size == expansionThreshold()) {
             resizeTo(CapacityUtil.nextCapacity(capacity()));
         }
         long slot = hash(key1, key2) & mask();
@@ -344,15 +349,9 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         mem.putLong(baseAddress + CAPACITY_OFFSET, capacity);
     }
 
-    /** Resize the array when {@code size} hits this value. */
-    private long expandAt() {
+    private void setExpansionThreshold(long thresh) {
         assertValid();
-        return mem.getLong(baseAddress + EXPAND_AT_OFFSET);
-    }
-
-    private void setExpandAt(long expandAt) {
-        assertValid();
-        mem.putLong(baseAddress + EXPAND_AT_OFFSET, expandAt);
+        mem.putLong(baseAddress + EXPAND_THRESHOLD_OFFSET, thresh);
     }
 
     /** Bit mask used to compute the slot index. */
@@ -388,7 +387,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         baseAddress = malloc.allocate(HEADER_SIZE + newCapacity * slotLength) + HEADER_SIZE;
         setSize(size);
         setCapacity(newCapacity);
-        setExpandAt(maxSizeForCapacity(newCapacity, loadFactor));
+        setExpansionThreshold(maxSizeForCapacity(newCapacity, loadFactor));
         markAllUnassigned();
     }
 

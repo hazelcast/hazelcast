@@ -97,6 +97,9 @@ public interface HashSlotArray extends Disposable {
      */
     long capacity();
 
+    /** Array expansion and rehashing will be triggered when {@code size} reaches this value. */
+    long expansionThreshold();
+
     /**
      * After this method returns, all slots in the current hash slot array are unassigned.
      */
