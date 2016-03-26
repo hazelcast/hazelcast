@@ -281,7 +281,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         Address remoteAddress = getNode(remote).getThisAddress();
 
         TargetInvocation orgInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1, true);
+                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1);
         InvocationFuture future = orgInvocation.invoke();
         final CountDownLatch timeoutLatch = new CountDownLatch(1);
         future.andThen(new ExecutionCallback() {
@@ -303,7 +303,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         long orgCallId = orgInvocation.op.getCallId();
 
         TargetInvocation isStillExecutingInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1, true);
+                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1);
         InvocationFuture isStillExecutingFuture = isStillExecutingInvocation.invoke();
         isStillExecutingFuture.andThen(new IsStillRunningService.IsOperationStillRunningCallback(orgInvocation));
 
@@ -323,13 +323,13 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         Address remoteAddress = getNode(remote).getThisAddress();
 
         TargetInvocation orgInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1, true);
+                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1);
         InvocationFuture future = orgInvocation.invoke();
 
         long orgCallId = orgInvocation.op.getCallId();
 
         TargetInvocation isStillExecutingInvocation = new TargetInvocation(getOperationServiceImpl(local),
-                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1, true);
+                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1);
         InvocationFuture isStillExecutingFuture = isStillExecutingInvocation.invoke();
         isStillExecutingFuture.andThen(new IsStillRunningService.IsOperationStillRunningCallback(orgInvocation));
 

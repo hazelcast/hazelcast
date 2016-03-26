@@ -28,8 +28,8 @@ import com.hazelcast.spi.partition.IPartition;
 public final class PartitionInvocation extends Invocation {
 
     public PartitionInvocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
-                               long callTimeout, boolean resultDeserialized) {
-        super(operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+                               long callTimeout) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeout);
     }
 
     @Override

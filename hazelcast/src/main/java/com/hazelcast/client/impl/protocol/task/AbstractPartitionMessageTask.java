@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -55,14 +54,13 @@ public abstract class AbstractPartitionMessageTask<P>
     @Override
     public final void processMessage() {
         beforeProcess();
-        Operation op = prepareOperation();
-        op.setCallerUuid(endpoint.getUuid());
-        InvocationBuilder builder = nodeEngine.getOperationService()
-                .createInvocationBuilder(getServiceName(), op, getPartitionId())
-                .setExecutionCallback(this)
-                .setResultDeserialized(false);
+        Operation op = prepareOperation()
+                .setCallerUuid(endpoint.getUuid())
+                .setService(getServiceName());
 
-        builder.invoke();
+        nodeEngine.getOperationService().invokeOnPartition(op)
+                .setDeserialize(false)
+                .andThen(this);
     }
 
     protected abstract Operation prepareOperation();
@@ -80,5 +78,4 @@ public abstract class AbstractPartitionMessageTask<P>
         handleProcessingFailure(t);
         afterResponse();
     }
-
 }

@@ -110,7 +110,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     final ILogger logger;
     final int tryCount;
     final long tryPauseMillis;
-    final boolean deserialize;
     final long callTimeout;
 
     boolean remote;
@@ -120,8 +119,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
-    Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis, long callTimeout,
-               boolean deserialize) {
+    Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis, long callTimeout) {
         this.operationService = operationService;
         this.logger = operationService.invocationLogger;
         this.nodeEngine = operationService.nodeEngine;
@@ -129,7 +127,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.deserialize = deserialize;
         this.future = new InvocationFuture(operationService, this);
     }
 

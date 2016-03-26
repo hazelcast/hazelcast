@@ -49,7 +49,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(operationService, op, 0, 0, 0, false);
+        return new PartitionInvocation(operationService, op, 0, 0, 0);
     }
 
     // ====================== register ===============================

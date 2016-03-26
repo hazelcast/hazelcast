@@ -33,8 +33,8 @@ public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTa
     @Override
     protected void processMessage() {
         final ClientEndpoint endpoint = getEndpoint();
-        Operation op = prepareOperation();
-        op.setCallerUuid(endpoint.getUuid());
+        Operation op = prepareOperation()
+                .setCallerUuid(endpoint.getUuid());
 
         InvocationBuilder builder = getInvocationBuilder(op)
                 .setExecutionCallback(this)
