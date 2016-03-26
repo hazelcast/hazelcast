@@ -35,14 +35,14 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * when FalsePredicate is going to implement IdentifiedDataSerializable, make sure no new instance
  * is created, but the INSTANCE is returned. No need to create new objects.
  */
-public class FalsePredicate implements IdentifiedDataSerializable, Predicate, IndexAwarePredicate {
+public class FalsePredicate<K, V> implements IdentifiedDataSerializable, Predicate<K, V>, IndexAwarePredicate<K, V> {
     /**
      * An instance of the FalsePredicate.
      */
     public static final FalsePredicate INSTANCE = new FalsePredicate();
 
      @Override
-    public boolean apply(Map.Entry mapEntry) {
+    public boolean apply(Map.Entry<K, V> mapEntry) {
         return false;
     }
 
@@ -52,7 +52,7 @@ public class FalsePredicate implements IdentifiedDataSerializable, Predicate, In
     }
 
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
+    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
         return Collections.emptySet();
     }
 

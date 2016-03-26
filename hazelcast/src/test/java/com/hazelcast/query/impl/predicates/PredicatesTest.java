@@ -91,18 +91,18 @@ public class PredicatesTest extends HazelcastTestSupport {
         String name = randomString();
         map.put("key", new Value(name));
 
-        final ShouldExecuteOncePredicate indexAwareNotIndexedPredicate = new ShouldExecuteOncePredicate();
+        final ShouldExecuteOncePredicate<?, ?> indexAwareNotIndexedPredicate = new ShouldExecuteOncePredicate<Object, Object>();
         final EqualPredicate equalPredicate = new EqualPredicate("name", name);
         final AndPredicate andPredicate = new AndPredicate(indexAwareNotIndexedPredicate, equalPredicate);
         map.values(andPredicate);
     }
 
-    static class ShouldExecuteOncePredicate implements IndexAwarePredicate {
+    static class ShouldExecuteOncePredicate<K, V> implements IndexAwarePredicate<K, V> {
 
         boolean executed = false;
 
         @Override
-        public boolean apply(Map.Entry mapEntry) {
+        public boolean apply(Map.Entry<K, V> mapEntry) {
             if (!executed) {
                 executed = true;
                 return true;
@@ -111,7 +111,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Set<QueryableEntry> filter(final QueryContext queryContext) {
+        public Set<QueryableEntry<K, V>> filter(final QueryContext queryContext) {
             return null;
         }
 

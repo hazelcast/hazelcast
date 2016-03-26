@@ -20,7 +20,7 @@ import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 
-public abstract class AbstractIndexAwarePredicate extends AbstractPredicate implements IndexAwarePredicate {
+public abstract class AbstractIndexAwarePredicate<K, V> extends AbstractPredicate<K, V> implements IndexAwarePredicate<K, V> {
 
     protected AbstractIndexAwarePredicate() {
     }

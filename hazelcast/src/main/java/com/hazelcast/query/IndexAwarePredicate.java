@@ -23,9 +23,9 @@ import java.util.Set;
 /**
  * This interface is used for create filterable Predicates.
  */
-public interface IndexAwarePredicate extends Predicate {
+public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
 
-    Set<QueryableEntry> filter(QueryContext queryContext);
+    Set<QueryableEntry<K, V>> filter(QueryContext queryContext);
 
     boolean isIndexed(QueryContext queryContext);
 }
