@@ -21,9 +21,9 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NewClientReadHandlerTest {
+public class ClientReadHandlerTest {
 
-    private NewClientReadHandler readHandler;
+    private ClientReadHandler readHandler;
     private IOService ioService;
     private Connection connection;
 
@@ -31,7 +31,7 @@ public class NewClientReadHandlerTest {
     public void setup() throws IOException {
         ioService = mock(IOService.class);
         connection = mock(Connection.class);
-        readHandler = new NewClientReadHandler(connection, ioService);
+        readHandler = new ClientReadHandler(connection, ioService);
     }
 
     @Test

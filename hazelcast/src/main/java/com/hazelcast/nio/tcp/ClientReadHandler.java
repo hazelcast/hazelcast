@@ -30,18 +30,18 @@ import java.nio.ByteBuffer;
  * to the {@link IOService#handleClientMessage(ClientMessage, Connection)}.
  *
  * Probably the design can be simplified if the IOService would expose a method getMessageHandler; so we
- * don't need to let the NewClientReadHandler act like the MessageHandler, but directly send to the right
+ * don't need to let the ClientReadHandler act like the MessageHandler, but directly send to the right
  * data-structure.
  *
- * @see NewClientWriteHandler
+ * @see ClientWriteHandler
  */
-public class NewClientReadHandler implements ReadHandler, ClientMessageBuilder.MessageHandler {
+public class ClientReadHandler implements ReadHandler, ClientMessageBuilder.MessageHandler {
 
     private final ClientMessageBuilder builder;
     private final Connection connection;
     private final IOService ioService;
 
-    public NewClientReadHandler(Connection connection, IOService ioService) throws IOException {
+    public ClientReadHandler(Connection connection, IOService ioService) throws IOException {
         this.connection = connection;
         this.ioService = ioService;
         this.builder = new ClientMessageBuilder(this);
