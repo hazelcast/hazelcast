@@ -158,7 +158,13 @@ public interface OperationExecutor {
     boolean isInvocationAllowedFromCurrentThread(Operation op, boolean isAsync);
 
     /**
+     * Starts this OperationExecutor
+     */
+    void start();
+
+    /**
      * Shuts down this OperationExecutor.
      */
     void shutdown();
+
 }

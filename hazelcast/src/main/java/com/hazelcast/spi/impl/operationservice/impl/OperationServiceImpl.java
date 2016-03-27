@@ -183,10 +183,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         metricsRegistry.scanAndRegister(this, "operation");
     }
 
-    public void start() {
-        ((ClassicOperationExecutor) operationExecutor).start();
-    }
-
     private SlowOperationDetector initSlowOperationDetector() {
         return new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(),
@@ -454,13 +450,23 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         invocationRegistry.reset();
     }
 
+    public void start() {
+        logger.finest("Starting OperationService");
+
+        invocationMonitor.start();
+        operationExecutor.start();
+        responsePacketExecutor.start();
+        slowOperationDetector.start();
+    }
+
     public void shutdown() {
         logger.finest("Shutting down OperationService");
+
         invocationRegistry.shutdown();
+        invocationMonitor.shutdown();
         operationExecutor.shutdown();
         responsePacketExecutor.shutdown();
         slowOperationDetector.shutdown();
-        invocationMonitor.shutdown();
 
         try {
             invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);

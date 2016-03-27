@@ -54,15 +54,10 @@ public class AsyncResponsePacketHandler implements PacketHandler {
                                       PacketHandler responsePacketHandler) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler);
-        responseThread.start();
     }
 
     public int getQueueSize() {
         return workQueue.size();
-    }
-
-    public void shutdown() {
-        responseThread.shutdown();
     }
 
     @Override
@@ -72,6 +67,14 @@ public class AsyncResponsePacketHandler implements PacketHandler {
         checkTrue(packet.isFlagSet(FLAG_RESPONSE), "FLAG_RESPONSE should be set");
 
         workQueue.add(packet);
+    }
+
+    public void start() {
+        responseThread.start();
+    }
+
+    public void shutdown() {
+        responseThread.shutdown();
     }
 
     /**
