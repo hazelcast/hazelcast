@@ -44,6 +44,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
@@ -110,7 +111,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     final ILogger logger;
     final int tryCount;
     final long tryPauseMillis;
-    final long callTimeout;
+    final long callTimeoutMillis;
 
     boolean remote;
     Address invTarget;
@@ -119,15 +120,15 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
-    Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis, long callTimeout,
-               boolean deserialize) {
+    Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
+               long callTimeoutMillis, boolean deserialize) {
         this.operationService = operationService;
         this.logger = operationService.invocationLogger;
         this.nodeEngine = operationService.nodeEngine;
         this.op = op;
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
-        this.callTimeout = getCallTimeout(callTimeout);
+        this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
         this.future = new InvocationFuture(operationService, this, deserialize);
     }
 
@@ -135,31 +136,31 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     protected abstract Address getTarget();
 
-    private long getCallTimeout(long callTimeout) {
-        if (callTimeout > 0) {
-            return callTimeout;
+    private long getCallTimeoutMillis(long callTimeoutMillis) {
+        if (callTimeoutMillis > 0) {
+            return callTimeoutMillis;
         }
 
-        long defaultCallTimeout = operationService.defaultCallTimeoutMillis;
+        long defaultCallTimeoutMillis = operationService.defaultCallTimeoutMillis;
         if (!(op instanceof BlockingOperation)) {
-            return defaultCallTimeout;
+            return defaultCallTimeoutMillis;
         }
 
         long waitTimeoutMillis = op.getWaitTimeout();
         if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
             /*
              * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
-             * long callTimeout = Math.min(waitTimeoutMillis, defaultCallTimeout);
-             * callTimeout = Math.max(a, minTimeout);
-             * return callTimeout;
+             * long callTimeoutMillis = Math.min(waitTimeoutMillis, defaultCallTimeout);
+             * callTimeoutMillis = Math.max(a, minTimeout);
+             * return callTimeoutMillis;
              *
              * Below two lines are shortened version of above*
              * using min(max(x,y),z)=max(min(x,z),min(y,z))
              */
             long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT);
-            return Math.min(max, defaultCallTimeout);
+            return Math.min(max, defaultCallTimeoutMillis);
         }
-        return defaultCallTimeout;
+        return defaultCallTimeoutMillis;
     }
 
     public final InvocationFuture invoke() {
@@ -180,7 +181,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         try {
-            setCallTimeout(op, callTimeout);
+            setCallTimeout(op, callTimeoutMillis);
             setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine);
 
@@ -402,7 +403,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         if (op instanceof BlockingOperation) {
             // decrement wait-timeout by call-timeout
             long waitTimeout = op.getWaitTimeout();
-            waitTimeout -= callTimeout;
+            waitTimeout -= callTimeoutMillis;
             op.setWaitTimeout(waitTimeout);
         }
 
@@ -562,10 +563,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         return "Invocation{"
                 + "op=" + op
+                + ", firstInvocationTime='" + new Date(firstInvocationTimeMillis) + "'"
                 + ", tryCount=" + tryCount
                 + ", tryPauseMillis=" + tryPauseMillis
                 + ", invokeCount=" + invokeCount
-                + ", callTimeout=" + callTimeout
+                + ", callTimeoutMillis=" + callTimeoutMillis
                 + ", target=" + invTarget
                 + ", backupsExpected=" + backupsExpected
                 + ", backupsCompleted=" + backupsCompleted

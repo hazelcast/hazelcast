@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class Invocation_CallTimeoutTest extends HazelcastTestSupport {
+public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
 
     private final static long callTimeout = 12345;
 
@@ -45,7 +45,7 @@ public class Invocation_CallTimeoutTest extends HazelcastTestSupport {
         Operation op = new DummyOperation();
         InvocationFuture f = (InvocationFuture) opService.invokeOnTarget(null, op, thisAddress);
 
-        assertEquals(callTimeout, f.invocation.callTimeout);
+        assertEquals(callTimeout, f.invocation.callTimeoutMillis);
         assertEquals(callTimeout, f.invocation.op.getCallTimeout());
     }
 
@@ -59,7 +59,7 @@ public class Invocation_CallTimeoutTest extends HazelcastTestSupport {
 
         InvocationFuture f = (InvocationFuture) opService.invokeOnTarget(null, op, thisAddress);
 
-        assertEquals(explicitCallTimeout, f.invocation.callTimeout);
+        assertEquals(explicitCallTimeout, f.invocation.callTimeoutMillis);
         assertEquals(explicitCallTimeout, f.invocation.op.getCallTimeout());
     }
 
@@ -72,7 +72,7 @@ public class Invocation_CallTimeoutTest extends HazelcastTestSupport {
                 .setCallTimeout(explicitCallTimeout)
                 .invoke();
 
-        assertEquals(explicitCallTimeout, f.invocation.callTimeout);
+        assertEquals(explicitCallTimeout, f.invocation.callTimeoutMillis);
         assertEquals(explicitCallTimeout, f.invocation.op.getCallTimeout());
     }
 }

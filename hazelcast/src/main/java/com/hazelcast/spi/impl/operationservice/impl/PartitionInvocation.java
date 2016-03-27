@@ -21,6 +21,8 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.partition.IPartition;
 
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
  * {@link OperationServiceImpl}.
@@ -28,8 +30,8 @@ import com.hazelcast.spi.partition.IPartition;
 public final class PartitionInvocation extends Invocation {
 
     public PartitionInvocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
-                               long callTimeout, boolean resultDeserialized) {
-        super(operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+                               long callTimeoutMillis, boolean deserialize) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
     }
 
     @Override
@@ -41,6 +43,6 @@ public final class PartitionInvocation extends Invocation {
     @Override
     ExceptionAction onException(Throwable t) {
         ExceptionAction action = op.onInvocationException(t);
-        return action != null ? action : ExceptionAction.THROW_EXCEPTION;
+        return action != null ? action : THROW_EXCEPTION;
     }
 }

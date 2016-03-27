@@ -305,7 +305,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     long getMaxCallTimeout() {
-        long callTimeout = invocation.callTimeout;
+        long callTimeout = invocation.callTimeoutMillis;
         long maxCallTimeout = callTimeout + getCallTimeoutExtension(callTimeout);
         return maxCallTimeout > 0 ? maxCallTimeout : Long.MAX_VALUE;
     }
