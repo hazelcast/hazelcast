@@ -21,6 +21,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
  * {@link OperationServiceImpl}.
@@ -29,10 +31,9 @@ public final class TargetInvocation extends Invocation {
 
     private final Address target;
 
-    public TargetInvocation(OperationServiceImpl operationService, Operation op,
-                            Address target, int tryCount, long tryPauseMillis, long callTimeout,
-                            boolean resultDeserialized) {
-        super(operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+    public TargetInvocation(OperationServiceImpl operationService, Operation op, Address target,
+                            int tryCount, long tryPauseMillis, long callTimeoutMillis, boolean deserialize) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
         this.target = target;
     }
 
@@ -43,6 +44,6 @@ public final class TargetInvocation extends Invocation {
 
     @Override
     ExceptionAction onException(Throwable t) {
-        return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onInvocationException(t);
+        return t instanceof MemberLeftException ? THROW_EXCEPTION : op.onInvocationException(t);
     }
 }
