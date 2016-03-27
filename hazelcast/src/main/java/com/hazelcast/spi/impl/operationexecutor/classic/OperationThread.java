@@ -25,7 +25,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.concurrent.TimeUnit;
@@ -98,8 +97,6 @@ public abstract class OperationThread extends HazelcastManagedThread {
         nodeExtension.onThreadStart(this);
         try {
             doRun();
-        } catch (InterruptedException e) {
-            EmptyStatement.ignore(e);
         } catch (Throwable t) {
             inspectOutputMemoryError(t);
             logger.severe(t);
@@ -108,9 +105,14 @@ public abstract class OperationThread extends HazelcastManagedThread {
         }
     }
 
-    private void doRun() throws Exception {
+    private void doRun() {
         while (!shutdown) {
-            Object task = queue.take();
+            Object task;
+            try {
+                task = queue.take();
+            } catch (InterruptedException e) {
+                continue;
+            }
 
             processedTotal.inc();
 
