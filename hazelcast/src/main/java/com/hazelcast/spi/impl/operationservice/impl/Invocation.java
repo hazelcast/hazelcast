@@ -49,6 +49,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.ClusterState.*;
+import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
@@ -296,7 +298,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         ClusterService clusterService = nodeEngine.getClusterService();
 
         ClusterState clusterState = clusterService.getClusterState();
-        if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
+        if (clusterState == FROZEN || clusterState == PASSIVE) {
             notifyError(new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState));
         } else if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
             notifyError(new NoDataMemberInClusterException(
