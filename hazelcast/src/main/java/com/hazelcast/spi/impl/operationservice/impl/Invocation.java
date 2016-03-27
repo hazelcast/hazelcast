@@ -174,11 +174,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private void invoke0(boolean isAsync) {
         if (invokeCount > 0) {
-            // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
-        }
-
-        if (op.getCallId() != 0) {
+        } else if (op.getCallId() != 0) {
             throw new IllegalStateException("An operation[" + op + "] can not be used for multiple invocations!");
         }
 
@@ -277,14 +274,13 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     boolean initInvocationTarget() {
         invTarget = getTarget();
 
-        ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
             notifyWithExceptionWhenTargetIsNull();
             return false;
         }
 
-        targetMember = clusterService.getMember(invTarget);
+        targetMember = nodeEngine.getClusterService().getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
             notifyError(
                     new TargetNotMemberException(invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
@@ -400,8 +396,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         operationService.callTimeoutCount.inc();
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: "
-                    + toString());
+            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
         }
 
         if (op instanceof BlockingOperation) {
