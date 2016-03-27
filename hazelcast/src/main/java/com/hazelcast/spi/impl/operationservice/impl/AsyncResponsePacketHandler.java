@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,6 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
@@ -83,9 +83,6 @@ public class AsyncResponsePacketHandler implements PacketHandler {
      */
     private final class ResponseThread extends Thread implements OperationHostileThread {
 
-        // field is only written by the response-thread itself, but can be read by other threads.
-        volatile long processedResponses;
-
         private final PacketHandler responsePacketHandler;
         private volatile boolean shutdown;
 
@@ -100,40 +97,23 @@ public class AsyncResponsePacketHandler implements PacketHandler {
         public void run() {
             try {
                 doRun();
+            } catch (InterruptedException e) {
+                ignore(e);
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe(t);
             }
         }
 
-        private void doRun() {
-            for (; ; ) {
-                Packet responsePacket;
+        private void doRun() throws InterruptedException {
+            while (!shutdown) {
+                Packet responsePacket = workQueue.take();
                 try {
-                    responsePacket = workQueue.take();
-                } catch (InterruptedException e) {
-                    if (shutdown) {
-                        return;
-                    }
-                    continue;
+                    responsePacketHandler.handle(responsePacket);
+                } catch (Throwable e) {
+                    inspectOutputMemoryError(e);
+                    logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName(), e);
                 }
-
-                if (shutdown) {
-                    return;
-                }
-
-                process(responsePacket);
-            }
-        }
-
-        @SuppressFBWarnings("VO_VOLATILE_INCREMENT")
-        private void process(Packet responsePacket) {
-            processedResponses++;
-            try {
-                responsePacketHandler.handle(responsePacket);
-            } catch (Throwable e) {
-                inspectOutputMemoryError(e);
-                logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName(), e);
             }
         }
 
