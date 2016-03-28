@@ -16,10 +16,15 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -27,21 +32,40 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+
 /**
- * Responsible for handling responses.
+ * Responsible for handling responses for invocations. Based on the content of the response packet, it will lookup the
+ * Invocation from the InvocationRegistry and notify the Invocation.
  */
-final class ResponsePacketHandlerImpl implements PacketHandler {
+public final class ResponsePacketHandlerImpl implements PacketHandler {
 
     private final ILogger logger;
     private final InternalSerializationService serializationService;
     private final InvocationRegistry invocationRegistry;
+    private final NodeEngineImpl nodeEngine;
+    @Probe(name = "responses[normal]", level = MANDATORY)
+    private final SwCounter responsesNormal = newSwCounter();
+    @Probe(name = "responses[timeout]", level = MANDATORY)
+    private final SwCounter responsesTimeout = newSwCounter();
+    @Probe(name = "responses[backup]", level = MANDATORY)
+    private final MwCounter responsesBackup = newMwCounter();
+    @Probe(name = "responses[error]", level = MANDATORY)
+    private final SwCounter responsesError = newSwCounter();
+    @Probe(name = "responses[missing]", level = MANDATORY)
+    private final MwCounter responsesMissing = newMwCounter();
 
     public ResponsePacketHandlerImpl(ILogger logger,
                                      InternalSerializationService serializationService,
-                                     InvocationRegistry invocationRegistry) {
+                                     InvocationRegistry invocationRegistry,
+                                     NodeEngineImpl nodeEngine) {
         this.logger = logger;
         this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;
+        this.nodeEngine = nodeEngine;
+        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation.invocations");
     }
 
     @Override
@@ -51,18 +75,18 @@ final class ResponsePacketHandlerImpl implements PacketHandler {
         try {
             if (response instanceof NormalResponse) {
                 NormalResponse normalResponse = (NormalResponse) response;
-                invocationRegistry.notifyNormalResponse(
+                notifyNormalResponse(
                         normalResponse.getCallId(),
                         normalResponse.getValue(),
                         normalResponse.getBackupCount(),
                         sender);
             } else if (response instanceof BackupResponse) {
-                invocationRegistry.notifyBackupComplete(response.getCallId());
+                notifyBackupComplete(response.getCallId());
             } else if (response instanceof CallTimeoutResponse) {
-                invocationRegistry.notifyCallTimeout(response.getCallId(), sender);
+                notifyCallTimeout(response.getCallId(), sender);
             } else if (response instanceof ErrorResponse) {
                 ErrorResponse errorResponse = (ErrorResponse) response;
-                invocationRegistry.notifyErrorResponse(
+                notifyErrorResponse(
                         errorResponse.getCallId(),
                         errorResponse.getCause(),
                         sender);
@@ -72,5 +96,70 @@ final class ResponsePacketHandlerImpl implements PacketHandler {
         } catch (Throwable e) {
             logger.severe("While processing response...", e);
         }
+    }
+
+    public void notifyBackupComplete(long callId) {
+        responsesBackup.inc();
+
+        try {
+            Invocation invocation = invocationRegistry.get(callId);
+
+            // It can happen that a backup response is send without the Invocation being available anymore.
+            // This is because the InvocationRegistry will automatically release invocations where the backup is
+            // taking too much time.
+            if (invocation == null) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("No Invocation found for backup response with callId " + callId);
+                }
+                return;
+            }
+
+            invocation.notifySingleBackupComplete();
+        } catch (Exception e) {
+            ReplicaErrorLogger.log(e, logger);
+        }
+    }
+
+    void notifyErrorResponse(long callId, Object cause, Address sender) {
+        responsesError.inc();
+        Invocation invocation = invocationRegistry.get(callId);
+
+        if (invocation == null) {
+            responsesMissing.inc();
+            if (nodeEngine.isRunning()) {
+                logger.warning("No Invocation found for error response with callId: " + callId + " sent from " + sender);
+            }
+            return;
+        }
+
+        invocation.notifyError(cause);
+    }
+
+    void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {
+        responsesNormal.inc();
+        Invocation invocation = invocationRegistry.get(callId);
+
+        if (invocation == null) {
+            responsesMissing.inc();
+            if (nodeEngine.isRunning()) {
+                logger.warning("No Invocation found for normal response with callId " + callId + " sent from " + sender);
+            }
+            return;
+        }
+        invocation.notifyNormalResponse(value, backupCount);
+    }
+
+    void notifyCallTimeout(long callId, Address sender) {
+        responsesTimeout.inc();
+        Invocation invocation = invocationRegistry.get(callId);
+
+        if (invocation == null) {
+            responsesMissing.inc();
+            if (nodeEngine.isRunning()) {
+                logger.warning("No Invocation found for call timeout response with callId" + callId + " sent from " + sender);
+            }
+            return;
+        }
+        invocation.notifyCallTimeout();
     }
 }

@@ -19,11 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Iterator;
@@ -33,8 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 
@@ -61,24 +55,11 @@ public class InvocationRegistry implements Iterable<Invocation> {
 
     @Probe(name = "invocations.pending", level = MANDATORY)
     private final ConcurrentMap<Long, Invocation> invocations;
-    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
 
-    @Probe(name = "responses[normal]", level = MANDATORY)
-    private final SwCounter responsesNormal = newSwCounter();
-    @Probe(name = "responses[timeout]", level = MANDATORY)
-    private final SwCounter responsesTimeout = newSwCounter();
-    @Probe(name = "responses[backup]", level = MANDATORY)
-    private final MwCounter responsesBackup = newMwCounter();
-    @Probe(name = "responses[error]", level = MANDATORY)
-    private final SwCounter responsesError = newSwCounter();
-    @Probe(name = "responses[missing]", level = MANDATORY)
-    private final MwCounter responsesMissing = newMwCounter();
-
     public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
                               int concurrencyLevel) {
-        this.nodeEngine = nodeEngine;
         this.logger = logger;
         this.callIdSequence = backpressureRegulator.newCallIdSequence();
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
@@ -176,72 +157,6 @@ public class InvocationRegistry implements Iterable<Invocation> {
         return invocations.get(callId);
     }
 
-
-    public void notifyBackupComplete(long callId) {
-        responsesBackup.inc();
-
-        try {
-            Invocation invocation = invocations.get(callId);
-
-            // It can happen that a backup response is send without the Invocation being available anymore.
-            // This is because the InvocationRegistry will automatically release invocations where the backup is
-            // taking too much time.
-            if (invocation == null) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("No Invocation found for backup response with callId " + callId);
-                }
-                return;
-            }
-
-            invocation.notifySingleBackupComplete();
-        } catch (Exception e) {
-            ReplicaErrorLogger.log(e, logger);
-        }
-    }
-
-    public void notifyErrorResponse(long callId, Object cause, Address sender) {
-        responsesError.inc();
-        Invocation invocation = invocations.get(callId);
-
-        if (invocation == null) {
-            responsesMissing.inc();
-            if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for error response with callId: " + callId + " sent from " + sender);
-            }
-            return;
-        }
-
-        invocation.notifyError(cause);
-    }
-
-    public void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {
-        responsesNormal.inc();
-        Invocation invocation = invocations.get(callId);
-
-        if (invocation == null) {
-            responsesMissing.inc();
-            if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for normal response with callId " + callId + " sent from " + sender);
-            }
-            return;
-        }
-        invocation.notifyNormalResponse(value, backupCount);
-    }
-
-    public void notifyCallTimeout(long callId, Address sender) {
-        responsesTimeout.inc();
-        Invocation invocation = invocations.get(callId);
-
-        if (invocation == null) {
-            responsesMissing.inc();
-            if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for call timeout response with callId" + callId + " sent from " + sender);
-            }
-            return;
-        }
-        invocation.notifyCallTimeout();
-    }
-
     public void reset() {
         for (Invocation invocation : this) {
             try {
@@ -261,5 +176,4 @@ public class InvocationRegistry implements Iterable<Invocation> {
             }
         }
     }
-
 }

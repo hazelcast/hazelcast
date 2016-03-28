@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AsyncResponsePacketHandlerTest extends HazelcastTestSupport {
+public class AsyncResponseHandlerTest extends HazelcastTestSupport {
 
     private PacketHandler responsePacketHandler;
     private AsyncResponsePacketHandler asyncHandler;
