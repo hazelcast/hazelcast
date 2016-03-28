@@ -34,7 +34,11 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -68,7 +72,8 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final PartitionOperationThread[] partitionOperationThreads;
     private final OperationRunner[] partitionOperationRunners;
 
-    private final OperationQueue genericOperationQueue;
+    private final OperationQueue priorityQueue = new DefaultOperationQueue();
+    private final OperationQueue queue = new DefaultOperationQueue();
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
     private final GenericOperationThread[] genericOperationThreads;
@@ -92,7 +97,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         this.threadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
-        this.genericOperationQueue = new DefaultOperationQueue();
 
         this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
 
@@ -100,23 +104,12 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         this.partitionOperationThreads = initPartitionThreads(properties);
 
         this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
-        this.genericOperationThreads = initGenericThreads();
-
-        logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
-                + partitionOperationThreads.length + " partition operation threads.");
-    }
-
-    public void start() {
-        for (Thread t : partitionOperationThreads) {
-            t.start();
-        }
-        for (Thread t : genericOperationThreads) {
-            t.start();
-        }
+        this.genericOperationThreads = initGenericThreads(properties);
     }
 
     private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
-        OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(GroupProperty.PARTITION_COUNT)];
+        int partitionCount = properties.getInteger(PARTITION_COUNT);
+        OperationRunner[] operationRunners = new OperationRunner[partitionCount];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = handlerFactory.createPartitionRunner(partitionId);
         }
@@ -124,17 +117,20 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private OperationRunner[] initGenericOperationRunners(GroupProperties properties, OperationRunnerFactory runnerFactory) {
-        int genericThreadCount = properties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT);
-        if (genericThreadCount <= 0) {
+        int threadCount = properties.getInteger(GENERIC_OPERATION_THREAD_COUNT);
+        if (threadCount <= 0) {
             // default generic operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
-            genericThreadCount = Math.max(2, coreSize / 2);
+            threadCount = Math.max(2, coreSize / 2);
         }
 
-        OperationRunner[] operationRunners = new OperationRunner[genericThreadCount];
+        int priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
+
+        OperationRunner[] operationRunners = new OperationRunner[threadCount + priorityThreadCount];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = runnerFactory.createGenericRunner();
         }
+
         return operationRunners;
     }
 
@@ -167,26 +163,42 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             runner.setCurrentThread(thread);
         }
 
+
+        logger.info("Partition operation threads: " + threadCount);
+
         return threads;
     }
 
-    private GenericOperationThread[] initGenericThreads() {
+    private GenericOperationThread[] initGenericThreads(GroupProperties properties) {
         // we created as many generic operation handlers, as there are generic threads
         int threadCount = genericOperationRunners.length;
+        int priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
+
         GenericOperationThread[] threads = new GenericOperationThread[threadCount];
 
-        for (int threadId = 0; threadId < threads.length; threadId++) {
-            String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
-            OperationRunner operationRunner = genericOperationRunners[threadId];
+        int threadId = 0;
+        for (int threadIndex = 0; threadIndex < threads.length; threadIndex++) {
+            boolean priority = threadIndex < priorityThreadCount;
+            String baseName = priority ? "priority-generic-operation" : "generic-operation";
+            String threadName = threadGroup.getThreadPoolNamePrefix(baseName) + threadId;
+            OperationRunner operationRunner = genericOperationRunners[threadIndex];
 
             GenericOperationThread operationThread = new GenericOperationThread(
-                    threadName, threadId, genericOperationQueue,
+                    threadName, threadIndex, priority ? priorityQueue : queue,
                     logger, threadGroup, nodeExtension, operationRunner);
 
-            threads[threadId] = operationThread;
+            threads[threadIndex] = operationThread;
             operationRunner.setCurrentThread(operationThread);
             metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
+
+            if (threadIndex == priorityThreadCount - 1) {
+                threadId = 0;
+            } else {
+                threadId++;
+            }
         }
+
+        logger.info("Generic operation threads: " + threadCount + "(" + priorityThreadCount + " dedicated for priority tasks)");
 
         return threads;
     }
@@ -277,13 +289,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     @Override
     public int getRunningOperationCount() {
         int result = 0;
-        for (OperationRunner handler : partitionOperationRunners) {
-            if (handler.currentTask() != null) {
+        for (OperationRunner runner : partitionOperationRunners) {
+            if (runner.currentTask() != null) {
                 result++;
             }
         }
-        for (OperationRunner handler : genericOperationRunners) {
-            if (handler.currentTask() != null) {
+        for (OperationRunner runner : genericOperationRunners) {
+            if (runner.currentTask() != null) {
                 result++;
             }
         }
@@ -298,7 +310,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             size += t.queue.normalSize();
         }
 
-        size += genericOperationQueue.normalSize();
+        size += queue.normalSize();
 
         return size;
     }
@@ -311,7 +323,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             size += t.queue.prioritySize();
         }
 
-        size += genericOperationQueue.prioritySize();
+        size += priorityQueue.size();
         return size;
     }
 
@@ -415,24 +427,39 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private void execute(Object task, int partitionId, boolean priority) {
-        OperationQueue operationQueue;
-
         if (partitionId < 0) {
-            operationQueue = genericOperationQueue;
+            if (priority) {
+                RunOnceRunnable runOnce = new RunOnceRunnable(task);
+                // we add it to the workqueue of the priority generic threads and the regular generic threads;
+                // it should be picked up as fast as possible. The task is wrapped in a runonce runnable, so that
+                // the task won't ne picked up by 2 threads.
+                priorityQueue.add(runOnce);
+                queue.addUrgent(runOnce);
+            } else {
+                queue.add(task);
+            }
         } else {
-            OperationThread partitionOperationThread = partitionOperationThreads[toPartitionThreadIndex(partitionId)];
-            operationQueue = partitionOperationThread.queue;
-        }
-
-        if (priority) {
-            operationQueue.addUrgent(task);
-        } else {
-            operationQueue.add(task);
+            PartitionOperationThread partitionThread = partitionOperationThreads[toPartitionThreadIndex(partitionId)];
+            if (priority) {
+                partitionThread.queue.addUrgent(task);
+            } else {
+                partitionThread.queue.add(task);
+            }
         }
     }
 
     public int toPartitionThreadIndex(int partitionId) {
         return partitionId % partitionOperationThreads.length;
+    }
+
+    @Override
+    public void start() {
+        for (Thread t : partitionOperationThreads) {
+            t.start();
+        }
+        for (Thread t : genericOperationThreads) {
+            t.start();
+        }
     }
 
     @Override
@@ -461,8 +488,23 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public String toString() {
-        return "ClassicOperationExecutor{"
-                + "node=" + thisAddress
-                + '}';
+        return "ClassicOperationExecutor{node=" + thisAddress + '}';
+    }
+
+    private static final class RunOnceRunnable implements Runnable {
+        private final AtomicBoolean started = new AtomicBoolean();
+        private final Object task;
+
+        private RunOnceRunnable(Object task) {
+            this.task = task;
+        }
+
+        @Override
+        public void run() {
+            if (started.compareAndSet(false, true)) {
+                GenericOperationThread operationThread = (GenericOperationThread) Thread.currentThread();
+                operationThread.process(task);
+            }
+        }
     }
 }

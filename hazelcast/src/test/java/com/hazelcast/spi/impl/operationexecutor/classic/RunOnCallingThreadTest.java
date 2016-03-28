@@ -1,6 +1,5 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -12,6 +11,8 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -39,7 +40,8 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
 
     @Test
     public void test_whenGenericOperation_andCallingFromGenericThread() {
-        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
+        config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
+        config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "0");
         initExecutor();
 
         final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);

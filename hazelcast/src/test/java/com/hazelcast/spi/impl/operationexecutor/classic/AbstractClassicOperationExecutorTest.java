@@ -19,6 +19,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
@@ -166,6 +167,13 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
             durationMs = in.readInt();
+        }
+    }
+
+    protected static class UrgentDummyOperation extends DummyOperation implements UrgentSystemOperation {
+
+        public UrgentDummyOperation(int partitionId) {
+            super(partitionId);
         }
     }
 
