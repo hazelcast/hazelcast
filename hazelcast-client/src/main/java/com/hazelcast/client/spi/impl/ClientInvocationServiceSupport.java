@@ -175,8 +175,12 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     public void shutdown() {
         isShutdown = true;
         responseThread.interrupt();
-        CleanResourcesTask cleanResourcesTask = new CleanResourcesTask();
-        cleanResourcesTask.run();
+        Iterator<ClientInvocation> iterator = callIdMap.values().iterator();
+        while (iterator.hasNext()) {
+            ClientInvocation invocation = iterator.next();
+            iterator.remove();
+            invocation.notifyException(new HazelcastClientNotActiveException("Client is shutting down"));
+        }
         assert callIdMap.isEmpty();
     }
 
@@ -197,8 +201,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                     continue;
                 }
 
-                int pendingPacketCount = connection.getPendingPacketCount();
-                if (pendingPacketCount != 0) {
+                if (connection.getPendingPacketCount() != 0) {
                     long closedTime = connection.getClosedTime();
                     long elapsed = System.currentTimeMillis() - closedTime;
                     if (elapsed < WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD) {
