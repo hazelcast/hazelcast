@@ -23,7 +23,7 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextReadHandler;
-import com.hazelcast.nio.tcp.NewClientReadHandler;
+import com.hazelcast.nio.tcp.ClientReadHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
@@ -197,7 +197,7 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 socketWriter.setProtocol(CLIENT_BINARY_NEW);
-                readHandler = new NewClientReadHandler(connection, ioService);
+                readHandler = new ClientReadHandler(connection, ioService);
             } else {
                 configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 socketWriter.setProtocol(Protocols.TEXT);

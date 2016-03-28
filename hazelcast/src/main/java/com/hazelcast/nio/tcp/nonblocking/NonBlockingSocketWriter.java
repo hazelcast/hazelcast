@@ -23,7 +23,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
-import com.hazelcast.nio.tcp.NewClientWriteHandler;
+import com.hazelcast.nio.tcp.ClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
@@ -169,7 +169,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
                 registerOp(SelectionKey.OP_WRITE);
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-                writeHandler = new NewClientWriteHandler();
+                writeHandler = new ClientWriteHandler();
             } else {
                 configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
                 writeHandler = new TextWriteHandler(connection);

@@ -23,12 +23,12 @@ import java.nio.ByteBuffer;
 /**
  * A {@link WriteHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
  *
- * @see NewClientReadHandler
+ * @see ClientReadHandler
  */
-public class NewClientWriteHandler implements WriteHandler<ClientMessage> {
+public class ClientWriteHandler implements WriteHandler<ClientMessage> {
 
     @Override
-    public boolean onWrite(ClientMessage frame, ByteBuffer dst) throws Exception {
-        return frame.writeTo(dst);
+    public boolean onWrite(ClientMessage message, ByteBuffer dst) throws Exception {
+        return message.writeTo(dst);
     }
 }
