@@ -40,7 +40,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * Responsible for handling responses for invocations. Based on the content of the response packet, it will lookup the
  * Invocation from the InvocationRegistry and notify the Invocation.
  */
-public final class ResponsePacketHandlerImpl implements PacketHandler {
+public final class ResponseHandler implements PacketHandler {
 
     private final ILogger logger;
     private final InternalSerializationService serializationService;
@@ -57,10 +57,10 @@ public final class ResponsePacketHandlerImpl implements PacketHandler {
     @Probe(name = "responses[missing]", level = MANDATORY)
     private final MwCounter responsesMissing = newMwCounter();
 
-    public ResponsePacketHandlerImpl(ILogger logger,
-                                     InternalSerializationService serializationService,
-                                     InvocationRegistry invocationRegistry,
-                                     NodeEngineImpl nodeEngine) {
+    public ResponseHandler(ILogger logger,
+                           InternalSerializationService serializationService,
+                           InvocationRegistry invocationRegistry,
+                           NodeEngineImpl nodeEngine) {
         this.logger = logger;
         this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;

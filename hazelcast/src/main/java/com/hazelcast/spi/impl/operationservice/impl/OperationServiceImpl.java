@@ -127,7 +127,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
-    private final ResponsePacketHandlerImpl responseHandler;
+    private final ResponseHandler responseHandler;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -157,7 +157,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
-        this.responseHandler = new ResponsePacketHandlerImpl(
+        this.responseHandler = new ResponseHandler(
                 logger,
                 node.getSerializationService(),
                 invocationRegistry,
@@ -207,7 +207,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return invocationRegistry;
     }
 
-    public ResponsePacketHandlerImpl getResponseHandler() {
+    public ResponseHandler getResponseHandler() {
         return responseHandler;
     }
 
