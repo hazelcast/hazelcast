@@ -310,6 +310,7 @@ public class WaitNotifyServiceImpl implements WaitNotifyService {
             }
 
             for (Queue<WaitingOperation> q : mapWaitingOps.values()) {
+                Iterator<WaitingOperation> it = q.iterator();
                 while (it.hasNext()) {
                     if (Thread.interrupted()) {
                         return true;
