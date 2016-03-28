@@ -26,13 +26,13 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ResponsePacketHandlerImpl_NotifyTest extends HazelcastTestSupport {
+public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private NodeEngineImpl nodeEngine;
     private OperationServiceImpl operationService;
     private HazelcastInstance local;
-    private ResponsePacketHandlerImpl responseHandler;
+    private ResponseHandler responseHandler;
 
     @Before
     public void setup() {
