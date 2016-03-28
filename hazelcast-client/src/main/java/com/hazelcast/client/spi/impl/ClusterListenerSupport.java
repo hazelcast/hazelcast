@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
@@ -52,6 +53,7 @@ import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
+    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     protected final HazelcastClientInstanceImpl client;
     private final Collection<AddressProvider> addressProviders;
@@ -91,11 +93,15 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     public void shutdown() {
         clusterExecutor.shutdown();
-    }
-
-    protected void connectToCluster() throws Exception {
-        connectToOne();
-        clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
+        try {
+            boolean success = clusterExecutor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!success) {
+                LOGGER.warning("cluster executor awaitTermination could not completed in "
+                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
+            }
+        } catch (InterruptedException e) {
+            LOGGER.warning("cluster executor await termination is interrupted", e);
+        }
     }
 
     private Collection<InetSocketAddress> getSocketAddresses() {
@@ -125,7 +131,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         this.principal = principal;
     }
 
-    private void connectToOne() throws Exception {
+    public void connectToCluster() throws Exception {
         ownerConnectionAddress = null;
 
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
@@ -172,6 +178,12 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     private boolean connect(Set<InetSocketAddress> triedAddresses) throws Exception {
         final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
         for (InetSocketAddress inetSocketAddress : socketAddresses) {
+            if (!client.getLifecycleService().isRunning()) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Giving up on retrying to connect to cluster since client is shutdown");
+                }
+                break;
+            }
             try {
                 triedAddresses.add(inetSocketAddress);
                 Address address = new Address(inetSocketAddress);
@@ -179,8 +191,9 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                     LOGGER.finest("Trying to connect to " + address);
                 }
                 Connection connection = connectionManager.getOrConnect(address, true);
-                fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 ownerConnectionAddress = connection.getEndPoint();
+                clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
+                fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {
                 Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
