@@ -124,6 +124,7 @@ public class ProducerTaskProcessor implements TaskProcessor {
             );
 
             if (!processProducer(producer)) {
+                this.produced = true;
                 this.nextProducerIdx = (idx + 1) % producersCount;
                 return true;
             }
@@ -136,6 +137,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
         if (producersCount > 0) {
             this.nextProducerIdx = (lastIdx + 1) % producersCount;
             this.produced = produced;
+        } else {
+            this.produced = false;
         }
 
         return false;
