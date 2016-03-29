@@ -12,7 +12,7 @@ import com.hazelcast.jet.impl.dag.DAGImpl;
 import com.hazelcast.jet.impl.dag.EdgeImpl;
 import com.hazelcast.jet.processors.CounterProcessor;
 import com.hazelcast.jet.processors.DummyProcessor;
-import com.hazelcast.jet.processors.VerySlowProcessor;
+import com.hazelcast.jet.processors.VerySlowProcessorOnlyForInterruptionTest;
 import com.hazelcast.jet.processors.WordCounterProcessor;
 import com.hazelcast.jet.processors.WordGeneratorProcessor;
 import com.hazelcast.jet.processors.WordSorterProcessor;
@@ -25,6 +25,7 @@ import com.hazelcast.jet.spi.strategy.HashingStrategy;
 import com.hazelcast.jet.spi.strategy.ProcessingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,15 +52,16 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
     }
 
     @Test
+    @Repeat(10)
     public void interruptionTest() throws Exception {
         final Application application = createApplication("interruptionTest");
         try {
             DAG dag = createDAG();
 
-            fillMap("source.interruptionTest", SERVER, 100_0000);
+            fillMap("source.interruptionTest", SERVER, 100_00);
 
-            Vertex vertex1 = createVertex("dummy1", VerySlowProcessor.Factory.class);
-            Vertex vertex2 = createVertex("dummy2", VerySlowProcessor.Factory.class);
+            Vertex vertex1 = createVertex("dummy1", VerySlowProcessorOnlyForInterruptionTest.Factory.class);
+            Vertex vertex2 = createVertex("dummy2", VerySlowProcessorOnlyForInterruptionTest.Factory.class);
 
             vertex1.addSourceMap("source.interruptionTest");
             vertex2.addSinkMap("target");
@@ -66,15 +69,19 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             addVertices(dag, vertex1, vertex2);
             addEdges(dag, new EdgeImpl("edge", vertex1, vertex2));
 
+            VerySlowProcessorOnlyForInterruptionTest.run = new CountDownLatch(1);
+            VerySlowProcessorOnlyForInterruptionTest.set = false;
+
             Future executionFuture = executeApplication(dag, application);
 
             final AtomicBoolean success = new AtomicBoolean(false);
+
+            VerySlowProcessorOnlyForInterruptionTest.run.await(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Thread.sleep(1000);
                         application.interrupt().get();
                         success.set(true);
                     } catch (Exception e) {

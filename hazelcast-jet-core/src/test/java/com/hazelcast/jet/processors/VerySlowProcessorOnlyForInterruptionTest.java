@@ -25,10 +25,14 @@ import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
 
 
-public class VerySlowProcessor implements TupleContainerProcessor<Object, Object, Object, Object> {
+public class VerySlowProcessorOnlyForInterruptionTest implements TupleContainerProcessor<Object, Object, Object, Object> {
+    public static volatile CountDownLatch run;
+    public static volatile boolean set;
+
     @Override
     public void beforeProcessing(ProcessorContext processorContext) {
 
@@ -39,6 +43,11 @@ public class VerySlowProcessor implements TupleContainerProcessor<Object, Object
                            ConsumerOutputStream<Tuple<Object, Object>> outputStream,
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
+        if (!set) {
+            run.countDown();
+            set = true;
+        }
+
         for (Tuple<Object, Object> t : inputStream) {
             LockSupport.parkNanos(100_000L);
             outputStream.consume(t);
@@ -60,7 +69,7 @@ public class VerySlowProcessor implements TupleContainerProcessor<Object, Object
 
     public static class Factory implements TupleContainerProcessorFactory {
         public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new VerySlowProcessor();
+            return new VerySlowProcessorOnlyForInterruptionTest();
         }
     }
 }

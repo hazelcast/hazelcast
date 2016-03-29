@@ -35,7 +35,6 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
     @Test
     @Repeat(500)
-    @Ignore
     public void simpleList2ListTest() throws Exception {
         Application application = createApplication("simpleList2ListTest");
 
@@ -63,7 +62,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(500)
+    @Ignore
+    @Repeat(5000)
     public void shufflingListTest() throws Exception {
         System.out.println(System.nanoTime() + " --> shufflingListTest");
         Application application = createApplication("shufflingListTest");

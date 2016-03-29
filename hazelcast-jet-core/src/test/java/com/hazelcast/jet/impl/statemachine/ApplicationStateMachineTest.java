@@ -350,20 +350,6 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNextStateIs_InterruptionFailure_when_InterruptionFailure_received_and_stateWas_ExecutionInProgress() throws Exception {
-        processRequest(getRequest(INIT_SUCCESS));
-        processRequest(getRequest(LOCALIZATION_START));
-        processRequest(getRequest(LOCALIZATION_SUCCESS));
-        processRequest(getRequest(SUBMIT_START));
-        processRequest(getRequest(SUBMIT_SUCCESS));
-        processRequest(getRequest(EXECUTION_START));
-        ApplicationResponse response = processRequest(getRequest(INTERRUPTION_FAILURE));
-
-        assertTrue(response.isSuccess());
-        assertEquals(ApplicationState.INTERRUPTION_FAILURE, stateMachine.currentState());
-    }
-
-    @Test
     public void testNextStateIs_InterruptionInProgress_when_InterruptionStart_received_and_stateWas_ExecutionInProgress() throws Exception {
         processRequest(getRequest(INIT_SUCCESS));
         processRequest(getRequest(LOCALIZATION_START));
@@ -389,7 +375,7 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
         ApplicationResponse response = processRequest(getRequest(EXECUTION_FAILURE));
 
         assertTrue(response.isSuccess());
-        assertEquals(ApplicationState.INTERRUPTION_IN_PROGRESS, stateMachine.currentState());
+        assertEquals(ApplicationState.EXECUTION_FAILURE, stateMachine.currentState());
     }
 
     @Test

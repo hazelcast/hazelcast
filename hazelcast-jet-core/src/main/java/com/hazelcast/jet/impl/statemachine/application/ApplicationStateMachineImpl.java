@@ -97,14 +97,16 @@ public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<Applic
                                     ApplicationEvent.EXECUTION_SUCCESS, ApplicationState.EXECUTION_SUCCESS,
                                     ApplicationEvent.EXECUTION_FAILURE, ApplicationState.EXECUTION_FAILURE,
                                     ApplicationEvent.INTERRUPTION_SUCCESS, ApplicationState.INTERRUPTION_SUCCESS,
-                                    ApplicationEvent.INTERRUPTION_FAILURE, ApplicationState.INTERRUPTION_FAILURE,
+                                    ApplicationEvent.INTERRUPTION_FAILURE, ApplicationState.EXECUTION_FAILURE,
                                     ApplicationEvent.INTERRUPTION_START, ApplicationState.INTERRUPTION_IN_PROGRESS
                             )
                     ).
                     put(
                             ApplicationState.INTERRUPTION_IN_PROGRESS, LinkedMapBuilder.of(
-                                    ApplicationEvent.EXECUTION_FAILURE, ApplicationState.INTERRUPTION_IN_PROGRESS,
-                                    ApplicationEvent.INTERRUPTION_SUCCESS, ApplicationState.INTERRUPTION_SUCCESS
+                                    ApplicationEvent.EXECUTION_SUCCESS, ApplicationState.EXECUTION_SUCCESS,
+                                    ApplicationEvent.EXECUTION_FAILURE, ApplicationState.EXECUTION_FAILURE,
+                                    ApplicationEvent.INTERRUPTION_SUCCESS, ApplicationState.INTERRUPTION_SUCCESS,
+                                    ApplicationEvent.INTERRUPTION_FAILURE, ApplicationState.EXECUTION_FAILURE
                             )
                     ).
                     put(
@@ -125,6 +127,7 @@ public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<Applic
                     ).
                     put(
                             ApplicationState.EXECUTION_FAILURE, LinkedMapBuilder.of(
+                                    ApplicationEvent.INTERRUPTION_SUCCESS, ApplicationState.EXECUTION_FAILURE,
                                     ApplicationEvent.FINALIZATION_START, ApplicationState.FINALIZATION_IN_PROGRESS,
                                     ApplicationEvent.FINALIZATION_SUCCESS, ApplicationState.NEW
                             )
