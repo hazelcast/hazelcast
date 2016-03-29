@@ -294,6 +294,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
+        if (!alive) {
+            throw new HazelcastException("ConnectionManager is not active!!!");
+        }
+
         AuthenticationFuture callback = new AuthenticationFuture();
         AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
         if (firstCallback == null) {

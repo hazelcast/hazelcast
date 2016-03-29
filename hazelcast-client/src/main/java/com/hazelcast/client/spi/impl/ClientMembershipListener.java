@@ -134,32 +134,19 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     }
 
-    void listenMembershipEvents(Address ownerConnectionAddress) {
+    void listenMembershipEvents(Address ownerConnectionAddress) throws Exception {
         initialListFetchedLatch = new CountDownLatch(1);
-        try {
-            ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
-
-            Connection connection = connectionManager.getConnection(ownerConnectionAddress);
-            if (connection == null) {
-                throw new IllegalStateException(
-                        "Can not load initial members list because owner connection is null. Address "
-                                + ownerConnectionAddress);
-            }
-            ClientInvocation invocation = new ClientInvocation(client, clientMessage, connection);
-            invocation.setEventHandler(this);
-            invocation.invokeUrgent().get();
-            waitInitialMemberListFetched();
-
-        } catch (Exception e) {
-            if (client.getLifecycleService().isRunning()) {
-                if (logger.isFinestEnabled()) {
-                    logger.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
-                } else {
-                    logger.warning("Error while registering to cluster events! -> " + ownerConnectionAddress + ", Error: " + e
-                            .toString());
-                }
-            }
+        ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeRequest(false);
+        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+        if (connection == null) {
+            throw new IllegalStateException(
+                    "Can not load initial members list because owner connection is null. Address "
+                            + ownerConnectionAddress);
         }
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, connection);
+        invocation.setEventHandler(this);
+        invocation.invokeUrgent().get();
+        waitInitialMemberListFetched();
     }
 
     private void waitInitialMemberListFetched() throws InterruptedException {
