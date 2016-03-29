@@ -45,7 +45,7 @@ public final class FetchPartitionStateOperation extends AbstractOperation implem
             throw new RetryableHazelcastException(msg);
         }
         InternalPartitionServiceImpl service = getService();
-        partitionState = service.createPartitionState();
+        partitionState = service.createPartitionStateInternal();
     }
 
     @Override

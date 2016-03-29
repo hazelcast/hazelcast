@@ -36,7 +36,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.HashMap;
 import java.util.Iterator;

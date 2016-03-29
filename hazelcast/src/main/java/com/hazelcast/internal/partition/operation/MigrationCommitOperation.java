@@ -29,6 +29,12 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
+/**
+ *
+ * Used for committing a migration on migration destination.
+ * It updates the partition table on migration destination and finalizes the migration.
+ *
+ */
 public class MigrationCommitOperation extends AbstractOperation implements MigrationCycleOperation {
 
     private PartitionRuntimeState partitionState;

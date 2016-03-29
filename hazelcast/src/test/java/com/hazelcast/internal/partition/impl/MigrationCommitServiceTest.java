@@ -2,22 +2,18 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
+import com.hazelcast.internal.partition.service.TestGetOperation;
+import com.hazelcast.internal.partition.service.TestMigrationAwareService;
+import com.hazelcast.internal.partition.service.TestPutOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,16 +28,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.internal.partition.impl.MigrationCommitTest.resetInternalMigrationListener;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
@@ -50,7 +42,7 @@ import static com.hazelcast.test.TestPartitionUtils.getReplicaVersions;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -83,7 +75,7 @@ public class MigrationCommitServiceTest
 
         final InternalOperationService operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
-            operationService.invokeOnPartition(null, new SamplePutOperation(), partitionId).get();
+            operationService.invokeOnPartition(null, new TestPutOperation(), partitionId).get();
         }
 
         assertTrueEventually(new AssertTask() {
@@ -96,8 +88,8 @@ public class MigrationCommitServiceTest
                     for (int i = 0; i <= BACKUP_COUNT; i++) {
                         final Address replicaAddress = partition.getReplicaAddress(i);
                         if (replicaAddress != null) {
-                            final MigrationEventCollectingService service = getService(replicaAddress);
-                            assertTrue(Boolean.TRUE.equals(service.data.get(partitionId)));
+                            final TestMigrationAwareService service = getService(replicaAddress);
+                            assertNotNull(service.get(partitionId));
                         }
                     }
                 }
@@ -105,8 +97,8 @@ public class MigrationCommitServiceTest
         });
 
         for (HazelcastInstance instance : instances) {
-            final MigrationEventCollectingService service = getNodeEngineImpl(instance)
-                    .getService(MigrationEventCollectingService.SERVICE_NAME);
+            final TestMigrationAwareService service = getNodeEngineImpl(instance)
+                    .getService(TestMigrationAwareService.SERVICE_NAME);
 
             service.clearEvents();
         }
@@ -245,7 +237,7 @@ public class MigrationCommitServiceTest
                 public void run()
                         throws Exception {
 
-                    final MigrationEventCollectingService service = getService(oldReplicaOwner);
+                    final TestMigrationAwareService service = getService(oldReplicaOwner);
 
                     final List<Integer> clearPartitionIds = service.getClearPartitionIds();
                     assertTrue(clearPartitionIds.size() == 1);
@@ -273,7 +265,7 @@ public class MigrationCommitServiceTest
                 @Override
                 public void run()
                         throws Exception {
-                    final MigrationEventCollectingService service = getService(oldReplicaOwner);
+                    final TestMigrationAwareService service = getService(oldReplicaOwner);
 
                     final List<Integer> clearPartitionIds = service.getClearPartitionIds();
                     assertTrue(clearPartitionIds.isEmpty());
@@ -422,8 +414,8 @@ public class MigrationCommitServiceTest
             @Override
             public void run()
                     throws Exception {
-                final MigrationEventCollectingService service = getService(oldReplicaOwner);
-                assertFalse(service.containsDataForPartition(partitionId));
+                final TestMigrationAwareService service = getService(oldReplicaOwner);
+                assertFalse(service.contains(partitionId));
 
                 final long[] replicaVersions = TestPartitionUtils
                         .getReplicaVersions(factory.getInstance(oldReplicaOwner), partitionId);
@@ -432,8 +424,8 @@ public class MigrationCommitServiceTest
         });
 
         for (HazelcastInstance instance : instances) {
-            final MigrationEventCollectingService service = getNodeEngineImpl(instance)
-                    .getService(MigrationEventCollectingService.SERVICE_NAME);
+            final TestMigrationAwareService service = getNodeEngineImpl(instance)
+                    .getService(TestMigrationAwareService.SERVICE_NAME);
 
             service.clearEvents();
         }
@@ -466,7 +458,7 @@ public class MigrationCommitServiceTest
 
     private void assertMigrationSourceCommit(final MigrationInfo migration)
             throws InterruptedException {
-        final MigrationEventCollectingService service = getService(migration.getSource());
+        final TestMigrationAwareService service = getService(migration.getSource());
 
         final String msg = getAssertMessage(migration, service);
 
@@ -486,7 +478,7 @@ public class MigrationCommitServiceTest
             @Override
             public void run()
                     throws Exception {
-                final MigrationEventCollectingService service = getService(migration.getSource());
+                final TestMigrationAwareService service = getService(migration.getSource());
 
                 final String msg = getAssertMessage(migration, service);
 
@@ -507,7 +499,7 @@ public class MigrationCommitServiceTest
 
     private void assertMigrationDestinationCommit(final MigrationInfo migration)
             throws InterruptedException {
-        final MigrationEventCollectingService service = getService(migration.getDestination());
+        final TestMigrationAwareService service = getService(migration.getDestination());
 
         final String msg = getAssertMessage(migration, service);
 
@@ -517,7 +509,7 @@ public class MigrationCommitServiceTest
         assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
         assertDestinationPartitionMigrationEvent(msg, commitEvent, migration);
 
-        assertTrue(msg, service.containsDataForPartition(migration.getPartitionId()));
+        assertTrue(msg, service.contains(migration.getPartitionId()));
 
         assertReplicaVersionsAndServiceData(msg, migration.getDestination(), migration.getPartitionId(),
                 migration.getDestinationNewReplicaIndex());
@@ -529,7 +521,7 @@ public class MigrationCommitServiceTest
             @Override
             public void run()
                     throws Exception {
-                final MigrationEventCollectingService service = getService(migration.getDestination());
+                final TestMigrationAwareService service = getService(migration.getDestination());
 
                 final String msg = getAssertMessage(migration, service);
 
@@ -551,10 +543,10 @@ public class MigrationCommitServiceTest
     private void assertReplicaVersionsAndServiceData(String msg, final Address address, final int partitionId,
                                                      final int replicaIndex)
             throws InterruptedException {
-        final MigrationEventCollectingService service = getService(address);
+        final TestMigrationAwareService service = getService(address);
 
         final boolean shouldContainData = replicaIndex != -1 && replicaIndex <= BACKUP_COUNT;
-        assertEquals(msg, shouldContainData, service.containsDataForPartition(partitionId));
+        assertEquals(msg, shouldContainData, service.contains(partitionId));
 
         final long[] replicaVersions = getReplicaVersions(factory.getInstance(address), partitionId);
 
@@ -580,12 +572,12 @@ public class MigrationCommitServiceTest
             throws ExecutionException, InterruptedException, TimeoutException {
         final InternalOperationService operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
-            assertEquals(Boolean.TRUE,
-                    operationService.invokeOnPartition(null, new SampleGetOperation(), partitionId).get(10, TimeUnit.SECONDS));
+            assertNotNull(operationService.invokeOnPartition(null, new TestGetOperation(), partitionId)
+                    .get(10, TimeUnit.SECONDS));
         }
     }
 
-    private String getAssertMessage(MigrationInfo migration, MigrationEventCollectingService service) {
+    private String getAssertMessage(MigrationInfo migration, TestMigrationAwareService service) {
         return migration + " -> BeforeEvents: " + service.getBeforeEvents() + " , CommitEvents: " + service.getCommitEvents()
                 + " , RollbackEvents: " + service.getRollbackEvents();
     }
@@ -607,12 +599,10 @@ public class MigrationCommitServiceTest
     private Config createConfig() {
         final Config config = new Config();
 
-        final ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
-                                                               .setName(MigrationEventCollectingService.SERVICE_NAME)
-                                                               .setClassName(MigrationEventCollectingService.class.getName());
+        ServiceConfig serviceConfig = TestMigrationAwareService.createServiceConfig(BACKUP_COUNT);
         config.getServicesConfig().addServiceConfig(serviceConfig);
-        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
-        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(PARTITION_COUNT));
+        config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
 
         return config;
     }
@@ -622,222 +612,8 @@ public class MigrationCommitServiceTest
         return (InternalPartitionImpl) partitionService.getPartition(partitionId);
     }
 
-    private MigrationEventCollectingService getService(final Address address) {
-        return getNodeEngineImpl(factory.getInstance(address)).getService(MigrationEventCollectingService.SERVICE_NAME);
-    }
-
-    private static class MigrationEventCollectingService
-            implements MigrationAwareService {
-
-        private static final String SERVICE_NAME = MigrationEventCollectingService.class.getSimpleName();
-
-        private final ConcurrentMap<Integer, Object> data = new ConcurrentHashMap<Integer, Object>();
-
-        private final List<PartitionMigrationEvent> beforeEvents = new ArrayList<PartitionMigrationEvent>();
-
-        private final List<PartitionMigrationEvent> commitEvents = new ArrayList<PartitionMigrationEvent>();
-
-        private final List<PartitionMigrationEvent> rollbackEvents = new ArrayList<PartitionMigrationEvent>();
-
-        private final List<Integer> clearPartitionIds = new ArrayList<Integer>();
-
-        @Override
-        public void beforeMigration(PartitionMigrationEvent event) {
-            synchronized (beforeEvents) {
-                beforeEvents.add(event);
-            }
-        }
-
-        @Override
-        public void commitMigration(PartitionMigrationEvent event) {
-            synchronized (commitEvents) {
-                commitEvents.add(event);
-            }
-
-            if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                if (event.getNewReplicaIndex() == -1 || event.getNewReplicaIndex() > BACKUP_COUNT) {
-                    data.remove(event.getPartitionId());
-                }
-            }
-            if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-                if (event.getNewReplicaIndex() > BACKUP_COUNT) {
-                    assertNull(data.get(event.getPartitionId()));
-                }
-            }
-        }
-
-        @Override
-        public void rollbackMigration(PartitionMigrationEvent event) {
-            synchronized (rollbackEvents) {
-                rollbackEvents.add(event);
-            }
-
-            if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-                if (event.getCurrentReplicaIndex() == -1 || event.getCurrentReplicaIndex() > BACKUP_COUNT) {
-                    data.remove(event.getPartitionId());
-                }
-            }
-        }
-
-        @Override
-        public void clearPartitionReplica(int partitionId) {
-            synchronized (clearPartitionIds) {
-                clearPartitionIds.add(partitionId);
-            }
-            data.remove(partitionId);
-        }
-
-        public List<PartitionMigrationEvent> getBeforeEvents() {
-            synchronized (beforeEvents) {
-                return new ArrayList<PartitionMigrationEvent>(beforeEvents);
-            }
-        }
-
-        public List<PartitionMigrationEvent> getCommitEvents() {
-            synchronized (commitEvents) {
-                return new ArrayList<PartitionMigrationEvent>(commitEvents);
-            }
-        }
-
-        public List<PartitionMigrationEvent> getRollbackEvents() {
-            synchronized (rollbackEvents) {
-                return new ArrayList<PartitionMigrationEvent>(rollbackEvents);
-            }
-        }
-
-        public List<Integer> getClearPartitionIds() {
-            synchronized (clearPartitionIds) {
-                return new ArrayList<Integer>(clearPartitionIds);
-            }
-        }
-
-        public void clearEvents() {
-            synchronized (beforeEvents) {
-                beforeEvents.clear();
-            }
-            synchronized (commitEvents) {
-                commitEvents.clear();
-            }
-            synchronized (rollbackEvents) {
-                rollbackEvents.clear();
-            }
-            synchronized (clearPartitionIds) {
-                clearPartitionIds.clear();
-            }
-        }
-
-        public boolean containsDataForPartition(final int partitionId) {
-            return data.containsKey(partitionId);
-        }
-
-        @Override
-        public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-            if (!data.containsKey(event.getPartitionId())) {
-                throw new HazelcastException("No data found for " + event);
-            }
-            return new SampleReplicationOperation();
-        }
-
-    }
-
-    private static class SampleGetOperation
-            extends AbstractOperation {
-
-        private Object returnValue;
-
-        @Override
-        public void run()
-                throws Exception {
-            MigrationEventCollectingService service = getService();
-            returnValue = service.data.get(getPartitionId());
-        }
-
-        @Override
-        public Object getResponse() {
-            return returnValue;
-        }
-
-        @Override
-        public String getServiceName() {
-            return MigrationEventCollectingService.SERVICE_NAME;
-        }
-    }
-
-    private static class SamplePutOperation
-            extends AbstractOperation
-            implements BackupAwareOperation {
-        @Override
-        public void run()
-                throws Exception {
-            MigrationEventCollectingService service = getService();
-            service.data.put(getPartitionId(), Boolean.TRUE);
-        }
-
-        @Override
-        public boolean shouldBackup() {
-            return true;
-        }
-
-        @Override
-        public int getSyncBackupCount() {
-            return BACKUP_COUNT;
-        }
-
-        @Override
-        public int getAsyncBackupCount() {
-            return 0;
-        }
-
-        @Override
-        public Operation getBackupOperation() {
-            return new SampleBackupPutOperation();
-        }
-
-        @Override
-        public String getServiceName() {
-            return MigrationEventCollectingService.SERVICE_NAME;
-        }
-    }
-
-    private static class SampleBackupPutOperation
-            extends AbstractOperation {
-        @Override
-        public void run()
-                throws Exception {
-            MigrationEventCollectingService service = getService();
-            service.data.put(getPartitionId(), Boolean.TRUE);
-        }
-
-        @Override
-        public String getServiceName() {
-            return MigrationEventCollectingService.SERVICE_NAME;
-        }
-    }
-
-    private static class SampleReplicationOperation
-            extends AbstractOperation {
-
-        public SampleReplicationOperation() {
-        }
-
-        @Override
-        public void run()
-                throws Exception {
-            // artificial latency!
-            randomLatency();
-            MigrationEventCollectingService service = getService();
-            service.data.put(getPartitionId(), Boolean.TRUE);
-        }
-
-        private void randomLatency() {
-            long duration = (long) (Math.random() * 100);
-            LockSupport.parkNanos(TimeUnit.MICROSECONDS.toNanos(duration) + 100);
-        }
-
-        @Override
-        public String getServiceName() {
-            return MigrationEventCollectingService.SERVICE_NAME;
-        }
+    private TestMigrationAwareService getService(final Address address) {
+        return getNodeEngineImpl(factory.getInstance(address)).getService(TestMigrationAwareService.SERVICE_NAME);
     }
 
     private static class RejectMigrationOnComplete

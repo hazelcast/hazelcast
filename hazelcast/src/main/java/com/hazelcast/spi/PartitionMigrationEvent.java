@@ -62,17 +62,20 @@ public class PartitionMigrationEvent extends EventObject {
     }
 
     /**
-     * TODO
-     * @return
+     * Gets the index of the partition replica that current member owns currently, before migration starts.
+     * This index will be in range of [0,6] if current member owns a replica of the partition. Otherwise it will be -1.
+     *
+     * @return index of the partition replica that current member owns currently
      */
     public int getCurrentReplicaIndex() {
         return currentReplicaIndex;
     }
 
     /**
-     * TODO
+     * Gets the index of the partition replica that current member will own after migration is committed.
+     * This index will be -1 if partition replica will be moved from current member completely.
      *
-     * @return
+     * @return index of the partition replica that current member will own after migration is committed
      */
     public int getNewReplicaIndex() {
         return newReplicaIndex;

@@ -454,7 +454,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         if (invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
             Level level = invokeCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
             if (logger.isLoggable(level)) {
-//                logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
+                logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
             }
         }
 

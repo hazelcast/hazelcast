@@ -22,10 +22,12 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 
@@ -33,10 +35,12 @@ import java.util.Collection;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
 import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
+import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
 
 /**
- * TODO: Javadoc Pending...
+ *
+ * Maintains registration of partition-system related listeners and dispatches corresponding events
  *
  */
 public class PartitionEventManager {
@@ -121,6 +125,42 @@ public class PartitionEventManager {
         final Collection<EventRegistration> registrations = eventService
                 .getRegistrations(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC);
         eventService.publishEvent(SERVICE_NAME, registrations, partitionLostEvent, event.getPartitionId());
+    }
+
+    public void sendPartitionLostEvent(int partitionId, int lostReplicaIndex) {
+        final IPartitionLostEvent event = new IPartitionLostEvent(partitionId, lostReplicaIndex,
+                nodeEngine.getThisAddress());
+        final InternalPartitionLostEventPublisher publisher = new InternalPartitionLostEventPublisher(nodeEngine, event);
+        nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR, publisher);
+    }
+
+    private static class InternalPartitionLostEventPublisher
+            implements Runnable {
+
+        private final NodeEngineImpl nodeEngine;
+
+        private final IPartitionLostEvent event;
+
+        InternalPartitionLostEventPublisher(NodeEngineImpl nodeEngine, IPartitionLostEvent event) {
+            this.nodeEngine = nodeEngine;
+            this.event = event;
+        }
+
+        @Override
+        public void run() {
+            for (PartitionAwareService service : nodeEngine.getServices(PartitionAwareService.class)) {
+                try {
+                    service.onPartitionLost(event);
+                } catch (Exception e) {
+                    final ILogger logger = nodeEngine.getLogger(InternalPartitionLostEventPublisher.class);
+                    logger.warning("Handling partitionLostEvent failed. Service: " + service.getClass() + " Event: " + event, e);
+                }
+            }
+        }
+
+        public IPartitionLostEvent getEvent() {
+            return event;
+        }
     }
 
 }

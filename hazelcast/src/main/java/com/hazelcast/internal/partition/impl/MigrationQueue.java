@@ -39,10 +39,7 @@ class MigrationQueue {
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED",
             justification = "offer will always be successful since queue is unbounded")
     public void add(MigrationRunnable task) {
-        if (task instanceof MigrationManager.MigrateTask) {
-            migrateTaskCount.incrementAndGet();
-        }
-
+        migrateTaskCount.incrementAndGet();
         queue.offer(task);
     }
 
@@ -61,27 +58,17 @@ class MigrationQueue {
     }
 
     public void afterTaskCompletion(MigrationRunnable task) {
-        if (task instanceof MigrationManager.MigrateTask) {
-            if (migrateTaskCount.decrementAndGet() < 0) {
-                throw new IllegalStateException();
-            }
+        if (migrateTaskCount.decrementAndGet() < 0) {
+            throw new IllegalStateException();
         }
+    }
+
+    public int migrationTaskCount() {
+        return migrateTaskCount.get();
     }
 
     public boolean hasMigrationTasks() {
         return migrateTaskCount.get() > 0;
-    }
-
-    public boolean isEmpty() {
-        return queue.isEmpty();
-    }
-
-    public boolean isNonEmpty() {
-        return !queue.isEmpty();
-    }
-
-    public int size() {
-        return queue.size();
     }
 
     @Override

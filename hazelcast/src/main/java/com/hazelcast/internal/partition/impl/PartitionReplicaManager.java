@@ -21,12 +21,13 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
 import com.hazelcast.internal.partition.operation.SyncReplicaVersion;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
@@ -45,7 +46,8 @@ import static com.hazelcast.internal.partition.InternalPartitionService.REPLICA_
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
 /**
- * TODO: Javadoc Pending...
+ *
+ * Maintains the version values for the partition replicas and manages the replica-related operations for partitions
  *
  */
 public class PartitionReplicaManager {
@@ -65,7 +67,7 @@ public class PartitionReplicaManager {
     private final int partitionCount;
     private final int maxParallelReplications;
 
-    public PartitionReplicaManager(Node node, InternalPartitionServiceImpl partitionService) {
+    PartitionReplicaManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(getClass());
@@ -74,8 +76,9 @@ public class PartitionReplicaManager {
         partitionCount = partitionService.getPartitionCount();
         partitionStateManager = partitionService.getPartitionStateManager();
 
-        partitionMigrationTimeout = node.groupProperties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
-        maxParallelReplications = node.groupProperties.getInteger(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
+        HazelcastProperties properties = node.getProperties();
+        partitionMigrationTimeout = properties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
+        maxParallelReplications = properties.getInteger(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
         replicaSyncProcessLock = new Semaphore(maxParallelReplications);
 
         replicaVersions = new PartitionReplicaVersions[partitionCount];
@@ -223,13 +226,13 @@ public class PartitionReplicaManager {
 
     // called in operation threads
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
-    public long[] incrementPartitionReplicaVersions(int partitionId, int backupCount) {
+    long[] incrementPartitionReplicaVersions(int partitionId, int backupCount) {
         PartitionReplicaVersions replicaVersion = replicaVersions[partitionId];
         return replicaVersion.incrementAndGet(backupCount);
     }
 
     // called in operation threads
-    public void updatePartitionReplicaVersions(int partitionId, long[] versions, int replicaIndex) {
+    void updatePartitionReplicaVersions(int partitionId, long[] versions, int replicaIndex) {
         PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
         if (!partitionVersion.update(versions, replicaIndex)) {
             // this partition backup is behind the owner.
@@ -238,7 +241,7 @@ public class PartitionReplicaManager {
     }
 
     // called in operation threads
-    public boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex) {
+    boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex) {
         PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
         return partitionVersion.isStale(versions, replicaIndex);
     }
@@ -317,7 +320,7 @@ public class PartitionReplicaManager {
     /**
      * @return copy of ongoing replica-sync operations
      */
-    public List<ReplicaSyncInfo> getOngoingReplicaSyncRequests() {
+    List<ReplicaSyncInfo> getOngoingReplicaSyncRequests() {
         final int length = replicaSyncRequests.length();
         final List<ReplicaSyncInfo> replicaSyncRequestsList = new ArrayList<ReplicaSyncInfo>(length);
         for (int i = 0; i < length; i++) {
@@ -333,7 +336,7 @@ public class PartitionReplicaManager {
     /**
      * @return copy of scheduled replica-sync requests
      */
-    public List<ScheduledEntry<Integer, ReplicaSyncInfo>> getScheduledReplicaSyncRequests() {
+    List<ScheduledEntry<Integer, ReplicaSyncInfo>> getScheduledReplicaSyncRequests() {
         final List<ScheduledEntry<Integer, ReplicaSyncInfo>> entries = new ArrayList<ScheduledEntry<Integer, ReplicaSyncInfo>>();
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             final ScheduledEntry<Integer, ReplicaSyncInfo> entry = replicaSyncScheduler.get(partitionId);
@@ -358,7 +361,7 @@ public class PartitionReplicaManager {
     }
 
     void scheduleReplicaVersionSync(ExecutionService executionService) {
-        long definedBackupSyncCheckInterval = node.groupProperties.getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
+        long definedBackupSyncCheckInterval = node.getProperties().getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         long backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
 
         executionService.scheduleWithRepetition(new SyncReplicaVersionTask(),

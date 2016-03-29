@@ -19,7 +19,9 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionListener;
@@ -31,12 +33,17 @@ import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
 /**
- * TODO: Javadoc Pending...
+ *
+ * Maintains the partition table state.
  *
  */
 public class PartitionStateManager {
@@ -47,6 +54,7 @@ public class PartitionStateManager {
 
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
+    private final Map<Address, String> memberUuidMap = new HashMap<Address, String>();
 
     @Probe
     private final AtomicInteger stateVersion = new AtomicInteger();
@@ -126,6 +134,8 @@ public class PartitionStateManager {
             return false;
         }
 
+        updateMemberUuidMap();
+
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];
             Address[] replicas = newState[partitionId];
@@ -151,8 +161,39 @@ public class PartitionStateManager {
             }
             partition.setInitialReplicaAddresses(replicas);
         }
+        updateMemberUuidMap();
         stateVersion.set(partitionStateVersion);
         initialized = foundReplica;
+    }
+
+    void updateMemberUuidMap() {
+        List<MemberImpl> members = partitionService.getCurrentMembersAndMembersRemovedWhileClusterNotActive();
+        memberUuidMap.clear();
+        for (MemberImpl member : members) {
+            memberUuidMap.put(member.getAddress(), member.getUuid());
+        }
+    }
+
+    void updateMemberUuidMap(MemberInfo[] members) {
+        memberUuidMap.clear();
+        for (MemberInfo member : members) {
+            memberUuidMap.put(member.getAddress(), member.getUuid());
+        }
+    }
+
+    boolean isKnownMemberUuid(Address address, String uuid) {
+        String currentUuid = memberUuidMap.get(address);
+        assert currentUuid != null : "Unknown Member! " + address + " - " + uuid;
+        return uuid.equals(currentUuid);
+    }
+
+    MemberInfo[] getPartitionTableMembers() {
+        MemberInfo[] members = new MemberInfo[memberUuidMap.size()];
+        int ix = 0;
+        for (Map.Entry<Address, String> entry : memberUuidMap.entrySet()) {
+            members[ix++] = new MemberInfo(entry.getKey(), entry.getValue(), Collections.<String, Object>emptyMap());
+        }
+        return members;
     }
 
     void updateMemberGroupsSize() {
@@ -166,7 +207,7 @@ public class PartitionStateManager {
         memberGroupsSize = size;
     }
 
-    public int getMemberGroupsSize() {
+    int getMemberGroupsSize() {
         int size = memberGroupsSize;
         if (size > 0) {
             return size;
@@ -184,7 +225,8 @@ public class PartitionStateManager {
             // address is not replica of this partition
             if (index == -1) {
                 continue;
-            } else if (logger.isFinestEnabled()) {
+            }
+            if (logger.isFinestEnabled()) {
                 logger.finest("partitionId=" + partition.getPartitionId() + " " + address
                         + " is removed from replica index: " + index + " partition: " + partition);
             }

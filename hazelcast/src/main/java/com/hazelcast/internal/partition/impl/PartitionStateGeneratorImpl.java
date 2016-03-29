@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
+final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private static final ILogger LOGGER = Logger.getLogger(PartitionStateGenerator.class);
 
@@ -128,7 +128,8 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
                 // until queue is empty.
                 distributeUnownedPartitions(groups, freePartitions, index);
             }
-            // TODO: what if there are still free partitions?
+            assert freePartitions.isEmpty() : "There are partitions not-owned yet: " + freePartitions;
+
             // iterate through over-loaded groups' partitions and distribute them to under-loaded groups.
             transferPartitionsBetweenGroups(underLoadedGroups, overLoadedGroups, index,
                     avgPartitionPerGroup, plusOneGroupCount);
@@ -139,6 +140,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
         }
     }
 
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     private void transferPartitionsBetweenGroups(Queue<NodeGroup> underLoadedGroups, Collection<NodeGroup> overLoadedGroups,
                                                  int index, int avgPartitionPerGroup, int plusOneGroupCount) {
 
@@ -676,7 +678,7 @@ public final class PartitionStateGeneratorImpl implements PartitionStateGenerato
             }
             if (containsPartition(partitionId)) {
                 if (LOGGER.isFinestEnabled()) {
-                    String error = "Partition[" + partitionId + "] is already owned by this node " + address + "! Duplicate!";
+                    String error = "Partition[" + partitionId + "] is already owned by this node " + address;
                     LOGGER.finest(error);
                 }
                 return false;

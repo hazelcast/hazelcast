@@ -98,17 +98,6 @@ public class MigrationInfo implements DataSerializable {
         this.status = MigrationStatus.ACTIVE;
     }
 
-    public MigrationInfo copy() {
-        MigrationInfo copy = new MigrationInfo(partitionId, source, destination, sourceCurrentReplicaIndex,
-                sourceNewReplicaIndex, destinationCurrentReplicaIndex, destinationNewReplicaIndex);
-
-        copy.uuid = uuid;
-        copy.master = master;
-        copy.status = status;
-        copy.oldBackupReplicaOwner = oldBackupReplicaOwner;
-        return copy;
-    }
-
     public Address getSource() {
         return source;
     }

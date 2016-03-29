@@ -20,9 +20,20 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+/**
+ * Denotes endpoint of a migration.
+ */
 public enum MigrationEndpoint {
 
-    SOURCE(0), DESTINATION(1);
+    /**
+     * Denotes old owner of a partition replica
+     */
+    SOURCE(0),
+
+    /**
+     * Denotes new owner of a partition replica
+     */
+    DESTINATION(1);
 
     private final byte code;
 

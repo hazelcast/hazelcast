@@ -73,6 +73,8 @@ public interface InternalPartitionService extends IPartitionService {
 
     void firstArrangement();
 
+    PartitionRuntimeState createPartitionState();
+
     boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex);
 
     long[] getPartitionReplicaVersions(int partitionId);
