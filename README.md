@@ -74,6 +74,17 @@ You'll need to setup [Azure Active Directory Service Principal credentials](http
 
 ## Azure Configuration
 
+- `client-id` - The Azure Active Directory Service Principal client ID
+- `client-secret` - The Azure Active Directory Service Principal client secret
+- `tenant-id` - The Azure Active Directory tenant id
+- `subscription-id` - The Azure subscription id
+- `cluster-id` - The name of the tag on the hazelcast vm resources
+- `group-name` - The Azure [resource group](https://azure.microsoft.com/en-us/documentation/articles/resource-group-portal/) name of the cluster. You can find this in the Azure [portal](https://portal.azure.com) or [CLI](https://npmjs.org/azure-cli).
+
 With every Hazelcast Virtual Machine you deploy in your resource group, you need to ensure that each VM is tagged with the value of `cluster-id` defined in your Hazelcast configuration. The only requirement is that every VM can access each other either by private or public IP address.
 
 Read more about how you can [tag your virtual machines](https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-tagging-arm/).
+
+## Automated Deployment
+
+You can also use the [Azure Hazelcast Template](https://github.com/Azure/azure-quickstart-templates/tree/master/hazelcast-vm-cluster) to automatically deploy a Hazelcast cluster which uses this plugin.
