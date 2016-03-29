@@ -245,15 +245,15 @@ public class HealthMonitor {
                 = metricRegistry.newLongGauge("os.freeSwapSpaceSize");
 
         final LongGauge operationServiceExecutorQueueSize
-                = metricRegistry.newLongGauge("operation.queue.size");
+                = metricRegistry.newLongGauge("operation.queueSize");
         final LongGauge operationServiceExecutorPriorityQueueSize
-                = metricRegistry.newLongGauge("operation.priority-queue.size");
+                = metricRegistry.newLongGauge("operation.priorityQueueSize");
         final LongGauge operationServiceResponseQueueSize
-                = metricRegistry.newLongGauge("operation.response-queue.size");
+                = metricRegistry.newLongGauge("operation.responseQueueSize");
         final LongGauge operationServiceRunningOperationsCount
-                = metricRegistry.newLongGauge("operation.running.count");
+                = metricRegistry.newLongGauge("operation.runningCount");
         final LongGauge operationServiceCompletedOperationsCount
-                = metricRegistry.newLongGauge("operation.completed.count");
+                = metricRegistry.newLongGauge("operation.completedCount");
         final LongGauge operationServicePendingInvocationsCount
                 = metricRegistry.newLongGauge("operation.invocations.pending");
         final DoubleGauge operationServicePendingInvocationsPercentage

@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
+public class OperationThreadTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test
     public void testOOME_whenDeserializing() throws Exception {
@@ -130,12 +130,12 @@ public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
             public void run() {
             }
         };
-        executor.runOnAllPartitionThreads(emptyRunnable);
+        executor.executeOnPartitionThreads(emptyRunnable);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(0, executor.getPriorityOperationExecutorQueueSize());
+                assertEquals(0, executor.getPriorityQueueSize());
             }
         });
     }

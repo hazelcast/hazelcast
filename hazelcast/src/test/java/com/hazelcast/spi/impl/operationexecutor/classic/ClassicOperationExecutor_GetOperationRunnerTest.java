@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class GetOperationRunnerTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_GetOperationRunnerTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNull() {

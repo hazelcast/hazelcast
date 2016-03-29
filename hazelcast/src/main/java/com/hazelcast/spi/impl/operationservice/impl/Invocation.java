@@ -187,7 +187,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine);
 
-            boolean isAllowed = operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op, isAsync);
+            boolean isAllowed = operationService.operationExecutor.isInvocationAllowed(op, isAsync);
             if (!isAllowed && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -239,7 +239,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         if (isAsync) {
             operationService.operationExecutor.execute(op);
         } else {
-            operationService.operationExecutor.runOnCallingThreadIfPossible(op);
+            operationService.operationExecutor.runOrExecute(op);
         }
     }
 

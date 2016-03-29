@@ -35,17 +35,29 @@ public interface OperationQueue {
      * <p/>
      * This method is thread safe.
      *
-     * @param task     the item to add
+     * @param task the item to add
      * @throws java.lang.NullPointerException if task is null
      */
     void add(Object task);
+
+    /**
+     * Adds an task to this queue.
+     * <p/>
+     * This method is thread safe.
+     *
+     * @param task     the item to add
+     * @param priority if the task has priority or not
+     * @throws java.lang.NullPointerException if task is null
+     */
+    void add(Object task, boolean priority);
+
 
     /**
      * Adds an task with normal priority to this queue.
      * <p/>
      * This method is thread safe.
      *
-     * @param task     the item to add
+     * @param task the item to add
      * @throws java.lang.NullPointerException if task is null
      */
     void addUrgent(Object task);

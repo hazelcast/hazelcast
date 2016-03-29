@@ -16,20 +16,20 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutorTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_BasicTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test
     public void testConstruction() {
         initExecutor();
 
         assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_COUNT), executor.getPartitionOperationRunners().length);
-        assertEquals(executor.getGenericOperationThreadCount(), executor.getGenericOperationRunners().length);
+        assertEquals(executor.getGenericThreadCount(), executor.getGenericOperationRunners().length);
 
         assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_OPERATION_THREAD_COUNT),
-                executor.getPartitionOperationThreadCount());
+                executor.getPartitionThreadCount());
 
         assertEquals(groupProperties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT),
-                executor.getGenericOperationThreadCount());
+                executor.getGenericThreadCount());
     }
 
     @Test
@@ -52,27 +52,27 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     }
 
     @Test
-    public void test_getOperationExecutorQueueSize() {
+    public void test_getQueueSize() {
         initExecutor();
 
         // first we need to set the threads to work so the queues are going to be left alone.
-        for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
+        for (int k = 0; k < executor.getGenericThreadCount(); k++) {
             executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
         }
-        for (int k = 0; k < executor.getPartitionOperationThreadCount(); k++) {
+        for (int k = 0; k < executor.getPartitionThreadCount(); k++) {
             executor.execute(new DummyOperation(k).durationMs(2000));
         }
 
         // now we throw in some work in the queues that wont' be picked up
         int count = 0;
         for (int l = 0; l < 3; l++) {
-            for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
+            for (int k = 0; k < executor.getGenericThreadCount(); k++) {
                 executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
                 count++;
             }
         }
         for (int l = 0; l < 5; l++) {
-            for (int k = 0; k < executor.getPartitionOperationThreadCount(); k++) {
+            for (int k = 0; k < executor.getPartitionThreadCount(); k++) {
                 executor.execute(new DummyOperation(k).durationMs(2000));
                 count++;
             }
@@ -82,7 +82,7 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(expectedCount, executor.getOperationExecutorQueueSize());
+                assertEquals(expectedCount, executor.getQueueSize());
             }
         });
     }
@@ -90,17 +90,17 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     @Test(expected = NullPointerException.class)
     public void test_runOnAllPartitionThreads_whenTaskNull() {
         initExecutor();
-        executor.runOnAllPartitionThreads(null);
+        executor.executeOnPartitionThreads(null);
     }
 
     @Test
     public void test_runOnAllPartitionThreads() throws Exception {
         initExecutor();
 
-        int threadCount = executor.getPartitionOperationThreadCount();
+        int threadCount = executor.getPartitionThreadCount();
         final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
 
-        executor.runOnAllPartitionThreads(new Runnable() {
+        executor.executeOnPartitionThreads(new Runnable() {
             @Override
             public void run() {
                 // current thread must be a PartitionOperationThread
@@ -121,10 +121,10 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     public void test_interruptAllPartitionThreads() throws Exception {
         initExecutor();
 
-        int threadCount = executor.getPartitionOperationThreadCount();
+        int threadCount = executor.getPartitionThreadCount();
         final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
 
-        executor.runOnAllPartitionThreads(new Runnable() {
+        executor.executeOnPartitionThreads(new Runnable() {
             @Override
             public void run() {
                 // current thread must be a PartitionOperationThread
@@ -143,7 +143,7 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
             }
         });
 
-        executor.interruptAllPartitionThreads();
+        executor.interruptPartitionThreads();
         awaitBarrier(barrier);
     }
 

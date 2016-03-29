@@ -95,7 +95,6 @@ public class DefaultOperationQueueTest extends HazelcastTestSupport {
         assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
     }
 
-
     public void assertEmpty(Queue q) {
         assertEquals("expecting an empty queue, but the queue is:" + q, 0, q.size());
     }

@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -33,9 +33,13 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.concurrent.TimeUnit;
-
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} that schedules:
@@ -58,6 +62,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * </li>
  * </ol>
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class ClassicOperationExecutor implements OperationExecutor {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
@@ -65,58 +70,42 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
-    private final PartitionOperationThread[] partitionOperationThreads;
+    private final PartitionOperationThread[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
 
-    private final OperationQueue genericOperationQueue;
+    private final OperationQueue genericQueue = new DefaultOperationQueue();
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
-    private final GenericOperationThread[] genericOperationThreads;
+    private final GenericOperationThread[] genericThreads;
     private final OperationRunner[] genericOperationRunners;
 
     private final Address thisAddress;
-    private final NodeExtension nodeExtension;
-    private final HazelcastThreadGroup threadGroup;
     private final OperationRunner adHocOperationRunner;
-    private final MetricsRegistry metricsRegistry;
 
     public ClassicOperationExecutor(GroupProperties properties,
                                     LoggingService loggerService,
                                     Address thisAddress,
                                     OperationRunnerFactory operationRunnerFactory,
-                                    HazelcastThreadGroup hazelcastThreadGroup,
+                                    HazelcastThreadGroup threadGroup,
                                     NodeExtension nodeExtension,
                                     MetricsRegistry metricsRegistry) {
         this.thisAddress = thisAddress;
-        this.nodeExtension = nodeExtension;
-        this.threadGroup = hazelcastThreadGroup;
-        this.metricsRegistry = metricsRegistry;
         this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
-        this.genericOperationQueue = new DefaultOperationQueue();
 
         this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, operationRunnerFactory);
-        this.partitionOperationThreads = initPartitionThreads(properties);
+        this.partitionThreads = initPartitionThreads(properties, threadGroup, nodeExtension, metricsRegistry);
 
         this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
-        this.genericOperationThreads = initGenericThreads();
+        this.genericThreads = initGenericThreads(threadGroup, nodeExtension, metricsRegistry);
 
-        logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
-                + partitionOperationThreads.length + " partition operation threads.");
-    }
+        metricsRegistry.scanAndRegister(this, "operation");
 
-    public void start() {
-        for (Thread t : partitionOperationThreads) {
-            t.start();
-        }
-        for (Thread t : genericOperationThreads) {
-            t.start();
-        }
     }
 
     private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
-        OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(GroupProperty.PARTITION_COUNT)];
+        OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(PARTITION_COUNT)];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = handlerFactory.createPartitionRunner(partitionId);
         }
@@ -124,7 +113,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private OperationRunner[] initGenericOperationRunners(GroupProperties properties, OperationRunnerFactory runnerFactory) {
-        int genericThreadCount = properties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT);
+        int genericThreadCount = properties.getInteger(GENERIC_OPERATION_THREAD_COUNT);
         if (genericThreadCount <= 0) {
             // default generic operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
@@ -138,8 +127,10 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return operationRunners;
     }
 
-    private PartitionOperationThread[] initPartitionThreads(GroupProperties properties) {
-        int threadCount = properties.getInteger(GroupProperty.PARTITION_OPERATION_THREAD_COUNT);
+    private PartitionOperationThread[] initPartitionThreads(GroupProperties properties, HazelcastThreadGroup threadGroup,
+                                                            NodeExtension nodeExtension, MetricsRegistry metricsRegistry) {
+
+        int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
             // default partition operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
@@ -151,12 +142,12 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
             OperationQueue operationQueue = new DefaultOperationQueue();
 
-            PartitionOperationThread operationThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
+            PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     threadGroup, nodeExtension, partitionOperationRunners);
 
-            threads[threadId] = operationThread;
+            threads[threadId] = partitionThread;
 
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
+            metricsRegistry.scanAndRegister(partitionThread, "operation." + partitionThread.getName());
         }
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
@@ -170,7 +161,8 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return threads;
     }
 
-    private GenericOperationThread[] initGenericThreads() {
+    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
+                                                        MetricsRegistry metricsRegistry) {
         // we created as many generic operation handlers, as there are generic threads
         int threadCount = genericOperationRunners.length;
         GenericOperationThread[] threads = new GenericOperationThread[threadCount];
@@ -179,13 +171,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
             OperationRunner operationRunner = genericOperationRunners[threadId];
 
-            GenericOperationThread operationThread = new GenericOperationThread(
-                    threadName, threadId, genericOperationQueue,
+            GenericOperationThread genericThread = new GenericOperationThread(
+                    threadName, threadId, genericQueue,
                     logger, threadGroup, nodeExtension, operationRunner);
 
-            threads[threadId] = operationThread;
-            operationRunner.setCurrentThread(operationThread);
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
+            threads[threadId] = genericThread;
+            operationRunner.setCurrentThread(genericThread);
+            metricsRegistry.scanAndRegister(genericThread, "operation." + genericThread.getName());
         }
 
         return threads;
@@ -203,8 +195,175 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return genericOperationRunners;
     }
 
+    @Probe(name = "runningCount")
     @Override
-    public boolean isAllowedToRunInCurrentThread(Operation op) {
+    public int getRunningOperationCount() {
+        return getRunningPartitionOperationCount() + getRunningGenericOperationCount();
+    }
+
+    @Probe(name = "runningPartitionCount")
+    private int getRunningPartitionOperationCount() {
+        return getRunningOperationCount(partitionOperationRunners);
+    }
+
+    @Probe(name = "runningGenericCount")
+    private int getRunningGenericOperationCount() {
+        return getRunningOperationCount(genericOperationRunners);
+    }
+
+    private static int getRunningOperationCount(OperationRunner[] runners) {
+        int result = 0;
+        for (OperationRunner runner : runners) {
+            if (runner.currentTask() != null) {
+                result++;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    @Probe(name = "queueSize", level = MANDATORY)
+    public int getQueueSize() {
+        int size = 0;
+        for (PartitionOperationThread partitionThread : partitionThreads) {
+            size += partitionThread.queue.normalSize();
+        }
+        size += genericQueue.normalSize();
+        return size;
+    }
+
+    @Override
+    @Probe(name = "priorityQueueSize", level = MANDATORY)
+    public int getPriorityQueueSize() {
+        int size = 0;
+        for (PartitionOperationThread partitionThread : partitionThreads) {
+            size += partitionThread.queue.prioritySize();
+        }
+        size += genericQueue.prioritySize();
+        return size;
+    }
+
+    @Probe(name = "genericQueueSize")
+    private int getGenericQueueSize() {
+        return genericQueue.normalSize();
+    }
+
+    @Probe(name = "genericPriorityQueueSize")
+    private int getGenericPriorityQueueSize() {
+        return genericQueue.prioritySize();
+    }
+
+    @Override
+    @Probe(name = "partitionThreadCount")
+    public int getPartitionThreadCount() {
+        return partitionThreads.length;
+    }
+
+    @Override
+    @Probe(name = "genericThreadCount")
+    public int getGenericThreadCount() {
+        return genericThreads.length;
+    }
+
+    @Override
+    public boolean isOperationThread() {
+        return Thread.currentThread() instanceof OperationThread;
+    }
+
+    @Override
+    public void execute(Operation op) {
+        checkNotNull(op, "op can't be null");
+
+        execute(op, op.getPartitionId(), op.isUrgent());
+    }
+
+    @Override
+    public void execute(PartitionSpecificRunnable task) {
+        checkNotNull(task, "task can't be null");
+
+        execute(task, task.getPartitionId(), false);
+    }
+
+    @Override
+    public void execute(Packet packet) {
+        checkNotNull(packet, "packet can't be null");
+        if (!packet.isFlagSet(FLAG_OP)) {
+            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.FLAG_OP set");
+        }
+
+        execute(packet, packet.getPartitionId(), packet.isUrgent());
+    }
+
+    private void execute(Object task, int partitionId, boolean priority) {
+        if (partitionId < 0) {
+            genericQueue.add(task, priority);
+        } else {
+            OperationThread partitionThread = partitionThreads[toPartitionThreadIndex(partitionId)];
+            partitionThread.queue.add(task, priority);
+        }
+    }
+
+    @Override
+    public void executeOnPartitionThreads(Runnable task) {
+        checkNotNull(task, "task can't be null");
+
+        for (OperationThread partitionThread : partitionThreads) {
+            partitionThread.queue.addUrgent(task);
+        }
+    }
+
+    @Override
+    public void interruptPartitionThreads() {
+        for (PartitionOperationThread partitionThread : partitionThreads) {
+            partitionThread.interrupt();
+        }
+    }
+
+    @Override
+    public void run(Operation operation) {
+        checkNotNull(operation, "operation can't be null");
+
+        if (!isRunAllowed(operation)) {
+            throw new IllegalThreadStateException("Operation '" + operation + "' cannot be run in current thread: "
+                    + Thread.currentThread());
+        }
+
+        OperationRunner operationRunner = getOperationRunner(operation);
+        operationRunner.run(operation);
+    }
+
+    OperationRunner getOperationRunner(Operation operation) {
+        checkNotNull(operation, "operation can't be null");
+
+        if (operation.getPartitionId() >= 0) {
+            // retrieving an OperationRunner for a partition specific operation is easy; we can just use the partition id.
+            return partitionOperationRunners[operation.getPartitionId()];
+        }
+
+        Thread currentThread = Thread.currentThread();
+        if (!(currentThread instanceof OperationThread)) {
+            // if thread is not an operation thread, we return the adHocOperationRunner
+            return adHocOperationRunner;
+        }
+
+        // It is a generic operation and we are running on an operation-thread. So we can just return the operation-runner
+        // for that thread. There won't be any partition-conflict since generic operations are allowed to be executed by
+        // a partition-specific operation-runner.
+        OperationThread operationThread = (OperationThread) currentThread;
+        return operationThread.currentRunner;
+    }
+
+    @Override
+    public void runOrExecute(Operation op) {
+        if (isRunAllowed(op)) {
+            run(op);
+        } else {
+            execute(op);
+        }
+    }
+
+    @Override
+    public boolean isRunAllowed(Operation op) {
         checkNotNull(op, "op can't be null");
 
         Thread currentThread = Thread.currentThread();
@@ -221,7 +380,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
 
         // we are only allowed to execute partition aware actions on an OperationThread
-        if (!(currentThread instanceof PartitionOperationThread)) {
+        if (currentThread.getClass() != PartitionOperationThread.class) {
             return false;
         }
 
@@ -233,12 +392,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     @Override
-    public boolean isOperationThread() {
-        return Thread.currentThread() instanceof OperationThread;
-    }
-
-    @Override
-    public boolean isInvocationAllowedFromCurrentThread(Operation op, boolean isAsync) {
+    public boolean isInvocationAllowed(Operation op, boolean isAsync) {
         checkNotNull(op, "op can't be null");
 
         Thread currentThread = Thread.currentThread();
@@ -259,12 +413,12 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
 
         // allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
-        if (!(currentThread instanceof PartitionOperationThread)) {
+        if (currentThread.getClass() != PartitionOperationThread.class) {
             return true;
         }
 
         PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
-        OperationRunner runner = partitionThread.getCurrentRunner();
+        OperationRunner runner = partitionThread.currentRunner;
         if (runner != null) {
             // non null runner means it's a nested call
             // in this case partitionId of both inner and outer operations have to match
@@ -274,173 +428,32 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return toPartitionThreadIndex(op.getPartitionId()) == partitionThread.threadId;
     }
 
-    @Override
-    public int getRunningOperationCount() {
-        int result = 0;
-        for (OperationRunner handler : partitionOperationRunners) {
-            if (handler.currentTask() != null) {
-                result++;
-            }
-        }
-        for (OperationRunner handler : genericOperationRunners) {
-            if (handler.currentTask() != null) {
-                result++;
-            }
-        }
-        return result;
-    }
-
-    @Override
-    public int getOperationExecutorQueueSize() {
-        int size = 0;
-
-        for (PartitionOperationThread t : partitionOperationThreads) {
-            size += t.queue.normalSize();
-        }
-
-        size += genericOperationQueue.normalSize();
-
-        return size;
-    }
-
-    @Override
-    public int getPriorityOperationExecutorQueueSize() {
-        int size = 0;
-
-        for (PartitionOperationThread t : partitionOperationThreads) {
-            size += t.queue.prioritySize();
-        }
-
-        size += genericOperationQueue.prioritySize();
-        return size;
-    }
-
-    @Override
-    public int getPartitionOperationThreadCount() {
-        return partitionOperationThreads.length;
-    }
-
-    @Override
-    public int getGenericOperationThreadCount() {
-        return genericOperationThreads.length;
-    }
-
-    @Override
-    public void execute(Operation op) {
-        checkNotNull(op, "op can't be null");
-
-        execute(op, op.getPartitionId(), op.isUrgent());
-    }
-
-    @Override
-    public void execute(PartitionSpecificRunnable task) {
-        checkNotNull(task, "task can't be null");
-
-        execute(task, task.getPartitionId(), false);
-    }
-
-    @Override
-    public void runOnCallingThreadIfPossible(Operation op) {
-        if (isAllowedToRunInCurrentThread(op)) {
-            runOnCallingThread(op);
-        } else {
-            execute(op);
-        }
-    }
-
-    @Override
-    public void runOnAllPartitionThreads(Runnable task) {
-        checkNotNull(task, "task can't be null");
-
-        for (OperationThread partitionOperationThread : partitionOperationThreads) {
-            partitionOperationThread.queue.addUrgent(task);
-        }
-    }
-
-    @Override
-    public void interruptAllPartitionThreads() {
-        for (PartitionOperationThread thread : partitionOperationThreads) {
-            thread.interrupt();
-        }
-    }
-
-    @Override
-    public void execute(Packet packet) {
-        checkNotNull(packet, "packet can't be null");
-        checkOpPacket(packet);
-
-        int partitionId = packet.getPartitionId();
-        boolean hasPriority = packet.isUrgent();
-        execute(packet, partitionId, hasPriority);
-    }
-
-    private void checkOpPacket(Packet packet) {
-        if (!packet.isFlagSet(Packet.FLAG_OP)) {
-            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.FLAG_OP set");
-        }
-    }
-
-    @Override
-    public void runOnCallingThread(Operation operation) {
-        checkNotNull(operation, "operation can't be null");
-
-        if (!isAllowedToRunInCurrentThread(operation)) {
-            throw new IllegalThreadStateException("Operation '" + operation + "' cannot be run in current thread: "
-                    + Thread.currentThread());
-        }
-
-        OperationRunner operationRunner = getOperationRunner(operation);
-        operationRunner.run(operation);
-    }
-
-    OperationRunner getOperationRunner(Operation operation) {
-        checkNotNull(operation, "operation can't be null");
-
-        if (operation.getPartitionId() >= 0) {
-            // retrieving an OperationRunner for a partition specific operation is easy; we can just use the partition id.
-            return partitionOperationRunners[operation.getPartitionId()];
-        }
-
-        Thread thread = Thread.currentThread();
-        if (!(thread instanceof OperationThread)) {
-            // if thread is not an operation thread, we return the adHocOperationRunner
-            return adHocOperationRunner;
-        }
-
-        // It is a generic operation and we are running on an operation-thread. So we can just return the operation-runner
-        // for that thread. There won't be any partition-conflict since generic operations are allowed to be executed by
-        // a partition-specific operation-runner.
-        OperationThread operationThread = (OperationThread) thread;
-        return operationThread.getCurrentRunner();
-    }
-
-    private void execute(Object task, int partitionId, boolean priority) {
-        OperationQueue operationQueue;
-
-        if (partitionId < 0) {
-            operationQueue = genericOperationQueue;
-        } else {
-            OperationThread partitionOperationThread = partitionOperationThreads[toPartitionThreadIndex(partitionId)];
-            operationQueue = partitionOperationThread.queue;
-        }
-
-        if (priority) {
-            operationQueue.addUrgent(task);
-        } else {
-            operationQueue.add(task);
-        }
-    }
-
+    // public for testing purposes
     public int toPartitionThreadIndex(int partitionId) {
-        return partitionId % partitionOperationThreads.length;
+        return partitionId % partitionThreads.length;
+    }
+
+    @Override
+    public void start() {
+        logger.info("Starting with " + genericThreads.length + " generic operation threads and "
+                + partitionThreads.length + " partition operation threads.");
+
+        startAll(partitionThreads);
+        startAll(genericThreads);
+    }
+
+    private static void startAll(OperationThread[] operationThreads) {
+        for (OperationThread thread : operationThreads) {
+            thread.start();
+        }
     }
 
     @Override
     public void shutdown() {
-        shutdownAll(partitionOperationThreads);
-        shutdownAll(genericOperationThreads);
-        awaitTermination(partitionOperationThreads);
-        awaitTermination(genericOperationThreads);
+        shutdownAll(partitionThreads);
+        shutdownAll(genericThreads);
+        awaitTermination(partitionThreads);
+        awaitTermination(genericThreads);
     }
 
     private static void shutdownAll(OperationThread[] operationThreads) {
@@ -452,7 +465,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private static void awaitTermination(OperationThread[] operationThreads) {
         for (OperationThread thread : operationThreads) {
             try {
-                thread.awaitTermination(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                thread.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             }
@@ -461,8 +474,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public String toString() {
-        return "ClassicOperationExecutor{"
-                + "node=" + thisAddress
-                + '}';
+        return "ClassicOperationExecutor{node=" + thisAddress + '}';
     }
 }

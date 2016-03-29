@@ -16,13 +16,13 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_RunTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNull() {
         initExecutor();
 
-        executor.runOnCallingThread(null);
+        executor.run(null);
     }
 
     @Test
@@ -31,7 +31,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
 
         DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        executor.runOnCallingThread(genericOperation);
+        executor.run(genericOperation);
 
         DummyOperationRunner adhocHandler = ((DummyOperationRunnerFactory) handlerFactory).adhocHandler;
         assertTrue(adhocHandler.operations.contains(genericOperation));
@@ -48,7 +48,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
         PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
-                executor.runOnCallingThread(genericOperation);
+                executor.run(genericOperation);
                 return null;
             }
         };
@@ -74,7 +74,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
         PartitionSpecificCallable task = new PartitionSpecificCallable(partitionId) {
             @Override
             public Object call() {
-                executor.runOnCallingThread(genericOperation);
+                executor.run(genericOperation);
                 return null;
             }
         };
@@ -101,7 +101,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
             @Override
             public Boolean call() throws Exception {
                 try {
-                    executor.runOnCallingThread(genericOperation);
+                    executor.run(genericOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;
@@ -121,7 +121,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
 
         DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        executor.runOnCallingThread(partitionOperation);
+        executor.run(partitionOperation);
     }
 
     @Test
@@ -134,7 +134,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
             @Override
             public Object call() {
                 try {
-                    executor.runOnCallingThread(partitionOperation);
+                    executor.run(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;
@@ -158,7 +158,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
             @Override
             public Object call() {
                 try {
-                    executor.runOnCallingThread(partitionOperation);
+                    executor.run(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;
@@ -181,7 +181,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
         PartitionSpecificCallable task = new PartitionSpecificCallable(partitionId) {
             @Override
             public Object call() {
-                executor.runOnCallingThread(partitionOperation);
+                executor.run(partitionOperation);
                 return Boolean.TRUE;
             }
         };
@@ -208,7 +208,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
             @Override
             public Boolean call() throws Exception {
                 try {
-                    executor.runOnCallingThread(partitionOperation);
+                    executor.run(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;
