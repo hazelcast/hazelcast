@@ -22,5 +22,10 @@ interface PortablePosition {
 
     boolean isEmpty();
 
+    // convenience
+    boolean isNullOrEmpty();
+
+    boolean isLast();
+
     List<PortablePosition> asMultiPosition();
 }

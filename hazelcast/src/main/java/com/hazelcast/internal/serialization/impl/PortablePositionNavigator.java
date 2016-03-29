@@ -9,7 +9,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -145,28 +144,30 @@ public class PortablePositionNavigator {
     }
 
     private void adjustPositionForSingleCellNonPortableArrayAccess(String fieldName, FieldType type, PortableSinglePosition position) throws IOException {
-        if (position.index >= 0) {
-            in.position(position.getStreamPosition());
-            int arrayLen = in.readInt();
+        if (!position.isNullOrEmpty()) {
+            if (position.index >= 0) {
+                in.position(position.getStreamPosition());
+                int arrayLen = in.readInt();
 
-            //
-            if (arrayLen == Bits.NULL_ARRAY_LENGTH) {
-                throw new IllegalArgumentException("The array is null in " + fieldName);
-            }
-            if (position.index > arrayLen - 1) {
-                throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
-            }
-
-            if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
-                int currentIndex = 0;
-                while (position.index > currentIndex) {
-                    int indexElementLen = in.readInt();
-                    in.position(in.position() + indexElementLen);
-                    currentIndex++;
+                //
+                if (arrayLen == Bits.NULL_ARRAY_LENGTH) {
+                    throw new IllegalArgumentException("The array is null in " + fieldName);
                 }
-                position.position = in.position();
-            } else {
-                position.position = in.position() + position.index * getTypeElementSizeInBytes(type);
+                if (position.index > arrayLen - 1) {
+                    throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
+                }
+
+                if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
+                    int currentIndex = 0;
+                    while (position.index > currentIndex) {
+                        int indexElementLen = in.readInt();
+                        in.position(in.position() + indexElementLen);
+                        currentIndex++;
+                    }
+                    position.position = in.position();
+                } else {
+                    position.position = in.position() + position.index * getTypeElementSizeInBytes(type);
+                }
             }
         }
     }
@@ -249,8 +250,8 @@ public class PortablePositionNavigator {
 
     private PortablePosition adjustForPortableArrayAccess(PortableSinglePosition pos, boolean singleCellAccess,
                                                           String path) throws IOException {
-        in.position(pos.getStreamPosition());
-        if(pos.len != -1) { // not poison pill
+        if (!pos.isNullOrEmpty()) {
+            in.position(pos.getStreamPosition());
 
             int len = in.readInt();
             int factoryId = in.readInt();
@@ -263,9 +264,6 @@ public class PortablePositionNavigator {
 
             //        checkFactoryAndClass(fd, factoryId, classId);
             if (singleCellAccess) {
-                //            if (len == Bits.NULL_ARRAY_LENGTH) {
-                //                throw new HazelcastSerializationException("The array " + path + " is null!");
-                //            } else if (len > 0) {
                 if (pos.getIndex() < len) {
                     int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
                     in.position(offset);
@@ -274,16 +272,25 @@ public class PortablePositionNavigator {
                     pos.nil = true;
                 }
             }
-            //        }
+        } else {
+            if (pos.isNull()) {
+                pos.nil = true;
+            } else if (pos.isEmpty() && !pos.isLast()) {
+                pos.nil = true;
+            } else if (pos.isEmpty() && pos.getIndex() >= 0) {
+                pos.nil = true;
+            }
         }
+
         return pos;
     }
 
-    /**
-     * @param fieldName
-     * @return
-     * @throws IOException
-     */
+        /**
+         * @param fieldName
+         * @return
+         * @throws IOException
+         */
+
     public PortablePosition findPositionOfPortableArray(String fieldName) throws IOException {
         PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(fieldName, FieldType.PORTABLE_ARRAY);
         if (position.isMultiPosition()) {
@@ -315,20 +322,14 @@ public class PortablePositionNavigator {
         PortablePosition result = null;
         for (int i = 0; i < pathTokens.length; i++) {
             result = processPath(pathTokens, i, nestedPath, null);
-            // poision pill for for multipositions
-            if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
-                break;
-            }
-
-            // poision pill for for singleposistions
-            if (result != null && !result.isMultiPosition() && (result.isNull() || result.getLen() == -1)) {
+            if (result != null && result.isNullOrEmpty()) {
                 break;
             }
         }
-        if (result == null && multiPositions.isEmpty()) {
+
+        if (result == null) {
             throw unknownFieldException(nestedPath);
         }
-
 
         if (multiPositions.isEmpty()) {
             //        if (fd.getType() != type) {
@@ -338,11 +339,7 @@ public class PortablePositionNavigator {
         } else {
 
             List<PortablePosition> positions = new LinkedList<PortablePosition>();
-            if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
-//                break;
-            } else if (result != null) {
-                positions.add(result);
-            }
+            positions.add(result);
 
             while (!multiPositions.isEmpty()) {
                 NavigationFrame frame = multiPositions.pollFirst();
@@ -377,7 +374,12 @@ public class PortablePositionNavigator {
         cd = frame.cd;
     }
 
-    public PortableSinglePosition EMPTY_ARRAY = new PortableSinglePosition();
+    public PortableSinglePosition EMPTY = new PortableSinglePosition();
+    public PortableSinglePosition NULL = new PortableSinglePosition();
+    {
+        EMPTY.len = 0;
+        NULL.nil = true;
+    }
 
     private PortablePosition processPath(String[] pathTokens, int pathTokenIndex, String nestedPath,
                                          NavigationFrame frame) throws IOException {
@@ -398,9 +400,8 @@ public class PortablePositionNavigator {
                 return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
             }
             if (!advanceToNextTokenFromNonArrayElement(fd, token)) {
-                PortableSinglePosition pos = new PortableSinglePosition();
-                pos.nil = true;
-                return pos;
+                NULL.last = last;
+                return NULL;
             }
         } else if (isPathTokenWithAnyQuantifier(token)) {
             //
@@ -413,13 +414,11 @@ public class PortablePositionNavigator {
                 if (frame == null) {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
-                        // poison pill -> [any] used with empty array, so no need to process further
-                        return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
+                        EMPTY.last = last;
+                        return EMPTY;
                     } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                        // poison pill -> [any] used with null array, so no need to process further
-                        PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
-                        pos.nil = true;
-                        return pos;
+                        NULL.last = last;
+                        return NULL;
                     } else {
                         populatePendingNavigationFrames(pathTokenIndex, len);
                         if (last) {
@@ -443,13 +442,11 @@ public class PortablePositionNavigator {
                     if (last) {
                         int len = getCurrentArrayLength(fd);
                         if (len == 0) {
-                            // poison pill -> [any] used with empty array, so no need to process further
-                            return new PortableMultiPosition(Collections.<PortablePosition>emptyList());
+                            EMPTY.last = last;
+                            return EMPTY;
                         } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                            // poison pill -> [any] used with null array, so no need to process further
-                            PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
-                            pos.nil = true;
-                            return pos;
+                            NULL.last = last;
+                            return NULL;
                         } else {
                             populatePendingNavigationFrames(pathTokenIndex, len);
                             return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
@@ -472,37 +469,30 @@ public class PortablePositionNavigator {
 
             if (last) {
                 if (len == 0) {
-                    PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.len = -1;
-                    return pos;
+                    EMPTY.index = index;
+                    EMPTY.last = last;
+                    return EMPTY;
                 } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    // poison pill -> [any] used with null array, so no need to process further
-                    PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.nil = true;
-                    return pos;
+                    NULL.last = last;
+                    return NULL;
                 } else if (index >= len) {
-                    PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.nil = true;
-                    return pos;
+                    NULL.last = last;
+                    return NULL;
                 } else {
                     return readPositionOfCurrentElement(new PortableSinglePosition(), fd, index);
                 }
             }
             if (fd.getType() == FieldType.PORTABLE_ARRAY) {
                 if (len == 0) {
-                    // poison pill
-                    PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.len = -1;
-                    return pos;
+                    EMPTY.index = index;
+                    EMPTY.last = last;
+                    return EMPTY;
                 } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    // poison pill
-                    PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.nil = true;
-                    return pos;
+                    NULL.last = last;
+                    return NULL;
                 } else if (index >= len) {
-                    PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.nil = true;
-                    return pos;
+                    NULL.last = last;
+                    return NULL;
                 } else {
                     advanceToNextTokenFromPortableArrayElement(fd, index, field);
                 }
@@ -538,10 +528,10 @@ public class PortablePositionNavigator {
         return pathToken.endsWith("[any]");
     }
 
-
     private PortablePosition readPositionOfCurrentElement(PortableSinglePosition result, FieldDefinition fd) throws IOException {
         result.fd = fd;
         result.position = readPositionFromMetadata(fd);
+        result.last = true;
         return result;
     }
 
@@ -549,6 +539,7 @@ public class PortablePositionNavigator {
         result.fd = fd;
         result.position = readPositionFromMetadata(fd);
         result.index = index;
+        result.last = true;
         return result;
     }
 
@@ -556,7 +547,7 @@ public class PortablePositionNavigator {
         int pos = readPositionFromMetadata(fd);
         in.position(pos);
 
-        int len = in.readInt();
+        in.readInt(); // read length
         int factoryId = in.readInt();
         int classId = in.readInt();
 
@@ -569,12 +560,6 @@ public class PortablePositionNavigator {
         int versionId = in.readInt();
 
         advance(factoryId, classId, versionId);
-
-//        }
-//        else {
-//            throw new HazelcastSerializationException("The array " + field + " is empty!");
-//        }
-
     }
 
     /**

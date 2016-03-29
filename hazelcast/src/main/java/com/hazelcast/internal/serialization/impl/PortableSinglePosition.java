@@ -6,26 +6,23 @@ import java.util.List;
 
 class PortableSinglePosition implements PortablePosition {
 
-    //    enum AccessType {
-//        FIELD,
-//        ARRAY
-//    }
-//
     // used for all positions
     FieldDefinition fd;
     //    AccessType accessType;
-    int position;
+    int position = 0;
 
     // poison pills to indicate null-pointer or empty-array
     boolean nil = false;
 
     // used for arrays only
     int index = -1;
-    int len = 0;
+    int len = -1;
 
     // used for portables only
-    int factoryId;
-    int classId;
+    int factoryId = -1;
+    int classId = -1;
+
+    boolean last = false;
 
     @Override
     public int getStreamPosition() {
@@ -53,6 +50,16 @@ class PortableSinglePosition implements PortablePosition {
     }
 
     @Override
+    public boolean isNullOrEmpty() {
+        return isNull() || isEmpty();
+    }
+
+    @Override
+    public boolean isLast() {
+        return last;
+    }
+
+    @Override
     public int getFactoryId() {
         return factoryId;
     }
@@ -70,5 +77,16 @@ class PortableSinglePosition implements PortablePosition {
     @Override
     public List<PortablePosition> asMultiPosition() {
         throw new RuntimeException("Not a multi-position!");
+    }
+
+    public void reset() {
+        fd = null;
+        position = 0;
+        nil = false;
+        int index = -1;
+        int len = -1;
+        int factoryId = -1;
+        int classId = -1;
+        last = false;
     }
 }
