@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListProcessor implements TupleContainerProcessor<Integer, String, Integer, String> {
+    public static final AtomicInteger DEBUG_COUNTER = new AtomicInteger(0);
     private static final AtomicInteger counter = new AtomicInteger(0);
     private static final Map<Integer, Tuple<Integer, String>> list = new ConcurrentSkipListMap<Integer, Tuple<Integer, String>>();
 
@@ -46,6 +47,7 @@ public class ListProcessor implements TupleContainerProcessor<Integer, String, I
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
         activeNode = processorContext.getNodeEngine().getHazelcastInstance().getName();
+        DEBUG_COUNTER.addAndGet(inputStream.size());
 
         for (Tuple<Integer, String> tuple : inputStream) {
             list.put(tuple.getKey(0), tuple);

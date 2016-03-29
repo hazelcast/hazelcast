@@ -7,6 +7,7 @@ import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.impl.dag.EdgeImpl;
 import com.hazelcast.jet.impl.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
+import com.hazelcast.jet.processors.DummyProcessorForShufflingList;
 import com.hazelcast.jet.processors.ListProcessor;
 import com.hazelcast.jet.processors.ReverseProcessor;
 import com.hazelcast.jet.spi.dag.DAG;
@@ -18,7 +19,6 @@ import com.hazelcast.test.annotation.SlowTest;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,7 +62,6 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Ignore
     @Repeat(5000)
     public void shufflingListTest() throws Exception {
         System.out.println(System.nanoTime() + " --> shufflingListTest");
@@ -76,7 +75,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             fillMap("source.shufflingListTest", SERVER, CNT);
 
-            Vertex vertex1 = createVertex("MapReader", DummyProcessor.Factory.class);
+            Vertex vertex1 = createVertex("MapReader", DummyProcessorForShufflingList.Factory.class);
             Vertex vertex2 = createVertex("Sorter", ListProcessor.Factory.class, 1);
 
             addVertices(dag, vertex1, vertex2);
@@ -94,8 +93,16 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
                             build()
             );
 
+            ListProcessor.DEBUG_COUNTER.set(0);
+            DummyProcessorForShufflingList.DEBUG_COUNTER.set(0);
+
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
-            assertEquals(CNT, targetList.size());
+            assertEquals(
+                    "DummyProcessor.DEBUG_COUNTER=" + DummyProcessorForShufflingList.DEBUG_COUNTER.get() +
+                            "ListProcessor.DEBUG_COUNTER" + ListProcessor.DEBUG_COUNTER.get(),
+                    CNT,
+                    targetList.size()
+            );
         } finally {
             SERVER.getMap("source.shufflingListTest").clear();
             SERVER.getMap("target.shufflingListTest").clear();
