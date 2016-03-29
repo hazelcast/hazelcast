@@ -51,12 +51,15 @@ public class LocalMapStatsProvider {
         }
     };
 
+    private final boolean iterateStats;
+
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext, NodeEngine nodeEngine) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = nodeEngine;
+        this.iterateStats = nodeEngine.getGroupProperties().ITERATING_MAP_STATS_ENABLED.getBoolean();
     }
 
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
@@ -120,14 +123,16 @@ public class LocalMapStatsProvider {
         long ownedEntryMemoryCost = 0;
         long hits = 0;
 
-        final Iterator<Record> iterator = recordStore.iterator();
-        while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            hits += getHits(record);
-            ownedEntryMemoryCost += record.getCost();
-            lockedEntryCount += isLocked(record, recordStore);
-            lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
-            lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
+        if (iterateStats) {
+            final Iterator<Record> iterator = recordStore.iterator();
+            while (iterator.hasNext()) {
+                final Record record = iterator.next();
+                hits += getHits(record);
+                ownedEntryMemoryCost += record.getCost();
+                lockedEntryCount += isLocked(record, recordStore);
+                lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
+                lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
+            }
         }
 
         localMapOnDemandCalculatedStats.incrementOwnedEntryMemoryCost(ownedEntryMemoryCost);

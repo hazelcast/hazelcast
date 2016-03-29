@@ -182,6 +182,7 @@ public class GroupProperties {
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
+    public static final String PROP_ITERATING_MAP_STATS_ENABLED = "hazelcast.management.iterating.map.stats.enabled";
     public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
     public static final String PROP_MC_MAX_VISIBLE_SLOW_OPERATION_COUNT = "hazelcast.mc.max.visible.slow.operations.count";
     public static final String PROP_MC_URL_CHANGE_ENABLED = "hazelcast.mc.url.change.enabled";
@@ -549,6 +550,8 @@ public class GroupProperties {
 
     public final GroupProperty ENABLE_JMX_DETAILED;
 
+    public final GroupProperty ITERATING_MAP_STATS_ENABLED;
+
     public final GroupProperty MC_MAX_INSTANCE_COUNT;
 
     public final GroupProperty MC_MAX_SLOW_OPERATION_COUNT;
@@ -700,6 +703,7 @@ public class GroupProperties {
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
+        ITERATING_MAP_STATS_ENABLED = new GroupProperty(config, PROP_ITERATING_MAP_STATS_ENABLED, "true");
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
         MC_MAX_SLOW_OPERATION_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_SLOW_OPERATION_COUNT, "10");
         MC_URL_CHANGE_ENABLED = new GroupProperty(config, PROP_MC_URL_CHANGE_ENABLED, "true");
