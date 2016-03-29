@@ -213,6 +213,7 @@ public class DefaultContainerTask extends AbstractTask
         this.receiversClosed = false;
         this.sendersFlushed = false;
         this.producersClosed = false;
+
         this.activeProducersCounter.set(this.producers.size());
         this.activeReceiversCounter.set(this.shufflingReceivers.values().size());
         this.finalizedReceiversCounter.set(this.shufflingReceivers.values().size());
@@ -349,8 +350,6 @@ public class DefaultContainerTask extends AbstractTask
         payload.set(activity);
 
         if (((!activity) && (success))) {
-            checkActiveProducers(processor);
-
             if (checkProducersClosed()) {
                 processor.onProducersWriteFinished();
                 return true;
@@ -419,14 +418,6 @@ public class DefaultContainerTask extends AbstractTask
         }
 
         return false;
-    }
-
-    private void checkActiveProducers(TaskProcessor processor) {
-        if ((!processor.hasActiveProducers())) {
-            this.activeProducersCounter.set(0);
-            this.finalizedReceiversCounter.set(0);
-            this.activeReceiversCounter.set(0);
-        }
     }
 
     private void notifyFinalizationStarted() {

@@ -49,6 +49,8 @@ public class ListProcessor implements TupleContainerProcessor<Integer, String, I
         activeNode = processorContext.getNodeEngine().getHazelcastInstance().getName();
         DEBUG_COUNTER.addAndGet(inputStream.size());
 
+        System.out.println("Received node= " + activeNode);
+
         for (Tuple<Integer, String> tuple : inputStream) {
             list.put(tuple.getKey(0), tuple);
         }

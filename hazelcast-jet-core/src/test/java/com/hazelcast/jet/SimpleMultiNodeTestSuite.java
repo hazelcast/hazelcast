@@ -62,26 +62,27 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(5000)
+    @Repeat(500)
     public void shufflingListTest() throws Exception {
         System.out.println(System.nanoTime() + " --> shufflingListTest");
         Application application = createApplication("shufflingListTest");
-        IList targetList = SERVER.getList("target.shufflingListTest");
+        IList targetList = SERVER.getList(randomName());
+        IMap sourceMap = SERVER.getMap(randomName());
 
         try {
             DAG dag = createDAG();
 
             int CNT = 100;
 
-            fillMap("source.shufflingListTest", SERVER, CNT);
+            fillMap(sourceMap.getName(), SERVER, CNT);
 
             Vertex vertex1 = createVertex("MapReader", DummyProcessorForShufflingList.Factory.class);
             Vertex vertex2 = createVertex("Sorter", ListProcessor.Factory.class, 1);
 
             addVertices(dag, vertex1, vertex2);
 
-            vertex1.addSourceMap("source.shufflingListTest");
-            vertex2.addSinkList("target.shufflingListTest");
+            vertex1.addSourceMap(sourceMap.getName());
+            vertex2.addSinkList(targetList.getName());
 
             addEdges(
                     dag,
@@ -97,6 +98,9 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
             DummyProcessorForShufflingList.DEBUG_COUNTER.set(0);
 
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+
+            assertEquals(CNT, DummyProcessorForShufflingList.DEBUG_COUNTER.get());
+            assertEquals(CNT, ListProcessor.DEBUG_COUNTER.get());
             assertEquals(
                     "DummyProcessor.DEBUG_COUNTER=" + DummyProcessorForShufflingList.DEBUG_COUNTER.get() +
                             "ListProcessor.DEBUG_COUNTER" + ListProcessor.DEBUG_COUNTER.get(),
@@ -104,8 +108,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
                     targetList.size()
             );
         } finally {
-            SERVER.getMap("source.shufflingListTest").clear();
-            SERVER.getMap("target.shufflingListTest").clear();
+            sourceMap.clear();
+            targetList.clear();
             application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
         }
     }

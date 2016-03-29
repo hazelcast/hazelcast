@@ -71,11 +71,6 @@ public class ActorTaskProcessor extends ProducerTaskProcessor {
     }
 
     @Override
-    public boolean hasActiveConsumers() {
-        return this.consumerProcessor.hasActiveConsumers();
-    }
-
-    @Override
     public void reset() {
         super.reset();
         this.consumerProcessor.reset();

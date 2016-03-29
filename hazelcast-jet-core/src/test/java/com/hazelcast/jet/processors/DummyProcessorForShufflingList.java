@@ -42,7 +42,7 @@ public class DummyProcessorForShufflingList implements TupleContainerProcessor<I
 
     public static class Factory implements TupleContainerProcessorFactory {
         public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new DummyProcessor();
+            return new DummyProcessorForShufflingList();
         }
     }
 }

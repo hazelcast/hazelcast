@@ -201,14 +201,4 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     public boolean produced() {
         return false;
     }
-
-    @Override
-    public boolean hasActiveConsumers() {
-        return true;
-    }
-
-    @Override
-    public boolean hasActiveProducers() {
-        return false;
-    }
 }

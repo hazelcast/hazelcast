@@ -69,20 +69,6 @@ public interface TaskProcessor {
     boolean isFinalized();
 
     /**
-     * Indicates of task has active consumers for writing;
-     *
-     * @return - true if corresponding task has active consumers; false - otherwise;
-     */
-    boolean hasActiveConsumers();
-
-    /**
-     * Indicates of task has active consumers for reading;
-     *
-     * @return - true if corresponding task has active producers; false - otherwise;
-     */
-    boolean hasActiveProducers();
-
-    /**
      * Resets producer to the initial state;
      */
     void reset();
