@@ -41,7 +41,6 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     private final ObjectProducer[] receivers;
     private final DefaultObjectIOStream<Object> receivedTupleStream;
     private final TaskProcessor receiverConsumerProcessor;
-    private final boolean hasActiveProducers;
     private int nextReceiverIdx;
     private boolean receiversClosed;
     private boolean receiversProduced;
@@ -58,8 +57,6 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         this.receiverConsumerProcessor = receiverConsumerProcessor;
         List<ObjectProducer> receivers = new ArrayList<ObjectProducer>();
         ApplicationMaster applicationMaster = containerContext.getApplicationContext().getApplicationMaster();
-
-        this.hasActiveProducers = hasActiveProducers(producers, consumers, containerContext);
         ProcessingContainer processingContainer = applicationMaster.getContainerByVertex(containerContext.getVertex());
         ContainerTask containerTask = processingContainer.getTasksCache().get(taskID);
 
@@ -73,57 +70,6 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
         int chunkSize = containerContext.getApplicationContext().getJetApplicationConfig().getChunkSize();
         this.receivedTupleStream = new DefaultObjectIOStream<Object>(new Object[chunkSize]);
         this.receivers = receivers.toArray(new ObjectProducer[receivers.size()]);
-    }
-
-    //If task doesn't have active producers it will be automatically closed
-    private boolean hasActiveProducers(ObjectProducer[] producers,
-                                       ObjectConsumer[] consumers,
-                                       ContainerContext containerContext) {
-        boolean hasActiveProducers = false;
-
-        //Check if we will receive objects from input channels
-        for (ObjectProducer producer : producers) {
-            if (producer instanceof DataReader) {
-                hasActiveProducers = true;
-            }
-        }
-
-        // If vertex has output DataWriters  -
-        // it means that it can read data from corresponding Shuffling readers
-        // So it will have active producers
-        for (ObjectConsumer consumer : consumers) {
-            if (consumer instanceof DataWriter) {
-                hasActiveProducers = true;
-            }
-        }
-
-        for (Edge edge : containerContext.getVertex().getInputEdges()) {
-            if (edge.getShufflingStrategy() == null) {
-                hasActiveProducers = true;
-            } else {
-                Address[] shufflingAddresses = edge.getShufflingStrategy().getShufflingAddress(containerContext);
-
-                if (shufflingAddresses != null) {
-                    if (searchAddress(shufflingAddresses, containerContext.getNodeEngine().getThisAddress())) {
-                        hasActiveProducers = true;
-                    }
-                } else {
-                    hasActiveProducers = true;
-                }
-            }
-        }
-
-        return hasActiveProducers;
-    }
-
-    private boolean searchAddress(Address[] addresses, Address address) {
-        for (Address addr : addresses) {
-            if (addr.equals(address)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     @Override
@@ -178,11 +124,6 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     @Override
     public void onReceiversClosed() {
         this.receiversClosed = true;
-    }
-
-    @Override
-    public boolean hasActiveProducers() {
-        return this.hasActiveProducers;
     }
 
     private boolean processReceivers() throws Exception {

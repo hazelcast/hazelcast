@@ -77,16 +77,6 @@ public class SimpleTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean hasActiveConsumers() {
-        return false;
-    }
-
-    @Override
-    public boolean hasActiveProducers() {
-        return false;
-    }
-
-    @Override
     public void reset() {
         this.finalized = false;
         this.tupleInputStream.reset();

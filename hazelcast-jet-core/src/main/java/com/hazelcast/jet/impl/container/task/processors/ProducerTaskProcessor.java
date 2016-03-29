@@ -198,11 +198,6 @@ public class ProducerTaskProcessor implements TaskProcessor {
     }
 
     @Override
-    public boolean hasActiveProducers() {
-        return this.producers.length > 0;
-    }
-
-    @Override
     public void reset() {
         resetProducers();
 
@@ -253,11 +248,6 @@ public class ProducerTaskProcessor implements TaskProcessor {
 
     @Override
     public boolean consumed() {
-        return false;
-    }
-
-    @Override
-    public boolean hasActiveConsumers() {
         return false;
     }
 
