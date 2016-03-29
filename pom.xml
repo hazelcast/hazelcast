@@ -23,7 +23,7 @@
     <artifactId>hazelcast-jet-root</artifactId>
     <packaging>pom</packaging>
     <version>0.1-SNAPSHOT</version>
-    <name>hazelcast Jet</name>
+    <name>hazelcast-jet-root</name>
     <description>Hazelcast Jet Data Processor</description>
     <url>http://www.hazelcast.com/</url>
 
@@ -319,9 +319,9 @@
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/client/**Request.*</exclude>
                     </excludes>
-                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                    <groups>com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest</groups>
                     <excludedGroups>
-                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
+                        com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
                 </configuration>
             </plugin>

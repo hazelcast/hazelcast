@@ -18,6 +18,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,6 +35,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
     @Test
     @Repeat(500)
+    @Ignore
     public void simpleList2ListTest() throws Exception {
         Application application = createApplication("simpleList2ListTest");
 
