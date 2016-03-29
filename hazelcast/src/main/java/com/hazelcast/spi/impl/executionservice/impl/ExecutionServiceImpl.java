@@ -167,8 +167,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             Node node = nodeEngine.getNode();
             String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
             HazelcastThreadGroup hazelcastThreadGroup = node.getHazelcastThreadGroup();
-            PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(hazelcastThreadGroup,
-                    hazelcastThreadGroup.getThreadPoolNamePrefix(internalName));
+            PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(hazelcastThreadGroup, internalName);
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
                     KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                     new LinkedBlockingQueue<Runnable>(queueCapacity),

@@ -25,15 +25,15 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.junit.Assert;
 
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Collection;
 
 class MockJoiner extends AbstractJoiner {
 
-    private final CopyOnWriteArrayList<Address> joinAddresses;
+    private final Collection<Address> joinAddresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes;
     private final Object joinerLock;
 
-    MockJoiner(Node node, CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Object joinerLock) {
+    MockJoiner(Node node, Collection<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Object joinerLock) {
         super(node);
         this.joinAddresses = addresses;
         this.nodes = nodes;

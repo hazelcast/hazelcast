@@ -92,7 +92,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             @Override
             public Collection<InetSocketAddress> loadAddresses() {
                 Collection<InetSocketAddress> inetAddresses = new ArrayList<InetSocketAddress>();
-                for (Address address : addresses) {
+                for (Address address : addressMap.values()) {
                     Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
                             address.getHost(), 3);
                     inetAddresses.addAll(addresses);
