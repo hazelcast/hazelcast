@@ -5,14 +5,25 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import java.util.List;
 
 class PortableSinglePosition implements PortablePosition {
-    // used for all field types
+
+    //    enum AccessType {
+//        FIELD,
+//        ARRAY
+//    }
+//
+    // used for all positions
     FieldDefinition fd;
+    //    AccessType accessType;
     int position;
+
+    // poison pills to indicate null-pointer or empty-array
+    boolean nil = false;
+
+    // used for arrays only
     int index = -1;
+    int len = 0;
 
     // used for portables only
-    boolean isNull = false;
-    int len = 0;
     int factoryId;
     int classId;
 
@@ -28,12 +39,17 @@ class PortableSinglePosition implements PortablePosition {
 
     @Override
     public boolean isNull() {
-        return isNull;
+        return nil;
     }
 
     @Override
     public int getLen() {
         return len;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return len == 0;
     }
 
     @Override

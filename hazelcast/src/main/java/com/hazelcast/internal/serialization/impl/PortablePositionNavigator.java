@@ -235,7 +235,7 @@ public class PortablePositionNavigator {
         in.position(pos.position);
 
         if (!pos.isNull()) { // extraction returned null (poison pill)
-            pos.isNull = in.readBoolean();
+            pos.nil = in.readBoolean();
             pos.factoryId = in.readInt();
             pos.classId = in.readInt();
             pos.position = in.position();
@@ -271,7 +271,7 @@ public class PortablePositionNavigator {
                     in.position(offset);
                     pos.position = in.readInt(); // portable position
                 } else {
-                    pos.isNull = true;
+                    pos.nil = true;
                 }
             }
             //        }
@@ -372,9 +372,12 @@ public class PortablePositionNavigator {
     }
 
     private void setupForFrame(NavigationFrame frame) {
+        in.position(frame.streamPosition); // changed in the evening on 24.03.2016
         offset = frame.streamOffset;
         cd = frame.cd;
     }
+
+    public PortableSinglePosition EMPTY_ARRAY = new PortableSinglePosition();
 
     private PortablePosition processPath(String[] pathTokens, int pathTokenIndex, String nestedPath,
                                          NavigationFrame frame) throws IOException {
@@ -388,16 +391,25 @@ public class PortablePositionNavigator {
         }
 
         if (isPathTokenWithoutQuantifier(token)) {
+            //
+            // without quantifier
+            //
             if (last) {
                 return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
             }
             if (!advanceToNextTokenFromNonArrayElement(fd, token)) {
                 PortableSinglePosition pos = new PortableSinglePosition();
-                pos.isNull = true;
+                pos.nil = true;
                 return pos;
             }
         } else if (isPathTokenWithAnyQuantifier(token)) {
+            //
+            // with [any] quantifier
+            //
             if (fd.getType() == FieldType.PORTABLE_ARRAY) {
+                //
+                // PORTABLE array
+                //
                 if (frame == null) {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
@@ -406,7 +418,7 @@ public class PortablePositionNavigator {
                     } else if (len == Bits.NULL_ARRAY_LENGTH) {
                         // poison pill -> [any] used with null array, so no need to process further
                         PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
-                        pos.isNull = true;
+                        pos.nil = true;
                         return pos;
                     } else {
                         populatePendingNavigationFrames(pathTokenIndex, len);
@@ -424,6 +436,9 @@ public class PortablePositionNavigator {
                     advanceToNextTokenFromPortableArrayElement(fd, frame.arrayIndex, field);
                 }
             } else {
+                //
+                // PRIMITIVE array
+                //
                 if (frame == null) {
                     if (last) {
                         int len = getCurrentArrayLength(fd);
@@ -433,7 +448,7 @@ public class PortablePositionNavigator {
                         } else if (len == Bits.NULL_ARRAY_LENGTH) {
                             // poison pill -> [any] used with null array, so no need to process further
                             PortableMultiPosition pos = new PortableMultiPosition(Collections.<PortablePosition>emptyList());
-                            pos.isNull = true;
+                            pos.nil = true;
                             return pos;
                         } else {
                             populatePendingNavigationFrames(pathTokenIndex, len);
@@ -449,6 +464,9 @@ public class PortablePositionNavigator {
                 }
             }
         } else {
+            //
+            // with [number] quantifier
+            //
             int index = Integer.valueOf(extractArgumentsFromAttributeName(token));
             int len = getCurrentArrayLength(fd);
 
@@ -460,11 +478,11 @@ public class PortablePositionNavigator {
                 } else if (len == Bits.NULL_ARRAY_LENGTH) {
                     // poison pill -> [any] used with null array, so no need to process further
                     PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.isNull = true;
+                    pos.nil = true;
                     return pos;
                 } else if (index >= len) {
                     PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.isNull = true;
+                    pos.nil = true;
                     return pos;
                 } else {
                     return readPositionOfCurrentElement(new PortableSinglePosition(), fd, index);
@@ -479,11 +497,11 @@ public class PortablePositionNavigator {
                 } else if (len == Bits.NULL_ARRAY_LENGTH) {
                     // poison pill
                     PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.isNull = true;
+                    pos.nil = true;
                     return pos;
                 } else if (index >= len) {
                     PortableSinglePosition pos = new PortableSinglePosition();
-                    pos.isNull = true;
+                    pos.nil = true;
                     return pos;
                 } else {
                     advanceToNextTokenFromPortableArrayElement(fd, index, field);
@@ -496,8 +514,8 @@ public class PortablePositionNavigator {
 
     private void populatePendingNavigationFrames(int pathTokenIndex, int len) {
         // populate "recursive" multi-positions
-        for (int k = 1; k < len; k++) {
-            multiPositions.add(new NavigationFrame(cd, pathTokenIndex, k, in.position(), this.offset));
+        for (int k = len - 1; k > 0; k--) {
+            multiPositions.addFirst(new NavigationFrame(cd, pathTokenIndex, k, in.position(), this.offset));
         }
     }
 

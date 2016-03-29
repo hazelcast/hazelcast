@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 public enum FieldType {
 
+    // SINGLE-VALUE TYPES
     PORTABLE(0),
     BYTE(1),
     BOOLEAN(2),
@@ -28,6 +29,8 @@ public enum FieldType {
     FLOAT(7),
     DOUBLE(8),
     UTF(9),
+
+    // ARRAY TYPES
     PORTABLE_ARRAY(10),
     BYTE_ARRAY(11),
     BOOLEAN_ARRAY(12),
@@ -53,6 +56,10 @@ public enum FieldType {
 
     public static FieldType get(byte type) {
         return ALL[type];
+    }
+
+    public boolean isArrayType(FieldType field) {
+        return field.type >= PORTABLE_ARRAY.type;
     }
 
 }

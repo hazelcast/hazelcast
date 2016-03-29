@@ -20,5 +20,7 @@ interface PortablePosition {
     // determines type of position
     boolean isMultiPosition();
 
+    boolean isEmpty();
+
     List<PortablePosition> asMultiPosition();
 }

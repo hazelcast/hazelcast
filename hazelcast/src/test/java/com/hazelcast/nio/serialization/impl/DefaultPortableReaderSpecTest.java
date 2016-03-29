@@ -13,6 +13,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ExceptionUtil;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,6 +24,7 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -272,6 +274,10 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         fromPortableArrayToPortableArrayAnyScenarios(result);
         edgeCaseScenarios(result);
 
+        // TODO
+        // fromPortableArrayToPortableArrayToPrimitiveAnyScenarios(result);
+
+
         return result;
     }
 
@@ -477,6 +483,41 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         );
     }
 
+    private static void fromPortableArrayToPortableArrayToPrimitiveAnyScenarios(List<Object[]> result) {
+
+        NestedGroupPortable nestedEmptyArrayGroup = nested(new Portable[]{new GroupPortable(new Portable[0]), group(prim(1, FULL), prim(10, FULL)/*, prim(50, NULL)*/)});
+
+        List<Long> expected = new ArrayList<Long>();
+        expected.addAll(Arrays.asList(ArrayUtils.toObject(prim(1, FULL).longs)));
+        expected.addAll(Arrays.asList(ArrayUtils.toObject(prim(10, FULL).longs)));
+//        expected.addAll(Arrays.asList(ArrayUtils.toObject(prim(50, FULL).longs)));
+
+        result.add(
+                scenario(nestedEmptyArrayGroup, expected, Method.LongArray, "portables[any].portables[any].longs[any]")
+        );
+
+
+
+
+
+//        result.addAll(asList(
+//                scenario(nestedEmptyArrayGroup, new Portable[0], Method.PortableArray, "portables[0].portables[any]"),
+//                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
+//                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
+//                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
+//                scenario(nestedEmptyArrayGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.PortableArray, "portables[any].portables[any]")
+//        ));
+//
+//        NestedGroupPortable nestedNullArrayGroup = nested(new Portable[]{new GroupPortable((Portable[]) null), group(prim(1, FULL), prim(10, NONE), prim(50, NULL))});
+//        result.addAll(asList(
+//                scenario(nestedNullArrayGroup, null, Method.PortableArray, "portables[0].portables[any]"),
+//                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
+//                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
+//                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
+//                scenario(nestedNullArrayGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.PortableArray, "portables[any].portables[any]")
+//        ));
+    }
+
     private static void fromPortableArrayToPortableArrayAnyScenarios(List<Object[]> result) {
         NestedGroupPortable anyGroup = nested(new Portable[]{
                 group(prim(1, FULL), prim(10, NONE), prim(50, NULL)),
@@ -487,7 +528,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
                 scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
                 scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
-                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL), prim(10, FULL), prim(50, FULL), prim(20, FULL), prim(80, FULL)},
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL), prim(20, FULL), prim(80, FULL)},
                         Method.PortableArray, "portables[any].portables[any]")
         ));
 
@@ -509,6 +550,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNullArrayGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.PortableArray, "portables[any].portables[any]")
         ));
     }
+
 
     private static void fromPortableArrayToPortableArrayToPrimitiveScenarios(List<Object[]> result) {
         // ----------------------------------------------------------------------------------------------------------
