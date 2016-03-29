@@ -75,7 +75,7 @@ public class CacheConfig<K, V>
 
     /**
      * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
-     * Full-flush invalidation event means that invalidation events for all entries on clear.
+     * Full-flush invalidation means the invalidation of events for all entries when clear is called.
      */
     private boolean disablePerEntryInvalidationEvents;
 
