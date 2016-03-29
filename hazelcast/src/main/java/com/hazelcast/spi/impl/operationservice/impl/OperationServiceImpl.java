@@ -39,7 +39,6 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -417,7 +416,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         Packet packet = new Packet(bytes, partitionId);
         packet.setFlag(Packet.FLAG_OP);
 
-        if (op instanceof UrgentSystemOperation) {
+        if (op.isUrgent()) {
             packet.setFlag(Packet.FLAG_URGENT);
         }
 
