@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.impl.operation.MapOperationProviderWrapper;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
 
@@ -148,6 +149,7 @@ public class MapConfig {
     // and #setCacheDeserializedValues()
     private boolean optimizeQueryExplicitlyInvoked;
     private boolean setCacheDeserializedValuesExplicitlyInvoked;
+    private MapOperationProviderWrapper mapOperationProviderImplementation;
 
     public MapConfig(String name) {
         this.name = name;
@@ -829,6 +831,14 @@ public class MapConfig {
         this.quorumName = quorumName;
     }
 
+    public MapOperationProviderWrapper getMapOperationProviderImplementation() {
+        return mapOperationProviderImplementation;
+    }
+
+    public void setMapOperationProviderImplementation(MapOperationProviderWrapper mapOperationProviderImplementation) {
+        this.mapOperationProviderImplementation = mapOperationProviderImplementation;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -858,6 +868,10 @@ public class MapConfig {
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
         result = prime * result + cacheDeserializedValues.hashCode();
+        result = prime
+                * result
+                + ((this.mapOperationProviderImplementation == null) ? 0 : this.mapOperationProviderImplementation
+                .hashCode());
         result = prime * result + (this.readBackupData ? 1231 : 1237);
         return result;
     }
@@ -890,7 +904,10 @@ public class MapConfig {
                         && (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
                         : other.mapStoreConfig == null)
                         && (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
-                        : other.nearCacheConfig == null);
+                        : other.nearCacheConfig == null)
+                        && (this.mapOperationProviderImplementation != null
+                        ? this.mapOperationProviderImplementation.equals(other.mapOperationProviderImplementation)
+                        : other.mapOperationProviderImplementation == null);
     }
 
     @Override
@@ -918,6 +935,7 @@ public class MapConfig {
                 + ", quorumName=" + quorumName
                 + ", queryCacheConfigs=" + queryCacheConfigs
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
+                + ", mapOperationProviderImplementation=" + mapOperationProviderImplementation
                 + '}';
     }
 }

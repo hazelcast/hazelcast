@@ -44,6 +44,12 @@ public class MapOperationProviders {
      */
     public MapOperationProvider getOperationProvider(String name) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
-        return mapContainer.isWanReplicationEnabled() ? wanAwareProvider : defaultProvider;
+        MapOperationProvider mapOperationProvider = mapContainer.isWanReplicationEnabled() ? wanAwareProvider : defaultProvider;
+        MapOperationProviderWrapper mapOperationProviderWrapped = mapContainer.getMapOperationProviderImplementation();
+        if (mapOperationProviderWrapped != null) {
+            mapOperationProviderWrapped.setProvider(mapOperationProvider);
+            mapOperationProvider = mapOperationProviderWrapped;
+        }
+        return mapOperationProvider;
     }
 }
