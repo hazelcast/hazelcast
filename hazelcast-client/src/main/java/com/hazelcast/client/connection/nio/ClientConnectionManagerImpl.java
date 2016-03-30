@@ -69,6 +69,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
@@ -216,7 +217,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     return connection;
                 }
                 AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
-                connection = firstCallback.get();
+                connection = firstCallback.get(connectionTimeout);
                 if (!asOwner) {
                     return connection;
                 }
@@ -248,12 +249,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             countDownLatch.countDown();
         }
 
-        Connection get() throws Throwable {
-            countDownLatch.await();
+        Connection get(int timeout) throws Throwable {
+            countDownLatch.await(timeout, TimeUnit.MILLISECONDS);
             if (connection != null) {
                 return connection;
             }
-            throw throwable;
+            if (throwable != null) {
+                throw throwable;
+            }
+            throw new TimeoutException("Authentication response did not come back in " + timeout + " millis");
         }
     }
 
@@ -288,6 +292,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
+        if (!alive) {
+            throw new HazelcastException("ConnectionManager is not active!!!");
+        }
+
         AuthenticationFuture callback = new AuthenticationFuture();
         AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
         if (firstCallback == null) {
@@ -359,6 +367,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             for (ConnectionListener connectionListener : connectionListeners) {
                 connectionListener.connectionRemoved(conn);
             }
+        } else {
+            ((ClientConnection) connection).close(e);
         }
     }
 

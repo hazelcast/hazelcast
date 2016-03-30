@@ -138,7 +138,7 @@ public class ClientInvocationTest extends HazelcastTestSupport {
 
                 @Override
                 public void onFailure(Throwable t) {
-                    if (t instanceof HazelcastClientNotActiveException) {
+                    if (t.getCause() instanceof HazelcastClientNotActiveException) {
                         shutdownLatch.countDown();
                     }
                     errorLatch.countDown();
