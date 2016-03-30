@@ -124,7 +124,8 @@ public class PartitionContainer {
         return maps.get(mapName);
     }
 
-    public void destroyMap(String name) {
+    public void destroyMap(MapContainer mapContainer) {
+        String name = mapContainer.getName();
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {
             recordStore.destroy();
@@ -135,6 +136,9 @@ public class PartitionContainer {
             // this IMap partition.
             clearLockStore(name);
         }
+
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        mapServiceContext.removeMapContainer(mapContainer);
     }
 
     private void clearLockStore(String name) {
