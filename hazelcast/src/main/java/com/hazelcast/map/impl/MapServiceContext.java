@@ -124,4 +124,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     Extractors getExtractors(String mapName);
 
     void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
+
+    void removeMapContainer(MapContainer mapContainer);
 }
