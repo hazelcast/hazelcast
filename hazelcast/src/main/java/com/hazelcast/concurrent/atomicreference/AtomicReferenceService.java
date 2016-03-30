@@ -109,27 +109,27 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     }
 
     @Override
-    public void commitMigration(PartitionMigrationEvent partitionMigrationEvent) {
-        if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            int partitionId = partitionMigrationEvent.getPartitionId();
-            removeContainers(partitionId);
+    public void commitMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            int thresholdReplicaIndex = event.getNewReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
         }
     }
 
     @Override
-    public void rollbackMigration(PartitionMigrationEvent partitionMigrationEvent) {
-        if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            int partitionId = partitionMigrationEvent.getPartitionId();
-            removeContainers(partitionId);
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            int thresholdReplicaIndex = event.getCurrentReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        removeContainers(partitionId);
-    }
-
-    public void removeContainers(int partitionId) {
         final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();

@@ -17,7 +17,6 @@
 package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.concurrent.countdownlatch.operations.CountDownLatchReplicationOperation;
-import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -26,6 +25,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -139,7 +139,10 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             int partitionId = event.getPartitionId();
-            clearPartition(partitionId);
+            int thresholdReplicaIndex = event.getNewReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(partitionId);
+            }
         }
     }
 
@@ -147,16 +150,9 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             int partitionId = event.getPartitionId();
-            clearPartition(partitionId);
-        }
-    }
-
-    private void clearPartition(int partitionId) {
-        final Iterator<String> iter = containers.keySet().iterator();
-        while (iter.hasNext()) {
-            final String name = iter.next();
-            if (getPartitionId(name) == partitionId) {
-                iter.remove();
+            int thresholdReplicaIndex = event.getCurrentReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(partitionId);
             }
         }
     }
@@ -168,7 +164,13 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearPartition(partitionId);
+        final Iterator<String> iter = containers.keySet().iterator();
+        while (iter.hasNext()) {
+            String name = iter.next();
+            if (getPartitionId(name) == partitionId) {
+                iter.remove();
+            }
+        }
     }
 
     public CountDownLatchContainer getCountDownLatchContainer(String name) {

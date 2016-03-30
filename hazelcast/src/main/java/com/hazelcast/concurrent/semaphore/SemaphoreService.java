@@ -166,30 +166,34 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearMigrationData(event.getPartitionId());
-        }
-    }
-
-    private void clearMigrationData(int partitionId) {
-        Iterator<Map.Entry<String, SemaphoreContainer>> it = containers.entrySet().iterator();
-        while (it.hasNext()) {
-            SemaphoreContainer semaphoreContainer = it.next().getValue();
-            if (semaphoreContainer.getPartitionId() == partitionId) {
-                it.remove();
-            }
+            clearSemaphoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId());
+            clearSemaphoresHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
+        }
+    }
+
+    private void clearSemaphoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        Iterator<SemaphoreContainer> it = containers.values().iterator();
+        while (it.hasNext()) {
+            SemaphoreContainer semaphoreContainer = it.next();
+            if (semaphoreContainer.getPartitionId() != partitionId) {
+                continue;
+            }
+
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > semaphoreContainer.getTotalBackupCount()) {
+                it.remove();
+            }
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearMigrationData(partitionId);
+        clearSemaphoresHavingLesserBackupCountThan(partitionId, -1);
     }
 
     @Override

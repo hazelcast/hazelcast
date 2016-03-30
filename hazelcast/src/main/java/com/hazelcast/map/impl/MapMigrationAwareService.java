@@ -67,7 +67,7 @@ class MapMigrationAwareService implements MigrationAwareService {
     public void commitMigration(PartitionMigrationEvent event) {
         migrateIndex(event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            mapServiceContext.clearPartitionData(event.getPartitionId());
+            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
         mapServiceContext.reloadOwnedPartitions();
     }
@@ -75,9 +75,17 @@ class MapMigrationAwareService implements MigrationAwareService {
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            mapServiceContext.clearPartitionData(event.getPartitionId());
+            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
         mapServiceContext.reloadOwnedPartitions();
+    }
+
+    private void clearMapsHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        if (thresholdReplicaIndex < 0) {
+            mapServiceContext.clearPartitionData(partitionId);
+        } else {
+            mapServiceContext.clearMapsHavingLesserBackupCountThan(partitionId, thresholdReplicaIndex);
+        }
     }
 
     @Override
@@ -85,27 +93,30 @@ class MapMigrationAwareService implements MigrationAwareService {
         mapServiceContext.clearPartitionData(partitionId);
     }
 
-    protected void migrateIndex(PartitionMigrationEvent event) {
+    private void migrateIndex(PartitionMigrationEvent event) {
         final long now = getNow();
 
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
             final Indexes indexes = mapContainer.getIndexes();
-            if (indexes.hasIndex()) {
-                final Iterator<Record> iterator = recordStore.iterator(now, false);
-                while (iterator.hasNext()) {
-                    Record record = iterator.next();
-                    Data key = record.getKey();
-                    if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                        Object value = Records.getValueOrCachedValue(record, serializationService);
-                        indexes.removeEntryIndex(key, value);
-                    } else {
-                        Object value = Records.getValueOrCachedValue(record, serializationService);
-                        if (value != null) {
-                            QueryableEntry queryEntry = mapContainer.newQueryEntry(record.getKey(), value);
-                            indexes.saveEntryIndex(queryEntry, null);
-                        }
+            if (!indexes.hasIndex()) {
+                continue;
+            }
+
+            final Iterator<Record> iterator = recordStore.iterator(now, false);
+            while (iterator.hasNext()) {
+                Record record = iterator.next();
+                Data key = record.getKey();
+                if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+                    assert event.getNewReplicaIndex() != 0 : "Invalid migration event: " + event;
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    indexes.removeEntryIndex(key, value);
+                } else if (event.getNewReplicaIndex() == 0) {
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    if (value != null) {
+                        QueryableEntry queryEntry = mapContainer.newQueryEntry(record.getKey(), value);
+                        indexes.saveEntryIndex(queryEntry, null);
                     }
                 }
             }

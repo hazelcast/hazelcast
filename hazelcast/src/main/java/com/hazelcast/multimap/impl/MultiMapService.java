@@ -56,6 +56,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -269,30 +270,48 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         return maxRecordId;
     }
 
-    private void clearMigrationData(int partitionId) {
-        final MultiMapPartitionContainer partitionContainer = partitionContainers[partitionId];
-        if (partitionContainer != null) {
-            partitionContainer.containerMap.clear();
-        }
-    }
-
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearMigrationData(event.getPartitionId());
+            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId());
+            clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
+        }
+    }
+
+    private void clearMapsHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        final MultiMapPartitionContainer partitionContainer = partitionContainers[partitionId];
+        if (partitionContainer == null) {
+            return;
+        }
+
+        ConcurrentMap<String, MultiMapContainer> containerMap = partitionContainer.containerMap;
+        if (thresholdReplicaIndex < 0) {
+            for (MultiMapContainer container : containerMap.values()) {
+                container.destroy();
+            }
+            containerMap.clear();
+            return;
+        }
+
+        Iterator<MultiMapContainer> iter = containerMap.values().iterator();
+        while (iter.hasNext()) {
+            MultiMapContainer container = iter.next();
+            if (thresholdReplicaIndex > container.getConfig().getTotalBackupCount()) {
+                container.destroy();
+                iter.remove();
+            }
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearMigrationData(partitionId);
+        clearMapsHavingLesserBackupCountThan(partitionId, -1);
     }
 
     public LocalMultiMapStats createStats(String name) {

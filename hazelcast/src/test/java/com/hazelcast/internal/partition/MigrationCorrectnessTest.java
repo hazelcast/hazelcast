@@ -16,20 +16,26 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class/*, ParallelTest.class*/})
-//@Ignore // related issue https://github.com/hazelcast/hazelcast/issues/5444
-public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
+@Category({QuickTest.class, ParallelTest.class})
+// related issue https://github.com/hazelcast/hazelcast/issues/5444
+public class MigrationCorrectnessTest extends PartitionCorrectnessTestSupport {
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
@@ -43,4 +49,102 @@ public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
         });
     }
 
+    @Test
+    public void testPartitionData_whenNodesStartedSequentially() throws InterruptedException {
+        Config config = getConfig(backupCount, true, false);
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        fillData(hz);
+        assertSizeAndData();
+
+        for (int i = 1; i <= nodeCount; i++) {
+            startNodes(config, 1);
+            assertSizeAndData();
+        }
+    }
+
+    @Test
+    public void testPartitionData_whenNodesStartedParallel() throws InterruptedException {
+        Config config = getConfig(backupCount, true, false);
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        fillData(hz);
+        assertSizeAndData();
+
+        startNodes(config, nodeCount);
+        assertSizeAndData();
+    }
+
+    @Test
+    public void testPartitionData_whenBackupNodesTerminated() throws InterruptedException {
+        Config config = getConfig(backupCount, true, false);
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        startNodes(config, nodeCount);
+        warmUpPartitions(factory.getAllHazelcastInstances());
+
+        fillData(hz);
+        assertSizeAndData();
+
+        terminateNodes(backupCount);
+        assertSizeAndData();
+    }
+
+    @Test(timeout = 6000 * 10 * 10)
+    public void testPartitionData_whenBackupNodesStartedTerminated() throws InterruptedException {
+        testPartitionData_whenBackupNodesStartedTerminated(false);
+    }
+
+    @Test(timeout = 6000 * 10 * 10)
+    public void testPartitionData_whenBackupNodesStartedTerminated_withSafetyCheckAfterTerminate() throws InterruptedException {
+        testPartitionData_whenBackupNodesStartedTerminated(true);
+    }
+
+    public void testPartitionData_whenBackupNodesStartedTerminated(boolean checkAfterTerminate)
+            throws InterruptedException {
+        Config config = getConfig(backupCount, true, false);
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        fillData(hz);
+        assertSizeAndData();
+
+        int size = 1;
+        while (size < (nodeCount + 1)) {
+            startNodes(config, backupCount + 1);
+            size += (backupCount + 1);
+
+            assertSizeAndData();
+
+            terminateNodes(backupCount);
+            size -= backupCount;
+
+            if (checkAfterTerminate) {
+                assertSizeAndData();
+            }
+        }
+    }
+
+    @Test(timeout = 6000 * 10 * 10)
+    public void testPartitionData_whenBackupNodesStartedTerminated_withRestart() throws InterruptedException {
+        Config config = getConfig(backupCount, true, false);
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        fillData(hz);
+        assertSizeAndData();
+
+        Collection<Address> addresses = Collections.emptySet();
+
+        int size = 1;
+        while (size < (nodeCount + 1)) {
+            int startCount = (backupCount + 1) - addresses.size();
+            startNodes(config, addresses);
+            startNodes(config, startCount);
+            size += (backupCount + 1);
+
+            assertSizeAndData();
+
+            addresses = terminateNodes(backupCount);
+            size -= backupCount;
+        }
+    }
 }

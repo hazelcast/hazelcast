@@ -122,25 +122,30 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == SOURCE) {
-            clearMigrationData(event.getPartitionId());
+            clearRingbuffersHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == DESTINATION) {
-            clearMigrationData(event.getPartitionId());
+            clearRingbuffersHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
     }
 
-    private void clearMigrationData(int partitionId) {
+    private void clearRingbuffersHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         Iterator<Map.Entry<String, RingbufferContainer>> iterator = containers.entrySet().iterator();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
             Map.Entry<String, RingbufferContainer> entry = iterator.next();
             String name = entry.getKey();
             int containerPartitionId = partitionService.getPartitionId(getPartitionKey(name));
-            if (containerPartitionId == partitionId) {
+            if (containerPartitionId != partitionId) {
+                continue;
+            }
+
+            RingbufferContainer container = entry.getValue();
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > container.getConfig().getTotalBackupCount()) {
                 iterator.remove();
             }
         }
@@ -148,7 +153,7 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearMigrationData(partitionId);
+        clearRingbuffersHavingLesserBackupCountThan(partitionId, -1);
     }
 
     public RingbufferContainer getContainer(String name) {

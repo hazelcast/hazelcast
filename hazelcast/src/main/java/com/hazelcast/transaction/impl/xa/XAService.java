@@ -108,6 +108,10 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        if (event.getReplicaIndex() > 1) {
+            return null;
+        }
+
         List<XATransactionDTO> migrationData = new ArrayList<XATransactionDTO>();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<SerializableXID, List<XATransaction>> entry : transactions.entrySet()) {
@@ -115,8 +119,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
             int partitionId = partitionService.getPartitionId(xid);
             List<XATransaction> xaTransactionList = entry.getValue();
             for (XATransaction xaTransaction : xaTransactionList) {
-                if (partitionId == event.getPartitionId()
-                        && event.getReplicaIndex() <= 1) {
+                if (partitionId == event.getPartitionId()) {
                     migrationData.add(new XATransactionDTO(xaTransaction));
                 }
             }
@@ -136,14 +139,20 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearPartitionReplica(event.getPartitionId());
+            int thresholdReplicaIndex = event.getNewReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartitionReplica(event.getPartitionId());
+            int thresholdReplicaIndex = event.getCurrentReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
         }
     }
 

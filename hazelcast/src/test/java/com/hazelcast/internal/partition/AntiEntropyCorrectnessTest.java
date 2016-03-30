@@ -16,19 +16,34 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.Node;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.nio.tcp.PacketFilter;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class/*, ParallelTest.class*/})
-public class AntiEntropyCorrectnessTest extends AbstractAntiEntropyCorrectnessTest {
+@Category({QuickTest.class, ParallelTest.class})
+public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport {
+
+    private static final float BACKUP_BLOCK_RATIO = 0.65f;
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
@@ -40,5 +55,53 @@ public class AntiEntropyCorrectnessTest extends AbstractAntiEntropyCorrectnessTe
                 {3, 4},
                 {3, InternalPartition.MAX_REPLICA_COUNT}
         });
+    }
+
+    @Test
+    public void testPartitionData() throws InterruptedException {
+        HazelcastInstance[] instances = factory.newInstances(getConfig(backupCount, true, true), nodeCount);
+        for (HazelcastInstance instance : instances) {
+            Node node = getNode(instance);
+            FirewallingMockConnectionManager cm = (FirewallingMockConnectionManager) node.getConnectionManager();
+            cm.setPacketFilter(new BackupPacketFilter(node.getSerializationService(), BACKUP_BLOCK_RATIO));
+        }
+        warmUpPartitions(instances);
+
+        for (HazelcastInstance instance : instances) {
+            fillData(instance);
+        }
+
+        assertSizeAndData();
+    }
+
+    private static class BackupPacketFilter implements PacketFilter {
+        final InternalSerializationService serializationService;
+        final float blockRatio;
+
+        BackupPacketFilter(InternalSerializationService serializationService, float blockRatio) {
+            this.serializationService = serializationService;
+            this.blockRatio = blockRatio;
+        }
+
+        @Override
+        public boolean allow(Packet packet, Address endpoint) {
+            return !packet.isFlagSet(Packet.FLAG_OP) || allowOperation(packet);
+        }
+
+        private boolean allowOperation(Packet packet) {
+            try {
+                ObjectDataInput input = serializationService.createObjectDataInput(packet);
+                boolean identified = input.readBoolean();
+                if (identified) {
+                    int factory = input.readInt();
+                    int type = input.readInt();
+                    boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
+                    return !isBackup || Math.random() > blockRatio;
+                }
+            } catch (IOException e) {
+                throw new HazelcastException(e);
+            }
+            return true;
+        }
     }
 }

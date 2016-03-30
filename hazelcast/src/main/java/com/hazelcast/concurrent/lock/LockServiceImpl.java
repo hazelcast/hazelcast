@@ -246,7 +246,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearPartition(event.getPartitionId());
+            clearLockStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         } else {
             int partitionId = event.getPartitionId();
             scheduleEvictions(partitionId);
@@ -269,23 +269,25 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         }
     }
 
-    private void clearPartition(int partitionId) {
-        final LockStoreContainer container = containers[partitionId];
-        for (LockStoreImpl ls : container.getLockStores()) {
-            ls.clear();
-        }
-    }
-
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartition(event.getPartitionId());
+            clearLockStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
+        }
+    }
+
+    private void clearLockStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        LockStoreContainer container = containers[partitionId];
+        for (LockStoreImpl lockStore : container.getLockStores()) {
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > lockStore.getTotalBackupCount()) {
+                lockStore.clear();
+            }
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearPartition(partitionId);
+        clearLockStoresHavingLesserBackupCountThan(partitionId, -1);
     }
 
     @Override
