@@ -53,6 +53,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -1046,6 +1047,17 @@ public class ClientMapNearCacheTest {
         populateNearCache(map, 10);
 
         map.destroy();
+    }
+
+    @Test
+    public void testNearCacheGetAsyncTwice() throws ExecutionException, InterruptedException {
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
+
+        map.getAsync(1).get();
+        Thread.sleep(1000);
+        assertNull(map.getAsync(1).get());
     }
 
     protected void populateNearCache(IMap<Integer, Integer> map, int size) {
