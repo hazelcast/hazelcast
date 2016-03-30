@@ -17,24 +17,25 @@
 package com.hazelcast.map.impl.operation;
 
 
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import java.util.concurrent.Semaphore;
 
 public class MapPartitionDestroyTask implements PartitionSpecificRunnable {
     private final PartitionContainer partitionContainer;
-    private final String mapName;
+    private final MapContainer mapContainer;
     private Semaphore semaphore;
 
-    public MapPartitionDestroyTask(PartitionContainer partitionContainer, String mapName, Semaphore semaphore) {
-        this.partitionContainer = partitionContainer;
-        this.mapName = mapName;
+    public MapPartitionDestroyTask(PartitionContainer container, MapContainer mapContainer, Semaphore semaphore) {
+        this.partitionContainer = container;
+        this.mapContainer = mapContainer;
         this.semaphore = semaphore;
     }
 
     @Override
     public void run() {
-        partitionContainer.destroyMap(mapName);
+        partitionContainer.destroyMap(mapContainer);
         semaphore.release();
     }
 
