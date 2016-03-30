@@ -79,6 +79,15 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.operation.generic.thread.count", -1);
 
     /**
+     * The number of priority generic operation handler threads per Member.
+     * <p/>
+     * The default is 1.
+     */
+    public static final HazelcastProperty PRIORITY_GENERIC_OPERATION_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.operation.priority.generic.thread.count", 1);
+
+
+    /**
      * The number of threads that the client engine has available for processing requests that are not partition specific.
      * Most of the requests, such as map.put and map.get, are partition specific and will use a partition-operation-thread, but
      * there are also requests that can't be executed on a partition-specific operation-thread, such as multimap.contain(value);
