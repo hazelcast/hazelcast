@@ -207,6 +207,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return containsKeyInternal(keyData);
     }
 
+    @Override
+    public boolean existKey(Object key) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
     protected boolean containsKeyInternal(Data keyData) {
         ClientMessage message = MapContainsKeyCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         ClientMessage result = invoke(message, keyData);

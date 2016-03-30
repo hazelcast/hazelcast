@@ -118,6 +118,11 @@ public abstract class MapOperationProviderDelegator implements MapOperationProvi
     }
 
     @Override
+    public MapOperation createExistKeyOperation(String name, Data dataKey) {
+        return getDelegate().createExistKeyOperation(name, dataKey);
+    }
+
+    @Override
     public MapOperation createGetEntryViewOperation(String name, Data dataKey) {
         return getDelegate().createGetEntryViewOperation(name, dataKey);
     }

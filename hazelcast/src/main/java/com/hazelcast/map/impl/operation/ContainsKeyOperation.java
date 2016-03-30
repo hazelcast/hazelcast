@@ -45,6 +45,10 @@ public class ContainsKeyOperation extends KeyBasedMapOperation implements Readon
         return containsKey;
     }
 
+    public void setResponse(final boolean response){
+        containsKey = response;
+    }
+
     @Override
     public WaitNotifyKey getWaitKey() {
         DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);

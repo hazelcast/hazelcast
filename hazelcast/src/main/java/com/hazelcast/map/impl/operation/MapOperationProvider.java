@@ -65,6 +65,8 @@ public interface MapOperationProvider {
 
     MapOperation createContainsKeyOperation(String name, Data dataKey);
 
+    MapOperation createExistKeyOperation(String name, Data dataKey);
+
     MapOperation createGetEntryViewOperation(String name, Data dataKey);
 
     MapOperation createGetOperation(String name, Data dataKey);

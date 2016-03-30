@@ -105,6 +105,8 @@ public interface RecordStore<R extends Record> {
 
     boolean containsKey(Data dataKey);
 
+    boolean existKey(Data dataKey);
+
     Object replace(Data dataKey, Object update);
 
 
