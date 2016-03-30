@@ -104,10 +104,8 @@ public class ClientHeapNearCache<K>
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value;
-        if (object == null) {
-            value = NULL_OBJECT;
-        } else {
+        Object value = null;
+        if (object != null) {
             SerializationService serializationService = context.getSerializationService();
             if (inMemoryFormat == InMemoryFormat.BINARY) {
                 value = serializationService.toData(object);
@@ -117,6 +115,7 @@ public class ClientHeapNearCache<K>
                 throw new IllegalArgumentException();
             }
         }
+        value = value == null ? NULL_OBJECT : value;
         cache.put(key, new NearCacheRecord(key, value));
     }
 

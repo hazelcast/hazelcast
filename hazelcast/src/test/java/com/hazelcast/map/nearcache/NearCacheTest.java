@@ -18,6 +18,7 @@ package com.hazelcast.map.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -62,6 +63,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -821,6 +823,20 @@ public class NearCacheTest extends HazelcastTestSupport {
                 assertEquals(maxSize, ownedEntryCount);
             }
         });
+    }
+
+    @Test
+    public void testNearCacheGetAsyncTwice() throws ExecutionException, InterruptedException {
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        String name = randomName();
+        Config config = new Config();
+        config.addMapConfig(new MapConfig(name).setNearCacheConfig(nearCacheConfig));
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance.getMap(name);
+        map.getAsync(1).get();
+        Thread.sleep(1000);
+        assertNull(map.getAsync(1).get());
     }
 
     /**
