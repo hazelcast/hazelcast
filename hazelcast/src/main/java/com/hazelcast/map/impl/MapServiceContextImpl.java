@@ -232,18 +232,29 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public void destroyMap(final String mapName) {
-        localMapStatsProvider.destroyLocalMapStatsImpl(mapName);
-        final PartitionContainer[] containers = partitionContainers;
-        final Semaphore semaphore = new Semaphore(0);
+    public void destroyMap(String mapName) {
+        MapContainer mapContainer = mapContainers.get(mapName);
+        if (mapContainer == null) {
+            return;
+        }
+        mapContainer.getMapStoreContext().stop();
+        nearCacheProvider.destroyNearCache(mapName);
+        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, mapName);
+        localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
+
+        destroyPartitionsAndMapContainer(mapContainer);
+    }
+
+    private void destroyPartitionsAndMapContainer(MapContainer mapContainer) {
+        Semaphore semaphore = new Semaphore(0);
         InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        for (final PartitionContainer container : containers) {
-            MapPartitionDestroyTask partitionDestroyTask = new MapPartitionDestroyTask(container, mapName, semaphore);
+        for (PartitionContainer container : partitionContainers) {
+            MapPartitionDestroyTask partitionDestroyTask = new MapPartitionDestroyTask(container, mapContainer, semaphore);
             operationService.execute(partitionDestroyTask);
         }
 
         try {
-            semaphore.tryAcquire(containers.length, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            semaphore.tryAcquire(partitionContainers.length, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -546,5 +557,10 @@ class MapServiceContextImpl implements MapServiceContext {
     public RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader) {
         ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
         return new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
+    }
+
+    @Override
+    public void removeMapContainer(MapContainer mapContainer) {
+        mapContainers.remove(mapContainer.getName(), mapContainer);
     }
 }
