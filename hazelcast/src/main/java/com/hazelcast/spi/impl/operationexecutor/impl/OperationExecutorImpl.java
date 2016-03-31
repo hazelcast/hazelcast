@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.properties.GroupProperties;
@@ -64,7 +65,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class OperationExecutorImpl implements OperationExecutor {
+public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
@@ -88,21 +89,17 @@ public final class OperationExecutorImpl implements OperationExecutor {
                                  Address thisAddress,
                                  OperationRunnerFactory operationRunnerFactory,
                                  HazelcastThreadGroup threadGroup,
-                                 NodeExtension nodeExtension,
-                                 MetricsRegistry metricsRegistry) {
+                                 NodeExtension nodeExtension) {
         this.thisAddress = thisAddress;
         this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
 
         this.partitionOperationRunners = initPartitionOperationRunners(properties, operationRunnerFactory);
-        this.partitionThreads = initPartitionThreads(properties, threadGroup, nodeExtension, metricsRegistry);
+        this.partitionThreads = initPartitionThreads(properties, threadGroup, nodeExtension);
 
         this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
-        this.genericThreads = initGenericThreads(threadGroup, nodeExtension, metricsRegistry);
-
-        metricsRegistry.scanAndRegister(this, "operation");
-
+        this.genericThreads = initGenericThreads(threadGroup, nodeExtension);
     }
 
     private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
@@ -129,7 +126,7 @@ public final class OperationExecutorImpl implements OperationExecutor {
     }
 
     private PartitionOperationThread[] initPartitionThreads(GroupProperties properties, HazelcastThreadGroup threadGroup,
-                                                            NodeExtension nodeExtension, MetricsRegistry metricsRegistry) {
+                                                            NodeExtension nodeExtension) {
 
         int threadCount = properties.getInteger(PARTITION_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
@@ -147,8 +144,6 @@ public final class OperationExecutorImpl implements OperationExecutor {
                     threadGroup, nodeExtension, partitionOperationRunners);
 
             threads[threadId] = partitionThread;
-
-            metricsRegistry.scanAndRegister(partitionThread, "operation." + partitionThread.getName());
         }
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
@@ -162,8 +157,7 @@ public final class OperationExecutorImpl implements OperationExecutor {
         return threads;
     }
 
-    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
-                                                        MetricsRegistry metricsRegistry) {
+    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
         // we created as many generic operation handlers, as there are generic threads
         int threadCount = genericOperationRunners.length;
         GenericOperationThread[] threads = new GenericOperationThread[threadCount];
@@ -178,10 +172,20 @@ public final class OperationExecutorImpl implements OperationExecutor {
 
             threads[threadId] = genericThread;
             operationRunner.setCurrentThread(genericThread);
-            metricsRegistry.scanAndRegister(genericThread, "operation." + genericThread.getName());
         }
 
         return threads;
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndRegister(this, "operation");
+
+        metricsRegistry.collectMetrics(genericThreads);
+        metricsRegistry.collectMetrics(partitionThreads);
+        metricsRegistry.collectMetrics(adHocOperationRunner);
+        metricsRegistry.collectMetrics(genericOperationRunners);
+        metricsRegistry.collectMetrics(partitionOperationRunners);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")

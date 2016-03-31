@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.properties.GroupProperties;
@@ -49,7 +50,7 @@ import static java.util.logging.Level.INFO;
  * An experimental feature to support debugging is the slow invocation detector. So it can log any invocation that takes
  * more than x seconds. See {@link GroupProperty#SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS} for more information.
  */
-public class InvocationMonitor {
+public class InvocationMonitor implements MetricsProvider {
 
     private static final long ON_MEMBER_LEFT_DELAY_MS = 1111;
     private static final int SCAN_DELAY_MILLIS = 1000;
@@ -65,14 +66,16 @@ public class InvocationMonitor {
     private final SwCounter normalTimeoutsCount = newSwCounter();
 
     public InvocationMonitor(InvocationRegistry invocationRegistry, ILogger logger, GroupProperties props,
-                             HazelcastThreadGroup hzThreadGroup, ExecutionService executionService,
-                             MetricsRegistry metricsRegistry) {
+                             HazelcastThreadGroup hzThreadGroup, ExecutionService executionService) {
         this.invocationRegistry = invocationRegistry;
         this.logger = logger;
         this.executionService = executionService;
         this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.monitorThread = new InvocationMonitorThread(hzThreadGroup);
+    }
 
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
         metricsRegistry.scanAndRegister(this, "operation.invocations");
     }
 

@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.internal.properties.GroupProperty;
@@ -61,7 +63,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
-public class EventServiceImpl implements InternalEventService {
+public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     public static final String EVENT_SYNC_FREQUENCY_PROP = "hazelcast.event.sync.frequency";
 
@@ -125,8 +127,11 @@ public class EventServiceImpl implements InternalEventService {
         this.deregistrationExceptionHandler
                 = new FutureUtilExceptionHandler(logger, "Member left while de-registering listener...");
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
+    }
 
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "event");
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndRegister(this, "event");
     }
 
     @Override

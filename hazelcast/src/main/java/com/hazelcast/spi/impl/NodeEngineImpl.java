@@ -164,6 +164,10 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void start() {
+        metricsRegistry.collectMetrics(operationService);
+        metricsRegistry.collectMetrics(proxyService);
+        metricsRegistry.collectMetrics(eventService);
+
         serviceManager.start();
         proxyService.init();
         operationService.start();

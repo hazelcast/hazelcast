@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -46,19 +47,14 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive currently.
  */
-public class AsyncResponseHandler implements PacketHandler {
+public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
 
     private final ResponseThread responseThread;
     private final ILogger logger;
-    private final MetricsRegistry metricsRegistry;
 
-    public AsyncResponseHandler(HazelcastThreadGroup threadGroup,
-                                ILogger logger,
-                                PacketHandler responsePacketHandler,
-                                MetricsRegistry metricsRegistry) {
+    public AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler);
-        this.metricsRegistry = metricsRegistry;
     }
 
     @Probe(name = "responseQueueSize", level = MANDATORY)
@@ -75,8 +71,12 @@ public class AsyncResponseHandler implements PacketHandler {
         responseThread.responseQueue.add(packet);
     }
 
-    public void start() {
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
         metricsRegistry.scanAndRegister(this, "operation");
+    }
+
+    public void start() {
         responseThread.start();
     }
 

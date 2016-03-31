@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.impl;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -236,6 +237,15 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
         for (ProbeInstance probeInstance : getSortedProbeInstances()) {
             render(renderer, probeInstance);
+        }
+    }
+
+    @Override
+    public void collectMetrics(Object... objects) {
+        for (Object object : objects) {
+            if (object instanceof MetricsProvider) {
+                ((MetricsProvider) object).provideMetrics(this);
+            }
         }
     }
 

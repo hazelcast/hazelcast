@@ -21,6 +21,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -91,7 +92,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
-public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
+public final class OperationServiceImpl implements InternalOperationService, PacketHandler, MetricsProvider {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -117,7 +118,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final MwCounter retryCount = MwCounter.newMwCounter();
 
     final NodeEngineImpl nodeEngine;
-    final MetricsRegistry metricsRegistry;
     final Node node;
     final ILogger logger;
     final OperationBackupHandler operationBackupHandler;
@@ -135,7 +135,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
@@ -148,38 +147,22 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
         this.invocationRegistry = new InvocationRegistry(
-                logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel, nodeEngine.getMetricsRegistry());
+                logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel);
 
         this.invocationMonitor = new InvocationMonitor(
-                invocationRegistry,
-                logger,
-                groupProperties,
-                node.getHazelcastThreadGroup(),
-                nodeEngine.getExecutionService(),
-                nodeEngine.getMetricsRegistry());
+                invocationRegistry, logger, groupProperties, node.getHazelcastThreadGroup(), nodeEngine.getExecutionService());
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.responseHandler = new ResponseHandler(
-                logger,
-                node.getSerializationService(),
-                invocationRegistry,
-                nodeEngine);
+                logger, node.getSerializationService(), invocationRegistry, nodeEngine);
+
         this.responsePacketExecutor = new AsyncResponseHandler(
-                node.getHazelcastThreadGroup(),
-                logger,
-                responseHandler,
-                metricsRegistry);
+                node.getHazelcastThreadGroup(), logger, responseHandler);
 
         this.operationExecutor = new OperationExecutorImpl(
-                groupProperties,
-                node.loggingService,
-                node.getThisAddress(),
-                new OperationRunnerFactoryImpl(this),
-                node.getHazelcastThreadGroup(),
-                node.getNodeExtension(),
-                metricsRegistry
-        );
+                groupProperties, node.loggingService, node.getThisAddress(), new OperationRunnerFactoryImpl(this),
+                node.getHazelcastThreadGroup(), node.getNodeExtension());
 
         this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
 
@@ -187,7 +170,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
-        metricsRegistry.scanAndRegister(this, "operation");
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -454,6 +436,13 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     public void reset() {
         invocationRegistry.reset();
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndRegister(this, "operation");
+        metricsRegistry.collectMetrics(invocationRegistry, invocationMonitor, responseHandler, responsePacketExecutor,
+                operationExecutor);
     }
 
     public void start() {

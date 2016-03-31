@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -40,7 +42,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * Responsible for handling responses for invocations. Based on the content of the response packet, it will lookup the
  * Invocation from the InvocationRegistry and notify the Invocation.
  */
-public final class ResponseHandler implements PacketHandler {
+public final class ResponseHandler implements PacketHandler, MetricsProvider {
 
     private final ILogger logger;
     private final InternalSerializationService serializationService;
@@ -65,7 +67,11 @@ public final class ResponseHandler implements PacketHandler {
         this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;
         this.nodeEngine = nodeEngine;
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation.invocations");
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndRegister(this, "operation.invocations");
     }
 
     @Override
