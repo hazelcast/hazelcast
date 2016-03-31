@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.concurrent.semaphore.operations.AcquireBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
 import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
-import com.hazelcast.concurrent.semaphore.operations.DeadMemberBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.DrainBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
 import com.hazelcast.concurrent.semaphore.operations.InitBackupOperation;
@@ -54,7 +54,7 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
     public static final int REDUCE_OPERATION = 9;
     public static final int RELEASE_BACKUP_OPERATION = 10;
     public static final int RELEASE_OPERATION = 11;
-    public static final int SEMAPHORE_DEAD_MEMBER_OPERATION = 12;
+    public static final int DEAD_MEMBER_OPERATION = 12;
     public static final int SEMAPHORE_REPLICATION_OPERATION = 13;
 
     @Override
@@ -75,7 +75,7 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
                     case AVAILABLE_OPERATION:
                         return new AvailableOperation();
                     case DEAD_MEMBER_BACKUP_OPERATION:
-                        return new DeadMemberBackupOperation();
+                        return new SemaphoreDeadMemberBackupOperation();
                     case DRAIN_BACKUP_OPERATION:
                         return new DrainBackupOperation();
                     case DRAIN_OPERATION:
@@ -92,7 +92,7 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
                         return new ReleaseBackupOperation();
                     case RELEASE_OPERATION:
                         return new ReleaseOperation();
-                    case SEMAPHORE_DEAD_MEMBER_OPERATION:
+                    case DEAD_MEMBER_OPERATION:
                         return new SemaphoreDeadMemberOperation();
                     case SEMAPHORE_REPLICATION_OPERATION:
                         return new SemaphoreReplicationOperation();

@@ -18,23 +18,26 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class DeadMemberBackupOperation extends SemaphoreBackupOperation
+public class SemaphoreDeadMemberBackupOperation extends SemaphoreBackupOperation
         implements IdentifiedDataSerializable {
 
-    public DeadMemberBackupOperation() {
+    public SemaphoreDeadMemberBackupOperation() {
     }
 
-    public DeadMemberBackupOperation(String name, String firstCaller) {
+    public SemaphoreDeadMemberBackupOperation(String name, String firstCaller) {
         super(name, -1, firstCaller);
     }
 
     @Override
     public void run() throws Exception {
-        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
-        semaphoreContainer.memberRemoved(firstCaller);
-        response = true;
+        SemaphoreService service = getService();
+        if (service.containsSemaphore(name)) {
+            SemaphoreContainer semaphoreContainer = service.getSemaphoreContainer(name);
+            response = semaphoreContainer.memberRemoved(firstCaller);
+        }
     }
 
     @Override

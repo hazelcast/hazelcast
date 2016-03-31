@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.ClientAwareService;
@@ -74,7 +73,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return getOrPutIfAbsent(containers, name, containerConstructor);
     }
 
-    // just for testing
     public boolean containsSemaphore(String name) {
         return containers.containsKey(name);
     }
@@ -113,16 +111,14 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
         for (String name : containers.keySet()) {
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
-            IPartition partition = partitionService.getPartition(partitionId);
-            if (partition.isLocal()) {
-                Operation op = new SemaphoreDeadMemberOperation(name, caller)
-                        .setPartitionId(partitionId)
-                        .setOperationResponseHandler(createEmptyResponseHandler())
-                        .setService(this)
-                        .setNodeEngine(nodeEngine)
-                        .setServiceName(SERVICE_NAME);
-                operationService.executeOperation(op);
-            }
+            Operation op = new SemaphoreDeadMemberOperation(name, caller)
+                    .setPartitionId(partitionId)
+                    .setValidateTarget(false)
+                    .setOperationResponseHandler(createEmptyResponseHandler())
+                    .setService(this)
+                    .setNodeEngine(nodeEngine)
+                    .setServiceName(SERVICE_NAME);
+            operationService.executeOperation(op);
         }
     }
 
