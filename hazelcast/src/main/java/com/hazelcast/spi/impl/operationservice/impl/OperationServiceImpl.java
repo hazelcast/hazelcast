@@ -70,8 +70,6 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -92,7 +90,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
-public final class OperationServiceImpl implements InternalOperationService, PacketHandler, MetricsProvider {
+public final class OperationServiceImpl implements InternalOperationService, MetricsProvider {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -126,7 +124,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
-    private final AsyncResponseHandler responsePacketExecutor;
+    private final AsyncResponseHandler asyncResponseHandler;
     private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
     private final ResponseHandler responseHandler;
@@ -155,10 +153,14 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.responseHandler = new ResponseHandler(
-                logger, node.getSerializationService(), invocationRegistry, nodeEngine);
-
-        this.responsePacketExecutor = new AsyncResponseHandler(
-                node.getHazelcastThreadGroup(), logger, responseHandler);
+                logger,
+                node.getSerializationService(),
+                invocationRegistry,
+                nodeEngine);
+        this.asyncResponseHandler = new AsyncResponseHandler(
+                node.getHazelcastThreadGroup(),
+                logger,
+                responseHandler);
 
         this.operationExecutor = new OperationExecutorImpl(
                 groupProperties, node.loggingService, node.getThisAddress(), new OperationRunnerFactoryImpl(this),
@@ -182,6 +184,10 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     public IsStillRunningService getIsStillRunningService() {
         return isStillRunningService;
+    }
+
+    public PacketHandler getAsyncResponseHandler() {
+        return asyncResponseHandler;
     }
 
     @Override
@@ -238,19 +244,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     @Override
     public int getResponseQueueSize() {
-        return responsePacketExecutor.getQueueSize();
-    }
-
-    @Override
-    public void handle(Packet packet) throws Exception {
-        checkNotNull(packet, "packet can't be null");
-        checkTrue(packet.isFlagSet(FLAG_OP), "Packet.FLAG_OP should be set!");
-
-        if (packet.isFlagSet(FLAG_RESPONSE)) {
-            responsePacketExecutor.handle(packet);
-        } else {
-            operationExecutor.execute(packet);
-        }
+        return asyncResponseHandler.getQueueSize();
     }
 
     @Override
@@ -441,7 +435,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     public void provideMetrics(MetricsRegistry metricsRegistry) {
         metricsRegistry.scanAndRegister(this, "operation");
-        metricsRegistry.collectMetrics(invocationRegistry, invocationMonitor, responseHandler, responsePacketExecutor,
+        metricsRegistry.collectMetrics(invocationRegistry, invocationMonitor, responseHandler, asyncResponseHandler,
                 operationExecutor);
     }
 
@@ -450,7 +444,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         invocationMonitor.start();
         operationExecutor.start();
-        responsePacketExecutor.start();
+        asyncResponseHandler.start();
         slowOperationDetector.start();
     }
 
@@ -460,7 +454,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         invocationRegistry.shutdown();
         invocationMonitor.shutdown();
         operationExecutor.shutdown();
-        responsePacketExecutor.shutdown();
+        asyncResponseHandler.shutdown();
         slowOperationDetector.shutdown();
 
         try {
@@ -472,4 +466,5 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
             EmptyStatement.ignore(e);
         }
     }
+
 }

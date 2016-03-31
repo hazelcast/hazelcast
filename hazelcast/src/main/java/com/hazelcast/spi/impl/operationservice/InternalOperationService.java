@@ -20,7 +20,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 import java.util.List;
@@ -33,7 +32,7 @@ import java.util.List;
  * It exposes methods that will not be called by regular code, like shutdown, but will only be called by
  * the the SPI management.
  */
-public interface InternalOperationService extends OperationService, PacketHandler {
+public interface InternalOperationService extends OperationService {
 
     /**
      * Returns the size of the response queue.

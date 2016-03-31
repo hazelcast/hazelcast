@@ -11,20 +11,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests {@link OperationExecutorImpl#execute(com.hazelcast.nio.Packet)}
+ * Tests {@link OperationExecutorImpl#handle(Packet)}.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class OperationExecutorImpl_ExecutePacketTest extends OperationExecutorImpl_AbstractTest {
+public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImpl_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullPacket() {
         initExecutor();
 
-        executor.execute((Packet) null);
+        executor.handle(null);
     }
 
     @Test
@@ -32,15 +34,14 @@ public class OperationExecutorImpl_ExecutePacketTest extends OperationExecutorIm
         initExecutor();
 
         final NormalResponse normalResponse = new NormalResponse(null, 1, 0, false);
-        final Packet packet = new Packet(serializationService.toBytes(normalResponse), 0);
-        packet.setFlag(Packet.FLAG_RESPONSE);
-        packet.setFlag(Packet.FLAG_OP);
-        executor.execute(packet);
+        final Packet packet = new Packet(serializationService.toBytes(normalResponse), 0)
+                .setAllFlags(FLAG_RESPONSE | FLAG_OP);
+        executor.handle(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) OperationExecutorImpl_ExecutePacketTest.this.responsePacketHandler;
+                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) OperationExecutorImpl_HandlePacketTest.this.responsePacketHandler;
                 responsePacketHandler.packets.contains(packet);
                 responsePacketHandler.responses.contains(normalResponse);
             }
@@ -52,9 +53,9 @@ public class OperationExecutorImpl_ExecutePacketTest extends OperationExecutorIm
         initExecutor();
 
         final DummyOperation operation = new DummyOperation(0);
-        final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setFlag(Packet.FLAG_OP);
-        executor.execute(packet);
+        final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
+                .setFlag(FLAG_OP);
+        executor.handle(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -71,9 +72,9 @@ public class OperationExecutorImpl_ExecutePacketTest extends OperationExecutorIm
         initExecutor();
 
         final DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
-        final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setFlag(Packet.FLAG_OP);
-        executor.execute(packet);
+        final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
+                .setFlag(FLAG_OP);
+        executor.handle(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
