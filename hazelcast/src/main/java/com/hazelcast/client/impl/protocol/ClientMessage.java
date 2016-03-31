@@ -34,7 +34,7 @@ import java.nio.ByteBuffer;
  * Any request parameter, response or event data will be carried in
  * the payload.
  * </p>
- * <p>
+ * <p/>
  * <pre>
  * 0                   1                   2                   3
  * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -430,5 +430,34 @@ public class ClientMessage
         ClientMessage clientMessage = new ClientMessage();
         clientMessage.wrapForDecode(buffer, offset);
         return clientMessage;
+    }
+
+    @Override
+    public int hashCode() {
+        return ByteBuffer.wrap(buffer().byteArray(), 0, getFrameLength()).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ClientMessage that = (ClientMessage) o;
+
+        byte[] thisBytes = this.buffer().byteArray();
+        byte[] thatBytes = that.buffer().byteArray();
+        if (this.getFrameLength() != that.getFrameLength()) {
+            return false;
+        }
+        for (int i = 0; i < this.getFrameLength(); i++) {
+            if (thisBytes[i] != thatBytes[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }
