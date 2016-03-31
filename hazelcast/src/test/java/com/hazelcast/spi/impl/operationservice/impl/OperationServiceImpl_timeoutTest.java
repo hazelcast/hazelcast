@@ -51,7 +51,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        OperationServiceImplTest.assertNoLitterInOpService(hz);
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz);
     }
 
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
@@ -67,8 +67,8 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        OperationServiceImplTest.assertNoLitterInOpService(hz1);
-        OperationServiceImplTest.assertNoLitterInOpService(hz2);
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz1);
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz2);
     }
 
     @Test
@@ -135,7 +135,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         assertOpenEventually("Should throw OperationTimeoutException", latch);
 
         for (HazelcastInstance instance : instances) {
-            OperationServiceImplTest.assertNoLitterInOpService(instance);
+            OperationServiceImpl_BasicTest.assertNoLitterInOpService(instance);
         }
     }
 

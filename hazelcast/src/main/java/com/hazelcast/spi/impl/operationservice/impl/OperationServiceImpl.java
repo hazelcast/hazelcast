@@ -60,6 +60,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.nio.Packet.FLAG_OP;
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
@@ -123,7 +126,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
-    private final AsyncResponsePacketHandler responsePacketExecutor;
+    private final AsyncResponseHandler responsePacketExecutor;
     private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
     private final ResponseHandler responseHandler;
@@ -165,10 +168,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 node.getSerializationService(),
                 invocationRegistry,
                 nodeEngine);
-        this.responsePacketExecutor = new AsyncResponsePacketHandler(
+        this.responsePacketExecutor = new AsyncResponseHandler(
                 node.getHazelcastThreadGroup(),
                 logger,
-                responseHandler);
+                responseHandler,
+                metricsRegistry);
 
         this.operationExecutor = new OperationExecutorImpl(
                 groupProperties,
@@ -215,12 +219,12 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Override
-    public int getPartitionOperationThreadCount() {
+    public int getPartitionThreadCount() {
         return operationExecutor.getPartitionThreadCount();
     }
 
     @Override
-    public int getGenericOperationThreadCount() {
+    public int getGenericThreadCount() {
         return operationExecutor.getGenericThreadCount();
     }
 
@@ -253,7 +257,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return operationExecutor;
     }
 
-    @Probe(name = "response-queue.size", level = MANDATORY)
     @Override
     public int getResponseQueueSize() {
         return responsePacketExecutor.getQueueSize();
@@ -262,9 +265,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     public void handle(Packet packet) throws Exception {
         checkNotNull(packet, "packet can't be null");
-        checkTrue(packet.isFlagSet(Packet.FLAG_OP), "Packet.FLAG_OP should be set!");
+        checkTrue(packet.isFlagSet(FLAG_OP), "Packet.FLAG_OP should be set!");
 
-        if (packet.isFlagSet(Packet.FLAG_RESPONSE)) {
+        if (packet.isFlagSet(FLAG_RESPONSE)) {
             responsePacketExecutor.handle(packet);
         } else {
             operationExecutor.execute(packet);
@@ -303,7 +306,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Override
-    public boolean isAllowedToRunOnCallingThread(Operation op) {
+    public boolean isRunAllowed(Operation op) {
         return operationExecutor.isRunAllowed(op);
     }
 
@@ -414,11 +417,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
-        Packet packet = new Packet(bytes, partitionId);
-        packet.setFlag(Packet.FLAG_OP);
+        Packet packet = new Packet(bytes, partitionId)
+                .setFlag(FLAG_OP);
 
         if (op.isUrgent()) {
-            packet.setFlag(Packet.FLAG_URGENT);
+            packet.setFlag(FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();
@@ -436,12 +439,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         }
 
         byte[] bytes = serializationService.toBytes(response);
-        Packet packet = new Packet(bytes, -1);
-        packet.setFlag(Packet.FLAG_OP);
-        packet.setFlag(Packet.FLAG_RESPONSE);
+        Packet packet = new Packet(bytes, -1)
+                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
 
         if (response.isUrgent()) {
-            packet.setFlag(Packet.FLAG_URGENT);
+            packet.setFlag(FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();

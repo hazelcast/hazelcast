@@ -45,18 +45,6 @@ public interface OperationService {
      */
     void executeOperation(Operation op);
 
-    /**
-     * Returns true if the given operation is allowed to run on the calling thread, false otherwise.
-     * If this method returns true, then the operation can be executed using {@link #runOperationOnCallingThread(Operation)}
-     * method, otherwise {@link #executeOperation(Operation)} should be used.
-     *
-     * @param op the operation to check.
-     * @return true if the operation is allowed to run on the calling thread, false otherwise.
-     * @deprecated since 3.5 since not needed anymore.
-     */
-    @Deprecated
-    boolean isAllowedToRunOnCallingThread(Operation op);
-
     <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
 
     /**
