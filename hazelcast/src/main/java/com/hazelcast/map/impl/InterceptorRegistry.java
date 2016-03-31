@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.spi.impl.operationexecutor.classic.PartitionOperationThread;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,7 +67,7 @@ public class InterceptorRegistry {
      * If there is no registration associated with the `id`, registers interceptor,
      * otherwise silently ignores registration.
      *
-     * This method is called by {@link com.hazelcast.spi.impl.operationexecutor.classic.GenericOperationThread}
+     * This method is called by {@link com.hazelcast.spi.impl.operationexecutor.impl.GenericOperationThread}
      * when registering via {@link com.hazelcast.map.impl.operation.AddInterceptorOperation}
      *
      * @param id          id of the interceptor
@@ -94,7 +94,7 @@ public class InterceptorRegistry {
     /**
      * De-registers {@link MapInterceptor} for the supplied `id`, if there is any.
      *
-     * This method is called by {@link com.hazelcast.spi.impl.operationexecutor.classic.GenericOperationThread}
+     * This method is called by {@link com.hazelcast.spi.impl.operationexecutor.impl.GenericOperationThread}
      * when de-registering via {@link com.hazelcast.map.impl.operation.RemoveInterceptorOperation}
      *
      * @param id id of the interceptor

@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -11,7 +11,7 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutor_IsOperationThreadTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationExecutorImpl_IsOperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
     @Test
     public void test_whenCallingFromNonOperationThread() {

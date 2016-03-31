@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutor_ExecuteOperationTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecutorImpl_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void whenNull() {

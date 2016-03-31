@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutor_RunOrExecuteTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImpl_AbstractTest {
 
 
     @Test(expected = NullPointerException.class)

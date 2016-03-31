@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
@@ -40,13 +40,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Abstract test support to test the {@link ClassicOperationExecutor}.
+ * Abstract test support to test the {@link OperationExecutorImpl}.
  * <p/>
  * The idea is the following; all dependencies for the executor are available as fields in this object and by calling the
  * {@link #initExecutor()} method, the actual ClassicOperationExecutor instance is created. But if you need to replace
  * the dependencies by mocks, just replace them before calling the {@link #initExecutor()} method.
  */
-public abstract class ClassicOperationExecutor_AbstractTest extends HazelcastTestSupport {
+public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSupport {
 
     protected LoggingServiceImpl loggingService;
     protected GroupProperties groupProperties;
@@ -56,7 +56,7 @@ public abstract class ClassicOperationExecutor_AbstractTest extends HazelcastTes
     protected OperationRunnerFactory handlerFactory;
     protected InternalSerializationService serializationService;
     protected PacketHandler responsePacketHandler;
-    protected ClassicOperationExecutor executor;
+    protected OperationExecutorImpl executor;
     protected Config config;
     protected MetricsRegistry metricsRegistry;
 
@@ -81,9 +81,9 @@ public abstract class ClassicOperationExecutor_AbstractTest extends HazelcastTes
         responsePacketHandler = new DummyResponsePacketHandler();
     }
 
-    protected ClassicOperationExecutor initExecutor() {
+    protected OperationExecutorImpl initExecutor() {
         groupProperties = new GroupProperties(config);
-        executor = new ClassicOperationExecutor(
+        executor = new OperationExecutorImpl(
                 groupProperties, loggingService, thisAddress, handlerFactory,
                 threadGroup, nodeExtension, metricsRegistry);
         executor.start();

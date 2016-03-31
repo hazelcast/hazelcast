@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 
 /**
  * The OperationExecutor is responsible for scheduling work (packets/operations) to be executed. It can be compared
@@ -26,7 +27,7 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
  * operations and PartitionSpecificRunnable to a thread instead of only runnables.
  *
  * It depends on the implementation if an operation is executed on the calling thread or not. For example the
- * {@link com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor} will always offload a partition specific
+ * {@link OperationExecutorImpl} will always offload a partition specific
  * Operation to the correct partition-operation-thread.
  *
  * The actual processing of a operation-packet, Operation, or a PartitionSpecificRunnable is forwarded to the

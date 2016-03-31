@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor} code.
+ * Contains the {@link com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl} code.
  */
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;

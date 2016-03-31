@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 /**
  * The OperationQueue is the queue used to schedule operations/tasks on an OperationThread.

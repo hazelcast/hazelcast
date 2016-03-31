@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
@@ -60,10 +60,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * generic operation threads: these threads are responsible for executing operations that are not
  * specific to a partition. E.g. a heart beat.
  * </li>
+ *
  * </ol>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class ClassicOperationExecutor implements OperationExecutor {
+public final class OperationExecutorImpl implements OperationExecutor {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
@@ -82,15 +83,15 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
 
-    public ClassicOperationExecutor(GroupProperties properties,
-                                    LoggingService loggerService,
-                                    Address thisAddress,
-                                    OperationRunnerFactory operationRunnerFactory,
-                                    HazelcastThreadGroup threadGroup,
-                                    NodeExtension nodeExtension,
-                                    MetricsRegistry metricsRegistry) {
+    public OperationExecutorImpl(GroupProperties properties,
+                                 LoggingService loggerService,
+                                 Address thisAddress,
+                                 OperationRunnerFactory operationRunnerFactory,
+                                 HazelcastThreadGroup threadGroup,
+                                 NodeExtension nodeExtension,
+                                 MetricsRegistry metricsRegistry) {
         this.thisAddress = thisAddress;
-        this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
+        this.logger = loggerService.getLogger(OperationExecutorImpl.class);
 
         this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
 

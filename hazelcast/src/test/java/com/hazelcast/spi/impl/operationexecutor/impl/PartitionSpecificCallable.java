@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 

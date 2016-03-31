@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.spi.Operation;
@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutor_BasicTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_AbstractTest {
 
     @Test
     public void testConstruction() {
