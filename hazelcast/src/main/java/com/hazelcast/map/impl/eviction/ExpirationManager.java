@@ -162,7 +162,7 @@ public class ExpirationManager {
             final int times = 3;
             InternalOperationService opService
                     = (InternalOperationService) ExpirationManager.this.nodeEngine.getOperationService();
-            return times * opService.getPartitionOperationThreadCount();
+            return times * opService.getPartitionThreadCount();
         }
 
         private boolean isContainerEmpty(PartitionContainer container) {

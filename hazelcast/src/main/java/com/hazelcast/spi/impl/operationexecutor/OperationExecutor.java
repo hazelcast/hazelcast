@@ -138,7 +138,6 @@ public interface OperationExecutor {
      * @return true if it is allowed, false otherwise.
      * @throws java.lang.NullPointerException if op is null.
      */
-    @Deprecated
     boolean isRunAllowed(Operation op);
 
     /**

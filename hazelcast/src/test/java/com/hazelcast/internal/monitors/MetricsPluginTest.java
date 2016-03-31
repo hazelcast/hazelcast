@@ -69,6 +69,6 @@ public class MetricsPluginTest extends AbstractPerformanceMonitorPluginTest {
 
         // we just test a few to make sure the metrics are written.
         assertContains("client.endpoint.count=0");
-        assertContains("operation.response-queue.size=0");
+        assertContains("operation.responseQueueSize=0");
     }
 }

@@ -17,6 +17,8 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -26,6 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -35,29 +38,32 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 /**
  * The AsyncResponsePacketHandler is a PacketHandler that asynchronously process operation-response packets.
  *
- * So when a response is received from a remote system, it is put in the workQueue of the ResponseThread.
- * Then the ResponseThread takes it from this workQueue and calls the {@link PacketHandler} for the
+ * So when a response is received from a remote system, it is put in the responseQueue of the ResponseThread.
+ * Then the ResponseThread takes it from this responseQueue and calls the {@link PacketHandler} for the
  * actual processing.
  *
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive currently.
  */
-public class AsyncResponsePacketHandler implements PacketHandler {
+public class AsyncResponseHandler implements PacketHandler {
 
     private final ResponseThread responseThread;
-    private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
     private final ILogger logger;
+    private final MetricsRegistry metricsRegistry;
 
-    public AsyncResponsePacketHandler(HazelcastThreadGroup threadGroup,
-                                      ILogger logger,
-                                      PacketHandler responsePacketHandler) {
+    public AsyncResponseHandler(HazelcastThreadGroup threadGroup,
+                                ILogger logger,
+                                PacketHandler responsePacketHandler,
+                                MetricsRegistry metricsRegistry) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler);
+        this.metricsRegistry = metricsRegistry;
     }
 
+    @Probe(name = "responseQueueSize", level = MANDATORY)
     public int getQueueSize() {
-        return workQueue.size();
+        return responseThread.responseQueue.size();
     }
 
     @Override
@@ -66,10 +72,11 @@ public class AsyncResponsePacketHandler implements PacketHandler {
         checkTrue(packet.isFlagSet(FLAG_OP), "FLAG_OP should be set");
         checkTrue(packet.isFlagSet(FLAG_RESPONSE), "FLAG_RESPONSE should be set");
 
-        workQueue.add(packet);
+        responseThread.responseQueue.add(packet);
     }
 
     public void start() {
+        metricsRegistry.scanAndRegister(this, "operation");
         responseThread.start();
     }
 
@@ -83,6 +90,7 @@ public class AsyncResponsePacketHandler implements PacketHandler {
      */
     private final class ResponseThread extends Thread implements OperationHostileThread {
 
+        private final BlockingQueue<Packet> responseQueue = new LinkedBlockingQueue<Packet>();
         private final PacketHandler responsePacketHandler;
         private volatile boolean shutdown;
 
@@ -107,12 +115,12 @@ public class AsyncResponsePacketHandler implements PacketHandler {
 
         private void doRun() throws InterruptedException {
             while (!shutdown) {
-                Packet responsePacket = workQueue.take();
+                Packet response = responseQueue.take();
                 try {
-                    responsePacketHandler.handle(responsePacket);
+                    responsePacketHandler.handle(response);
                 } catch (Throwable e) {
                     inspectOutputMemoryError(e);
-                    logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName(), e);
+                    logger.severe("Failed to process response: " + response + " on response thread:" + getName(), e);
                 }
             }
         }

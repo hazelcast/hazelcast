@@ -76,6 +76,6 @@ public class OperationServiceMBean extends HazelcastMBean<InternalOperationServi
     @ManagedAnnotation("operationThreadCount")
     @ManagedDescription("Number of threads executing operations")
     public long getOperationThreadCount() {
-        return managedObject.getPartitionOperationThreadCount();
+        return managedObject.getPartitionThreadCount();
     }
 }

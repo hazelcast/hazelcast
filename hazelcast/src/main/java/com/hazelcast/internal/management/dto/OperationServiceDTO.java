@@ -44,7 +44,7 @@ public class OperationServiceDTO implements JsonSerializable {
         runningOperationsCount = os.getRunningOperationsCount();
         remoteOperationCount = os.getRemoteOperationsCount();
         executedOperationCount = os.getExecutedOperationCount();
-        operationThreadCount = os.getPartitionOperationThreadCount();
+        operationThreadCount = os.getPartitionThreadCount();
     }
 
     @Override
