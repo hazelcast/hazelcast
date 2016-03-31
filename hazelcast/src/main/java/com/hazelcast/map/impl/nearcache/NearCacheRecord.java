@@ -61,6 +61,8 @@ public class NearCacheRecord {
     private volatile long lastAccessTime;
 
     public NearCacheRecord(Object key, Object value) {
+        assert key != null;
+        assert value != null;
         this.key = key;
         this.value = value;
         long time = Clock.currentTimeMillis();
