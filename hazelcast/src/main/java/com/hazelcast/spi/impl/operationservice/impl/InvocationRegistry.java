@@ -18,9 +18,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -58,13 +58,13 @@ public class InvocationRegistry implements Iterable<Invocation> {
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
 
-    public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
-                              int concurrencyLevel) {
+    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence,
+                              int concurrencyLevel, MetricsRegistry metricsRegistry) {
         this.logger = logger;
-        this.callIdSequence = backpressureRegulator.newCallIdSequence();
+        this.callIdSequence = callIdSequence;
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
 
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
+        metricsRegistry.scanAndRegister(this, "operation");
     }
 
     @Probe(name = "invocations.usedPercentage")

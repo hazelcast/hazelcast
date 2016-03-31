@@ -144,7 +144,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
-        this.invocationRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
+        this.invocationRegistry = new InvocationRegistry(
+                logger,
+                backpressureRegulator.newCallIdSequence(),
+                concurrencyLevel,
+                nodeEngine.getMetricsRegistry());
 
         this.invocationMonitor = new InvocationMonitor(
                 invocationRegistry,
