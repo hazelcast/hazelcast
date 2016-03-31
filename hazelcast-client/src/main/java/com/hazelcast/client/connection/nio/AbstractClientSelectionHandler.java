@@ -31,7 +31,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
- * The AbstractClientSelectionHandler gets called by an IO-thread when there data available to read,
+ * The AbstractClientSelectionHandler gets called by an IO-thread when there is data available to read,
  * or space available to write.
  */
 public abstract class AbstractClientSelectionHandler implements SelectionHandler, Runnable {

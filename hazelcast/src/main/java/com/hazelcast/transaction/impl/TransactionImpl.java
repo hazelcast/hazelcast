@@ -243,8 +243,8 @@ public class TransactionImpl implements Transaction {
      * <p>
      * If a transaction is local or if there is 1 or 0 items in the transaction log, instead of
      * preparing, we are just going to try to commit. If the lock is still acquired, the write
-     * succeeds, and if the lock isn't acquired, the write fails; the same effect as a prepare
-     * would have.
+     * succeeds, and if the lock isn't acquired, the write fails; this is the same effect as a
+     * prepare would have.
      *
      * @return true if {@link #prepare()} is required.
      */

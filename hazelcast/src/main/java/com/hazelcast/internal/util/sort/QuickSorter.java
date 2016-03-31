@@ -41,16 +41,19 @@ public abstract class QuickSorter {
     /**
      * Loads the data from the given index as needed to satisfy later calls to {@link #isLessThanPivot(long)}
      * and {@link #isGreaterThanPivot(long)}.
+     * @param index the index from which to load the data.
      */
     protected abstract void loadPivot(long index);
 
     /**
+     * @param index the supplied index.
      * @return {@code true} if the slot at the supplied index is "less than" the slot remembered by the
      * previous call to {@link #loadPivot(long)}; {@code false} otherwise.
      */
     protected abstract boolean isLessThanPivot(long index);
 
     /**
+     * @param index the supplied index.
      * @return {@code true} if the slot at the supplied index is "greater than" the slot remembered by the
      * previous call to {@link #loadPivot(long)}; {@code false} otherwise.
      */
@@ -58,6 +61,8 @@ public abstract class QuickSorter {
 
     /**
      * Swaps the contents of the slots at the supplied indices.
+     * @param index1 the index from which to swap contents.
+     * @param index2 the other index from which to swap contents.
      */
     protected abstract void swap(long index1, long index2);
 

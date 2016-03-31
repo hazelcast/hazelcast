@@ -126,35 +126,35 @@ public interface OperationExecutor {
      * Tries to run the {@link Operation} on the calling thread if allowed. Otherwise the operation is submitted for executing
      * using {@link #execute(Operation)}.
      *
-     * @param op the operation to run or execute.
+     * @param op the {@link Operation} to run or execute.
      * @throws java.lang.NullPointerException if op is null.
      */
     void runOrExecute(Operation op);
 
     /**
-     * Checks if the operation is allowed to run on the current thread.
+     * Checks if the {@link Operation} is allowed to run on the current thread.
      *
-     * @param op the Operation to check
+     * @param op the {@link Operation} to check
      * @return true if it is allowed, false otherwise.
      * @throws java.lang.NullPointerException if op is null.
      */
     boolean isRunAllowed(Operation op);
 
     /**
-     * Checks if the op is allowed to be invoked from the current thread. Invoking means that the operation can
+     * Checks if the {@link Operation} is allowed to be invoked from the current thread. Invoking means that the operation can
      * be executed on another thread, but that one is going to block for completion using the future.get/join etc.
      * Blocking for completion can cause problems, e.g. when you hog a partition thread or deadlocks.
      *
-     * @param op the Operation to check
+     * @param op the {@link Operation} to check
      * @param isAsync is the invocation async, if false invocation does not return a future to block on
      * @return true if allowed, false otherwise.
      */
     boolean isInvocationAllowed(Operation op, boolean isAsync);
 
     /**
-     * Checks if the current thread is an operation thread.
+     * Checks if the current thread is an {@link Operation} thread.
      *
-     * @return true if is an operation thread, false otherwise.
+     * @return true if is an {@link Operation} thread, false otherwise.
      */
     boolean isOperationThread();
 

@@ -74,7 +74,7 @@ public class PerformanceMonitor {
             = new HazelcastProperty("hazelcast.performance.monitor.max.rolled.file.count", 10);
 
     /**
-     * If a human friendly, but more difficult to parse, output format should be selected for dumping the metrics.
+     * Determines if a human friendly, but more difficult to parse, output format is selected for dumping the metrics.
      * <p/>
      * The default is true.
      */

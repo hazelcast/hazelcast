@@ -38,7 +38,8 @@ public abstract class MemArrayQuickSorter extends QuickSorter {
 
     /**
      * Sets the base address to the supplied address.
-     * @return {@code this}
+     * @param baseAddress the supplied address.
+     * @return {@code this} the base address.
      */
     public MemArrayQuickSorter gotoAddress(long baseAddress) {
         this.baseAddress = baseAddress;

@@ -24,15 +24,15 @@ public interface MemoryAccessor {
     /**
      * Reads the boolean value from given address.
      *
-     * @param address the address where boolean value will be read from
-     * @return the read value
+     * @param address the address where the boolean value will be read from
+     * @return the value that is read
      */
     boolean getBoolean(long address);
 
     /**
      * Writes the given boolean value to given address.
      *
-     * @param address the address where boolean value will be written to
+     * @param address the address where the boolean value will be written to
      * @param x       the boolean value to be written
      */
     void putBoolean(long address, boolean x);
@@ -40,7 +40,7 @@ public interface MemoryAccessor {
     /**
      * Reads the byte value from given address.
      *
-     * @param address the address where byte value will be read from
+     * @param address the address where the byte value will be read from
      * @return the byte value that was read
      */
     byte getByte(long address);
@@ -48,7 +48,7 @@ public interface MemoryAccessor {
     /**
      * Writes the given byte value to given address.
      *
-     * @param address the address where byte value will be written to
+     * @param address the address where the byte value will be written to
      * @param x       the byte value to be written
      */
     void putByte(long address, byte x);
@@ -56,7 +56,7 @@ public interface MemoryAccessor {
     /**
      * Reads the char value from given address.
      *
-     * @param address the address where char value will be read from
+     * @param address the address where the char value will be read from
      * @return the char value that was read
      */
     char getChar(long address);
@@ -64,7 +64,7 @@ public interface MemoryAccessor {
     /**
      * Writes the given char value to given address.
      *
-     * @param address the address where char value will be written to
+     * @param address the address where the char value will be written to
      * @param x       the char value to be written
      */
     void putChar(long address, char x);
@@ -72,7 +72,7 @@ public interface MemoryAccessor {
     /**
      * Reads the short value from given address.
      *
-     * @param address the address where short value will be read from
+     * @param address the address where the short value will be read from
      * @return the short value that was read
      */
     short getShort(long address);
@@ -80,7 +80,7 @@ public interface MemoryAccessor {
     /**
      * Writes the given short value to given address.
      *
-     * @param address the address where short value will be written to
+     * @param address the address where the short value will be written to
      * @param x       the short value to be written
      */
     void putShort(long address, short x);
@@ -88,7 +88,7 @@ public interface MemoryAccessor {
     /**
      * Reads the int value from given address.
      *
-     * @param address the address where int value will be read from
+     * @param address the address where the int value will be read from
      * @return the int value that was read
      */
     int getInt(long address);
@@ -96,7 +96,7 @@ public interface MemoryAccessor {
     /**
      * Writes the given int value to given address.
      *
-     * @param address the address where int value will be written to
+     * @param address the address where the int value will be written to
      * @param x       the int value to be written
      */
     void putInt(long address, int x);
@@ -104,7 +104,7 @@ public interface MemoryAccessor {
     /**
      * Reads the float value from given address.
      *
-     * @param address the address where float value will be read from
+     * @param address the address where the float value will be read from
      * @return the float value that was read
      */
     float getFloat(long address);
@@ -112,7 +112,7 @@ public interface MemoryAccessor {
     /**
      * Writes the given float value to given address.
      *
-     * @param address the address where float value will be written to
+     * @param address the address where the float value will be written to
      * @param x       the float value to be written
      */
     void putFloat(long address, float x);
@@ -120,7 +120,7 @@ public interface MemoryAccessor {
     /**
      * Reads the long value from given address.
      *
-     * @param address the address where long value will be read from
+     * @param address the address where the long value will be read from
      * @return the long value that was read
      */
     long getLong(long address);
@@ -128,7 +128,7 @@ public interface MemoryAccessor {
     /**
      * Writes the given long value to given address.
      *
-     * @param address the address where long value will be written to
+     * @param address the address where the long value will be written to
      * @param x       the long value to be written
      */
     void putLong(long address, long x);
@@ -136,7 +136,7 @@ public interface MemoryAccessor {
     /**
      * Reads the double value from given address.
      *
-     * @param address the address where double value will be read from
+     * @param address the address where the double value will be read from
      * @return the double value that was read
      */
     double getDouble(long address);
@@ -144,7 +144,7 @@ public interface MemoryAccessor {
     /**
      * Writes the given double value to given address.
      *
-     * @param address the address where double value will be written to
+     * @param address the address where the double value will be written to
      * @param x       the double value to be written
      */
     void putDouble(long address, double x);
@@ -183,7 +183,7 @@ public interface MemoryAccessor {
      * Sets memory with given value from specified address as given size.
      *
      * @param address the start address of the memory region
-     *                which will be set with given value
+     *                which will be set with the given value
      * @param lengthBytes   the number of bytes to be set
      * @param value   the value to be set
      */
