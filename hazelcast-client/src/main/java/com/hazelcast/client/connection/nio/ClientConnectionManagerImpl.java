@@ -250,14 +250,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
 
         Connection get(int timeout) throws Throwable {
-            countDownLatch.await(timeout, TimeUnit.MILLISECONDS);
+            if (!countDownLatch.await(timeout, TimeUnit.MILLISECONDS)) {
+                throw new TimeoutException("Authentication response did not come back in " + timeout + " millis");
+            }
             if (connection != null) {
                 return connection;
             }
-            if (throwable != null) {
-                throw throwable;
-            }
-            throw new TimeoutException("Authentication response did not come back in " + timeout + " millis");
+            throw throwable;
         }
     }
 
