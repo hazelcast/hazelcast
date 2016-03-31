@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutor_IsRunAllowedTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImpl_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullOperation() {

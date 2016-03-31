@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class OperationThreadTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
     @Test
     public void testOOME_whenDeserializing() throws Exception {

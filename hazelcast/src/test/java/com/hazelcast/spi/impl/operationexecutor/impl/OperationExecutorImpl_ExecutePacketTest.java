@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
@@ -14,11 +14,11 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests {@link ClassicOperationExecutor#execute(com.hazelcast.nio.Packet)}
+ * Tests {@link OperationExecutorImpl#execute(com.hazelcast.nio.Packet)}
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutor_ExecutePacketTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationExecutorImpl_ExecutePacketTest extends OperationExecutorImpl_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullPacket() {
@@ -40,7 +40,7 @@ public class ClassicOperationExecutor_ExecutePacketTest extends ClassicOperation
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) ClassicOperationExecutor_ExecutePacketTest.this.responsePacketHandler;
+                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) OperationExecutorImpl_ExecutePacketTest.this.responsePacketHandler;
                 responsePacketHandler.packets.contains(packet);
                 responsePacketHandler.responses.contains(normalResponse);
             }

@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 
 /**
  * The OperationRunner is responsible for the actual running of operations.
@@ -80,7 +81,7 @@ public abstract class OperationRunner {
      * This value only has meaning when an Operation is running. It depends on the implementation if the field is unset
      * after an operation is executed or not. So it could be that a value is returned while no operation is running.
      * <p/>
-     * For example, the {@link com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor} will never unset
+     * For example, the {@link OperationExecutorImpl} will never unset
      * this field since each OperationRunner is bound to a single OperationThread; so this field is initialized when the
      * OperationRunner is created.
      * <p/>

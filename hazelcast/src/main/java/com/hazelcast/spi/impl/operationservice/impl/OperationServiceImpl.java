@@ -43,7 +43,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -166,7 +166,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 logger,
                 responseHandler);
 
-        this.operationExecutor = new ClassicOperationExecutor(
+        this.operationExecutor = new OperationExecutorImpl(
                 groupProperties,
                 node.loggingService,
                 node.getThisAddress(),

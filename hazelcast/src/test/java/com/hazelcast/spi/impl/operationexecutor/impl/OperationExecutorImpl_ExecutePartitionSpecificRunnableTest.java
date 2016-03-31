@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationexecutor.classic;
+package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.test.AssertTask;
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationExecutor_ExecutePartitionSpecificRunnableTest extends ClassicOperationExecutor_AbstractTest {
+public class OperationExecutorImpl_ExecutePartitionSpecificRunnableTest extends OperationExecutorImpl_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void whenNull() {
