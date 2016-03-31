@@ -65,7 +65,7 @@ public class ClientMessage
     /**
      * Current protocol version
      */
-    public static final short VERSION = 0;
+    public static final short VERSION = 1;
 
     /**
      * Begin Flag
