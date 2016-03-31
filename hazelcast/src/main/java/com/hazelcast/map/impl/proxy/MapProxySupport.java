@@ -25,6 +25,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -133,6 +134,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final OperationService operationService;
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
+    private final boolean defensiveCopyObjectMemoryFormat;
 
     // not final for testing purposes.
     protected MapOperationProvider operationProvider;
@@ -153,6 +155,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
+        boolean defensiveCopy = getMapConfig().isDefensiveCopyObjectMemoryFormat();
+        if (!InMemoryFormat.OBJECT.equals(getMapConfig().getInMemoryFormat())) {
+            defensiveCopy = true;
+        }
+        defensiveCopyObjectMemoryFormat = defensiveCopy;
     }
 
     @Override
@@ -241,17 +248,34 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected Object getInternal(Data key) {
         // todo action for read-backup true is not well tested.
         if (getMapConfig().isReadBackupData()) {
-            Object fromBackup = readBackupDataOrNull(key);
+            final Object fromBackup = readBackup(key);
             if (fromBackup != null) {
                 return fromBackup;
             }
         }
-        MapOperation operation = operationProvider.createGetOperation(name, key);
+        MapOperation operation;
+
+        if (defensiveCopyObjectMemoryFormat) {
+            operation = operationProvider.createGetOperation(name, key);
+        } else {
+            operation = operationProvider.createGetOperationWithoutDefensiveCopy(name, key);
+        }
+
         operation.setThreadId(ThreadUtil.getThreadId());
         return invokeOperation(key, operation);
     }
 
-    private Data readBackupDataOrNull(Data key) {
+    private Object readBackup(Data key) {
+        final Object toReturn;
+        if (defensiveCopyObjectMemoryFormat) {
+            toReturn = readBackupDataOrNull(key);
+        } else {
+            toReturn = readBackupOrNull(key);
+        }
+        return toReturn;
+    }
+
+    private RecordStore getRecordStore(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         IPartition partition = partitionService.getPartition(partitionId, false);
         if (!partition.isOwnerOrBackup(thisAddress)) {
@@ -259,6 +283,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+        if (recordStore == null) {
+            return null;
+        }
+        return recordStore;
+    }
+
+    private Object readBackupOrNull(Data key) {
+        RecordStore recordStore = getRecordStore(key);
+        if (recordStore == null) {
+            return null;
+        }
+        return recordStore.readBackup(key);
+    }
+
+    private Data readBackupDataOrNull(Data key) {
+        RecordStore recordStore = getRecordStore(key);
         if (recordStore == null) {
             return null;
         }
@@ -322,7 +362,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 mapServiceContext.incrementOperationStats(time, localMapStats, name, operation);
             } else {
                 Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false).invoke();
+                        .setResultDeserialized(false)
+                        .invoke();
                 result = f.get();
             }
             return result;

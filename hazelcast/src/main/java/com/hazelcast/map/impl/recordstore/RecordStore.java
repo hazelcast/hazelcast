@@ -101,6 +101,8 @@ public interface RecordStore<R extends Record> {
      */
     Data readBackupData(Data key);
 
+    Object readBackup(Data key);
+
     MapEntries getAll(Set<Data> keySet);
 
     boolean containsKey(Data dataKey);

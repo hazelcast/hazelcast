@@ -122,6 +122,8 @@ public class MapConfig {
 
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
 
+    private boolean defensiveCopyObjectMemoryFormat = true;
+
     private WanReplicationRef wanReplicationRef;
 
     private List<EntryListenerConfig> entryListenerConfigs;
@@ -168,6 +170,7 @@ public class MapConfig {
         this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
         this.evictionPolicy = config.evictionPolicy;
         this.inMemoryFormat = config.inMemoryFormat;
+        this.defensiveCopyObjectMemoryFormat = config.defensiveCopyObjectMemoryFormat;
         this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
         this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
         this.readBackupData = config.readBackupData;
@@ -235,6 +238,15 @@ public class MapConfig {
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
+        return this;
+    }
+
+    public boolean isDefensiveCopyObjectMemoryFormat() {
+        return defensiveCopyObjectMemoryFormat;
+    }
+
+    public MapConfig setDefensiveCopyObjectMemoryFormat(boolean defensiveCopyObjectMemoryFormat) {
+        this.defensiveCopyObjectMemoryFormat = defensiveCopyObjectMemoryFormat;
         return this;
     }
 
@@ -885,6 +897,7 @@ public class MapConfig {
                         && (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null)
                         && (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat)
                         : other.inMemoryFormat == null)
+                        && this.defensiveCopyObjectMemoryFormat == other.defensiveCopyObjectMemoryFormat
                         && (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
                         : other.evictionPolicy == null)
                         && (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
@@ -898,6 +911,7 @@ public class MapConfig {
         return "MapConfig{"
                 + "name='" + name + '\''
                 + "', inMemoryFormat=" + inMemoryFormat + '\''
+                + ", defensiveCopyObjectMemoryFormat =" + defensiveCopyObjectMemoryFormat
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
