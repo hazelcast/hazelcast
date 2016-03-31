@@ -11,7 +11,7 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class IsOperationThreadTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_IsOperationThreadTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test
     public void test_whenCallingFromNonOperationThread() {

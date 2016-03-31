@@ -101,7 +101,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
 
-    @Probe(name = "completed.count", level = MANDATORY)
+    @Probe(name = "completedCount", level = MANDATORY)
     final AtomicLong completedOperationsCount = new AtomicLong();
 
     @Probe(name = "operationTimeoutCount", level = MANDATORY)
@@ -212,15 +212,14 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     @Override
     public int getPartitionOperationThreadCount() {
-        return operationExecutor.getPartitionOperationThreadCount();
+        return operationExecutor.getPartitionThreadCount();
     }
 
     @Override
     public int getGenericOperationThreadCount() {
-        return operationExecutor.getGenericOperationThreadCount();
+        return operationExecutor.getGenericThreadCount();
     }
 
-    @Probe(name = "running.count")
     @Override
     public int getRunningOperationsCount() {
         return operationExecutor.getRunningOperationCount();
@@ -236,16 +235,14 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return invocationRegistry.size();
     }
 
-    @Probe(name = "queue.size", level = MANDATORY)
     @Override
     public int getOperationExecutorQueueSize() {
-        return operationExecutor.getOperationExecutorQueueSize();
+        return operationExecutor.getQueueSize();
     }
 
-    @Probe(name = "priority-queue.size", level = MANDATORY)
     @Override
     public int getPriorityOperationExecutorQueueSize() {
-        return operationExecutor.getPriorityOperationExecutorQueueSize();
+        return operationExecutor.getPriorityQueueSize();
     }
 
     public OperationExecutor getOperationExecutor() {
@@ -293,7 +290,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     @Override
     public void runOperationOnCallingThread(Operation op) {
-        operationExecutor.runOnCallingThread(op);
+        operationExecutor.run(op);
     }
 
     @Override
@@ -303,7 +300,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     @Override
     public boolean isAllowedToRunOnCallingThread(Operation op) {
-        return operationExecutor.isAllowedToRunInCurrentThread(op);
+        return operationExecutor.isRunAllowed(op);
     }
 
     @Override

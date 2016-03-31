@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_ExecutePacketTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullPacket() {
@@ -40,7 +40,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) ExecutePacketTest.this.responsePacketHandler;
+                DummyResponsePacketHandler responsePacketHandler = (DummyResponsePacketHandler) ClassicOperationExecutor_ExecutePacketTest.this.responsePacketHandler;
                 responsePacketHandler.packets.contains(packet);
                 responsePacketHandler.responses.contains(normalResponse);
             }

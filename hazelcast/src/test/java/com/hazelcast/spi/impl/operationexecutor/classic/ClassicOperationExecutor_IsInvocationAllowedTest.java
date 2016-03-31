@@ -10,17 +10,19 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOperationExecutorTest {
+public class ClassicOperationExecutor_IsInvocationAllowedTest extends ClassicOperationExecutor_AbstractTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullOperation() {
         initExecutor();
 
-        executor.isInvocationAllowedFromCurrentThread(null, false);
+        executor.isInvocationAllowed(null, false);
     }
 
     // ============= generic operations ==============================
@@ -31,7 +33,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        boolean result = executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
+        boolean result = executor.isInvocationAllowed(genericOperation, false);
 
         assertTrue(result);
     }
@@ -45,13 +47,13 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(0) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
+                return executor.isInvocationAllowed(genericOperation, false);
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -63,12 +65,12 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
+                return executor.isInvocationAllowed(genericOperation, false);
             }
         };
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -80,14 +82,14 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
+                return executor.isInvocationAllowed(genericOperation, false);
             }
         });
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, Boolean.FALSE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 
     @Test
@@ -99,14 +101,14 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return executor.isInvocationAllowedFromCurrentThread(genericOperation, true);
+                return executor.isInvocationAllowed(genericOperation, true);
             }
         });
 
         DummyOperationHostileThread hostileThread = new DummyOperationHostileThread(futureTask);
         hostileThread.start();
 
-        assertEqualsEventually(futureTask, Boolean.FALSE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 
     // ===================== partition specific operations ========================
@@ -117,7 +119,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        boolean result = executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
+        boolean result = executor.isInvocationAllowed(partitionOperation, false);
 
         assertTrue(result);
     }
@@ -131,13 +133,13 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
+                return executor.isInvocationAllowed(partitionOperation, false);
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -149,13 +151,13 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(partitionOperation.getPartitionId()) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
+                return executor.isInvocationAllowed(partitionOperation, false);
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -168,13 +170,13 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(wrongPartition) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
+                return executor.isInvocationAllowed(partitionOperation, false);
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.FALSE);
+        assertEqualsEventually(task, FALSE);
     }
 
     @Test
@@ -187,13 +189,13 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(wrongPartition) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, true);
+                return executor.isInvocationAllowed(partitionOperation, true);
             }
         };
 
         executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, TRUE);
     }
 
     @Test
@@ -205,14 +207,14 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return executor.isInvocationAllowedFromCurrentThread(operation, false);
+                return executor.isInvocationAllowed(operation, false);
             }
         });
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, Boolean.FALSE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 
     @Test
@@ -224,13 +226,13 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return executor.isInvocationAllowedFromCurrentThread(operation, true);
+                return executor.isInvocationAllowed(operation, true);
             }
         });
 
         DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
         thread.start();
 
-        assertEqualsEventually(futureTask, Boolean.FALSE);
+        assertEqualsEventually(futureTask, FALSE);
     }
 }

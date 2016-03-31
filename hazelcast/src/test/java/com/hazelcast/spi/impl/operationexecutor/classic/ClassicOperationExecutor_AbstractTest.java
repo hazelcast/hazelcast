@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
  * {@link #initExecutor()} method, the actual ClassicOperationExecutor instance is created. But if you need to replace
  * the dependencies by mocks, just replace them before calling the {@link #initExecutor()} method.
  */
-public abstract class AbstractClassicOperationExecutorTest extends HazelcastTestSupport {
+public abstract class ClassicOperationExecutor_AbstractTest extends HazelcastTestSupport {
 
     protected LoggingServiceImpl loggingService;
     protected GroupProperties groupProperties;

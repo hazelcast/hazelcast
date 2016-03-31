@@ -50,6 +50,15 @@ public final class DefaultOperationQueue implements OperationQueue {
     }
 
     @Override
+    public void add(Object task, boolean priority) {
+        if (priority) {
+            addUrgent(task);
+        } else {
+            add(task);
+        }
+    }
+
+    @Override
     public void addUrgent(Object task) {
         checkNotNull(task, "task can't be null");
 

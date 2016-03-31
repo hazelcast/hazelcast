@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -45,5 +46,15 @@ public final class PartitionOperationThread extends OperationThread {
     @Override
     public OperationRunner getOperationRunner(int partitionId) {
         return partitionOperationRunners[partitionId];
+    }
+
+    @Probe
+    int priorityPendingCount() {
+        return queue.prioritySize();
+    }
+
+    @Probe
+    int normalPendingCount() {
+        return queue.normalSize();
     }
 }

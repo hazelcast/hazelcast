@@ -40,19 +40,25 @@ public interface OperationExecutor {
 
     // Will be replaced by metrics
     @Deprecated
-    int getOperationExecutorQueueSize();
+    int getQueueSize();
 
     // Will be replaced by metrics
     @Deprecated
-    int getPriorityOperationExecutorQueueSize();
+    int getPriorityQueueSize();
 
-    // Will be replaced by metrics
-    @Deprecated
-    int getPartitionOperationThreadCount();
+    /**
+     * Returns the number of partition threads.
+     *
+     * @return number of partition threads.
+     */
+    int getPartitionThreadCount();
 
-    // Will be replaced by metrics
-    @Deprecated
-    int getGenericOperationThreadCount();
+    /**
+     * Returns the number of generic threads.
+     *
+     * @return number of generic threads.
+     */
+    int getGenericThreadCount();
 
     /**
      * Gets all the operation handlers for the partitions. Each partition will have its own operation handler. So if
@@ -75,7 +81,7 @@ public interface OperationExecutor {
     OperationRunner[] getGenericOperationRunners();
 
     /**
-     * Executes an Operation.
+     * Executes the given {@link Operation} at some point in the future.
      *
      * @param op the operation to execute.
      * @throws java.lang.NullPointerException if op is null.
@@ -83,7 +89,7 @@ public interface OperationExecutor {
     void execute(Operation op);
 
     /**
-     * Executes a PartitionSpecificRunnable.
+     * Executes the given {@link PartitionSpecificRunnable} at some point in the future.
      *
      * @param task the task the execute.
      * @throws java.lang.NullPointerException if task is null.
@@ -91,7 +97,7 @@ public interface OperationExecutor {
     void execute(PartitionSpecificRunnable task);
 
     /**
-     * Executes a Operation packet
+     * Executes the given {@link Packet} at some point in the future.
      *
      * @param packet the packet to execute.
      * @throws java.lang.NullPointerException if packet is null
@@ -99,34 +105,30 @@ public interface OperationExecutor {
     void execute(Packet packet);
 
     /**
-     * Runs the operation on the calling thread.
-     *
-     * @param op the operation to run.
-     * @throws java.lang.NullPointerException if op is null.
-     * @throws IllegalThreadStateException    if the operation is not allowed to be run on the calling thread.
-     */
-    void runOnCallingThread(Operation op);
-
-    /**
-     * Tries to run the operation on the calling thread if possible. Otherwise offload it to a different thread.
-     *
-     * @param op the operation to run.
-     * @throws java.lang.NullPointerException if op is null.
-     */
-    void runOnCallingThreadIfPossible(Operation op);
-
-    /**
-     * Executes the task on all partition operation threads.
+     * Executes the task on every partition thread.
      *
      * @param task the task the execute.
      * @throws java.lang.NullPointerException if task is null.
      */
-    void runOnAllPartitionThreads(Runnable task);
+    void executeOnPartitionThreads(Runnable task);
 
     /**
-     * Interrupts all partition threads.
+     * Runs the {@link Operation} on the calling thread.
+     *
+     * @param op the {@link Operation} to run.
+     * @throws java.lang.NullPointerException if op is null.
+     * @throws IllegalThreadStateException    if the operation is not allowed to be run on the calling thread.
      */
-    void interruptAllPartitionThreads();
+    void run(Operation op);
+
+    /**
+     * Tries to run the {@link Operation} on the calling thread if allowed. Otherwise the operation is submitted for executing
+     * using {@link #execute(Operation)}.
+     *
+     * @param op the operation to run or execute.
+     * @throws java.lang.NullPointerException if op is null.
+     */
+    void runOrExecute(Operation op);
 
     /**
      * Checks if the operation is allowed to run on the current thread.
@@ -136,26 +138,30 @@ public interface OperationExecutor {
      * @throws java.lang.NullPointerException if op is null.
      */
     @Deprecated
-    boolean isAllowedToRunInCurrentThread(Operation op);
+    boolean isRunAllowed(Operation op);
 
     /**
-     * Checks if the current thread is an operation thread.
-     *
-     * @return true if is an operation thread, false otherwise.
-     * @deprecated it should not matter if a thread is an operation thread or not; this is something operationExecutor specific.
-     */
-    boolean isOperationThread();
-
-    /**
-     * Checks this operation can be invoked from the current thread. Invoking means that the operation can
-     * be executed on another thread, but that one is going to block for completion. Blocking for completion
-     * can cause problems, e.g. when you hog a partition thread.
+     * Checks if the op is allowed to be invoked from the current thread. Invoking means that the operation can
+     * be executed on another thread, but that one is going to block for completion using the future.get/join etc.
+     * Blocking for completion can cause problems, e.g. when you hog a partition thread or deadlocks.
      *
      * @param op the Operation to check
      * @param isAsync is the invocation async, if false invocation does not return a future to block on
      * @return true if allowed, false otherwise.
      */
-    boolean isInvocationAllowedFromCurrentThread(Operation op, boolean isAsync);
+    boolean isInvocationAllowed(Operation op, boolean isAsync);
+
+    /**
+     * Checks if the current thread is an operation thread.
+     *
+     * @return true if is an operation thread, false otherwise.
+     */
+    boolean isOperationThread();
+
+    /**
+     * Interrupts the partition threads.
+     */
+    void interruptPartitionThreads();
 
     /**
      * Starts this OperationExecutor
@@ -163,8 +169,7 @@ public interface OperationExecutor {
     void start();
 
     /**
-     * Shuts down this OperationExecutor.
+     * Shuts down this OperationExecutor. Any pending tasks are discarded.
      */
     void shutdown();
-
 }
