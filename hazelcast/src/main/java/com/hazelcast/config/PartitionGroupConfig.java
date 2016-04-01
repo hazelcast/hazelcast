@@ -123,7 +123,13 @@ public class PartitionGroupConfig {
         /**
          * Per member
          */
-        PER_MEMBER
+        PER_MEMBER,
+        /**
+         * Zone Aware. Backups will be created in other zones. If
+         * only one zone is available, backups will be created in the
+         * same zone.
+         */
+        ZONE_AWARE
     }
 
     /**

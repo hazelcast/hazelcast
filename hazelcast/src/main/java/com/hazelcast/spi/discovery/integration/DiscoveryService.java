@@ -21,6 +21,8 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 
+import java.util.Map;
+
 /**
  * The <tt>DiscoveryService</tt> interface defines the basic entry point
  * into the Discovery SPI implementation. If not overridden explicitly the Hazelcast
@@ -65,4 +67,22 @@ public interface DiscoveryService {
      * before the service itself will be destroyed.
      */
     void destroy();
+
+    /**
+     * Returns a map with discovered metadata provided by the runtime environment. Those information
+     * may include, but are not limited, to location information like datacenter, rack, host or additional
+     * tags to be used for custom purpose.
+     * <p/>
+     * Information discovered from this method are shaded into the {@link com.hazelcast.core.Member}s
+     * attributes. Existing attributes will not be overridden, that way local attribute configuration
+     * overrides provided metadata.
+     * <p/>
+     * The default implementation provides an empty map with no further metadata configured. Returning
+     * <tt>null</tt> is not permitted and will most probably result in an {@link NullPointerException}
+     * inside the cluster system.
+     *
+     * @return a map of discovered metadata as provided by the runtime environment
+     * @since 3.7
+     */
+    Map<String, Object> discoverLocalMetadata();
 }

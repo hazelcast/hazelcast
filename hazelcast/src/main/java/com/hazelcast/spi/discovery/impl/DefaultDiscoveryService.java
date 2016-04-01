@@ -50,19 +50,19 @@ public class DefaultDiscoveryService
 
     private final DiscoveryNode discoveryNode;
     private final ILogger logger;
-    private final Iterable<DiscoveryStrategy> discoveryProviders;
+    private final Iterable<DiscoveryStrategy> discoveryStrategies;
     private final NodeFilter nodeFilter;
 
     public DefaultDiscoveryService(DiscoveryServiceSettings settings) {
         this.discoveryNode = settings.getDiscoveryNode();
         this.logger = settings.getLogger();
         this.nodeFilter = getNodeFilter(settings);
-        this.discoveryProviders = loadDiscoveryProviders(settings);
+        this.discoveryStrategies = loadDiscoveryStrategies(settings);
     }
 
     @Override
     public void start() {
-        for (DiscoveryStrategy discoveryStrategy : discoveryProviders) {
+        for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
             discoveryStrategy.start();
         }
     }
@@ -70,7 +70,7 @@ public class DefaultDiscoveryService
     @Override
     public Iterable<DiscoveryNode> discoverNodes() {
         Set<DiscoveryNode> discoveryNodes = new HashSet<DiscoveryNode>();
-        for (DiscoveryStrategy discoveryStrategy : discoveryProviders) {
+        for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
             Iterable<DiscoveryNode> candidates = discoveryStrategy.discoverNodes();
 
             if (candidates != null) {
@@ -85,8 +85,17 @@ public class DefaultDiscoveryService
     }
 
     @Override
+    public Map<String, Object> discoverLocalMetadata() {
+        Map<String, Object> metadata = new HashMap<String, Object>();
+        for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
+            metadata.putAll(discoveryStrategy.discoverLocalMetadata());
+        }
+        return metadata;
+    }
+
+    @Override
     public void destroy() {
-        for (DiscoveryStrategy discoveryStrategy : discoveryProviders) {
+        for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
             discoveryStrategy.destroy();
         }
     }
@@ -117,7 +126,7 @@ public class DefaultDiscoveryService
         return nodeFilter == null || nodeFilter.test(candidate);
     }
 
-    private Iterable<DiscoveryStrategy> loadDiscoveryProviders(DiscoveryServiceSettings settings) {
+    private Iterable<DiscoveryStrategy> loadDiscoveryStrategies(DiscoveryServiceSettings settings) {
         DiscoveryConfig discoveryConfig = settings.getDiscoveryConfig();
         ClassLoader configClassLoader = settings.getConfigClassLoader();
 
@@ -142,7 +151,7 @@ public class DefaultDiscoveryService
 
             List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
             for (DiscoveryStrategyFactory factory : factories) {
-                DiscoveryStrategy discoveryStrategy = buildDiscoveryProvider(factory, discoveryStrategyConfigs);
+                DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(factory, discoveryStrategyConfigs);
                 if (discoveryStrategy != null) {
                     discoveryStrategies.add(discoveryStrategy);
                 }
@@ -192,10 +201,10 @@ public class DefaultDiscoveryService
         return mappedProperties;
     }
 
-    private DiscoveryStrategy buildDiscoveryProvider(DiscoveryStrategyFactory factory,
+    private DiscoveryStrategy buildDiscoveryStrategy(DiscoveryStrategyFactory factory,
                                                      Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
-        Class<? extends DiscoveryStrategy> discoveryProviderType = factory.getDiscoveryStrategyType();
-        String className = discoveryProviderType.getName();
+        Class<? extends DiscoveryStrategy> discoveryStrategyType = factory.getDiscoveryStrategyType();
+        String className = discoveryStrategyType.getName();
 
         for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
             String factoryClassName = getFactoryClassName(config);

@@ -47,6 +47,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
+import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -314,6 +315,16 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
         @Override
         public void destroy() {
+        }
+
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return null;
+        }
+
+        @Override
+        public Map<String, Object> discoverLocalMetadata() {
+            return Collections.emptyMap();
         }
     }
 
