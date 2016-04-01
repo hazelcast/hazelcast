@@ -830,7 +830,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         String name = randomName();
-        Config config = new Config();
+        Config config = getConfig();
         config.addMapConfig(new MapConfig(name).setNearCacheConfig(nearCacheConfig));
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, Integer> map = instance.getMap(name);
