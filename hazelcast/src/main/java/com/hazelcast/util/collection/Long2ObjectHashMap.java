@@ -37,11 +37,17 @@ import static com.hazelcast.util.collection.Hashing.longHash;
  * {@link java.util.Map} implementation specialised for long keys using open addressing and
  * linear probing for cache efficient access.
  *
+ * NOTE: This map doesn't support {@code null} keys and values!
+ *
  * @param <V> values stored in the {@link java.util.Map}
  */
 public class Long2ObjectHashMap<V> implements Map<Long, V> {
-    /** The default load factor for constructors not explicitly supplying it */
+
+    /**
+     * The default load factor for constructors not explicitly supplying it
+     */
     public static final double DEFAULT_LOAD_FACTOR = 0.6;
+
     private final double loadFactor;
     private int resizeThreshold;
     private int capacity;
@@ -51,10 +57,10 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     private long[] keys;
     private Object[] values;
 
-    // Cached to avoid allocation.
-    private final ValueCollection<V> valueCollection = new ValueCollection<V>();
+    // cached to avoid allocation
+    private final ValueCollection valueCollection = new ValueCollection();
     private final KeySet keySet = new KeySet();
-    private final EntrySet<V> entrySet = new EntrySet<V>();
+    private final EntrySet entrySet = new EntrySet();
 
     public Long2ObjectHashMap() {
         this(8, DEFAULT_LOAD_FACTOR);
@@ -189,7 +195,6 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     /**
      * Get a value for a given key, or if it does ot exist then default the value via a {@link LongFunction}
      * and put it in the map.
-     * <p/>
      *
      * @param key             to search on.
      * @param mappingFunction to provide a value if the get returns null.
@@ -331,7 +336,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append('{');
-        for (final Map.Entry<Long, V> entry : entrySet()) {
+        for (final Entry<Long, V> entry : entrySet()) {
             sb.append(entry.getKey().longValue());
             sb.append('=');
             sb.append(entry.getValue());
@@ -386,8 +391,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
             }
             final int hash = longHash(keys[index], mask);
             if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
-                    || (hash <= deleteIndex && deleteIndex <= index)
-            ) {
+                    || (hash <= deleteIndex && deleteIndex <= index)) {
                 keys[deleteIndex] = keys[index];
                 values[deleteIndex] = values[index];
                 values[index] = null;
@@ -401,6 +405,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     public class KeySet extends AbstractSet<Long> {
+
         public int size() {
             return Long2ObjectHashMap.this.size();
         }
@@ -434,7 +439,8 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         }
     }
 
-    private class ValueCollection<V> extends AbstractCollection<V> {
+    private class ValueCollection extends AbstractCollection<V> {
+
         public int size() {
             return Long2ObjectHashMap.this.size();
         }
@@ -456,7 +462,8 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
         }
     }
 
-    private class EntrySet<V> extends AbstractSet<Map.Entry<Long, V>> {
+    private class EntrySet extends AbstractSet<Entry<Long, V>> {
+
         public int size() {
             return Long2ObjectHashMap.this.size();
         }
@@ -465,8 +472,8 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
             return Long2ObjectHashMap.this.isEmpty();
         }
 
-        public Iterator<Map.Entry<Long, V>> iterator() {
-            return new EntryIterator<V>();
+        public Iterator<Entry<Long, V>> iterator() {
+            return new EntryIterator();
         }
 
         public void clear() {
@@ -479,6 +486,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     private abstract class AbstractIterator<T> implements Iterator<T> {
+
         protected final long[] keys = Long2ObjectHashMap.this.keys;
         protected final Object[] values = Long2ObjectHashMap.this.values;
         private int posCounter;
@@ -550,6 +558,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     }
 
     public class KeyIterator extends AbstractIterator<Long> {
+
         public Long next() {
             return nextLong();
         }
@@ -564,9 +573,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     @SuppressWarnings("unchecked")
     @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
             justification = "deliberate, documented choice")
-    public class EntryIterator<V>
-            extends AbstractIterator<Entry<Long, V>>
-            implements Entry<Long, V> {
+    private class EntryIterator extends AbstractIterator<Entry<Long, V>> implements Entry<Long, V> {
 
         public Entry<Long, V> next() {
             findNext();

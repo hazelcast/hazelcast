@@ -17,7 +17,6 @@
 
 package com.hazelcast.util.collection;
 
-
 import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.IntFunction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -38,9 +37,17 @@ import static com.hazelcast.util.collection.Hashing.intHash;
  * {@link java.util.Map} implementation specialised for int keys using open addressing and
  * linear probing for cache efficient access.
  *
+ * NOTE: This map doesn't support {@code null} keys and values!
+ *
  * @param <V> values stored in the {@link java.util.Map}
  */
 public class Int2ObjectHashMap<V> implements Map<Integer, V> {
+
+    /**
+     * The default load factor for constructors not explicitly supplying it
+     */
+    public static final double DEFAULT_LOAD_FACTOR = 0.6;
+
     private final double loadFactor;
     private int resizeThreshold;
     private int capacity;
@@ -50,13 +57,17 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     private int[] keys;
     private Object[] values;
 
-    // Cached to avoid allocation.
+    // cached to avoid allocation
     private final ValueCollection valueCollection = new ValueCollection();
     private final KeySet keySet = new KeySet();
     private final EntrySet entrySet = new EntrySet();
 
     public Int2ObjectHashMap() {
-        this(8, 0.6);
+        this(8, DEFAULT_LOAD_FACTOR);
+    }
+
+    public Int2ObjectHashMap(int initialCapacity) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR);
     }
 
     /**
@@ -122,7 +133,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
      */
     public boolean containsKey(final Object key) {
         checkNotNull(key, "Null keys are not permitted");
-
         return containsKey(((Integer) key).intValue());
     }
 
@@ -134,15 +144,12 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
      */
     public boolean containsKey(final int key) {
         int index = intHash(key, mask);
-
         while (null != values[index]) {
             if (key == keys[index]) {
                 return true;
             }
-
             index = ++index & mask;
         }
-
         return false;
     }
 
@@ -151,13 +158,11 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
      */
     public boolean containsValue(final Object value) {
         checkNotNull(value, "Null values are not permitted");
-
         for (final Object v : values) {
             if (null != v && value.equals(v)) {
                 return true;
             }
         }
-
         return false;
     }
 
@@ -177,19 +182,15 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     @SuppressWarnings("unchecked")
     public V get(final int key) {
         int index = intHash(key, mask);
-
         Object value;
         while (null != (value = values[index])) {
             if (key == keys[index]) {
                 return (V) value;
             }
-
             index = ++index & mask;
         }
-
         return null;
     }
-
 
     /**
      * Get a value for a given key, or if it does ot exist then default the value via a {@link IntFunction}
@@ -208,7 +209,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
                 put(key, value);
             }
         }
-
         return value;
     }
 
@@ -336,20 +336,16 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append('{');
-
         for (final Entry<Integer, V> entry : entrySet()) {
             sb.append(entry.getKey().intValue());
             sb.append('=');
             sb.append(entry.getValue());
             sb.append(", ");
         }
-
         if (sb.length() > 1) {
             sb.setLength(sb.length() - 2);
         }
-
         sb.append('}');
-
         return sb.toString();
     }
 
@@ -358,7 +354,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         if (newCapacity < 0) {
             throw new IllegalStateException("Max capacity reached at size=" + size);
         }
-
         rehash(newCapacity);
     }
 
@@ -366,14 +361,11 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         if (1 != Integer.bitCount(newCapacity)) {
             throw new IllegalStateException("New capacity must be a power of two");
         }
-
         capacity = newCapacity;
         mask = newCapacity - 1;
         resizeThreshold = (int) (newCapacity * loadFactor);
-
         final int[] tempKeys = new int[capacity];
         final Object[] tempValues = new Object[capacity];
-
         for (int i = 0, size = values.length; i < size; i++) {
             final Object value = values[i];
             if (null != value) {
@@ -413,6 +405,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     public class KeySet extends AbstractSet<Integer> {
+
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
@@ -447,6 +440,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     }
 
     private class ValueCollection extends AbstractCollection<V> {
+
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
@@ -469,6 +463,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     }
 
     private class EntrySet extends AbstractSet<Entry<Integer, V>> {
+
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
@@ -478,7 +473,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         }
 
         public Iterator<Entry<Integer, V>> iterator() {
-            return new EntryIterator<V>();
+            return new EntryIterator();
         }
 
         public void clear() {
@@ -491,6 +486,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     private abstract class AbstractIterator<T> implements Iterator<T> {
+
         protected final int[] keys = Int2ObjectHashMap.this.keys;
         protected final Object[] values = Int2ObjectHashMap.this.values;
         private int posCounter;
@@ -562,6 +558,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     }
 
     public class KeyIterator extends AbstractIterator<Integer> {
+
         public Integer next() {
             return nextInt();
         }
@@ -575,9 +572,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     @SuppressWarnings("unchecked")
     @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
             justification = "deliberate, documented choice")
-    public class EntryIterator<V>
-            extends AbstractIterator<Entry<Integer, V>>
-            implements Entry<Integer, V> {
+    private class EntryIterator extends AbstractIterator<Entry<Integer, V>> implements Entry<Integer, V> {
 
         public Entry<Integer, V> next() {
             findNext();
