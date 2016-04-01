@@ -121,7 +121,8 @@ public class NodeEngineImpl implements NodeEngine {
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
         this.packetDispatcher = new PacketDispatcherImpl(
                 logger,
-                operationService,
+                operationService.getOperationExecutor(),
+                operationService.getAsyncResponseHandler(),
                 eventService,
                 new ConnectionManagerPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);

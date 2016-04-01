@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 
@@ -33,7 +33,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
  * The actual processing of a operation-packet, Operation, or a PartitionSpecificRunnable is forwarded to the
  * {@link OperationRunner}.
  */
-public interface OperationExecutor {
+public interface OperationExecutor extends PacketHandler {
 
     // Will be replaced by metrics
     @Deprecated
@@ -96,14 +96,6 @@ public interface OperationExecutor {
      * @throws java.lang.NullPointerException if task is null.
      */
     void execute(PartitionSpecificRunnable task);
-
-    /**
-     * Executes the given {@link Packet} at some point in the future.
-     *
-     * @param packet the packet to execute.
-     * @throws java.lang.NullPointerException if packet is null
-     */
-    void execute(Packet packet);
 
     /**
      * Executes the task on every partition thread.

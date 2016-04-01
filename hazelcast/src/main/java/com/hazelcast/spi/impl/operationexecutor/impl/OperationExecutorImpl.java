@@ -38,7 +38,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -290,12 +289,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void execute(Packet packet) {
-        checkNotNull(packet, "packet can't be null");
-        if (!packet.isFlagSet(FLAG_OP)) {
-            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.FLAG_OP set");
-        }
-
+    public void handle(Packet packet) {
         execute(packet, packet.getPartitionId(), packet.isUrgent());
     }
 
