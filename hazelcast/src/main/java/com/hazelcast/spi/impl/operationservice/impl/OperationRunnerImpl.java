@@ -27,6 +27,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -53,7 +54,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -81,7 +81,8 @@ class OperationRunnerImpl extends OperationRunner {
     private final OperationServiceImpl operationService;
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final AtomicLong executedOperationsCount;
+    //todo: we should get rid of this contented counter
+    private final MwCounter executedOperationsCount;
 
     @Probe(level = DEBUG)
     private final Counter count;
@@ -142,7 +143,7 @@ class OperationRunnerImpl extends OperationRunner {
             count.inc();
         }
 
-        executedOperationsCount.incrementAndGet();
+        executedOperationsCount.inc();
 
         boolean publishCurrentTask = publishCurrentTask();
 

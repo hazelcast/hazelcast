@@ -49,7 +49,8 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(operationService, op, 0, 0, 0, false);
+        InvocationContext invocationContext = new InvocationContext();
+        return new PartitionInvocation(invocationContext, op, 0, 0, 0, false);
     }
 
     // ====================== register ===============================

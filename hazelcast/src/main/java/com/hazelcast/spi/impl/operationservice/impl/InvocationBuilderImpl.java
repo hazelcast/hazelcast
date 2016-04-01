@@ -26,20 +26,20 @@ import com.hazelcast.spi.Operation;
  */
 public class InvocationBuilderImpl extends InvocationBuilder {
 
-    private final OperationServiceImpl operationService;
+    private final InvocationContext context;
 
-    public InvocationBuilderImpl(OperationServiceImpl operationService, String serviceName, Operation op, int partitionId) {
-        this(operationService, serviceName, op, partitionId, null);
+    public InvocationBuilderImpl(InvocationContext context, String serviceName, Operation op, int partitionId) {
+        this(context, serviceName, op, partitionId, null);
     }
 
-    public InvocationBuilderImpl(OperationServiceImpl operationService, String serviceName, Operation op, Address target) {
-        this(operationService, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
+    public InvocationBuilderImpl(InvocationContext context, String serviceName, Operation op, Address target) {
+        this(context, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
     }
 
-    private InvocationBuilderImpl(OperationServiceImpl operationService, String serviceName, Operation op,
+    private InvocationBuilderImpl(InvocationContext context, String serviceName, Operation op,
                                   int partitionId, Address target) {
         super(serviceName, op, partitionId, target);
-        this.operationService = operationService;
+        this.context = context;
     }
 
     @Override
@@ -49,11 +49,9 @@ public class InvocationBuilderImpl extends InvocationBuilder {
         Invocation invocation;
         if (target == null) {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-            invocation = new PartitionInvocation(
-                    operationService, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+            invocation = new PartitionInvocation(context, op, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
         } else {
-            invocation = new TargetInvocation(
-                    operationService, op, target, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
+            invocation = new TargetInvocation(context, op, target, tryCount, tryPauseMillis, callTimeout, resultDeserialized);
         }
 
         InternalCompletableFuture future = invocation.invoke();

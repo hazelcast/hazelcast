@@ -18,7 +18,7 @@ public abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport
 
     public static boolean mappedToSameThread(OperationService operationService, int partitionId1, int partitionId2) {
         OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
-        OperationExecutorImpl executor = (OperationExecutorImpl) operationServiceImpl.getOperationExecutor();
+        OperationExecutorImpl executor = (OperationExecutorImpl) operationServiceImpl.operationExecutor;
         int thread1 = executor.toPartitionThreadIndex(partitionId1);
         int thread2 = executor.toPartitionThreadIndex(partitionId2);
         return thread1 == thread2;

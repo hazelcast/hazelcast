@@ -54,19 +54,19 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     volatile Object response = VOID;
 
     final Invocation invocation;
+    private final InvocationContext context;
     private final boolean deserialize;
-    private final OperationServiceImpl operationService;
     private volatile ExecutionCallbackNode<E> callbackHead;
 
-    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, boolean deserialize) {
+    InvocationFuture(Invocation invocation, boolean deserialize) {
         this.invocation = invocation;
-        this.operationService = operationService;
+        this.context = invocation.context;
         this.deserialize = deserialize;
     }
 
     @Override
     public void andThen(ExecutionCallback<E> callback) {
-        andThen(callback, operationService.asyncExecutor);
+        andThen(callback, context.asyncExecutor);
     }
 
     @Override
@@ -84,7 +84,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-      private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
+    private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
         try {
             executor.execute(new Runnable() {
                 @Override
@@ -102,13 +102,13 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                             callback.onFailure(error);
                         }
                     } catch (Throwable cause) {
-                        invocation.logger.severe("Failed asynchronous execution of execution callback: " + callback
+                        context.logger.severe("Failed asynchronous execution of execution callback: " + callback
                                 + "for call " + invocation, cause);
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
-            invocation.logger.warning("Execution of callback: " + callback + " is rejected!", e);
+            context.logger.warning("Execution of callback: " + callback + " is rejected!", e);
         }
     }
 
@@ -130,8 +130,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 // it can be that this invocation future already received an answer, e.g. when an invocation already received a
                 // response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException.
 
-                if (invocation.logger.isFinestEnabled()) {
-                    invocation.logger.finest("Future response is already set! Current response: "
+                if (context.logger.isFinestEnabled()) {
+                    context.logger.finest("Future response is already set! Current response: "
                             + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
                 }
 
@@ -143,7 +143,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             callbackHead = null;
             notifyAll();
 
-            operationService.invocationRegistry.deregister(invocation);
+            context.invocationRegistry.deregister(invocation);
         }
 
         notifyCallbacks(callbackChain);
@@ -268,7 +268,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         Object response = unresolved;
         if (deserialize && response instanceof Data) {
-            response = invocation.nodeEngine.toObject(response);
+            response = context.serializationService.toObject(response);
             if (response == null) {
                 return null;
             }
