@@ -35,6 +35,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -58,7 +61,6 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     protected PacketHandler responsePacketHandler;
     protected OperationExecutorImpl executor;
     protected Config config;
-    protected MetricsRegistry metricsRegistry;
 
     @Before
     public void setup() throws Exception {
@@ -66,9 +68,9 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "10");
-        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "10");
-        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "10");
+        config.setProperty(PARTITION_COUNT.getName(), "10");
+        config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "10");
+        config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "10");
         thisAddress = new Address("localhost", 5701);
         threadGroup = new HazelcastThreadGroup(
                 "foo",
@@ -77,7 +79,6 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         nodeExtension = new DefaultNodeExtension(Mockito.mock(Node.class));
         handlerFactory = new DummyOperationRunnerFactory();
 
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class), INFO);
         responsePacketHandler = new DummyResponsePacketHandler();
     }
 
@@ -85,7 +86,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         groupProperties = new GroupProperties(config);
         executor = new OperationExecutorImpl(
                 groupProperties, loggingService, thisAddress, handlerFactory,
-                threadGroup, nodeExtension, metricsRegistry);
+                threadGroup, nodeExtension);
         executor.start();
         return executor;
     }

@@ -24,6 +24,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.util.counters.Counter;
@@ -73,7 +75,7 @@ import static java.util.logging.Level.WARNING;
 /**
  * Responsible for processing an Operation.
  */
-class OperationRunnerImpl extends OperationRunner {
+class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -108,9 +110,15 @@ class OperationRunnerImpl extends OperationRunner {
 
         if (partitionId >= 0) {
             this.count = newSwCounter();
-            nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation.partition[" + partitionId + "]");
         } else {
             this.count = null;
+        }
+    }
+
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        if (partitionId >= 0) {
+            metricsRegistry.scanAndRegister(this, "operation.partition[" + partitionId + "]");
         }
     }
 

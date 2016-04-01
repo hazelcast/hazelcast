@@ -163,4 +163,12 @@ public interface MetricsRegistry {
      * @throws NullPointerException if renderer is null.
      */
     void render(ProbeRenderer renderer);
+
+    /**
+     * For each object that implements {@link MetricsProvider} the {@link MetricsProvider#provideMetrics(MetricsRegistry)}
+     * is called.
+     *
+     * @param objects the array of objects to initialize.
+     */
+    void collectMetrics(Object... objects);
 }

@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -47,7 +48,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
-public class InvocationRegistry implements Iterable<Invocation> {
+public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -58,12 +59,14 @@ public class InvocationRegistry implements Iterable<Invocation> {
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
 
-    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence,
-                              int concurrencyLevel, MetricsRegistry metricsRegistry) {
+    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence, int concurrencyLevel) {
         this.logger = logger;
         this.callIdSequence = callIdSequence;
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
+    }
 
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
         metricsRegistry.scanAndRegister(this, "operation");
     }
 
