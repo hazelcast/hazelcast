@@ -27,7 +27,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Factory for creating response queues.
- * <p/>
+ *
  * See LockBasedResponseQueue.
  */
 public final class ResponseQueueFactory {
@@ -37,19 +37,23 @@ public final class ResponseQueueFactory {
 
     /**
      * Creates new response queue
+     *
      * @return LockBasedResponseQueue new created response queue
      */
-    public static BlockingQueue newResponseQueue() {
+    public static BlockingQueue<Object> newResponseQueue() {
         return new LockBasedResponseQueue();
     }
 
-    private static final class LockBasedResponseQueue extends AbstractQueue implements BlockingQueue {
+    private static final class LockBasedResponseQueue extends AbstractQueue<Object> implements BlockingQueue<Object> {
+
         private static final Object NULL = new Object();
-        private Object response;
+
         private final Lock lock = new ReentrantLock();
         private final Condition noValue = lock.newCondition();
 
+        private Object response;
 
+        @Override
         public Object take() throws InterruptedException {
             lock.lock();
             try {
@@ -63,10 +67,12 @@ public final class ResponseQueueFactory {
             }
         }
 
-        public boolean offer(Object o, long timeout, TimeUnit unit) throws InterruptedException {
-            return offer(o);
+        @Override
+        public boolean offer(Object object, long timeout, TimeUnit unit) throws InterruptedException {
+            return offer(object);
         }
 
+        @Override
         public Object poll(long timeout, TimeUnit unit) throws InterruptedException {
             if (timeout < 0) {
                 throw new IllegalArgumentException();
@@ -86,12 +92,14 @@ public final class ResponseQueueFactory {
             }
         }
 
-        public void put(Object o) throws InterruptedException {
-            offer(o);
+        @Override
+        public void put(Object object) throws InterruptedException {
+            offer(object);
         }
 
-        public boolean offer(Object obj) {
-            Object item = obj;
+        @Override
+        public boolean offer(Object object) {
+            Object item = object;
             if (item == null) {
                 item = NULL;
             }
@@ -109,6 +117,7 @@ public final class ResponseQueueFactory {
             }
         }
 
+        @Override
         public Object poll() {
             lock.lock();
             try {
@@ -118,29 +127,22 @@ public final class ResponseQueueFactory {
             }
         }
 
-        /**
-         * Internal method, should be called under lock.
-         *
-         * @return response
-         */
-        private Object getAndRemoveResponse() {
-            final Object value = response;
-            response = null;
-            return (value == NULL) ? null : value;
-        }
-
+        @Override
         public int remainingCapacity() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public int drainTo(Collection c) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public int drainTo(Collection c, int maxElements) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void clear() {
             lock.lock();
             try {
@@ -151,7 +153,7 @@ public final class ResponseQueueFactory {
         }
 
         @Override
-        public Iterator iterator() {
+        public Iterator<Object> iterator() {
             throw new UnsupportedOperationException();
         }
 
@@ -165,6 +167,7 @@ public final class ResponseQueueFactory {
             }
         }
 
+        @Override
         public Object peek() {
             lock.lock();
             try {
@@ -172,6 +175,15 @@ public final class ResponseQueueFactory {
             } finally {
                 lock.unlock();
             }
+        }
+
+        /**
+         * Internal method, should be called under lock.
+         */
+        private Object getAndRemoveResponse() {
+            Object value = response;
+            response = null;
+            return (value == NULL ? null : value);
         }
     }
 }
