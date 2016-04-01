@@ -1,5 +1,7 @@
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.serialization.FieldType;
+
 import java.util.List;
 
 interface PortablePosition {
@@ -28,4 +30,6 @@ interface PortablePosition {
     boolean isLast();
 
     List<PortablePosition> asMultiPosition();
+
+    FieldType getType();
 }

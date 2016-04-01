@@ -19,7 +19,7 @@ package com.hazelcast.query.extractor;
 /**
  * Enables collecting values extracted by a {@see com.hazelcast.query.extractor.ValueExtractor}
  */
-public abstract class ValueCollector {
+public abstract class ValueCollector<T> {
 
     /**
      * Collects a value extracted by a ValueExtractor.
@@ -29,23 +29,6 @@ public abstract class ValueCollector {
      *
      * @param value value to be collected
      */
-    public abstract void addObject(Object value);
-
-
-    public abstract void addByte(byte value);
-
-    public abstract void addShort(float value);
-
-    public abstract void addInt(int value);
-
-    public abstract void addLong(long value);
-
-    public abstract void addDouble(double value);
-
-    public abstract void addFloat(float value);
-
-    public abstract void addBoolean(boolean value);
-
-    public abstract void addChar(char value);
+    public abstract void addObject(T value);
 
 }

@@ -27,15 +27,6 @@ public class DefaultValueCollector extends ValueCollector {
     private Object value;
     private List<Object> values;
 
-    private byte[] bytes;
-    private short[] shorts;
-    private int[] ints;
-    private long[] longs;
-    private float[] floats;
-    private double[] doubles;
-    private boolean[] booleans;
-    private char[] chars;
-
     public void addObject(Object valueToCollect) {
         if (values != null) {
             values.add(valueToCollect);
@@ -46,78 +37,6 @@ public class DefaultValueCollector extends ValueCollector {
             values.add(value);
             values.add(valueToCollect);
             value = null;
-        }
-    }
-
-    @Override
-    public void addByte(byte value) {
-        if(values != null) {
-
-        } else {
-
-        }
-    }
-
-    @Override
-    public void addShort(float value) {
-        if(values != null) {
-
-        } else {
-
-        }
-    }
-
-    @Override
-    public void addInt(int value) {
-        if(values != null) {
-
-        } else {
-
-        }
-    }
-
-    @Override
-    public void addLong(long value) {
-        if(values != null) {
-
-        } else {
-
-        }
-    }
-
-    @Override
-    public void addFloat(float value) {
-        if(values != null) {
-
-        } else {
-
-        }
-    }
-
-    @Override
-    public void addDouble(double value) {
-        if(values != null) {
-
-        } else {
-
-        }
-    }
-
-    @Override
-    public void addBoolean(boolean value) {
-        if(values != null) {
-
-        } else {
-
-        }
-    }
-
-    @Override
-    public void addChar(char value) {
-        if(values != null) {
-
-        } else {
-
         }
     }
 

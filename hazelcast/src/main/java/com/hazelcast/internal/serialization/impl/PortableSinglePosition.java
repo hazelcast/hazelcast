@@ -1,6 +1,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
 
 import java.util.List;
 
@@ -77,6 +78,14 @@ class PortableSinglePosition implements PortablePosition {
     @Override
     public List<PortablePosition> asMultiPosition() {
         throw new RuntimeException("Not a multi-position!");
+    }
+
+    @Override
+    public FieldType getType() {
+        if(fd != null) {
+            return fd.getType();
+        }
+        return null;
     }
 
     public void reset() {

@@ -58,8 +58,8 @@ public enum FieldType {
         return ALL[type];
     }
 
-    public boolean isArrayType(FieldType field) {
-        return field.type >= PORTABLE_ARRAY.type;
+    public boolean isArrayType() {
+        return type >= PORTABLE_ARRAY.type;
     }
 
 }

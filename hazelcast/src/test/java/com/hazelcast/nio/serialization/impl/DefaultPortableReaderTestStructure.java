@@ -36,7 +36,9 @@ public class DefaultPortableReaderTestStructure {
         UTFArray("strings"),
 
         PortableArray("portables"),
-        Portable("portable");
+        Portable("portable"),
+
+        Generic("");
 
         Method(String field) {
             this.field = field;

@@ -1,6 +1,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 
+import com.hazelcast.nio.serialization.FieldType;
+
 import java.util.List;
 
 class PortableMultiPosition extends PortableSinglePosition {
@@ -14,6 +16,15 @@ class PortableMultiPosition extends PortableSinglePosition {
     @Override
     public boolean isMultiPosition() {
         return true;
+    }
+
+    @Override
+    public FieldType getType() {
+        if (positions.isEmpty()) {
+            return null;
+        } else {
+            return positions.iterator().next().getType();
+        }
     }
 
     @Override

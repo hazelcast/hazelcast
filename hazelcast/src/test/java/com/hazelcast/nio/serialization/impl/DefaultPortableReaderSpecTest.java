@@ -10,6 +10,7 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ExceptionUtil;
@@ -56,13 +57,13 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
     private Portable input;
     private Object result;
-    private Method method;
+    private String methodName;
     private String path;
 
     public DefaultPortableReaderSpecTest(Portable input, Object result, Method method, String path) {
         this.input = input;
         this.result = result;
-        this.method = method;
+        this.methodName = method.name().replace("Generic", "");
         this.path = path;
     }
 
@@ -76,20 +77,30 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             expected.expectCause(hasCause(isA((Class) result)));
         } else if (result instanceof List) {
             // just convenience -> if result is a list if will be compared to an array, so it has to be converted
-            resultToMatch = ((List) resultToMatch).toArray();
+             resultToMatch = ((List) resultToMatch).toArray();
         }
+//        else if(resultToMatch.getClass().isArray()) {
+//            resultToMatch = ArrayUtils.toObject(resultToMatch);
+//        }
 
         // print scenario
         printlnScenarioDescription(resultToMatch);
 
         // assert
-        assertThat(Invoker.invoke(reader(input), method, path), equalTo(resultToMatch));
+        Object result = Invoker.invoke(reader(input), methodName, path);
+        if(result instanceof MultiResult) {
+            result = ((MultiResult)result).getResults().toArray();
+        }
+//        else if(result.getClass().isArray()) {
+//            result = Arrays.asList(result);
+//        }
+        assertThat(result, equalTo(resultToMatch));
     }
 
     private void printlnScenarioDescription(Object resultToMatch) {
         String desc = "Running test case:\n";
         desc += "path:\t" + path + "\n";
-        desc += "method:\tread" + method.name() + "\n";
+        desc += "method:\tread" + methodName + "\n";
         desc += "result:\t" + resultToMatch + "\n";
         desc += "input:\t" + input + "\n";
         System.out.println(desc);
@@ -97,8 +108,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     }
 
     static class Invoker {
-        public static <T> T invoke(PortableReader reader, Method method, String path) {
-            return invokeMethod(reader, "read" + method.name(), path);
+        public static <T> T invoke(PortableReader reader, String methodName, String path) {
+            return invokeMethod(reader, "read" + methodName, path);
         }
 
         public static <T> T invokeMethod(Object object, String methodName, String arg) throws RuntimeException {
@@ -139,9 +150,10 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             } else {
                 adjustedResult = result;
             }
-            Object[] scenario = scenario(input, adjustedResult, method,
-                    pathToExplode.replace(tokenToReplace, method.field));
-            scenarios.add(scenario);
+            scenarios.add(scenario(input, adjustedResult, method,
+                    pathToExplode.replace(tokenToReplace, method.field)));
+            scenarios.add(scenario(input, adjustedResult, Method.Generic,
+                    pathToExplode.replace(tokenToReplace, method.field)));
         }
         return scenarios;
     }
@@ -186,7 +198,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
             scenarios.addAll(asList(
                     scenario(input, resultToMatch, method, path),
-                    scenario(input, resultToMatchAny, method, path + "[any]")
+                    scenario(input, resultToMatch, Method.Generic, path),
+                    scenario(input, resultToMatchAny, method, path + "[any]"),
+                    scenario(input, resultToMatchAny, Method.Generic, path + "[any]")
             ));
         }
 
@@ -274,12 +288,12 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         List<Object[]> result = new ArrayList<Object[]>();
 
         directPrimitiveScenarios(result);
-        fromPortableToPrimitiveScenarios(result);
-        fromPortableArrayToPrimitiveScenarios(result);
-        fromPortableToPortableToPrimitiveScenarios(result);
-        fromPortableToPortableArrayToPrimitiveScenarios(result);
-        fromPortableArrayToPortableArrayToPrimitiveScenarios(result);
-        fromPortableArrayToPortableArrayAnyScenarios(result);
+//        fromPortableToPrimitiveScenarios(result);
+//        fromPortableArrayToPrimitiveScenarios(result);
+//        fromPortableToPortableToPrimitiveScenarios(result);
+//        fromPortableToPortableArrayToPrimitiveScenarios(result);
+//        fromPortableArrayToPortableArrayToPrimitiveScenarios(result);
+//        fromPortableArrayToPortableArrayAnyScenarios(result);
 
 
         // TODO

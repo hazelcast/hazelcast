@@ -225,6 +225,10 @@ public class PortablePositionNavigator {
      */
     public PortablePosition findPositionOfPortableObject(String fieldName) throws IOException {
         PortablePosition pos = findFieldPosition(fieldName, FieldType.PORTABLE);
+        return adjustForPortableObjectAccess(fieldName, pos);
+    }
+
+    private PortablePosition adjustForPortableObjectAccess(String fieldName, PortablePosition pos) throws IOException {
         if (pos.getIndex() < 0) {
             return adjustForPortableFieldAccess((PortableSinglePosition) pos);
         } else {
@@ -293,6 +297,11 @@ public class PortablePositionNavigator {
 
     public PortablePosition findPositionOfPortableArray(String fieldName) throws IOException {
         PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(fieldName, FieldType.PORTABLE_ARRAY);
+        adjustForPortableArrayObjectAccess(fieldName, position);
+        return position;
+    }
+
+    private void adjustForPortableArrayObjectAccess(String fieldName, PortableSinglePosition position) throws IOException {
         if (position.isMultiPosition()) {
             List<PortablePosition> positions = position.asMultiPosition();
             for (int i = 0; i < positions.size(); i++) {
@@ -306,8 +315,36 @@ public class PortablePositionNavigator {
         } else {
             adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, fieldName);
         }
+    }
+
+
+    public PortablePosition findPositionOf(String path) throws IOException {
+        PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path, null);
+        FieldType type = position.getType();
+        if(type == null) {
+            return position;
+        } else
+        if(type.isArrayType()) {
+            if(type == FieldType.PORTABLE_ARRAY) {
+                adjustForPortableArrayObjectAccess(path, position);
+            } else {
+                adjustForNonPortableArrayAccess(path, type, position);
+            }
+        } else {
+            if(type == FieldType.PORTABLE) {
+                adjustForPortableObjectAccess(path, position);
+            } else {
+                adjustForNonPortableArrayAccess(path, type, position);
+            }
+        }
         return position;
     }
+
+
+
+    // ----------------------------------------
+    // ----------------------------------------
+    // ----------------------------------------
 
     private int readPositionFromMetadata(FieldDefinition fd) throws IOException {
         int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
