@@ -1,7 +1,5 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.internal.properties.GroupProperty;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -12,6 +10,9 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -39,13 +40,14 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
     @Test
     public void test_whenGenericOperation_andCallingFromGenericThread() {
-        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
+        config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
+        config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "0");
         initExecutor();
 
         final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 executor.run(genericOperation);
@@ -130,7 +132,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 try {

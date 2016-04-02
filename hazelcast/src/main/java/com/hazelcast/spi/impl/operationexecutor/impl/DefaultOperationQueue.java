@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -30,40 +31,16 @@ public final class DefaultOperationQueue implements OperationQueue {
         }
     };
 
-    private final BlockingQueue normalQueue;
-    private final ConcurrentLinkedQueue priorityQueue;
+    private final BlockingQueue<Object> normalQueue;
+    private final Queue<Object> priorityQueue;
 
     public DefaultOperationQueue() {
-        this(new LinkedBlockingQueue(), new ConcurrentLinkedQueue());
+        this(new LinkedBlockingQueue<Object>(), new ConcurrentLinkedQueue<Object>());
     }
 
-    public DefaultOperationQueue(BlockingQueue normalQueue, ConcurrentLinkedQueue priorityQueue) {
+    public DefaultOperationQueue(BlockingQueue<Object> normalQueue, Queue<Object> priorityQueue) {
         this.normalQueue = checkNotNull(normalQueue, "normalQueue");
         this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
-    }
-
-    @Override
-    public void add(Object task) {
-        checkNotNull(task, "task can't be null");
-
-        normalQueue.add(task);
-    }
-
-    @Override
-    public void add(Object task, boolean priority) {
-        if (priority) {
-            addUrgent(task);
-        } else {
-            add(task);
-        }
-    }
-
-    @Override
-    public void addUrgent(Object task) {
-        checkNotNull(task, "task can't be null");
-
-        priorityQueue.add(task);
-        normalQueue.add(TRIGGER_TASK);
     }
 
     @Override
@@ -82,8 +59,23 @@ public final class DefaultOperationQueue implements OperationQueue {
     }
 
     @Override
-    public Object take() throws InterruptedException {
-        ConcurrentLinkedQueue priorityQueue = this.priorityQueue;
+    public void add(Object task, boolean priority) {
+        checkNotNull(task, "task can't be null");
+
+        if (priority) {
+            priorityQueue.add(task);
+            normalQueue.add(TRIGGER_TASK);
+        } else {
+            normalQueue.add(task);
+        }
+    }
+
+    @Override
+    public Object take(boolean priorityOnly) throws InterruptedException {
+        if (priorityOnly) {
+            return ((BlockingQueue) priorityQueue).take();
+        }
+
         for (; ; ) {
             Object priorityItem = priorityQueue.poll();
             if (priorityItem != null) {

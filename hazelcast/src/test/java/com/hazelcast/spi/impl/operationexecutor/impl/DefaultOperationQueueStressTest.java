@@ -55,15 +55,15 @@ public class DefaultOperationQueueStressTest extends HazelcastTestSupport {
             Random random = new Random();
             while (!stop.get()) {
                 if (random.nextInt(5) == 0) {
-                    queue.addUrgent("foo");
+                    queue.add("foo", true);
                 } else {
-                    queue.add("foo");
+                    queue.add("foo", false);
                 }
                 produced++;
             }
 
             for (int k = 0; k < 100; k++) {
-                queue.add(POISON_PILL);
+                queue.add(POISON_PILL, false);
             }
         }
     }
@@ -78,7 +78,7 @@ public class DefaultOperationQueueStressTest extends HazelcastTestSupport {
         @Override
         public void doRun() throws Throwable {
             for (; ; ) {
-                Object item = queue.take();
+                Object item = queue.take(false);
                 if (item == POISON_PILL) {
                     break;
                 }

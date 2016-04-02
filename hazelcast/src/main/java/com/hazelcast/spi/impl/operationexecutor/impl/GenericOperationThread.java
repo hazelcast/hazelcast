@@ -28,10 +28,10 @@ public final class GenericOperationThread extends OperationThread {
 
     private final OperationRunner operationRunner;
 
-    public GenericOperationThread(String name, int threadId, OperationQueue queue,
-                                  ILogger logger, HazelcastThreadGroup threadGroup,
-                                  NodeExtension nodeExtension, OperationRunner operationRunner) {
-        super(name, threadId, queue, logger, threadGroup, nodeExtension);
+    public GenericOperationThread(String name, int threadId, OperationQueue queue, ILogger logger,
+                                  HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
+                                  OperationRunner operationRunner, boolean priority) {
+        super(name, threadId, queue, logger, threadGroup, nodeExtension, priority);
         this.operationRunner = operationRunner;
     }
 

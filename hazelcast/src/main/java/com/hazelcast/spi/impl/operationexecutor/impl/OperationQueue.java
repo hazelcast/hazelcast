@@ -31,16 +31,6 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 public interface OperationQueue {
 
     /**
-     * Adds an task with normal priority to this queue.
-     * <p/>
-     * This method is thread safe.
-     *
-     * @param task the item to add
-     * @throws java.lang.NullPointerException if task is null
-     */
-    void add(Object task);
-
-    /**
      * Adds an task to this queue.
      * <p/>
      * This method is thread safe.
@@ -51,26 +41,17 @@ public interface OperationQueue {
      */
     void add(Object task, boolean priority);
 
-
-    /**
-     * Adds an task with normal priority to this queue.
-     * <p/>
-     * This method is thread safe.
-     *
-     * @param task the item to add
-     * @throws java.lang.NullPointerException if task is null
-     */
-    void addUrgent(Object task);
-
     /**
      * Takes an item from this queue. If no item is available, the call blocks.
      * <p/>
      * This method should always be called by the same thread.
      *
+     * @param priorityOnly true if only priority items should be taken. This is useful for priority generic threads since they
+     *                     should only take priority items.
      * @return the taken item.
      * @throws InterruptedException if the thread is interrupted while waiting.
      */
-    Object take() throws InterruptedException;
+    Object take(boolean priorityOnly) throws InterruptedException;
 
     /**
      * returns the number of normal operations pending.

@@ -65,18 +65,20 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     @Probe
     private final SwCounter errorCount = newSwCounter();
 
+    private final boolean priority;
     private final NodeExtension nodeExtension;
     private final ILogger logger;
     private volatile boolean shutdown;
 
-    public OperationThread(String name, int threadId, OperationQueue queue,
-                           ILogger logger, HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
+    public OperationThread(String name, int threadId, OperationQueue queue, ILogger logger, HazelcastThreadGroup threadGroup,
+                           NodeExtension nodeExtension, boolean priority) {
         super(threadGroup.getInternalThreadGroup(), name);
         setContextClassLoader(threadGroup.getClassLoader());
         this.queue = queue;
         this.threadId = threadId;
         this.logger = logger;
         this.nodeExtension = nodeExtension;
+        this.priority = priority;
     }
 
     public int getThreadId() {
@@ -92,7 +94,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
             while (!shutdown) {
                 Object task;
                 try {
-                    task = queue.take();
+                    task = queue.take(priority);
                 } catch (InterruptedException e) {
                     continue;
                 }

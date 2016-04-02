@@ -35,7 +35,7 @@ public final class PartitionOperationThread extends OperationThread {
                                     OperationQueue queue, ILogger logger,
                                     HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
                                     OperationRunner[] partitionOperationRunners) {
-        super(name, threadId, queue, logger, threadGroup, nodeExtension);
+        super(name, threadId, queue, logger, threadGroup, nodeExtension, false);
         this.partitionOperationRunners = partitionOperationRunners;
     }
 
