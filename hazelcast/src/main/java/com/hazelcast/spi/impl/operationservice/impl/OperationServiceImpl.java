@@ -70,6 +70,8 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -254,17 +256,13 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        if (partitionId < 0) {
-            throw new IllegalArgumentException("Partition id cannot be negative!");
-        }
+        checkNotNegative(partitionId, "Partition id cannot be negative!");
         return new InvocationBuilderImpl(this, serviceName, op, partitionId);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        if (target == null) {
-            throw new IllegalArgumentException("Target cannot be null!");
-        }
+        checkNotNull(target, "Target cannot be null!");
         return new InvocationBuilderImpl(this, serviceName, op, target);
     }
 
@@ -380,9 +378,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public boolean send(Operation op, Address target) {
-        if (target == null) {
-            throw new IllegalArgumentException("Target is required!");
-        }
+        checkNotNull(target, "Target is required!");
 
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
@@ -403,9 +399,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     public boolean send(Response response, Address target) {
-        if (target == null) {
-            throw new IllegalArgumentException("Target is required!");
-        }
+        checkNotNull(target, "Target is required!");
 
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
