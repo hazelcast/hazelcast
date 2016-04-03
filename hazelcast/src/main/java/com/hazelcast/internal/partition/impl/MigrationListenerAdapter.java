@@ -22,7 +22,7 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.partition.PartitionEventListener;
 
 /**
- * Wraps a migration listener and dispatches a migration event to matching method
+ * Wraps a migration listener and dispatches a migration event to matching method.
  */
 class MigrationListenerAdapter implements PartitionEventListener<MigrationEvent> {
 
@@ -34,8 +34,7 @@ class MigrationListenerAdapter implements PartitionEventListener<MigrationEvent>
 
     @Override
     public void onEvent(MigrationEvent migrationEvent) {
-
-        final MigrationStatus status = migrationEvent.getStatus();
+        MigrationStatus status = migrationEvent.getStatus();
         switch (status) {
             case STARTED:
                 migrationListener.migrationStarted(migrationEvent);
@@ -49,7 +48,5 @@ class MigrationListenerAdapter implements PartitionEventListener<MigrationEvent>
             default:
                 throw new IllegalArgumentException("Not a known MigrationStatus: " + status);
         }
-
     }
-
 }
