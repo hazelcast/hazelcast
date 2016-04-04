@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.impl.strategy;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.strategy.HashingStrategy;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.HashUtil;
 
 /**
  * Default hashing strategy based on Hazelcast partition-id calculation;
@@ -35,6 +39,13 @@ public final class DefaultHashingStrategy implements HashingStrategy {
     public int hash(Object object,
                     Object partitionKey,
                     ContainerDescriptor containerDescriptor) {
-        return containerDescriptor.getNodeEngine().getPartitionService().getPartitionId(partitionKey);
+        if (partitionKey instanceof Data) {
+            return ((Data) partitionKey).getPartitionHash();
+        }
+
+        InternalSerializationService serializationService = (InternalSerializationService) containerDescriptor
+                .getNodeEngine().getSerializationService();
+        byte[] bytes = serializationService.toBytes(partitionKey);
+        return HashUtil.MurmurHash3_x86_32(bytes, HeapData.DATA_OFFSET, bytes.length - HeapData.DATA_OFFSET);
     }
 }
