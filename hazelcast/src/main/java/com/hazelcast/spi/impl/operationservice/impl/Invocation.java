@@ -398,6 +398,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         future.complete(value);
     }
 
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
         if (logger.isFinestEnabled()) {
             logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
