@@ -5,6 +5,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.api.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.impl.dag.EdgeImpl;
+import com.hazelcast.jet.impl.dag.tap.sink.HazelcastListPartitionWriter;
 import com.hazelcast.jet.impl.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
 import com.hazelcast.jet.processors.DummyProcessorForShufflingList;
@@ -12,6 +13,7 @@ import com.hazelcast.jet.processors.ListProcessor;
 import com.hazelcast.jet.processors.ReverseProcessor;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
@@ -62,13 +64,13 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(500)
+    @Repeat(1000)
     public void shufflingListTest() throws Exception {
         System.out.println(System.nanoTime() + " --> shufflingListTest");
         Application application = createApplication("shufflingListTest");
         IList targetList = SERVER.getList(randomName());
         IMap sourceMap = SERVER.getMap(randomName());
-
+        
         try {
             DAG dag = createDAG();
 
@@ -96,6 +98,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             ListProcessor.DEBUG_COUNTER.set(0);
             DummyProcessorForShufflingList.DEBUG_COUNTER.set(0);
+            HazelcastListPartitionWriter.DEBUG_COUNTER.set(0);
+            HazelcastListPartitionWriter.DEBUG_COUNTER1.set(0);
 
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
@@ -103,7 +107,10 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
             assertEquals(CNT, ListProcessor.DEBUG_COUNTER.get());
             assertEquals(
                     "DummyProcessor.DEBUG_COUNTER=" + DummyProcessorForShufflingList.DEBUG_COUNTER.get() +
-                            "ListProcessor.DEBUG_COUNTER" + ListProcessor.DEBUG_COUNTER.get(),
+                            "ListProcessor.DEBUG_COUNTER" + ListProcessor.DEBUG_COUNTER.get() +
+                            " HazelcastListPartitionWriter.DEBUG_COUNTER=" + HazelcastListPartitionWriter.DEBUG_COUNTER.get() +
+                            " HazelcastListPartitionWriter.DEBUG_COUNTER1=" + HazelcastListPartitionWriter.DEBUG_COUNTER1.get()
+                    ,
                     CNT,
                     targetList.size()
             );

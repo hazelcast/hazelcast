@@ -53,7 +53,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
 
     protected volatile boolean isFlushed = true;
 
-    private final String name;
     private final int partitionId;
     private final NodeEngine nodeEngine;
     private final int awaitInSecondsTime;
@@ -100,7 +99,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
         checkNotNull(containerDescriptor);
 
         this.partitionId = partitionId;
-        this.name = containerDescriptor.getApplicationName();
         this.sinkTapWriteStrategy = sinkTapWriteStrategy;
         this.nodeEngine = containerDescriptor.getNodeEngine();
         this.containerDescriptor = containerDescriptor;
@@ -153,10 +151,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     protected abstract void processChunk(ProducerInputStream<Object> inputStream);
-
-    public String getName() {
-        return this.name;
-    }
 
     @Override
     public int getPartitionId() {
