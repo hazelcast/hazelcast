@@ -47,13 +47,13 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.record.ResultSet;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.IterationType;
 
@@ -64,11 +64,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -84,22 +82,20 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
-    private static final Random RANDOM_PARTITION_ID_GENERATOR = new Random();
-
-    private static final AtomicIntegerFieldUpdater<ClientReplicatedMapProxy> TARGET_PARTITION_ID_UPDATER =
-            AtomicIntegerFieldUpdater.newUpdater(ClientReplicatedMapProxy.class, "targetPartitionId");
-
     private volatile NearCache nearCache;
     private volatile String invalidationListenerId;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
-    // all requests are forwarded to the same node via a random partition id
-    // do not use this field directly. use getOrInitTargetPartitionId() instead.
-    private volatile int targetPartitionId = Operation.GENERIC_PARTITION_ID;
-
+    private int targetPartitionId;
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
+    }
+
+    @Override
+    protected void onInitialize() {
+        int partitionCount = getContext().getPartitionService().getPartitionCount();
+        targetPartitionId = ThreadLocalRandom.current().nextInt(partitionCount);
     }
 
     @Override
@@ -126,7 +122,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public int size() {
         ClientMessage request = ReplicatedMapSizeCodec.encodeRequest(name);
-        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapSizeCodec.ResponseParameters result = ReplicatedMapSizeCodec.decodeResponse(response);
         return result.response;
     }
@@ -134,7 +130,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public boolean isEmpty() {
         ClientMessage request = ReplicatedMapIsEmptyCodec.encodeRequest(name);
-        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapIsEmptyCodec.ResponseParameters result = ReplicatedMapIsEmptyCodec.decodeResponse(response);
         return result.response;
     }
@@ -154,7 +150,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         checkNotNull(value, NULL_KEY_IS_NOT_ALLOWED);
         Data valueData = toData(value);
         ClientMessage request = ReplicatedMapContainsValueCodec.encodeRequest(name, valueData);
-        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapContainsValueCodec.ResponseParameters result = ReplicatedMapContainsValueCodec.decodeResponse(response);
         return result.response;
     }
@@ -355,7 +351,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public Set<K> keySet() {
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
-        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
         List<Entry<K, V>> keys = new ArrayList<Entry<K, V>>(result.response.size());
         for (Data dataKey : result.response) {
@@ -372,7 +368,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public Collection<V> values() {
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
-        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
         return new UnmodifiableLazyList<V>(result.response, getSerializationService());
     }
@@ -387,7 +383,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
-        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        ClientMessage response = invokeOnPartition(request, targetPartitionId);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
         List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(result.response.size());
         for (Entry<Data, Data> dataEntry : result.response) {
@@ -506,19 +502,6 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         @Override
         public void onListenerRegister() {
         }
-    }
-
-    private int getOrInitTargetPartitionId() {
-        int targetPartitionId = this.targetPartitionId;
-        while (targetPartitionId == Operation.GENERIC_PARTITION_ID) {
-            final int partitionCount = getContext().getPartitionService().getPartitionCount();
-            targetPartitionId = RANDOM_PARTITION_ID_GENERATOR.nextInt(partitionCount);
-            if (!TARGET_PARTITION_ID_UPDATER.compareAndSet(this, -1, targetPartitionId)) {
-                targetPartitionId = this.targetPartitionId;
-            }
-        }
-
-        return targetPartitionId;
     }
 
     private class ReplicatedMapAddNearCacheEventHandler
