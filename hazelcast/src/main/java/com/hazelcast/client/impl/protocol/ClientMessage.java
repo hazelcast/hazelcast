@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.util.QuickMath;
 
 import java.nio.ByteBuffer;
 
@@ -35,7 +34,7 @@ import java.nio.ByteBuffer;
  * Any request parameter, response or event data will be carried in
  * the payload.
  * </p>
- * <p/>
+ * <p>
  * <pre>
  * 0                   1                   2                   3
  * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -117,42 +116,6 @@ public class ClientMessage
     protected ClientMessage() {
     }
 
-    public static ClientMessage create() {
-        return new ClientMessage();
-    }
-
-    public static ClientMessage createForEncode(int initialCapacity) {
-        initialCapacity = findSuitableMessageSize(initialCapacity);
-        if (USE_UNSAFE) {
-            return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
-        } else {
-            return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
-        }
-    }
-
-    public static int findSuitableMessageSize(int desiredMessageSize) {
-        if (desiredMessageSize < 0) {
-            throw new MaxMessageSizeExceeded();
-        }
-        desiredMessageSize = QuickMath.nextPowerOfTwo(desiredMessageSize);
-        if (desiredMessageSize < 0) {
-            desiredMessageSize = Integer.MAX_VALUE;
-        }
-        return desiredMessageSize;
-    }
-
-    public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrapForEncode(buffer, offset);
-        return clientMessage;
-    }
-
-    public static ClientMessage createForDecode(ClientProtocolBuffer buffer, int offset) {
-        ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrapForDecode(buffer, offset);
-        return clientMessage;
-    }
-
     protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
         ensureHeaderSize(offset, buffer.capacity());
         super.wrap(buffer, offset);
@@ -194,7 +157,6 @@ public class ClientMessage
         uint8Put(VERSION_FIELD_OFFSET, version);
         return this;
     }
-
 
     /**
      * @param flag Check this flag to see if it is set.
@@ -412,12 +374,12 @@ public class ClientMessage
         return false;
     }
 
-    public void setRetryable(boolean isRetryable) {
-        this.isRetryable = isRetryable;
-    }
-
     public boolean isRetryable() {
         return isRetryable;
+    }
+
+    public void setRetryable(boolean isRetryable) {
+        this.isRetryable = isRetryable;
     }
 
     @Override
@@ -436,5 +398,37 @@ public class ClientMessage
         }
         sb.append('}');
         return sb.toString();
+    }
+
+    public static ClientMessage create() {
+        return new ClientMessage();
+    }
+
+    public static ClientMessage createForEncode(int initialCapacity) {
+        initialCapacity = findSuitableMessageSize(initialCapacity);
+        if (USE_UNSAFE) {
+            return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
+        } else {
+            return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
+        }
+    }
+
+    public static int findSuitableMessageSize(int desiredMessageSize) {
+        if (desiredMessageSize < 0) {
+            throw new MaxMessageSizeExceeded();
+        }
+        return desiredMessageSize;
+    }
+
+    public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {
+        ClientMessage clientMessage = new ClientMessage();
+        clientMessage.wrapForEncode(buffer, offset);
+        return clientMessage;
+    }
+
+    public static ClientMessage createForDecode(ClientProtocolBuffer buffer, int offset) {
+        ClientMessage clientMessage = new ClientMessage();
+        clientMessage.wrapForDecode(buffer, offset);
+        return clientMessage;
     }
 }

@@ -21,7 +21,9 @@ import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.TestUtil;
@@ -89,6 +91,30 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
                 assertEquals("there should be only one registration", 1, regs2.size());
             }
         });
+    }
+
+    @Test
+    public void testFutureGetCalledInCallback() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        IMap<Integer, Integer> map = client.getMap("map");
+        final ICompletableFuture<Integer> future = (ICompletableFuture<Integer>) map.getAsync(1);
+        final CountDownLatch latch = new CountDownLatch(1);
+        future.andThen(new ExecutionCallback<Integer>() {
+            public void onResponse(Integer response) {
+                try {
+                    future.get();
+                    latch.countDown();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        });
+        assertOpenEventually(latch, 10);
     }
 
     @Test
