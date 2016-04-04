@@ -37,6 +37,8 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
@@ -92,7 +94,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
-public final class OperationServiceImpl implements InternalOperationService, MetricsProvider {
+public final class OperationServiceImpl implements InternalOperationService, MetricsProvider, LiveOperationsTracker {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -125,7 +127,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final long defaultCallTimeoutMillis;
 
     private final SlowOperationDetector slowOperationDetector;
-    private final IsStillRunningService isStillRunningService;
     private final AsyncResponseHandler asyncResponseHandler;
     private final InternalSerializationService serializationService;
     private final InvocationMonitor invocationMonitor;
@@ -150,7 +151,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel);
 
         this.invocationMonitor = new InvocationMonitor(
-                invocationRegistry, logger, groupProperties, node.getHazelcastThreadGroup(), nodeEngine.getExecutionService());
+                nodeEngine, node.getThisAddress(), node.getHazelcastThreadGroup(), node.getGroupProperties(),
+                invocationRegistry, logger, (InternalSerializationService) nodeEngine.getSerializationService(),
+                nodeEngine.getServiceManager());
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
@@ -168,12 +171,15 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 groupProperties, node.loggingService, node.getThisAddress(), new OperationRunnerFactoryImpl(this),
                 node.getHazelcastThreadGroup(), node.getNodeExtension());
 
-        this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
-
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
+    }
+
+    @Override
+    public void populate(LiveOperations result) {
+        operationExecutor.scan(result);
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -184,12 +190,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.getHazelcastThreadGroup());
     }
 
-    public IsStillRunningService getIsStillRunningService() {
-        return isStillRunningService;
-    }
-
     public PacketHandler getAsyncResponseHandler() {
         return asyncResponseHandler;
+    }
+
+    public PacketHandler getInvocationMonitor() {
+        return invocationMonitor;
     }
 
     @Override

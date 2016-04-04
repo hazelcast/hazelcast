@@ -8,7 +8,6 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.internal.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -94,7 +94,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     private void testOperationTimeout(int memberCount, boolean async) {
         assertTrue(memberCount > 0);
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(memberCount);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -175,9 +175,8 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
     @Test
     public void testOperationTimeoutForLongRunningRemoteOperation() throws Exception {
-        int callTimeoutMillis = 500;
-        Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
+        int callTimeoutMillis = 1000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMillis);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -198,7 +197,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     public void testOperationTimeoutForLongRunningLocalOperation() throws Exception {
         int callTimeoutMillis = 500;
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

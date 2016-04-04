@@ -34,6 +34,8 @@ import java.util.List;
  */
 public interface InternalOperationService extends OperationService {
 
+    String SERVICE_NAME = "hz:impl:operationService";
+
     /**
      * Returns the size of the response queue.
      *
