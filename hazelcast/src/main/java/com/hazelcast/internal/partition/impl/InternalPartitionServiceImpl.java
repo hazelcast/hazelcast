@@ -1299,7 +1299,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return true;
         }
         for (Future future : futures) {
-            boolean isSync = getFutureResult(future, REPLICA_SYNC_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            boolean isSync = getFutureResultSilently(future, REPLICA_SYNC_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!isSync) {
                 return false;
             }
@@ -1321,13 +1321,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 .invoke();
     }
 
-    private boolean getFutureResult(Future future, long seconds, TimeUnit unit) {
+    private boolean getFutureResultSilently(Future future, long seconds, TimeUnit unit) {
         boolean sync;
         try {
             sync = (Boolean) future.get(seconds, unit);
         } catch (Throwable t) {
             sync = false;
-            logger.warning("Exception while getting future", t);
+            logger.finest("Exception while getting future", t);
         }
         return sync;
     }
