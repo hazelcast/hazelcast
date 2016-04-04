@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -70,8 +71,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return success;
+    protected MigrationParticipant getMigrationParticipantType() {
+        return MigrationParticipant.DESTINATION;
     }
 
     @Override
@@ -82,8 +83,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
             doRun();
         } catch (Throwable t) {
             logMigrationFailure(t);
+            success = false;
             failureReason = t;
         } finally {
+            onMigrationComplete();
             if (!success) {
                 onExecutionFailure(failureReason);
             }

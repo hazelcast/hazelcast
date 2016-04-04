@@ -26,29 +26,20 @@ import java.util.Arrays;
 
 public class InternalPartitionImpl implements InternalPartition {
 
-    private final int partitionId;
-    private final PartitionListener partitionListener;
-    private final Address thisAddress;
-
     @SuppressFBWarnings(value = "VO_VOLATILE_REFERENCE_TO_ARRAY", justification =
             "The contents of this array will never be updated, so it can be safely read using a volatile read."
                     + " Writing to `addresses` is done under InternalPartitionServiceImpl.lock,"
                     + " so there's no need to guard `addresses` field or to use a CAS.")
     private volatile Address[] addresses = new Address[MAX_REPLICA_COUNT];
+    private final int partitionId;
+    private final PartitionListener partitionListener;
+    private final Address thisAddress;
     private volatile boolean isMigrating;
 
     InternalPartitionImpl(int partitionId, PartitionListener partitionListener, Address thisAddress) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
         this.thisAddress = thisAddress;
-    }
-
-    static InternalPartitionImpl[] createArray(int partitionCount, PartitionListener partitionListener, Address thisAddress) {
-        InternalPartitionImpl[] partitions = new InternalPartitionImpl[partitionCount];
-        for (int i = 0; i < partitionCount; i++) {
-            partitions[i] = new InternalPartitionImpl(i, partitionListener, thisAddress);
-        }
-        return partitions;
     }
 
     @Override
@@ -121,9 +112,11 @@ public class InternalPartitionImpl implements InternalPartition {
         Address[] oldAddresses = addresses;
         addresses = newAddresses;
         callPartitionListener(newAddresses, oldAddresses, PartitionReplicaChangeReason.ASSIGNMENT);
+
     }
 
-    private void callPartitionListener(Address[] newAddresses, Address[] oldAddresses, PartitionReplicaChangeReason reason) {
+    private void callPartitionListener(Address[] newAddresses, Address[] oldAddresses,
+                                       PartitionReplicaChangeReason reason) {
         if (partitionListener != null) {
             for (int replicaIndex = 0; replicaIndex < MAX_REPLICA_COUNT; replicaIndex++) {
                 Address oldAddress = oldAddresses[replicaIndex];

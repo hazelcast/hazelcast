@@ -38,18 +38,17 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import static java.util.Collections.singleton;
+public final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
-final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
+    private static final ILogger LOGGER = Logger.getLogger(PartitionStateGenerator.class);
 
     private static final int DEFAULT_RETRY_MULTIPLIER = 10;
+
     private static final float RANGE_CHECK_RATIO = 1.1f;
     private static final int MAX_RETRY_COUNT = 3;
     private static final int AGGRESSIVE_RETRY_THRESHOLD = 1;
     private static final int AGGRESSIVE_INDEX_THRESHOLD = 3;
     private static final int MIN_AVG_OWNER_DIFF = 3;
-
-    private static final ILogger LOGGER = Logger.getLogger(PartitionStateGenerator.class);
 
     @Override
     public Address[][] initialize(Collection<MemberGroup> memberGroups, int partitionCount) {
@@ -140,9 +139,9 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     private void transferPartitionsBetweenGroups(Queue<NodeGroup> underLoadedGroups, Collection<NodeGroup> overLoadedGroups,
                                                  int index, int avgPartitionPerGroup, int plusOneGroupCount) {
+
         int maxPartitionPerGroup = avgPartitionPerGroup + 1;
         int maxTries = underLoadedGroups.size() * overLoadedGroups.size() * DEFAULT_RETRY_MULTIPLIER;
         int tries = 0;
@@ -219,6 +218,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private int tryToDistributeUnownedPartitions(Queue<NodeGroup> underLoadedGroups, Queue<Integer> freePartitions,
                                                  int avgPartitionPerGroup, int index, int plusOneGroupCount) {
+
         // distribute free partitions among under-loaded groups
         int maxPartitionPerGroup = avgPartitionPerGroup + 1;
         int maxTries = freePartitions.size() * underLoadedGroups.size();
@@ -229,8 +229,9 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             int count = group.getPartitionCount(index);
             if (plusOneGroupCount > 0 && count == maxPartitionPerGroup) {
                 if (--plusOneGroupCount == 0) {
-                    // search all (avg + 1) partitions owned groups
-                    // remove any group which has avg number of partitions in under-loaded queue
+                    // all (avg + 1) partitions owned groups are found
+                    // if there is any group has avg number of partitions in under-loaded queue
+                    // remove it.
                     Iterator<NodeGroup> underLoaded = underLoadedGroups.iterator();
                     while (underLoaded.hasNext()) {
                         if (underLoaded.next().getPartitionCount(index) >= avgPartitionPerGroup) {
@@ -238,7 +239,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                         }
                     }
                 }
-            } else if ((plusOneGroupCount > 0 && count < maxPartitionPerGroup) || (count < avgPartitionPerGroup)) {
+            } else if ((plusOneGroupCount > 0 && count < maxPartitionPerGroup)
+                    || (count < avgPartitionPerGroup)) {
                 underLoadedGroups.offer(group);
             }
         }
@@ -397,7 +399,6 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private static class CopyStateInitializer implements StateInitializer {
-
         private final InternalPartition[] currentState;
 
         CopyStateInitializer(InternalPartition[] currentState) {
@@ -425,7 +426,6 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private interface NodeGroup {
-
         void addNode(Address address);
 
         boolean hasNode(Address address);
@@ -452,7 +452,6 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private static class DefaultNodeGroup implements NodeGroup {
-
         final PartitionTable groupPartitionTable = new PartitionTable();
         final Map<Address, PartitionTable> nodePartitionTables = new HashMap<Address, PartitionTable>();
         final Set<Address> nodes = nodePartitionTables.keySet();
@@ -624,20 +623,18 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private static class SingleNodeGroup implements NodeGroup {
-
         final PartitionTable nodeTable = new PartitionTable();
-
         Address address;
         Set<Address> nodes;
 
         @Override
-        public void addNode(Address address) {
-            if (this.address != null) {
-                LOGGER.warning("Single node group already has an address => " + this.address);
+        public void addNode(Address addr) {
+            if (address != null) {
+                LOGGER.warning("Single node group already has an address => " + address);
                 return;
             }
-            this.address = address;
-            nodes = singleton(address);
+            this.address = addr;
+            nodes = Collections.singleton(address);
         }
 
         @Override
@@ -715,9 +712,8 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static class PartitionTable {
-
-        @SuppressWarnings("unchecked")
         final Set<Integer>[] partitions = new Set[InternalPartition.MAX_REPLICA_COUNT];
 
         Set<Integer> getPartitions(int index) {
@@ -732,6 +728,10 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
         boolean add(int index, Integer partitionId) {
             return getPartitions(index).add(partitionId);
+        }
+
+        boolean contains(int index, Integer partitionId) {
+            return getPartitions(index).contains(partitionId);
         }
 
         boolean contains(Integer partitionId) {

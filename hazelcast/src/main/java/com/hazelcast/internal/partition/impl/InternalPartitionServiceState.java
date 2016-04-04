@@ -16,31 +16,31 @@
 
 package com.hazelcast.internal.partition.impl;
 
-/**
- * This enum represents the internal state of the {@link InternalPartitionServiceImpl} over all partitions.
- *
- * @see InternalPartitionServiceImpl#getMemberState
+/*
+    This enum represents internal state of the InternalPartitionServiceImpl over all partitions
+    @see InternalPartitionServiceImpl#getMemberState
  */
 public enum InternalPartitionServiceState {
 
     /**
-     * Indicates that there is no migration operation on the system and all first backups are sync for partitions
-     * owned by this node
+     *  Indicates that there is no migration operation on the system and all first backups are sync for partitions
+     *  owned by this node
      */
     SAFE,
 
     /**
-     * Indicates that there is a migration operation ongoing on this node
+     *  Indicates that there is a migration operation ongoing on this node
      */
     MIGRATION_LOCAL,
 
     /**
-     * Indicates that master node manages a migration operation between 2 other nodes
+     *  Indicates that master node manages a migration operation between 2 other nodes
      */
     MIGRATION_ON_MASTER,
 
     /**
-     * Indicates that there is an not-sync first replica on other nodes for owned partitions of the this node
+     *  Indicates that there is an not-sync first replica on other nodes for owned partitions of the this node
      */
     REPLICA_NOT_SYNC
+
 }

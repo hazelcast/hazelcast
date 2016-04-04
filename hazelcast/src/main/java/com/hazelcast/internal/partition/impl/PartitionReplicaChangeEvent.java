@@ -20,7 +20,6 @@ import com.hazelcast.internal.partition.PartitionReplicaChangeReason;
 import com.hazelcast.nio.Address;
 
 public class PartitionReplicaChangeEvent {
-
     private final int partitionId;
     private final int replicaIndex;
     private final Address oldAddress;
