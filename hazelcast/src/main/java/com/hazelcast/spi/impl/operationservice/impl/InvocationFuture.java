@@ -47,8 +47,8 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     final Invocation invocation;
     private final boolean deserialize;
 
-    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, boolean deserialize) {
-        super(operationService.asyncExecutor, invocation.logger);
+    InvocationFuture(Invocation invocation, boolean deserialize) {
+        super(invocation.context.asyncExecutor, invocation.context.logger);
         this.invocation = invocation;
         this.deserialize = deserialize;
     }
@@ -100,7 +100,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
         Object value = unresolved;
         if (deserialize && value instanceof Data) {
-            value = invocation.nodeEngine.toObject(value);
+            value = invocation.context.serializationService.toObject(value);
             if (value == null) {
                 return null;
             }
@@ -130,7 +130,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
             sb.append("Last heartbeat: ");
             appendHeartbeat(sb, lastHeartbeatMillis);
 
-            long lastHeartbeatFromMemberMillis = invocation.operationService.invocationMonitor
+            long lastHeartbeatFromMemberMillis = invocation.context.invocationMonitor
                     .getLastMemberHeartbeatMillis(invocation.invTarget);
             sb.append("Last member heartbeat: ");
             appendHeartbeat(sb, lastHeartbeatFromMemberMillis);

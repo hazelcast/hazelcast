@@ -20,8 +20,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
@@ -36,7 +34,6 @@ import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -105,6 +102,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      */
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
+    final InvocationContext context;
 
     /**
      * Contains the pending response from the primary.
@@ -140,10 +138,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      */
     volatile long lastHeartbeatMillis;
 
-    final NodeEngineImpl nodeEngine;
-    final OperationServiceImpl operationService;
     final InvocationFuture future;
-    final ILogger logger;
     final int tryCount;
     final long tryPauseMillis;
     final long callTimeoutMillis;
@@ -155,16 +150,14 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
-    Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
+    Invocation(InvocationContext context, Operation op, int tryCount, long tryPauseMillis,
                long callTimeoutMillis, boolean deserialize) {
-        this.operationService = operationService;
-        this.logger = operationService.invocationLogger;
-        this.nodeEngine = operationService.nodeEngine;
+        this.context = context;
         this.op = op;
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
-        this.future = new InvocationFuture(operationService, this, deserialize);
+        this.future = new InvocationFuture(this, deserialize);
     }
 
     abstract ExceptionAction onException(Throwable t);
@@ -176,7 +169,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return callTimeoutMillis;
         }
 
-        long defaultCallTimeoutMillis = operationService.defaultCallTimeoutMillis;
+        long defaultCallTimeoutMillis = context.defaultCallTimeoutMillis;
         if (!(op instanceof BlockingOperation)) {
             return defaultCallTimeoutMillis;
         }
@@ -217,10 +210,10 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         try {
             setCallTimeout(op, callTimeoutMillis);
-            setCallerAddress(op, nodeEngine.getThisAddress());
-            op.setNodeEngine(nodeEngine);
+            setCallerAddress(op, context.thisAddress);
+            op.setNodeEngine(context.nodeEngine);
 
-            boolean isAllowed = operationService.operationExecutor.isInvocationAllowed(op, isAsync);
+            boolean isAllowed = context.operationExecutor.isInvocationAllowed(op, isAsync);
             if (!isAllowed && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -252,8 +245,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return;
         }
 
-        setInvocationTime(op, nodeEngine.getClusterService().getClusterClock().getClusterTime());
-        operationService.invocationRegistry.register(this);
+        setInvocationTime(op, context.clusterClock.getClusterTime());
+        context.invocationRegistry.register(this);
         if (remote) {
             doInvokeRemote();
         } else {
@@ -263,22 +256,22 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private void doInvokeLocal(boolean isAsync) {
         if (op.getCallerUuid() == null) {
-            op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+            op.setCallerUuid(context.localMemberUuid);
         }
 
         responseReceived = FALSE;
         op.setOperationResponseHandler(this);
 
         if (isAsync) {
-            operationService.operationExecutor.execute(op);
+            context.operationExecutor.execute(op);
         } else {
-            operationService.operationExecutor.runOrExecute(op);
+            context.operationExecutor.runOrExecute(op);
         }
     }
 
     private void doInvokeRemote() {
-        if (!operationService.send(op, invTarget)) {
-            operationService.invocationRegistry.deregister(this);
+        if (!context.operationService.send(op, invTarget)) {
+            context.invocationRegistry.deregister(this);
             notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
@@ -289,7 +282,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        NodeState state = nodeEngine.getNode().getState();
+        NodeState state = context.node.getState();
         if (state == NodeState.ACTIVE) {
             return true;
         }
@@ -316,28 +309,26 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-        targetMember = nodeEngine.getClusterService().getMember(invTarget);
+        targetMember = context.clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
             notifyError(
                     new TargetNotMemberException(invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
             return false;
         }
 
-        remote = !nodeEngine.getThisAddress().equals(invTarget);
+        remote = !context.thisAddress.equals(invTarget);
         return true;
     }
 
     private void notifyWithExceptionWhenTargetIsNull() {
-        ClusterService clusterService = nodeEngine.getClusterService();
-
-        ClusterState clusterState = clusterService.getClusterState();
+        ClusterState clusterState = context.clusterService.getClusterState();
         if (clusterState == FROZEN || clusterState == PASSIVE) {
             notifyError(new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState));
-        } else if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+        } else if (context.clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
             notifyError(new NoDataMemberInClusterException(
                     "Partitions can't be assigned since all nodes in the cluster are lite members"));
         } else {
-            notifyError(new WrongTargetException(nodeEngine.getThisAddress(), null, op.getPartitionId(),
+            notifyError(new WrongTargetException(context.thisAddress, null, op.getPartitionId(),
                     op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));
         }
     }
@@ -423,8 +414,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
+        if (context.logger.isFinestEnabled()) {
+            context.logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
         }
 
         if (!(op instanceof BlockingOperation)) {
@@ -471,30 +462,30 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void complete(Object value) {
-        operationService.invocationRegistry.deregister(this);
+        context.invocationRegistry.deregister(this);
         future.complete(value);
     }
 
     private void handleRetry(Object cause) {
-        operationService.retryCount.inc();
+        context.retryCount.inc();
 
         if (invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
             Level level = invokeCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
-            if (logger.isLoggable(level)) {
-                logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
+            if (context.logger.isLoggable(level)) {
+                context.logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
             }
         }
 
         if (future.interrupted) {
             complete(INTERRUPTED);
         } else {
-            operationService.invocationRegistry.deregister(this);
+            context.invocationRegistry.deregister(this);
 
             if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                 // fast retry for the first few invocations
-                operationService.asyncExecutor.execute(this);
+                context.asyncExecutor.execute(this);
             } else {
-                nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+                context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
             }
         }
     }
@@ -533,7 +524,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // a call is always allowed to execute as long as its own call timeout
         long deadlineMillis = op.getInvocationTime() + callTimeoutMillis;
-        if (deadlineMillis > nodeEngine.getClusterService().getClusterClock().getClusterTime()) {
+        if (deadlineMillis > context.clusterClock.getClusterTime()) {
             return NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
         }
 
@@ -579,7 +570,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-        boolean targetDead = nodeEngine.getClusterService().getMember(invTarget) == null;
+        boolean targetDead = context.clusterService.getMember(invTarget) == null;
         if (targetDead) {
             // the target doesn't exist, so we are going to re-invoke this invocation;
             // the reason for the re-invocation is that otherwise it's possible to lose data,
@@ -598,7 +589,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void resetAndReInvoke() {
-        operationService.invocationRegistry.deregister(this);
+        context.invocationRegistry.deregister(this);
         invokeCount = 0;
         pendingResponse = VOID;
         pendingResponseReceivedMillis = -1;
@@ -613,7 +604,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         String connectionStr = null;
         Address invTarget = this.invTarget;
         if (invTarget != null) {
-            ConnectionManager connectionManager = operationService.nodeEngine.getNode().getConnectionManager();
+            ConnectionManager connectionManager = context.connectionManager;
             Connection connection = connectionManager.getConnection(invTarget);
             connectionStr = connection == null ? null : connection.toString();
         }

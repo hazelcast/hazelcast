@@ -30,7 +30,6 @@ import static org.junit.Assert.fail;
 public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
-    private NodeEngineImpl nodeEngine;
     private OperationServiceImpl operationService;
     private HazelcastInstance local;
     private ResponseHandler responseHandler;
@@ -42,7 +41,6 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "20000");
         local = createHazelcastInstance(config);
         warmUpPartitions(local);
-        nodeEngine = getNodeEngineImpl(local);
 
         operationService = getOperationServiceImpl(local);
         invocationRegistry = operationService.invocationRegistry;
@@ -54,7 +52,8 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        Invocation invocation = new PartitionInvocation(operationService, op , 0, 0, 0, false);
+        InvocationContext context = operationService.invocationContext;
+        Invocation invocation = new PartitionInvocation(context, op , 0, 0, 0, false);
         invocation.invTarget = getAddress(local);
         return invocation;
     }

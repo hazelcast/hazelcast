@@ -28,7 +28,6 @@ import static org.junit.Assert.fail;
 public class InvocationRegistryTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
-    private NodeEngineImpl nodeEngine;
     private OperationServiceImpl operationService;
     private HazelcastInstance local;
 
@@ -38,7 +37,6 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
         local = createHazelcastInstance(config);
         warmUpPartitions(local);
-        nodeEngine = getNodeEngineImpl(local);
 
         operationService = (OperationServiceImpl) getOperationService(local);
         invocationRegistry = operationService.invocationRegistry;
@@ -49,7 +47,8 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(operationService, op, 0, 0, 0, false);
+        InvocationContext context = operationService.invocationContext;
+        return new PartitionInvocation(context, op, 0, 0, 0, false);
     }
 
     // ====================== register ===============================
