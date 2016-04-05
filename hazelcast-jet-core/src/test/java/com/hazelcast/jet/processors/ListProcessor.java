@@ -24,21 +24,19 @@ import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListProcessor implements TupleContainerProcessor<Integer, String, Integer, String> {
     public static final AtomicInteger DEBUG_COUNTER = new AtomicInteger(0);
-    private static final AtomicInteger counter = new AtomicInteger(0);
-    private static final Map<Integer, Tuple<Integer, String>> list = new ConcurrentSkipListMap<Integer, Tuple<Integer, String>>();
+    public static final AtomicInteger DEBUG_COUNTER1 = new AtomicInteger(0);
+    private final Map<Integer, Tuple<Integer, String>> list = new HashMap<Integer, Tuple<Integer, String>>();
 
-    private static volatile String activeNode;
 
     @Override
     public void beforeProcessing(ProcessorContext processorContext) {
-        activeNode = null;
-        counter.set(0);
+        assert processorContext.getTaskCount() == 1;
     }
 
     @Override
@@ -46,10 +44,7 @@ public class ListProcessor implements TupleContainerProcessor<Integer, String, I
                            ConsumerOutputStream<Tuple<Integer, String>> outputStream,
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
-        activeNode = processorContext.getNodeEngine().getHazelcastInstance().getName();
         DEBUG_COUNTER.addAndGet(inputStream.size());
-
-        System.out.println("Received node= " + activeNode);
 
         for (Tuple<Integer, String> tuple : inputStream) {
             list.put(tuple.getKey(0), tuple);
@@ -59,25 +54,23 @@ public class ListProcessor implements TupleContainerProcessor<Integer, String, I
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Integer, String>> outputStream, ProcessorContext processorContext) throws Exception {
-        if ((activeNode != null) && (activeNode.equals(processorContext.getNodeEngine().getHazelcastInstance().getName()))) {
-            if (counter.incrementAndGet() >= processorContext.getVertex().getDescriptor().getTaskCount()) {
-                System.out.println("Eventually I am writing");
+    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Integer, String>> outputStream,
+                                     ProcessorContext processorContext) throws Exception {
+        DEBUG_COUNTER1.incrementAndGet();
+        System.out.println("Eventually I am writing");
 
-                for (Map.Entry<Integer, Tuple<Integer, String>> integerTupleEntry : list.entrySet()) {
-                    outputStream.consume(integerTupleEntry.getValue());
-                }
-
-                System.out.println("Eventually I've written");
-            }
+        for (Map.Entry<Integer, Tuple<Integer, String>> integerTupleEntry : list.entrySet()) {
+            outputStream.consume(integerTupleEntry.getValue());
         }
+
+        System.out.println("Eventually I've written");
 
         return true;
     }
 
     @Override
     public void afterProcessing(ProcessorContext processorContext) {
-
+        list.clear();
     }
 
     public static class Factory implements TupleContainerProcessorFactory {
