@@ -19,13 +19,15 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
+import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.impl.data.tuple.Tuple2;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.processor.ContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
 
-public class CountProcessor implements TupleContainerProcessor<Long, Integer, Long, Integer> {
+public class CountProcessor implements ContainerProcessor<Object, Tuple<Long, Integer>> {
     private int result = 0;
 
     @Override
@@ -34,13 +36,11 @@ public class CountProcessor implements TupleContainerProcessor<Long, Integer, Lo
     }
 
     @Override
-    public boolean process(ProducerInputStream<Tuple<Long, Integer>> inputStream,
+    public boolean process(ProducerInputStream<Object> inputStream,
                            ConsumerOutputStream<Tuple<Long, Integer>> outputStream,
-                           String sourceName, ProcessorContext processorContext) throws Exception {
-        for (Tuple<Long, Integer> ignored : inputStream) {
-            result++;
-        }
-
+                           String sourceName,
+                           ProcessorContext processorContext) throws Exception {
+        result += inputStream.size();
         return true;
     }
 
@@ -57,8 +57,8 @@ public class CountProcessor implements TupleContainerProcessor<Long, Integer, Lo
 
     }
 
-    public static class Factory implements TupleContainerProcessorFactory {
-        public TupleContainerProcessor getProcessor(Vertex vertex) {
+    public static class Factory implements ContainerProcessorFactory {
+        public ContainerProcessor getProcessor(Vertex vertex) {
             return new CountProcessor();
         }
     }

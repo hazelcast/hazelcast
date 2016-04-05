@@ -109,10 +109,17 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
                     taskList
             ));
 
+            initializeHazelcastPartitions();
+
             addShutdownHook(nodeEngine);
         } catch (IOException e) {
             throw JetUtil.reThrow(e);
         }
+    }
+
+    private void initializeHazelcastPartitions() {
+        // force Hazelcast partitions to initialize
+        this.nodeEngine.getPartitionService().getPartitionOwner(0);
     }
 
     private void addShutdownHook(final NodeEngine nodeEngine) {
