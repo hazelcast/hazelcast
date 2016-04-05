@@ -29,6 +29,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for Client proxies.
@@ -125,6 +126,11 @@ public abstract class ClientProxy implements DistributedObject {
         return invokeOnPartition(clientMessage, partitionId);
     }
 
+    protected <T> T invoke(ClientMessage clientMessage, Object key, long timeout, TimeUnit timeUnit) {
+        final int partitionId = context.getPartitionService().getPartitionId(key);
+        return invokeOnPartition(clientMessage, partitionId, timeout, timeUnit);
+    }
+
     protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId) {
         try {
             final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
@@ -134,9 +140,28 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
+    protected <T> T invokeOnPartition(ClientMessage clientMessage, int partitionId, long timeout, TimeUnit timeUnit) {
+        try {
+            final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke(timeout, timeUnit);
+            return (T) future.get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage, int partitionId) throws InterruptedException {
         try {
             final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+            return (T) future.get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrowAllowInterrupted(e);
+        }
+    }
+
+    protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage, int partitionId,
+                                                   long timeout, TimeUnit timeUnit) throws InterruptedException {
+        try {
+            final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke(timeout, timeUnit);
             return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);

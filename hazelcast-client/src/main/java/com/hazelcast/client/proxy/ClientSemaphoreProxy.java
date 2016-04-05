@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreReducePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreTryAcquireCodec;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.OperationTimeoutException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -111,9 +112,13 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
             return tryAcquire();
         }
         ClientMessage request = SemaphoreTryAcquireCodec.encodeRequest(name, 1, unit.toMillis(timeout));
-        ClientMessage response = invokeOnPartition(request);
-        SemaphoreTryAcquireCodec.ResponseParameters resultParameters = SemaphoreTryAcquireCodec.decodeResponse(response);
-        return resultParameters.response;
+        try {
+            ClientMessage response = invokeOnPartition(request, timeout, unit);
+            SemaphoreTryAcquireCodec.ResponseParameters resultParameters = SemaphoreTryAcquireCodec.decodeResponse(response);
+            return resultParameters.response;
+        } catch (OperationTimeoutException ex) {
+            return false;
+        }
     }
 
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {

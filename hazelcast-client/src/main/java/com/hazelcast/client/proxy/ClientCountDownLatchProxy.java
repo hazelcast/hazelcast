@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
 import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.OperationTimeoutException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,9 +37,12 @@ public class ClientCountDownLatchProxy extends PartitionSpecificClientProxy impl
 
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(name, getTimeInMillis(timeout, unit));
-        CountDownLatchAwaitCodec.ResponseParameters resultParameters =
-                CountDownLatchAwaitCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        try {
+            ClientMessage response = invokeOnPartition(request, timeout, unit);
+            return CountDownLatchAwaitCodec.decodeResponse(response).response;
+        } catch (OperationTimeoutException op) {
+            return false;
+        }
     }
 
     public void countDown() {

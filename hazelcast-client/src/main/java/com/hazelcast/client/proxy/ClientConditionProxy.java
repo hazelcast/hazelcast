@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.core.ICondition;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -83,8 +84,12 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
         final long timeoutInMillis = unit.toMillis(time);
         ClientMessage request = ConditionAwaitCodec.encodeRequest(conditionId, threadId, timeoutInMillis, name);
-        ClientMessage response = invokeOnPartition(request);
-        return ConditionAwaitCodec.decodeResponse(response).response;
+        try {
+            ClientMessage response = invokeOnPartition(request, time, unit);
+            return ConditionAwaitCodec.decodeResponse(response).response;
+        } catch (OperationTimeoutException ex) {
+            return false;
+        }
     }
 
 

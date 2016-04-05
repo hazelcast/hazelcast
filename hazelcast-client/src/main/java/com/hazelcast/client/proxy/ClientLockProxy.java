@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.LockTryLockCodec;
 import com.hazelcast.client.impl.protocol.codec.LockUnlockCodec;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.TimeUnit;
@@ -123,8 +124,13 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseUnit);
         long threadId = ThreadUtil.getThreadId();
         ClientMessage request = LockTryLockCodec.encodeRequest(name, threadId, leaseTimeInMillis, timeoutInMillis);
-        LockTryLockCodec.ResponseParameters resultParameters = LockTryLockCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        try {
+            ClientMessage response = invokeOnPartition(request, timeout, unit);
+            LockTryLockCodec.ResponseParameters resultParameters = LockTryLockCodec.decodeResponse(response);
+            return resultParameters.response;
+        } catch (OperationTimeoutException e) {
+            return false;
+        }
     }
 
     public void unlock() {

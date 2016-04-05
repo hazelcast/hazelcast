@@ -27,6 +27,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -130,6 +131,11 @@ public class ClientInvocation implements Runnable {
 
     }
 
+    public ClientInvocationFuture invoke(long timeout, TimeUnit timeUnit) {
+        retryTimeoutPointInMillis = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+        return invoke();
+    }
+
     public ClientInvocationFuture invokeUrgent() {
         urgent = true;
         return invoke();
@@ -157,9 +163,7 @@ public class ClientInvocation implements Runnable {
     }
 
     public void notify(ClientMessage clientMessage) {
-        if (clientMessage == null) {
-            throw new IllegalArgumentException("response can't be null");
-        }
+        assert clientMessage != null;
         clientInvocationFuture.setResponse(clientMessage);
 
     }
@@ -172,27 +176,28 @@ public class ClientInvocation implements Runnable {
         }
 
         if (isRetryable(exception)) {
-            if (handleRetry()) {
-                return;
-            }
+            handleRetry(exception);
+            return;
         }
+
         if (exception instanceof RetryableHazelcastException) {
             if (clientMessage.isRetryable() || invocationService.isRedoOperation()) {
-                if (handleRetry()) {
-                    return;
-                }
+                handleRetry(exception);
+                return;
             }
         }
         clientInvocationFuture.setResponse(exception);
     }
 
-    private boolean handleRetry() {
+    private void handleRetry(Throwable exception) {
         if (isBindToSingleConnection()) {
-            return false;
+            clientInvocationFuture.setResponse(exception);
+            return;
         }
 
-        if (!shouldRetry()) {
-            return false;
+        if (isTimedOut()) {
+            clientInvocationFuture.setResponse(new OperationTimeoutException("Client invocation is timed out"));
+            return;
         }
 
         try {
@@ -203,7 +208,6 @@ public class ClientInvocation implements Runnable {
             }
             notifyException(e);
         }
-        return true;
     }
 
     private void rescheduleInvocation() {
@@ -211,8 +215,8 @@ public class ClientInvocation implements Runnable {
         executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
-    protected boolean shouldRetry() {
-        return System.currentTimeMillis() < retryTimeoutPointInMillis;
+    protected boolean isTimedOut() {
+        return System.currentTimeMillis() > retryTimeoutPointInMillis;
     }
 
     private boolean isBindToSingleConnection() {
