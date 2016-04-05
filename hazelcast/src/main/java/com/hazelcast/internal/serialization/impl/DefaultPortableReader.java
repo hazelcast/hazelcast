@@ -482,6 +482,8 @@ public class DefaultPortableReader implements PortableReader {
                 return readMultiPortableArray(position.asMultiPosition());
             } else if (position.isNull()) {
                 return null;
+            } else if (position.isEmpty() && position.isAny()) {
+                return null;
             } else {
                 return readSinglePortableArray(position);
             }
@@ -522,8 +524,14 @@ public class DefaultPortableReader implements PortableReader {
             PortablePosition position = navigator.findPositionOf(path);
             if (position.isMultiPosition()) {
                 return readMultiPosition(position.asMultiPosition());
-            } else if (position.isNullOrEmpty()) {
+            } else if (position.isNull()) {
                 return null;
+            } else if (position.isEmpty()) {
+                if(position.isLast() && position.getType() != null) {
+                    return readSinglePosition(position);
+                } else {
+                    return null;
+                }
             } else {
                 return readSinglePosition(position);
             }
@@ -579,6 +587,7 @@ public class DefaultPortableReader implements PortableReader {
                     return (T) in.readUTF();
                 case PORTABLE:
                 case PORTABLE_ARRAY:
+                    in.position(position.getStreamPosition());
                     return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
                 default:
                     throw new IllegalArgumentException("Unsupported type " + position.getType());

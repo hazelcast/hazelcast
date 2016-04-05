@@ -29,6 +29,8 @@ interface PortablePosition {
 
     boolean isLast();
 
+    boolean isAny();
+
     List<PortablePosition> asMultiPosition();
 
     FieldType getType();

@@ -156,7 +156,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return extractors.extract(targetObject, attributeName);
     }
 
-    private static Comparable extractViaPortable(InternalSerializationService serializationService,
+    private static Object extractViaPortable(InternalSerializationService serializationService,
                                                  String attributeName, Data data) {
         try {
             return PortableExtractor.extractValue(serializationService, data, attributeName);

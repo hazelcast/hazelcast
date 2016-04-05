@@ -289,11 +289,11 @@ public class PortablePositionNavigator {
         return pos;
     }
 
-        /**
-         * @param fieldName
-         * @return
-         * @throws IOException
-         */
+    /**
+     * @param fieldName
+     * @return
+     * @throws IOException
+     */
 
     public PortablePosition findPositionOfPortableArray(String fieldName) throws IOException {
         PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(fieldName, FieldType.PORTABLE_ARRAY);
@@ -313,34 +313,54 @@ public class PortablePositionNavigator {
                 }
             }
         } else {
-            adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, fieldName);
+            if (position.getIndex() < 0) {
+                adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, fieldName);
+            } else {
+                adjustForPortableArrayAccess(position, SINGLE_CELL_ACCESS, fieldName);
+            }
         }
     }
 
-
     public PortablePosition findPositionOf(String path) throws IOException {
         PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path, null);
-        FieldType type = position.getType();
-        if(type == null) {
-            return position;
-        } else
-        if(type.isArrayType()) {
-            if(type == FieldType.PORTABLE_ARRAY) {
-                adjustForPortableArrayObjectAccess(path, position);
-            } else {
-                adjustForNonPortableArrayAccess(path, type, position);
+        if (position.isMultiPosition()) {
+            List<PortablePosition> positions = position.asMultiPosition();
+            for (PortablePosition pos : positions) {
+                adjustPositionForDirectAccess((PortableSinglePosition) pos, path);
             }
         } else {
-            if(type == FieldType.PORTABLE) {
+            adjustPositionForDirectAccess(position, path);
+        }
+
+        return position;
+    }
+
+    void adjustPositionForDirectAccess(PortableSinglePosition position, String path) throws IOException {
+        FieldType type = position.getType();
+        if (type == null) {
+            return;
+        }
+        if (type.isArrayType()) {
+            if (type == FieldType.PORTABLE_ARRAY) {
+                if (position.getIndex() >= 0) {
+                    adjustForPortableArrayAccess(position, SINGLE_CELL_ACCESS, path);
+                } else {
+                    adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, path);
+                }
+            } else {
+                adjustPositionForSingleCellNonPortableArrayAccess(path, type, position);
+            }
+        } else {
+            if (position.getIndex() >= 0) {
+                throw new IllegalArgumentException("Cannot read array cell from non-array");
+            }
+            if (type == FieldType.PORTABLE) {
                 adjustForPortableObjectAccess(path, position);
             } else {
                 adjustForNonPortableArrayAccess(path, type, position);
             }
         }
-        return position;
     }
-
-
 
     // ----------------------------------------
     // ----------------------------------------
@@ -372,6 +392,13 @@ public class PortablePositionNavigator {
             //        if (fd.getType() != type) {
             //            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
             //        }
+            if (!result.isNullOrEmpty()) {
+                if (nestedPath.contains("[any]")) {
+                    List<PortablePosition> positions = new LinkedList<PortablePosition>();
+                    positions.add(result);
+                    return new PortableMultiPosition(positions);
+                }
+            }
             return result;
         } else {
 
@@ -413,6 +440,7 @@ public class PortablePositionNavigator {
 
     public PortableSinglePosition EMPTY = new PortableSinglePosition();
     public PortableSinglePosition NULL = new PortableSinglePosition();
+
     {
         EMPTY.len = 0;
         NULL.nil = true;
@@ -452,9 +480,11 @@ public class PortablePositionNavigator {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
                         EMPTY.last = last;
+                        EMPTY.any = true;
                         return EMPTY;
                     } else if (len == Bits.NULL_ARRAY_LENGTH) {
                         NULL.last = last;
+                        NULL.any = true;
                         return NULL;
                     } else {
                         populatePendingNavigationFrames(pathTokenIndex, len);
@@ -480,9 +510,11 @@ public class PortablePositionNavigator {
                         int len = getCurrentArrayLength(fd);
                         if (len == 0) {
                             EMPTY.last = last;
+                            EMPTY.any = true;
                             return EMPTY;
                         } else if (len == Bits.NULL_ARRAY_LENGTH) {
                             NULL.last = last;
+                            NULL.any = true;
                             return NULL;
                         } else {
                             populatePendingNavigationFrames(pathTokenIndex, len);

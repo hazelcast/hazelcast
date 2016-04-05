@@ -227,7 +227,15 @@ public class DefaultPortableReaderTestStructure {
 
         @Override
         public String toString() {
-            return "primitives{" + getSeed() + "}";
+            String init;
+            if(bytes == null) {
+                init = "NULL";
+            } else if(bytes.length == 0) {
+                init = "EMPTY";
+            } else {
+                init = "FULL";
+            }
+            return "primitives{" + getSeed() + ", " + init + "}";
         }
 
         public Object getPrimitive(Method method) {

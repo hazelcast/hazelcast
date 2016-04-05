@@ -24,6 +24,7 @@ class PortableSinglePosition implements PortablePosition {
     int classId = -1;
 
     boolean last = false;
+    boolean any = false;
 
     @Override
     public int getStreamPosition() {
@@ -58,6 +59,11 @@ class PortableSinglePosition implements PortablePosition {
     @Override
     public boolean isLast() {
         return last;
+    }
+
+    @Override
+    public boolean isAny() {
+        return any;
     }
 
     @Override

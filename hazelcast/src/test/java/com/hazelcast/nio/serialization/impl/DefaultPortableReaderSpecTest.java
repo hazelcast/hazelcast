@@ -77,7 +77,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             expected.expectCause(hasCause(isA((Class) result)));
         } else if (result instanceof List) {
             // just convenience -> if result is a list if will be compared to an array, so it has to be converted
-             resultToMatch = ((List) resultToMatch).toArray();
+            resultToMatch = ((List) resultToMatch).toArray();
         }
 //        else if(resultToMatch.getClass().isArray()) {
 //            resultToMatch = ArrayUtils.toObject(resultToMatch);
@@ -88,8 +88,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 
         // assert
         Object result = Invoker.invoke(reader(input), methodName, path);
-        if(result instanceof MultiResult) {
-            result = ((MultiResult)result).getResults().toArray();
+        if (result instanceof MultiResult) {
+            result = ((MultiResult) result).getResults().toArray();
         }
 //        else if(result.getClass().isArray()) {
 //            result = Arrays.asList(result);
@@ -104,7 +104,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         desc += "result:\t" + resultToMatch + "\n";
         desc += "input:\t" + input + "\n";
         System.out.println(desc);
-
     }
 
     static class Invoker {
@@ -150,9 +149,11 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             } else {
                 adjustedResult = result;
             }
+            // type-specific method case
             scenarios.add(scenario(input, adjustedResult, method,
                     pathToExplode.replace(tokenToReplace, method.field)));
-            scenarios.add(scenario(input, adjustedResult, Method.Generic,
+            // generic method case
+            scenarios.add(scenario(input, adjustedResult == IllegalArgumentException.class ? null : adjustedResult, Method.Generic,
                     pathToExplode.replace(tokenToReplace, method.field)));
         }
         return scenarios;
@@ -190,16 +191,16 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             String path = pathToExplode.replace("primitiveArray", method.field);
             Object resultToMatch = result != null ? result.getPrimitiveArray(method) : null;
             Object resultToMatchAny = resultToMatch;
-            if(resultToMatchAny != null) {
-                if(Array.getLength(resultToMatchAny) == 0) {
-                    resultToMatchAny = null;
-                }
+            if (resultToMatchAny != null && Array.getLength(resultToMatchAny) == 0) {
+                resultToMatchAny = null;
             }
 
             scenarios.addAll(asList(
                     scenario(input, resultToMatch, method, path),
+                    scenario(input, resultToMatchAny, method, path + "[any]")
+            ));
+            scenarios.addAll(asList(
                     scenario(input, resultToMatch, Method.Generic, path),
-                    scenario(input, resultToMatchAny, method, path + "[any]"),
                     scenario(input, resultToMatchAny, Method.Generic, path + "[any]")
             ));
         }
@@ -209,12 +210,15 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
             String path = pathToExplode.replace("primitiveArray", method.field).replace("_", "s");
             if (result == null || result.getPrimitiveArray(method) == null || Array.getLength(result.getPrimitiveArray(method)) == 0) {
                 if (method.equals(Method.UTF)) {
-                    scenarios.add(
-                            scenario(input, null, method, path + "[0]")
+                    scenarios.addAll(asList(
+                            scenario(input, null, method, path + "[0]"),
+                            scenario(input, null, Method.Generic, path + "[0]"))
                     );
                 } else {
-                    scenarios.add(
-                            scenario(input, IllegalArgumentException.class, method, path + "[0]")
+                    // IMPORTANT: the difference between generic and non-generic primitive call for null
+                    scenarios.addAll(asList(
+                            scenario(input, IllegalArgumentException.class, method, path + "[0]"),
+                            scenario(input, null, Method.Generic, path + "[0]"))
                     );
                 }
             } else {
@@ -223,6 +227,12 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                         scenario(input, Array.get(result.getPrimitiveArray(method), 1), method, path + "[1]"),
                         scenario(input, Array.get(result.getPrimitiveArray(method), 2), method, path + "[2]")
                 ));
+                scenarios.addAll(asList(
+                        scenario(input, Array.get(result.getPrimitiveArray(method), 0), Method.Generic, path + "[0]"),
+                        scenario(input, Array.get(result.getPrimitiveArray(method), 1), Method.Generic, path + "[1]"),
+                        scenario(input, Array.get(result.getPrimitiveArray(method), 2), Method.Generic, path + "[2]")
+                ));
+
             }
         }
         return scenarios;
@@ -253,9 +263,12 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                         resultToMatch = null;
                     }
 
-                    Object[] scenario = scenario(input, resultToMatch, Method.getArrayMethodFor(method),
-                            path.replace(tokenToReplace, method.field));
-                    scenarios.add(scenario);
+                    scenarios.addAll(asList(
+                            scenario(input, resultToMatch, Method.getArrayMethodFor(method),
+                                    path.replace(tokenToReplace, method.field)),
+                            scenario(input, resultToMatch, Method.Generic,
+                                    path.replace(tokenToReplace, method.field))
+                    ));
                 }
             } else {
 
@@ -274,9 +287,11 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                         }
                     }
 
-                    Object[] scenario = scenario(input, resultToMatch, method,
-                            path.replace(tokenToReplace, method.field));
-                    scenarios.add(scenario);
+                    scenarios.addAll(asList(
+                            scenario(input, resultToMatch, method, path.replace(tokenToReplace, method.field)),
+                            // IMPORTANT: the difference between generic and non-generic primitive call for null
+                            scenario(input, resultToMatch == IllegalArgumentException.class ? null : resultToMatch, Method.Generic, path.replace(tokenToReplace, method.field))
+                    ));
                 }
             }
         }
@@ -288,16 +303,15 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         List<Object[]> result = new ArrayList<Object[]>();
 
         directPrimitiveScenarios(result);
-//        fromPortableToPrimitiveScenarios(result);
-//        fromPortableArrayToPrimitiveScenarios(result);
-//        fromPortableToPortableToPrimitiveScenarios(result);
-//        fromPortableToPortableArrayToPrimitiveScenarios(result);
-//        fromPortableArrayToPortableArrayToPrimitiveScenarios(result);
-//        fromPortableArrayToPortableArrayAnyScenarios(result);
-
+        fromPortableToPrimitiveScenarios(result);
+        fromPortableArrayToPrimitiveScenarios(result);
+        fromPortableToPortableToPrimitiveScenarios(result);
+        fromPortableToPortableArrayToPrimitiveScenarios(result);
+        fromPortableArrayToPortableArrayToPrimitiveAnyScenarios(result);
+        fromPortableArrayToPortableArrayToPrimitiveScenarios(result);
+        fromPortableArrayToPortableArrayAnyScenarios(result);
 
         // TODO
-//         fromPortableArrayToPortableArrayToPrimitiveAnyScenarios(result);
 
 //        edgeCaseScenarios(result);
 
@@ -375,7 +389,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.addAll(expandPrimitiveScenario(emptyArrayGroup, IllegalArgumentException.class, "portables[2].primitive_"));
         result.add(scenario(emptyArrayGroup, null, Method.UTF, "portables[0].string_"));
         result.add(scenario(emptyArrayGroup, null, Method.UTF, "portables[1].string_"));
-        result.add(scenario(emptyArrayGroup, null, Method.UTF, "portables[2].string_"));
+        result.add(scenario(emptyArrayGroup, null, Method.Generic, "portables[0].string_"));
+        result.add(scenario(emptyArrayGroup, null, Method.Generic, "portables[1].string_"));
+
 
         // EMPTY portable array -> de-referenced further for array access
         result.addAll(expandPrimitiveArrayScenario(emptyArrayGroup, null, "portables[0].primitiveArray"));
@@ -388,7 +404,8 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.addAll(expandPrimitiveScenario(nullArrayGroup, IllegalArgumentException.class, "portables[2].primitive_"));
         result.add(scenario(nullArrayGroup, null, Method.UTF, "portables[0].string_"));
         result.add(scenario(nullArrayGroup, null, Method.UTF, "portables[1].string_"));
-        result.add(scenario(nullArrayGroup, null, Method.UTF, "portables[2].string_"));
+        result.add(scenario(nullArrayGroup, null, Method.Generic, "portables[0].string_"));
+        result.add(scenario(nullArrayGroup, null, Method.Generic, "portables[1].string_"));
 
         // EMPTY portable array -> de-referenced further for array access
         result.addAll(expandPrimitiveArrayScenario(nullArrayGroup, null, "portables[0].primitiveArray"));
@@ -407,6 +424,10 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedFullGroup, (nestedFullGroup.portable), Method.Portable, "portable"),
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portable, Method.Portable, "portable.portable")
         ));
+        result.addAll(asList(
+                scenario(nestedFullGroup, (nestedFullGroup.portable), Method.Generic, "portable"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portable, Method.Generic, "portable.portable")
+        ));
         result.addAll(expandPrimitiveScenario(nestedFullGroup, ((GroupPortable) nestedFullGroup.portable).portable, "portable.portable.primitiveUTF_"));
         result.addAll(expandPrimitiveArrayScenario(nestedFullGroup, (PrimitivePortable) ((GroupPortable) nestedFullGroup.portable).portable, "portable.portable.primitiveArray"));
 
@@ -414,19 +435,31 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.addAll(expandPrimitiveScenario(nestedFullEmptyNullGroup, ((GroupPortable) nestedFullEmptyNullGroup.portable).portable, "portable.portable.primitiveUTF_"));
         result.addAll(expandPrimitiveArrayScenario(nestedFullEmptyNullGroup, (PrimitivePortable) ((GroupPortable) nestedFullEmptyNullGroup.portable).portable, "portable.portable.primitiveArray"));
 
+
+
         // empty or null portable array de-referenced further
         NestedGroupPortable nestedNullArrayGroup = nested(new GroupPortable((Portable[]) null));
         result.addAll(asList(
                 scenario(nestedNullArrayGroup, (nestedNullArrayGroup.portable), Method.Portable, "portable"),
                 scenario(nestedNullArrayGroup, null, Method.Portable, "portable.portable")
         ));
+        result.addAll(asList(
+                scenario(nestedNullArrayGroup, (nestedNullArrayGroup.portable), Method.Generic, "portable"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portable.portable")
+        ));
         result.addAll(expandPrimitiveScenario(nestedNullArrayGroup, null, "portable.portable.primitiveUTF_"));
         result.addAll(expandPrimitiveArrayScenario(nestedNullArrayGroup, null, "portable.portable.primitiveArray"));
+
+
 
         NestedGroupPortable nestedNull = nested(new Portable[0]);
         result.addAll(asList(
                 scenario(nestedNull, null, Method.Portable, "portable"),
                 scenario(nestedNull, null, Method.Portable, "portable.portable")
+        ));
+        result.addAll(asList(
+                scenario(nestedNull, null, Method.Generic, "portable"),
+                scenario(nestedNull, null, Method.Generic, "portable.portable")
         ));
         result.addAll(expandPrimitiveScenario(nestedNull, null, "portable.portable.primitiveUTF_"));
         result.addAll(expandPrimitiveArrayScenario(nestedNull, null, "portable.portable.primitiveArray"));
@@ -447,14 +480,26 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[2], Method.Portable, "portable.portables[2]"),
                 scenario(nestedFullGroup, null, Method.Portable, "portable.portables[12]")
         ));
+        result.addAll(asList(
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, Method.Generic, "portable.portables"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables, Method.Generic, "portable.portables[any]"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[0], Method.Generic, "portable.portables[0]"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[1], Method.Generic, "portable.portables[1]"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portable)).portables[2], Method.Generic, "portable.portables[2]"),
+                scenario(nestedFullGroup, null, Method.Generic, "portable.portables[12]")
+        ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedFullGroup, (GroupPortable) nestedFullGroup.portable, "portable.portableArray.primitiveUTF_")
         );
+
+
 
         NestedGroupPortable nestedfullEmptyNullGroup = nested(group(prim(1, FULL), prim(10, NONE), prim(100, NULL)));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedfullEmptyNullGroup, (GroupPortable) nestedfullEmptyNullGroup.portable, "portable.portableArray.primitiveUTF_")
         );
+
+
 
         // empty or null portable array de-referenced further
         NestedGroupPortable nestedNullArrayGroup = nested(new GroupPortable((Portable[]) null));
@@ -465,21 +510,40 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNullArrayGroup, null, Method.Portable, "portable.portables[1]"),
                 scenario(nestedNullArrayGroup, null, Method.Portable, "portable.portables[2]")
         ));
+        result.addAll(asList(
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portable.portables"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portable.portables[any]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portable.portables[0]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portable.portables[1]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portable.portables[2]")
+        ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedNullArrayGroup, (GroupPortable) nestedNullArrayGroup.portable, "portable.portableArray.primitiveUTF_")
         );
 
+
+
         NestedGroupPortable nestedEmptyArrayGroup = nested(new GroupPortable(new Portable[0]));
         result.addAll(asList(
                 scenario(nestedEmptyArrayGroup, new Portable[0], Method.PortableArray, "portable.portables"),
-                scenario(nestedEmptyArrayGroup, new Portable[0], Method.PortableArray, "portable.portables[any]"),
+                scenario(nestedEmptyArrayGroup, null, Method.PortableArray, "portable.portables[any]"),
                 scenario(nestedEmptyArrayGroup, null, Method.Portable, "portable.portables[0]"),
                 scenario(nestedEmptyArrayGroup, null, Method.Portable, "portable.portables[1]"),
                 scenario(nestedEmptyArrayGroup, null, Method.Portable, "portable.portables[2]")
         ));
+        result.addAll(asList(
+                scenario(nestedEmptyArrayGroup, new Portable[0], Method.Generic, "portable.portables"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portable.portables[any]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portable.portables[0]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portable.portables[1]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portable.portables[2]")
+        ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedEmptyArrayGroup, (GroupPortable) nestedEmptyArrayGroup.portable, "portable.portableArray.primitiveUTF_")
         );
+
+
+
 
         NestedGroupPortable nestedEmpty = nested(new GroupPortable[0]);
         result.addAll(asList(
@@ -489,9 +553,19 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedEmpty, null, Method.Portable, "portable.portables[1]"),
                 scenario(nestedEmpty, null, Method.Portable, "portable.portables[2]")
         ));
+        result.addAll(asList(
+                scenario(nestedEmpty, null, Method.Generic, "portable.portables"),
+                scenario(nestedEmpty, null, Method.Generic, "portable.portables[any]"),
+                scenario(nestedEmpty, null, Method.Generic, "portable.portables[0]"),
+                scenario(nestedEmpty, null, Method.Generic, "portable.portables[1]"),
+                scenario(nestedEmpty, null, Method.Generic, "portable.portables[2]")
+        ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedEmpty, (GroupPortable) nestedEmpty.portable, "portable.portableArray.primitiveUTF_")
         );
+
+
+
 
         NestedGroupPortable nestedNull = nested((GroupPortable[]) null);
         result.addAll(asList(
@@ -501,11 +575,19 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNull, null, Method.Portable, "portable.portables[1]"),
                 scenario(nestedNull, null, Method.Portable, "portable.portables[2]")
         ));
+        result.addAll(asList(
+                scenario(nestedNull, null, Method.Generic, "portable.portables"),
+                scenario(nestedNull, null, Method.Generic, "portable.portables[any]"),
+                scenario(nestedNull, null, Method.Generic, "portable.portables[0]"),
+                scenario(nestedNull, null, Method.Generic, "portable.portables[1]"),
+                scenario(nestedNull, null, Method.Generic, "portable.portables[2]")
+        ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedNull, (GroupPortable) nestedNull.portable, "portable.portableArray.primitiveUTF_")
         );
     }
 
+    // TODO
     private static void fromPortableArrayToPortableArrayToPrimitiveAnyScenarios(List<Object[]> result) {
 
         NestedGroupPortable nestedEmptyArrayGroup = nested(new Portable[]{new GroupPortable(new Portable[0]), group(prim(1, FULL), prim(10, FULL)/*, prim(50, NULL)*/)});
@@ -518,9 +600,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.add(
                 scenario(nestedEmptyArrayGroup, expected, Method.LongArray, "portables[any].portables[any].longs[any]")
         );
-
-
-
 
 
 //        result.addAll(asList(
@@ -541,40 +620,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 //        ));
     }
 
-    private static void fromPortableArrayToPortableArrayAnyScenarios(List<Object[]> result) {
-        NestedGroupPortable anyGroup = nested(new Portable[]{
-                group(prim(1, FULL), prim(10, NONE), prim(50, NULL)),
-                group(prim(2, FULL), prim(20, NONE), prim(80, NULL))
-        });
-        result.addAll(asList(
-                scenario(anyGroup, ((GroupPortable) (anyGroup.portables[0])).portables, Method.PortableArray, "portables[0].portables[any]"),
-                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
-                scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
-                scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
-                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL), prim(20, FULL), prim(80, FULL)},
-                        Method.PortableArray, "portables[any].portables[any]")
-        ));
-
-        NestedGroupPortable nestedEmptyArrayGroup = nested(new Portable[]{new GroupPortable(new Portable[0]), group(prim(1, FULL), prim(10, NONE), prim(50, NULL))});
-        result.addAll(asList(
-                scenario(nestedEmptyArrayGroup, new Portable[0], Method.PortableArray, "portables[0].portables[any]"),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
-                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.PortableArray, "portables[any].portables[any]")
-        ));
-
-        NestedGroupPortable nestedNullArrayGroup = nested(new Portable[]{new GroupPortable((Portable[]) null), group(prim(1, FULL), prim(10, NONE), prim(50, NULL))});
-        result.addAll(asList(
-                scenario(nestedNullArrayGroup, null, Method.PortableArray, "portables[0].portables[any]"),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
-                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.PortableArray, "portables[any].portables[any]")
-        ));
-    }
-
-
     private static void fromPortableArrayToPortableArrayToPrimitiveScenarios(List<Object[]> result) {
         // ----------------------------------------------------------------------------------------------------------
         // from PORTABLE to PORTABLE_ARRAY access + further
@@ -585,13 +630,24 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         result.addAll(asList(
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Method.PortableArray, "portables[0].portables"),
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Method.PortableArray, "portables[0].portables[any]"),
-                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Method.PortableArray, "portables[any].portables[0]"),
+                scenario(nestedFullGroup, new Portable[]{prim(1, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Method.PortableArray, "portables[any].portables[any]"),
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[0], Method.Portable, "portables[0].portables[0]"),
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[1], Method.Portable, "portables[0].portables[1]"),
                 scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[2], Method.Portable, "portables[0].portables[2]"),
                 scenario(nestedFullGroup, null, Method.Portable, "portables[0].portables[12]")
         ));
+        result.addAll(asList(
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Method.Generic, "portables[0].portables"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Method.Generic, "portables[0].portables[any]"),
+                scenario(nestedFullGroup, new Portable[]{prim(1, FULL)}, Method.Generic, "portables[any].portables[0]"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables, Method.Generic, "portables[any].portables[any]"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[0], Method.Generic, "portables[0].portables[0]"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[1], Method.Generic, "portables[0].portables[1]"),
+                scenario(nestedFullGroup, ((GroupPortable) (nestedFullGroup.portables[0])).portables[2], Method.Generic, "portables[0].portables[2]"),
+                scenario(nestedFullGroup, null, Method.Generic, "portables[0].portables[12]")
+        ));
+
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedFullGroup, (GroupPortable) nestedFullGroup.portable, "portables[0].portableArray.primitiveUTF_")
         );
@@ -614,6 +670,15 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNullArrayGroup, null, Method.Portable, "portables[0].portables[1]"),
                 scenario(nestedNullArrayGroup, null, Method.Portable, "portables[0].portables[2]")
         ));
+        result.addAll(asList(
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portables[0].portables"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portables[0].portables[any]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portables[any].portables[0]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portables[any].portables[any]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portables[0].portables[0]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portables[0].portables[1]"),
+                scenario(nestedNullArrayGroup, null, Method.Generic, "portables[0].portables[2]")
+        ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedNullArrayGroup, (GroupPortable) nestedNullArrayGroup.portable, "portables[0].portableArray.primitiveUTF_")
         );
@@ -621,24 +686,26 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         NestedGroupPortable nestedEmptyArrayGroup = nested(new GroupPortable(new Portable[0]));
         result.addAll(asList(
                 scenario(nestedEmptyArrayGroup, new Portable[0], Method.PortableArray, "portables[0].portables"),
-                scenario(nestedEmptyArrayGroup, new Portable[0], Method.PortableArray, "portables[0].portables[any]"),
+                scenario(nestedEmptyArrayGroup, null, Method.PortableArray, "portables[0].portables[any]"),
                 scenario(nestedEmptyArrayGroup, null, Method.PortableArray, "portables[any].portables[0]"),
-                scenario(nestedEmptyArrayGroup, new Portable[0], Method.PortableArray, "portables[any].portables[any]"),
+                scenario(nestedEmptyArrayGroup, null, Method.PortableArray, "portables[any].portables[any]"),
                 scenario(nestedEmptyArrayGroup, null, Method.Portable, "portables[0].portables[0]"),
                 scenario(nestedEmptyArrayGroup, null, Method.Portable, "portables[0].portables[1]"),
                 scenario(nestedEmptyArrayGroup, null, Method.Portable, "portables[0].portables[2]")
+        ));
+        result.addAll(asList(
+                scenario(nestedEmptyArrayGroup, new Portable[0], Method.Generic, "portables[0].portables"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portables[0].portables[any]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portables[any].portables[0]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portables[any].portables[any]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portables[0].portables[0]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portables[0].portables[1]"),
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portables[0].portables[2]")
         ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedEmptyArrayGroup, (GroupPortable) nestedEmptyArrayGroup.portable, "portables[0].portableArray.primitiveUTF_")
         );
 
-        //
-        // Currently:
-        // - if [any] is done on non-null array, the result will never be null, but an empty or non-empty array
-        // - if [any] is done on a null array, the result will be null
-        //
-        // TODO: check if that's acceptable
-        //
         NestedGroupPortable nestedEmpty = nested(new GroupPortable[0]);
         result.addAll(asList(
                 scenario(nestedEmpty, null, Method.PortableArray, "portables[0].portables"),
@@ -648,6 +715,15 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedEmpty, null, Method.Portable, "portables[0].portables[0]"),
                 scenario(nestedEmpty, null, Method.Portable, "portables[0].portables[1]"),
                 scenario(nestedEmpty, null, Method.Portable, "portables[0].portables[2]")
+        ));
+        result.addAll(asList(
+                scenario(nestedEmpty, null, Method.Generic, "portables[0].portables"),
+                scenario(nestedEmpty, null, Method.Generic, "portables[0].portables[any]"),
+                scenario(nestedEmpty, null, Method.Generic, "portables[any].portables[0]"),
+                scenario(nestedEmpty, null, Method.Generic, "portables[any].portables[any]"),
+                scenario(nestedEmpty, null, Method.Generic, "portables[0].portables[0]"),
+                scenario(nestedEmpty, null, Method.Generic, "portables[0].portables[1]"),
+                scenario(nestedEmpty, null, Method.Generic, "portables[0].portables[2]")
         ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedEmpty, (GroupPortable) nestedEmpty.portable, "portables[0].portableArray.primitiveUTF_")
@@ -663,11 +739,75 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 scenario(nestedNull, null, Method.Portable, "portables[0].portables[1]"),
                 scenario(nestedNull, null, Method.Portable, "portables[0].portables[2]")
         ));
+        result.addAll(asList(
+                scenario(nestedNull, null, Method.Generic, "portables[0].portables"),
+                scenario(nestedNull, null, Method.Generic, "portables[0].portables[any]"),
+                scenario(nestedNull, null, Method.Generic, "portables[any].portables[0]"),
+                scenario(nestedNull, null, Method.Generic, "portables[any].portables[any]"),
+                scenario(nestedNull, null, Method.Generic, "portables[0].portables[0]"),
+                scenario(nestedNull, null, Method.Generic, "portables[0].portables[1]"),
+                scenario(nestedNull, null, Method.Generic, "portables[0].portables[2]")
+        ));
         result.addAll(
                 expandPortableArrayPrimitiveScenario(nestedNull, (GroupPortable) nestedNull.portable, "portables[0].portableArray.primitiveUTF_")
         );
     }
 
+
+    private static void fromPortableArrayToPortableArrayAnyScenarios(List<Object[]> result) {
+        NestedGroupPortable anyGroup = nested(new Portable[]{
+                group(prim(1, FULL), prim(10, NONE), prim(50, NULL)),
+                group(prim(2, FULL), prim(20, NONE), prim(80, NULL))
+        });
+        result.addAll(asList(
+                scenario(anyGroup, ((GroupPortable) (anyGroup.portables[0])).portables, Method.PortableArray, "portables[0].portables[any]"),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
+                scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
+                scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL), prim(20, FULL), prim(80, FULL)},
+                        Method.PortableArray, "portables[any].portables[any]")
+        ));
+        result.addAll(asList(
+                scenario(anyGroup, ((GroupPortable) (anyGroup.portables[0])).portables, Method.Generic, "portables[0].portables[any]"),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(2, FULL)}, Method.Generic, "portables[any].portables[0]"),
+                scenario(anyGroup, new Portable[]{prim(10, FULL), prim(20, FULL)}, Method.Generic, "portables[any].portables[1]"),
+                scenario(anyGroup, new Portable[]{prim(50, FULL), prim(80, FULL)}, Method.Generic, "portables[any].portables[2]"),
+                scenario(anyGroup, new Portable[]{prim(1, FULL), prim(10, FULL), prim(50, FULL), prim(2, FULL), prim(20, FULL), prim(80, FULL)},
+                        Method.Generic, "portables[any].portables[any]")
+        ));
+
+        NestedGroupPortable nestedEmptyArrayGroup = nested(new Portable[]{new GroupPortable(new Portable[0]), group(prim(1, FULL), prim(10, NONE), prim(50, NULL))});
+        result.addAll(asList(
+                scenario(nestedEmptyArrayGroup, null, Method.PortableArray, "portables[0].portables[any]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.PortableArray, "portables[any].portables[any]")
+        ));
+        result.addAll(asList(
+                scenario(nestedEmptyArrayGroup, null, Method.Generic, "portables[0].portables[any]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.Generic, "portables[any].portables[0]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.Generic, "portables[any].portables[1]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.Generic, "portables[any].portables[2]"),
+                scenario(nestedEmptyArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.Generic, "portables[any].portables[any]")
+        ));
+
+        NestedGroupPortable nestedNullArrayGroup = nested(new Portable[]{new GroupPortable((Portable[]) null), group(prim(1, FULL), prim(10, NONE), prim(50, NULL))});
+        result.addAll(asList(
+                scenario(nestedNullArrayGroup, null, Method.PortableArray, "portables[0].portables[any]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.PortableArray, "portables[any].portables[0]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.PortableArray, "portables[any].portables[1]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.PortableArray, "portables[any].portables[2]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.PortableArray, "portables[any].portables[any]")
+        ));
+        result.addAll(asList(
+                scenario(nestedNullArrayGroup, null, Method.PortableArray, "portables[0].portables[any]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL)}, Method.Generic, "portables[any].portables[0]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(10, FULL)}, Method.Generic, "portables[any].portables[1]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(50, FULL)}, Method.Generic, "portables[any].portables[2]"),
+                scenario(nestedNullArrayGroup, new Portable[]{null, prim(1, FULL), prim(10, FULL), prim(50, FULL)}, Method.Generic, "portables[any].portables[any]")
+        ));
+    }
 
     private static void edgeCaseScenarios(List<Object[]> result) {
         // nested [any] queries with portable and primitive arrays
