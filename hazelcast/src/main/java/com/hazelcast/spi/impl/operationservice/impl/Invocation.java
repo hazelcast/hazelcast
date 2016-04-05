@@ -463,16 +463,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         if (future.interrupted) {
             future.complete(INTERRUPTED);
         } else {
-            // fast retry for the first few invocations
             if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+                // fast retry for the first few invocations
                 operationService.asyncExecutor.execute(this);
             } else {
-                if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
-                    // fast retry for the first few invocations
-                    operationService.asyncExecutor.execute(this);
-                } else {
-                    nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
-                }
+                nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
             }
         }
     }
@@ -525,7 +520,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                 ? op.getInvocationTime() + callTimeoutMillis + heartbeatTimeoutMillis
                 : lastHeartbeatMillis + heartbeatTimeoutMillis;
 
-        if (heartBeatExpirationTimeMillis >  Clock.currentTimeMillis()) {
+        if (heartBeatExpirationTimeMillis > Clock.currentTimeMillis()) {
             return NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
         }
 
