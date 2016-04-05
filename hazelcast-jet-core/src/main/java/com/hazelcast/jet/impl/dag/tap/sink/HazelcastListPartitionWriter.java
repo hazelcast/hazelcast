@@ -86,8 +86,10 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
                 this.listContainer.add(tuple.getValueData(this.calculationStrategy, getNodeEngine()));
             }
         } finally {
-            DEBUG_COUNTER.addAndGet(chunk.size());
-            DEBUG_COUNTER1.addAndGet(this.listContainer.size());
+            if (containerDescriptor.getApplicationName().startsWith("shufflingListTest_")) {
+                DEBUG_COUNTER.addAndGet(chunk.size());
+                DEBUG_COUNTER1.addAndGet(this.listContainer.size());
+            }
         }
     }
 
