@@ -31,6 +31,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -636,6 +637,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/6297
     public void testPutInterruption() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
