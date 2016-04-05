@@ -597,9 +597,10 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         expected.addAll(Arrays.asList(ArrayUtils.toObject(prim(10, FULL).longs)));
 //        expected.addAll(Arrays.asList(ArrayUtils.toObject(prim(50, FULL).longs)));
 
-        result.add(
-                scenario(nestedEmptyArrayGroup, expected, Method.LongArray, "portables[any].portables[any].longs[any]")
-        );
+        // TODO
+//        result.add(
+//                scenario(nestedEmptyArrayGroup, expected, Method.LongArray, "portables[any].portables[any].longs[any]")
+//        );
 
 
 //        result.addAll(asList(

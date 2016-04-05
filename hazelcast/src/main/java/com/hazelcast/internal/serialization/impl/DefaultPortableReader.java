@@ -211,7 +211,8 @@ public class DefaultPortableReader implements PortableReader {
     private byte[] readMultiByteArray(List<PortablePosition> positions) throws IOException {
         byte[] result = new byte[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = in.readByte(positions.get(i).getStreamPosition());
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readByte(position.getStreamPosition());
         }
         return result;
     }
@@ -241,7 +242,8 @@ public class DefaultPortableReader implements PortableReader {
     private boolean[] readMultiBooleanArray(List<PortablePosition> positions) throws IOException {
         boolean[] result = new boolean[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = in.readBoolean(positions.get(i).getStreamPosition());
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readBoolean(position.getStreamPosition());
         }
         return result;
     }
@@ -271,7 +273,8 @@ public class DefaultPortableReader implements PortableReader {
     private char[] readMultiCharArray(List<PortablePosition> positions) throws IOException {
         char[] result = new char[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = in.readChar(positions.get(i).getStreamPosition());
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readChar(position.getStreamPosition());
         }
         return result;
     }
@@ -301,7 +304,8 @@ public class DefaultPortableReader implements PortableReader {
     private int[] readMultiIntArray(List<PortablePosition> positions) throws IOException {
         int[] result = new int[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = in.readInt(positions.get(i).getStreamPosition());
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readInt(position.getStreamPosition());
         }
         return result;
     }
@@ -331,20 +335,10 @@ public class DefaultPortableReader implements PortableReader {
     private long[] readMultiLongArray(List<PortablePosition> positions) throws IOException {
         long[] result = new long[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = positions.get(i);
-            // TODO
-//            if (!position.isNull()) {
-                result[i] = in.readLong(position.getStreamPosition());
-//            }
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readLong(position.getStreamPosition());
         }
         return result;
-    }
-
-    private PortablePosition validateNullPosition(PortablePosition position) {
-        if (position.isNullOrEmpty()) {
-            throw PRIMITIVE_NULL_EXCEPTION;
-        }
-        return position;
     }
 
     private long[] readSingleLongArray(PortablePosition position) throws IOException {
@@ -372,7 +366,8 @@ public class DefaultPortableReader implements PortableReader {
     private double[] readMultiDoubleArray(List<PortablePosition> positions) throws IOException {
         double[] result = new double[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = in.readDouble(positions.get(i).getStreamPosition());
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readDouble(position.getStreamPosition());
         }
         return result;
     }
@@ -402,7 +397,8 @@ public class DefaultPortableReader implements PortableReader {
     private float[] readMultiFloatArray(List<PortablePosition> positions) throws IOException {
         float[] result = new float[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = in.readFloat(positions.get(i).getStreamPosition());
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readFloat(position.getStreamPosition());
         }
         return result;
     }
@@ -432,7 +428,8 @@ public class DefaultPortableReader implements PortableReader {
     private short[] readMultiShortArray(List<PortablePosition> positions) throws IOException {
         short[] result = new short[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            result[i] = in.readShort(positions.get(i).getStreamPosition());
+            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            result[i] = in.readShort(position.getStreamPosition());
         }
         return result;
     }
@@ -440,6 +437,13 @@ public class DefaultPortableReader implements PortableReader {
     private short[] readSingleShortArray(PortablePosition position) throws IOException {
         in.position(position.getStreamPosition());
         return in.readShortArray();
+    }
+
+    private PortablePosition validateNonNullOrEmptyPosition(PortablePosition position) {
+        if (position.isNullOrEmpty()) {
+            throw PRIMITIVE_NULL_EXCEPTION;
+        }
+        return position;
     }
 
     @Override
@@ -527,7 +531,7 @@ public class DefaultPortableReader implements PortableReader {
             } else if (position.isNull()) {
                 return null;
             } else if (position.isEmpty()) {
-                if(position.isLast() && position.getType() != null) {
+                if (position.isLast() && position.getType() != null) {
                     return readSinglePosition(position);
                 } else {
                     return null;
@@ -555,7 +559,7 @@ public class DefaultPortableReader implements PortableReader {
     // TODO -> refactor to O(1) lookup of proper strategy
     @SuppressWarnings("unchecked")
     private <T> T readSinglePosition(PortablePosition position) throws IOException {
-        if(position.getIndex() >= 0) {
+        if (position.getIndex() >= 0) {
             switch (position.getType()) {
                 case BYTE:
                 case BYTE_ARRAY:
