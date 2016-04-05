@@ -29,7 +29,9 @@ import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
+import com.hazelcast.test.annotation.Repeat;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,16 +52,23 @@ public class FileToFileTest extends JetBaseTest {
 
     private static final int CNT = 10000;
 
-    @Test
-    @Ignore
-    public void simpleFileToFileTest() throws Exception {
+    @Before
+    public void initCluster() throws Exception {
         JetBaseTest.initCluster(2);
-        Application application = createApplication("fileToFileTest");
+    }
 
+    @After
+    public void shutdownCluster() {
+        HAZELCAST_FACTORY.terminateAll();
+    }
+
+    @Test
+    @Repeat(10)
+    public void simpleFileToFileTest() throws Exception {
+        Application application = createApplication("fileToFileTest");
         DAG dag = createDAG();
 
         File input = createInputFile();
-        System.out.println(input.getAbsolutePath());
         File output = File.createTempFile("output", ".txt");
 
         Vertex counter = createVertex("counter", CountProcessor.Factory.class, 1);
@@ -79,11 +88,9 @@ public class FileToFileTest extends JetBaseTest {
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
             List<String> strings = Files.readAllLines(output.toPath());
-
             assertEquals(1, strings.size());
 
             String[] tuple = strings.get(0).split("\\s+");
-
             assertEquals(0, Integer.parseInt(tuple[0]));
             assertEquals(CNT * 2, Integer.parseInt(tuple[1]));
         } finally {

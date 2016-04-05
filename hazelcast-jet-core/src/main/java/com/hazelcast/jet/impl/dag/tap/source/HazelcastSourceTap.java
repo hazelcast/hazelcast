@@ -23,7 +23,6 @@ import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.spi.data.tuple.TupleFactory;
-import com.hazelcast.spi.partition.IPartition;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -52,9 +51,7 @@ public class HazelcastSourceTap extends SourceTap {
 
         if (TapType.HAZELCAST_LIST == this.tapType) {
             int partitionId = HazelcastListPartitionReader.getPartitionId(containerDescriptor.getNodeEngine(), this.name);
-            IPartition partition = containerDescriptor.getNodeEngine().getPartitionService().getPartition(partitionId);
-
-            if (partition != null && partition.isLocal()) {
+            if (JetUtil.isPartitionLocal(containerDescriptor.getNodeEngine(), partitionId)) {
                 readers.add(HazelcastReaderFactory.getReader(
                         this.tapType, this.name, containerDescriptor, partitionId, tupleFactory, vertex
                         )
@@ -86,18 +83,16 @@ public class HazelcastSourceTap extends SourceTap {
                 ));
             }
         } else {
-            for (IPartition partition : containerDescriptor.getNodeEngine().getPartitionService().getPartitions()) {
-                if (partition.isLocal()) {
-                    readers.add(HazelcastReaderFactory.getReader(
-                            this.tapType,
-                            this.name,
-                            containerDescriptor,
-                            partition.getPartitionId(),
-                            tupleFactory,
-                            vertex
-                            )
-                    );
-                }
+            List<Integer> localPartitions = JetUtil.getLocalPartitions(containerDescriptor.getNodeEngine());
+            for (int partitionId : localPartitions) {
+                readers.add(HazelcastReaderFactory.getReader(
+                        this.tapType,
+                        this.name,
+                        containerDescriptor,
+                        partitionId,
+                        tupleFactory,
+                        vertex
+                ));
             }
         }
 
