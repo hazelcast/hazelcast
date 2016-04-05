@@ -49,6 +49,7 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -75,7 +76,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
+        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
 
@@ -106,11 +107,9 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
-        private final boolean includeValue;
         private final ItemListener<E> listener;
 
-        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
-            this.includeValue = includeValue;
+        public ItemEventHandler(ItemListener<E> listener) {
             this.listener = listener;
         }
 
@@ -184,9 +183,13 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
         Data data = toData(e);
         ClientMessage request = QueueOfferCodec.encodeRequest(name, data, unit.toMillis(timeout));
-        ClientMessage response = invokeOnPartitionInterruptibly(request);
-        QueueOfferCodec.ResponseParameters resultParameters = QueueOfferCodec.decodeResponse(response);
-        return resultParameters.response;
+        try {
+            ClientMessage response = invokeOnPartitionInterruptibly(request, timeout, unit);
+            QueueOfferCodec.ResponseParameters resultParameters = QueueOfferCodec.decodeResponse(response);
+            return resultParameters.response;
+        } catch (OperationTimeoutException ex) {
+            return false;
+        }
     }
 
     public E take() throws InterruptedException {
@@ -198,9 +201,13 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         ClientMessage request = QueuePollCodec.encodeRequest(name, unit.toMillis(timeout));
-        ClientMessage response = invokeOnPartitionInterruptibly(request);
-        QueuePollCodec.ResponseParameters resultParameters = QueuePollCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        try {
+            ClientMessage response = invokeOnPartitionInterruptibly(request, timeout, unit);
+            QueuePollCodec.ResponseParameters resultParameters = QueuePollCodec.decodeResponse(response);
+            return toObject(resultParameters.response);
+        } catch (OperationTimeoutException ex) {
+            return null;
+        }
     }
 
     public int remainingCapacity() {

@@ -51,6 +51,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.mapreduce.Collator;
@@ -87,7 +88,6 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  *
  * @param <K> key
  * @param <V> value
- *
  * @author ali 5/19/13
  */
 public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K, V> {
@@ -355,9 +355,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         long threadId = ThreadUtil.getThreadId();
         ClientMessage request = MultiMapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis);
-        ClientMessage response = invoke(request, keyData);
-        MultiMapTryLockCodec.ResponseParameters resultParameters = MultiMapTryLockCodec.decodeResponse(response);
-        return resultParameters.response;
+        try {
+            ClientMessage response = invoke(request, keyData, time, timeunit);
+            MultiMapTryLockCodec.ResponseParameters resultParameters = MultiMapTryLockCodec.decodeResponse(response);
+            return resultParameters.response;
+        } catch (OperationTimeoutException ex) {
+            return false;
+        }
     }
 
     public void unlock(K key) {

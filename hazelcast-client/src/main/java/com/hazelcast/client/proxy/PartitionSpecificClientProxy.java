@@ -19,6 +19,8 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientProxy;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Base class for proxies of distributed objects that lives in on partition.
  */
@@ -39,7 +41,16 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
         return invokeOnPartition(req, partitionId);
     }
 
+    protected ClientMessage invokeOnPartition(ClientMessage req, long timeout, TimeUnit timeUnit) {
+        return invokeOnPartition(req, partitionId, timeout, timeUnit);
+    }
+
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage) throws InterruptedException {
         return invokeOnPartitionInterruptibly(clientMessage, partitionId);
+    }
+
+    protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage, long timeout, TimeUnit timeUnit)
+            throws InterruptedException {
+        return invokeOnPartitionInterruptibly(clientMessage, partitionId, timeout, timeUnit);
     }
 }

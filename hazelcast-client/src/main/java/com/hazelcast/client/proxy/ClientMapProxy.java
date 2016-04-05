@@ -93,6 +93,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -412,9 +413,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected boolean tryRemoveInternal(long timeout, TimeUnit timeunit, Data keyData) {
         ClientMessage request = MapTryRemoveCodec.encodeRequest(name, keyData,
                 ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
-        ClientMessage response = invoke(request, keyData);
-        MapTryRemoveCodec.ResponseParameters resultParameters = MapTryRemoveCodec.decodeResponse(response);
-        return resultParameters.response;
+        try {
+            ClientMessage response = invoke(request, keyData, timeout, timeunit);
+            MapTryRemoveCodec.ResponseParameters resultParameters = MapTryRemoveCodec.decodeResponse(response);
+            return resultParameters.response;
+        } catch (OperationTimeoutException ex) {
+            return false;
+        }
     }
 
     @Override
@@ -430,9 +435,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Data keyData, Data valueData) {
         ClientMessage request = MapTryPutCodec.encodeRequest(name, keyData, valueData,
                 ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
-        ClientMessage response = invoke(request, keyData);
-        MapTryPutCodec.ResponseParameters resultParameters = MapTryPutCodec.decodeResponse(response);
-        return resultParameters.response;
+        try {
+            ClientMessage response = invoke(request, keyData, timeout, timeunit);
+            MapTryPutCodec.ResponseParameters resultParameters = MapTryPutCodec.decodeResponse(response);
+            return resultParameters.response;
+        } catch (OperationTimeoutException ex) {
+            return false;
+        }
     }
 
     @Override
@@ -598,9 +607,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         long threadId = ThreadUtil.getThreadId();
         ClientMessage request = MapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis);
 
-        ClientMessage response = invoke(request, keyData);
-        MapTryLockCodec.ResponseParameters resultParameters = MapTryLockCodec.decodeResponse(response);
-        return resultParameters.response;
+        try {
+            ClientMessage response = invoke(request, keyData, time, timeunit);
+            MapTryLockCodec.ResponseParameters resultParameters = MapTryLockCodec.decodeResponse(response);
+            return resultParameters.response;
+        } catch (OperationTimeoutException ex) {
+            return false;
+        }
     }
 
     @Override
