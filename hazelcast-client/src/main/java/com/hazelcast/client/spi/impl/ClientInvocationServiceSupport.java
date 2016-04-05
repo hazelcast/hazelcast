@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
@@ -31,7 +32,6 @@ import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 
@@ -93,8 +93,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
 
     private ClientExceptionFactory initClientExceptionFactory() {
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        boolean jcacheAvailable = ClassLoaderUtil.isClassAvailable(classLoader, "javax.cache.Caching");
+        boolean jcacheAvailable = JCacheDetector.isJcacheAvailable(client.getClientConfig().getClassLoader());
         return new ClientExceptionFactory(jcacheAvailable);
     }
 
