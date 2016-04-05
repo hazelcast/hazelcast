@@ -62,7 +62,6 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
 
         HAZELCAST_FACTORY = new TestHazelcastFactory();
         buildCluster(membersCount);
-        warmUpPartitions(SERVER);
     }
 
     protected static void buildCluster(int memberCount) throws Exception {
