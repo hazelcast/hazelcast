@@ -29,6 +29,7 @@ import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,6 +51,7 @@ public class FileToFileTest extends JetBaseTest {
     private static final int CNT = 10000;
 
     @Test
+    @Ignore
     public void simpleFileToFileTest() throws Exception {
         JetBaseTest.initCluster(2);
         Application application = createApplication("fileToFileTest");
@@ -84,8 +86,7 @@ public class FileToFileTest extends JetBaseTest {
 
             assertEquals(0, Integer.parseInt(tuple[0]));
             assertEquals(CNT * 2, Integer.parseInt(tuple[1]));
-        }
-        finally {
+        } finally {
             application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
         }
     }
@@ -116,7 +117,7 @@ public class FileToFileTest extends JetBaseTest {
         @Override
         public Address[] getShufflingAddress(ContainerDescriptor containerDescriptor) {
             try {
-                return new Address[] { new Address(host, port) };
+                return new Address[]{new Address(host, port)};
             } catch (UnknownHostException e) {
                 throw JetUtil.reThrow(e);
             }

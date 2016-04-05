@@ -90,6 +90,9 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
     @Override
     public boolean process() throws Exception {
         if (this.receivedTupleStream.size() > 0) {
+            produced = false;
+            receiversProduced = false;
+
             boolean success = this.receiverConsumerProcessor.onChunk(this.receivedTupleStream);
 
             if (success) {

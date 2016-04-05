@@ -87,7 +87,7 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
             }
         } finally {
             DEBUG_COUNTER.addAndGet(chunk.size());
-            DEBUG_COUNTER1.addAndGet(chunk.size());
+            DEBUG_COUNTER1.addAndGet(this.listContainer.size());
         }
     }
 
