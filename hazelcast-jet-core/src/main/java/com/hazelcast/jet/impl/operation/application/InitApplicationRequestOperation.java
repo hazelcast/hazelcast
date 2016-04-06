@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.operation.application;
 
 import com.hazelcast.jet.api.hazelcast.JetService;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 public class InitApplicationRequestOperation extends AbstractJetApplicationRequestOperation {
@@ -43,6 +44,11 @@ public class InitApplicationRequestOperation extends AbstractJetApplicationReque
     @Override
     public void run() throws Exception {
         resolveApplicationContext();
+        initializePartitions(this.getNodeEngine());
         System.out.println("InitApplicationRequestOperation");
+    }
+
+    private void initializePartitions(NodeEngine nodeEngine) {
+        nodeEngine.getPartitionService().getMemberPartitionsMap();
     }
 }

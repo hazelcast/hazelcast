@@ -18,13 +18,13 @@ package com.hazelcast.jet.impl.dag.tap.sink;
 
 import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
 import com.hazelcast.jet.impl.dag.tap.source.HazelcastListPartitionReader;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.tap.SinkOutputStream;
 import com.hazelcast.jet.spi.dag.tap.SinkTap;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataWriter;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
@@ -71,8 +71,9 @@ public class HazelcastSinkTap extends SinkTap {
 
         if (TapType.HAZELCAST_LIST == tapType) {
             int partitionId = HazelcastListPartitionReader.getPartitionId(nodeEngine, this.name);
-            IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-            int realPartitionId = ((partition != null) && (partition.isLocal())) ? partitionId : -1;
+
+            boolean isPartitionLocal = JetUtil.isPartitionLocal(containerDescriptor.getNodeEngine(), partitionId);
+            int realPartitionId = isPartitionLocal ? partitionId : -1;
             writers.add(
                     new ShufflingWriter(
                             HazelcastWriterFactory.getWriter(
@@ -98,23 +99,22 @@ public class HazelcastSinkTap extends SinkTap {
                     )
             );
         } else {
-            for (IPartition partition : nodeEngine.getPartitionService().getPartitions()) {
-                if (partition.isLocal()) {
-                    writers.add(
-                            new ShufflingWriter(
-                                    HazelcastWriterFactory.getWriter(
-                                            this.tapType,
-                                            this.name,
-                                            getTapStrategy(),
-                                            containerDescriptor,
-                                            partition.getPartitionId(),
-                                            this
-                                    ),
-                                    nodeEngine,
-                                    containerDescriptor
-                            )
-                    );
-                }
+            List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
+            for (int partitionId : localPartitions) {
+                writers.add(
+                        new ShufflingWriter(
+                                HazelcastWriterFactory.getWriter(
+                                        this.tapType,
+                                        this.name,
+                                        getTapStrategy(),
+                                        containerDescriptor,
+                                        partitionId,
+                                        this
+                                ),
+                                nodeEngine,
+                                containerDescriptor
+                        )
+                );
             }
         }
 

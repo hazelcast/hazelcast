@@ -36,7 +36,6 @@ import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.strategy.CalculationStrategyAware;
 import com.hazelcast.jet.spi.strategy.ShufflingStrategy;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.HashUtil;
 
@@ -168,17 +167,10 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private void initCalculationStrategies(Set<CalculationStrategy> strategies,
                                            List<ObjectConsumer> nonPartitionedConsumers,
                                            Set<Address> nonPartitionedAddresses) {
-        List<IPartition> localPartitions = new ArrayList<IPartition>();
 
         ApplicationMaster applicationMaster = this.containerContext.getApplicationContext().getApplicationMaster();
         Map<Address, Address> hzToJetAddressMapping = applicationMaster.getApplicationContext().getHzToJetAddressMapping();
-
-        for (IPartition partition : this.nodeEngine.getPartitionService().getPartitions()) {
-            if (partition.isLocal()) {
-                localPartitions.add(partition);
-            }
-        }
-
+        List<Integer> localPartitions = JetUtil.getLocalPartitions(nodeEngine);
         for (ObjectConsumer consumer : this.shuffledConsumers) {
             ShufflingStrategy shufflingStrategy = consumer.getShufflingStrategy();
             initConsumerCalculationStrategy(
@@ -194,7 +186,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void initConsumerCalculationStrategy(Set<CalculationStrategy> strategies,
-                                                 List<IPartition> localPartitions,
+                                                 List<Integer> localPartitions,
                                                  List<ObjectConsumer> nonPartitionedConsumers,
                                                  Set<Address> nonPartitionedAddresses,
                                                  Map<Address, Address> hzToJetAddressMapping,
@@ -231,7 +223,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private void initConsumerPartitions(Set<CalculationStrategy> strategies,
-                                        List<IPartition> localPartitions,
+                                        List<Integer> localPartitions,
                                         List<ObjectConsumer> nonPartitionedConsumers,
                                         Set<Address> nonPartitionedAddresses,
                                         Map<Address, Address> hzToJetAddressMapping,
@@ -280,8 +272,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         if (partitionId >= 0) {
             processPartition(map, partitionId).add(consumer);
         } else {
-            for (IPartition localPartition : localPartitions) {
-                processPartition(map, localPartition.getPartitionId()).add(consumer);
+            for (Integer localPartition : localPartitions) {
+                processPartition(map, localPartition).add(consumer);
             }
         }
     }
@@ -290,16 +282,12 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                                         Set<Address> nonPartitionedAddresses,
                                         Map<Address, Address> hzToJetAddressMapping,
                                         DataWriter writer) {
-        IPartition partition = this.nodeEngine.getPartitionService().getPartition(writer.getPartitionId());
-
-        if (partition.isLocal()) {
-            nonPartitionedConsumers.add(
-                    writer
-            );
+        if (JetUtil.isPartitionLocal(nodeEngine, writer.getPartitionId())) {
+            nonPartitionedConsumers.add(writer);
         } else {
             nonPartitionedAddresses.add(
                     hzToJetAddressMapping.get(
-                            this.nodeEngine.getPartitionService().getPartitionOwner(partition.getPartitionId())
+                            this.nodeEngine.getPartitionService().getPartitionOwner(writer.getPartitionId())
                     )
             );
         }

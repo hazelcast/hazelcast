@@ -23,16 +23,17 @@ import com.hazelcast.jet.spi.config.JetClientConfig;
 import com.hazelcast.jet.spi.config.JetConfig;
 import com.hazelcast.spi.NodeEngine;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -224,6 +225,14 @@ public final class JetUtil {
                                                                          final JetApplicationConfig jetApplicationConfig,
                                                                          final String name) {
         return resolveJetApplicationConfig(client.getClientConfig(), jetApplicationConfig, name);
+    }
+
+    public static List<Integer> getLocalPartitions(final NodeEngine nodeEngine) {
+        return nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
+    }
+
+    public static boolean isPartitionLocal(final NodeEngine nodeEngine, int partitionId) {
+        return nodeEngine.getPartitionService().getPartition(partitionId).isLocal();
     }
 
     private static <T> JetApplicationConfig resolveJetApplicationConfig(final T hazelcastConfig,
