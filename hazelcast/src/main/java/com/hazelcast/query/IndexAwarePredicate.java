@@ -22,6 +22,9 @@ import com.hazelcast.query.impl.QueryableEntry;
 import java.util.Set;
 /**
  * This interface is used for create filterable Predicates.
+ *
+ * @param <K>
+ * @param <V>
  */
 public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
 
