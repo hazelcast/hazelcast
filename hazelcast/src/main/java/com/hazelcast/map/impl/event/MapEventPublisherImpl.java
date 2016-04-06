@@ -82,12 +82,12 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     @Override
     public void publishWanReplicationUpdateBackup(String mapName, EntryView entryView) {
-        //NOP
+        // NOP
     }
 
     @Override
     public void publishWanReplicationRemoveBackup(String mapName, Data key, long removeTime) {
-        //NOP
+        // NOP
     }
 
     @Override
@@ -184,16 +184,14 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         return registrations;
     }
 
-    //CHECKSTYLE:OFF
     protected boolean doFilter(EventFilter filter, Data dataKey,
                                Object dataOldValue, Object dataValue, EntryEventType eventType, String mapNameOrNull) {
-
         if (filter instanceof MapPartitionLostEventFilter) {
             return false;
         }
 
-        // below, order of ifs are important.
-        // QueryEventFilter is instance of EntryEventFilter.
+        // the order of the following ifs is important!
+        // QueryEventFilter is instance of EntryEventFilter
         if (filter instanceof EventListenerFilter) {
             if (!filter.eval(eventType.getType())) {
                 return false;
@@ -201,43 +199,34 @@ public class MapEventPublisherImpl implements MapEventPublisher {
                 filter = ((EventListenerFilter) filter).getEventFilter();
             }
         }
-
         if (filter instanceof TrueEventFilter) {
             return true;
         }
-
         if (filter instanceof QueryEventFilter) {
             return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue, mapNameOrNull);
         }
-
         if (filter instanceof EntryEventFilter) {
             return processEntryEventFilter(filter, dataKey);
         }
-
         throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
-    //CHECKSTYLE:ON
 
     protected boolean isIncludeValue(EventFilter filter) {
-        // below, order of ifs are important.
-        // QueryEventFilter is instance of EntryEventFilter.
-        // SyntheticEventFilter wraps an event filter.
+        // the order of the following ifs is important!
+        // QueryEventFilter is instance of EntryEventFilter
+        // SyntheticEventFilter wraps an event filter
         if (filter instanceof EventListenerFilter) {
             filter = ((EventListenerFilter) filter).getEventFilter();
         }
-
         if (filter instanceof TrueEventFilter) {
             return true;
         }
-
         if (filter instanceof QueryEventFilter) {
             return ((QueryEventFilter) filter).isIncludeValue();
         }
-
         if (filter instanceof EntryEventFilter) {
             return ((EntryEventFilter) filter).isIncludeValue();
         }
-
         throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
 
@@ -328,5 +317,4 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         return new EntryEventData(thisNodesAddress, mapName, caller,
                 dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
     }
-
 }
