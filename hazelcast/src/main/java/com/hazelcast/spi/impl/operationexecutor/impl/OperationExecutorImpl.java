@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.properties.GroupProperties;
+import com.hazelcast.internal.util.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -34,8 +35,10 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.util.concurrent.NoOpIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -147,7 +150,9 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
-            OperationQueue operationQueue = new DefaultOperationQueue();
+            MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(null, new NoOpIdleStrategy());
+            OperationQueue operationQueue = new DefaultOperationQueue(
+                    normalQueue, new ConcurrentLinkedQueue<Object>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     threadGroup, nodeExtension, partitionOperationRunners);

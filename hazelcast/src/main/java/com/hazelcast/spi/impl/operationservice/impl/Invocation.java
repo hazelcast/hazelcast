@@ -348,6 +348,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     void notifyError(Object error) {
         assert error != null;
 
+        // this sucks because the deserializing thead could be an io thread.
+        error = operationService.serializationService.toObject(error);
+
         Throwable cause = error instanceof Throwable
                 ? (Throwable) error
                 : ((ErrorResponse) error).getCause();
