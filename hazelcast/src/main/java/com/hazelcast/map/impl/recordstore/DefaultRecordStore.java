@@ -588,7 +588,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         final long now = getNow();
 
-        final MapEntries mapEntries = new MapEntries();
+        final MapEntries mapEntries = new MapEntries(keys.size());
 
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {

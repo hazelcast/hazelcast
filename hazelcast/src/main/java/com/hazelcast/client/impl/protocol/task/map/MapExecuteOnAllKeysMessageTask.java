@@ -55,9 +55,7 @@ public class MapExecuteOnAllKeysMessageTask
         for (Object o : map.values()) {
             if (o != null) {
                 MapEntries entries = (MapEntries) mapService.getMapServiceContext().toObject(o);
-                for (Map.Entry<Data, Data> entry : entries) {
-                    dataMap.add(entry);
-                }
+                entries.putAllToList(dataMap);
             }
         }
         return dataMap;
