@@ -48,6 +48,11 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 public abstract class Response implements IdentifiedDataSerializable {
     public static final boolean USE_BIG_ENDIAN = true;
 
+    private final static int OFFSET_SERIALIZER_ID = 4;
+    private final static int OFFSET_FACTORY_ID = 9;
+    private final static int OFFSET_TYPE_ID = 13;
+    private final static int OFFSET_CALL_ID = 17;
+    private final static int OFFSET_BACKUP_COUNT = 26;
 
     protected long callId;
     protected boolean urgent;
@@ -103,23 +108,24 @@ public abstract class Response implements IdentifiedDataSerializable {
         //int:factory-id
         //int: type id
 
-        return Bits.readLong(bytes, 17, USE_BIG_ENDIAN);
+        return Bits.readLong(bytes, OFFSET_CALL_ID, USE_BIG_ENDIAN);
     }
 
+
     public static int typeId(byte[] bytes) {
-        return Bits.readInt(bytes, 13, USE_BIG_ENDIAN);
+        return Bits.readInt(bytes, OFFSET_TYPE_ID, USE_BIG_ENDIAN);
     }
 
     public static int backupCount(byte[] bytes) {
-        return Bits.readInt(bytes, 26, USE_BIG_ENDIAN);
+        return Bits.readInt(bytes, OFFSET_BACKUP_COUNT, USE_BIG_ENDIAN);
     }
 
     public static int serializerId(byte[] bytes) {
-        return Bits.readInt(bytes, 4, USE_BIG_ENDIAN);
+        return Bits.readInt(bytes, OFFSET_SERIALIZER_ID, USE_BIG_ENDIAN);
     }
 
     public static int factoryId(byte[] bytes) {
-        return Bits.readInt(bytes, 9, USE_BIG_ENDIAN);
+        return Bits.readInt(bytes, OFFSET_FACTORY_ID, USE_BIG_ENDIAN);
     }
 
     public static Object deserializeValue(InternalSerializationService serializationService, Object data) {

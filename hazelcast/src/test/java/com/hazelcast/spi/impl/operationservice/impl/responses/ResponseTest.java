@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.operationservice.impl;
+package com.hazelcast.spi.impl.operationservice.impl.responses;
 
 
 import com.hazelcast.internal.serialization.InternalSerializationService;

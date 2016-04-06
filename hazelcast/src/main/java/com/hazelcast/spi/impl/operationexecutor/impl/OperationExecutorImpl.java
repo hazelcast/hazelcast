@@ -158,6 +158,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
                     threadGroup, nodeExtension, partitionOperationRunners);
 
             threads[threadId] = partitionThread;
+            normalQueue.setOwningThread(partitionThread);
         }
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
