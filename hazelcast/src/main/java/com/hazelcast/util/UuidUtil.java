@@ -130,8 +130,8 @@ public final class UuidUtil {
         return getUUID(THREAD_LOCAL_SECURE_RANDOM.get());
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private static UUID getUUID(Random random) {
-        //CHECKSTYLE:OFF  suppressed because of magic numbers
         byte[] data = new byte[16];
         random.nextBytes(data);
 
@@ -154,7 +154,6 @@ public final class UuidUtil {
             leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
         }
         return new UUID(mostSigBits, leastSigBits);
-        //CHECKSTYLE:ON
     }
 
     private static long seedUniquifier() {

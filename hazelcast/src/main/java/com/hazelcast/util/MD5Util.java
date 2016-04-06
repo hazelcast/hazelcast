@@ -33,6 +33,7 @@ public final class MD5Util {
      *
      * @param str str to be hashed with MD5
      */
+    @SuppressWarnings("checkstyle:magicnumber")
     public static String toMD5String(String str) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -41,12 +42,10 @@ public final class MD5Util {
             }
             byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
 
-            //CHECKSTYLE:OFF suppressed because of magic numbers.
             StringBuilder sb = new StringBuilder();
             for (byte aByteData : byteData) {
                 sb.append(Integer.toString((aByteData & 0xff) + 0x100, 16).substring(1));
             }
-            //CHECKSTYLE:ON
             return sb.toString();
         } catch (NoSuchAlgorithmException ignored) {
             EmptyStatement.ignore(ignored);
