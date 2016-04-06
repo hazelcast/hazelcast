@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
@@ -74,8 +73,10 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
             invalidationKeys = new ArrayList<Data>(mapEntries.size());
         }
 
-        for (Map.Entry<Data, Data> entry : mapEntries) {
-            put(entry);
+        // we use an iterator for the keys, since they can be stored in a LinkedList
+        int i = 0;
+        for (Data key : mapEntries.getKeys()) {
+            put(key, mapEntries.getValue(i++));
         }
     }
 
@@ -87,10 +88,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         return (mapContainer.getTotalBackupCount() > 0);
     }
 
-    private void put(Map.Entry<Data, Data> entry) {
-        Data dataKey = entry.getKey();
-        Data dataValue = entry.getValue();
-
+    private void put(Data dataKey, Data dataValue) {
         Object oldValue = putToRecordStore(dataKey, dataValue);
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
         mapServiceContext.interceptAfterPut(name, dataValue);

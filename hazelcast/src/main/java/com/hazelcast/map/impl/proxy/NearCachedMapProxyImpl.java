@@ -262,9 +262,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected Future createPutAllOperationFuture(String name, MapEntries mapEntries, int partitionId) {
-        Collection<Entry<Data, Data>> collection = mapEntries.entries();
-        for (Entry<Data, Data> entry : collection) {
-            invalidateCache(entry.getKey());
+        for (Data key : mapEntries.getKeys()) {
+            invalidateCache(key);
         }
         return super.createPutAllOperationFuture(name, mapEntries, partitionId);
     }

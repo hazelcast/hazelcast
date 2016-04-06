@@ -41,11 +41,7 @@ public class MapPutAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        MapEntries mapEntries = new MapEntries();
-        for (Map.Entry<Data, Data> entry : parameters.entries) {
-            mapEntries.add(entry.getKey(), entry.getValue());
-        }
-
+        MapEntries mapEntries = new MapEntries(parameters.entries);
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         return operationProvider.createPutAllOperation(parameters.name, mapEntries);
     }
