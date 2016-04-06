@@ -466,8 +466,11 @@ public class DefaultPortableReader implements PortableReader {
     private String[] readMultiUTFArray(List<PortablePosition> positions) throws IOException {
         String[] result = new String[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            in.position(positions.get(i).getStreamPosition());
-            result[i] = in.readUTF();
+            PortablePosition position = positions.get(i);
+            if(!position.isNullOrEmpty()) {
+                in.position(position.getStreamPosition());
+                result[i] = in.readUTF();
+            }
         }
         return result;
     }

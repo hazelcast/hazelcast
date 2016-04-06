@@ -127,6 +127,7 @@ public class PortablePositionNavigator {
                 // validate the arrays length
                 in.position(p.getStreamPosition());
                 arrayLen = in.readInt();
+                arrayIndex = 0;
             }
             validatePositionIndexInBound(fieldName, arrayLen, p);
 
@@ -393,6 +394,8 @@ public class PortablePositionNavigator {
             //            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
             //        }
             if (!result.isNullOrEmpty()) {
+                // for consistency: [any] queries always return a multi-result, even if there's a single result only
+                // only if it's a single null result -> then it's returned as-is
                 if (nestedPath.contains("[any]")) {
                     List<PortablePosition> positions = new LinkedList<PortablePosition>();
                     positions.add(result);
@@ -410,16 +413,13 @@ public class PortablePositionNavigator {
                 setupForFrame(frame);
                 for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
                     result = processPath(pathTokens, i, nestedPath, frame);
-                    if (result != null && result.isMultiPosition() && result.asMultiPosition().size() == 0) {
-                        continue;
+                    if (result != null && result.isNullOrEmpty()) {
+                        break;
                     }
                     frame = null;
                 }
                 if (result == null) {
                     throw unknownFieldException(nestedPath);
-                }
-                if (result.isMultiPosition() && result.asMultiPosition().size() == 0) {
-                    continue;
                 }
                 positions.add(result);
             }
@@ -438,12 +438,16 @@ public class PortablePositionNavigator {
         cd = frame.cd;
     }
 
-    public PortableSinglePosition EMPTY = new PortableSinglePosition();
-    public PortableSinglePosition NULL = new PortableSinglePosition();
+    public static PortableSinglePosition nilPosition() {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.nil = true;
+        return position;
+    }
 
-    {
-        EMPTY.len = 0;
-        NULL.nil = true;
+    public static PortableSinglePosition emptyPosition() {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.len = 0;
+        return position;
     }
 
     private PortablePosition processPath(String[] pathTokens, int pathTokenIndex, String nestedPath,
@@ -465,8 +469,9 @@ public class PortablePositionNavigator {
                 return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
             }
             if (!advanceToNextTokenFromNonArrayElement(fd, token)) {
-                NULL.last = last;
-                return NULL;
+                PortableSinglePosition nil = nilPosition();
+                nil.last = last;
+                return nil;
             }
         } else if (isPathTokenWithAnyQuantifier(token)) {
             //
@@ -479,13 +484,15 @@ public class PortablePositionNavigator {
                 if (frame == null) {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
-                        EMPTY.last = last;
-                        EMPTY.any = true;
-                        return EMPTY;
+                        PortableSinglePosition empty = emptyPosition();
+                        empty.last = last;
+                        empty.any = true;
+                        return empty;
                     } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                        NULL.last = last;
-                        NULL.any = true;
-                        return NULL;
+                        PortableSinglePosition nil = nilPosition();
+                        nil.last = last;
+                        nil.any = true;
+                        return nil;
                     } else {
                         populatePendingNavigationFrames(pathTokenIndex, len);
                         if (last) {
@@ -509,13 +516,15 @@ public class PortablePositionNavigator {
                     if (last) {
                         int len = getCurrentArrayLength(fd);
                         if (len == 0) {
-                            EMPTY.last = last;
-                            EMPTY.any = true;
-                            return EMPTY;
+                            PortableSinglePosition empty = emptyPosition();
+                            empty.last = last;
+                            empty.any = true;
+                            return empty;
                         } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                            NULL.last = last;
-                            NULL.any = true;
-                            return NULL;
+                            PortableSinglePosition nil = nilPosition();
+                            nil.last = last;
+                            nil.any = true;
+                            return nil;
                         } else {
                             populatePendingNavigationFrames(pathTokenIndex, len);
                             return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
@@ -538,30 +547,36 @@ public class PortablePositionNavigator {
 
             if (last) {
                 if (len == 0) {
-                    EMPTY.index = index;
-                    EMPTY.last = last;
-                    return EMPTY;
+                    PortableSinglePosition empty = emptyPosition();
+                    empty.index = index;
+                    empty.last = last;
+                    return empty;
                 } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    NULL.last = last;
-                    return NULL;
+                    PortableSinglePosition nil = nilPosition();
+                    nil.last = last;
+                    return nil;
                 } else if (index >= len) {
-                    NULL.last = last;
-                    return NULL;
+                    PortableSinglePosition nil = nilPosition();
+                    nil.last = last;
+                    return nil;
                 } else {
                     return readPositionOfCurrentElement(new PortableSinglePosition(), fd, index);
                 }
             }
             if (fd.getType() == FieldType.PORTABLE_ARRAY) {
                 if (len == 0) {
-                    EMPTY.index = index;
-                    EMPTY.last = last;
-                    return EMPTY;
+                    PortableSinglePosition empty = emptyPosition();
+                    empty.index = index;
+                    empty.last = last;
+                    return empty;
                 } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    NULL.last = last;
-                    return NULL;
+                    PortableSinglePosition nil = nilPosition();
+                    nil.last = last;
+                    return nil;
                 } else if (index >= len) {
-                    NULL.last = last;
-                    return NULL;
+                    PortableSinglePosition nil = nilPosition();
+                    nil.last = last;
+                    return nil;
                 } else {
                     advanceToNextTokenFromPortableArrayElement(fd, index, field);
                 }
