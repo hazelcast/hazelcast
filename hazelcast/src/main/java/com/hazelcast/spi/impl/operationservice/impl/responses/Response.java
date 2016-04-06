@@ -46,13 +46,12 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 //todo: we need to fix the magic numbers
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Response implements IdentifiedDataSerializable {
-    public static final boolean USE_BIG_ENDIAN = true;
-
-    private final static int OFFSET_SERIALIZER_ID = 4;
-    private final static int OFFSET_FACTORY_ID = 9;
-    private final static int OFFSET_TYPE_ID = 13;
-    private final static int OFFSET_CALL_ID = 17;
-    private final static int OFFSET_BACKUP_COUNT = 26;
+    private static final boolean USE_BIG_ENDIAN = true;
+    private static final int OFFSET_SERIALIZER_ID = 4;
+    private static final int OFFSET_FACTORY_ID = 9;
+    private static final int OFFSET_TYPE_ID = 13;
+    private static final int OFFSET_CALL_ID = 17;
+    private static final int OFFSET_BACKUP_COUNT = 26;
 
     protected long callId;
     protected boolean urgent;
