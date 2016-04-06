@@ -40,6 +40,9 @@ import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.Thread.currentThread;
+import static java.util.concurrent.locks.LockSupport.park;
+import static java.util.concurrent.locks.LockSupport.parkNanos;
+import static java.util.concurrent.locks.LockSupport.unpark;
 
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
@@ -97,7 +100,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         Object response = registerWaiter(callback, executor);
         if (response != VOID) {
-            unblockExecutionCallback(callback, executor);
+            unblock(callback, executor);
         }
     }
 
@@ -139,10 +142,10 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private void unblockAll(Object waiter, Executor executor) {
         while (waiter != null) {
             if (waiter instanceof Thread) {
-                LockSupport.unpark((Thread) waiter);
+                unpark((Thread) waiter);
                 return;
             } else if (waiter instanceof ExecutionCallback) {
-                unblockExecutionCallback((ExecutionCallback) waiter, executor);
+                unblock((ExecutionCallback) waiter, executor);
                 return;
             } else if (waiter.getClass() == WaitNode.class) {
                 WaitNode waitNode = (WaitNode) waiter;
@@ -154,7 +157,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-    private void unblockExecutionCallback(final ExecutionCallback<E> callback, Executor executor) {
+    private void unblock(final ExecutionCallback<E> callback, Executor executor) {
         //todo: hack to make sure executor is available
         if (executor == null) {
             executor = invocation.operationService.asyncExecutor;
@@ -214,7 +217,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         // we are going to park for a result; however it can be that we get spurious wake-ups so
         // we need to recheck the state. We don't need to reregister
         for (; ; ) {
-            LockSupport.park();
+            park();
             Object state = this.state;
             if (isDone(state)) {
                 return resolveAndThrow(state);
@@ -247,7 +250,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         // we are going to park for a result; however it can be that we get spurious wake-ups so
         // we need to recheck the state. We don't need to re-registerWaiter
         for (; ; ) {
-            LockSupport.parkNanos(timeoutNanos);
+            parkNanos(timeoutNanos);
             long endTimeNanos = System.nanoTime();
             timeoutNanos -= endTimeNanos - startTimeNanos;
             startTimeNanos = endTimeNanos;
@@ -355,7 +358,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return response;
     }
 
-    private Object newOperationTimeoutException(boolean heartbeatTimeout) {
+    private ExecutionException newOperationTimeoutException(boolean heartbeatTimeout) {
         StringBuilder sb = new StringBuilder();
         if (heartbeatTimeout) {
             sb.append(invocation.op.getClass().getSimpleName())
