@@ -23,7 +23,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import java.util.Map;
 import java.util.Set;
 
-public class TestPredicate implements IndexAwarePredicate {
+public class TestPredicate implements IndexAwarePredicate<String, TempData> {
 
     private String value;
     private boolean didApply;
@@ -32,14 +32,14 @@ public class TestPredicate implements IndexAwarePredicate {
         this.value = value;
     }
 
-    public boolean apply(Map.Entry mapEntry) {
+    public boolean apply(Map.Entry<String, TempData> mapEntry) {
         didApply = true;
         TempData data = (TempData) mapEntry.getValue();
         return data.getAttr1().equals(value);
     }
 
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        return queryContext.getIndex("attr1").getRecords(value);
+    public Set<QueryableEntry<String, TempData>> filter(QueryContext queryContext) {
+        return (Set) queryContext.getIndex("attr1").getRecords(value);
     }
 
     public boolean isIndexed(QueryContext queryContext) {
