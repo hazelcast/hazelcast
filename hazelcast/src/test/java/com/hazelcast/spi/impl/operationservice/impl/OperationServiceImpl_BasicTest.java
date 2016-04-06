@@ -47,6 +47,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -67,10 +68,11 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
     public void testGetGenericThreadCount(){
         Config config = new Config();
         config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "5");
+        config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
         HazelcastInstance hz = createHazelcastInstance(config);
         OperationServiceImpl operationService = getOperationServiceImpl(hz);
 
-        assertEquals(5, operationService.getGenericThreadCount());
+        assertEquals(6, operationService.getGenericThreadCount());
     }
 
     // there was a memory leak caused by the invocation not releasing the backup registration
@@ -132,7 +134,7 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
         HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz1);
         OperationService operationService = impl.node.nodeEngine.getOperationService();
 
-        Address address = ((MemberImpl) hz2.getCluster().getLocalMember()).getAddress();
+        Address address = hz2.getCluster().getLocalMember().getAddress();
 
         Operation operation = new GithubIssue2559Operation();
         String serviceName = DistributedExecutorService.SERVICE_NAME;

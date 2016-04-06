@@ -12,8 +12,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -22,52 +21,159 @@ import static org.junit.Assert.assertSame;
 @Category(QuickTest.class)
 public class DefaultOperationQueueTest extends HazelcastTestSupport {
 
-    private DefaultOperationQueue queue;
-    private LinkedBlockingQueue normalQueue;
-    private ConcurrentLinkedQueue priorityQueue;
+    private DefaultOperationQueue operationQueue;
+    private ArrayBlockingQueue normalQueue;
+    private ArrayBlockingQueue priorityQueue;
 
     @Before
     public void setup() {
-        normalQueue = new LinkedBlockingQueue();
-        priorityQueue = new ConcurrentLinkedQueue();
-        queue = new DefaultOperationQueue(normalQueue, priorityQueue);
+        normalQueue = new ArrayBlockingQueue(100);
+        priorityQueue = new ArrayBlockingQueue(100);
+        operationQueue = new DefaultOperationQueue(normalQueue, priorityQueue);
     }
 
     // ================== add =====================
 
     @Test(expected = NullPointerException.class)
-    public void test_add_whenNull() {
-        queue.add(null);
+    public void add_whenNull() {
+        operationQueue.add(null, false);
     }
 
     @Test
-    public void test_add_whenPriority() {
+    public void add_whenPriority() throws InterruptedException {
         Object task = new Object();
-        queue.addUrgent(task);
+        operationQueue.add(task, true);
 
-        assertContent(priorityQueue, task);
-        assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
-        assertEquals(1, queue.prioritySize());
-        assertEquals(1, queue.normalSize());
-        assertEquals(2, queue.size());
+        assertEquals(1, operationQueue.prioritySize());
+        assertEquals(1, operationQueue.normalSize());
+        assertEquals(2, operationQueue.size());
+        assertEquals(1, priorityQueue.size());
+        assertEquals(1, normalQueue.size());
+
+        assertSame(task, priorityQueue.iterator().next());
+        assertSame(DefaultOperationQueue.TRIGGER_TASK, normalQueue.iterator().next());
     }
 
     @Test
-    public void test_add_whenNormal() {
+    public void add_whenNormal() {
         Object task = new Object();
-        queue.add(task);
+        operationQueue.add(task, false);
 
         assertContent(normalQueue, task);
         assertEmpty(priorityQueue);
-        assertEquals(0, queue.prioritySize());
-        assertEquals(1, queue.normalSize());
-        assertEquals(1, queue.size());
+        assertEquals(0, operationQueue.prioritySize());
+        assertEquals(1, operationQueue.normalSize());
+        assertEquals(1, operationQueue.size());
     }
 
     // ================== take =====================
 
     @Test
-    public void test_take_priorityIsRetrievedFirst() throws InterruptedException {
+    public void take_whenPriorityItemAvailable() throws InterruptedException {
+        Object task1 = "task1";
+        Object task2 = "task2";
+        Object task3 = "task3";
+
+        operationQueue.add(task1, true);
+        operationQueue.add(task2, true);
+        operationQueue.add(task3, true);
+
+        assertSame(task1, operationQueue.take(false));
+        assertSame(task2, operationQueue.take(false));
+        assertSame(task3, operationQueue.take(false));
+
+        assertEquals(3, operationQueue.size());
+        assertEquals(0, operationQueue.prioritySize());
+        assertEquals(3, operationQueue.normalSize());
+    }
+
+    /**
+     * It could be that in the low priority query there are a bunch of useless trigger tasks preceding a regular tasks.
+      */
+    @Test
+    public void take_whenLowPriority_andManyPrecedingTriggerTasks() throws InterruptedException {
+        Object task1 = "task1";
+        Object task2 = "task2";
+        Object task3 = "task3";
+        Object task4 = "task4";
+
+        operationQueue.add(task1, true);
+        operationQueue.add(task2, true);
+        operationQueue.add(task3, true);
+        operationQueue.add(task4, false);
+
+        assertSame(task1, operationQueue.take(false));
+        assertSame(task2, operationQueue.take(false));
+        assertSame(task3, operationQueue.take(false));
+
+        // at this moment there are 3 trigger tasks and 1 normal task
+        assertEquals(4, operationQueue.size());
+
+        // when we take the item
+        assertSame(task4, operationQueue.take(false));
+
+        // all the trigger tasks are drained
+        assertEquals(0, operationQueue.size());
+        assertEquals(0, operationQueue.prioritySize());
+        assertEquals(0, operationQueue.normalSize());
+    }
+
+    @Test
+    public void take_whenRegularItemAvailable() throws InterruptedException {
+        Object task1 = "task1";
+        Object task2 = "task2";
+        Object task3 = "task3";
+
+        operationQueue.add(task1, false);
+        operationQueue.add(task2, false);
+        operationQueue.add(task3, false);
+
+        assertSame(task1, operationQueue.take(false));
+        assertSame(task2, operationQueue.take(false));
+        assertSame(task3, operationQueue.take(false));
+
+        assertEquals(0, operationQueue.size());
+        assertEquals(0, operationQueue.prioritySize());
+        assertEquals(0, operationQueue.normalSize());
+    }
+
+    @Test
+    public void take_whenPriorityAndRegularItemAvailable() throws InterruptedException {
+        Object task1 = "task1";
+        Object task2 = "task2";
+        Object task3 = "task3";
+
+        operationQueue.add(task1, true);
+        operationQueue.add(task2, false);
+        operationQueue.add(task3, true);
+
+        assertSame(task1, operationQueue.take(true));
+        assertSame(task3, operationQueue.take(true));
+
+        assertEquals(0, operationQueue.prioritySize());
+    }
+
+    @Test
+    public void take_whenPriority_andNoItemAvailable_thenBlockTillItemAvailable() throws InterruptedException {
+        final Object task1 = "task1";
+        final Object task2 = "task2";
+
+        operationQueue.add(task1, false);
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                sleepSeconds(4);
+                operationQueue.add(task2, true);
+            }
+        });
+
+        assertSame(task2, operationQueue.take(true));
+        assertEquals(0, operationQueue.prioritySize());
+    }
+
+    @Test
+    public void take_priorityIsRetrievedFirst() throws InterruptedException {
         Object priorityTask1 = "priority1";
         Object priorityTask2 = "priority2";
         Object priorityTask3 = "priority4";
@@ -76,27 +182,27 @@ public class DefaultOperationQueueTest extends HazelcastTestSupport {
         Object normalTask2 = "normalTask2";
         Object normalTask3 = "normalTask3";
 
-        queue.addUrgent(priorityTask1);
-        queue.add(normalTask1);
-        queue.add(normalTask2);
+        operationQueue.add(priorityTask1, true);
+        operationQueue.add(normalTask1, false);
+        operationQueue.add(normalTask2, false);
 
-        queue.addUrgent(priorityTask2);
-        queue.add(normalTask3);
-        queue.addUrgent(priorityTask3);
+        operationQueue.add(priorityTask2, true);
+        operationQueue.add(normalTask3, false);
+        operationQueue.add(priorityTask3, true);
 
-        assertSame(priorityTask1, queue.take());
-        assertSame(priorityTask2, queue.take());
-        assertSame(priorityTask3, queue.take());
-        assertSame(normalTask1, queue.take());
-        assertSame(normalTask2, queue.take());
-        assertSame(normalTask3, queue.take());
+        assertSame(priorityTask1, operationQueue.take(false));
+        assertSame(priorityTask2, operationQueue.take(false));
+        assertSame(priorityTask3, operationQueue.take(false));
+        assertSame(normalTask1, operationQueue.take(false));
+        assertSame(normalTask2, operationQueue.take(false));
+        assertSame(normalTask3, operationQueue.take(false));
 
         assertEmpty(priorityQueue);
-        assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
+        //assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
     }
 
     public void assertEmpty(Queue q) {
-        assertEquals("expecting an empty queue, but the queue is:" + q, 0, q.size());
+        assertEquals("expecting an empty operationQueue, but the operationQueue is:" + q, 0, q.size());
     }
 
     public void assertContent(Queue q, Object... expected) {

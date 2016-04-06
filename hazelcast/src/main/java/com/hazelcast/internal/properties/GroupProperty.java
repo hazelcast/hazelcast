@@ -77,6 +77,18 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty GENERIC_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.generic.thread.count", -1);
+    /**
+     * The number of priority generic operation handler threads per Member.
+     * <p/>
+     * The default is 1.
+     *
+     * Having at least 1 priority generic operation thread helps to improve cluster stability since a lot of the cluster
+     * operations are generic priority operations and they should get executed as soon as possible. If there is a dedicated
+     * generic operation thread, than these operations don't get delayed because the generic threads are busy executing regular
+     * user operations. So unless memory consumption is an issue, make sure there is at least 1 thread.
+     */
+    public static final HazelcastProperty PRIORITY_GENERIC_OPERATION_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.operation.priority.generic.thread.count", 1);
 
     /**
      * The number of threads that the client engine has available for processing requests that are not partition specific.

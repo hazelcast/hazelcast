@@ -36,10 +36,13 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.internal.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -76,7 +79,8 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     private final PartitionOperationThread[] partitionThreads;
     private final OperationRunner[] partitionOperationRunners;
 
-    private final OperationQueue genericQueue = new DefaultOperationQueue();
+    private final OperationQueue genericQueue
+            = new DefaultOperationQueue(new LinkedBlockingQueue<Object>(), new LinkedBlockingQueue<Object>());
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
     private final GenericOperationThread[] genericThreads;
@@ -84,6 +88,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
     private final Address thisAddress;
     private final OperationRunner adHocOperationRunner;
+    private final int priorityThreadCount;
 
     public OperationExecutorImpl(GroupProperties properties,
                                  LoggingService loggerService,
@@ -99,6 +104,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         this.partitionOperationRunners = initPartitionOperationRunners(properties, operationRunnerFactory);
         this.partitionThreads = initPartitionThreads(properties, threadGroup, nodeExtension);
 
+        this.priorityThreadCount = properties.getInteger(PRIORITY_GENERIC_OPERATION_THREAD_COUNT);
         this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
         this.genericThreads = initGenericThreads(threadGroup, nodeExtension);
     }
@@ -112,17 +118,19 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     private OperationRunner[] initGenericOperationRunners(GroupProperties properties, OperationRunnerFactory runnerFactory) {
-        int genericThreadCount = properties.getInteger(GENERIC_OPERATION_THREAD_COUNT);
-        if (genericThreadCount <= 0) {
+        int threadCount = properties.getInteger(GENERIC_OPERATION_THREAD_COUNT);
+        if (threadCount <= 0) {
             // default generic operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
-            genericThreadCount = Math.max(2, coreSize / 2);
+            threadCount = Math.max(2, coreSize / 2);
         }
 
-        OperationRunner[] operationRunners = new OperationRunner[genericThreadCount];
+
+        OperationRunner[] operationRunners = new OperationRunner[threadCount + priorityThreadCount];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = runnerFactory.createGenericRunner();
         }
+
         return operationRunners;
     }
 
@@ -158,21 +166,31 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return threads;
     }
 
-    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
+    private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup,
+                                                        NodeExtension nodeExtension) {
         // we created as many generic operation handlers, as there are generic threads
         int threadCount = genericOperationRunners.length;
+
         GenericOperationThread[] threads = new GenericOperationThread[threadCount];
 
-        for (int threadId = 0; threadId < threads.length; threadId++) {
-            String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
-            OperationRunner operationRunner = genericOperationRunners[threadId];
+        int threadId = 0;
+        for (int threadIndex = 0; threadIndex < threads.length; threadIndex++) {
+            boolean priority = threadIndex < priorityThreadCount;
+            String baseName = priority ? "priority-generic-operation" : "generic-operation";
+            String threadName = threadGroup.getThreadPoolNamePrefix(baseName) + threadId;
+            OperationRunner operationRunner = genericOperationRunners[threadIndex];
 
-            GenericOperationThread genericThread = new GenericOperationThread(
-                    threadName, threadId, genericQueue,
-                    logger, threadGroup, nodeExtension, operationRunner);
+            GenericOperationThread operationThread = new GenericOperationThread(
+                    threadName, threadIndex, genericQueue, logger, threadGroup, nodeExtension, operationRunner, priority);
 
-            threads[threadId] = genericThread;
-            operationRunner.setCurrentThread(genericThread);
+            threads[threadIndex] = operationThread;
+            operationRunner.setCurrentThread(operationThread);
+
+            if (threadIndex == priorityThreadCount - 1) {
+                threadId = 0;
+            } else {
+                threadId++;
+            }
         }
 
         return threads;
@@ -182,11 +200,11 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     public void provideMetrics(MetricsRegistry metricsRegistry) {
         metricsRegistry.scanAndRegister(this, "operation");
 
-        metricsRegistry.collectMetrics(genericThreads);
-        metricsRegistry.collectMetrics(partitionThreads);
+        metricsRegistry.collectMetrics((Object[]) genericThreads);
+        metricsRegistry.collectMetrics((Object[]) partitionThreads);
         metricsRegistry.collectMetrics(adHocOperationRunner);
-        metricsRegistry.collectMetrics(genericOperationRunners);
-        metricsRegistry.collectMetrics(partitionOperationRunners);
+        metricsRegistry.collectMetrics((Object[]) genericOperationRunners);
+        metricsRegistry.collectMetrics((Object[]) partitionOperationRunners);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -327,7 +345,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         checkNotNull(task, "task can't be null");
 
         for (OperationThread partitionThread : partitionThreads) {
-            partitionThread.queue.addUrgent(task);
+            partitionThread.queue.add(task, true);
         }
     }
 
@@ -454,10 +472,11 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
     @Override
     public void start() {
-        logger.info("Starting with " + genericThreads.length + " generic operation threads and "
-                + partitionThreads.length + " partition operation threads.");
-
+        logger.info("Starting " + partitionThreads.length + " partition threads");
         startAll(partitionThreads);
+
+        logger.info("Starting " + genericThreads.length + " generic threads ("
+                + priorityThreadCount + " dedicated for priority tasks)");
         startAll(genericThreads);
     }
 
@@ -493,6 +512,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
     @Override
     public String toString() {
-        return "ClassicOperationExecutor{node=" + thisAddress + '}';
+        return "OperationExecutorImpl{node=" + thisAddress + '}';
     }
 }
