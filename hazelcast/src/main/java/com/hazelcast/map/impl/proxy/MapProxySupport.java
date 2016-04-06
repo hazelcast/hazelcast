@@ -80,12 +80,12 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -93,6 +93,7 @@ import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -103,10 +104,12 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_PUT_ALL_INITIAL_SIZE_FACTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -137,9 +140,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
 
+    private final float putAllInitialSizeFactor;
+
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
         this.name = name;
+
+        HazelcastProperties properties = nodeEngine.getProperties();
 
         this.mapServiceContext = service.getMapServiceContext();
         this.mapContainer = mapServiceContext.getMapContainer(name);
@@ -147,12 +154,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(SERVICE_NAME, name),
-                LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getProperties()));
+                LockServiceImpl.getMaxLeaseTimeInMillis(properties));
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
+
+        this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
     }
 
     @Override
@@ -621,11 +630,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
-                for (Entry<Data, Data> entry : entries) {
-                    Data key = entry.getKey();
-                    Data value = entry.getValue();
-                    resultingKeyValuePairs.add(toObject(key));
-                    resultingKeyValuePairs.add(toObject(value));
+                for (int i = 0; i < entries.size(); i++) {
+                    resultingKeyValuePairs.add(toObject(entries.getKey(i)));
+                    resultingKeyValuePairs.add(toObject(entries.getValue(i)));
                 }
             }
         } catch (Exception e) {
@@ -673,46 +680,105 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * Probably this can be optimized in the future by making use of an PartitionIterating operation.
      */
     protected void putAllInternal(Map<?, ?> map) {
-        int partitionCount = partitionService.getPartitionCount();
-
         try {
+            int mapSize = map.size();
+            int partitionCount = partitionService.getPartitionCount();
+
+            // invoke operations
             List<Future> futures = new ArrayList<Future>(partitionCount);
-            MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
-
-            // first we fill entriesPerPartition
-            for (Entry entry : map.entrySet()) {
-                checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
-                checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
-
-                Data keyData = toData(entry.getKey(), partitionStrategy);
-
-                int partitionId = partitionService.getPartitionId(keyData);
-
-                MapEntries entries = entriesPerPartition[partitionId];
-                if (entries == null) {
-                    entries = new MapEntries();
-                    entriesPerPartition[partitionId] = entries;
-                }
-
-                entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
+            if (putAllInitialSizeFactor > 0) {
+                invokePutAllWithEstimation(map, mapSize, partitionCount, futures);
+            } else {
+                invokePutAllWithAnalysis(map, mapSize, partitionCount, futures);
             }
 
-            // then we invoke the operations
-            for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
-                MapEntries entries = entriesPerPartition[partitionId];
-                if (entries != null) {
-                    // if there is a single entry, we could make use of a PutOperation since that is a bit cheaper
-                    Future future = createPutAllOperationFuture(name, entries, partitionId);
-                    futures.add(future);
-                }
-            }
-
-            // then we sync on completion of these operations
+            // sync on completion of the operations
             for (Future future : futures) {
                 future.get();
             }
         } catch (Exception e) {
             throw rethrow(e);
+        }
+    }
+
+    private void invokePutAllWithEstimation(Map<?, ?> map, int mapSize, int partitionCount, List<Future> futures) {
+        int initialSize = (int) ceil(putAllInitialSizeFactor * mapSize / partitionCount);
+
+        // fill entriesPerPartition
+        MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
+        for (Entry entry : map.entrySet()) {
+            checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+            checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
+            Data keyData = toData(entry.getKey(), partitionStrategy);
+            int partitionId = partitionService.getPartitionId(keyData);
+            MapEntries entries = entriesPerPartition[partitionId];
+            if (entries == null) {
+                entries = new MapEntries(initialSize);
+                entriesPerPartition[partitionId] = entries;
+            }
+
+            entries.add(keyData, toData(entry.getValue()));
+        }
+
+        // invoke the operations
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            MapEntries entries = entriesPerPartition[partitionId];
+            if (entries != null) {
+                Future future = createPutAllOperationFuture(name, entries, partitionId);
+                futures.add(future);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void invokePutAllWithAnalysis(Map<?, ?> map, int mapSize, int partitionCount, List<Future> futures) {
+        int[] keyPartitionArray = new int[mapSize];
+        List<Data>[] keyDataArray = new List[partitionCount];
+        List<Data>[] valueDataArray = new List[partitionCount];
+
+        // fill keys per partition
+        Iterator<?> keyIterator = map.keySet().iterator();
+        for (int i = 0; i < mapSize; i++) {
+            Object key = keyIterator.next();
+            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+            Data keyData = toData(key, partitionStrategy);
+            int partitionId = partitionService.getPartitionId(keyData);
+
+            List<Data> keys = keyDataArray[partitionId];
+            if (keys == null) {
+                keys = new LinkedList<Data>();
+                keyDataArray[partitionId] = keys;
+            }
+            keys.add(keyData);
+
+            keyPartitionArray[i] = partitionId;
+        }
+
+        // fill values per partition
+        Iterator<?> valueIterator = map.values().iterator();
+        for (int i = 0; i < mapSize; i++) {
+            Object value = valueIterator.next();
+            checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+            int partitionId = keyPartitionArray[i];
+            List<Data> values = valueDataArray[partitionId];
+            if (values == null) {
+                values = new ArrayList<Data>(keyDataArray[partitionId].size());
+                valueDataArray[partitionId] = values;
+            }
+
+            values.add(toData(value));
+        }
+
+        // invoke the operations
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            List<Data> keys = keyDataArray[partitionId];
+            if (keys != null) {
+                Future future = createPutAllOperationFuture(name, new MapEntries(keys, valueDataArray[partitionId]), partitionId);
+                futures.add(future);
+            }
         }
     }
 
@@ -895,9 +961,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Map<Integer, Object> results = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitionsForKeys);
             for (Object object : results.values()) {
                 if (object != null) {
-                    for (Entry<Data, Data> entry : (MapEntries) object) {
-                        result.put(toObject(entry.getKey()), toObject(entry.getValue()));
-                    }
+                    MapEntries mapEntries = (MapEntries) object;
+                    mapEntries.putAllToMap(serializationService, result);
                 }
             }
         } catch (Throwable t) {
@@ -936,12 +1001,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object object : results.values()) {
                 if (object != null) {
                     MapEntries mapEntries = (MapEntries) object;
-                    for (Entry<Data, Data> entry : mapEntries) {
-                        Data key = entry.getKey();
-                        Data value = entry.getValue();
-
-                        result.add(key);
-                        result.add(value);
+                    for (int i = 0; i < mapEntries.size(); i++) {
+                        result.add(mapEntries.getKey(i));
+                        result.add(mapEntries.getValue(i));
                     }
                 }
             }

@@ -35,7 +35,6 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -223,16 +222,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
 
     protected long getLatencyFrom(long begin) {
         return Clock.currentTimeMillis() - begin;
-    }
-
-    protected void addToResponses(Data key, Data response) {
-        if (response == null) {
-            return;
-        }
-        if (responses == null) {
-            responses = new MapEntries();
-        }
-        responses.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, response));
     }
 
     protected Data process(Map.Entry entry) {

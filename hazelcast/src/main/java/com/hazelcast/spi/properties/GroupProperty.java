@@ -25,6 +25,8 @@ import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 
+import java.util.Map;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -171,6 +173,30 @@ public final class GroupProperty {
 
     public static final HazelcastProperty MAP_LOAD_CHUNK_SIZE
             = new HazelcastProperty("hazelcast.map.load.chunk.size", 1000);
+
+    /**
+     * Defines if {@link IMap#putAll(Map)} should estimate the size of arrays per partition or analyze them correctly.
+     *
+     * The default value of -1 disables the estimation, which is a good overall strategy. This strategy creates a fair amount of
+     * litter, which is an {@code int[]} of the size of the map and a {@code LinkedList$Node} for each key of the inserted map.
+     *
+     * If you insert entries which are distributed well among the partitions you can configure this factor.
+     * This safes the litter mentioned above, since we directly create {@code ArrayLists} of the estimated initial size.
+     * The initial size is calculated by this formula:
+     * {@code initialSize = ceil(MAP_PUT_ALL_INITIAL_SIZE_FACTOR * map.size() / PARTITION_COUNT)}
+     *
+     * As a rule of thumb you can try the following values:
+     * <ul>
+     *     <li>{@code 10} for map sizes about 100 entries</li>
+     *     <li>{@code 5} for map sizes between 500 and 5000 entries</li>
+     *     <li>{@code 1.5} for map sizes between about 50000 entries</li>
+     * </ul>
+     *
+     * If you set this value too high, you will waste memory.
+     * If you set this value too low, you will suffer from expensive {@link java.util.Arrays#copyOf} calls.
+     */
+    public static final HazelcastProperty MAP_PUT_ALL_INITIAL_SIZE_FACTOR
+            = new HazelcastProperty("hazelcast.map.put.all.initial.size.factor", -1);
 
     public static final HazelcastProperty MERGE_FIRST_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.first.run.delay.seconds", 300, SECONDS);
