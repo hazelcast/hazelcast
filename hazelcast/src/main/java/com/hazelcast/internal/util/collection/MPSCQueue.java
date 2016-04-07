@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.util;
+package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -25,6 +25,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.locks.LockSupport.park;
 import static java.util.concurrent.locks.LockSupport.unpark;
 
@@ -70,9 +71,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     @Override
     public boolean offer(E value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value can't be null");
-        }
+        checkNotNull(value,"value can't be null");
 
         AtomicReference<Node> head = putStackHead;
         Node newHead = new Node();
@@ -187,7 +186,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
         }
     }
 
-    public boolean pollAll() {
+    private boolean pollAll() {
         AtomicReference<Node> head = putStackHead;
         for (; ; ) {
             Node headNode = head.get();
