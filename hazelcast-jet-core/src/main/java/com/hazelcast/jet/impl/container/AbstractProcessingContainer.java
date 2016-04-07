@@ -237,43 +237,23 @@ public abstract class AbstractProcessingContainer extends
         if (taskCount == 0) {
             throw new IllegalStateException("No containerTasks for container");
         }
-
+        
         List<ObjectProducer> producers = new ArrayList<ObjectProducer>(this.sourcesProducers);
+        List<ObjectProducer>[] tasksProducers = new List[taskCount];
 
-        int producersCount = producers.size();
+        for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
+            tasksProducers[taskIdx] = new ArrayList<ObjectProducer>();
+        }
 
-        if (producersCount > 0) {
-            int producersPerTask = producersCount / taskCount;
+        int taskId = 0;
 
-            if (producersPerTask == 0) {
-                startTask(producers, 0);
+        for (ObjectProducer producer : producers) {
+            tasksProducers[taskId].add(producer);
+            taskId = (taskId + 1) % taskCount;
+        }
 
-                for (int taskIdx = 1; taskIdx < getContainerTasks().length; taskIdx++) {
-                    startTask(new ArrayList<ObjectProducer>(), taskIdx);
-                }
-            } else {
-                for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
-                    int startIdx = taskIdx * producersPerTask;
-
-                    if (startIdx > producersCount - 1) {
-                        break;
-                    }
-
-                    int toIndex;
-
-                    if (taskIdx == taskCount - 1) {
-                        toIndex = producersCount;
-                    } else {
-                        toIndex = startIdx + producersPerTask;
-                    }
-
-                    startTask(producers.subList(startIdx, toIndex), taskIdx);
-                }
-            }
-        } else {
-            for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
-                startTask(new ArrayList<ObjectProducer>(), taskIdx);
-            }
+        for (int taskIdx = 0; taskIdx < getContainerTasks().length; taskIdx++) {
+            startTask(tasksProducers[taskIdx], taskIdx);
         }
     }
 
@@ -329,8 +309,8 @@ public abstract class AbstractProcessingContainer extends
         for (SinkTap sinkTap : sinks) {
             if (!sinkTap.isPartitioned()) {
                 List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
-                        getNodeEngine(),
-                        getContainerContext())
+                                getNodeEngine(),
+                                getContainerContext())
                 );
                 int i = 0;
 
@@ -347,8 +327,8 @@ public abstract class AbstractProcessingContainer extends
             } else {
                 for (ContainerTask containerTask : getContainerTasks()) {
                     List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
-                            getNodeEngine(),
-                            getContainerContext())
+                                    getNodeEngine(),
+                                    getContainerContext())
                     );
 
                     containerTask.registerSinkWriters(writers);
