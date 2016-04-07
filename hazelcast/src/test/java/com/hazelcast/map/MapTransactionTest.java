@@ -1239,15 +1239,15 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance node = factory.newHazelcastInstance(config);
-        final IMap map = node.getMap(mapName);
+        final IMap<Integer, Employee> map = node.getMap(mapName);
 
         final Employee emp = new Employee("name", 77, true, 10D);
         map.put(1, emp);
 
         node.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
-                PagingPredicate predicate = new PagingPredicate(5);
+                final TransactionalMap<Integer, Employee> txMap = context.getMap(mapName);
+                PagingPredicate<Integer, Employee> predicate = new PagingPredicate<Integer, Employee>(5);
                 txMap.values(predicate);
                 return true;
             }

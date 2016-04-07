@@ -69,14 +69,17 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * values = map.values(predicate);
  * System.out.println("values = " + values) // will print 'values = [0, 1]'
  * </pre>
+ *
+ * @param <K>
+ * @param <V>
  */
-public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSerializable {
+public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, IdentifiedDataSerializable {
 
     private static final Map.Entry<Integer, Map.Entry> NULL_ANCHOR = new SimpleImmutableEntry(-1, null);
 
-    private List<Map.Entry<Integer, Map.Entry>> anchorList;
-    private Predicate predicate;
-    private Comparator<Map.Entry> comparator;
+    private List<Map.Entry<Integer, Map.Entry<K, V>>> anchorList;
+    private Predicate<K, V> predicate;
+    private Comparator<Map.Entry<K, V>> comparator;
     private int pageSize;
     private int page;
     private IterationType iterationType;
@@ -100,7 +103,7 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
             throw new IllegalArgumentException("pageSize should be greater than 0 !!!");
         }
         this.pageSize = pageSize;
-        anchorList = new ArrayList<Map.Entry<Integer, Map.Entry>>();
+        anchorList = new ArrayList<Map.Entry<Integer, Map.Entry<K, V>>>();
     }
 
     /**
@@ -127,7 +130,7 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
      * @param comparator the comparator through which results will be ordered
      * @param pageSize   the page size
      */
-    public PagingPredicate(Comparator<Map.Entry> comparator, int pageSize) {
+    public PagingPredicate(Comparator<Map.Entry<K, V>> comparator, int pageSize) {
         this(pageSize);
         this.comparator = comparator;
     }
@@ -143,7 +146,7 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
      * @param comparator the comparator through which results will be ordered
      * @param pageSize   the page size
      */
-    public PagingPredicate(Predicate predicate, Comparator<Map.Entry> comparator, int pageSize) {
+    public PagingPredicate(Predicate<K, V> predicate, Comparator<Map.Entry<K, V>> comparator, int pageSize) {
         this(pageSize);
         setInnerPredicate(predicate);
         this.comparator = comparator;
@@ -156,7 +159,7 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
      * @param predicate the inner predicate through which results will be filtered
      */
 
-    private void setInnerPredicate(Predicate predicate) {
+    private void setInnerPredicate(Predicate<K, V> predicate) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Nested PagingPredicate is not supported!!!");
         }
@@ -170,25 +173,26 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
      * @return
      */
     @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
+    public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
         if (!(predicate instanceof IndexAwarePredicate)) {
             return null;
         }
 
-        Set<QueryableEntry> set = ((IndexAwarePredicate) predicate).filter(queryContext);
+        Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
         if (set == null || set.isEmpty()) {
             return null;
         }
-        List<QueryableEntry> resultList = new ArrayList<QueryableEntry>();
+        List<QueryableEntry<K, V>> resultList = new ArrayList<QueryableEntry<K, V>>();
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry();
-        for (QueryableEntry queryableEntry : set) {
+        for (QueryableEntry<K, V> queryableEntry : set) {
             if (SortingUtil.compareAnchor(this, queryableEntry, nearestAnchorEntry)) {
                 resultList.add(queryableEntry);
             }
         }
 
-        List<QueryableEntry> sortedSubList = SortingUtil.getSortedSubList(resultList, this, nearestAnchorEntry);
-        return new LinkedHashSet<QueryableEntry>(sortedSubList);
+        List<QueryableEntry<K, V>> sortedSubList =
+                (List) SortingUtil.getSortedSubList((List) resultList, this, nearestAnchorEntry);
+        return new LinkedHashSet<QueryableEntry<K, V>>(sortedSubList);
     }
 
 
@@ -265,11 +269,11 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
         return pageSize;
     }
 
-    public Predicate getPredicate() {
+    public Predicate<K, V> getPredicate() {
         return predicate;
     }
 
-    public Comparator<Map.Entry> getComparator() {
+    public Comparator<Map.Entry<K, V>> getComparator() {
         return comparator;
     }
 
@@ -280,8 +284,8 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
      *
      * @return Map.Entry the anchor object which is the last value object on the previous page
      */
-    public Map.Entry getAnchor() {
-        Map.Entry<Integer, Map.Entry> anchorEntry = anchorList.get(page);
+    public Map.Entry<K, V> getAnchor() {
+        Map.Entry<Integer, Map.Entry<K, V>> anchorEntry = anchorList.get(page);
         return anchorEntry == null ? null : anchorEntry.getValue();
     }
 
@@ -336,9 +340,9 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
         out.writeInt(pageSize);
         out.writeUTF(iterationType.name());
         out.writeInt(anchorList.size());
-        for (Map.Entry<Integer, Map.Entry> anchor : anchorList) {
+        for (Map.Entry<Integer, Map.Entry<K, V>> anchor : anchorList) {
             out.writeInt(anchor.getKey());
-            Map.Entry anchorEntry = anchor.getValue();
+            Map.Entry<K, V> anchorEntry = anchor.getValue();
             out.writeObject(anchorEntry.getKey());
             out.writeObject(anchorEntry.getValue());
         }
@@ -352,13 +356,13 @@ public class PagingPredicate implements IndexAwarePredicate, IdentifiedDataSeria
         pageSize = in.readInt();
         iterationType = IterationType.valueOf(in.readUTF());
         int size = in.readInt();
-        anchorList = new ArrayList<Map.Entry<Integer, Map.Entry>>(size);
+        anchorList = new ArrayList<Map.Entry<Integer, Map.Entry<K, V>>>(size);
         for (int i = 0; i < size; i++) {
             int anchorPage = in.readInt();
             Object anchorKey = in.readObject();
             Object anchorValue = in.readObject();
             Map.Entry anchorEntry = new SimpleImmutableEntry(anchorKey, anchorValue);
-            anchorList.add(new SimpleImmutableEntry(anchorPage, anchorEntry));
+            anchorList.add(new SimpleImmutableEntry<Integer, Map.Entry<K, V>>(anchorPage, anchorEntry));
         }
     }
 
