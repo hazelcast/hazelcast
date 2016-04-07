@@ -44,7 +44,7 @@ public class Long2LongMapHsaTest {
 
     @Before
     public void setUp() throws Exception {
-        memMgr = new HeapMemoryManager(32 * 1000 * 1000);
+        memMgr = new HeapMemoryManager(2 * 1000 * 1000);
         map = new Long2LongMapHsa(MISSING_VALUE, memMgr);
     }
 
