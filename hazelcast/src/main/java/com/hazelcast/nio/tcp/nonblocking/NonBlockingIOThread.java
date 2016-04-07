@@ -212,9 +212,9 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     private void runSelectLoop() throws IOException {
         while (!isInterrupted()) {
-            boolean ready = processTaskQueue();
+            processTaskQueue();
 
-            int selectedKeys = ready ? selector.select(SELECT_WAIT_TIME_MILLIS) : selector.selectNow();
+            int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
             if (selectedKeys > 0) {
                 lastSelectTimeMs = currentTimeMillis();
                 handleSelectionKeys();
@@ -234,15 +234,14 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
-    private boolean processTaskQueue() {
-        //while (!isInterrupted()) {
-        Runnable task = taskQueue.poll();
-        if (task == null) {
-            return true;
+    private void processTaskQueue() {
+        while (!isInterrupted()) {
+            Runnable task = taskQueue.poll();
+            if (task == null) {
+                return;
+            }
+            executeTask(task);
         }
-        executeTask(task);
-        return false;
-        //}
     }
 
     private void executeTask(Runnable task) {
