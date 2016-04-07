@@ -42,43 +42,46 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  * @param <E>
  */
 public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
-    private static final Node BLOCKED = new Node();
-    private static final int INITIAL_ARRAY_SIZE = 512;
+    static final int INITIAL_ARRAY_SIZE = 512;
+    static final Node BLOCKED = new Node();
 
-    private final AtomicReference<Node> putStackHead = new AtomicReference<Node>();
-
-    private Thread owningThread;
+    final AtomicReference<Node> putStack = new AtomicReference<Node>();
     private final IdleStrategy idleStrategy;
 
     // will only be used by the owningThread.
-    private Object[] array;
-    private int arrayIndex = -1;
+    private Thread owningThread;
+    private Object[] takeStack = new Object[INITIAL_ARRAY_SIZE];
+    private int takeStackIndex = -1;
 
     public MPSCQueue(Thread owningThread, IdleStrategy idleStrategy) {
         this.owningThread = owningThread;
-        this.array = new Object[INITIAL_ARRAY_SIZE];
-        this.idleStrategy = idleStrategy;
+        this.idleStrategy = checkNotNull(idleStrategy, "idleStrategy can't be null");
     }
 
     public void setOwningThread(Thread owningThread) {
         this.owningThread = owningThread;
     }
 
+    /**
+     * {@inheritDoc}.
+     *
+     * This call is threadsafe; but it will only remove the items that are on the put-stack.
+     */
     @Override
     public void clear() {
-        putStackHead.set(null);
+        putStack.set(BLOCKED);
     }
 
     @Override
     public boolean offer(E value) {
-        checkNotNull(value,"value can't be null");
+        checkNotNull(value, "value can't be null");
 
-        AtomicReference<Node> head = putStackHead;
+        AtomicReference<Node> putStack = this.putStack;
         Node newHead = new Node();
         newHead.value = value;
 
         for (; ; ) {
-            Node oldHead = head.get();
+            Node oldHead = putStack.get();
             if (oldHead == null || oldHead == BLOCKED) {
                 newHead.next = null;
                 newHead.size = 1;
@@ -87,7 +90,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
                 newHead.size = oldHead.size + 1;
             }
 
-            if (!head.compareAndSet(oldHead, newHead)) {
+            if (!putStack.compareAndSet(oldHead, newHead)) {
                 continue;
             }
 
@@ -107,8 +110,8 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
         }
 
         takeAll();
-        assert arrayIndex == 0;
-        assert array[arrayIndex] != null;
+        assert takeStackIndex == 0;
+        assert takeStack[takeStackIndex] != null;
 
         return next();
     }
@@ -121,7 +124,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
             return item;
         }
 
-        if (!pollAll()) {
+        if (!drainPutStack()) {
             return null;
         }
 
@@ -129,35 +132,35 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     private E next() {
-        if (arrayIndex == -1) {
+        if (takeStackIndex == -1) {
             return null;
         }
 
-        if (arrayIndex == array.length) {
-            arrayIndex = -1;
+        if (takeStackIndex == takeStack.length) {
+            takeStackIndex = -1;
             return null;
         }
 
-        E item = (E) array[arrayIndex];
+        E item = (E) takeStack[takeStackIndex];
         if (item == null) {
-            arrayIndex = -1;
+            takeStackIndex = -1;
             return null;
         }
-        array[arrayIndex] = null;
-        arrayIndex++;
+        takeStack[takeStackIndex] = null;
+        takeStackIndex++;
         return item;
     }
 
-    public void takeAll() throws InterruptedException {
+    private void takeAll() throws InterruptedException {
         long iteration = 0;
-        AtomicReference<Node> head = putStackHead;
+        AtomicReference<Node> putStack = this.putStack;
         for (; ; ) {
             if (owningThread.isInterrupted()) {
-                head.compareAndSet(BLOCKED, null);
+                putStack.compareAndSet(BLOCKED, null);
                 throw new InterruptedException();
             }
 
-            Node currentHead = head.get();
+            Node currentHead = putStack.get();
 
             if (currentHead == null) {
                 // first we try to idle;
@@ -167,7 +170,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
                 }
 
                 // there is nothing to be take, so lets block.
-                if (!head.compareAndSet(null, BLOCKED)) {
+                if (!putStack.compareAndSet(null, BLOCKED)) {
                     continue;
                 }
 
@@ -175,71 +178,69 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
             } else if (currentHead == BLOCKED) {
                 park();
             } else {
-                if (!head.compareAndSet(currentHead, null)) {
+                if (!putStack.compareAndSet(currentHead, null)) {
                     continue;
                 }
 
-                initArray(currentHead);
+                copyToArray(currentHead);
                 break;
             }
             iteration++;
         }
     }
 
-    private boolean pollAll() {
-        AtomicReference<Node> head = putStackHead;
+    private boolean drainPutStack() {
         for (; ; ) {
-            Node headNode = head.get();
-            if (headNode == null) {
+            Node head = putStack.get();
+            if (head == null) {
                 return false;
             }
 
-            if (head.compareAndSet(headNode, null)) {
-                initArray(headNode);
+            if (putStack.compareAndSet(head, null)) {
+                copyToArray(head);
                 return true;
             }
         }
     }
 
-    private void initArray(Node head) {
+    private void copyToArray(Node head) {
         int size = head.size;
 
         assert head != BLOCKED;
         assert size != 0;
 
-        Object[] drain = this.array;
-        if (size > drain.length) {
-            drain = new Object[head.size * 2];
-            this.array = drain;
+        Object[] takeArray = this.takeStack;
+        if (size > takeArray.length) {
+            takeArray = new Object[head.size * 2];
+            this.takeStack = takeArray;
         }
 
         for (int i = size - 1; i >= 0; i--) {
-            drain[i] = head.value;
+            takeArray[i] = head.value;
             head = head.next;
         }
 
-        for (int k = 0; k < array.length; k++) {
-            if (array[k] == null) {
+        for (int k = 0; k < this.takeStack.length; k++) {
+            if (this.takeStack[k] == null) {
                 break;
             }
         }
 
-        arrayIndex = 0;
-        assert array[0] != null;
+        takeStackIndex = 0;
+        assert this.takeStack[0] != null;
     }
 
     @Override
     public int size() {
-        //todo: size can't be relied upon because this items which have been copied into the array, are not visible apart
+        //todo: size can't be relied upon because this items which have been copied into the takeStack, are not visible apart
         //to the owning thread.
-        Node h = putStackHead.get();
+        Node h = putStack.get();
         return h == null ? 0 : h.size;
     }
 
     @Override
     public boolean isEmpty() {
         return size() == 0;
-        //  throw new UnsupportedOperationException();
     }
 
     @Override
@@ -249,7 +250,8 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
+        add(e);
+        return true;
     }
 
     @Override
@@ -259,7 +261,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
 
     @Override
     public int remainingCapacity() {
-        throw new UnsupportedOperationException();
+        return Integer.MAX_VALUE;
     }
 
     @Override
