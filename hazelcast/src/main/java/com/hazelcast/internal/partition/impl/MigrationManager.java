@@ -66,6 +66,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
 
 /**
@@ -102,6 +103,8 @@ public class MigrationManager {
     private final long partitionMigrationTimeout;
 
     private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
+
+    private final Set<Address> shutdownRequestedAddresses = new HashSet<Address>();
 
     // updates will be done under lock, but reads will be multithreaded.
     private volatile MigrationInfo activeMigrationInfo;
@@ -418,8 +421,17 @@ public class MigrationManager {
         internalMigrationListener = new InternalMigrationListener.NopInternalMigrationListener();
     }
 
+    void onShutdownRequest(Address address) {
+        if (shutdownRequestedAddresses.add(address)) {
+            logger.info("Shutdown request of " + address + " is handled");
+            triggerControlTask();
+        }
+    }
+
     void onMemberRemove(MemberImpl member) {
         Address deadAddress = member.getAddress();
+        shutdownRequestedAddresses.remove(deadAddress);
+
         final MigrationInfo activeMigration = activeMigrationInfo;
         if (activeMigration != null) {
             if (deadAddress.equals(activeMigration.getSource())
@@ -531,6 +543,10 @@ public class MigrationManager {
         partition.setReplicaAddresses(addresses);
     }
 
+    Set<Address> getShutdownRequestedAddresses() {
+        return shutdownRequestedAddresses;
+    }
+
     private class RepartitioningTask implements MigrationRunnable {
 
         @Override
@@ -555,6 +571,8 @@ public class MigrationManager {
                     migrationQueue.add(new CheckPartitionTableTask());
                 }
 
+                migrationQueue.add(new CheckShutdownRequestsTask());
+
                 partitionService.syncPartitionRuntimeState();
             } finally {
                 partitionServiceLock.unlock();
@@ -566,7 +584,7 @@ public class MigrationManager {
                 return null;
             }
 
-            Address[][] newState = partitionStateManager.repartition();
+            Address[][] newState = partitionStateManager.repartition(shutdownRequestedAddresses);
             if (newState == null) {
                 return null;
             }
@@ -1016,6 +1034,59 @@ public class MigrationManager {
                 partitionServiceLock.unlock();
             }
         }
+    }
+
+    private class CheckShutdownRequestsTask implements MigrationRunnable {
+
+        @Override
+        public void run() {
+            if (!node.isMaster()) {
+                return;
+            }
+
+            partitionServiceLock.lock();
+            try {
+                final int shutdownRequestCount = shutdownRequestedAddresses.size();
+                if (shutdownRequestCount > 0) {
+                    if (shutdownRequestCount == nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR)) {
+                        for (Address address : shutdownRequestedAddresses) {
+                            sendShutdownOperation(address);
+                        }
+                    } else {
+                        boolean present = false;
+                        for (Address address : shutdownRequestedAddresses) {
+                            if (isAbsentInPartitionTable(address)) {
+                                sendShutdownOperation(address);
+                            } else {
+                                logger.warning(address + " requested to shutdown but still in partition table");
+                                present  = true;
+                            }
+                        }
+
+                        if (present) {
+                            triggerControlTask();
+                        }
+                    }
+                }
+            } finally {
+                partitionServiceLock.unlock();
+            }
+        }
+
+        private boolean isAbsentInPartitionTable(Address address) {
+            for (InternalPartition partition : partitionStateManager.getPartitions()) {
+                if (partition.isOwnerOrBackup(address)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void sendShutdownOperation(Address address) {
+
+        }
+
     }
 
 }

@@ -22,13 +22,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
 /**
  * Queries if replica version is sync between partitions.
  */
-public class IsReplicaVersionSync extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
+public class IsReplicaVersionSync extends Operation
+        implements PartitionAwareOperation, MigrationCycleOperation, AllowedDuringPassiveState {
 
     private long version;
     private transient boolean result;

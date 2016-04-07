@@ -24,28 +24,17 @@ import java.util.Collection;
 public interface PartitionStateGenerator {
 
     /**
-     * Returns the initial layout for the partitions.
-     * <p/>
-     * A 2 dimensional array of addresses is returned where the first index is the partition id, and
-     * the second index is the replica index.
-     *
-     * @param groups
-     * @param partitionCount the number of partitions.
-     * @return
-     */
-    Address[][] initialize(final Collection<MemberGroup> groups, final int partitionCount);
-
-    /**
-     * Rearranges the partition layout.
+     * Arranges the partition layout.
      * <p/>
      * This method does not actually change the partitions, but send back the updated layout.
      * <p/>
-     * A 2 dimensional array of addresses is returned where the first index is the partition id, and
+     * A two-dimensional array of addresses is returned where the first index is the partition id, and
      * the second index is the replica index.
      *
-     * @param groups
-     * @param currentState the current partition state.
-     * @return
+     * @param groups member groups
+     * @param currentState current partition state.
+     * @return proposed partition table
      */
-    Address[][] reArrange(final Collection<MemberGroup> groups, final InternalPartition[] currentState);
+    Address[][] arrange(Collection<MemberGroup> groups, InternalPartition[] currentState);
+
 }

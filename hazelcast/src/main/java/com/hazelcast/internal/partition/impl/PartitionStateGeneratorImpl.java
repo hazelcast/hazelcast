@@ -29,7 +29,6 @@ import com.hazelcast.partition.membergroup.SingleMemberGroup;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -45,51 +44,36 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     private static final int DEFAULT_RETRY_MULTIPLIER = 10;
 
     private static final float RANGE_CHECK_RATIO = 1.1f;
-    private static final int MAX_RETRY_COUNT = 3;
+    private static final int MAX_RETRY_COUNT = 5;
     private static final int AGGRESSIVE_RETRY_THRESHOLD = 1;
     private static final int AGGRESSIVE_INDEX_THRESHOLD = 3;
     private static final int MIN_AVG_OWNER_DIFF = 3;
 
-    @Override
-    public Address[][] initialize(Collection<MemberGroup> memberGroups, int partitionCount) {
-        Queue<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
-        if (nodeGroups.size() == 0) {
-            return null;
-        }
-        return arrange(nodeGroups, partitionCount, new EmptyStateInitializer());
-    }
 
     @Override
-    public Address[][] reArrange(Collection<MemberGroup> memberGroups, InternalPartition[] currentState) {
-        Queue<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
-        if (nodeGroups.size() == 0) {
+    public Address[][] arrange(Collection<MemberGroup> groups, InternalPartition[] currentState) {
+        Queue<NodeGroup> nodeGroups = createNodeGroups(groups);
+        if (nodeGroups.isEmpty()) {
             return null;
         }
-        return arrange(nodeGroups, currentState.length, new CopyStateInitializer(currentState));
+        return arrange(nodeGroups, currentState.length, new StateInitializer(currentState));
     }
 
     private Address[][] arrange(Queue<NodeGroup> groups, int partitionCount, StateInitializer stateInitializer) {
-        Address[][] state = new Address[partitionCount][];
+        Address[][] state = new Address[partitionCount][InternalPartition.MAX_REPLICA_COUNT];
         stateInitializer.initialize(state);
-        TestResult result = null;
+
         int tryCount = 0;
-        while (tryCount < MAX_RETRY_COUNT && result != TestResult.PASS) {
+        do {
             boolean aggressive = tryCount >= AGGRESSIVE_RETRY_THRESHOLD;
             tryArrange(state, groups, partitionCount, aggressive);
-            result = testArrangement(state, groups, partitionCount);
-            if (result == TestResult.FAIL) {
-                LOGGER.warning("Error detected on partition arrangement! Try-count: " + tryCount);
-                stateInitializer.initialize(state);
-            } else if (result == TestResult.RETRY) {
-                tryCount++;
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Re-trying partition arrangement.. Count: " + tryCount);
+            if (tryCount++ > 0) {
+                if (LOGGER.isFineEnabled()) {
+                    LOGGER.fine("Re-trying partition arrangement. Count: " + tryCount);
                 }
             }
-        }
-        if (result == TestResult.FAIL) {
-            LOGGER.severe("Failed to arrange partitions !!!");
-        }
+        } while (tryCount < MAX_RETRY_COUNT && !areGroupsBalanced(groups, partitionCount));
+
         return state;
     }
 
@@ -343,30 +327,11 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return nodeGroups;
     }
 
-    private TestResult testArrangement(Address[][] state, Collection<NodeGroup> groups, int partitionCount) {
+    private boolean areGroupsBalanced(Collection<NodeGroup> groups, int partitionCount) {
         float ratio = RANGE_CHECK_RATIO;
         int avgPartitionPerGroup = partitionCount / groups.size();
         int replicaCount = Math.min(groups.size(), InternalPartition.MAX_REPLICA_COUNT);
-        Set<Address> set = new HashSet<Address>();
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            Address[] replicas = state[partitionId];
-            for (int i = 0; i < replicaCount; i++) {
-                Address owner = replicas[i];
-                if (owner == null) {
-                    LOGGER.warning(
-                            "Partition-Arrangement-Test: Owner is null !!! => partition: " + partitionId + " replica: " + i);
-                    return TestResult.FAIL;
-                }
-                if (set.contains(owner)) {
-                    // Should not happen!
-                    LOGGER.warning("Partition-Arrangement-Test: " + owner + " has owned multiple replicas of partition: "
-                            + partitionId + " replica: " + i);
-                    return TestResult.FAIL;
-                }
-                set.add(owner);
-            }
-            set.clear();
-        }
+
         for (NodeGroup group : groups) {
             for (int i = 0; i < replicaCount; i++) {
                 int partitionCountOfGroup = group.getPartitionCount(i);
@@ -375,56 +340,37 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
                 if ((partitionCountOfGroup < avgPartitionPerGroup / ratio)
                         || (partitionCountOfGroup > avgPartitionPerGroup * ratio)) {
-                    if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Replica: " + i + ", PartitionCount: "
+                    if (LOGGER.isFineEnabled()) {
+                        LOGGER.fine("Not well balanced! Replica: " + i + ", PartitionCount: "
                                 + partitionCountOfGroup + ", AvgPartitionCount: " + avgPartitionPerGroup);
                     }
-                    return TestResult.RETRY;
+                    return false;
                 }
             }
         }
-        return TestResult.PASS;
+        return true;
     }
     // ----- INNER CLASSES -----
 
-    private interface StateInitializer {
-        void initialize(Address[][] state);
-    }
-
-    private static class EmptyStateInitializer implements StateInitializer {
-        @Override
-        public void initialize(Address[][] state) {
-            for (int i = 0; i < state.length; i++) {
-                state[i] = new Address[InternalPartition.MAX_REPLICA_COUNT];
-            }
-        }
-    }
-
-    private static class CopyStateInitializer implements StateInitializer {
+    private static class StateInitializer {
         private final InternalPartition[] currentState;
 
-        CopyStateInitializer(InternalPartition[] currentState) {
+        StateInitializer(InternalPartition[] currentState) {
             this.currentState = currentState;
         }
 
-        @Override
-        public void initialize(Address[][] state) {
-            if (state.length != currentState.length) {
-                throw new IllegalArgumentException("Partition counts do not match!");
-            }
+        void initialize(Address[][] state) {
+            assert state.length == currentState.length : "Partition counts do not match! "
+                    + state.length + " vs " + currentState.length;
+
             for (int partitionId = 0; partitionId < state.length; partitionId++) {
                 InternalPartition p = currentState[partitionId];
-                Address[] replicas = new Address[InternalPartition.MAX_REPLICA_COUNT];
-                state[partitionId] = replicas;
+                Address[] replicas = state[partitionId];
                 for (int replicaIndex = 0; replicaIndex < InternalPartition.MAX_REPLICA_COUNT; replicaIndex++) {
                     replicas[replicaIndex] = p.getReplicaAddress(replicaIndex);
                 }
             }
         }
-    }
-
-    private enum TestResult {
-        PASS, RETRY, FAIL
     }
 
     private interface NodeGroup {
@@ -508,8 +454,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             if (containsPartition(partitionId)) {
                 if (LOGGER.isFinestEnabled()) {
-                    String error = "Partition[" + partitionId + "] is already owned by this group! " + "Duplicate!";
-                    LOGGER.finest(error);
+                    LOGGER.finest("Partition[" + partitionId + "] is already owned by this group!");
                 }
                 return false;
             }
@@ -678,8 +623,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             if (containsPartition(partitionId)) {
                 if (LOGGER.isFinestEnabled()) {
-                    String error = "Partition[" + partitionId + "] is already owned by this node " + address;
-                    LOGGER.finest(error);
+                    LOGGER.finest("Partition[" + partitionId + "] is already owned by this node " + address);
                 }
                 return false;
             }

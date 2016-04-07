@@ -26,8 +26,10 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-public final class FetchPartitionStateOperation extends AbstractOperation implements MigrationCycleOperation {
+public final class FetchPartitionStateOperation extends AbstractOperation
+        implements MigrationCycleOperation, AllowedDuringPassiveState {
 
     private PartitionRuntimeState partitionState;
 

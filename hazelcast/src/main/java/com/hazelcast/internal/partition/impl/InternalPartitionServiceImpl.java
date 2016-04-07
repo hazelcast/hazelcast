@@ -223,7 +223,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (partitionStateManager.isInitialized()) {
                 return;
             }
-            if (!partitionStateManager.initializePartitionAssignments()) {
+            Set<Address> excludedAddresses = migrationManager.getShutdownRequestedAddresses();
+            if (!partitionStateManager.initializePartitionAssignments(excludedAddresses)) {
                 return;
             }
             publishPartitionRuntimeState();
@@ -949,6 +950,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     public boolean isFetchMostRecentPartitionTableTaskRequired() {
         return shouldFetchPartitionTables;
+    }
+
+    public void onShutdownRequest(Address address) {
+        lock.lock();
+        try {
+            migrationManager.onShutdownRequest(address);
+        } finally {
+            lock.unlock();
+        }
     }
 
     boolean scheduleFetchMostRecentPartitionTableTaskIfRequired() {

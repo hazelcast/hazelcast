@@ -17,19 +17,22 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
 public final class PartitionStateOperation extends AbstractOperation
-        implements MigrationCycleOperation, JoinOperation {
+        implements MigrationCycleOperation, AllowedDuringPassiveState, JoinOperation {
 
     private PartitionRuntimeState partitionState;
     private boolean sync;
@@ -49,14 +52,25 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public void run() {
-        partitionState.setEndpoint(getCallerAddress());
+        Address callerAddress = getCallerAddress();
+        partitionState.setEndpoint(callerAddress);
         InternalPartitionServiceImpl partitionService = getService();
         returnValue = partitionService.processPartitionRuntimeState(partitionState);
 
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
             logger.fine("Applied new partition state: " + returnValue + ". Version: " + partitionState.getVersion()
-                    + ", caller: " + getCallerAddress());
+                    + ", caller: " + callerAddress);
+        }
+
+        if (returnValue) {
+            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            if (!nodeEngine.isRunning()) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Sending shutdown request to master: " + callerAddress + " again");
+                }
+                nodeEngine.getOperationService().send(new ShutdownRequestOperation(), callerAddress);
+            }
         }
     }
 
