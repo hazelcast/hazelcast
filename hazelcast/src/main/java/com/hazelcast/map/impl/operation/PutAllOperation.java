@@ -50,7 +50,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private boolean hasInvalidation;
 
     private List<RecordInfo> backupRecordInfos;
-    private List<Map.Entry<Data, Data>> backupEntries;
     private List<Data> invalidationKeys;
 
     public PutAllOperation() {
@@ -70,7 +69,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
         if (hasBackups) {
             backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());
-            backupEntries = new ArrayList<Map.Entry<Data, Data>>(mapEntries.size());
         }
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<Data>(mapEntries.size());
@@ -108,7 +106,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
             mapEventPublisher.publishWanReplicationUpdate(name, entryView);
         }
         if (hasBackups) {
-            backupEntries.add(entry);
             RecordInfo replicationInfo = buildRecordInfo(record);
             backupRecordInfos.add(replicationInfo);
         }
@@ -154,7 +151,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     @Override
     public boolean shouldBackup() {
-        return (hasBackups && !backupEntries.isEmpty());
+        return (hasBackups && !mapEntries.isEmpty());
     }
 
     @Override
@@ -169,7 +166,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, backupEntries, backupRecordInfos);
+        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos);
     }
 
     @Override

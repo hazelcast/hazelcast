@@ -17,10 +17,9 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.EntryViews;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
-import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,18 +28,19 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class PutAllBackupOperation extends MapOperation implements PartitionAwareOperation, BackupOperation,
-        MutatingOperation {
+import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
-    private List<Map.Entry<Data, Data>> entries;
+public class PutAllBackupOperation extends MapOperation implements PartitionAwareOperation, BackupOperation, MutatingOperation {
+
+    private MapEntries entries;
     private List<RecordInfo> recordInfos;
 
-    public PutAllBackupOperation(String name, List<Map.Entry<Data, Data>> entries, List<RecordInfo> recordInfos) {
+    public PutAllBackupOperation(String name, MapEntries entries, List<RecordInfo> recordInfos) {
         super(name);
         this.entries = entries;
         this.recordInfos = recordInfos;
@@ -52,18 +52,18 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
     @Override
     public void run() {
         boolean wanEnabled = mapContainer.isWanReplicationEnabled();
-        for (int i = 0; i < entries.size(); i++) {
-            final RecordInfo recordInfo = recordInfos.get(i);
-            final Map.Entry<Data, Data> entry = entries.get(i);
-            final Record record = recordStore.putBackup(entry.getKey(), entry.getValue());
-            Records.applyRecordInfo(record, recordInfo);
+        int i = 0;
+        for (Map.Entry<Data, Data> entry : entries) {
+            Record record = recordStore.putBackup(entry.getKey(), entry.getValue());
+            applyRecordInfo(record, recordInfos.get(i));
             if (wanEnabled) {
-                final Data dataValueAsData = mapServiceContext.toData(entry.getValue());
-                final EntryView entryView = EntryViews.createSimpleEntryView(entry.getKey(), dataValueAsData, record);
+                Data dataValueAsData = mapServiceContext.toData(entry.getValue());
+                EntryView entryView = createSimpleEntryView(entry.getKey(), dataValueAsData, record);
                 mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
 
             evict();
+            i++;
         }
     }
 
@@ -75,28 +75,23 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        final int size = entries.size();
-        out.writeInt(size);
-        for (int i = 0; i < size; i++) {
-            final Map.Entry<Data, Data> entry = entries.get(i);
-            out.writeData(entry.getKey());
-            out.writeData(entry.getValue());
-            recordInfos.get(i).writeData(out);
+
+        entries.writeData(out);
+        for (RecordInfo recordInfo : recordInfos) {
+            recordInfo.writeData(out);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        final int size = in.readInt();
-        entries = new ArrayList<Map.Entry<Data, Data>>(size);
+
+        entries = new MapEntries();
+        entries.readData(in);
+        int size = entries.size();
         recordInfos = new ArrayList<RecordInfo>(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
-            Data value = in.readData();
-            Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value);
-            entries.add(entry);
-            final RecordInfo recordInfo = new RecordInfo();
+            RecordInfo recordInfo = new RecordInfo();
             recordInfo.readData(in);
             recordInfos.add(recordInfo);
         }
