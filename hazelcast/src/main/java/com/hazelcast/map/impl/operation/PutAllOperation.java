@@ -73,10 +73,8 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
             invalidationKeys = new ArrayList<Data>(mapEntries.size());
         }
 
-        // we use an iterator for the keys, since they can be stored in a LinkedList
-        int i = 0;
-        for (Data key : mapEntries.getKeys()) {
-            put(key, mapEntries.getValue(i++));
+        for (int i = 0; i < mapEntries.size(); i++) {
+            put(mapEntries.getKey(i), mapEntries.getValue(i));
         }
     }
 
@@ -118,7 +116,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
      * The method recordStore.put() tries to fetch the old value from the MapStore,
      * which can lead to a serious performance degradation if loading from MapStore is expensive.
      * We prevent this by calling recordStore.set() if no map listeners are registered.
-      */
+     */
     private Object putToRecordStore(Data dataKey, Data dataValue) {
         if (hasMapListener) {
             return recordStore.put(dataKey, dataValue, DEFAULT_TTL);
@@ -170,12 +168,13 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(mapEntries);
+        mapEntries.writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapEntries = in.readObject();
+        mapEntries = new MapEntries();
+        mapEntries.readData(in);
     }
 }

@@ -225,6 +225,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createPutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries) {
+        return new PutAllPerMemberOperation(name, partitions, mapEntries);
+    }
+
+    @Override
     public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
         return new PutFromLoadAllOperation(name, keyValueSequence);
     }

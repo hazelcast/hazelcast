@@ -156,7 +156,7 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * @param ttl   time to live seconds.
      * @return the previous value associated with <tt>key</tt>, or
      * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see com.hazelcast.map.impl.operation.PutAllOperation
+     * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
      */
     Object putFromLoad(Data key, Object value, long ttl);
 

@@ -883,6 +883,7 @@ public class ClientMapBasicTest extends HazelcastTestSupport {
         }
         map.putAll(expected);
 
+        assertEquals(max, map.size());
         for (Integer key : expected.keySet()) {
             Integer value = map.get(key);
             Integer expectedValue = expected.get(key);
