@@ -276,7 +276,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private Object registerWaiter(Object waiter, Executor executor) {
         WaitNode waitNode = null;
         for (; ; ) {
-            Object oldState = state;
+            final Object oldState = state;
             if (isDone(oldState)) {
                 return oldState;
             }
