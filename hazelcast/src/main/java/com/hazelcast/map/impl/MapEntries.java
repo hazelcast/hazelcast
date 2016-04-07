@@ -46,14 +46,6 @@ public final class MapEntries implements IdentifiedDataSerializable {
         values = new ArrayList<Data>(initialSize);
     }
 
-    public MapEntries(List<Data> keys, List<Data> values) {
-        if (!(values instanceof ArrayList)) {
-            throw new IllegalArgumentException("values has to be of type ArrayList<Data>");
-        }
-        this.keys = keys;
-        this.values = values;
-    }
-
     public MapEntries(List<Map.Entry<Data, Data>> entries) {
         int initialSize = entries.size();
         keys = new ArrayList<Data>(initialSize);
@@ -76,14 +68,7 @@ public final class MapEntries implements IdentifiedDataSerializable {
         return entries;
     }
 
-    public List<Data> getKeys() {
-        ensureEntriesCreated();
-        return keys;
-    }
-
     public Data getKey(int index) {
-        // we should not use this method if the MapEntries was created with a LinkedList for keys
-        assert keys instanceof ArrayList;
         return keys.get(index);
     }
 
@@ -144,22 +129,17 @@ public final class MapEntries implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         int size = size();
         out.writeInt(size);
-
-        // we use an iterator for the keys, since they can be stored in a LinkedList
-        int i = 0;
-        for (Data key : keys) {
-            out.writeData(key);
-            out.writeData(values.get(i++));
+        for (int i = 0; i < size; i++) {
+            out.writeData(keys.get(i));
+            out.writeData(values.get(i));
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-
         keys = new ArrayList<Data>(size);
         values = new ArrayList<Data>(size);
-
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());
             values.add(in.readData());

@@ -41,7 +41,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
 
-    private MapEntries mapEntries;
+    private final MapEntries mapEntries;
 
     private boolean hasMapListener;
     private boolean hasWanReplication;
@@ -50,9 +50,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
-
-    public PutAllOperation() {
-    }
 
     public PutAllOperation(String name, MapEntries mapEntries) {
         super(name);
@@ -73,10 +70,8 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
             invalidationKeys = new ArrayList<Data>(mapEntries.size());
         }
 
-        // we use an iterator for the keys, since they can be stored in a LinkedList
-        int i = 0;
-        for (Data key : mapEntries.getKeys()) {
-            put(key, mapEntries.getValue(i++));
+        for (int i = 0; i < mapEntries.size(); i++) {
+            put(mapEntries.getKey(i), mapEntries.getValue(i));
         }
     }
 
@@ -169,13 +164,11 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(mapEntries);
+        throw new UnsupportedOperationException("this is a local operation!");
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        mapEntries = in.readObject();
+        throw new UnsupportedOperationException("this is a local operation!");
     }
 }

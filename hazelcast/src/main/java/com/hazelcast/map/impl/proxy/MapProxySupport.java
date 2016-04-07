@@ -81,19 +81,20 @@ import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -104,12 +105,12 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_PUT_ALL_INITIAL_SIZE_FACTOR;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Math.ceil;
+import static java.lang.Math.log10;
 import static java.lang.Math.min;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -118,12 +119,32 @@ import static java.util.logging.Level.WARNING;
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
-
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     private static final int CHECK_IF_LOADED_TIMEOUT_SECONDS = 60;
+
+    /**
+     * Defines the initial size of arrays per partition for {@link IMap#putAll(Map)} calls.
+     *
+     * The default value of {@code 0} uses an educated guess, depending on the map size, which is a good overall strategy.
+     * If you insert entries which don't match a normal partition distribution you should configure this factor.
+     * The initial size is calculated by this formula:
+     * {@code initialSize = ceil(MAP_PUT_ALL_INITIAL_SIZE_FACTOR * map.size() / PARTITION_COUNT)}
+     *
+     * As a rule of thumb you can try the following values:
+     * <ul>
+     * <li>{@code 10} for map sizes about 100 entries</li>
+     * <li>{@code 5} for map sizes between 500 and 5000 entries</li>
+     * <li>{@code 1.5} for map sizes between about 50000 entries</li>
+     * </ul>
+     *
+     * If you set this value too high, you will waste memory.
+     * If you set this value too low, you will suffer from expensive {@link java.util.Arrays#copyOf} calls.
+     */
+    private static final HazelcastProperty MAP_PUT_ALL_INITIAL_SIZE_FACTOR
+            = new HazelcastProperty("hazelcast.map.put.all.initial.size.factor", 0);
 
     protected final String name;
     protected final LocalMapStatsImpl localMapStats;
@@ -673,23 +694,43 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     /**
-     * This Operation will first group all puts per partition and then send a PutAllOperation per partition. So if there are e.g.
-     * 5 keys for a single partition, then instead of having 5 remote invocations, there will be only 1 remote invocation.
+     * This method will group all puts per partition and send a {@link com.hazelcast.map.impl.operation.PutAllPerMemberOperation}
+     * per member.
      * <p/>
-     * If there are multiple puts for different partitions on the same member, they are executed as different remote operations.
-     * Probably this can be optimized in the future by making use of an PartitionIterating operation.
+     * If there are e.g. five keys for a single member, there will only be a single remote invocation
+     * instead of having five remote invocations.
+     * <p/>
+     * Takes care about {@code null} checks for keys and values.
      */
     protected void putAllInternal(Map<?, ?> map) {
         try {
             int mapSize = map.size();
             int partitionCount = partitionService.getPartitionCount();
+            int initialSize = getPutAllInitialSize(mapSize, partitionCount);
 
-            // invoke operations
+            Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
             List<Future> futures = new ArrayList<Future>(partitionCount);
-            if (putAllInitialSizeFactor > 0) {
-                invokePutAllWithEstimation(map, mapSize, partitionCount, futures);
-            } else {
-                invokePutAllWithAnalysis(map, mapSize, partitionCount, futures);
+
+            // fill entriesPerPartition
+            MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
+            for (Entry entry : map.entrySet()) {
+                checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
+                Data keyData = toData(entry.getKey(), partitionStrategy);
+                int partitionId = partitionService.getPartitionId(keyData);
+                MapEntries entries = entriesPerPartition[partitionId];
+                if (entries == null) {
+                    entries = new MapEntries(initialSize);
+                    entriesPerPartition[partitionId] = entries;
+                }
+
+                entries.add(keyData, toData(entry.getValue()));
+            }
+
+            // invoke operations for entriesPerPartition
+            for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
+                invokePutAllOperation(entry.getKey(), entry.getValue(), futures, entriesPerPartition);
             }
 
             // sync on completion of the operations
@@ -701,93 +742,51 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    private void invokePutAllWithEstimation(Map<?, ?> map, int mapSize, int partitionCount, List<Future> futures) {
-        int initialSize = (int) ceil(putAllInitialSizeFactor * mapSize / partitionCount);
-
-        // fill entriesPerPartition
-        MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
-        for (Entry entry : map.entrySet()) {
-            checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
-            checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
-
-            Data keyData = toData(entry.getKey(), partitionStrategy);
-            int partitionId = partitionService.getPartitionId(keyData);
-            MapEntries entries = entriesPerPartition[partitionId];
-            if (entries == null) {
-                entries = new MapEntries(initialSize);
-                entriesPerPartition[partitionId] = entries;
+    @SuppressWarnings("checkstyle:magicnumber")
+    private int getPutAllInitialSize(int mapSize, int partitionCount) {
+        if (putAllInitialSizeFactor < 1) {
+            if (mapSize == 1) {
+                return 1;
             }
-
-            entries.add(keyData, toData(entry.getValue()));
+            // this is an educated guess for the initial size of the entries per partition, depending on the map size
+            return (int) ceil(20f * mapSize / partitionCount / log10(mapSize));
         }
-
-        // invoke the operations
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            MapEntries entries = entriesPerPartition[partitionId];
-            if (entries != null) {
-                Future future = createPutAllOperationFuture(name, entries, partitionId);
-                futures.add(future);
-            }
-        }
+        return (int) ceil(putAllInitialSizeFactor * mapSize / partitionCount);
     }
 
-    @SuppressWarnings("unchecked")
-    private void invokePutAllWithAnalysis(Map<?, ?> map, int mapSize, int partitionCount, List<Future> futures) {
-        int[] keyPartitionArray = new int[mapSize];
-        List<Data>[] keyDataArray = new List[partitionCount];
-        List<Data>[] valueDataArray = new List[partitionCount];
-
-        // fill keys per partition
-        Iterator<?> keyIterator = map.keySet().iterator();
-        for (int i = 0; i < mapSize; i++) {
-            Object key = keyIterator.next();
-            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-
-            Data keyData = toData(key, partitionStrategy);
-            int partitionId = partitionService.getPartitionId(keyData);
-
-            List<Data> keys = keyDataArray[partitionId];
-            if (keys == null) {
-                keys = new LinkedList<Data>();
-                keyDataArray[partitionId] = keys;
-            }
-            keys.add(keyData);
-
-            keyPartitionArray[i] = partitionId;
-        }
-
-        // fill values per partition
-        Iterator<?> valueIterator = map.values().iterator();
-        for (int i = 0; i < mapSize; i++) {
-            Object value = valueIterator.next();
-            checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-
-            int partitionId = keyPartitionArray[i];
-            List<Data> values = valueDataArray[partitionId];
-            if (values == null) {
-                values = new ArrayList<Data>(keyDataArray[partitionId].size());
-                valueDataArray[partitionId] = values;
-            }
-
-            values.add(toData(value));
-        }
-
-        // invoke the operations
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            List<Data> keys = keyDataArray[partitionId];
-            if (keys != null) {
-                Future future = createPutAllOperationFuture(name, new MapEntries(keys, valueDataArray[partitionId]), partitionId);
-                futures.add(future);
+    private void invokePutAllOperation(Address address, List<Integer> memberPartitions, List<Future> futures,
+                                       MapEntries[] entriesPerPartition) {
+        int size = memberPartitions.size();
+        int[] partitions = new int[size];
+        int index = 0;
+        for (Integer partitionId : memberPartitions) {
+            if (entriesPerPartition[partitionId] != null) {
+                partitions[index++] = partitionId;
             }
         }
+        // trim partition array to real size
+        if (index < size) {
+            partitions = Arrays.copyOf(partitions, index);
+            size = index;
+        }
+
+        index = 0;
+        MapEntries[] entries = new MapEntries[size];
+        long totalSize = 0;
+        for (int partitionId : partitions) {
+            entries[index++] = entriesPerPartition[partitionId];
+            totalSize += entriesPerPartition[partitionId].size();
+        }
+
+        Future future = createPutAllOperationFuture(name, totalSize, partitions, entries, address);
+        futures.add(future);
     }
 
-    protected Future createPutAllOperationFuture(final String name, MapEntries entries, int partitionId) {
-        MapOperation op = operationProvider.createPutAllOperation(name, entries);
-        op.setPartitionId(partitionId);
-        final long size = entries.size();
+    protected Future createPutAllOperationFuture(final String name, final long size, int[] partitions, MapEntries[] entries,
+                                                 Address address) {
+        MapOperation op = operationProvider.createPutAllPerMemberOperation(name, partitions, entries);
         final long time = System.currentTimeMillis();
-        InternalCompletableFuture<Object> future = operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(SERVICE_NAME, op, address);
         future.andThen(new ExecutionCallback<Object>() {
             @Override
             public void onResponse(Object response) {
