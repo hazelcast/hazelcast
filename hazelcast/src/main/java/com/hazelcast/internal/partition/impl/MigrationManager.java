@@ -35,6 +35,7 @@ import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PromoteFromBackupOperation;
+import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
@@ -120,7 +121,7 @@ public class MigrationManager {
 
     private final Lock partitionServiceLock;
 
-    private final MigrationPlanner migrationPlanner = new MigrationPlanner();
+    private final MigrationPlanner migrationPlanner;
 
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
@@ -128,6 +129,8 @@ public class MigrationManager {
         this.partitionService = service;
         this.logger = node.getLogger(getClass());
         this.partitionServiceLock = partitionServiceLock;
+
+        migrationPlanner = new MigrationPlanner(node.getLogger(MigrationPlanner.class));
 
         HazelcastProperties properties = node.getProperties();
         long intervalMillis = properties.getMillis(GroupProperty.PARTITION_MIGRATION_INTERVAL);
@@ -422,9 +425,13 @@ public class MigrationManager {
     }
 
     void onShutdownRequest(Address address) {
-        if (shutdownRequestedAddresses.add(address)) {
-            logger.info("Shutdown request of " + address + " is handled");
-            triggerControlTask();
+        if (partitionStateManager.isInitialized()) {
+            if (shutdownRequestedAddresses.add(address)) {
+                logger.info("Shutdown request of " + address + " is handled");
+                triggerControlTask();
+            }
+        } else {
+            sendShutdownOperation(address);
         }
     }
 
@@ -547,6 +554,15 @@ public class MigrationManager {
         return shutdownRequestedAddresses;
     }
 
+    private void sendShutdownOperation(Address address) {
+        if (node.getThisAddress().equals(address)) {
+            assert !node.isRunning() : "Node state: " + node.getState();
+            partitionService.onShutdownResponse();
+        } else {
+            nodeEngine.getOperationService().send(new ShutdownResponseOperation(), address);
+        }
+    }
+
     private class RepartitioningTask implements MigrationRunnable {
 
         @Override
@@ -586,6 +602,7 @@ public class MigrationManager {
 
             Address[][] newState = partitionStateManager.repartition(shutdownRequestedAddresses);
             if (newState == null) {
+                migrationQueue.add(new CheckShutdownRequestsTask());
                 return null;
             }
 
@@ -651,12 +668,21 @@ public class MigrationManager {
         }
 
         private boolean isAllowed() {
-            boolean migrationAllowed = partitionService.isMigrationAllowed();
+            boolean migrationAllowed = isClusterActiveAndMigrationAllowed();
             boolean hasMigrationTasks = migrationQueue.migrationTaskCount() > 1;
             if (migrationAllowed && !hasMigrationTasks) {
                 return true;
             }
             triggerControlTask();
+            return false;
+        }
+
+        private boolean isClusterActiveAndMigrationAllowed() {
+            if (isMigrationAllowed()) {
+                ClusterState clusterState = node.getClusterService().getClusterState();
+                return clusterState == ClusterState.ACTIVE;
+            }
+
             return false;
         }
 
@@ -678,6 +704,14 @@ public class MigrationManager {
             public void migrate(Address source, int sourceCurrentReplicaIndex, int sourceNewReplicaIndex,
                     Address destination, int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
 
+                if (logger.isFineEnabled()) {
+                    logger.fine("Planned migration for Partition[" + partitionId + "]: "
+                            + "source = " + source + ", sourceCurrentReplicaIndex = " + sourceCurrentReplicaIndex
+                            + ", sourceNewReplicaIndex = " + sourceNewReplicaIndex + ", destination = " + destination
+                            + ", destinationCurrentReplicaIndex = " + destinationCurrentReplicaIndex + ", destinationNewReplicaIndex = "
+                            + destinationNewReplicaIndex);
+                }
+
                 if (source == null && destinationCurrentReplicaIndex == -1 && destinationNewReplicaIndex == 0) {
                     assert destination != null;
                     assert sourceCurrentReplicaIndex == -1 : "invalid index: " + sourceCurrentReplicaIndex;
@@ -696,9 +730,6 @@ public class MigrationManager {
                 } else {
                     MigrationInfo migration = new MigrationInfo(partitionId, source, destination, sourceCurrentReplicaIndex,
                             sourceNewReplicaIndex, destinationCurrentReplicaIndex, destinationNewReplicaIndex);
-
-                    // Shift up to replica 0 should be handled by repair task
-                    assert !(source == null && destinationNewReplicaIndex == 0) : "ILLEGAL! -> " + migration + ", " + partition;
 
                     migrationCount.value++;
                     if (sourceNewReplicaIndex > 0) {
@@ -1081,10 +1112,6 @@ public class MigrationManager {
             }
 
             return true;
-        }
-
-        private void sendShutdownOperation(Address address) {
-
         }
 
     }

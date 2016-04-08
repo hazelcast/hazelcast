@@ -60,7 +60,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class PartitionStateGeneratorTest {
 
-    private static final boolean PRINT_STATE = true;
+    private static final boolean PRINT_STATE = false;
 
     @Test
     public void testRandomPartitionGenerator() throws Exception {
@@ -170,7 +170,7 @@ public class PartitionStateGeneratorTest {
             int memberCount = members[0];
             List<Member> memberList = createMembers(memberCount, maxSameHostCount);
             Collection<MemberGroup> groups = memberGroupFactory.createMemberGroups(memberList);
-            Address[][] state = generator.arrange(groups, emptyPartitionView(partitionCount));
+            Address[][] state = generator.arrange(groups, emptyPartitionArray(partitionCount));
             checkTestResult(state, groups, partitionCount);
             int previousMemberCount = memberCount;
             for (int j = 1; j < members.length; j++) {
@@ -190,7 +190,7 @@ public class PartitionStateGeneratorTest {
                         shift(state, memberList);
                     }
                     groups = memberGroupFactory.createMemberGroups(memberList);
-                    state = generator.arrange(groups, toPartitionView(state));
+                    state = generator.arrange(groups, toPartitionArray(state));
                     checkTestResult(state, groups, partitionCount);
                     previousMemberCount = memberCount;
                 }
@@ -198,23 +198,23 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private DummyInternalPartition[] toPartitionView(Address[][] state) {
-        DummyInternalPartition[] result = new DummyInternalPartition[state.length];
+    static InternalPartition[] toPartitionArray(Address[][] state) {
+        InternalPartition[] result = new InternalPartition[state.length];
         for (int partitionId = 0; partitionId < state.length; partitionId++) {
             result[partitionId] = new DummyInternalPartition(state[partitionId]);
         }
         return result;
     }
 
-    private DummyInternalPartition[] emptyPartitionView(int partitionCount) {
-        DummyInternalPartition[] result = new DummyInternalPartition[partitionCount];
+    static InternalPartition[] emptyPartitionArray(int partitionCount) {
+        InternalPartition[] result = new InternalPartition[partitionCount];
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             result[partitionId] = new DummyInternalPartition(new Address[InternalPartition.MAX_REPLICA_COUNT]);
         }
         return result;
     }
 
-    private class DummyInternalPartition implements InternalPartition {
+    private static class DummyInternalPartition implements InternalPartition {
         private Address[] replicas;
 
         private DummyInternalPartition(Address[] replicas) {
@@ -262,8 +262,7 @@ public class PartitionStateGeneratorTest {
         for (Member member : members) {
             addresses.add(((MemberImpl) member).getAddress());
         }
-        for (int partitionId = 0; partitionId < state.length; partitionId++) {
-            Address[] replicas = state[partitionId];
+        for (Address[] replicas : state) {
             for (int i = 0; i < replicas.length; i++) {
                 if (replicas[i] != null && !addresses.contains(replicas[i])) {
                     Address[] validAddresses = new Address[InternalPartition.MAX_REPLICA_COUNT - i];
@@ -274,9 +273,7 @@ public class PartitionStateGeneratorTest {
                             validAddresses[k++] = address;
                         }
                     }
-                    for (int a = 0; a < k; a++) {
-                        replicas[i + a] = validAddresses[a];
-                    }
+                    System.arraycopy(validAddresses, 0, replicas, i, k);
                     for (int a = i + k; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
                         replicas[a] = null;
                     }
@@ -286,7 +283,7 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private static List<Member> createMembers(int memberCount, int maxSameHostCount) throws Exception {
+    static List<Member> createMembers(int memberCount, int maxSameHostCount) throws Exception {
         return createMembers(null, memberCount, maxSameHostCount);
     }
 
@@ -366,23 +363,18 @@ public class PartitionStateGeneratorTest {
             }
             set.clear();
         }
-        int k = 1;
         for (GroupPartitionState groupState : groupPartitionStates.values()) {
             for (Map.Entry<Address, Set<Integer>[]> entry : groupState.nodePartitionsMap.entrySet()) {
-                int total = 0;
                 Collection<Integer>[] partitions = entry.getValue();
                 for (int i = 0; i < replicaCount; i++) {
                     int avgPartitionPerNode = groupState.groupPartitions[i].size() / groupState.nodePartitionsMap.size();
                     int count = partitions[i].size();
-                    total += partitions[i].size();
                     isInAllowedRange(count, avgPartitionPerNode, i, entry.getKey(), groups, partitionCount);
                 }
             }
-            int total = 0;
             Collection<Integer>[] partitions = groupState.groupPartitions;
             for (int i = 0; i < replicaCount; i++) {
                 int count = partitions[i].size();
-                total += partitions[i].size();
                 isInAllowedRange(count, avgPartitionPerGroup, i, groupState.group, groups, partitionCount);
             }
         }

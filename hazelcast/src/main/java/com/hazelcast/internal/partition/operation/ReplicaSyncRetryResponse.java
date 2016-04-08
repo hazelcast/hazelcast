@@ -29,12 +29,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
 public class ReplicaSyncRetryResponse extends Operation
-        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation, AllowedDuringPassiveState {
+        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation {
 
     public ReplicaSyncRetryResponse() {
     }

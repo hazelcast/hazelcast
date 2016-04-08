@@ -11,10 +11,8 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-public class ShutdownRequestOperation extends AbstractOperation
-        implements MigrationCycleOperation, AllowedDuringPassiveState {
+public class ShutdownRequestOperation extends AbstractOperation implements MigrationCycleOperation {
 
     public ShutdownRequestOperation() {
     }
@@ -45,12 +43,7 @@ public class ShutdownRequestOperation extends AbstractOperation
 
     @Override
     public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
+        return false;
     }
 
     @Override

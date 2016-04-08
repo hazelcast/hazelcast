@@ -37,6 +37,7 @@ import com.hazelcast.internal.partition.PartitionServiceProxy;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.PartitionStateOperation;
+import com.hazelcast.internal.partition.operation.ShutdownRequestOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -54,6 +55,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.util.EmptyStatement;
@@ -71,10 +73,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -95,6 +99,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final String EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT = "Partition state sync invocation timed out";
     private static final int PTABLE_SYNC_TIMEOUT_SECONDS = 10;
+    private static final int SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS = 1000;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -118,6 +123,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     // used to limit partition assignment requests sent to master
     private final AtomicBoolean triggerMasterFlag = new AtomicBoolean(false);
+
+    private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<CountDownLatch>();
 
     private volatile Address lastMaster;
 
@@ -266,7 +273,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    boolean isClusterFormedByOnlyLiteMembers() {
+    private boolean isClusterFormedByOnlyLiteMembers() {
         final ClusterServiceImpl clusterService = node.getClusterService();
         return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
     }
@@ -692,7 +699,53 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean prepareToSafeShutdown(long timeout, TimeUnit unit) {
-        return partitionReplicaStateChecker.prepareToSafeShutdown(timeout, unit);
+        if (node.isLiteMember()) {
+            return true;
+        }
+
+        CountDownLatch latch = shutdownLatchRef.get();
+        if (latch == null) {
+            latch = new CountDownLatch(1);
+            if (!shutdownLatchRef.compareAndSet(null, latch)) {
+                latch = shutdownLatchRef.get();
+            }
+        }
+
+        InternalOperationService operationService = nodeEngine.getOperationService();
+
+        long timeoutMillis = unit.toMillis(timeout);
+        long awaitStep = Math.min(SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS, timeoutMillis);
+        try {
+            do {
+                if (node.isMaster()) {
+                    onShutdownRequest(node.getThisAddress());
+                } else {
+                    operationService.send(new ShutdownRequestOperation(), nodeEngine.getMasterAddress());
+                }
+                if (latch.await(awaitStep, TimeUnit.MILLISECONDS)) {
+                    return true;
+                }
+                timeoutMillis -= awaitStep;
+            } while (timeoutMillis > 0);
+        } catch (InterruptedException e) {
+            logger.info("Safe shutdown is interrupted!");
+        }
+        return false;
+    }
+
+    public void onShutdownRequest(Address address) {
+        lock.lock();
+        try {
+            migrationManager.onShutdownRequest(address);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void onShutdownResponse() {
+        CountDownLatch latch = shutdownLatchRef.get();
+        assert latch != null;
+        latch.countDown();
     }
 
     List<MemberImpl> getCurrentMembersAndMembersRemovedWhileClusterNotActive() {
@@ -821,15 +874,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return migrationManager.isMigrationAllowed();
     }
 
-    public boolean isMigrationAllowed() {
-        if (migrationManager.isMigrationAllowed()) {
-            ClusterState clusterState = node.getClusterService().getClusterState();
-            return clusterState == ClusterState.ACTIVE;
-        }
-
-        return false;
-    }
-
     @Override
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down the partition service");
@@ -948,17 +992,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return partitionEventManager;
     }
 
-    public boolean isFetchMostRecentPartitionTableTaskRequired() {
+    boolean isFetchMostRecentPartitionTableTaskRequired() {
         return shouldFetchPartitionTables;
-    }
-
-    public void onShutdownRequest(Address address) {
-        lock.lock();
-        try {
-            migrationManager.onShutdownRequest(address);
-        } finally {
-            lock.unlock();
-        }
     }
 
     boolean scheduleFetchMostRecentPartitionTableTaskIfRequired() {
@@ -974,7 +1009,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
            lock.unlock();
        }
     }
-
 
     private class FetchMostRecentPartitionTableTask implements MigrationRunnable {
 

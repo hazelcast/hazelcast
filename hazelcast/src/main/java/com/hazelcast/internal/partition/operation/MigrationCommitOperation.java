@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -25,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
@@ -48,6 +50,11 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
 
     @Override
     public void run() {
+        NodeEngine nodeEngine = getNodeEngine();
+        if (!nodeEngine.isRunning()) {
+            throw new HazelcastInstanceNotActiveException("This node is shutting down!");
+        }
+
         partitionState.setEndpoint(getCallerAddress());
         InternalPartitionServiceImpl partitionService = getService();
         partitionService.processPartitionRuntimeState(partitionState);

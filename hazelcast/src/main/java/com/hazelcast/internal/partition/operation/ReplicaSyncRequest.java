@@ -33,7 +33,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
@@ -44,7 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public final class ReplicaSyncRequest extends Operation
-        implements PartitionAwareOperation, MigrationCycleOperation, AllowedDuringPassiveState {
+        implements PartitionAwareOperation, MigrationCycleOperation {
 
     public ReplicaSyncRequest() {
     }

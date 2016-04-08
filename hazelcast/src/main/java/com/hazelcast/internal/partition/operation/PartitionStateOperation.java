@@ -26,17 +26,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
 public final class PartitionStateOperation extends AbstractOperation
-        implements MigrationCycleOperation, AllowedDuringPassiveState, JoinOperation {
+        implements MigrationCycleOperation, JoinOperation {
 
     private PartitionRuntimeState partitionState;
     private boolean sync;
-    private boolean returnValue;
+    private boolean success;
 
     public PartitionStateOperation() {
     }
@@ -55,22 +53,12 @@ public final class PartitionStateOperation extends AbstractOperation
         Address callerAddress = getCallerAddress();
         partitionState.setEndpoint(callerAddress);
         InternalPartitionServiceImpl partitionService = getService();
-        returnValue = partitionService.processPartitionRuntimeState(partitionState);
+        success = partitionService.processPartitionRuntimeState(partitionState);
 
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
-            logger.fine("Applied new partition state: " + returnValue + ". Version: " + partitionState.getVersion()
+            logger.fine("Applied new partition state: " + success + ". Version: " + partitionState.getVersion()
                     + ", caller: " + callerAddress);
-        }
-
-        if (returnValue) {
-            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            if (!nodeEngine.isRunning()) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Sending shutdown request to master: " + callerAddress + " again");
-                }
-                nodeEngine.getOperationService().send(new ShutdownRequestOperation(), callerAddress);
-            }
         }
     }
 
@@ -81,7 +69,7 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public Object getResponse() {
-        return returnValue;
+        return success;
     }
 
     @Override

@@ -101,7 +101,7 @@ public class PartitionAssignmentsCorrectnessTest extends PartitionCorrectnessTes
             @Override
             public void run() throws Exception {
                 Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
-                final int actualBackupCount = Math.min(backupCount, instances.size() - 1);
+                final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
 
                 for (HazelcastInstance hz : instances) {
                     Node node = getNode(hz);
@@ -109,7 +109,7 @@ public class PartitionAssignmentsCorrectnessTest extends PartitionCorrectnessTes
                     InternalPartition[] partitions = partitionService.getInternalPartitions();
 
                     for (InternalPartition partition : partitions) {
-                        for (int i = 0; i <= actualBackupCount; i++) {
+                        for (int i = 0; i < replicaCount; i++) {
                             Address replicaAddress = partition.getReplicaAddress(i);
                             assertNotNull("Replica " + i + " is not found in " + partition, replicaAddress);
                             assertTrue("Not member: " + replicaAddress, node.getClusterService().getMember(replicaAddress) != null);
