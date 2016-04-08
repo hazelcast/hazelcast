@@ -206,9 +206,6 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     private void copyToArray(Node head) {
         int size = head.size;
 
-        assert head != BLOCKED;
-        assert size != 0;
-
         Object[] takeArray = this.takeStack;
         if (size > takeArray.length) {
             takeArray = new Object[head.size * 2];
@@ -218,12 +215,6 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
         for (int i = size - 1; i >= 0; i--) {
             takeArray[i] = head.value;
             head = head.next;
-        }
-
-        for (int k = 0; k < this.takeStack.length; k++) {
-            if (this.takeStack[k] == null) {
-                break;
-            }
         }
 
         takeStackIndex = 0;
