@@ -118,7 +118,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
-    private static final short protocolVersion = 1;
+    private static final short protocolVersion = ClientMessage.VERSION;
 
     private final ClientProperties clientProperties;
     private final int id = CLIENT_ID.getAndIncrement();
