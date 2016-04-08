@@ -799,7 +799,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    // TODO: fails in parallel
     public void testPutAllBackup() {
         int size = 100;
 
@@ -829,14 +828,13 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    // TODO: fails in parallel
     public void testPutAllTooManyEntriesWithBackup() {
         int size = 10000;
 
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        IMap<Integer, Integer> map1 = instance1.getMap("testPutAllBackup");
-        IMap<Integer, Integer> map2 = instance2.getMap("testPutAllBackup");
+        IMap<Integer, Integer> map1 = instance1.getMap("testPutAllTooManyEntries");
+        IMap<Integer, Integer> map2 = instance2.getMap("testPutAllTooManyEntries");
         warmUpPartitions(instances);
 
         Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
