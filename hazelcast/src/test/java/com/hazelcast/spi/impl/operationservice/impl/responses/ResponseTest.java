@@ -31,6 +31,14 @@ public class ResponseTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         serializationService = new DefaultSerializationServiceBuilder().build();
+
+        Response response = new Response() {
+            @Override
+            public int getId() {
+                return 0;
+            }
+        };
+
     }
 
     @Test

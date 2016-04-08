@@ -28,6 +28,9 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import java.io.IOException;
 
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
+import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.ERROR_RESPONSE;
 import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
@@ -47,11 +50,14 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 @SuppressWarnings("checkstyle:magicnumber")
 public abstract class Response implements IdentifiedDataSerializable {
     private static final boolean USE_BIG_ENDIAN = true;
-    private static final int OFFSET_SERIALIZER_ID = 4;
-    private static final int OFFSET_FACTORY_ID = 9;
-    private static final int OFFSET_TYPE_ID = 13;
-    private static final int OFFSET_CALL_ID = 17;
-    private static final int OFFSET_BACKUP_COUNT = 26;
+
+    private static final int OFFSET_SERIALIZER_ID = HeapData.TYPE_OFFSET;
+    private static final int OFFSET_FACTORY_ID = OFFSET_SERIALIZER_ID + INT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES;
+    private static final int OFFSET_TYPE_ID = OFFSET_FACTORY_ID + INT_SIZE_IN_BYTES;
+    private static final int OFFSET_CALL_ID = OFFSET_TYPE_ID + INT_SIZE_IN_BYTES;
+    private static final int OFFSET_BACKUP_COUNT = OFFSET_CALL_ID + LONG_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES;
+    private static final int OFFSET_NORMAL_RESPONSE_DATA = OFFSET_BACKUP_COUNT + INT_SIZE_IN_BYTES;
+    private static final int OFFSET_ERROR_DATA = OFFSET_CALL_ID + BYTE_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES;
 
     protected long callId;
     protected boolean urgent;
@@ -101,15 +107,8 @@ public abstract class Response implements IdentifiedDataSerializable {
 
 
     public static long callId(byte[] bytes) {
-        //int:partition hash
-        //int:serializer type id
-        //byte:identified
-        //int:factory-id
-        //int: type id
-
         return Bits.readLong(bytes, OFFSET_CALL_ID, USE_BIG_ENDIAN);
     }
-
 
     public static int typeId(byte[] bytes) {
         return Bits.readInt(bytes, OFFSET_TYPE_ID, USE_BIG_ENDIAN);
@@ -127,18 +126,6 @@ public abstract class Response implements IdentifiedDataSerializable {
         return Bits.readInt(bytes, OFFSET_FACTORY_ID, USE_BIG_ENDIAN);
     }
 
-    public static Object deserializeValue(InternalSerializationService serializationService, Object data) {
-        if (data instanceof NormalResponse) {
-            data = ((NormalResponse) data).getValue();
-        }
-
-        if (!(data instanceof Data)) {
-            return data;
-        }
-
-        return deserializeValue(serializationService, (Data) data);
-    }
-
     public static Object deserializeValue(InternalSerializationService serializationService, Data data) {
         byte[] bytes = data.toByteArray();
 
@@ -147,14 +134,14 @@ public abstract class Response implements IdentifiedDataSerializable {
         if (serializerId(bytes) == CONSTANT_TYPE_DATA_SERIALIZABLE && factoryId(bytes) == SpiDataSerializerHook.F_ID) {
             switch (typeId(bytes)) {
                 case NORMAL_RESPONSE:
-                    byte isData = bytes[30];
+                    byte isData = bytes[OFFSET_NORMAL_RESPONSE_DATA];
                     if (isData == 1) {
                         return serializationService.bytesToObject(bytes, 39);
                     }
-                    offset = 31;
+                    offset = OFFSET_NORMAL_RESPONSE_DATA + BYTE_SIZE_IN_BYTES;
                     break;
                 case ERROR_RESPONSE:
-                    offset = 26;
+                    offset = OFFSET_ERROR_DATA;
                     break;
                 default:
                     //no-op
@@ -176,14 +163,15 @@ public abstract class Response implements IdentifiedDataSerializable {
             return data;
         }
 
-        byte isData = bytes[30];
+        byte isData = bytes[OFFSET_NORMAL_RESPONSE_DATA];
         if (isData == 1) {
-            int size = Bits.readIntB(bytes, 31);
+            int size = Bits.readIntB(bytes, OFFSET_NORMAL_RESPONSE_DATA + BYTE_SIZE_IN_BYTES);
             byte[] valueBytes = new byte[size];
-            System.arraycopy(bytes, 35, valueBytes, 0, valueBytes.length);
+            System.arraycopy(bytes, OFFSET_NORMAL_RESPONSE_DATA + BYTE_SIZE_IN_BYTES + INT_SIZE_IN_BYTES,
+                    valueBytes, 0, valueBytes.length);
             return new HeapData(valueBytes);
         } else {
-            return serializationService.bytesToObject(bytes, 31);
+            return serializationService.bytesToObject(bytes, OFFSET_NORMAL_RESPONSE_DATA + BYTE_SIZE_IN_BYTES);
         }
     }
 }

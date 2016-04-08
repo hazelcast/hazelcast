@@ -30,7 +30,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.CALL_TIMEOUT;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.HEARTBEAT_TIMEOUT;
