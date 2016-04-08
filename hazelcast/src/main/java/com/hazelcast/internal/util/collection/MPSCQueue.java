@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 import static java.util.concurrent.locks.LockSupport.park;
 import static java.util.concurrent.locks.LockSupport.unpark;
 
@@ -146,6 +147,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
             takeStackIndex = -1;
             return null;
         }
+
         takeStack[takeStackIndex] = null;
         takeStackIndex++;
         return item;
@@ -182,7 +184,7 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
                     continue;
                 }
 
-                copyToArray(currentHead);
+                copyToTakeStack(currentHead);
                 break;
             }
             iteration++;
@@ -197,28 +199,26 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
             }
 
             if (putStack.compareAndSet(head, null)) {
-                copyToArray(head);
+                copyToTakeStack(head);
                 return true;
             }
         }
     }
 
-    private void copyToArray(Node head) {
-        int size = head.size;
+    private void copyToTakeStack(Node putStackHead) {
+        int putStackSize = putStackHead.size;
 
-        Object[] takeArray = this.takeStack;
-        if (size > takeArray.length) {
-            takeArray = new Object[head.size * 2];
-            this.takeStack = takeArray;
+        if (putStackSize > takeStack.length) {
+            takeStack = new Object[nextPowerOfTwo(putStackHead.size) * 2];
         }
 
-        for (int i = size - 1; i >= 0; i--) {
-            takeArray[i] = head.value;
-            head = head.next;
+        for (int i = putStackSize - 1; i >= 0; i--) {
+            takeStack[i] = putStackHead.value;
+            putStackHead = putStackHead.next;
         }
 
         takeStackIndex = 0;
-        assert this.takeStack[0] != null;
+        assert takeStack[0] != null;
     }
 
     @Override
