@@ -162,9 +162,9 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
                 throw new InterruptedException();
             }
 
-            Node currentHead = putStack.get();
+            Node currentPutStackHead = putStack.get();
 
-            if (currentHead == null) {
+            if (currentPutStackHead == null) {
                 // first we try to idle;
                 if (!idleStrategy.idle(iteration)) {
                     // we don't need to block yet; so lets try again.
@@ -177,14 +177,14 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
                 }
 
                 park();
-            } else if (currentHead == BLOCKED) {
+            } else if (currentPutStackHead == BLOCKED) {
                 park();
             } else {
-                if (!putStack.compareAndSet(currentHead, null)) {
+                if (!putStack.compareAndSet(currentPutStackHead, null)) {
                     continue;
                 }
 
-                copyToTakeStack(currentHead);
+                copyIntoTakeStack(currentPutStackHead);
                 break;
             }
             iteration++;
@@ -199,17 +199,17 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
             }
 
             if (putStack.compareAndSet(head, null)) {
-                copyToTakeStack(head);
+                copyIntoTakeStack(head);
                 return true;
             }
         }
     }
 
-    private void copyToTakeStack(Node putStackHead) {
+    private void copyIntoTakeStack(Node putStackHead) {
         int putStackSize = putStackHead.size;
 
         if (putStackSize > takeStack.length) {
-            takeStack = new Object[nextPowerOfTwo(putStackHead.size) * 2];
+            takeStack = new Object[nextPowerOfTwo(putStackHead.size)];
         }
 
         for (int i = putStackSize - 1; i >= 0; i--) {
