@@ -282,7 +282,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         final List<ManagedService> managedServices = getServices(ManagedService.class);
         // reverse order to stop CoreServices last.
         Collections.reverse(managedServices);
-        services.clear();
+
         for (ManagedService service : managedServices) {
             shutdownService(service, terminate);
         }
