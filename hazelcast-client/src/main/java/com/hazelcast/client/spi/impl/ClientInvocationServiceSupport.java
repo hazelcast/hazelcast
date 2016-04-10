@@ -36,7 +36,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
-import com.hazelcast.util.concurrent.NoOpIdleStrategy;
 
 import java.io.IOException;
 import java.util.Collection;
