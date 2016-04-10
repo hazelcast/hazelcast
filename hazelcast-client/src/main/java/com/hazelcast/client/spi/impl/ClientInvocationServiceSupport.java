@@ -31,9 +31,11 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.util.concurrent.NoOpIdleStrategy;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -43,7 +45,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.internal.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
@@ -259,11 +260,12 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private class ResponseThread extends Thread {
-        private final BlockingQueue<ClientPacket> workQueue = new LinkedBlockingQueue<ClientPacket>();
+        private final BlockingQueue<ClientPacket> workQueue;
 
         public ResponseThread(ThreadGroup threadGroup, String name, ClassLoader classLoader) {
             super(threadGroup, name);
             setContextClassLoader(classLoader);
+            this.workQueue = new MPSCQueue<ClientPacket>(this, new NoOpIdleStrategy());
         }
 
         @Override
