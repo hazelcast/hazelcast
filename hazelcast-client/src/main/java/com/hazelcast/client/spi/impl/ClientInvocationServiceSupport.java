@@ -35,6 +35,7 @@ import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.NoOpIdleStrategy;
 
 import java.io.IOException;
@@ -49,9 +50,15 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.internal.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService {
+    private static final long IDLE_MAX_SPINS = 20;
+    private static final long IDLE_MAX_YIELDS = 50;
+    private static final long IDLE_MIN_PARK_NS = NANOSECONDS.toNanos(1);
+    private static final long IDLE_MAX_PARK_NS = MICROSECONDS.toNanos(100);
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
     protected final HazelcastClientInstanceImpl client;
@@ -260,12 +267,14 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private class ResponseThread extends Thread {
+
         private final BlockingQueue<ClientPacket> workQueue;
 
         public ResponseThread(ThreadGroup threadGroup, String name, ClassLoader classLoader) {
             super(threadGroup, name);
             setContextClassLoader(classLoader);
-            this.workQueue = new MPSCQueue<ClientPacket>(this, new NoOpIdleStrategy());
+            this.workQueue = new MPSCQueue<ClientPacket>(this,
+                    new BackoffIdleStrategy(IDLE_MAX_SPINS, IDLE_MAX_YIELDS, IDLE_MIN_PARK_NS, IDLE_MAX_PARK_NS));
         }
 
         @Override
