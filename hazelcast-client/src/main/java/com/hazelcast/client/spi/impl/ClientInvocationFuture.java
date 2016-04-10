@@ -22,28 +22,38 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
+import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
+import static java.util.concurrent.locks.LockSupport.parkNanos;
+import static java.util.concurrent.locks.LockSupport.unpark;
 
 public class ClientInvocationFuture implements ICompletableFuture<ClientMessage> {
+
+    private static final AtomicReferenceFieldUpdater<ClientInvocationFuture, Object> STATE =
+            newUpdater(ClientInvocationFuture.class, Object.class, "state");
+
+    private static final Object VOID = new Object() {
+        public String toString() {
+            return "VOID";
+        }
+    };
 
     protected final ILogger logger;
 
     protected final ClientMessage clientMessage;
-    protected volatile Object response;
+    protected volatile Object state = VOID;
 
     private final ClientExecutionServiceImpl executionService;
-    private final List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
     private final ClientInvocation invocation;
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
@@ -67,7 +77,18 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     @Override
     public boolean isDone() {
-        return response != null;
+        return isDone(state);
+    }
+
+    private boolean isDone(final Object state) {
+        if (state == null) {
+            return true;
+        }
+
+        return !(state == VOID
+                || state.getClass() == WaitNode.class
+                || state instanceof Thread
+                || state instanceof ExecutionCallback);
     }
 
     @Override
@@ -81,51 +102,101 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     @Override
     public ClientMessage get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (response == null) {
-            long waitMillis = unit.toMillis(timeout);
-            if (waitMillis > 0) {
-                synchronized (this) {
-                    while (waitMillis > 0 && response == null) {
-                        long start = Clock.currentTimeMillis();
-                        wait(waitMillis);
-                        long elapsed = Clock.currentTimeMillis() - start;
-                        waitMillis -= elapsed;
-                    }
-                }
+        long timeoutNanos = unit.toNanos(timeout);
+
+        if (timeoutNanos <= 0) {
+            Object response = state;
+            if (isDone(response)) {
+                return resolveAndThrow(response);
+            } else {
+                return resolveAndThrow(null);
             }
         }
-        return resolveResponse();
-    }
 
-    /**
-     * @param response coming from server
-     * @return true if response coming from server should be set
-     */
-    boolean shouldSetResponse(Object response) {
-        if (this.response != null) {
-            logger.warning("The Future.set() method can only be called once. Request: " + clientMessage
-                    + ", current response: " + this.response + ", new response: " + response);
-            return false;
+        Object response = registerWaiter(Thread.currentThread(), null);
+        if (response != VOID) {
+            return resolveAndThrow(response);
         }
-        return true;
+
+        long startTimeNanos = System.nanoTime();
+        // todo: deal with interruption
+        // we are going to park for a result; however it can be that we get spurious wake-ups so
+        // we need to recheck the state. We don't need to re-registerWaiter
+        for (; ; ) {
+            parkNanos(timeoutNanos);
+            long endTimeNanos = System.nanoTime();
+            timeoutNanos -= endTimeNanos - startTimeNanos;
+            startTimeNanos = endTimeNanos;
+
+            Object state = this.state;
+            if (isDone(state)) {
+                return resolveAndThrow(state);
+            } else if (timeoutNanos <= 0) {
+                return resolveAndThrow(null);
+            }
+        }
+//
+//
+//        if (response == null) {
+//            long waitMillis = unit.toMillis(timeout);
+//            if (waitMillis > 0) {
+//                synchronized (this) {
+//                    while (waitMillis > 0 && response == null) {
+//                        long start = Clock.currentTimeMillis();
+//                        wait(waitMillis);
+//                        long elapsed = Clock.currentTimeMillis() - start;
+//                        waitMillis -= elapsed;
+//                    }
+//                }
+//            }
+//        }
+//        return resolveAndThrow();
     }
 
-    void setResponse(Object response) {
-        synchronized (this) {
-            if (!shouldSetResponse(response)) {
-                return;
+//    /**
+//     * @param response coming from server
+//     * @return true if response coming from server should be set
+//     */
+//    boolean shouldSetResponse(Object response) {
+//        if (this.response != null) {
+//            logger.warning("The Future.set() method can only be called once. Request: " + clientMessage
+//                    + ", current response: " + this.response + ", new response: " + response);
+//            return false;
+//        }
+//        return true;
+//    }
+//
+
+//    void complete(Object response) {
+//        synchronized (this) {
+//            if (!shouldSetResponse(response)) {
+//                return;
+//            }
+//
+//            this.response = response;
+//            notifyAll();
+//            for (ExecutionCallbackNode node : callbackNodeList) {
+//                runAsynchronous(node.callback, node.executor);
+//            }
+//            callbackNodeList.clear();
+//        }
+//    }
+
+    public boolean complete(Object value) {
+        for (; ; ) {
+            Object oldState = state;
+            if (isDone(oldState)) {
+                return false;
             }
 
-            this.response = response;
-            notifyAll();
-            for (ExecutionCallbackNode node : callbackNodeList) {
-                runAsynchronous(node.callback, node.executor);
+            if (STATE.compareAndSet(this, oldState, value)) {
+                unblockAll(oldState, null);
+                return true;
             }
-            callbackNodeList.clear();
         }
     }
 
-    private ClientMessage resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
+    private ClientMessage resolveAndThrow(Object response) throws ExecutionException, TimeoutException, InterruptedException {
         if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
@@ -155,16 +226,34 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     @Override
     public void andThen(ExecutionCallback<ClientMessage> callback, Executor executor) {
-        synchronized (this) {
-            if (response != null) {
-                runAsynchronous(callback, executor);
-                return;
-            }
-            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
+        isNotNull(callback, "callback");
+        isNotNull(executor, "executor");
+
+        Object response = registerWaiter(callback, executor);
+        if (response != VOID) {
+            unblock(callback, executor);
         }
     }
 
-    private void runAsynchronous(final ExecutionCallback callback, Executor executor) {
+    private void unblockAll(Object waiter, Executor executor) {
+        while (waiter != null) {
+            if (waiter instanceof Thread) {
+                unpark((Thread) waiter);
+                return;
+            } else if (waiter instanceof ExecutionCallback) {
+                unblock((ExecutionCallback) waiter, executor);
+                return;
+            } else if (waiter.getClass() == WaitNode.class) {
+                WaitNode waitNode = (WaitNode) waiter;
+                unblockAll(waitNode.waiter, waitNode.executor);
+                waiter = waitNode.next;
+            } else {
+                return;
+            }
+        }
+    }
+
+    private void unblock(final ExecutionCallback callback, Executor executor) {
         try {
             executor.execute(new Runnable() {
                 @Override
@@ -172,7 +261,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
                     try {
                         ClientMessage resp;
                         try {
-                            resp = resolveResponse();
+                            resp = resolveAndThrow(state);
                         } catch (Throwable t) {
                             callback.onFailure(t);
                             return;
@@ -180,7 +269,7 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
                         callback.onResponse(resp);
                     } catch (Throwable t) {
                         logger.severe("Failed to execute callback: " + callback
-                                + "! Request: " + clientMessage + ", response: " + response, t);
+                                + "! Request: " + clientMessage + ", response: " + state, t);
                     }
                 }
             });
@@ -190,17 +279,46 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
         }
     }
 
+    private Object registerWaiter(Object waiter, Executor executor) {
+        WaitNode waitNode = null;
+        for (; ; ) {
+            final Object oldState = state;
+            if (isDone(oldState)) {
+                return oldState;
+            }
+
+            Object newState;
+            if (oldState == VOID && (executor == null)) {
+                // Nothing is syncing on this future, so instead of creating a WaitNode, we just try
+                // the cas the thread (so no extra litter)
+                newState = waiter;
+            } else {
+                // something already has been registered for syncing. So we need to create a WaitNode.
+                if (waitNode == null) {
+                    waitNode = new WaitNode(waiter, executor);
+                }
+                waitNode.next = oldState;
+                newState = waitNode;
+            }
+
+            if (STATE.compareAndSet(this, oldState, newState)) {
+                // we have successfully registered to be notified.
+                return VOID;
+            }
+        }
+    }
+
     public ClientInvocation getInvocation() {
         return invocation;
     }
 
-    static class ExecutionCallbackNode {
+    private static final class WaitNode {
+        private final Executor executor;
+        private final Object waiter;
+        private Object next;
 
-        final ExecutionCallback callback;
-        final Executor executor;
-
-        ExecutionCallbackNode(ExecutionCallback callback, Executor executor) {
-            this.callback = callback;
+        private WaitNode(Object waiter, Executor executor) {
+            this.waiter = waiter;
             this.executor = executor;
         }
     }
