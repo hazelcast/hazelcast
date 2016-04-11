@@ -46,7 +46,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
-        future.complete(InternalResponse.INTERRUPTED);
+        future.complete(InvocationValue.INTERRUPTED);
 
         assertTrue(future.isDone());
     }
@@ -56,7 +56,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
-        future.complete(InternalResponse.CALL_TIMEOUT);
+        future.complete(InvocationValue.CALL_TIMEOUT);
 
         assertTrue(future.isDone());
     }
