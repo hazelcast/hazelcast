@@ -44,8 +44,6 @@ import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -64,6 +62,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -80,6 +79,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
+import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
+import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
+import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
@@ -91,7 +96,6 @@ public class Node {
     public final HazelcastInstanceImpl hazelcastInstance;
 
     public final Config config;
-    public final GroupProperties groupProperties;
 
     public final NodeEngineImpl nodeEngine;
     public final ClientEngineImpl clientEngine;
@@ -124,6 +128,7 @@ public class Node {
 
     private final NodeExtension nodeExtension;
 
+    private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
@@ -144,10 +149,10 @@ public class Node {
         this.config = config;
         this.liteMember = config.isLiteMember();
         this.configClassLoader = config.getClassLoader();
-        this.groupProperties = new GroupProperties(config);
+        this.properties = new HazelcastProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
 
-        String loggingType = groupProperties.getString(GroupProperty.LOGGING_TYPE);
+        String loggingType = properties.getString(LOGGING_TYPE);
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
@@ -330,11 +335,11 @@ public class Node {
                     hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
-        if (groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_ENABLED)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {
             discoveryService.start();
         }
 
-        if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
+        if (properties.getBoolean(SHUTDOWNHOOK_ENABLED)) {
             logger.finest("Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
@@ -370,7 +375,7 @@ public class Node {
         }
 
         if (!terminate) {
-            final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
+            final int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
@@ -392,7 +397,7 @@ public class Node {
         joined.set(false);
         setMasterAddress(null);
         try {
-            if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
+            if (properties.getBoolean(SHUTDOWNHOOK_ENABLED)) {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
         } catch (Throwable ignored) {
@@ -514,8 +519,8 @@ public class Node {
         return loggingService.getLogger(clazz);
     }
 
-    public GroupProperties getGroupProperties() {
-        return groupProperties;
+    public HazelcastProperties getProperties() {
+        return properties;
     }
 
     public TextCommandService getTextCommandService() {
@@ -597,7 +602,7 @@ public class Node {
         }
 
         if (!joined()) {
-            long maxJoinTimeMillis = groupProperties.getMillis(GroupProperty.MAX_JOIN_SECONDS);
+            long maxJoinTimeMillis = properties.getMillis(MAX_JOIN_SECONDS);
             logger.severe("Could not join cluster in " + maxJoinTimeMillis + " ms. Shutting down now!");
             shutdownNodeByFiringEvents(Node.this, true);
         }
@@ -611,11 +616,10 @@ public class Node {
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.verify();
 
-        if (groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_ENABLED)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {
             //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
-            return new DiscoveryJoiner(this, discoveryService,
-                    groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
+            return new DiscoveryJoiner(this, discoveryService, properties.getBoolean(DISCOVERY_SPI_PUBLIC_IP_ENABLED));
         } else {
             if (join.getMulticastConfig().isEnabled() && multicastService != null) {
                 logger.info("Creating MulticastJoiner");

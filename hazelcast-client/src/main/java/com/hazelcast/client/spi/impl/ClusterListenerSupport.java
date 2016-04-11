@@ -47,7 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.client.internal.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
@@ -68,7 +68,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         this.client = client;
         this.logger = client.getLoggingService().getLogger(ClusterListenerSupport.class);
         this.addressProviders = addressProviders;
-        this.shuffleMemberList = client.getClientProperties().getBoolean(SHUFFLE_MEMBER_LIST);
+        this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.clusterExecutor = createSingleThreadExecutorService(client);
     }
 

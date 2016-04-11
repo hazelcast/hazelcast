@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -304,7 +305,7 @@ public abstract class Operation implements DataSerializable {
      * aborted, then the call-timeout is 60000 milliseconds.
      *
      * For more information about the default value, see
-     * {@link com.hazelcast.internal.properties.GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
+     * {@link GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
      *
      * @return the call timeout in milliseconds.
      * @see #setCallTimeout(long)

@@ -51,8 +51,6 @@ import com.hazelcast.internal.partition.operation.PromoteFromBackupOperation;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
 import com.hazelcast.internal.partition.operation.ResetReplicaVersionOperation;
 import com.hazelcast.internal.partition.operation.SyncReplicaVersion;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -80,6 +78,8 @@ import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -198,7 +198,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public InternalPartitionServiceImpl(Node node) {
-        GroupProperties properties = node.getGroupProperties();
+        HazelcastProperties properties = node.getProperties();
 
         this.node = node;
         this.nodeEngine = node.nodeEngine;
@@ -255,17 +255,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private long calculateMaxMigrationDelayOnMemberRemoved() {
         // hard limit for migration pause is half of the call timeout. otherwise we might experience timeouts
-        return node.groupProperties.getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS) / 2;
+        return node.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS) / 2;
     }
 
     private long calculateMigrationDelayOnMemberRemoved(long maxDelayMs) {
-        long migrationDelayMs = node.groupProperties.getMillis(GroupProperty.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS);
+        long migrationDelayMs = node.getProperties().getMillis(GroupProperty.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS);
 
-        long connectionErrorDetectionIntervalMs = node.groupProperties.getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL)
-                * node.groupProperties.getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS) * CONN_ERROR_DETECTION_FACTOR;
+        long connectionErrorDetectionIntervalMs = node.getProperties().getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL)
+                * node.getProperties().getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS) * CONN_ERROR_DETECTION_FACTOR;
         migrationDelayMs = Math.max(migrationDelayMs, connectionErrorDetectionIntervalMs);
 
-        long heartbeatIntervalMs = node.groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+        long heartbeatIntervalMs = node.getProperties().getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         migrationDelayMs = Math.max(migrationDelayMs, heartbeatIntervalMs * 3);
 
         migrationDelayMs = min(migrationDelayMs, maxDelayMs);
@@ -273,7 +273,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private long getBackupSyncCheckInterval() {
-        long definedBackupSyncCheckInterval = node.getGroupProperties().getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
+        long definedBackupSyncCheckInterval = node.getProperties().getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         return (definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1);
     }
 
@@ -297,7 +297,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public void init(NodeEngine nodeEngine, Properties properties) {
         migrationThread.start();
 
-        int partitionTableSendInterval = node.groupProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
+        int partitionTableSendInterval = node.getProperties().getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
         if (partitionTableSendInterval <= 0) {
             partitionTableSendInterval = 1;
         }

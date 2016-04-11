@@ -25,10 +25,10 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_ENABLED;
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-import static com.hazelcast.internal.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
-import static com.hazelcast.internal.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_SYNCWINDOW;
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 

@@ -16,12 +16,9 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.HazelcastProperty;
-import com.hazelcast.nio.OutboundFrame;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -29,6 +26,8 @@ import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.nio.tcp.spinning.SpinningSocketWriter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ItemCounter;
 
@@ -99,7 +98,7 @@ public class OverloadedConnectionsPlugin extends PerformanceMonitorPlugin {
         this.logger = nodeEngine.getLogger(OverloadedConnectionsPlugin.class);
         this.defaultFormat.setMinimumFractionDigits(3);
 
-        GroupProperties props = nodeEngine.getGroupProperties();
+        HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);
         this.threshold = props.getInteger(THRESHOLD);
         this.samples = props.getInteger(SAMPLES);

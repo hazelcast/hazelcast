@@ -22,7 +22,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -34,6 +33,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
@@ -46,12 +46,12 @@ import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
-import static com.hazelcast.internal.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINE;
@@ -95,7 +95,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     public InvocationMonitor(NodeEngineImpl nodeEngine,
                              Address thisAddress,
                              HazelcastThreadGroup threadGroup,
-                             GroupProperties groupProperties,
+                             HazelcastProperties hazelcastProperties,
                              InvocationRegistry invocationRegistry,
                              ILogger logger,
                              InternalSerializationService serializationService,
@@ -106,9 +106,9 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         this.serviceManager = serviceManager;
         this.invocationRegistry = invocationRegistry;
         this.logger = logger;
-        this.backupTimeoutMillis = backupTimeoutMillis(groupProperties);
-        this.invocationTimeoutMillis = invocationTimeoutMillis(groupProperties);
-        this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(groupProperties);
+        this.backupTimeoutMillis = backupTimeoutMillis(hazelcastProperties);
+        this.invocationTimeoutMillis = invocationTimeoutMillis(hazelcastProperties);
+        this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(hazelcastProperties);
         this.scheduler = newScheduler(threadGroup);
     }
 
@@ -135,7 +135,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         return scheduler;
     }
 
-    private long invocationTimeoutMillis(GroupProperties properties) {
+    private long invocationTimeoutMillis(HazelcastProperties properties) {
         long heartbeatTimeoutMillis = properties.getMillis(OPERATION_CALL_TIMEOUT_MILLIS);
         if (logger.isFinestEnabled()) {
             logger.finest("Operation invocation timeout is " + heartbeatTimeoutMillis + " ms");
@@ -144,7 +144,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         return heartbeatTimeoutMillis;
     }
 
-    private long backupTimeoutMillis(GroupProperties properties) {
+    private long backupTimeoutMillis(HazelcastProperties properties) {
         long backupTimeoutMillis = properties.getMillis(OPERATION_BACKUP_TIMEOUT_MILLIS);
 
         if (logger.isFinestEnabled()) {
@@ -154,7 +154,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         return backupTimeoutMillis;
     }
 
-    private long heartbeatBroadcastPeriodMillis(GroupProperties groupProperties) {
+    private long heartbeatBroadcastPeriodMillis(HazelcastProperties groupProperties) {
         // The heartbeat period is configured to be 1/4 of the call timeout. So with default settings, every 15 seconds,
         // every member in the cluster, will notify every other member in the cluster about all calls that are pending.
         // This is done quite efficiently; imagine at any given moment one node has 1000 concurrent calls pending on another

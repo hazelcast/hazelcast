@@ -21,8 +21,6 @@ import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.ClientAwareService;
@@ -40,6 +38,8 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -68,7 +68,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
             containers[i] = new LockStoreContainer(this, i);
         }
 
-        maxLeaseTimeInMillis = getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties());
+        maxLeaseTimeInMillis = getMaxLeaseTimeInMillis(nodeEngine.getProperties());
     }
 
     NodeEngine getNodeEngine() {
@@ -308,7 +308,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         releaseLocksOwnedBy(clientUuid);
     }
 
-    public static long getMaxLeaseTimeInMillis(GroupProperties groupProperties) {
-        return groupProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
+    public static long getMaxLeaseTimeInMillis(HazelcastProperties hazelcastProperties) {
+        return hazelcastProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
     }
 }

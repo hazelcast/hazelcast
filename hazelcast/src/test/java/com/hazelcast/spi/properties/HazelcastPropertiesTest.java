@@ -1,4 +1,4 @@
-package com.hazelcast.internal.properties;
+package com.hazelcast.spi.properties;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -21,11 +21,11 @@ import static org.junit.Assert.assertTrue;
 public class HazelcastPropertiesTest {
 
     private final Config config = new Config();
-    private final HazelcastProperties defaultGroupProperties = new HazelcastPropertiesImpl(config.getProperties());
+    private final HazelcastProperties defaultHazelcastProperties = new HazelcastProperties(config);
 
     @Test
     public void testNullProperties() {
-        HazelcastProperties properties = new HazelcastPropertiesImpl(null);
+        HazelcastProperties properties = new HazelcastProperties((Properties) null);
 
         assertTrue(properties.keySet().isEmpty());
     }
@@ -35,21 +35,21 @@ public class HazelcastPropertiesTest {
         Properties props = new Properties();
         props.setProperty("key1", "value1");
         props.setProperty("key2", "value2");
-        HazelcastProperties properties = new HazelcastPropertiesImpl(props);
+        HazelcastProperties properties = new HazelcastProperties(props);
 
         assertEquals(props.keySet(), properties.keySet());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testKeySet_isImmutable() {
-        HazelcastProperties properties = new HazelcastPropertiesImpl(null);
+        HazelcastProperties properties = new HazelcastProperties(config);
 
         properties.keySet().remove("foo");
     }
 
     @Test(expected = NullPointerException.class)
     public void testGet_whenKeyNull() {
-        HazelcastProperties properties = new HazelcastPropertiesImpl(null);
+        HazelcastProperties properties = new HazelcastProperties(config);
 
         properties.get(null);
     }
@@ -59,9 +59,9 @@ public class HazelcastPropertiesTest {
         Properties props = new Properties();
         props.setProperty("key1", "value1");
         props.setProperty("key2", "value2");
-        HazelcastProperties properties = new HazelcastPropertiesImpl(props);
+        HazelcastProperties properties = new HazelcastProperties(props);
 
-        assertNull(properties.get("nonexistingkey"));
+        assertNull(properties.get("nonExistingKey"));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class HazelcastPropertiesTest {
         Properties props = new Properties();
         props.setProperty("key1", "value1");
         props.setProperty("key2", "value2");
-        HazelcastProperties properties = new HazelcastPropertiesImpl(props);
+        HazelcastProperties properties = new HazelcastProperties(props);
 
         assertEquals("value1", properties.get("key1"));
     }
@@ -79,8 +79,8 @@ public class HazelcastPropertiesTest {
         config.setProperty(GroupProperty.ENTERPRISE_LICENSE_KEY.getName(), "configValue");
         GroupProperty.ENTERPRISE_LICENSE_KEY.setSystemProperty("systemValue");
 
-        GroupProperties groupProperties = new GroupProperties(config);
-        String value = groupProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        String value = hazelcastProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
 
         GroupProperty.ENTERPRISE_LICENSE_KEY.clearSystemProperty();
 
@@ -91,8 +91,8 @@ public class HazelcastPropertiesTest {
     public void setProperty_ensureUsageOfSystemProperty() {
         GroupProperty.ENTERPRISE_LICENSE_KEY.setSystemProperty("systemValue");
 
-        GroupProperties groupProperties = new GroupProperties(config);
-        String value = groupProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        String value = hazelcastProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
 
         GroupProperty.ENTERPRISE_LICENSE_KEY.clearSystemProperty();
 
@@ -101,14 +101,14 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void setProperty_ensureUsageOfDefaultValue() {
-        String value = defaultGroupProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
+        String value = defaultHazelcastProperties.getString(GroupProperty.ENTERPRISE_LICENSE_KEY);
 
         assertNull(value);
     }
 
     @Test
     public void setProperty_inheritDefaultValueOfParentProperty() {
-        String inputIOThreadCount = defaultGroupProperties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
+        String inputIOThreadCount = defaultHazelcastProperties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
 
         assertEquals(GroupProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
     }
@@ -116,9 +116,9 @@ public class HazelcastPropertiesTest {
     @Test
     public void setProperty_inheritActualValueOfParentProperty() {
         config.setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "1");
-        GroupProperties groupProperties = new GroupProperties(config);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
-        String inputIOThreadCount = groupProperties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
+        String inputIOThreadCount = hazelcastProperties.getString(GroupProperty.IO_INPUT_THREAD_COUNT);
 
         assertEquals("1", inputIOThreadCount);
         assertNotEquals(GroupProperty.IO_THREAD_COUNT.getDefaultValue(), inputIOThreadCount);
@@ -135,32 +135,32 @@ public class HazelcastPropertiesTest {
 
     @Test
     public void getBoolean() {
-        HazelcastProperty property = new HazelcastProperty("foo","true");
+        HazelcastProperty property = new HazelcastProperty("foo", "true");
 
-        boolean isHumanReadable = defaultGroupProperties.getBoolean(property);
+        boolean isHumanReadable = defaultHazelcastProperties.getBoolean(property);
 
         assertTrue(isHumanReadable);
     }
 
     @Test
     public void getInteger() {
-        int ioThreadCount = defaultGroupProperties.getInteger(GroupProperty.IO_THREAD_COUNT);
+        int ioThreadCount = defaultHazelcastProperties.getInteger(GroupProperty.IO_THREAD_COUNT);
 
         assertEquals(3, ioThreadCount);
     }
 
     @Test
     public void getLong() {
-        long lockMaxLeaseTimeSeconds = defaultGroupProperties.getLong(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
+        long lockMaxLeaseTimeSeconds = defaultHazelcastProperties.getLong(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
 
         assertEquals(Long.MAX_VALUE, lockMaxLeaseTimeSeconds);
     }
 
     @Test
     public void getFloat() {
-        HazelcastProperty property = new HazelcastProperty("foo","10");
+        HazelcastProperty property = new HazelcastProperty("foo", "10");
 
-        float maxFileSize = defaultGroupProperties.getFloat(property);
+        float maxFileSize = defaultHazelcastProperties.getFloat(property);
 
         assertEquals(10, maxFileSize, 0.0001);
     }
@@ -168,18 +168,18 @@ public class HazelcastPropertiesTest {
     @Test
     public void getTimeUnit() {
         config.setProperty(GroupProperty.PARTITION_TABLE_SEND_INTERVAL.getName(), "300");
-        GroupProperties groupProperties = new GroupProperties(config);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
-        assertEquals(300, groupProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL));
+        assertEquals(300, hazelcastProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL));
     }
 
     @Test
     public void getTimeUnit_default() {
         long expectedSeconds = 15;
 
-        long intervalNanos = defaultGroupProperties.getNanos(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
-        long intervalMillis = defaultGroupProperties.getMillis(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
-        long intervalSeconds = defaultGroupProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalNanos = defaultHazelcastProperties.getNanos(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalMillis = defaultHazelcastProperties.getMillis(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
+        long intervalSeconds = defaultHazelcastProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
 
         assertEquals(TimeUnit.SECONDS.toNanos(expectedSeconds), intervalNanos);
         assertEquals(TimeUnit.SECONDS.toMillis(expectedSeconds), intervalMillis);
@@ -188,22 +188,22 @@ public class HazelcastPropertiesTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void getTimeUnit_noTimeUnitProperty() {
-        defaultGroupProperties.getMillis(GroupProperty.APPLICATION_VALIDATION_TOKEN);
+        defaultHazelcastProperties.getMillis(GroupProperty.APPLICATION_VALIDATION_TOKEN);
     }
 
     @Test
     public void getEnum() {
         config.setProperty(GroupProperty.PERFORMANCE_METRICS_LEVEL.getName(), ProbeLevel.DEBUG.toString());
-        GroupProperties groupProperties = new GroupProperties(config);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
-        ProbeLevel level = groupProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel level = hazelcastProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
 
         assertEquals(ProbeLevel.DEBUG, level);
     }
 
     @Test
     public void getEnum_default() {
-        ProbeLevel level = defaultGroupProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel level = defaultHazelcastProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
 
         assertEquals(ProbeLevel.MANDATORY, level);
     }
@@ -211,24 +211,17 @@ public class HazelcastPropertiesTest {
     @Test(expected = IllegalArgumentException.class)
     public void getEnum_nonExistingEnum() {
         config.setProperty(GroupProperty.PERFORMANCE_METRICS_LEVEL.getName(), "notExist");
-        GroupProperties groupProperties = new GroupProperties(config);
-        groupProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
+        hazelcastProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
     }
 
     @Test
     public void getEnum_ignoredName() {
         config.setProperty(GroupProperty.PERFORMANCE_METRICS_LEVEL.getName(), "dEbUg");
-        GroupProperties groupProperties = new GroupProperties(config);
+        HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
-        ProbeLevel level = groupProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel level = hazelcastProperties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
 
         assertEquals(ProbeLevel.DEBUG, level);
-    }
-
-    private static class HazelcastPropertiesImpl extends HazelcastProperties {
-
-        HazelcastPropertiesImpl(Properties properties) {
-            super(properties);
-        }
     }
 }

@@ -21,7 +21,6 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
@@ -44,9 +43,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
-import static com.hazelcast.internal.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.internal.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.util.Collections.EMPTY_LIST;
 
@@ -266,13 +265,11 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     }
 
     private int getBatchSize() {
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        return groupProperties.getInteger(MAP_INVALIDATION_MESSAGE_BATCH_SIZE);
+        return nodeEngine.getProperties().getInteger(MAP_INVALIDATION_MESSAGE_BATCH_SIZE);
     }
 
     private int getBackgroundProcessorRunPeriodSeconds() {
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        return groupProperties.getInteger(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
+        return nodeEngine.getProperties().getInteger(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
     }
 
     /**

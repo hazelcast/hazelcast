@@ -22,9 +22,9 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.logging.Level;
 
@@ -49,10 +49,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * {@link GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  * <p/>
- * {@link com.hazelcast.internal.properties.GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
+ * {@link GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
  * Threshold: Percentage of max memory currently in use
  * <p/>
- * {@link com.hazelcast.internal.properties.GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
+ * {@link GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
  * Threshold: CPU system/process load
  */
 public class HealthMonitor {
@@ -78,9 +78,9 @@ public class HealthMonitor {
         this.metricRegistry = node.nodeEngine.getMetricsRegistry();
         this.monitorLevel = getHealthMonitorLevel();
         this.thresholdMemoryPercentage
-                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
+                = node.getProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
         this.thresholdCPUPercentage
-                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
+                = node.getProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
         this.healthMetrics = new HealthMetrics();
     }
@@ -90,7 +90,7 @@ public class HealthMonitor {
             return null;
         }
 
-        int delaySeconds = node.getGroupProperties().getSeconds(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS);
+        int delaySeconds = node.getProperties().getSeconds(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS);
         return new HealthMonitorThread(delaySeconds);
     }
 
@@ -106,7 +106,7 @@ public class HealthMonitor {
     }
 
     private HealthMonitorLevel getHealthMonitorLevel() {
-        String healthMonitorLevel = node.getGroupProperties().getString(GroupProperty.HEALTH_MONITORING_LEVEL);
+        String healthMonitorLevel = node.getProperties().getString(GroupProperty.HEALTH_MONITORING_LEVEL);
         return valueOf(healthMonitorLevel);
     }
 
@@ -119,7 +119,7 @@ public class HealthMonitor {
                     node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
-            this.performanceLogHint = node.getGroupProperties().getBoolean(PerformanceMonitor.ENABLED);
+            this.performanceLogHint = node.getProperties().getBoolean(PerformanceMonitor.ENABLED);
         }
 
         @Override

@@ -27,7 +27,7 @@ public interface EventService {
      * Returns the event thread count.
      *
      * @return the event thread count
-     * @see com.hazelcast.internal.properties.GroupProperty#EVENT_THREAD_COUNT
+     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_THREAD_COUNT
      */
     int getEventThreadCount();
 
@@ -35,7 +35,7 @@ public interface EventService {
      * Returns the queue capacity per event thread.
      *
      * @return the queue capacity per event thread
-     * @see com.hazelcast.internal.properties.GroupProperty#EVENT_QUEUE_CAPACITY
+     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_QUEUE_CAPACITY
      */
     int getEventQueueCapacity();
 
@@ -177,7 +177,6 @@ public interface EventService {
      */
     void publishRemoteEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
 
-
     /**
      * Executes an event callback on a random event thread.
      * <p>
@@ -190,5 +189,4 @@ public interface EventService {
      * @see com.hazelcast.util.executor.StripedRunnable
      */
     void executeEventCallback(Runnable callback);
-
 }

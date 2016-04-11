@@ -23,9 +23,9 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -91,7 +91,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     private AddressDefinition getPublicAddressByPortSearch() throws IOException {
         NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        boolean bindAny = node.getGroupProperties().getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
+        boolean bindAny = node.getProperties().getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
 
         Throwable error = null;
         ServerSocket serverSocket = null;
@@ -354,7 +354,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     private boolean preferIPv4Stack() {
         boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
-                || node.groupProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
+                || node.getProperties().getBoolean(GroupProperty.PREFER_IPv4_STACK);
         // AWS does not support IPv6
         JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();

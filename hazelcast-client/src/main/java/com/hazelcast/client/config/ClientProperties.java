@@ -16,15 +16,15 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.internal.properties.ClientProperty;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.instance.HazelcastProperties;
 
-import static com.hazelcast.client.internal.properties.ClientProperty.EVENT_QUEUE_CAPACITY;
-import static com.hazelcast.client.internal.properties.ClientProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_INTERVAL;
-import static com.hazelcast.client.internal.properties.ClientProperty.HEARTBEAT_TIMEOUT;
-import static com.hazelcast.client.internal.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
-import static com.hazelcast.client.internal.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.client.spi.properties.ClientProperty.EVENT_QUEUE_CAPACITY;
+import static com.hazelcast.client.spi.properties.ClientProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 
 /**
  * Container for configured Hazelcast Client properties ({@see ClientProperty}).

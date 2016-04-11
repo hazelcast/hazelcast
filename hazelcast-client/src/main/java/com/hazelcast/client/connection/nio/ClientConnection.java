@@ -22,7 +22,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -32,6 +31,7 @@ import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.spi.properties.GroupProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -80,7 +80,7 @@ public class ClientConnection implements Connection {
         this.connectionId = connectionId;
         LoggingService clientLoggingService = client.getLoggingService();
         this.logger = clientLoggingService.getLogger(ClientConnection.class);
-        boolean directBuffer = client.getClientProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
+        boolean directBuffer = client.getProperties().getBoolean(GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT);
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize(), directBuffer, clientLoggingService);
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize(), directBuffer, clientLoggingService);
 

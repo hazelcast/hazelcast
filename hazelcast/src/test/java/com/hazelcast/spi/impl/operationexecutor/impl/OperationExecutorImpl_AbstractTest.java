@@ -5,7 +5,6 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -21,6 +20,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -31,9 +31,9 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.internal.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.internal.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSupport {
 
     protected LoggingServiceImpl loggingService;
-    protected GroupProperties props;
+    protected HazelcastProperties props;
     protected Address thisAddress;
     protected HazelcastThreadGroup threadGroup;
     protected DefaultNodeExtension nodeExtension;
@@ -79,7 +79,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     }
 
     protected OperationExecutorImpl initExecutor() {
-        props = new GroupProperties(config);
+        props = new HazelcastProperties(config);
         executor = new OperationExecutorImpl(
                 props, loggingService, thisAddress, handlerFactory,
                 threadGroup, nodeExtension);

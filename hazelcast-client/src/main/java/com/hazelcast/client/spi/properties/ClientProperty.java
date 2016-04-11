@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.internal.properties;
+package com.hazelcast.client.spi.properties;
 
-import com.hazelcast.internal.properties.HazelcastProperty;
-import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -25,7 +24,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the name and default value for Hazelcast Client properties.
  */
-@PrivateApi
 public final class ClientProperty {
 
     /**

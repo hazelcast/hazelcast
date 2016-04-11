@@ -1,7 +1,7 @@
 package com.hazelcast.client.cluster;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.internal.properties.ClientProperty;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;

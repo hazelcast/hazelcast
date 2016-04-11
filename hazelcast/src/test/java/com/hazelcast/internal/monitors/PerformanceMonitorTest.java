@@ -38,7 +38,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
                 name,
                 Logger.getLogger(PerformanceMonitor.class),
                 nodeEngineImpl.getNode().getHazelcastThreadGroup(),
-                nodeEngineImpl.getNode().groupProperties);
+                nodeEngineImpl.getNode().getProperties());
     }
 
     @Test(expected = NullPointerException.class)

@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -39,7 +38,6 @@ import com.hazelcast.internal.monitors.SlowOperationPlugin;
 import com.hazelcast.internal.monitors.SystemPropertiesPlugin;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.properties.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
@@ -66,6 +64,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -74,7 +73,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.internal.properties.GroupProperty.PERFORMANCE_METRICS_LEVEL;
+import static com.hazelcast.spi.properties.GroupProperty.PERFORMANCE_METRICS_LEVEL;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -135,7 +134,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
-        ProbeLevel probeLevel = node.getGroupProperties().getEnum(PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel probeLevel = node.getProperties().getEnum(PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
         return new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
     }
 
@@ -149,8 +148,7 @@ public class NodeEngineImpl implements NodeEngine {
                 name,
                 loggingService.getLogger(PerformanceMonitor.class),
                 node.getHazelcastThreadGroup(),
-                node.groupProperties);
-
+                node.getProperties());
     }
 
     class ConnectionManagerPacketHandler implements PacketHandler {
@@ -317,8 +315,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public GroupProperties getGroupProperties() {
-        return node.getGroupProperties();
+    public HazelcastProperties getProperties() {
+        return node.getProperties();
     }
 
     @Override

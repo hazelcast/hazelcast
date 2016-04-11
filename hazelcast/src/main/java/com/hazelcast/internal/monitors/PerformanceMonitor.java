@@ -17,9 +17,9 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.internal.properties.HazelcastProperties;
-import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;

@@ -23,12 +23,12 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.operation.SafeStateCheckOperation;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -186,7 +186,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
     }
 
     private static int getMaxWaitTime(Node node) {
-        return node.getGroupProperties().getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
+        return node.getProperties().getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
     }
 
     public PartitionProxy getPartition(int partitionId) {

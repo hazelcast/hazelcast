@@ -17,8 +17,8 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.monitors.PerformanceMonitor;
+import com.hazelcast.spi.properties.GroupProperty;
 
 /**
  * Container for configured Hazelcast properties.

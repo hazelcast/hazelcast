@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.properties;
+package com.hazelcast.spi.properties;
 
 import java.util.concurrent.TimeUnit;
 

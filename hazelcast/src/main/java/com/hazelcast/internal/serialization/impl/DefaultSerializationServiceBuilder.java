@@ -24,7 +24,6 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
@@ -36,6 +35,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;

@@ -22,8 +22,8 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.jmx.ManagementService;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -232,7 +232,7 @@ public final class HazelcastInstanceManager {
 
             Node node = hazelcastInstance.node;
             boolean firstMember = isFirstMember(node);
-            long initialWaitSeconds = node.groupProperties.getSeconds(GroupProperty.INITIAL_WAIT_SECONDS);
+            long initialWaitSeconds = node.getProperties().getSeconds(GroupProperty.INITIAL_WAIT_SECONDS);
             if (initialWaitSeconds > 0) {
                 hazelcastInstance.logger.info(format("Waiting %d ms before completing HazelcastInstance startup...",
                         initialWaitSeconds));
@@ -266,7 +266,7 @@ public final class HazelcastInstanceManager {
     private static void awaitMinimalClusterSize(HazelcastInstanceImpl hazelcastInstance, Node node, boolean firstMember)
             throws InterruptedException {
 
-        int initialMinClusterSize = node.groupProperties.getInteger(GroupProperty.INITIAL_MIN_CLUSTER_SIZE);
+        int initialMinClusterSize = node.getProperties().getInteger(GroupProperty.INITIAL_MIN_CLUSTER_SIZE);
         while (node.getClusterService().getSize() < initialMinClusterSize) {
             try {
                 hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);

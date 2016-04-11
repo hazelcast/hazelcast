@@ -25,8 +25,6 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
@@ -50,6 +48,8 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -139,9 +139,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
-        GroupProperties groupProperties = node.getGroupProperties();
-        this.defaultCallTimeoutMillis = groupProperties.getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
-        this.backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
+        HazelcastProperties hazelcastProperties = node.getProperties();
+        this.defaultCallTimeoutMillis = hazelcastProperties.getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
+        this.backpressureRegulator = new BackpressureRegulator(hazelcastProperties, logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
@@ -151,7 +151,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel);
 
         this.invocationMonitor = new InvocationMonitor(
-                nodeEngine, node.getThisAddress(), node.getHazelcastThreadGroup(), node.getGroupProperties(),
+                nodeEngine, node.getThisAddress(), node.getHazelcastThreadGroup(), node.getProperties(),
                 invocationRegistry, logger, (InternalSerializationService) nodeEngine.getSerializationService(),
                 nodeEngine.getServiceManager());
 
@@ -168,7 +168,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 responseHandler);
 
         this.operationExecutor = new OperationExecutorImpl(
-                groupProperties, node.loggingService, node.getThisAddress(), new OperationRunnerFactoryImpl(this),
+                hazelcastProperties, node.loggingService, node.getThisAddress(), new OperationRunnerFactoryImpl(this),
                 node.getHazelcastThreadGroup(), node.getNodeExtension());
 
         ExecutionService executionService = nodeEngine.getExecutionService();
@@ -186,7 +186,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         return new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(),
                 operationExecutor.getPartitionOperationRunners(),
-                node.groupProperties,
+                node.getProperties(),
                 node.getHazelcastThreadGroup());
     }
 

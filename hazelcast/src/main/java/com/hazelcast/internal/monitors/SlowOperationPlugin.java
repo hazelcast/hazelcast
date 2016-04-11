@@ -19,12 +19,12 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
-import com.hazelcast.internal.properties.GroupProperties;
-import com.hazelcast.internal.properties.GroupProperty;
-import com.hazelcast.internal.properties.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.List;
 
@@ -61,7 +61,7 @@ public class SlowOperationPlugin extends PerformanceMonitorPlugin {
     }
 
     private long getPeriodMillis(NodeEngineImpl nodeEngine) {
-        GroupProperties props = nodeEngine.getGroupProperties();
+        HazelcastProperties props = nodeEngine.getProperties();
         if (!props.getBoolean(GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
             return DISABLED;
         }

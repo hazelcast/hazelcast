@@ -20,12 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -105,6 +105,6 @@ public class MapDestroyTest extends HazelcastTestSupport {
 
     private int getPartitionCount(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return node.groupProperties.getInteger(GroupProperty.PARTITION_COUNT);
+        return node.getProperties().getInteger(GroupProperty.PARTITION_COUNT);
     }
 }

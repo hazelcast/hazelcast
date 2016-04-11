@@ -21,8 +21,8 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.jmx.ManagementService;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -98,7 +98,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     private static int getShutdownTimeoutSeconds(Node node) {
-        int gracefulShutdownMaxWaitSeconds = node.groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
+        int gracefulShutdownMaxWaitSeconds = node.getProperties().getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
         return Math.min(DEFAULT_GRACEFUL_SHUTDOWN_WAIT, gracefulShutdownMaxWaitSeconds);
     }
 

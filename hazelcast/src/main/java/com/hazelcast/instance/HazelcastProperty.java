@@ -16,8 +16,8 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.concurrent.TimeUnit;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.properties;
+package com.hazelcast.spi.properties;
 
 import com.hazelcast.config.Config;
 
@@ -36,7 +36,7 @@ import static java.util.Collections.unmodifiableSet;
  * {@see http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties}</li>
  * </ul></p>
  */
-public abstract class HazelcastProperties {
+public class HazelcastProperties {
 
     private final Set<String> keys;
     private final Properties properties = new Properties();
@@ -47,10 +47,24 @@ public abstract class HazelcastProperties {
      * Uses the environmental value if no value is defined in the configuration.
      * Uses the default value if no environmental value is defined.
      *
+     * @param config {@link Config} used to configure the {@link HazelcastProperty} values.
+     *               Properties in config are allowed to be null.
+     */
+    public HazelcastProperties(Config config) {
+        this(config.getProperties());
+    }
+
+    /**
+     * Creates a container with configured Hazelcast properties.
+     * <p/>
+     * Uses the environmental value if no value is defined in the configuration.
+     * Uses the default value if no environmental value is defined.
+     *
      * @param nullableProperties {@link Properties} used to configure the {@link HazelcastProperty} values.
      *                           Properties are allowed to be null.
      */
-    protected HazelcastProperties(Properties nullableProperties) {
+    @SuppressWarnings("unchecked")
+    public HazelcastProperties(Properties nullableProperties) {
         if (nullableProperties != null) {
             properties.putAll(nullableProperties);
         }

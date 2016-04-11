@@ -32,7 +32,6 @@ import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.internal.properties.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -41,6 +40,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
 
@@ -104,8 +104,8 @@ public class ClusterJoinManager {
         clusterStateManager = clusterService.getClusterStateManager();
         clusterClock = clusterService.getClusterClock();
 
-        maxWaitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
-        waitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
+        maxWaitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
+        waitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
         whileFinalizeJoinsExceptionHandler = logAllExceptions(logger, "While waiting finalize join calls...",
                 Level.WARNING);
     }
