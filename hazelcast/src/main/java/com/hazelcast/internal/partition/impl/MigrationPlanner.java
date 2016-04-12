@@ -20,7 +20,6 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import sun.util.logging.resources.logging;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -62,20 +61,21 @@ class MigrationPlanner {
         assert oldAddresses.length == newAddresses.length : "Replica addresses with different lengths! Old: "
                 + Arrays.toString(oldAddresses) + ", New: " + Arrays.toString(newAddresses);
 
-        log("INITIAL STATE: %s", Arrays.toString(oldAddresses));
-        log("FINAL STATE: %s", Arrays.toString(newAddresses));
+        log("Initial state: %s", Arrays.toString(oldAddresses));
+        log("Final state: %s", Arrays.toString(newAddresses));
 
         initState(oldAddresses);
         assertNoDuplicate(oldAddresses, newAddresses);
-        // Fix cyclic partition replica movements.
-        fixCycle(oldAddresses, newAddresses);
 
-        log("EXPECTED FINAL STATE: %s", Arrays.toString(newAddresses));
+        // Fix cyclic partition replica movements.
+        if (fixCycle(oldAddresses, newAddresses)) {
+            log("Final state (after cycle fix): %s", Arrays.toString(newAddresses));
+        }
 
         int currentIndex = 0;
         while (currentIndex < oldAddresses.length) {
-            log("CURRENT STATE: %s", Arrays.toString(state));
-                    assertNoDuplicate(oldAddresses, newAddresses);
+            log("Current index: %d, state: %s", currentIndex, Arrays.toString(state));
+            assertNoDuplicate(oldAddresses, newAddresses);
 
             if (newAddresses[currentIndex] == null) {
                 if (state[currentIndex] != null) {
@@ -169,18 +169,21 @@ class MigrationPlanner {
                     } else {
                         int k = getReplicaIndex(newAddresses, state[i]);
                         if (k == -1) {
-                            log("SHIFT UP %s from old addresses index: %d to index: %d with source: %s", state[j], j, i, state[i]);
+                            log("SHIFT UP %s from old addresses index: %d to index: %d with source: %s",
+                                    state[j], j, i, state[i]);
                             callback.migrate(state[i], i, -1, state[j], j, i);
                             state[i] = state[j];
                         } else if (state[k] == null) {
                             // shift up + shift down
-                            log("SHIFT UP %s from old addresses index: %d to index: %d AND SHIFT DOWN %s to index: %d", state[j], j, i, state[i], k);
+                            log("SHIFT UP %s from old addresses index: %d to index: %d AND SHIFT DOWN %s to index: %d",
+                                    state[j], j, i, state[i], k);
                             callback.migrate(state[i], i, k, state[j], j, i);
                             state[k] = state[i];
                             state[i] = state[j];
                         } else {
                             // only shift up because source will come back with another move migration
-                            log("SHIFT UP %s from old addresses index: %d to index: %d with source: %s will get another MOVE migration to index: %d", state[j], j, i, state[i], k);
+                            log("SHIFT UP %s from old addresses index: %d to index: %d with source: %s will get "
+                                    + "another MOVE migration to index: %d", state[j], j, i, state[i], k);
                             callback.migrate(state[i], i, -1, state[j], j, i);
                             state[i] = state[j];
                         }

@@ -322,7 +322,8 @@ public class MigrationManager {
         if (node.getThisAddress().equals(migrationInfo.getDestination())) {
             final boolean result = node.isRunning();
             if (logger.isFinestEnabled()) {
-                logger.finest("Shortcutting migration commit with result: " + result + " since destination is master: " + migrationInfo);
+                logger.finest("Shortcutting migration commit with result: " + result
+                        + " since destination is master: " + migrationInfo);
             }
             return result;
         }
@@ -627,10 +628,16 @@ public class MigrationManager {
 
             for (int partitionId = 0; partitionId < newState.length; partitionId++) {
                 InternalPartitionImpl currentPartition = partitionStateManager.getPartitionImpl(partitionId);
+                Address[] currentReplicas = currentPartition.getReplicaAddresses();
                 Address[] newReplicas = newState[partitionId];
 
-                final MigrationCollector migrationCollector = new MigrationCollector(currentPartition, migrationCount, lostCount);
-                migrationPlanner.planMigrations(currentPartition.getReplicaAddresses(), newReplicas, migrationCollector);
+                MigrationCollector migrationCollector = new MigrationCollector(currentPartition, migrationCount, lostCount);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Planning migrations for partition: " + partitionId
+                            + ". Current replicas: " + Arrays.toString(currentReplicas)
+                            + ", New replicas: " + Arrays.toString(newReplicas));
+                }
+                migrationPlanner.planMigrations(currentReplicas, newReplicas, migrationCollector);
                 migrations.add(migrationCollector.migrations);
             }
 
@@ -711,11 +718,11 @@ public class MigrationManager {
                     Address destination, int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
 
                 if (logger.isFineEnabled()) {
-                    logger.fine("Planned migration for Partition[" + partitionId + "]: "
-                            + "source = " + source + ", sourceCurrentReplicaIndex = " + sourceCurrentReplicaIndex
+                    logger.fine("Planned migration -> partition = " + partitionId
+                            + ", source = " + source + ", sourceCurrentReplicaIndex = " + sourceCurrentReplicaIndex
                             + ", sourceNewReplicaIndex = " + sourceNewReplicaIndex + ", destination = " + destination
-                            + ", destinationCurrentReplicaIndex = " + destinationCurrentReplicaIndex + ", destinationNewReplicaIndex = "
-                            + destinationNewReplicaIndex);
+                            + ", destinationCurrentReplicaIndex = " + destinationCurrentReplicaIndex
+                            + ", destinationNewReplicaIndex = " + destinationNewReplicaIndex);
                 }
 
                 if (source == null && destinationCurrentReplicaIndex == -1 && destinationNewReplicaIndex == 0) {
@@ -818,7 +825,7 @@ public class MigrationManager {
                 Boolean result = executeMigrateOperation(partitionOwner);
                 processMigrationResult(result);
             } catch (Throwable t) {
-                final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
+                final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINE;
                 logger.log(level, "Error [" + t.getClass() + ": " + t.getMessage() + "] during " + migrationInfo);
                 logger.finest(t);
                 migrationOperationFailed();

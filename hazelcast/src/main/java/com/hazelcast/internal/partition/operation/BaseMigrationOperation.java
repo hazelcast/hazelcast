@@ -86,7 +86,7 @@ abstract class BaseMigrationOperation extends AbstractOperation
         }
         final Node node = nodeEngine.getNode();
         if (!node.getNodeExtension().isStartCompleted()) {
-            throw new IllegalStateException("Partition table received before startup is completed. "
+            throw new IllegalStateException("Migration operation is received before startup is completed. "
                     + "Caller: " + getCallerAddress());
         }
     }

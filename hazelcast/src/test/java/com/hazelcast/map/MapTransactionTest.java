@@ -74,6 +74,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -313,7 +314,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         };
         new Thread(runnable).start();
         assertOpenEventually(thresholdReached);
-        h2.shutdown();
+        terminateInstance(h2);
         assertOpenEventually(transactionCompletedLatch);
         for (int i = 0; i < size; i++) {
             assertNull(map.get(i));

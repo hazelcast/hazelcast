@@ -378,7 +378,16 @@ public class MigrationCommitServiceTest
     private void migrateWithSuccess(final MigrationInfo migration) {
         final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
         partitionService.getMigrationManager().scheduleMigration(migration);
-        waitAllForSafeState(instances);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (HazelcastInstance instance : factory.getAllHazelcastInstances()) {
+                    final InternalPartitionImpl partition = getPartition(instance, migration.getPartitionId());
+                    assertEquals(partition.getReplicaAddress(migration.getDestinationNewReplicaIndex()), migration.getDestination());
+                }
+            }
+        });
     }
 
     private void migrateWithFailure(final MigrationInfo migration) {

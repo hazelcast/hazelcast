@@ -186,8 +186,9 @@ public class PartitionStateGeneratorTest {
                         List<Member> extra = createMembers(last, (memberCount - previousMemberCount), maxSameHostCount);
                         memberList.addAll(extra);
                     } else {
+                        List<Member> removedMembers = memberList.subList(memberCount, memberList.size());
                         memberList = memberList.subList(0, memberCount);
-                        shift(state, memberList);
+                        remove(state, removedMembers);
                     }
                     groups = memberGroupFactory.createMemberGroups(memberList);
                     state = generator.arrange(groups, toPartitionArray(state));
@@ -257,26 +258,15 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private static void shift(Address[][] state, List<Member> members) {
+    private static void remove(Address[][] state, List<Member> removedMembers) {
         Set<Address> addresses = new HashSet<Address>();
-        for (Member member : members) {
-            addresses.add(((MemberImpl) member).getAddress());
+        for (Member member : removedMembers) {
+            addresses.add(member.getAddress());
         }
         for (Address[] replicas : state) {
             for (int i = 0; i < replicas.length; i++) {
                 if (replicas[i] != null && !addresses.contains(replicas[i])) {
-                    Address[] validAddresses = new Address[InternalPartition.MAX_REPLICA_COUNT - i];
-                    int k = 0;
-                    for (int a = i + 1; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
-                        Address address = replicas[a];
-                        if (address != null && addresses.contains(address)) {
-                            validAddresses[k++] = address;
-                        }
-                    }
-                    System.arraycopy(validAddresses, 0, replicas, i, k);
-                    for (int a = i + k; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
-                        replicas[a] = null;
-                    }
+                    replicas[i] = null;
                     break;
                 }
             }

@@ -252,7 +252,7 @@ public class PartitionStateManager {
         return partitions;
     }
 
-    InternalPartition[] getPartitionsCopy() {
+    public InternalPartition[] getPartitionsCopy() {
         NopPartitionListener listener = new NopPartitionListener();
         InternalPartition[] result = new InternalPartition[partitions.length];
         for (int i = 0; i < partitionCount; i++) {

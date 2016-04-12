@@ -45,15 +45,17 @@ public class MockConnectionManager implements ConnectionManager {
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
 
-    final ConcurrentMap<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
-    final ConcurrentMap<Address, NodeEngineImpl> nodes;
-    final Node node;
-    final Object joinerLock;
+    private final ConcurrentMap<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
+    private final ConcurrentMap<Address, NodeEngineImpl> nodes;
+    private final Node node;
+    private final Object joinerLock;
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
     private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
     private final IOService ioService;
     private final ILogger logger;
+
+    private volatile boolean live;
 
     public MockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes, Node node, Object joinerLock) {
         this.ioService = ioService;
@@ -74,7 +76,7 @@ public class MockConnectionManager implements ConnectionManager {
     @Override
     public Connection getOrConnect(Address address) {
         MockConnection conn = mapConnections.get(address);
-        if (conn == null || !conn.isAlive()) {
+        if (live && (conn == null || !conn.isAlive())) {
             NodeEngineImpl nodeEngine = nodes.get(address);
             if (nodeEngine != null && nodeEngine.isRunning()) {
                 MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.nodeEngine);
@@ -94,7 +96,14 @@ public class MockConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public void shutdown() {
+    public void start() {
+        live = true;
+    }
+
+    @Override
+    public void stop() {
+        live = false;
+
         for (Address address : nodes.keySet()) {
             if (address.equals(node.getThisAddress())) {
                 continue;
@@ -116,6 +125,11 @@ public class MockConnectionManager implements ConnectionManager {
     }
 
     @Override
+    public void shutdown() {
+        stop();
+    }
+
+    @Override
     public boolean registerConnection(final Address remoteEndpoint, final Connection connection) {
         mapConnections.put(remoteEndpoint, (MockConnection) connection);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
@@ -132,10 +146,6 @@ public class MockConnectionManager implements ConnectionManager {
             }
         });
         return true;
-    }
-
-    @Override
-    public void start() {
     }
 
     @Override
@@ -164,10 +174,6 @@ public class MockConnectionManager implements ConnectionManager {
                 return endPoint.hashCode();
             }
         });
-    }
-
-    @Override
-    public void stop() {
     }
 
     @Override

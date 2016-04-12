@@ -5,7 +5,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
+import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -29,16 +29,16 @@ public class TestPartitionUtils {
     private TestPartitionUtils() {
     }
 
-    public static InternalPartitionServiceState getInternalPartitionServiceState(HazelcastInstance instance) {
-        return getInternalPartitionServiceState(getNode(instance));
+    public static PartitionServiceState getPartitionServiceState(HazelcastInstance instance) {
+        return getPartitionServiceState(getNode(instance));
     }
 
-    public static InternalPartitionServiceState getInternalPartitionServiceState(Node node) {
+    public static PartitionServiceState getPartitionServiceState(Node node) {
         if (node == null) {
-            return InternalPartitionServiceState.SAFE;
+            return PartitionServiceState.SAFE;
         }
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
-        return partitionService.getPartitionReplicaStateChecker().getMemberState();
+        return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
     }
 
     public static Map<Integer, long[]> getAllReplicaVersions(List<HazelcastInstance> instances) throws InterruptedException {

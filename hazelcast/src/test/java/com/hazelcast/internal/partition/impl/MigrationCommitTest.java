@@ -87,6 +87,7 @@ public class MigrationCommitTest
 
         hz2.getLifecycleService().terminate();
 
+        assertClusterSizeEventually(1, hz1);
         waitAllForSafeState(hz1);
 
         final InternalPartition partition0 = getPartitionService(hz1).getPartition(0);
@@ -436,7 +437,6 @@ public class MigrationCommitTest
         final Config config = new Config();
         config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
-        config.setProperty("hazelcast.logging.type", "log4j");
         return config;
     }
 

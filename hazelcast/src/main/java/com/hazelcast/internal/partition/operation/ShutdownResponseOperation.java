@@ -25,7 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 
-public class ShutdownResponseOperation extends AbstractOperation implements MigrationCycleOperation{
+public class ShutdownResponseOperation extends AbstractOperation implements MigrationCycleOperation {
 
     public ShutdownResponseOperation() {
     }
@@ -52,7 +52,6 @@ public class ShutdownResponseOperation extends AbstractOperation implements Migr
             }
             partitionService.onShutdownResponse();
         } else {
-            // TODO this may be ok during master changes so we can convert the log level into finest
             logger.warning("Received shutdown response from " + caller + " but known master is: " + masterAddress);
         }
     }

@@ -689,18 +689,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean prepareToSafeShutdown(long timeout, TimeUnit unit) {
+        if (!node.joined()) {
+            return true;
+        }
+
         if (node.isLiteMember()) {
             return true;
         }
 
-        CountDownLatch latch = shutdownLatchRef.get();
-        if (latch == null) {
-            latch = new CountDownLatch(1);
-            if (!shutdownLatchRef.compareAndSet(null, latch)) {
-                latch = shutdownLatchRef.get();
-            }
-        }
-
+        CountDownLatch latch = getShutdownLatch();
         InternalOperationService operationService = nodeEngine.getOperationService();
 
         long timeoutMillis = unit.toMillis(timeout);
@@ -721,6 +718,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             logger.info("Safe shutdown is interrupted!");
         }
         return false;
+    }
+
+    private CountDownLatch getShutdownLatch() {
+        CountDownLatch latch = shutdownLatchRef.get();
+        if (latch == null) {
+            latch = new CountDownLatch(1);
+            if (!shutdownLatchRef.compareAndSet(null, latch)) {
+                latch = shutdownLatchRef.get();
+            }
+        }
+        return latch;
     }
 
     public void onShutdownRequest(Address address) {
@@ -751,7 +759,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean isMemberStateSafe() {
-        return partitionReplicaStateChecker.getMemberState() == InternalPartitionServiceState.SAFE;
+        return partitionReplicaStateChecker.getPartitionServiceState() == PartitionServiceState.SAFE;
     }
 
     @Override
@@ -1102,7 +1110,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     newState.setVersion(maxVersion);
                     logger.info("Applying the most recent of partition state...");
                     applyNewState(newState, thisAddress);
-                } else {
+                } else if (partitionStateManager.isInitialized()) {
                     partitionStateManager.incrementVersion();
                     for (MigrationInfo migrationInfo : allCompletedMigrations) {
                         if (migrationManager.addCompletedMigration(migrationInfo)) {
@@ -1113,6 +1121,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                             migrationManager.scheduleActiveMigrationFinalization(migrationInfo);
                         }
                     }
+                } else {
+                    assert allCompletedMigrations.isEmpty() : "Partitions are not initialized!";
                 }
 
                 shouldFetchPartitionTables = false;
