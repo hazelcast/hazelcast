@@ -988,11 +988,5 @@
             <version>3.0.0</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>pl.pragmatists</groupId>
-            <artifactId>JUnitParams</artifactId>
-            <version>1.0.4</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 </project>

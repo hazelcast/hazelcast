@@ -26,13 +26,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
-import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderNestedOldTest.WheelPortable.w;
+import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.WheelPortable.w;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DefaultPortableReaderNestedOldTest extends HazelcastTestSupport {
+public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
@@ -171,13 +172,8 @@ public class DefaultPortableReaderNestedOldTest extends HazelcastTestSupport {
 
     @Test
     public void portableArrayFirst_primitiveArrayAtTheEnd_wholeArrayFetched_withAny() throws IOException {
-        // TODO cleanup
-        int[] result = reader(PORSCHE).readIntArray("wheels[0].serial[any]");
-        int[] expected = ((WheelPortable) PORSCHE.wheels[0]).serial.clone();
-        Arrays.sort(result);
-        Arrays.sort(expected);
-
-        assertArrayEquals(expected, result);
+        int[] expected = ((WheelPortable) PORSCHE.wheels[0]).serial;
+        assertArrayEquals(expected, reader(PORSCHE).readIntArray("wheels[0].serial[any]"));
     }
 
     @Test
@@ -206,24 +202,22 @@ public class DefaultPortableReaderNestedOldTest extends HazelcastTestSupport {
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd6() throws IOException {
-        int[] expected = {};
-        assertArrayEquals(expected, reader(PORSCHE).readIntArray("wheels[1].emptyChips[any].power"));
+        assertNull(reader(PORSCHE).readIntArray("wheels[1].emptyChips[any].power"));
     }
 
-//    @Test
-//    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd7() throws IOException {
-//        assertArrayEquals(null, reader(PORSCHE).readIntArray("wheels[1].nullChips[any].power"));
-//    }
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd7() throws IOException {
+        assertArrayEquals(null, reader(PORSCHE).readIntArray("wheels[1].nullChips[any].power"));
+    }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8() throws IOException {
-        Portable[] expected = {};
-        assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[1].emptyChips[any]"));
+        assertNull(reader(PORSCHE).readPortableArray("wheels[1].emptyChips[any]"));
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd8a() throws IOException {
-        Portable[] expected = {};
+        Portable[] expected = {null, null};
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].emptyChips[any]"));
     }
 
@@ -233,15 +227,15 @@ public class DefaultPortableReaderNestedOldTest extends HazelcastTestSupport {
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[1].emptyChips"));
     }
 
-//    @Test
-//    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd10() throws IOException {
-//        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips[any]"));
-//    }
-//
-//    @Test
-//    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd11() throws IOException {
-//        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips"));
-//    }
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd10() throws IOException {
+        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips[any]"));
+    }
+
+    @Test
+    public void portableArrayFirst_withAny_primitiveArrayAtTheEnd11() throws IOException {
+        assertArrayEquals(null, reader(PORSCHE).readPortableArray("wheels[1].nullChips"));
+    }
 
     //
     // Utilities
