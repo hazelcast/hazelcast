@@ -59,8 +59,6 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
 
     private final List<PartitionMigrationEvent> rollbackEvents = new ArrayList<PartitionMigrationEvent>();
 
-    private final List<Integer> clearPartitionIds = new ArrayList<Integer>();
-
     volatile int backupCount;
 
     private volatile ILogger logger;
@@ -143,12 +141,7 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
         }
     }
 
-    @Override
     public void clearPartitionReplica(int partitionId) {
-        synchronized (clearPartitionIds) {
-            clearPartitionIds.add(partitionId);
-        }
-
         data.remove(partitionId);
     }
 
@@ -170,12 +163,6 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
         }
     }
 
-    public List<Integer> getClearPartitionIds() {
-        synchronized (clearPartitionIds) {
-            return new ArrayList<Integer>(clearPartitionIds);
-        }
-    }
-
     public void clearEvents() {
         synchronized (beforeEvents) {
             beforeEvents.clear();
@@ -185,9 +172,6 @@ public class TestMigrationAwareService implements ManagedService, MigrationAware
         }
         synchronized (rollbackEvents) {
             rollbackEvents.clear();
-        }
-        synchronized (clearPartitionIds) {
-            clearPartitionIds.clear();
         }
     }
 

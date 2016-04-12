@@ -88,11 +88,6 @@ class MapMigrationAwareService implements MigrationAwareService {
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        mapServiceContext.clearPartitionData(partitionId);
-    }
-
     private void migrateIndex(PartitionMigrationEvent event) {
         final long now = getNow();
 

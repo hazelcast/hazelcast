@@ -151,11 +151,6 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearRingbuffersHavingLesserBackupCountThan(partitionId, -1);
-    }
-
     public RingbufferContainer getContainer(String name) {
         RingbufferContainer ringbuffer = containers.get(name);
         if (ringbuffer != null) {

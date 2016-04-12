@@ -5,12 +5,18 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.partition.MigrationInfo.MigrationStatus;
 import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestPutOperation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -28,8 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -165,56 +171,28 @@ public class MigrationCommitServiceTest
     }
 
     @Test
-    public void testPartitionOwnerShiftDownCommitWithOldOwnerOfKeepReplicaIndex()
-            throws InterruptedException, TimeoutException, ExecutionException {
-        final int oldReplicaIndex = 0, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 2;
-        testSuccessfulShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
-    }
-
-    @Test
-    public void testPartitionOwnerShiftDownRollbackWithOldOwnerOfKeepReplicaIndex()
-            throws InterruptedException, TimeoutException, ExecutionException {
-        final int oldReplicaIndex = 0, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 2;
-        testFailedShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
-    }
-
-    @Test
-    public void testPartitionOwnerShiftDownCommitWithNullOwnerOfKeepReplicaIndex()
+    public void testPartitionOwnerShiftDownCommit()
             throws InterruptedException, TimeoutException, ExecutionException {
         final int oldReplicaIndex = 0, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 1;
         testSuccessfulShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
     }
 
     @Test
-    public void testPartitionOwnerShiftDownRollbackWithNullOwnerOfKeepReplicaIndex()
+    public void testPartitionOwnerShiftDownRollback()
             throws InterruptedException, TimeoutException, ExecutionException {
         final int oldReplicaIndex = 0, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 1;
         testFailedShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
     }
 
     @Test
-    public void testPartitionBackupShiftDownCommitWithOldOwnerOfKeepReplicaIndex()
-            throws InterruptedException, TimeoutException, ExecutionException {
-        final int oldReplicaIndex = 1, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 2;
-        testSuccessfulShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
-    }
-
-    @Test
-    public void testPartitionBackupShiftDownRollbackWithOldOwnerOfKeepReplicaIndex()
-            throws InterruptedException, TimeoutException, ExecutionException {
-        final int oldReplicaIndex = 1, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 2;
-        testFailedShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
-    }
-
-    @Test
-    public void testPartitionBackupMoveCopyBackCommitWithNullOwnerOfKeepReplicaIndex()
+    public void testPartitionBackupShiftDownCommit()
             throws InterruptedException, TimeoutException, ExecutionException {
         final int oldReplicaIndex = 1, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 1;
         testSuccessfulShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
     }
 
     @Test
-    public void testPartitionBackupMoveCopyBackRollbackWithNullOwnerOfKeepReplicaIndex()
+    public void testPartitionBackupShiftDownRollback()
             throws InterruptedException, TimeoutException, ExecutionException {
         final int oldReplicaIndex = 1, replicaIndexToClear = NODE_COUNT - 1, newReplicaIndex = NODE_COUNT - 1;
         testFailedShiftDownMigration(PARTITION_ID_TO_MIGRATE, replicaIndexToClear, oldReplicaIndex, newReplicaIndex);
@@ -224,28 +202,11 @@ public class MigrationCommitServiceTest
                                                   final int oldReplicaIndex, final int newReplicaIndex)
             throws InterruptedException, TimeoutException, ExecutionException {
         final Address destination = clearReplicaIndex(partitionId, replicaIndexToClear);
-        final MigrationInfo migration = createMoveCopyBackMigration(partitionId, oldReplicaIndex, newReplicaIndex, destination);
+        final MigrationInfo migration = createShiftDownMigration(partitionId, oldReplicaIndex, newReplicaIndex, destination);
         migrateWithSuccess(migration);
 
         assertMigrationSourceCommit(migration);
         assertMigrationDestinationCommit(migration);
-
-        final Address oldReplicaOwner = migration.getOldBackupReplicaOwner();
-        if (oldReplicaOwner != null) {
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run()
-                        throws Exception {
-
-                    final TestMigrationAwareService service = getService(oldReplicaOwner);
-
-                    final List<Integer> clearPartitionIds = service.getClearPartitionIds();
-                    assertTrue(clearPartitionIds.size() == 1);
-                    assertEquals(partitionId, (int) clearPartitionIds.get(0));
-                }
-            });
-        }
-
         assertPartitionDataAfterMigrations();
     }
 
@@ -253,26 +214,11 @@ public class MigrationCommitServiceTest
                                               final int oldReplicaIndex, final int newReplicaIndex)
             throws InterruptedException, TimeoutException, ExecutionException {
         final Address destination = clearReplicaIndex(partitionId, replicaIndexToClear);
-        final MigrationInfo migration = createMoveCopyBackMigration(partitionId, oldReplicaIndex, newReplicaIndex, destination);
+        final MigrationInfo migration = createShiftDownMigration(partitionId, oldReplicaIndex, newReplicaIndex, destination);
         migrateWithFailure(migration);
 
         assertMigrationSourceRollback(migration);
         assertMigrationDestinationRollback(migration);
-
-        final Address oldReplicaOwner = migration.getOldBackupReplicaOwner();
-        if (oldReplicaOwner != null) {
-            assertTrueAllTheTime(new AssertTask() {
-                @Override
-                public void run()
-                        throws Exception {
-                    final TestMigrationAwareService service = getService(oldReplicaOwner);
-
-                    final List<Integer> clearPartitionIds = service.getClearPartitionIds();
-                    assertTrue(clearPartitionIds.isEmpty());
-                }
-            }, 5);
-        }
-
         assertPartitionDataAfterMigrations();
     }
 
@@ -364,17 +310,12 @@ public class MigrationCommitServiceTest
         return new MigrationInfo(partitionId, source, destination, replicaIndex, -1, -1, replicaIndex);
     }
 
-    private MigrationInfo createMoveCopyBackMigration(final int partitionId, final int oldReplicaIndex, final int newReplicaIndex,
-                                                      final Address destination) {
+    private MigrationInfo createShiftDownMigration(final int partitionId, final int oldReplicaIndex, final int newReplicaIndex,
+                                                   final Address destination) {
         final InternalPartitionImpl partition = getPartition(instances[0], partitionId);
         final Address source = partition.getReplicaAddress(oldReplicaIndex);
-        final Address oldReplicaOwner = partition.getReplicaAddress(newReplicaIndex);
-
-        final MigrationInfo migration = new MigrationInfo(partitionId, source, destination, oldReplicaIndex, newReplicaIndex, -1,
+        return new MigrationInfo(partitionId, source, destination, oldReplicaIndex, newReplicaIndex, -1,
                 oldReplicaIndex);
-        migration.setOldBackupReplicaOwner(oldReplicaOwner);
-
-        return migration;
     }
 
     private MigrationInfo createCopyMigration(final int partitionId, final int copyReplicaIndex, final Address destination) {
@@ -388,19 +329,20 @@ public class MigrationCommitServiceTest
         return new MigrationInfo(partitionId, source, destination, newReplicaIndex, -1, oldReplicaIndex, newReplicaIndex);
     }
 
-    private Address clearReplicaIndex(final int partitionId, final int replicaIndexToClear) {
+    private Address clearReplicaIndex(final int partitionId, final int replicaIndexToClear)
+            throws ExecutionException, InterruptedException {
         final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(instances[0]);
         final InternalPartitionImpl partition = (InternalPartitionImpl) partitionService.getPartition(partitionId);
 
         final Address oldReplicaOwner = partition.getReplicaAddress(replicaIndexToClear);
-        partition.setReplicaAddress(replicaIndexToClear, null);
 
-        final MigrationInfo migration = new MigrationInfo(0, oldReplicaOwner, null, replicaIndexToClear, -1, -1, -1);
-        migration.setMaster(getAddress(instances[0]));
-        migration.setOldBackupReplicaOwner(oldReplicaOwner);
-        migration.setStatus(MigrationStatus.SUCCESS);
-        partitionService.getMigrationManager().addCompletedMigration(migration);
-        partitionService.getMigrationManager().scheduleActiveMigrationFinalization(migration);
+        ClearReplicaOperation op = new ClearReplicaOperation();
+        op.setPartitionId(partitionId).setReplicaIndex(replicaIndexToClear).setService(partitionService);
+        final InvocationBuilder builder = getOperationService(instances[0])
+                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, op, partitionId);
+        builder.setReplicaIndex(replicaIndexToClear).invoke().get();
+
+        partition.setReplicaAddress(replicaIndexToClear, null);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -603,6 +545,7 @@ public class MigrationCommitServiceTest
         config.getServicesConfig().addServiceConfig(serviceConfig);
         config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty("hazelcast.logging.type", "log4j");
 
         return config;
     }
@@ -665,6 +608,53 @@ public class MigrationCommitServiceTest
                 blockMigrations = true;
                 latch.countDown();
             }
+        }
+
+    }
+
+    static final class ClearReplicaOperation extends AbstractOperation
+            implements PartitionAwareOperation, MigrationCycleOperation {
+
+        public ClearReplicaOperation() {
+        }
+
+        @Override
+        public void run() throws Exception {
+            int partitionId = getPartitionId();
+            InternalPartitionServiceImpl partitionService = getService();
+            partitionService.getReplicaManager().cancelReplicaSync(partitionId);
+            clearPartition(partitionId, partitionService);
+        }
+
+        private void clearPartition(int partitionId, InternalPartitionServiceImpl partitionService) {
+            NodeEngine nodeEngine = getNodeEngine();
+            TestMigrationAwareService service = nodeEngine.getService(TestMigrationAwareService.SERVICE_NAME);
+            service.clearPartitionReplica(partitionId);
+            partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId);
+            System.err.println(
+                    "##### " + Arrays.toString(partitionService.getReplicaManager().getPartitionReplicaVersions(partitionId)));
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return true;
+        }
+
+        @Override
+        public boolean validatesTarget() {
+            return false;
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in)
+                throws IOException {
+            super.readInternal(in);
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out)
+                throws IOException {
+            super.writeInternal(out);
         }
 
     }

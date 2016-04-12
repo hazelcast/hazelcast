@@ -76,9 +76,6 @@ public class MigrationInfo implements DataSerializable {
     private int destinationCurrentReplicaIndex;
     private int destinationNewReplicaIndex;
 
-    // old replica owner of sourceNewReplicaIndex
-    private Address oldBackupReplicaOwner;
-
     private final AtomicBoolean processing = new AtomicBoolean(false);
     private volatile MigrationStatus status;
 
@@ -135,15 +132,6 @@ public class MigrationInfo implements DataSerializable {
         return this;
     }
 
-    public Address getOldBackupReplicaOwner() {
-        return oldBackupReplicaOwner;
-    }
-
-    public MigrationInfo setOldBackupReplicaOwner(Address oldKeepReplicaOwner) {
-        this.oldBackupReplicaOwner = oldKeepReplicaOwner;
-        return this;
-    }
-
     public boolean startProcessing() {
         return processing.compareAndSet(false, true);
     }
@@ -191,14 +179,7 @@ public class MigrationInfo implements DataSerializable {
             destination.writeData(out);
         }
 
-
         master.writeData(out);
-
-        boolean hasOld = oldBackupReplicaOwner != null;
-        out.writeBoolean(hasOld);
-        if (hasOld) {
-            oldBackupReplicaOwner.writeData(out);
-        }
     }
 
     @Override
@@ -225,11 +206,6 @@ public class MigrationInfo implements DataSerializable {
 
         master = new Address();
         master.readData(in);
-
-        if (in.readBoolean()) {
-            oldBackupReplicaOwner = new Address();
-            oldBackupReplicaOwner.readData(in);
-        }
     }
 
     @Override

@@ -156,8 +156,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
+    private void clearPartitionReplica(int partitionId) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         Iterator<Map.Entry<SerializableXID, List<XATransaction>>> iterator = transactions.entrySet().iterator();
         while (iterator.hasNext()) {

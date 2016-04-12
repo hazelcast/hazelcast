@@ -286,11 +286,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     }
 
     @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearLockStoresHavingLesserBackupCountThan(partitionId, -1);
-    }
-
-    @Override
     public DistributedObject createDistributedObject(String objectId) {
         return new LockProxy(nodeEngine, this, objectId);
     }

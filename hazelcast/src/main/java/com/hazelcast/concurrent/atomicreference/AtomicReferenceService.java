@@ -128,8 +128,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
+    private void clearPartitionReplica(int partitionId) {
         final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();

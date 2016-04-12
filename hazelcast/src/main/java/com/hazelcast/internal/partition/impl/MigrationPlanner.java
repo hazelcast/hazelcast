@@ -129,7 +129,6 @@ class MigrationPlanner {
                 continue;
             }
 
-            // IT IS A SHIFT DOWN
             if (getReplicaIndex(state, newAddresses[currentIndex]) == -1) {
                 int newIndex = getReplicaIndex(newAddresses, state[currentIndex]);
 
@@ -137,13 +136,17 @@ class MigrationPlanner {
                         + Arrays.toString(oldAddresses) + ", CURRENT: " + Arrays.toString(state)
                         + ", FINAL: " + Arrays.toString(newAddresses);
 
-                log("SHIFT DOWN %s to index: %d, COPY %s to index: %d", state[currentIndex], newIndex,
-                        newAddresses[currentIndex], currentIndex);
+                if (state[newIndex] == null) {
+                    // IT IS A SHIFT DOWN
+                    log("SHIFT DOWN %s to index: %d, COPY %s to index: %d", state[currentIndex], newIndex,
+                            newAddresses[currentIndex], currentIndex);
+                    callback.migrate(state[currentIndex], currentIndex, newIndex, newAddresses[currentIndex], -1, currentIndex);
+                    state[newIndex] = state[currentIndex];
+                } else {
+                    log("MOVE-3 %s to index: %d", newAddresses[currentIndex], currentIndex);
+                    callback.migrate(state[currentIndex], currentIndex, -1, newAddresses[currentIndex], -1, currentIndex);
+                }
 
-                // SHIFT DOWN replica on its current owner from currentIndex to newIndex
-                // and COPY replica on currentIndex to its new owner
-                callback.migrate(state[currentIndex], currentIndex, newIndex, newAddresses[currentIndex], -1, currentIndex);
-                state[newIndex] = state[currentIndex];
                 state[currentIndex] = newAddresses[currentIndex];
                 currentIndex++;
                 continue;
@@ -159,10 +162,29 @@ class MigrationPlanner {
                         + ", FINAL: " + Arrays.toString(newAddresses);
 
                 if (newAddresses[j] == null) {
-                    // SHIFT UP replica from j to i, copy data from partition owner
-                    log("SHIFT UP %s from old addresses index: %d to index: %d", state[j], j, i);
-                    callback.migrate(state[i], i, -1, state[j], j, i);
-                    state[i] = state[j];
+                    if (state[i] == null) {
+                        log("SHIFT UP %s from old addresses index: %d to index: %d", state[j], j, i);
+                        callback.migrate(state[i], i, -1, state[j], j, i);
+                        state[i] = state[j];
+                    } else {
+                        int k = getReplicaIndex(newAddresses, state[i]);
+                        if (k == -1) {
+                            log("SHIFT UP %s from old addresses index: %d to index: %d with source: %s", state[j], j, i, state[i]);
+                            callback.migrate(state[i], i, -1, state[j], j, i);
+                            state[i] = state[j];
+                        } else if (state[k] == null) {
+                            // shift up + shift down
+                            log("SHIFT UP %s from old addresses index: %d to index: %d AND SHIFT DOWN %s to index: %d", state[j], j, i, state[i], k);
+                            callback.migrate(state[i], i, k, state[j], j, i);
+                            state[k] = state[i];
+                            state[i] = state[j];
+                        } else {
+                            // only shift up because source will come back with another move migration
+                            log("SHIFT UP %s from old addresses index: %d to index: %d with source: %s will get another MOVE migration to index: %d", state[j], j, i, state[i], k);
+                            callback.migrate(state[i], i, -1, state[j], j, i);
+                            state[i] = state[j];
+                        }
+                    }
                     state[j] = null;
                     break;
                 } else if (getReplicaIndex(state, newAddresses[j]) == -1) {

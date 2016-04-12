@@ -30,7 +30,6 @@ import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
-import com.hazelcast.internal.partition.operation.ClearReplicaOperation;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
@@ -307,17 +306,6 @@ public class MigrationManager {
                 PromoteFromBackupOperation op = new PromoteFromBackupOperation(migrationInfo.getDestinationCurrentReplicaIndex());
                 op.setPartitionId(migrationInfo.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
                 nodeEngine.getOperationService().executeOperation(op);
-                return;
-            }
-
-            if (migrationInfo.getSourceNewReplicaIndex() > 0) {
-                if (migrationInfo.getStatus() == MigrationStatus.SUCCESS
-                        && node.getThisAddress().equals(migrationInfo.getOldBackupReplicaOwner())) {
-                    // clear
-                    ClearReplicaOperation op = new ClearReplicaOperation(migrationInfo.getSourceNewReplicaIndex());
-                    op.setPartitionId(migrationInfo.getPartitionId()).setNodeEngine(nodeEngine).setService(partitionService);
-                    nodeEngine.getOperationService().executeOperation(op);
-                }
                 return;
             }
         } finally {
@@ -732,10 +720,6 @@ public class MigrationManager {
                             sourceNewReplicaIndex, destinationCurrentReplicaIndex, destinationNewReplicaIndex);
 
                     migrationCount.value++;
-                    if (sourceNewReplicaIndex > 0) {
-                        migration.setOldBackupReplicaOwner(partition.getReplicaAddress(sourceNewReplicaIndex));
-                    }
-
                     migrations.offer(migration);
                 }
             }

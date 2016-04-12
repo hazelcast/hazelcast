@@ -113,8 +113,5 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         public void rollbackMigration(PartitionMigrationEvent event) {
         }
 
-        @Override
-        public void clearPartitionReplica(int partitionId) {
-        }
     }
 }
