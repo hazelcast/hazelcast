@@ -161,7 +161,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put("b", new TempData("abc", "123"));
         TestPredicate predicate = new TestPredicate("foo");
         Map<String, Object> entries = map.executeOnEntries(new LoggingEntryProcessor(), predicate);
-        assertEquals("The predicate should be applied to only one entry if indexing works!", entries.size(), 1);
+        assertEquals("The predicate should only relate to one entry!", entries.size(), 1);
+        assertTrue("The predicate should only be used via index service!", predicate.isFilteredAndNotApplied());
     }
 
     /**
