@@ -1,5 +1,6 @@
 package com.hazelcast.query.impl.extractor.specification;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
@@ -19,6 +20,7 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.ARRAY;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.PORTABLE;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Finger;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
@@ -56,6 +58,15 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     );
 
     private static final Person HUNT_NULL_LIMB = person("Hunt");
+
+    protected Configurator getInstanceConfigurator() {
+        return new Configurator() {
+            @Override
+            public void doWithConfig(Config config, Multivalue mv) {
+                config.getSerializationConfig().addPortableFactory(ComplexDataStructure.PersonPortableFactory.ID, new ComplexDataStructure.PersonPortableFactory());
+            }
+        };
+    }
 
     public ExtractionInArraySpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
@@ -136,7 +147,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
         return axes(
                 asList(BINARY, OBJECT),
                 asList(NO_INDEX, UNORDERED, ORDERED),
-                asList(ARRAY)
+                asList(ARRAY, PORTABLE)
         );
     }
 

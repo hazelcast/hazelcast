@@ -2,8 +2,10 @@ package com.hazelcast.query.impl.extractor;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.extractor.specification.ComplexDataStructure;
 import com.hazelcast.query.impl.predicates.AbstractPredicate;
+import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -24,12 +26,17 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
     }
 
     /**
-     * Parametrisation axis for storage type: single-value, list, array
+     * Parametrisation axis for storage type: single-value, list, array, portable-array
      */
     public enum Multivalue {
-        SINGLE_VALUE,
+        SINGLE,
         ARRAY,
-        LIST
+        LIST,
+        PORTABLE
+    }
+
+    public interface PortableAware {
+        <T> T getPortable();
     }
 
     /**

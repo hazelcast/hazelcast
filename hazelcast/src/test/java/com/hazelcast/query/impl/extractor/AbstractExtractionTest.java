@@ -7,6 +7,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 
@@ -123,10 +125,31 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
      * Populates the map with test data
      */
     private void putTestDataToMap(Object... objects) {
-        int i = 0;
-        for (Object person : objects) {
-            map.put(String.valueOf(i++), person);
+        translate(objects);
+        for (int i = 0; i < objects.length; i++) {
+            map.put(String.valueOf(i), objects[i]);
         }
+    }
+
+    private void translate(Object[] input) {
+        if (mv == Multivalue.PORTABLE) {
+            for (int i = 0; i < input.length; i++) {
+                input[i] = translate(input[i]);
+            }
+        }
+    }
+
+    private <T> T translate(T input) {
+        if (mv == Multivalue.PORTABLE) {
+            if (input instanceof PortableAware) {
+                return ((PortableAware) input).getPortable();
+            }
+        }
+        return input;
+    }
+
+    protected Predicate equal(String attribute, Comparable value) {
+        return Predicates.equal(attribute, translate(value));
     }
 
     /**
@@ -149,6 +172,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
         }
 
         // WHEN
+        doWithMap();
         putTestDataToMap(input.objects);
         Collection<?> values = map.values(query.predicate);
 
@@ -156,8 +180,12 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
         if (expected.throwable == null) {
             assertThat(values, hasSize(expected.objects.length));
             if (expected.objects.length > 0) {
+                translate(expected.objects);
                 assertThat(values, containsInAnyOrder(expected.objects));
             }
         }
+    }
+
+    protected void doWithMap() {
     }
 }

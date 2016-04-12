@@ -17,6 +17,9 @@ import java.util.regex.Pattern;
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractAttributeNameNameWithoutArguments;
 
+// =================================================
+// TODO -> MAJOR REFACTORING
+// =================================================
 public class PortablePositionNavigator {
 
     private static final Pattern NESTED_PATH_SPLITTER = Pattern.compile("\\.");
@@ -30,9 +33,7 @@ public class PortablePositionNavigator {
     private ClassDefinition cd;
     private PortableSerializer serializer;
 
-    // PortableSinglePosition singleResult = new PortableSinglePosition();
-    // PortableMultiPosition multiResult = new PortableMultiPosition();
-    Deque<NavigationFrame> multiPositions = new ArrayDeque<NavigationFrame>();
+    private final Deque<NavigationFrame> multiPositions = new ArrayDeque<NavigationFrame>();
 
     /**
      * @param in
@@ -70,30 +71,106 @@ public class PortablePositionNavigator {
         offset = in.position();
     }
 
-    /**
-     * @param fieldName
-     * @param type
-     * @return
-     * @throws IOException
-     */
-    public PortablePosition findPositionOfPrimitiveObject(String fieldName, FieldType type) throws IOException {
-        PortablePosition position = findFieldPosition(fieldName, type);
-        adjustForNonPortableArrayAccess(fieldName, type, (PortableSinglePosition) position);
+    private void validatePositionIndexInBound(String fieldName, int arrayLen, PortableSinglePosition position) throws IOException {
+        if (position.index > arrayLen - 1) {
+            throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
+        }
+    }
+
+    // TODO -> translate plural types to singular types and validate
+    static int getTypeElementSizeInBytes(FieldType type) {
+        switch (type) {
+            case BYTE:
+                return Bits.BYTE_SIZE_IN_BYTES;
+            case BYTE_ARRAY:
+                return Bits.BYTE_SIZE_IN_BYTES;
+            case SHORT:
+                return Bits.SHORT_SIZE_IN_BYTES;
+            case SHORT_ARRAY:
+                return Bits.SHORT_SIZE_IN_BYTES;
+            case INT:
+                return Bits.INT_SIZE_IN_BYTES;
+            case INT_ARRAY:
+                return Bits.INT_SIZE_IN_BYTES;
+            case LONG:
+                return Bits.LONG_SIZE_IN_BYTES;
+            case LONG_ARRAY:
+                return Bits.LONG_SIZE_IN_BYTES;
+            case FLOAT:
+                return Bits.FLOAT_SIZE_IN_BYTES;
+            case FLOAT_ARRAY:
+                return Bits.FLOAT_SIZE_IN_BYTES;
+            case DOUBLE:
+                return Bits.DOUBLE_SIZE_IN_BYTES;
+            case DOUBLE_ARRAY:
+                return Bits.DOUBLE_SIZE_IN_BYTES;
+            case BOOLEAN:
+                return Bits.BOOLEAN_SIZE_IN_BYTES;
+            case BOOLEAN_ARRAY:
+                return Bits.BOOLEAN_SIZE_IN_BYTES;
+            case CHAR:
+                return Bits.CHAR_SIZE_IN_BYTES;
+            case CHAR_ARRAY:
+                return Bits.CHAR_SIZE_IN_BYTES;
+            default:
+                throw new RuntimeException("Unsupported type " + type);
+        }
+    }
+
+
+    public PortablePosition findPositionOf(String path) throws IOException {
+        PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path, null);
+        if (position.isMultiPosition()) {
+            List<PortablePosition> positions = position.asMultiPosition();
+            for (PortablePosition pos : positions) {
+                adjustPositionForDirectAccess((PortableSinglePosition) pos, path);
+            }
+        } else {
+            adjustPositionForDirectAccess(position, path);
+        }
+
         return position;
     }
 
-    /**
-     * @param fieldName
-     * @param type
-     * @return
-     * @throws IOException
-     */
-    public PortablePosition findPositionOfPrimitiveArray(String fieldName, FieldType type) throws IOException {
-        PortablePosition position = findFieldPosition(fieldName, type);
-        adjustForNonPortableArrayAccess(fieldName, type, (PortableSinglePosition) position);
-        return position;
+    public PortablePosition findPositionOf(String path, FieldType type) throws IOException {
+        return findPositionOf(path);
     }
 
+    void adjustPositionForDirectAccess(PortableSinglePosition position, String path) throws IOException {
+        FieldType type = position.getType();
+        if (type == null) {
+            if (position.isEmpty() && !position.isLast()) {
+                position.nil = true;
+            } else if (position.isEmpty() && position.getIndex() >= 0) {
+                position.nil = true;
+            }
+            return;
+        }
+        if (type.isArrayType()) {
+            if (type == FieldType.PORTABLE_ARRAY) {
+                if (position.getIndex() >= 0) {
+                    adjustForPortableArrayAccess(position, SINGLE_CELL_ACCESS, path);
+                } else {
+                    adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, path);
+                }
+            } else {
+                adjustPositionForSingleCellNonPortableArrayAccess(path, type, position);
+            }
+        } else {
+            if (position.getIndex() >= 0) {
+                throw new IllegalArgumentException("Cannot read array cell from non-array");
+            }
+            if (type == FieldType.PORTABLE) {
+                adjustForPortableObjectAccess(path, position);
+            } else {
+                adjustForNonPortableArrayAccess(path, type, position);
+            }
+        }
+    }
+
+    // ----------------------------------------
+    // ----------------------------------------
+    // ----------------------------------------
     private void adjustForNonPortableArrayAccess(String fieldName, FieldType type, PortableSinglePosition position) throws IOException {
         if (position.isMultiPosition()) {
             adjustPositionForMultiCellNonPortableArrayAccess(fieldName, type, position);
@@ -173,62 +250,6 @@ public class PortablePositionNavigator {
         }
     }
 
-    private void validatePositionIndexInBound(String fieldName, int arrayLen, PortableSinglePosition position) throws IOException {
-        if (position.index > arrayLen - 1) {
-            throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
-        }
-    }
-
-    // TODO -> translate plural types to singular types and validate
-    static int getTypeElementSizeInBytes(FieldType type) {
-        switch (type) {
-            case BYTE:
-                return Bits.BYTE_SIZE_IN_BYTES;
-            case BYTE_ARRAY:
-                return Bits.BYTE_SIZE_IN_BYTES;
-            case SHORT:
-                return Bits.SHORT_SIZE_IN_BYTES;
-            case SHORT_ARRAY:
-                return Bits.SHORT_SIZE_IN_BYTES;
-            case INT:
-                return Bits.INT_SIZE_IN_BYTES;
-            case INT_ARRAY:
-                return Bits.INT_SIZE_IN_BYTES;
-            case LONG:
-                return Bits.LONG_SIZE_IN_BYTES;
-            case LONG_ARRAY:
-                return Bits.LONG_SIZE_IN_BYTES;
-            case FLOAT:
-                return Bits.FLOAT_SIZE_IN_BYTES;
-            case FLOAT_ARRAY:
-                return Bits.FLOAT_SIZE_IN_BYTES;
-            case DOUBLE:
-                return Bits.DOUBLE_SIZE_IN_BYTES;
-            case DOUBLE_ARRAY:
-                return Bits.DOUBLE_SIZE_IN_BYTES;
-            case BOOLEAN:
-                return Bits.BOOLEAN_SIZE_IN_BYTES;
-            case BOOLEAN_ARRAY:
-                return Bits.BOOLEAN_SIZE_IN_BYTES;
-            case CHAR:
-                return Bits.CHAR_SIZE_IN_BYTES;
-            case CHAR_ARRAY:
-                return Bits.CHAR_SIZE_IN_BYTES;
-            default:
-                throw new RuntimeException("Unsupported type " + type);
-        }
-    }
-
-    /**
-     * @param fieldName
-     * @return
-     * @throws IOException
-     */
-    public PortablePosition findPositionOfPortableObject(String fieldName) throws IOException {
-        PortablePosition pos = findFieldPosition(fieldName, FieldType.PORTABLE);
-        return adjustForPortableObjectAccess(fieldName, pos);
-    }
-
     private PortablePosition adjustForPortableObjectAccess(String fieldName, PortablePosition pos) throws IOException {
         if (pos.getIndex() < 0) {
             return adjustForPortableFieldAccess((PortableSinglePosition) pos);
@@ -239,17 +260,13 @@ public class PortablePositionNavigator {
 
     private PortablePosition adjustForPortableFieldAccess(PortableSinglePosition pos) throws IOException {
         in.position(pos.position);
-
         if (!pos.isNull()) { // extraction returned null (poison pill)
             pos.nil = in.readBoolean();
             pos.factoryId = in.readInt();
             pos.classId = in.readInt();
             pos.position = in.position();
+            checkFactoryAndClass(pos.fd, pos.factoryId, pos.classId);
         }
-
-        // TODO -> we need the read FieldDefinition here
-        // checkFactoryAndClass(pos.fd, pos.factoryId, pos.classId);
-
         return pos;
     }
 
@@ -267,7 +284,7 @@ public class PortablePositionNavigator {
             pos.classId = classId;
             pos.position = in.position();
 
-            //        checkFactoryAndClass(fd, factoryId, classId);
+            checkFactoryAndClass(pos.fd, factoryId, classId);
             if (singleCellAccess) {
                 if (pos.getIndex() < len) {
                     int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
@@ -278,9 +295,7 @@ public class PortablePositionNavigator {
                 }
             }
         } else {
-            if (pos.isNull()) {
-                pos.nil = true;
-            } else if (pos.isEmpty() && !pos.isLast()) {
+            if (pos.isEmpty() && !pos.isLast()) {
                 pos.nil = true;
             } else if (pos.isEmpty() && pos.getIndex() >= 0) {
                 pos.nil = true;
@@ -288,79 +303,6 @@ public class PortablePositionNavigator {
         }
 
         return pos;
-    }
-
-    /**
-     * @param fieldName
-     * @return
-     * @throws IOException
-     */
-
-    public PortablePosition findPositionOfPortableArray(String fieldName) throws IOException {
-        PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(fieldName, FieldType.PORTABLE_ARRAY);
-        adjustForPortableArrayObjectAccess(fieldName, position);
-        return position;
-    }
-
-    private void adjustForPortableArrayObjectAccess(String fieldName, PortableSinglePosition position) throws IOException {
-        if (position.isMultiPosition()) {
-            List<PortablePosition> positions = position.asMultiPosition();
-            for (int i = 0; i < positions.size(); i++) {
-                PortableSinglePosition pos = (PortableSinglePosition) positions.get(i);
-                if (pos.getIndex() < 0) {
-                    adjustForPortableFieldAccess(pos);
-                } else {
-                    adjustForPortableArrayAccess(pos, SINGLE_CELL_ACCESS, fieldName);
-                }
-            }
-        } else {
-            if (position.getIndex() < 0) {
-                adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, fieldName);
-            } else {
-                adjustForPortableArrayAccess(position, SINGLE_CELL_ACCESS, fieldName);
-            }
-        }
-    }
-
-    public PortablePosition findPositionOf(String path) throws IOException {
-        PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path, null);
-        if (position.isMultiPosition()) {
-            List<PortablePosition> positions = position.asMultiPosition();
-            for (PortablePosition pos : positions) {
-                adjustPositionForDirectAccess((PortableSinglePosition) pos, path);
-            }
-        } else {
-            adjustPositionForDirectAccess(position, path);
-        }
-
-        return position;
-    }
-
-    void adjustPositionForDirectAccess(PortableSinglePosition position, String path) throws IOException {
-        FieldType type = position.getType();
-        if (type == null) {
-            return;
-        }
-        if (type.isArrayType()) {
-            if (type == FieldType.PORTABLE_ARRAY) {
-                if (position.getIndex() >= 0) {
-                    adjustForPortableArrayAccess(position, SINGLE_CELL_ACCESS, path);
-                } else {
-                    adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, path);
-                }
-            } else {
-                adjustPositionForSingleCellNonPortableArrayAccess(path, type, position);
-            }
-        } else {
-            if (position.getIndex() >= 0) {
-                throw new IllegalArgumentException("Cannot read array cell from non-array");
-            }
-            if (type == FieldType.PORTABLE) {
-                adjustForPortableObjectAccess(path, position);
-            } else {
-                adjustForNonPortableArrayAccess(path, type, position);
-            }
-        }
     }
 
     // ----------------------------------------
@@ -543,6 +485,9 @@ public class PortablePositionNavigator {
             // with [number] quantifier
             //
             int index = Integer.valueOf(extractArgumentsFromAttributeName(token));
+            if (index < 0) {
+                throw new IllegalArgumentException("Array index cannot be negative in " + nestedPath);
+            }
             int len = getCurrentArrayLength(fd);
 
             if (last) {
