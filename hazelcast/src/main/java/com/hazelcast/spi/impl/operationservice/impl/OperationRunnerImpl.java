@@ -353,7 +353,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
         OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
         try {
-            if (nodeEngine.isRunning()) {
+            if (node.getState() != NodeState.SHUT_DOWN) {
                 responseHandler.sendResponse(operation, e);
             } else if (responseHandler.isLocal()) {
                 responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());

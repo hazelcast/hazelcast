@@ -9,7 +9,7 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.service.TestGetOperation;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
-import com.hazelcast.internal.partition.service.TestPutOperation;
+import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -81,7 +81,7 @@ public class MigrationCommitServiceTest
 
         final InternalOperationService operationService = getOperationService(instances[0]);
         for (int partitionId = 0; partitionId < PARTITION_COUNT; partitionId++) {
-            operationService.invokeOnPartition(null, new TestPutOperation(), partitionId).get();
+            operationService.invokeOnPartition(null, new TestIncrementOperation(), partitionId).get();
         }
 
         assertTrueEventually(new AssertTask() {
@@ -545,7 +545,6 @@ public class MigrationCommitServiceTest
         config.getServicesConfig().addServiceConfig(serviceConfig);
         config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), "0");
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
-        config.setProperty("hazelcast.logging.type", "log4j");
 
         return config;
     }
@@ -631,8 +630,6 @@ public class MigrationCommitServiceTest
             TestMigrationAwareService service = nodeEngine.getService(TestMigrationAwareService.SERVICE_NAME);
             service.clearPartitionReplica(partitionId);
             partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId);
-            System.err.println(
-                    "##### " + Arrays.toString(partitionService.getReplicaManager().getPartitionReplicaVersions(partitionId)));
         }
 
         @Override

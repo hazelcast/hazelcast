@@ -18,6 +18,7 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -100,7 +101,7 @@ public class MockConnectionManager implements ConnectionManager {
             }
 
             final NodeEngineImpl nodeEngine = nodes.get(address);
-            if (nodeEngine != null && nodeEngine.isRunning()) {
+            if (nodeEngine != null && nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
                 nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
                         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();

@@ -16,29 +16,21 @@
 
 package com.hazelcast.internal.partition.service;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
-import java.io.IOException;
-
-public class TestPutOperation extends AbstractOperation implements BackupAwareOperation {
+public class TestIncrementOperation extends AbstractOperation implements BackupAwareOperation {
 
     private int value;
 
-    public TestPutOperation() {
-    }
-
-    public TestPutOperation(int value) {
-        this.value = value;
+    public TestIncrementOperation() {
     }
 
     @Override
     public void run() throws Exception {
         TestMigrationAwareService service = getService();
-        service.put(getPartitionId(), value);
+        value = service.inc(getPartitionId());
     }
 
     @Override
@@ -65,17 +57,5 @@ public class TestPutOperation extends AbstractOperation implements BackupAwareOp
     @Override
     public String getServiceName() {
         return TestMigrationAwareService.SERVICE_NAME;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeInt(value);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        this.value = in.readInt();
     }
 }

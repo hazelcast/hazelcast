@@ -267,11 +267,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        if (nodeEngine.isRunning()) {
+        NodeState state = nodeEngine.getNode().getState();
+        if (state == NodeState.ACTIVE) {
             return true;
         }
 
-        NodeState state = nodeEngine.getNode().getState();
         boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
         if (!allowed) {
             notifyError(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));

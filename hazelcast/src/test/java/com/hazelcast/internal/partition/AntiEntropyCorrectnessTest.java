@@ -59,7 +59,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
     @Test
     public void testPartitionData() throws InterruptedException {
-        HazelcastInstance[] instances = factory.newInstances(getConfig(backupCount, true, true), nodeCount);
+        HazelcastInstance[] instances = factory.newInstances(getConfig(true, true), nodeCount);
         for (HazelcastInstance instance : instances) {
             Node node = getNode(instance);
             FirewallingMockConnectionManager cm = (FirewallingMockConnectionManager) node.getConnectionManager();
@@ -71,7 +71,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
             fillData(instance);
         }
 
-        assertSizeAndData();
+        assertSizeAndDataEventually();
     }
 
     private static class BackupPacketFilter implements PacketFilter {

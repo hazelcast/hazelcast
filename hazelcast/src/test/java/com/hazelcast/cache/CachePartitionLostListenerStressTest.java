@@ -33,10 +33,35 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
 
 
 
-    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1}")
+    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{{1, true}, {1, false}, {2, true}, {2, false}, {3, true}, {3, false}});
+        return Arrays.asList(new Object[][]{
+                {1, true, NodeLeaveType.SHUTDOWN, false},
+                {1, true, NodeLeaveType.TERMINATE, true},
+                {1, false, NodeLeaveType.SHUTDOWN, false},
+                {1, false, NodeLeaveType.TERMINATE, true},
+                {2, true, NodeLeaveType.SHUTDOWN, false},
+                {2, true, NodeLeaveType.TERMINATE, true},
+                {2, false, NodeLeaveType.SHUTDOWN, false},
+                {2, false, NodeLeaveType.TERMINATE, true},
+                {3, true, NodeLeaveType.SHUTDOWN, false},
+                {3, true, NodeLeaveType.TERMINATE, true},
+                {3, false, NodeLeaveType.SHUTDOWN, false},
+                {3, false, NodeLeaveType.TERMINATE, true}
+        });
     }
+
+    @Parameterized.Parameter(0)
+    public int numberOfNodesToCrash;
+
+    @Parameterized.Parameter(1)
+    public boolean withData;
+
+    @Parameterized.Parameter(2)
+    public NodeLeaveType nodeLeaveType;
+
+    @Parameterized.Parameter(3)
+    public boolean shouldExpectPartitionLostEvents;
 
     protected int getNodeCount() {
         return 5;
@@ -45,12 +70,6 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
     protected int getCacheEntryCount() {
         return 10000;
     }
-
-    @Parameterized.Parameter(0)
-    public int numberOfNodesToCrash;
-
-    @Parameterized.Parameter(1)
-    public boolean withData;
 
     @Test
     public void testCachePartitionLostListener() {
@@ -74,15 +93,28 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
             }
         }
 
-        String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
+        final String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
         Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
 
-        terminateInstances(terminatingInstances);
+        stopInstances(terminatingInstances, nodeLeaveType);
         waitAllForSafeState(survivingInstances);
 
-        for (int i = 0; i < getNodeCount(); i++) {
-            assertListenerInvocationsEventually(log, i, numberOfNodesToCrash, listeners.get(i), survivingPartitions);
+        if (shouldExpectPartitionLostEvents) {
+            for (int i = 0; i < getNodeCount(); i++) {
+                assertListenerInvocationsEventually(log, i, numberOfNodesToCrash, listeners.get(i), survivingPartitions);
+            }
+        } else {
+            for (final EventCollectingCachePartitionLostListener listener : listeners) {
+                assertTrueAllTheTime(new AssertTask() {
+                    @Override
+                    public void run()
+                            throws Exception {
+                        assertTrue(listener.getEvents().isEmpty());
+                    }
+                }, 1);
+            }
         }
+
 
         for (int i = 0; i < getNodeCount(); i++) {
             cacheManager.destroyCache(getIthCacheName(i));

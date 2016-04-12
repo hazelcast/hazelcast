@@ -434,31 +434,26 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        lock.lock();
-        try {
-            PartitionRuntimeState partitionState = createPartitionStateInternal();
-            if (partitionState == null) {
-                return;
-            }
+        PartitionRuntimeState partitionState = createPartitionStateInternal();
+        if (partitionState == null) {
+            return;
+        }
 
-            if (logger.isFineEnabled()) {
-                logger.fine("Publishing partition state, version: " + partitionState.getVersion());
-            }
+        if (logger.isFineEnabled()) {
+            logger.fine("Publishing partition state, version: " + partitionState.getVersion());
+        }
 
-            PartitionStateOperation op = new PartitionStateOperation(partitionState);
-            OperationService operationService = nodeEngine.getOperationService();
-            Collection<MemberImpl> members = node.clusterService.getMemberImpls();
-            for (MemberImpl member : members) {
-                if (!member.localMember()) {
-                    try {
-                        operationService.send(op, member.getAddress());
-                    } catch (Exception e) {
-                        logger.finest(e);
-                    }
+        PartitionStateOperation op = new PartitionStateOperation(partitionState);
+        OperationService operationService = nodeEngine.getOperationService();
+        Collection<MemberImpl> members = node.clusterService.getMemberImpls();
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                try {
+                    operationService.send(op, member.getAddress());
+                } catch (Exception e) {
+                    logger.finest(e);
                 }
             }
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -473,41 +468,36 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return false;
         }
 
-        lock.lock();
-        try {
-            PartitionRuntimeState partitionState = createPartitionStateInternal();
-            if (partitionState == null) {
-                return false;
-            }
-
-            if (logger.isFineEnabled()) {
-                logger.fine("Sync'ing partition state, version: " + partitionState.getVersion());
-            }
-
-            OperationService operationService = nodeEngine.getOperationService();
-
-            Collection<MemberImpl> members = node.clusterService.getMemberImpls();
-            List<Future<Boolean>> calls = firePartitionStateOperation(members, partitionState, operationService);
-            Collection<Boolean> results = returnWithDeadline(calls, PTABLE_SYNC_TIMEOUT_SECONDS,
-                    TimeUnit.SECONDS, partitionStateSyncTimeoutHandler);
-
-            if (calls.size() != results.size()) {
-                return false;
-            }
-
-            for (Boolean result : results) {
-                if (!result) {
-                    if (logger.isFineEnabled()) {
-                        logger.fine("Partition state, version: " + partitionState.getVersion()
-                                + " sync failed to one of the members!");
-                    }
-                    return false;
-                }
-            }
-            return true;
-        } finally {
-            lock.unlock();
+        PartitionRuntimeState partitionState = createPartitionStateInternal();
+        if (partitionState == null) {
+            return false;
         }
+
+        if (logger.isFineEnabled()) {
+            logger.fine("Sync'ing partition state, version: " + partitionState.getVersion());
+        }
+
+        OperationService operationService = nodeEngine.getOperationService();
+
+        Collection<MemberImpl> members = node.clusterService.getMemberImpls();
+        List<Future<Boolean>> calls = firePartitionStateOperation(members, partitionState, operationService);
+        Collection<Boolean> results = returnWithDeadline(calls, PTABLE_SYNC_TIMEOUT_SECONDS,
+                TimeUnit.SECONDS, partitionStateSyncTimeoutHandler);
+
+        if (calls.size() != results.size()) {
+            return false;
+        }
+
+        for (Boolean result : results) {
+            if (!result) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Partition state, version: " + partitionState.getVersion()
+                            + " sync failed to one of the members!");
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     private List<Future<Boolean>> firePartitionStateOperation(Collection<MemberImpl> members,
@@ -734,11 +724,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     public void onShutdownRequest(Address address) {
-        lock.lock();
-        try {
-            migrationManager.onShutdownRequest(address);
-        } finally {
-            lock.unlock();
+        if (lock.tryLock()) {
+            try {
+                migrationManager.onShutdownRequest(address);
+            } finally {
+                lock.unlock();
+            }
         }
     }
 

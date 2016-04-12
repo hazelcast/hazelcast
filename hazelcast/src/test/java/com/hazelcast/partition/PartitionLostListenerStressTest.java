@@ -42,9 +42,22 @@ public class PartitionLostListenerStressTest
         }
     }
 
-    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1}")
+    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{{1, true}, {1, false}, {2, true}, {2, false}, {3, true}, {3, false}});
+        return Arrays.asList(new Object[][]{
+                {1, true, NodeLeaveType.SHUTDOWN, false},
+                {1, true, NodeLeaveType.TERMINATE, true},
+                {1, false, NodeLeaveType.SHUTDOWN, false},
+                {1, false, NodeLeaveType.TERMINATE, true},
+                {2, true, NodeLeaveType.SHUTDOWN, false},
+                {2, true, NodeLeaveType.TERMINATE, true},
+                {2, false, NodeLeaveType.SHUTDOWN, false},
+                {2, false, NodeLeaveType.TERMINATE, true},
+                {3, true, NodeLeaveType.SHUTDOWN, false},
+                {3, true, NodeLeaveType.TERMINATE, true},
+                {3, false, NodeLeaveType.SHUTDOWN, false},
+                {3, false, NodeLeaveType.TERMINATE, true}
+        });
     }
 
     @Parameterized.Parameter(0)
@@ -53,6 +66,12 @@ public class PartitionLostListenerStressTest
     @Parameterized.Parameter(1)
     public boolean withData;
 
+    @Parameterized.Parameter(2)
+    public NodeLeaveType nodeLeaveType;
+
+    @Parameterized.Parameter(3)
+    public boolean shouldExpectPartitionLostEvents;
+
     protected int getNodeCount() {
         return 5;
     }
@@ -60,7 +79,6 @@ public class PartitionLostListenerStressTest
     protected int getMapEntryCount() {
         return 5000;
     }
-
 
     @Test
     public void testPartitionLostListener()
@@ -79,16 +97,26 @@ public class PartitionLostListenerStressTest
         final Map<Integer, Integer> survivingPartitions = getMinReplicaIndicesByPartitionId(survivingInstances);
         final Map<Integer, List<Address>> partitionTables = TestPartitionUtils.getAllReplicaAddresses(survivingInstances);
 
-        terminateInstances(terminatingInstances);
+        stopInstances(terminatingInstances, nodeLeaveType);
         waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, 300);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertLostPartitions(log, listener, survivingPartitions, partitionTables);
-            }
-        });
+        if (shouldExpectPartitionLostEvents) {
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run()
+                        throws Exception {
+                    assertLostPartitions(log, listener, survivingPartitions, partitionTables);
+                }
+            });
+        } else {
+            assertTrueAllTheTime(new AssertTask() {
+                @Override
+                public void run()
+                        throws Exception {
+                    assertTrue(listener.getEvents().isEmpty());
+                }
+            }, 1);
+        }
     }
 
     @Test

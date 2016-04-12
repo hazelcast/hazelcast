@@ -20,23 +20,24 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.properties.GroupProperty;
-import com.hazelcast.nio.Address;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RandomPicker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static com.hazelcast.instance.TestUtil.terminateInstance;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -213,32 +214,94 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         }
     }
 
-    // TODO: add more tests
-    // - shutdown multiple members while partitions migrating
-    // - terminate another member while a member is shutting down
-    // -
+    @Test
+    public void shutdownMultipleMembers_whilePartitionsMigrating() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "12");
+        config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
+
+        HazelcastInstance master = factory.newHazelcastInstance(config);
+        warmUpPartitions(master);
+
+        HazelcastInstance[] slaves = factory.newInstances(config, 5);
+
+        final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(slaves.length + 1);
+        instances.add(master);
+        instances.addAll(Arrays.asList(slaves));
+        Collections.shuffle(instances);
+
+        final int count = instances.size() / 2;
+        final CountDownLatch latch = new CountDownLatch(count);
+        for (int i = 0; i < count; i++) {
+            final int index = i;
+            new Thread() {
+                public void run() {
+                    HazelcastInstance instance = instances.get(index);
+                    instance.shutdown();
+                    latch.countDown();
+                }
+            }.start();
+        }
+
+        assertOpenEventually(latch);
+        assertPartitionAssignments();
+    }
+
+    @Test
+    public void shutdownAndTerminateSlaveMembers_concurrently() {
+        HazelcastInstance[] instances = factory.newInstances(new Config(), 5);
+        int shutdownIndex = RandomPicker.getInt(1, instances.length);
+        int terminateIndex;
+        do {
+            terminateIndex = RandomPicker.getInt(1, instances.length);
+        } while (terminateIndex == shutdownIndex);
+
+        shutdownAndTerminateMembers_concurrently(instances, shutdownIndex, terminateIndex);
+    }
+
+    @Test
+    public void shutdownMasterAndTerminateSlaveMember_concurrently() {
+        HazelcastInstance[] instances = factory.newInstances(new Config(), 5);
+        int shutdownIndex = 0;
+        int terminateIndex = RandomPicker.getInt(1, instances.length);
+
+        shutdownAndTerminateMembers_concurrently(instances, shutdownIndex, terminateIndex);
+    }
+
+    @Test
+    public void shutdownSlaveAndTerminateMasterMember_concurrently() {
+        HazelcastInstance[] instances = factory.newInstances(new Config(), 5);
+        int shutdownIndex = RandomPicker.getInt(1, instances.length);
+        int terminateIndex = 0;
+
+        shutdownAndTerminateMembers_concurrently(instances, shutdownIndex, terminateIndex);
+    }
+
+    private void shutdownAndTerminateMembers_concurrently(HazelcastInstance[] instances,
+            int shutdownIndex, int terminateIndex) {
+
+        warmUpPartitions(instances);
+
+        final HazelcastInstance shuttingDownInstance = instances[shutdownIndex];
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                shuttingDownInstance.shutdown();
+                latch.countDown();
+            }
+        }.start();
+
+        // spin until node starts to shut down
+        Node shuttingDownNode = getNode(shuttingDownInstance);
+        while (shuttingDownNode.isRunning());
+
+        terminateInstance(instances[terminateIndex]);
+
+        assertOpenEventually(latch);
+        assertPartitionAssignments();
+    }
 
     private void assertPartitionAssignments() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
-                final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
-
-                for (HazelcastInstance hz : instances) {
-                    Node node = getNode(hz);
-                    InternalPartitionService partitionService = node.getPartitionService();
-                    InternalPartition[] partitions = partitionService.getInternalPartitions();
-
-                    for (InternalPartition partition : partitions) {
-                        for (int i = 0; i < replicaCount; i++) {
-                            Address replicaAddress = partition.getReplicaAddress(i);
-                            assertNotNull("Replica " + i + " is not found in " + partition, replicaAddress);
-                            assertTrue("Not member: " + replicaAddress, node.getClusterService().getMember(replicaAddress) != null);
-                        }
-                    }
-                }
-            }
-        });
+        PartitionAssignmentsCorrectnessTest.assertPartitionAssignments(factory);
     }
 }

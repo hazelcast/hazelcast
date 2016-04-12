@@ -58,7 +58,6 @@ public class PartitionReplicaStateChecker {
 
     private final PartitionStateManager partitionStateManager;
     private final MigrationManager migrationManager;
-    private final PartitionReplicaManager replicaManager;
 
     public PartitionReplicaStateChecker(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
@@ -68,7 +67,6 @@ public class PartitionReplicaStateChecker {
 
         partitionStateManager = partitionService.getPartitionStateManager();
         migrationManager = partitionService.getMigrationManager();
-        replicaManager = partitionService.getReplicaManager();
     }
 
     public InternalPartitionServiceState getMemberState() {
