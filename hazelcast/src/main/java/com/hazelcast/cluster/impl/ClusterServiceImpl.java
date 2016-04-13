@@ -871,7 +871,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void listNodes() {
-
         System.out.println("LISTING NODES");
         Collection<Member> members = getMembers();
         for(Member member: members){
