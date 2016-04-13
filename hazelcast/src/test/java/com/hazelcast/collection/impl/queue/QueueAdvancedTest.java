@@ -607,6 +607,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/6297
     public void testTakeInterruption() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
