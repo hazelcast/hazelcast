@@ -291,6 +291,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
             sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
 
+
             sb.append("Total elapsed time: ")
                     .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
             long lastHeartbeatMillis = invocation.lastHeartbeatMillis;
@@ -299,6 +300,15 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 sb.append("never. ");
             } else {
                 sb.append(timeToString(lastHeartbeatMillis)).append(". ");
+            }
+
+            long lastHeartbeatFromMemberMillis = invocation.operationService.invocationMonitor
+                    .getLastMemberHeartbeatMillis(invocation.invTarget);
+            sb.append("Last member heartbeat: ");
+            if (lastHeartbeatFromMemberMillis == 0) {
+                sb.append("never. ");
+            } else {
+                sb.append(timeToString(lastHeartbeatFromMemberMillis)).append(". ");
             }
         } else {
             sb.append(invocation.op.getClass().getSimpleName())
