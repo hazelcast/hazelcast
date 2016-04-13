@@ -17,6 +17,9 @@
 package com.hazelcast.util;
 
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -32,7 +35,7 @@ public final class StringUtil {
     /**
      * Points to the System property 'line.separator'.
      */
-    public static final String LINE_SEPARATOR =  System.getProperty("line.separator");
+    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     private static final Locale LOCALE_INTERNAL = Locale.ENGLISH;
 
@@ -42,7 +45,7 @@ public final class StringUtil {
     /**
      * Creates a UTF8_CHARSET string from a byte array.
      *
-     * @param bytes the byte array.
+     * @param bytes  the byte array.
      * @param offset the index of the first byte to decode
      * @param length the number of bytes to decode
      * @return the string created from the byte array.
@@ -126,5 +129,18 @@ public final class StringUtil {
             return s;
         }
         return s.toLowerCase(LOCALE_INTERNAL);
+    }
+
+    /**
+     * Returns a String representation of the time.
+     *
+     * This method is not particularly efficient since it generates a ton of litter.
+     *
+     * @param timeMillis time in millis
+     * @return the String
+     */
+    public static String timeToString(long timeMillis) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        return dateFormat.format(new Date(timeMillis));
     }
 }

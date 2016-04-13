@@ -21,9 +21,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
-import com.hazelcast.util.Clock;
 
-import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -37,6 +35,8 @@ import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.VOID
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.StringUtil.timeToString;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
@@ -84,7 +84,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-      private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
+    private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
         try {
             executor.execute(new Runnable() {
                 @Override
@@ -206,7 +206,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
         boolean threadInterrupted = false;
         long timeoutMillis = unit.toMillis(timeout);
-        final long deadLineMillis = Clock.currentTimeMillis() + timeoutMillis;
+        final long deadLineMillis = currentTimeMillis() + timeoutMillis;
         try {
             synchronized (this) {
                 while (response == VOID) {
@@ -221,7 +221,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                         interrupted = true;
                     }
 
-                    timeoutMillis = deadLineMillis - System.currentTimeMillis();
+                    timeoutMillis = deadLineMillis - currentTimeMillis();
                 }
             }
 
@@ -283,20 +283,20 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return response;
     }
 
-    Object newOperationTimeoutException(boolean heartbeatTimeout) {
+    private Object newOperationTimeoutException(boolean heartbeatTimeout) {
         StringBuilder sb = new StringBuilder();
         if (heartbeatTimeout) {
             sb.append(invocation.op.getClass().getSimpleName())
                     .append(" invocation failed to complete due to operation-heartbeat-timeout. ");
 
             sb.append("Total elapsed time: ")
-                    .append(Clock.currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
+                    .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
             long lastHeartbeatMs = invocation.lastHeartbeatMillis;
             sb.append("Last heartbeat: ");
             if (lastHeartbeatMs == 0) {
                 sb.append("never. ");
             } else {
-                sb.append(new Date(lastHeartbeatMs)).append(". ");
+                sb.append(timeToString(lastHeartbeatMs)).append(". ");
             }
         } else {
             sb.append(invocation.op.getClass().getSimpleName())
@@ -304,7 +304,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     .append(invocation.callTimeoutMillis).append(" ms. ");
 
             sb.append("Total elapsed time: ")
-                    .append(Clock.currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
+                    .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
         }
 
         sb.append(invocation);
