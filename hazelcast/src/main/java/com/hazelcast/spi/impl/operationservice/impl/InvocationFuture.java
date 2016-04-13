@@ -289,19 +289,23 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             sb.append(invocation.op.getClass().getSimpleName())
                     .append(" invocation failed to complete due to operation-heartbeat-timeout. ");
 
+            sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
+
             sb.append("Total elapsed time: ")
                     .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
-            long lastHeartbeatMs = invocation.lastHeartbeatMillis;
+            long lastHeartbeatMillis = invocation.lastHeartbeatMillis;
             sb.append("Last heartbeat: ");
-            if (lastHeartbeatMs == 0) {
+            if (lastHeartbeatMillis == 0) {
                 sb.append("never. ");
             } else {
-                sb.append(timeToString(lastHeartbeatMs)).append(". ");
+                sb.append(timeToString(lastHeartbeatMillis)).append(". ");
             }
         } else {
             sb.append(invocation.op.getClass().getSimpleName())
                     .append(" got rejected before execution due to not starting within the operation-call-timeout of: ")
                     .append(invocation.callTimeoutMillis).append(" ms. ");
+
+            sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
 
             sb.append("Total elapsed time: ")
                     .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
