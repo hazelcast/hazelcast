@@ -17,6 +17,11 @@
 package com.hazelcast.core.server;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
 /**
  * Starts a Hazelcast server
@@ -29,10 +34,28 @@ public final class StartServer {
 
     /**
      * Creates a server instance of Hazelcast
-     *
+     * If user pass print.port property, Server writes port number of the instance to file.
+     * The file name is the same as print.port property.
      * @param args none
      */
-    public static void main(String[] args) {
-        Hazelcast.newHazelcastInstance(null);
+    public static void main(String[] args) throws FileNotFoundException {
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(null);
+        printMemberPort(hz);
+    }
+
+    public static void printMemberPort(HazelcastInstance hz) throws FileNotFoundException {
+        if (System.getProperty("print.port") != null) {
+            PrintWriter printWriter = null;
+            try {
+                printWriter = new PrintWriter("ports" + File.pathSeparator + System.getProperty("print.port"));
+                printWriter.println(hz.getCluster().getLocalMember().getAddress().getPort());
+            } catch (FileNotFoundException e) {
+                throw e;
+            } finally {
+                if (printWriter != null) {
+                    printWriter.close();
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,13 +42,10 @@ public class KillNodeRequest implements AsyncConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         String resultString = "SUCCESS";
-        try {
-            //TODO: Make sure correct
-            mcs.getHazelcastInstance().getCluster().getLocalMember();
-        } catch (Exception e) {
+        if (!mcs.getHazelcastInstance().getLifecycleService().isRunning()) {
             ILogger logger = mcs.getHazelcastInstance().node.nodeEngine.getLogger(getClass());
-            logger.warning("Cluster can not be shutdown: ", e);
-            resultString = e.getMessage();
+            logger.warning("Member can not be shutdown:");
+            resultString = "FAIL";
         }
 
         JsonObject result = new JsonObject().add("result", resultString);

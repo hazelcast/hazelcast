@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -243,41 +244,43 @@ public class RestTest extends HazelcastTestSupport {
     @Test
     public void testListNodes() throws IOException {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
-
-        assertTrue(instance1.getLifecycleService().isRunning());
-        assertTrue(instance2.getLifecycleService().isRunning());
-        assertTrue(instance3.getLifecycleService().isRunning());
-        assertEquals("{\"status\":\"success\"}", communicator.listClusterNodes("dev", "dev-pass"));
-//        assertTrueEventually(new AssertTask() {
-//            @Override
-//            public void run()
-//                    throws Exception {
-//                assertFalse(instance1.getLifecycleService().isRunning());
-//                assertFalse(instance2.getLifecycleService().isRunning());
-//                assertFalse(instance3.getLifecycleService().isRunning());
-//            }
-//        });
+        HazelcastTestSupport.waitInstanceForSafeState(instance1);
+        String result = String.format("{\"status\":\"success\" \"response\":\"[%s]\n%s\n%s\"}",
+                instance1.getCluster().getLocalMember().toString(),
+                BuildInfoProvider.getBuildInfo().getVersion(),
+                System.getProperty("java.version"));
+        assertEquals(result, communicator.listClusterNodes("dev", "dev-pass"));
     }
 
-//    @Test
-//    public void testKillNode() throws IOException {
-//        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-//        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-//        final HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(config);
-//        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
-//
-//        assertEquals(HttpURLConnection.HTTP_OK, communicator.shutdownCluster("dev", "dev-pass"));
-//        assertTrueEventually(new AssertTask() {
-//            @Override
-//            public void run()
-//                    throws Exception {
-//                assertFalse(instance1.getLifecycleService().isRunning());
-//                assertFalse(instance2.getLifecycleService().isRunning());
-//                assertFalse(instance3.getLifecycleService().isRunning());
-//            }
-//        });
-//    }
+    @Test
+    public void testListNodesWithWrongCredentials() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+        HazelcastTestSupport.waitInstanceForSafeState(instance1);
+        assertEquals("{\"status\":\"forbidden\" \"response\":\"null\"}", communicator.listClusterNodes("dev1", "dev-pass"));
+    }
+
+    @Test
+    public void testKillNode() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+
+        assertEquals("OK", communicator.killMember("dev", "dev-pass"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertFalse(instance1.getLifecycleService().isRunning());
+            }
+        });
+    }
+
+    @Test
+    public void testKillNodeWithWrongCredentials() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+
+        assertEquals("{\"status\":\"forbidden\"}", communicator.killMember("dev1", "dev-pass"));
+    }
 }

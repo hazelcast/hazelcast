@@ -159,6 +159,12 @@ public class HTTPCommunicator {
         return urlConnection.getResponseCode();
     }
 
+    public String killMember(String groupName, String groupPassword) throws IOException {
+
+        String url = address + "management/cluster/shutdownMember";
+        return doPost(url, groupName, groupPassword);
+    }
+
     public String getClusterState(String groupName, String groupPassword) throws IOException {
 
         String url = address + "management/cluster/state";
