@@ -77,50 +77,15 @@ public class PortablePositionNavigator {
         }
     }
 
-    // TODO -> translate plural types to singular types and validate
-    static int getTypeElementSizeInBytes(FieldType type) {
-        switch (type) {
-            case BYTE:
-                return Bits.BYTE_SIZE_IN_BYTES;
-            case BYTE_ARRAY:
-                return Bits.BYTE_SIZE_IN_BYTES;
-            case SHORT:
-                return Bits.SHORT_SIZE_IN_BYTES;
-            case SHORT_ARRAY:
-                return Bits.SHORT_SIZE_IN_BYTES;
-            case INT:
-                return Bits.INT_SIZE_IN_BYTES;
-            case INT_ARRAY:
-                return Bits.INT_SIZE_IN_BYTES;
-            case LONG:
-                return Bits.LONG_SIZE_IN_BYTES;
-            case LONG_ARRAY:
-                return Bits.LONG_SIZE_IN_BYTES;
-            case FLOAT:
-                return Bits.FLOAT_SIZE_IN_BYTES;
-            case FLOAT_ARRAY:
-                return Bits.FLOAT_SIZE_IN_BYTES;
-            case DOUBLE:
-                return Bits.DOUBLE_SIZE_IN_BYTES;
-            case DOUBLE_ARRAY:
-                return Bits.DOUBLE_SIZE_IN_BYTES;
-            case BOOLEAN:
-                return Bits.BOOLEAN_SIZE_IN_BYTES;
-            case BOOLEAN_ARRAY:
-                return Bits.BOOLEAN_SIZE_IN_BYTES;
-            case CHAR:
-                return Bits.CHAR_SIZE_IN_BYTES;
-            case CHAR_ARRAY:
-                return Bits.CHAR_SIZE_IN_BYTES;
-            default:
-                throw new RuntimeException("Unsupported type " + type);
-        }
+    private void reset() {
+        cd = initCd;
+        in.position(initPosition);
+        offset = initOffset;
     }
-
 
     public PortablePosition findPositionOf(String path) throws IOException {
         try {
-            PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path, null);
+            PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path);
             if (position.isMultiPosition()) {
                 List<PortablePosition> positions = position.asMultiPosition();
                 for (PortablePosition pos : positions) {
@@ -133,16 +98,6 @@ public class PortablePositionNavigator {
         } finally {
             reset();
         }
-    }
-
-    private void reset() {
-        cd = initCd;
-        in.position(initPosition);
-        offset = initOffset;
-    }
-
-    public PortablePosition findPositionOf(String path, FieldType type) throws IOException {
-        return findPositionOf(path);
     }
 
     void adjustPositionForDirectAccess(PortableSinglePosition position, String path) throws IOException {
@@ -225,7 +180,7 @@ public class PortablePositionNavigator {
                 }
                 p.position = in.position();
             } else {
-                p.position = in.position() + p.index * getTypeElementSizeInBytes(type);
+                p.position = in.position() + p.index * type.getSingleElementSize();
             }
         }
     }
@@ -253,7 +208,7 @@ public class PortablePositionNavigator {
                     }
                     position.position = in.position();
                 } else {
-                    position.position = in.position() + position.index * getTypeElementSizeInBytes(type);
+                    position.position = in.position() + position.index * type.getSingleElementSize();
                 }
             }
         }
@@ -325,7 +280,7 @@ public class PortablePositionNavigator {
         return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
     }
 
-    private PortablePosition findFieldPosition(String nestedPath, FieldType type) throws IOException {
+    private PortablePosition findFieldPosition(String nestedPath) throws IOException {
         String[] pathTokens = NESTED_PATH_SPLITTER.split(nestedPath);
 
         PortablePosition result = null;
@@ -374,11 +329,6 @@ public class PortablePositionNavigator {
                 }
                 positions.add(result);
             }
-
-            // TODO -> enable type checking
-//        if (fd.getType() != type) {
-//            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
-//        }
             return new PortableMultiPosition(positions);
         }
     }

@@ -44,8 +44,6 @@ public class DefaultPortableReader implements PortableReader {
     private final int offset;
     private boolean raw;
 
-    private static final IllegalArgumentException PRIMITIVE_NULL_EXCEPTION = new PrimitiveNullException();
-
     DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
@@ -82,66 +80,80 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     @Override
+    public ObjectDataInput getRawDataInput() throws IOException {
+        if (!raw) {
+            int pos = in.readInt(offset + cd.getFieldCount() * Bits.INT_SIZE_IN_BYTES);
+            in.position(pos);
+        }
+        raw = true;
+        return in;
+    }
+
+    final void end() throws IOException {
+        in.position(finalPosition);
+    }
+
+    @Override
     public byte readByte(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.BYTE);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos,  FieldType.BYTE);
         return in.readByte(pos.getStreamPosition());
     }
 
     @Override
     public short readShort(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.SHORT);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos, FieldType.SHORT);
         return in.readShort(pos.getStreamPosition());
     }
 
     @Override
     public int readInt(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.INT);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos, FieldType.INT);
         return in.readInt(pos.getStreamPosition());
     }
 
     @Override
     public long readLong(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.LONG);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos, FieldType.LONG);
         return in.readLong(pos.getStreamPosition());
     }
 
     @Override
     public float readFloat(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.FLOAT);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos, FieldType.FLOAT);
         return in.readFloat(pos.getStreamPosition());
     }
 
     @Override
     public double readDouble(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.DOUBLE);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos, FieldType.DOUBLE);
         return in.readDouble(pos.getStreamPosition());
     }
 
     @Override
     public boolean readBoolean(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.BOOLEAN);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos, FieldType.BOOLEAN);
         return in.readBoolean(pos.getStreamPosition());
     }
 
     @Override
     public char readChar(String path) throws IOException {
         validateQuantifier(path);
-        PortablePosition pos = findPositionOf(path, FieldType.CHAR);
-        validatePrimitiveNull(pos);
+        PortablePosition pos = findPositionOf(path);
+        validatePrimitive(pos, FieldType.CHAR);
         return in.readChar(pos.getStreamPosition());
     }
 
@@ -150,10 +162,12 @@ public class DefaultPortableReader implements PortableReader {
         validateQuantifier(path);
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.UTF);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             }
+            validateNotMultiPosition(position);
+            validateType(position, FieldType.UTF);
             in.position(position.getStreamPosition());
             return in.readUTF();
         } finally {
@@ -167,10 +181,11 @@ public class DefaultPortableReader implements PortableReader {
         validateQuantifier(path);
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.PORTABLE);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             }
+            validateType(position, FieldType.PORTABLE);
             in.position(position.getStreamPosition());
             return serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
         } finally {
@@ -182,7 +197,7 @@ public class DefaultPortableReader implements PortableReader {
     public byte[] readByteArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.BYTE_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -199,12 +214,14 @@ public class DefaultPortableReader implements PortableReader {
         byte[] result = new byte[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.BYTE);
             result[i] = in.readByte(position.getStreamPosition());
         }
         return result;
     }
 
     private byte[] readSingleByteArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.BYTE_ARRAY);
         in.position(position.getStreamPosition());
         return in.readByteArray();
     }
@@ -213,7 +230,7 @@ public class DefaultPortableReader implements PortableReader {
     public boolean[] readBooleanArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.BOOLEAN_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -230,12 +247,14 @@ public class DefaultPortableReader implements PortableReader {
         boolean[] result = new boolean[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.BOOLEAN);
             result[i] = in.readBoolean(position.getStreamPosition());
         }
         return result;
     }
 
     private boolean[] readSingleBooleanArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.BOOLEAN_ARRAY);
         in.position(position.getStreamPosition());
         return in.readBooleanArray();
     }
@@ -244,7 +263,7 @@ public class DefaultPortableReader implements PortableReader {
     public char[] readCharArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.CHAR_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -261,12 +280,14 @@ public class DefaultPortableReader implements PortableReader {
         char[] result = new char[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.CHAR);
             result[i] = in.readChar(position.getStreamPosition());
         }
         return result;
     }
 
     private char[] readSingleCharArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.CHAR_ARRAY);
         in.position(position.getStreamPosition());
         return in.readCharArray();
     }
@@ -275,7 +296,7 @@ public class DefaultPortableReader implements PortableReader {
     public int[] readIntArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.INT_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -292,12 +313,14 @@ public class DefaultPortableReader implements PortableReader {
         int[] result = new int[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.INT);
             result[i] = in.readInt(position.getStreamPosition());
         }
         return result;
     }
 
     private int[] readSingleIntArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.INT_ARRAY);
         in.position(position.getStreamPosition());
         return in.readIntArray();
     }
@@ -306,7 +329,7 @@ public class DefaultPortableReader implements PortableReader {
     public long[] readLongArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.LONG_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -323,12 +346,14 @@ public class DefaultPortableReader implements PortableReader {
         long[] result = new long[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.LONG);
             result[i] = in.readLong(position.getStreamPosition());
         }
         return result;
     }
 
     private long[] readSingleLongArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.LONG_ARRAY);
         in.position(position.getStreamPosition());
         return in.readLongArray();
     }
@@ -337,7 +362,7 @@ public class DefaultPortableReader implements PortableReader {
     public double[] readDoubleArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.DOUBLE_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -354,12 +379,14 @@ public class DefaultPortableReader implements PortableReader {
         double[] result = new double[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.DOUBLE);
             result[i] = in.readDouble(position.getStreamPosition());
         }
         return result;
     }
 
     private double[] readSingleDoubleArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.DOUBLE_ARRAY);
         in.position(position.getStreamPosition());
         return in.readDoubleArray();
     }
@@ -368,7 +395,7 @@ public class DefaultPortableReader implements PortableReader {
     public float[] readFloatArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.FLOAT_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -385,12 +412,14 @@ public class DefaultPortableReader implements PortableReader {
         float[] result = new float[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.FLOAT);
             result[i] = in.readFloat(position.getStreamPosition());
         }
         return result;
     }
 
     private float[] readSingleFloatArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.FLOAT_ARRAY);
         in.position(position.getStreamPosition());
         return in.readFloatArray();
     }
@@ -399,7 +428,7 @@ public class DefaultPortableReader implements PortableReader {
     public short[] readShortArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.SHORT_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -416,12 +445,14 @@ public class DefaultPortableReader implements PortableReader {
         short[] result = new short[positions.size()];
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            validateType(position, FieldType.SHORT);
             result[i] = in.readShort(position.getStreamPosition());
         }
         return result;
     }
 
     private short[] readSingleShortArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.SHORT_ARRAY);
         in.position(position.getStreamPosition());
         return in.readShortArray();
     }
@@ -430,7 +461,7 @@ public class DefaultPortableReader implements PortableReader {
     public String[] readUTFArray(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, FieldType.UTF_ARRAY);
+            PortablePosition position = findPositionOf(path);
             if (position.isNullOrEmpty()) {
                 return null;
             } else if (position.isMultiPosition()) {
@@ -448,6 +479,7 @@ public class DefaultPortableReader implements PortableReader {
         for (int i = 0; i < result.length; i++) {
             PortablePosition position = positions.get(i);
             if (!position.isNullOrEmpty()) {
+                validateType(position, FieldType.UTF);
                 in.position(position.getStreamPosition());
                 result[i] = in.readUTF();
             }
@@ -456,6 +488,7 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     private String[] readSingleUTFArray(PortablePosition position) throws IOException {
+        validateType(position, FieldType.UTF_ARRAY);
         in.position(position.getStreamPosition());
         return in.readUTFArray();
     }
@@ -464,7 +497,7 @@ public class DefaultPortableReader implements PortableReader {
     public Portable[] readPortableArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(fieldName, FieldType.PORTABLE_ARRAY);
+            PortablePosition position = findPositionOf(fieldName);
             if (position.isMultiPosition()) {
                 return readMultiPortableArray(position.asMultiPosition());
             } else if (position.isNull()) {
@@ -485,6 +518,7 @@ public class DefaultPortableReader implements PortableReader {
             return null;
         }
 
+        validateType(position, FieldType.PORTABLE_ARRAY);
         final Portable[] portables = new Portable[position.getLen()];
         for (int index = 0; index < position.getLen(); index++) {
             in.position(PortablePositionNavigator.getArrayCellPosition(position, index, in));
@@ -498,6 +532,7 @@ public class DefaultPortableReader implements PortableReader {
         for (int i = 0; i < portables.length; i++) {
             PortablePosition position = positions.get(i);
             if (!position.isNullOrEmpty()) {
+                validateType(position, FieldType.PORTABLE);
                 in.position(position.getStreamPosition());
                 portables[i] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
             }
@@ -505,11 +540,10 @@ public class DefaultPortableReader implements PortableReader {
         return portables;
     }
 
-    public Object read(String path, FieldType expectedType) throws IOException {
+    public Object read(String path) throws IOException {
         final int currentPos = in.position();
         try {
-            PortablePosition position = findPositionOf(path, expectedType);
-            // validateType(position, expectedType);
+            PortablePosition position = findPositionOf(path);
             if (position.isMultiPosition()) {
                 return readMultiPosition(position.asMultiPosition());
             } else if (position.isNull()) {
@@ -528,31 +562,13 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
-    private PortablePosition findPositionOf(String path, FieldType type) throws IOException {
+    private PortablePosition findPositionOf(String path) throws IOException {
         if (raw) {
             throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
-        return navigator.findPositionOf(path, type);
+        return navigator.findPositionOf(path);
     }
 
-
-    private void validateMultiType(PortablePosition position, FieldType expectedType) {
-        if (expectedType != null) {
-            FieldType returnedType = position.getType();
-
-        }
-    }
-
-    private void validateSingleType(PortablePosition position, FieldType expectedType) {
-        if (expectedType != null) {
-            FieldType returnedType = position.getType();
-
-        }
-    }
-
-    public Object read(String path) throws IOException {
-        return read(path, null);
-    }
 
     private <T> MultiResult<T> readMultiPosition(List<PortablePosition> positions) throws IOException {
         MultiResult<T> result = new MultiResult<T>();
@@ -566,7 +582,6 @@ public class DefaultPortableReader implements PortableReader {
         return result;
     }
 
-    // TODO -> refactor to O(1) lookup of proper strategy
     @SuppressWarnings("unchecked")
     private <T> T readSinglePosition(PortablePosition position) throws IOException {
         if (position.getIndex() >= 0) {
@@ -646,6 +661,7 @@ public class DefaultPortableReader implements PortableReader {
             case UTF_ARRAY:
                 return (T) readSingleUTFArray(position);
             case PORTABLE:
+                in.position(position.getStreamPosition());
                 return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
             case PORTABLE_ARRAY:
                 return (T) readSinglePortableArray(position);
@@ -654,45 +670,43 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
-    @Override
-    public ObjectDataInput getRawDataInput() throws IOException {
-        if (!raw) {
-            int pos = in.readInt(offset + cd.getFieldCount() * Bits.INT_SIZE_IN_BYTES);
-            in.position(pos);
-        }
-        raw = true;
-        return in;
-    }
-
-    final void end() throws IOException {
-        in.position(finalPosition);
-    }
-
     private void validateQuantifier(String path) {
         if (path.contains("[any]")) {
             throw new IllegalArgumentException("Invalid method for [any] quantifier. Use the readArray method family.");
         }
     }
 
-    private void validatePrimitiveNull(PortablePosition position) {
-        if (position.isNullOrEmpty()) {
-            throw PRIMITIVE_NULL_EXCEPTION;
-        }
+    private PortablePosition validatePrimitive(PortablePosition position, FieldType expectedType) {
+        validateNonNullOrEmptyPosition(position);
+        validateNotMultiPosition(position);
+        validateType(position, expectedType);
+        return position;
     }
 
     private PortablePosition validateNonNullOrEmptyPosition(PortablePosition position) {
         if (position.isNullOrEmpty()) {
-            throw PRIMITIVE_NULL_EXCEPTION;
+            throw new IllegalArgumentException("Primitive type cannot be returned since the result is/contains null.");
         }
         return position;
     }
 
-    // TODO - document
-    private static final class PrimitiveNullException extends IllegalArgumentException {
-        public PrimitiveNullException() {
-            super("Primitive type cannot be returned since the result contains null.\n" +
-                    "DISCLAIMER: The stacktrace of this exception is not accurate on-purpose.]");
+    private PortablePosition validateNotMultiPosition(PortablePosition position) {
+        if (position.isMultiPosition()) {
+            throw new IllegalArgumentException("The method expected a single result but multiple results have been returned");
         }
+        return position;
+    }
+
+    private PortablePosition validateType(PortablePosition position, FieldType expectedType) {
+        FieldType returnedType = position.getType();
+        if(position.getIndex() >= 0) {
+            returnedType = expectedType.getSingleType();
+        }
+        if (expectedType != returnedType) {
+            throw new IllegalArgumentException("Wrong actual type read! Actual:" + returnedType.name() + " Expected: "
+                    + expectedType.name());
+        }
+        return position;
     }
 
 }
