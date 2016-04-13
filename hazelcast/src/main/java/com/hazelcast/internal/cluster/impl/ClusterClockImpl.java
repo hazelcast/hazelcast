@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static java.lang.Math.abs;
 
 
 public class ClusterClockImpl implements ClusterClock {
@@ -30,6 +31,8 @@ public class ClusterClockImpl implements ClusterClock {
 
     private volatile long clusterTimeDiff;
     private volatile long clusterStartTime = Long.MIN_VALUE;
+    @Probe(level = MANDATORY)
+    private volatile long maxClusterTimeDiff;
 
     public ClusterClockImpl(ILogger logger) {
         this.logger = logger;
@@ -50,6 +53,11 @@ public class ClusterClockImpl implements ClusterClock {
         if (logger.isFinestEnabled()) {
             logger.finest("Setting cluster time diff to " + diff + "ms.");
         }
+
+        if (abs(diff) > abs(maxClusterTimeDiff)) {
+            maxClusterTimeDiff = diff;
+        }
+
         this.clusterTimeDiff = diff;
     }
 
