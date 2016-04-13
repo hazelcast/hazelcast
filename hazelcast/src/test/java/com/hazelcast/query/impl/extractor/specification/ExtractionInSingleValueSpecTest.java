@@ -78,6 +78,13 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    public void nested_wrong_attribute_name() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("firstLimb.name12312", "left-hand"), mv),
+                Expected.of(QueryException.class));
+    }
+
+    @Test
     public void wrong_attribute_name_compared_to_null() {
         execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
                 Query.of(Predicates.equal("name12312", null), mv),
@@ -117,7 +124,7 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
         return axes(
                 asList(BINARY, OBJECT),
                 asList(NO_INDEX, UNORDERED, ORDERED),
-                asList(SINGLE, PORTABLE)
+                asList(SINGLE)
         );
     }
 

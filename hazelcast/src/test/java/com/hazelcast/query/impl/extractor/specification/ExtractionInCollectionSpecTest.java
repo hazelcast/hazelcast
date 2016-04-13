@@ -174,14 +174,7 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     }
 
     @Test
-    public void indexOutOfBound_notExistingProperty() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(equal("limbs_[100].sdafasdf", "knife"), mv),
-                Expected.of(QueryException.class));
-    }
-
-    @Test
-    public void indexOutOfBound_atLeaf_notExistingProperty() {
+    public void indexOutOfBound_atLeaf_notExistingPropertyOnPrimitiveField() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(equal("limbs_[0].tattoos_[100].asdfas", "knife"), mv),
                 Expected.of(QueryException.class));

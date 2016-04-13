@@ -43,7 +43,7 @@ final class PortableExtractor {
         if (fieldDefinition != null) {
             return reader.read(fieldName);
         } else {
-            throw new IllegalArgumentException("Unknown field: " + fieldName);
+            return null;
         }
     }
 

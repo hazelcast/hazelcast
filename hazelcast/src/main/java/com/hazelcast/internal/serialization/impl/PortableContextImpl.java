@@ -186,11 +186,12 @@ final class PortableContextImpl implements PortableContext {
                 for (int i = 0; i < fieldNames.length; i++) {
                     name = PortableHelper.extractAttributeNameNameWithoutArguments(fieldNames[i]);
                     fd = currentClassDef.getField(name);
-                    if (fd == null) {
-                        throw new IllegalArgumentException("Unknown field: " + name);
-                    }
+                    // This is not enough to fully implement issue: https://github.com/hazelcast/hazelcast/issues/3927
                     if (i == fieldNames.length - 1) {
                         break;
+                    }
+                    if (fd == null) {
+                        throw new IllegalArgumentException("Unknown field: " + name);
                     }
                     currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
                             currentClassDef.getVersion());
