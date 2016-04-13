@@ -91,6 +91,6 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public void listNodes() {
-        
+
     }
 }
