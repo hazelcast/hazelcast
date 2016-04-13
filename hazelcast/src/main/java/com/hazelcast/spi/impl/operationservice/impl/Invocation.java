@@ -43,7 +43,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
@@ -68,6 +67,7 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -600,9 +600,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                 + ", invokeCount=" + invokeCount
                 + ", callTimeoutMillis=" + callTimeoutMillis
                 + ", firstInvocationTimeMs=" + firstInvocationTimeMillis
-                + ", firstInvocationTime='" + new Date(firstInvocationTimeMillis) + "'"
+                + ", firstInvocationTime='" + timeToString(firstInvocationTimeMillis) + "'"
                 + ", lastHeartbeatMillis=" + lastHeartbeatMillis
-                + ", lastHeartbeatTime='" + new Date(lastHeartbeatMillis) + "'"
+                + ", lastHeartbeatTime='" + timeToString(lastHeartbeatMillis) + "'"
                 + ", target=" + invTarget
                 + ", pendingResponse={" + pendingResponse + "}"
                 + ", backupsExpected=" + backupsExpected
