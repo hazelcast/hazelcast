@@ -33,6 +33,10 @@ public class PortablePositionNavigator {
     private ClassDefinition cd;
     private PortableSerializer serializer;
 
+    private final int initPosition;
+    private final ClassDefinition initCd;
+    private final int initOffset;
+
     private final Deque<NavigationFrame> multiPositions = new ArrayDeque<NavigationFrame>();
 
     /**
@@ -40,20 +44,16 @@ public class PortablePositionNavigator {
      * @param cd
      * @param serializer
      */
-    public void init(BufferObjectDataInput in, ClassDefinition cd, PortableSerializer serializer) {
+    public PortablePositionNavigator(BufferObjectDataInput in, ClassDefinition cd, PortableSerializer serializer) {
         this.in = in;
         this.cd = cd;
         this.serializer = serializer;
-        initFieldCountAndOffset(in, cd);
-    }
 
-    public void setup(BufferObjectDataInput in, int offset, int finalPosition, ClassDefinition cd,
-                      PortableSerializer serializer) {
-        this.in = in;
-        this.offset = offset;
-        this.finalPosition = finalPosition;
-        this.cd = cd;
-        this.serializer = serializer;
+        initFieldCountAndOffset(in, cd);
+
+        this.initPosition = in.position();
+        this.initCd = cd;
+        this.initOffset = offset;
     }
 
     private void initFieldCountAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
@@ -119,17 +119,26 @@ public class PortablePositionNavigator {
 
 
     public PortablePosition findPositionOf(String path) throws IOException {
-        PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path, null);
-        if (position.isMultiPosition()) {
-            List<PortablePosition> positions = position.asMultiPosition();
-            for (PortablePosition pos : positions) {
-                adjustPositionForDirectAccess((PortableSinglePosition) pos, path);
+        try {
+            PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path, null);
+            if (position.isMultiPosition()) {
+                List<PortablePosition> positions = position.asMultiPosition();
+                for (PortablePosition pos : positions) {
+                    adjustPositionForDirectAccess((PortableSinglePosition) pos, path);
+                }
+            } else {
+                adjustPositionForDirectAccess(position, path);
             }
-        } else {
-            adjustPositionForDirectAccess(position, path);
+            return position;
+        } finally {
+            reset();
         }
+    }
 
-        return position;
+    private void reset() {
+        cd = initCd;
+        in.position(initPosition);
+        offset = initOffset;
     }
 
     public PortablePosition findPositionOf(String path, FieldType type) throws IOException {
@@ -380,13 +389,13 @@ public class PortablePositionNavigator {
         cd = frame.cd;
     }
 
-    public static PortableSinglePosition nilPosition() {
+    private static PortableSinglePosition nilPosition() {
         PortableSinglePosition position = new PortableSinglePosition();
         position.nil = true;
         return position;
     }
 
-    public static PortableSinglePosition emptyPosition() {
+    private static PortableSinglePosition emptyPosition() {
         PortableSinglePosition position = new PortableSinglePosition();
         position.len = 0;
         return position;
@@ -643,11 +652,11 @@ public class PortablePositionNavigator {
         }
     }
 
-    public int getFinalPosition() {
+    int getFinalPosition() {
         return finalPosition;
     }
 
-    public int getOffset() {
+    int getOffset() {
         return offset;
     }
 

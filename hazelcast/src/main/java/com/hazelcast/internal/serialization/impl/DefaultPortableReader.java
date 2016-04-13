@@ -51,9 +51,7 @@ public class DefaultPortableReader implements PortableReader {
         this.serializer = serializer;
         this.cd = cd;
 
-        this.navigator = new PortablePositionNavigator();
-        this.navigator.init(in, cd, serializer);
-
+        this.navigator = new PortablePositionNavigator(in, cd, serializer);
         this.finalPosition = navigator.getFinalPosition();
         this.offset = navigator.getOffset();
     }
@@ -539,14 +537,14 @@ public class DefaultPortableReader implements PortableReader {
 
 
     private void validateMultiType(PortablePosition position, FieldType expectedType) {
-        if(expectedType != null) {
+        if (expectedType != null) {
             FieldType returnedType = position.getType();
 
         }
     }
 
     private void validateSingleType(PortablePosition position, FieldType expectedType) {
-        if(expectedType != null) {
+        if (expectedType != null) {
             FieldType returnedType = position.getType();
 
         }
