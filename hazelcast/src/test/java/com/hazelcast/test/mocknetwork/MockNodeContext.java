@@ -30,18 +30,18 @@ import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.nio.channels.ServerSocketChannel;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 class MockNodeContext implements NodeContext {
 
-    private final CopyOnWriteArrayList<Address> joinAddresses;
+    private final Collection<Address> joinAddresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes;
     private final Address thisAddress;
     private final Object joinerLock;
 
-    public MockNodeContext(CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes,
-                           Address thisAddress, Object joinerLock) {
+    public MockNodeContext(Collection<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes,
+            Address thisAddress, Object joinerLock) {
         this.joinAddresses = addresses;
         this.nodes = nodes;
         this.thisAddress = thisAddress;

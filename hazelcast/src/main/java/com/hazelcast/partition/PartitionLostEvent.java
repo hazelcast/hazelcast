@@ -18,6 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -62,8 +63,10 @@ public class PartitionLostEvent
 
     /**
      * Returns the number of lost backups for the partition. O: the owner, 1: first backup, 2: second backup ...
+     * If all replicas of a partition is lost, {@link InternalPartition#MAX_BACKUP_COUNT} is returned.
      *
-     * @return the number of lost backups for the partition
+     * @return the number of lost backups for the partition.
+     * If all replicas of a partition is lost, {@link InternalPartition#MAX_BACKUP_COUNT} is returned.
      */
     public int getLostBackupCount() {
         return lostBackupCount;

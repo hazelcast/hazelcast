@@ -23,10 +23,5 @@ public interface InternalPartition extends IPartition {
 
     int MAX_REPLICA_COUNT = MAX_BACKUP_COUNT + 1;
 
-    /**
-     * Indicates that a replica index is waiting for a backup sync
-     */
-    int SYNC_WAITING = -1;
-
     int getReplicaIndex(Address address);
 }

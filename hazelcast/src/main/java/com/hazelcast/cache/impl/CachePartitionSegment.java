@@ -115,4 +115,15 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
             }
         }
     }
+
+    void clearHavingLesserBackupCountThan(int backupCount) {
+        synchronized (mutex) {
+            for (ICacheRecordStore store : recordStores.values()) {
+                CacheConfig cacheConfig = store.getConfig();
+                if (backupCount > cacheConfig.getTotalBackupCount()) {
+                    store.clear();
+                }
+            }
+        }
+    }
 }

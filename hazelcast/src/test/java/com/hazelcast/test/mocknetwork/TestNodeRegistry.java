@@ -27,15 +27,14 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class TestNodeRegistry {
 
     private final ConcurrentMap<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
     private final Object joinerLock = new Object();
-    private final CopyOnWriteArrayList<Address> joinAddresses;
+    private final Collection<Address> joinAddresses;
 
-    public TestNodeRegistry(CopyOnWriteArrayList<Address> addresses) {
+    public TestNodeRegistry(Collection<Address> addresses) {
         this.joinAddresses = addresses;
     }
 

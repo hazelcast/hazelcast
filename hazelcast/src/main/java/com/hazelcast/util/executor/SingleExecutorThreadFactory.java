@@ -29,7 +29,7 @@ public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFac
 
     public SingleExecutorThreadFactory(HazelcastThreadGroup threadGroup, String threadName) {
         super(threadGroup.getInternalThreadGroup(), threadGroup.getClassLoader());
-        this.threadName = threadName;
+        this.threadName = threadGroup.getThreadNamePrefix(threadName);
     }
 
     @Override

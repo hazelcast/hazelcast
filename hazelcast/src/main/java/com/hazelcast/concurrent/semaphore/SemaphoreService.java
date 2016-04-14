@@ -19,7 +19,9 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -32,8 +34,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
@@ -166,30 +166,34 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearMigrationData(event.getPartitionId());
-        }
-    }
-
-    private void clearMigrationData(int partitionId) {
-        Iterator<Map.Entry<String, SemaphoreContainer>> it = containers.entrySet().iterator();
-        while (it.hasNext()) {
-            SemaphoreContainer semaphoreContainer = it.next().getValue();
-            if (semaphoreContainer.getPartitionId() == partitionId) {
-                it.remove();
-            }
+            clearSemaphoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId());
+            clearSemaphoresHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
+        }
+    }
+
+    private void clearSemaphoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        Iterator<SemaphoreContainer> it = containers.values().iterator();
+        while (it.hasNext()) {
+            SemaphoreContainer semaphoreContainer = it.next();
+            if (semaphoreContainer.getPartitionId() != partitionId) {
+                continue;
+            }
+
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > semaphoreContainer.getTotalBackupCount()) {
+                it.remove();
+            }
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        clearMigrationData(partitionId);
+        clearSemaphoresHavingLesserBackupCountThan(partitionId, -1);
     }
 
     @Override

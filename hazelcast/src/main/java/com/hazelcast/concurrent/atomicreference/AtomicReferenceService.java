@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -28,6 +27,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
@@ -109,27 +109,27 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     }
 
     @Override
-    public void commitMigration(PartitionMigrationEvent partitionMigrationEvent) {
-        if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            int partitionId = partitionMigrationEvent.getPartitionId();
-            removeContainers(partitionId);
+    public void commitMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            int thresholdReplicaIndex = event.getNewReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
         }
     }
 
     @Override
-    public void rollbackMigration(PartitionMigrationEvent partitionMigrationEvent) {
-        if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            int partitionId = partitionMigrationEvent.getPartitionId();
-            removeContainers(partitionId);
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            int thresholdReplicaIndex = event.getCurrentReplicaIndex();
+            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
+                clearPartitionReplica(event.getPartitionId());
+            }
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        removeContainers(partitionId);
-    }
-
-    public void removeContainers(int partitionId) {
         final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();

@@ -26,7 +26,8 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -38,7 +39,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -158,7 +158,7 @@ public abstract class AbstractCacheService
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearPartitionReplica(event.getPartitionId());
+            clearCachesHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
         initPartitionReplica(event.getPartitionId());
     }
@@ -166,9 +166,19 @@ public abstract class AbstractCacheService
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartitionReplica(event.getPartitionId());
+            clearCachesHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
         initPartitionReplica(event.getPartitionId());
+    }
+
+    private void clearCachesHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        if (thresholdReplicaIndex == -1) {
+            clearPartitionReplica(partitionId);
+            return;
+        }
+
+        CachePartitionSegment segment = segments[partitionId];
+        segment.clearHavingLesserBackupCountThan(thresholdReplicaIndex);
     }
 
     private void initPartitionReplica(int partitionId) {

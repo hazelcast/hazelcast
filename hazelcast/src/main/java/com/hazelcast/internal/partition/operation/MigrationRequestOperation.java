@@ -16,15 +16,16 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.impl.MigrationManager;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -45,15 +46,13 @@ import java.util.logging.Level;
 
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
-    private static final int TRY_PAUSE_MILLIS = 1000;
-
     private boolean returnResponse = true;
 
     public MigrationRequestOperation() {
     }
 
-    public MigrationRequestOperation(MigrationInfo migrationInfo) {
-        super(migrationInfo);
+    public MigrationRequestOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
+        super(migrationInfo, partitionStateVersion);
     }
 
     @Override
@@ -67,36 +66,47 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
         if (destination.equals(source)) {
             getLogger().warning("Source and destination addresses are the same! => " + toString());
-            success = false;
+            setFailed();
             return;
         }
 
-        verifyNotThisNode(nodeEngine, source);
-
-        InternalPartitionServiceImpl partitionService = getService();
-        InternalPartition partition = partitionService.getPartition(migrationInfo.getPartitionId());
-        Address owner = partition.getOwnerOrNull();
-        verifyOwnerExists(owner);
+        InternalPartition partition = getPartition();
+        verifySource(nodeEngine.getThisAddress(), partition);
 
         if (!migrationInfo.startProcessing()) {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);
-            success = false;
+            setFailed();
+            return;
+        }
+
+        InternalPartitionServiceImpl partitionService = getService();
+        MigrationManager migrationManager = partitionService.getMigrationManager();
+        if (!migrationManager.addActiveMigration(migrationInfo)) {
+            setFailed();
             return;
         }
 
         try {
-            verifyOwner(source, partition, owner);
-            partitionService.addActiveMigration(migrationInfo);
-            Collection<Operation> tasks = prepareMigrationTasks();
+            Collection<Operation> tasks = prepareMigrationOperations();
             long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
             invokeMigrationOperation(destination, replicaVersions, tasks);
             returnResponse = false;
         } catch (Throwable e) {
             logThrowable(e);
-            success = false;
+            setFailed();
         } finally {
             migrationInfo.doneProcessing();
         }
+    }
+
+    private void setFailed() {
+        success = false;
+        onMigrationComplete(false);
+    }
+
+    @Override
+    protected MigrationParticipant getMigrationParticipantType() {
+        return MigrationParticipant.SOURCE;
     }
 
     private void logThrowable(Throwable t) {
@@ -113,30 +123,22 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 || !getNodeEngine().isRunning() ? Level.INFO : Level.WARNING;
     }
 
-    private void verifyNotThisNode(NodeEngine nodeEngine, Address source) {
-        if (source == null || !source.equals(nodeEngine.getThisAddress())) {
-            throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
-        }
-    }
-
-    private void verifyOwnerExists(Address owner) {
+    private void verifySource(Address thisAddress, InternalPartition partition) {
+        Address owner = partition.getOwnerOrNull();
         if (owner == null) {
             throw new RetryableHazelcastException("Cannot migrate at the moment! Owner of the partition is null => "
                     + migrationInfo);
         }
-    }
 
-    private void verifyOwner(Address source, InternalPartition partition, Address owner) {
-        if (!source.equals(owner)) {
-            throw new HazelcastException("Cannot migrate! This node is not owner of the partition => "
-                    + migrationInfo + " -> partitionId=" + partition.getPartitionId() + " , " + partition);
+        if (!thisAddress.equals(owner)) {
+            throw new RetryableHazelcastException("Owner of partition is not this node! => " + toString());
         }
     }
 
     private void invokeMigrationOperation(Address destination, long[] replicaVersions, Collection<Operation> tasks)
             throws IOException {
 
-        MigrationOperation operation = new MigrationOperation(migrationInfo, replicaVersions, tasks);
+        MigrationOperation operation = new MigrationOperation(migrationInfo, replicaVersions, tasks, partitionStateVersion);
 
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
@@ -146,7 +148,8 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 .setExecutionCallback(new MigrationCallback(migrationInfo, this))
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
-                .setTryPauseMillis(TRY_PAUSE_MILLIS)
+                .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
+                .setTryPauseMillis(InternalPartitionService.MIGRATION_RETRY_PAUSE)
                 .setReplicaIndex(getReplicaIndex())
                 .invoke();
     }
@@ -177,25 +180,37 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return success;
-    }
-
-    @Override
     public boolean returnsResponse() {
         return returnResponse;
     }
 
-    private Collection<Operation> prepareMigrationTasks() {
+    public void handleMigrationResultFromTarget(Object result) {
+        migrationInfo.doneProcessing();
+        onMigrationComplete(Boolean.TRUE.equals(result));
+        sendResponse(result);
+    }
+
+    private Collection<Operation> prepareMigrationOperations() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(), 0);
-        PartitionMigrationEvent migrationEvent
-                = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId());
+
+        PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(),
+                migrationInfo.getDestinationNewReplicaIndex());
+
+        boolean ownerMigration = nodeEngine.getThisAddress().equals(migrationInfo.getSource());
+        PartitionMigrationEvent migrationEvent = null;
+        if (ownerMigration) {
+            migrationEvent = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId(),
+                    migrationInfo.getSourceCurrentReplicaIndex(), migrationInfo.getSourceNewReplicaIndex());
+        }
 
         Collection<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
-            service.beforeMigration(migrationEvent);
+
+            if (ownerMigration) {
+                service.beforeMigration(migrationEvent);
+            }
+
             Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {
                 op.setServiceName(serviceInfo.getName());
@@ -217,8 +232,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
         @Override
         public void notify(Object result) {
-            migrationInfo.doneProcessing();
-            op.sendResponse(result);
+            op.handleMigrationResultFromTarget(result);
         }
     }
 }

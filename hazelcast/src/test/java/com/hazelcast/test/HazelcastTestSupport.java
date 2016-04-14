@@ -27,7 +27,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -38,6 +37,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
@@ -428,7 +428,7 @@ public abstract class HazelcastTestSupport {
         warmUpPartitions(hz);
 
         InternalPartitionService partitionService = getPartitionService(hz);
-        for (InternalPartition p : partitionService.getPartitions()) {
+        for (IPartition p : partitionService.getPartitions()) {
             if (p.isLocal()) {
                 return p.getPartitionId();
             }

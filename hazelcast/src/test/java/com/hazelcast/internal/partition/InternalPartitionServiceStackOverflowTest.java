@@ -22,6 +22,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -67,6 +68,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
             } else {
                 op = new SlowPartitionUnawareSystemOperation(latch);
             }
+            op.setOperationResponseHandler(OperationResponseHandlerFactory.createEmptyResponseHandler());
             opService.executeOperation(op);
         }
 

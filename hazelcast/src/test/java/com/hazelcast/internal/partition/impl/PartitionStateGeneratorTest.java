@@ -21,7 +21,6 @@ import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -34,17 +33,16 @@ import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.SingleMemberGroupFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,21 +58,45 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class PartitionStateGeneratorTest {
 
     private static final boolean printState = false;
-
-    @BeforeClass
-    @AfterClass
-    public static void init() throws IOException {
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void testRandomPartitionGenerator() throws Exception {
         final MemberGroupFactory memberGroupFactory = new SingleMemberGroupFactory();
         test(memberGroupFactory);
+    }
+
+    @Test
+    public void test() throws Exception {
+        PartitionStateGenerator generator = new PartitionStateGeneratorImpl();
+        Address[][] state = new Address[][] {
+                    new Address[] {
+                            new Address("127.0.0.1", 5000),
+                            new Address("127.0.0.1", 5002),
+                            new Address("127.0.0.1", 5003),
+                            new Address("127.0.0.1", 5001),
+                            null, null, null}};
+
+        InternalPartition[] partitions = new InternalPartition[1];
+        partitions[0] = new DummyInternalPartition(state[0]);
+        System.out.println("initial: " + Arrays.toString(state[0]));
+
+        // remove member
+        state[0][2] = null;
+        System.out.println("member-removed: " + Arrays.toString(state[0]));
+
+        Member[] newMembers = {
+                new MemberImpl(new Address("127.0.0.1", 5000), false),
+                new MemberImpl(new Address("127.0.0.1", 5001), false),
+                new MemberImpl(new Address("127.0.0.1", 5002), false)};
+
+        Address[][] newState =
+                generator.reArrange(new SingleMemberGroupFactory().createMemberGroups(Arrays.asList(newMembers)), partitions);
+
+        System.out.println("repartitioned: " + Arrays.toString(newState[0]));
     }
 
     //"random host groups may cause non-uniform distribution of partitions when node size go down significantly!")
@@ -203,7 +225,6 @@ public class PartitionStateGeneratorTest {
                     }
                     groups = memberGroupFactory.createMemberGroups(memberList);
                     println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= " + memberCount + ", GROUP-COUNT= " + groups.size());
-                    //todo
                     state = generator.reArrange(memberGroupFactory.createMemberGroups(memberList), toPartitionView(state));
                     checkTestResult(state, groups, partitionCount);
                     previousMemberCount = memberCount;

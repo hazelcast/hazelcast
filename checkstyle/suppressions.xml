@@ -195,7 +195,6 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/partition/"/>
     <suppress checks="JavadocType" files="com/hazelcast/partition/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/partition/"/>
-    <suppress checks="FileLengthCheck" files="com/hazelcast/internal/partition/impl/InternalPartitionServiceImpl"/>
 
     <!-- Topic -->
     <suppress checks="VisibilityModifier" files="com/hazelcast/topic/impl/TopicEvent"/>

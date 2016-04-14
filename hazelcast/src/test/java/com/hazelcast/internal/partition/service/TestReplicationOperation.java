@@ -14,24 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.partition;
+package com.hazelcast.internal.partition.service;
 
-import com.hazelcast.spi.annotation.PrivateApi;
+public class TestReplicationOperation extends TestBackupPutOperation {
 
-/**
- * Used to indicate the reason behind an update on the partition talbe
- */
-@PrivateApi
-public enum PartitionReplicaChangeReason {
+    public TestReplicationOperation() {
+    }
 
-    /*
-        Used for initial partition assignments and migrations
-     */
-    ASSIGNMENT,
-
-    /*
-        Used when a replica node is shifted up in the partition table
-     */
-    MEMBER_REMOVED
-
+    public TestReplicationOperation(int value) {
+        super(value);
+    }
 }

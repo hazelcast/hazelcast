@@ -6,6 +6,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -79,7 +80,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         Config config = getConfig();
         config.setProperty("hazelcast.partition.max.parallel.replications", Integer.toString(getMaxParallelReplicaSyncCount()));
         for (int i = 0; i < nodeCount; i++) {
-            config.getMapConfig(getIthMapName(i)).setBackupCount(i);
+            config.getMapConfig(getIthMapName(i)).setBackupCount(Math.min(i, InternalPartition.MAX_BACKUP_COUNT));
         }
         return config;
     }
@@ -107,7 +108,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
             Node survivingNode = getNode(instance);
             Address survivingNodeAddress = survivingNode.getThisAddress();
 
-            for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
+            for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {
                 if (partition.isOwnerOrBackup(survivingNodeAddress)) {
                     for (int replicaIndex = 0; replicaIndex < getNodeCount(); replicaIndex++) {
                         if (survivingNodeAddress.equals(partition.getReplicaAddress(replicaIndex))) {
