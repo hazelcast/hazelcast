@@ -71,12 +71,6 @@ public class PortablePositionNavigator {
         offset = in.position();
     }
 
-    private void validatePositionIndexInBound(String fieldName, int arrayLen, PortableSinglePosition position) throws IOException {
-        if (position.index > arrayLen - 1) {
-            throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
-        }
-    }
-
     private void reset() {
         cd = initCd;
         in.position(initPosition);
@@ -89,10 +83,10 @@ public class PortablePositionNavigator {
             if (position.isMultiPosition()) {
                 List<PortablePosition> positions = position.asMultiPosition();
                 for (PortablePosition pos : positions) {
-                    adjustPositionForDirectAccess((PortableSinglePosition) pos, path);
+                    adjustPositionForReadAccess((PortableSinglePosition) pos, path);
                 }
             } else {
-                adjustPositionForDirectAccess(position, path);
+                adjustPositionForReadAccess(position, path);
             }
             return position;
         } finally {
@@ -100,7 +94,7 @@ public class PortablePositionNavigator {
         }
     }
 
-    void adjustPositionForDirectAccess(PortableSinglePosition position, String path) throws IOException {
+    void adjustPositionForReadAccess(PortableSinglePosition position, String path) throws IOException {
         FieldType type = position.getType();
         if (type == null) {
             if (position.isEmpty() && !position.isLast()) {
@@ -118,17 +112,21 @@ public class PortablePositionNavigator {
                     adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, path);
                 }
             } else {
-                adjustPositionForSingleCellNonPortableArrayAccess(path, type, position);
+                adjustForNonPortableArrayAccess(path, type, position);
             }
         } else {
-            if (position.getIndex() >= 0) {
-                throw new IllegalArgumentException("Cannot read array cell from non-array");
-            }
+            validateNonArrayPosition(position);
             if (type == FieldType.PORTABLE) {
                 adjustForPortableObjectAccess(path, position);
             } else {
                 adjustForNonPortableArrayAccess(path, type, position);
             }
+        }
+    }
+
+    private void validateNonArrayPosition(PortableSinglePosition position) {
+        if (position.getIndex() >= 0) {
+            throw new IllegalArgumentException("Cannot read array cell from non-array");
         }
     }
 
@@ -337,18 +335,6 @@ public class PortablePositionNavigator {
         in.position(frame.streamPosition); // changed in the evening on 24.03.2016
         offset = frame.streamOffset;
         cd = frame.cd;
-    }
-
-    private static PortableSinglePosition nilPosition() {
-        PortableSinglePosition position = new PortableSinglePosition();
-        position.nil = true;
-        return position;
-    }
-
-    private static PortableSinglePosition emptyPosition() {
-        PortableSinglePosition position = new PortableSinglePosition();
-        position.len = 0;
-        return position;
     }
 
     private PortablePosition processPath(String[] pathTokens, int pathTokenIndex, String nestedPath,
@@ -574,6 +560,24 @@ public class PortablePositionNavigator {
     private void advance(int factoryId, int classId, int version) throws IOException {
         cd = serializer.setupPositionAndDefinition(in, factoryId, classId, version);
         initFieldCountAndOffset(in, cd);
+    }
+
+    private static PortableSinglePosition nilPosition() {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.nil = true;
+        return position;
+    }
+
+    private static PortableSinglePosition emptyPosition() {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.len = 0;
+        return position;
+    }
+
+    private void validatePositionIndexInBound(String fieldName, int arrayLen, PortableSinglePosition position) throws IOException {
+        if (position.index > arrayLen - 1) {
+            throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
+        }
     }
 
     static int getArrayCellPosition(PortablePosition arrayPosition, int index, BufferObjectDataInput in)
