@@ -52,7 +52,9 @@ public enum FieldType {
     UTF_ARRAY(19, Integer.MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
-    private static final int VAR_SIZE = Integer.MAX_VALUE;
+    private static final int UNKNOWN_SIZE = Integer.MAX_VALUE;
+    // GOTCHA: Wont' work if you add more types!!!
+    private static final int TYPES_COUNT = 10;
 
     private final byte type;
     private final int elementSize;
@@ -76,7 +78,7 @@ public enum FieldType {
 
     public FieldType getSingleType() {
         if (isArrayType()) {
-            return get((byte) (getId() % 10));
+            return get((byte) (getId() % TYPES_COUNT));
         }
         return this;
     }
@@ -85,13 +87,13 @@ public enum FieldType {
         if (isArrayType()) {
             return this;
         }
-        return get((byte) (getId() + 10));
+        return get((byte) (getId() + TYPES_COUNT));
     }
 
     public int getSingleElementSize() {
         int elementSize = getSingleType().elementSize;
-        if (elementSize == VAR_SIZE) {
-            throw new IllegalArgumentException("Unsupported type - the size is variable!");
+        if (elementSize == UNKNOWN_SIZE) {
+            throw new IllegalArgumentException("Unsupported type - the size is variable or unknown!");
         }
         return elementSize;
     }

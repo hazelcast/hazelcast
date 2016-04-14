@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.query.extractor.ValueCollector;
 
 import java.io.IOException;
 import java.util.Set;

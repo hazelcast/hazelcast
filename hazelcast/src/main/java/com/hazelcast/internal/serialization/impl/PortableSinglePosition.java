@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -10,10 +26,10 @@ class PortableSinglePosition implements PortablePosition {
     // used for all positions
     FieldDefinition fd;
     //    AccessType accessType;
-    int position = 0;
+    int position;
 
     // poison pills to indicate null-pointer or empty-array
-    boolean nil = false;
+    boolean nil;
 
     // used for arrays only
     int index = -1;
@@ -23,8 +39,8 @@ class PortableSinglePosition implements PortablePosition {
     int factoryId = -1;
     int classId = -1;
 
-    boolean last = false;
-    boolean any = false;
+    boolean last;
+    boolean any;
 
     @Override
     public int getStreamPosition() {
@@ -88,7 +104,7 @@ class PortableSinglePosition implements PortablePosition {
 
     @Override
     public FieldType getType() {
-        if(fd != null) {
+        if (fd != null) {
             return fd.getType();
         }
         return null;

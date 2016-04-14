@@ -35,14 +35,16 @@ import java.util.Set;
  */
 public class DefaultPortableReader implements PortableReader {
 
-    private final BufferObjectDataInput in;
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
+    private final BufferObjectDataInput in;
     private final PortablePositionNavigator navigator;
     private final int finalPosition;
     private final int offset;
+
     private boolean raw;
+
 
     DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
@@ -97,7 +99,7 @@ public class DefaultPortableReader implements PortableReader {
     public byte readByte(String path) throws IOException {
         validateQuantifier(path);
         PortablePosition pos = findPositionOf(path);
-        validatePrimitive(pos,  FieldType.BYTE);
+        validatePrimitive(pos, FieldType.BYTE);
         return in.readByte(pos.getStreamPosition());
     }
 
@@ -585,43 +587,51 @@ public class DefaultPortableReader implements PortableReader {
     @SuppressWarnings("unchecked")
     private <T> T readSinglePosition(PortablePosition position) throws IOException {
         if (position.getIndex() >= 0) {
-            switch (position.getType()) {
-                case BYTE:
-                case BYTE_ARRAY:
-                    return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
-                case SHORT:
-                case SHORT_ARRAY:
-                    return (T) Short.valueOf(in.readShort(position.getStreamPosition()));
-                case INT:
-                case INT_ARRAY:
-                    return (T) Integer.valueOf(in.readInt(position.getStreamPosition()));
-                case LONG:
-                case LONG_ARRAY:
-                    return (T) Long.valueOf(in.readLong(position.getStreamPosition()));
-                case FLOAT:
-                case FLOAT_ARRAY:
-                    return (T) Float.valueOf(in.readFloat(position.getStreamPosition()));
-                case DOUBLE:
-                case DOUBLE_ARRAY:
-                    return (T) Double.valueOf(in.readDouble(position.getStreamPosition()));
-                case BOOLEAN:
-                case BOOLEAN_ARRAY:
-                    return (T) Boolean.valueOf(in.readBoolean(position.getStreamPosition()));
-                case CHAR:
-                case CHAR_ARRAY:
-                    return (T) Character.valueOf(in.readChar(position.getStreamPosition()));
-                case UTF:
-                case UTF_ARRAY:
-                    in.position(position.getStreamPosition());
-                    return (T) in.readUTF();
-                case PORTABLE:
-                case PORTABLE_ARRAY:
-                    in.position(position.getStreamPosition());
-                    return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
-                default:
-                    throw new IllegalArgumentException("Unsupported type " + position.getType());
-            }
+            return readSinglePositionFromArray(position);
         }
+        return readSinglePositionFromNonArray(position);
+    }
+
+    private <T> T readSinglePositionFromArray(PortablePosition position) throws IOException {
+        switch (position.getType()) {
+            case BYTE:
+            case BYTE_ARRAY:
+                return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
+            case SHORT:
+            case SHORT_ARRAY:
+                return (T) Short.valueOf(in.readShort(position.getStreamPosition()));
+            case INT:
+            case INT_ARRAY:
+                return (T) Integer.valueOf(in.readInt(position.getStreamPosition()));
+            case LONG:
+            case LONG_ARRAY:
+                return (T) Long.valueOf(in.readLong(position.getStreamPosition()));
+            case FLOAT:
+            case FLOAT_ARRAY:
+                return (T) Float.valueOf(in.readFloat(position.getStreamPosition()));
+            case DOUBLE:
+            case DOUBLE_ARRAY:
+                return (T) Double.valueOf(in.readDouble(position.getStreamPosition()));
+            case BOOLEAN:
+            case BOOLEAN_ARRAY:
+                return (T) Boolean.valueOf(in.readBoolean(position.getStreamPosition()));
+            case CHAR:
+            case CHAR_ARRAY:
+                return (T) Character.valueOf(in.readChar(position.getStreamPosition()));
+            case UTF:
+            case UTF_ARRAY:
+                in.position(position.getStreamPosition());
+                return (T) in.readUTF();
+            case PORTABLE:
+            case PORTABLE_ARRAY:
+                in.position(position.getStreamPosition());
+                return (T) serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
+            default:
+                throw new IllegalArgumentException("Unsupported type " + position.getType());
+        }
+    }
+
+    private <T> T readSinglePositionFromNonArray(PortablePosition position) throws IOException {
         switch (position.getType()) {
             case BYTE:
                 return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
@@ -699,7 +709,7 @@ public class DefaultPortableReader implements PortableReader {
 
     private PortablePosition validateType(PortablePosition position, FieldType expectedType) {
         FieldType returnedType = position.getType();
-        if(position.getIndex() >= 0) {
+        if (position.getIndex() >= 0) {
             returnedType = expectedType.getSingleType();
         }
         if (expectedType != returnedType) {
