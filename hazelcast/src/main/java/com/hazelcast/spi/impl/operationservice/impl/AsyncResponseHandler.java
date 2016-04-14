@@ -20,13 +20,18 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.util.concurrent.BusySpinIdleStrategy;
+import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -35,6 +40,8 @@ import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * The AsyncResponsePacketHandler is a PacketHandler that asynchronously process operation-response packets.
@@ -47,14 +54,23 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive currently.
  */
-class AsyncResponseHandler implements PacketHandler, MetricsProvider {
+public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
+
+    public static final HazelcastProperty IDLE_STRATEGY
+            = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
+
+    private static final long IDLE_MAX_SPINS = 20;
+    private static final long IDLE_MAX_YIELDS = 50;
+    private static final long IDLE_MIN_PARK_NS = NANOSECONDS.toNanos(1);
+    private static final long IDLE_MAX_PARK_NS = MICROSECONDS.toNanos(100);
 
     private final ResponseThread responseThread;
     private final ILogger logger;
 
-    AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler) {
+    AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler,
+                         HazelcastProperties properties) {
         this.logger = logger;
-        this.responseThread = new ResponseThread(threadGroup, responsePacketHandler);
+        this.responseThread = new ResponseThread(threadGroup, responsePacketHandler, properties);
     }
 
     @Probe(name = "responseQueueSize", level = MANDATORY)
@@ -84,21 +100,36 @@ class AsyncResponseHandler implements PacketHandler, MetricsProvider {
         responseThread.shutdown();
     }
 
+    public static IdleStrategy getIdleStrategy(HazelcastProperties properties, HazelcastProperty property) {
+        String idleStrategyString = properties.getString(property);
+        if ("block".equals(idleStrategyString)) {
+            return null;
+        } else if ("backoff".equals(idleStrategyString)) {
+            return new BackoffIdleStrategy(IDLE_MAX_SPINS, IDLE_MAX_YIELDS, IDLE_MIN_PARK_NS, IDLE_MAX_PARK_NS);
+        } else if ("busyspin".equals(idleStrategyString)) {
+            return new BusySpinIdleStrategy();
+        } else {
+            throw new IllegalStateException("Unrecognized " + property.getName() + " value=" + idleStrategyString);
+        }
+    }
+
     /**
      * The ResponseThread needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
     private final class ResponseThread extends Thread implements OperationHostileThread {
 
-        private final BlockingQueue<Packet> responseQueue = new LinkedBlockingQueue<Packet>();
+        private final BlockingQueue<Packet> responseQueue;
         private final PacketHandler responsePacketHandler;
         private volatile boolean shutdown;
 
-        ResponseThread(HazelcastThreadGroup threadGroup,
-                       PacketHandler responsePacketHandler) {
+        private ResponseThread(HazelcastThreadGroup threadGroup,
+                               PacketHandler responsePacketHandler,
+                               HazelcastProperties properties) {
             super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("response"));
             setContextClassLoader(threadGroup.getClassLoader());
             this.responsePacketHandler = responsePacketHandler;
+            this.responseQueue = new MPSCQueue<Packet>(this, getIdleStrategy(properties, IDLE_STRATEGY));
         }
 
         @Override

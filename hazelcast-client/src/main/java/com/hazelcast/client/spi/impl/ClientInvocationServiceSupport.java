@@ -31,8 +31,10 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -42,15 +44,17 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartBeat;
+import static com.hazelcast.spi.impl.operationservice.impl.AsyncResponseHandler.getIdleStrategy;
 
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService {
+    public static final HazelcastProperty IDLE_STRATEGY
+            = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
     protected final HazelcastClientInstanceImpl client;
@@ -237,7 +241,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     @Override
     public void handleClientMessage(ClientMessage message, Connection connection) {
-        responseThread.workQueue.add(new ClientPacket((ClientConnection) connection, message));
+        responseThread.responseQueue.add(new ClientPacket((ClientConnection) connection, message));
     }
 
     private static class ClientPacket {
@@ -259,11 +263,13 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private class ResponseThread extends Thread {
-        private final BlockingQueue<ClientPacket> workQueue = new LinkedBlockingQueue<ClientPacket>();
+        private final BlockingQueue<ClientPacket> responseQueue;
 
-        public ResponseThread(ThreadGroup threadGroup, String name, ClassLoader classLoader) {
+        ResponseThread(ThreadGroup threadGroup, String name, ClassLoader classLoader) {
             super(threadGroup, name);
             setContextClassLoader(classLoader);
+
+            this.responseQueue = new MPSCQueue<ClientPacket>(this, getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
         }
 
         @Override
@@ -281,7 +287,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             while (true) {
                 ClientPacket task;
                 try {
-                    task = workQueue.take();
+                    task = responseQueue.take();
                 } catch (InterruptedException e) {
                     if (isShutdown) {
                         return;

@@ -153,7 +153,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.responseHandler = new ResponseHandler(logger, node.getSerializationService(), invocationRegistry, nodeEngine);
-        this.asyncResponseHandler = new AsyncResponseHandler(node.getHazelcastThreadGroup(), logger, responseHandler);
+        this.asyncResponseHandler = new AsyncResponseHandler(
+                node.getHazelcastThreadGroup(), logger, responseHandler, node.getProperties());
 
         this.operationExecutor = new OperationExecutorImpl(
                 node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
