@@ -78,7 +78,7 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     @Override
     protected void doWithMap() {
         String key = UUID.randomUUID().toString();
-        map.put(key, BOND.getPortable());
+        map.put(key, KRUEGER.getPortable());
         map.remove(key);
     }
 

@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
@@ -16,10 +17,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.LIST;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.PORTABLE;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.limb;
@@ -55,6 +57,13 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
 
     public ExtractionWithExtractorsSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
+    }
+
+    @Override
+    protected void doWithMap() {
+        String key = UUID.randomUUID().toString();
+        map.put(key, KRUEGER.getPortable());
+        map.remove(key);
     }
 
     @Test
@@ -151,15 +160,26 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
                 tattoosCount.setName("tattoosCount");
                 tattoosCount.setExtractor("com.hazelcast.query.impl.extractor.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
                 mapConfig.addMapAttributeConfig(tattoosCount);
+
+                config.getSerializationConfig().addPortableFactory(ComplexDataStructure.PersonPortableFactory.ID, new ComplexDataStructure.PersonPortableFactory());
             }
         };
     }
 
-    public static class LimbTattoosCountExtractor extends ValueExtractor<Person, String> {
+    public static class LimbTattoosCountExtractor extends ValueExtractor {
         @Override
-        public void extract(Person target, String arguments, ValueCollector collector) {
-            Integer parsedId = Integer.parseInt(arguments);
-            collector.addObject(target.limbs_list.get(parsedId).tattoos_list.size());
+        public void extract(Object target, Object arguments, ValueCollector collector) {
+            Integer parsedId = Integer.parseInt((String)arguments);
+            int size;
+            if (target instanceof Person) {
+                size = ((Person) target).limbs_list.get(parsedId).tattoos_list.size();
+
+            } else {
+                PortableReader reader = (PortableReader) target;
+                // reader.read("limbs_portable[" + arguments + "]")
+                size = 0;
+            }
+            collector.addObject(size);
         }
     }
 
@@ -168,7 +188,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         return axes(
                 asList(OBJECT),
                 asList(NO_INDEX),
-                asList(LIST)
+                asList(PORTABLE)
         );
     }
 
