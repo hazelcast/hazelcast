@@ -56,16 +56,18 @@ class MigrationPlanner {
         Address[] state = new Address[oldAddresses.length];
         System.arraycopy(oldAddresses, 0, state, 0, oldAddresses.length);
 
-        verifyState(oldAddresses, newAddresses, state);
+        assertNoDuplicate(oldAddresses, newAddresses, state);
+        // Fix cyclic partition replica movements.
         fixCycle(oldAddresses, newAddresses);
 
         int currentIndex = 0;
         while (currentIndex < oldAddresses.length) {
 
-            verifyState(oldAddresses, newAddresses, state);
+            assertNoDuplicate(oldAddresses, newAddresses, state);
 
             if (newAddresses[currentIndex] == null) {
                 if (state[currentIndex] != null) {
+                    // Replica owner is removed and no one will own this replica.
                     callback.migrate(state[currentIndex], currentIndex, -1, null, -1, -1);
                     state[currentIndex] = null;
                 }
@@ -76,6 +78,7 @@ class MigrationPlanner {
             if (state[currentIndex] == null) {
                 int i = getReplicaIndex(state, newAddresses[currentIndex]);
                 if (i == -1) {
+                    // Fresh replica copy is needed. COPY replica to newAddresses[currentIndex] from partition owner
                     callback.migrate(null, -1, -1, newAddresses[currentIndex], -1, currentIndex);
                     state[currentIndex] = newAddresses[currentIndex];
                     currentIndex++;
@@ -83,6 +86,7 @@ class MigrationPlanner {
                 }
 
                 if (i > currentIndex) {
+                    // SHIFT UP replica from i to currentIndex, copy data from partition owner
                     callback.migrate(null, -1, -1, state[i], i, currentIndex);
                     state[currentIndex] = state[i];
                     state[i] = null;
@@ -95,12 +99,14 @@ class MigrationPlanner {
             }
 
             if (newAddresses[currentIndex].equals(state[currentIndex])) {
+                // No change, no action needed.
                 currentIndex++;
                 continue;
             }
 
             if (getReplicaIndex(newAddresses, state[currentIndex]) == -1
                     && getReplicaIndex(state, newAddresses[currentIndex]) == -1) {
+                // MOVE partition replica from its old owner to new owner
                 callback.migrate(state[currentIndex], currentIndex, -1, newAddresses[currentIndex], -1, currentIndex);
                 state[currentIndex] = newAddresses[currentIndex];
                 currentIndex++;
@@ -117,6 +123,8 @@ class MigrationPlanner {
                                     + ", CURRENT: " + Arrays.toString(state) + ", FINAL: " + Arrays.toString(newAddresses));
                 }
 
+                // SHIFT DOWN replica on its current owner from currentIndex to newIndex
+                // and COPY replica on currentIndex to its new owner
                 callback.migrate(state[currentIndex], currentIndex, newIndex, newAddresses[currentIndex], -1, currentIndex);
                 state[newIndex] = state[currentIndex];
                 state[currentIndex] = newAddresses[currentIndex];
@@ -136,11 +144,13 @@ class MigrationPlanner {
                                     .toString(newAddresses));
 
                 } else if (newAddresses[j] == null) {
+                    // SHIFT UP replica from j to i, copy data from partition owner
                     callback.migrate(state[i], i, -1, state[j], j, i);
                     state[i] = state[j];
                     state[j] = null;
                     break;
                 } else if (getReplicaIndex(state, newAddresses[j]) == -1) {
+                    // MOVE partition replica from its old owner to new owner
                     callback.migrate(state[j], j, -1, newAddresses[j], -1, j);
                     state[j] = newAddresses[j];
                     break;
@@ -159,7 +169,7 @@ class MigrationPlanner {
         }
     }
 
-    private void verifyState(Address[] oldAddresses, Address[] newAddresses, Address[] state) {
+    private void assertNoDuplicate(Address[] oldAddresses, Address[] newAddresses, Address[] state) {
         if (!ASSERTION_ENABLED) {
             return;
         }
@@ -179,6 +189,10 @@ class MigrationPlanner {
         }
     }
 
+    // Finds whether there's a migration cycle.
+    // For example followings are cycles:
+    // - [A,B] -> [B,A]
+    // - [A,B,C] -> [B,C,A]
     boolean isCyclic(Address[] oldReplicas, Address[] newReplicas) {
         for (int i = 0; i < oldReplicas.length; i++) {
             final Address oldAddress = oldReplicas[i];
@@ -196,6 +210,11 @@ class MigrationPlanner {
         return false;
     }
 
+    // Fix cyclic partition replica movements.
+    // When there are cycles among replica migrations, it's impossible to define a migration order.
+    // For example followings are cycles:
+    // - [A,B] -> [B,A]
+    // - [A,B,C] -> [B,C,A]
     boolean fixCycle(Address[] oldReplicas, Address[] newReplicas) {
         boolean cyclic = false;
         for (int i = 0; i < oldReplicas.length; i++) {

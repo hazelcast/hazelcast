@@ -21,8 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
 /**
- * TODO: Javadoc Pending...
- *
+ * A filter used by mock network system to allow or drop {@code Packet}s
  */
 public interface PacketFilter {
 

@@ -21,6 +21,14 @@ import com.hazelcast.internal.partition.MigrationInfo;
 
 import java.util.EventListener;
 
+/**
+ * Internal synchronous/blocking listener to intercept migration cycle
+ * on master member and migration participants.
+ * <p>
+ * It's used to execute a specific test scenario deterministically. There's no user side api or configuration.
+ *
+ * @see InternalPartitionServiceImpl#setInternalMigrationListener(InternalMigrationListener)
+ */
 public abstract class InternalMigrationListener implements EventListener {
 
     public enum MigrationParticipant {
