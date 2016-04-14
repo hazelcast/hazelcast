@@ -46,6 +46,7 @@ import com.hazelcast.util.UuidUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
@@ -263,23 +264,24 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 return;
             }
 
-            if (t instanceof StaleSequenceException) {
-                StaleSequenceException staleSequenceException = (StaleSequenceException) t;
+            if (t instanceof ExecutionException && t.getCause() instanceof StaleSequenceException) {
+                // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
+                long remoteHeadSeq = ringbuffer.headSequence();
 
                 if (listener.isLossTolerant()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("MessageListener " + listener + " on topic: " + name + " ran into a stale sequence. "
                                 + "Jumping from oldSequence: " + sequence
-                                + " to sequence: " + staleSequenceException.getHeadSeq());
+                                + " to sequence: " + remoteHeadSeq);
                     }
-                    sequence = staleSequenceException.getHeadSeq();
+                    sequence = remoteHeadSeq;
                     next();
                     return;
                 }
 
                 logger.warning("Terminating MessageListener:" + listener + " on topic: " + name + ". "
                         + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                        + "head: " + staleSequenceException.getHeadSeq() + " sequence:" + sequence);
+                        + "head: " + remoteHeadSeq + " sequence:" + sequence);
             } else if (t instanceof HazelcastInstanceNotActiveException) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "
