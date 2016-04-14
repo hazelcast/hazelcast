@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
@@ -299,7 +299,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key is null.
      * @see java.util.concurrent.Future
      */
-    Future<V> getAsync(K key);
+    ICompletableFuture<V> getAsync(K key);
 
     /**
      * Asynchronously puts the given key and value.
@@ -332,7 +332,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key or value is null.
      * @see java.util.concurrent.Future
      */
-    Future<V> putAsync(K key, V value);
+    ICompletableFuture<V> putAsync(K key, V value);
 
     /**
      * Asynchronously puts the given key and value into this map with a given ttl (time to live) value.
@@ -373,7 +373,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key or value is null.
      * @see java.util.concurrent.Future
      */
-    Future<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
+    ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
      * Asynchronously puts the given key and value.
@@ -409,7 +409,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key or value is null.
      * @see java.util.concurrent.Future
      */
-    Future<Void> setAsync(K key, V value);
+    ICompletableFuture<Void> setAsync(K key, V value);
 
     /**
      * Asynchronously puts the given key and value into this map with a given ttl (time to live) value.
@@ -451,7 +451,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @throws NullPointerException if the specified key or value is null.
      * @see java.util.concurrent.Future
      */
-    Future<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit);
+    ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
      * Asynchronously removes the given key.
@@ -466,7 +466,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * removed from the map can be retrieved.
      * @throws NullPointerException if the specified key is null.
      */
-    Future<V> removeAsync(K key);
+    ICompletableFuture<V> removeAsync(K key);
 
     /**
      * Tries to remove the entry with the given key from this map

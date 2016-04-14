@@ -151,19 +151,19 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected Future<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
         invalidateNearCache(keyData);
         return super.putAsyncInternal(ttl, timeunit, keyData, valueData);
     }
 
     @Override
-    protected Future<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
         invalidateNearCache(keyData);
         return super.setAsyncInternal(ttl, timeunit, keyData, valueData);
     }
 
     @Override
-    protected Future<V> removeAsyncInternal(Data keyData) {
+    protected ICompletableFuture<V> removeAsyncInternal(Data keyData) {
         invalidateNearCache(keyData);
         return super.removeAsyncInternal(keyData);
     }

@@ -258,7 +258,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future<V> getAsync(K k) {
+    public ICompletableFuture<V> getAsync(K k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
         Data key = toData(k, partitionStrategy);
@@ -276,7 +276,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future<V> putAsync(K key, V value) {
+    public ICompletableFuture<V> putAsync(K key, V value) {
         return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
@@ -292,7 +292,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future<Void> setAsync(K key, V value) {
+    public ICompletableFuture<Void> setAsync(K key, V value) {
         return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 

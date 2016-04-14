@@ -303,7 +303,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public Future<V> getAsync(final K key) {
+    public ICompletableFuture<V> getAsync(final K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
 
@@ -331,12 +331,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public Future<V> putAsync(final K key, final V value) {
+    public ICompletableFuture<V> putAsync(final K key, final V value) {
         return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public Future<V> putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+    public ICompletableFuture<V> putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -345,7 +345,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return putAsyncInternal(ttl, timeunit, keyData, valueData);
     }
 
-    protected Future<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
         ClientMessage request = MapPutCodec.encodeRequest(name, keyData,
                 valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         try {
@@ -358,12 +358,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public Future<Void> setAsync(final K key, final V value) {
+    public ICompletableFuture<Void> setAsync(final K key, final V value) {
         return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public Future<Void> setAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+    public ICompletableFuture<Void> setAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -372,7 +372,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return setAsyncInternal(ttl, timeunit, keyData, valueData);
     }
 
-    protected Future<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
         ClientMessage request = MapSetCodec.encodeRequest(name, keyData,
                 valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         try {
@@ -385,13 +385,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public Future<V> removeAsync(final K key) {
+    public ICompletableFuture<V> removeAsync(final K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         return removeAsyncInternal(keyData);
     }
 
-    protected Future<V> removeAsyncInternal(Data keyData) {
+    protected ICompletableFuture<V> removeAsyncInternal(Data keyData) {
         ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
