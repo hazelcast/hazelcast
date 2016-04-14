@@ -100,7 +100,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // when partitionId = -2, it is ad hoc
     // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
     // and therefor the {@link OperationRunner#currentTask()} always returns null
-    OperationRunnerImpl(OperationServiceImpl operationService, int partitionId) {
+    OperationRunnerImpl(
+            OperationServiceImpl operationService,
+            int partitionId) {
         super(partitionId);
         this.operationService = operationService;
         this.outboundResponseHandler = operationService.outboundResponseHandler;

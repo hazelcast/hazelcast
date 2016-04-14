@@ -186,6 +186,14 @@ final class OperationBackupHandler {
             Backup backup = newBackup(backupAwareOp, backupOp, replicaVersions, 1, isSyncBackup);
             operationService.send(backup, target);
 
+            byte backupBytes[]  = operationService.serializationService.toBytes(backup);
+            System.out.println("backup.size:"+backupBytes.length);
+
+            byte opBytes[]  = operationService.serializationService.toBytes(backup.getBackupOp());
+            System.out.println("opBytes.size:"+opBytes.length);
+
+
+
             if (isSyncBackup) {
                 return 1;
             }

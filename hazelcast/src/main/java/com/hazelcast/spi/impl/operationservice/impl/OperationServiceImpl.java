@@ -120,12 +120,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final OperationBackupHandler operationBackupHandler;
     final BackpressureRegulator backpressureRegulator;
     final OutboundResponseHandler outboundResponseHandler;
+    final InternalSerializationService serializationService;
     volatile Invocation.Context invocationContext;
 
     private final InvocationMonitor invocationMonitor;
     private final SlowOperationDetector slowOperationDetector;
     private final AsyncInboundResponseHandler asyncInboundResponseHandler;
-    private final InternalSerializationService serializationService;
     private final InboundResponseHandler inboundResponseHandler;
     private final Address thisAddress;
 
@@ -159,9 +159,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.outboundResponseHandler = new OutboundResponseHandler(
                 nodeEngine.getLogger(OutboundResponseHandler.class), thisAddress, serializationService, node);
 
+        OperationRunnerFactoryImpl operationRunnerFactory = new OperationRunnerFactoryImpl(this);
+
         this.operationExecutor = new OperationExecutorImpl(
-                node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
-                node.getHazelcastThreadGroup(), node.getNodeExtension());
+                node.getProperties(), node.loggingService, thisAddress,
+                operationRunnerFactory, node.getHazelcastThreadGroup(), node.getNodeExtension());
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
@@ -172,7 +174,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public void populate(LiveOperations result) {
         operationExecutor.scan(result);
     }
-
 
     public PacketHandler getAsyncInboundResponseHandler() {
         return asyncInboundResponseHandler;
@@ -389,6 +390,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         }
 
         byte[] bytes = serializationService.toBytes(op);
+
         int partitionId = op.getPartitionId();
         Packet packet = new Packet(bytes, partitionId)
                 .setFlag(FLAG_OP);
@@ -401,7 +403,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         Connection connection = connectionManager.getOrConnect(target);
         return connectionManager.transmit(packet, connection);
     }
-
 
     public void onMemberLeft(MemberImpl member) {
         invocationMonitor.onMemberLeft(member);

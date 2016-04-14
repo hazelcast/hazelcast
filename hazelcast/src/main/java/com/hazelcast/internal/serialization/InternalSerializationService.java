@@ -33,6 +33,10 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     byte VERSION_1 = 1;
 
+    <T> T toObject(Object data);
+
+    <T> T bytesToObject(byte[] bytes, int dataOffset);
+
     byte[] toBytes(Object obj);
 
     byte[] toBytes(Object obj, PartitioningStrategy strategy);
