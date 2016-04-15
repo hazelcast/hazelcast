@@ -206,4 +206,65 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     public int getId() {
         return MapDataSerializerHook.ENTRY_VIEW;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SimpleEntryView<?, ?> that = (SimpleEntryView<?, ?>) o;
+
+        if (cost != that.cost) {
+            return false;
+        }
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (expirationTime != that.expirationTime) {
+            return false;
+        }
+        if (hits != that.hits) {
+            return false;
+        }
+        if (lastAccessTime != that.lastAccessTime) {
+            return false;
+        }
+        if (lastStoredTime != that.lastStoredTime) {
+            return false;
+        }
+        if (lastUpdateTime != that.lastUpdateTime) {
+            return false;
+        }
+        if (version != that.version) {
+            return false;
+        }
+        if (ttl != that.ttl) {
+            return false;
+        }
+        if (key != null ? !key.equals(that.key) : that.key != null) {
+            return false;
+        }
+        return value != null ? value.equals(that.value) : that.value == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = key != null ? key.hashCode() : 0;
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (int) (cost ^ (cost >>> 32));
+        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
+        result = 31 * result + (int) (hits ^ (hits >>> 32));
+        result = 31 * result + (int) (lastAccessTime ^ (lastAccessTime >>> 32));
+        result = 31 * result + (int) (lastStoredTime ^ (lastStoredTime >>> 32));
+        result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
+        result = 31 * result + (int) (version ^ (version >>> 32));
+        result = 31 * result + (int) (ttl ^ (ttl >>> 32));
+        return result;
+    }
 }

@@ -42,6 +42,7 @@
     <suppress checks="NPathComplexity" files="com/hazelcast/config/CacheConfig"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/cache/HazelcastExpiryPolicy"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/cache/impl/HazelcastServerCachingProvider"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/cache/impl/CacheEventDataImpl"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/client/cache/impl/HazelcastClientCachingProvider"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/config/AbstractCacheConfig"/>
     <suppress checks="MethodCount|ParameterNumber|ClassFanOutComplexity|ClassDataAbstractionCoupling"
@@ -323,6 +324,8 @@
     <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/MapServiceContext"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/tx/TransactionalMapProxySupport"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/map/impl/querycache/event/DefaultQueryCacheEventData"/>
+    <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/map/impl/SimpleEntryView"/>
 
     <!-- Util -->
     <!-- written by Doug Lea  -->
