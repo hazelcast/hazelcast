@@ -44,7 +44,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 
 import java.util.AbstractMap;
@@ -60,6 +59,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -69,18 +69,20 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @param <K> key type
  * @param <V> value type
  */
-public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
+public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<ReplicatedMapService>
         implements ReplicatedMap<K, V>, InitializingObject {
 
     private static final int WAIT_INTERVAL_MILLIS = 1000;
     private static final int RETRY_INTERVAL_COUNT = 3;
+
     private final String name;
     private final NodeEngine nodeEngine;
     private final ReplicatedMapService service;
+    private final ReplicatedMapEventPublishingService eventPublishingService;
     private final SerializationService serializationService;
     private final InternalPartitionServiceImpl partitionService;
     private final ReplicatedMapConfig config;
-    private final ReplicatedMapEventPublishingService eventPublishingService;
+
     private int retryCount;
 
     ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service) {
@@ -118,7 +120,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
         try {
             TimeUnit.MILLISECONDS.sleep(WAIT_INTERVAL_MILLIS);
         } catch (InterruptedException e) {
-            ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -141,7 +143,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
                 .setTryCount(ReplicatedMapService.INVOCATION_TRY_COUNT)
                 .invoke();
     }
-
 
     @Override
     public String getName() {
@@ -292,7 +293,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
                 future.get();
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -301,7 +302,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
         Operation op = new PutAllOperation(name, entrySet).setPartitionId(partitionId);
         return operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
     }
-
 
     @Override
     public void clear() {
@@ -315,7 +315,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
             ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
             eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
@@ -392,7 +392,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
         return new ResultSet<K, V>(entries, IterationType.ENTRY);
     }
 
-
     @Override
     public int hashCode() {
         int result = super.hashCode();
@@ -409,5 +408,4 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject
     public LocalReplicatedMapStats getReplicatedMapStats() {
         return service.createReplicatedMapStats(name);
     }
-
 }
