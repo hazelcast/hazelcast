@@ -29,6 +29,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -94,6 +95,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/6056
     public void testLoadsAll_whenInitialLoaderNodeRemovedAfterLoading() throws Exception {
         Config cfg = newConfig("default", LAZY);
         HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
@@ -141,6 +143,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/3796
     public void testLoadsAll_whenInitialLoaderNodeRemovedWhileLoadingAndNoBackups() throws Exception {
         PausingMapLoader<Integer, Integer> pausingLoader = new PausingMapLoader<Integer, Integer>(mapLoader, 5000);
 

@@ -33,6 +33,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -288,7 +289,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    // https://github.com/hazelcast/hazelcast/issues/3796
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/3796
     public void testIssue859And863() throws Exception {
         final int numberOfMessages = 1000;
         final AtomicInteger count = new AtomicInteger();
