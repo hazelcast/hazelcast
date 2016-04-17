@@ -54,20 +54,20 @@ public class NearCacheRecord {
         }
     };
 
-    private final Object key;
-    private final Object value;
-    private final long creationTime;
-    private final AtomicLong hit;
+    private Object key;
+    private Object value;
+    private long creationTime;
+    private AtomicLong hit;
     private volatile long lastAccessTime;
 
     public NearCacheRecord(Object key, Object value) {
         assert key != null;
         assert value != null;
+
         this.key = key;
         this.value = value;
-        long time = Clock.currentTimeMillis();
-        this.lastAccessTime = time;
-        this.creationTime = time;
+        this.creationTime = Clock.currentTimeMillis();
+        this.lastAccessTime = creationTime;
         this.hit = new AtomicLong();
     }
 
@@ -121,6 +121,4 @@ public class NearCacheRecord {
             return NearCacheRecord.DEFAULT_COMPARATOR;
         }
     }
-
-
 }

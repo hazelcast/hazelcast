@@ -41,6 +41,7 @@ import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static java.util.Collections.EMPTY_MAP;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -103,8 +105,11 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             return (V) cached;
         }
 
+        Object marker = nearCache.mapKeyToMarker(keyData);
+
         V response = super.getInternal(keyData);
-        nearCache.put(keyData, response);
+
+        nearCache.updateKeyIfMappedToMarker(keyData, marker, response);
 
         return response;
     }
@@ -135,11 +140,13 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                     cached, getContext().getExecutionService().getAsyncExecutor());
         }
 
+        final Object marker = nearCache.mapKeyToMarker(keyData);
+
         ICompletableFuture<V> future = super.getAsyncInternal(keyData);
         ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data response) {
-                nearCache.put(keyData, response);
+                nearCache.updateKeyIfMappedToMarker(keyData, marker, response);
             }
 
             @Override
@@ -244,6 +251,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     @Override
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> pIdToKeyData, Map<K, V> result) {
+        Map<Data, Object> markers = EMPTY_MAP;
+
         for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
             List<Data> keyList = partitionKeyEntry.getValue();
             Iterator<Data> iterator = keyList.iterator();
@@ -253,6 +262,13 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 if (cached != null && NULL_OBJECT != cached) {
                     result.put((K) toObject(key), (V) cached);
                     iterator.remove();
+                } else {
+                    Object marker = nearCache.mapKeyToMarker(key);
+                    if (markers == EMPTY_MAP) {
+                        markers = new HashMap<Data, Object>();
+                    }
+
+                    markers.put(key, marker);
                 }
             }
         }
@@ -260,7 +276,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(pIdToKeyData, result);
         for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
             for (Entry<Data, Data> entry : resultParameters.response) {
-                nearCache.put(entry.getKey(), entry.getValue());
+                Data key = entry.getKey();
+                nearCache.updateKeyIfMappedToMarker(key, markers.get(key), entry.getValue());
             }
         }
         return responses;

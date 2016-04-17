@@ -170,6 +170,12 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         Data keyData = toData(key);
+
+        Object marker = null;
+        if (nearCache != null) {
+            marker = nearCache.mapKeyToMarker(keyData);
+        }
+
         ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
         ClientMessage response = invoke(request, keyData);
 
@@ -177,7 +183,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
         V value = (V) toObject(result.response);
         if (nearCache != null) {
-            nearCache.put(key, value);
+            nearCache.updateKeyIfMappedToMarker(key, marker, value);
         }
         return value;
     }

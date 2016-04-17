@@ -23,13 +23,15 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * A server-side {@code IMap} implementation which is fronted by a near-cache.
@@ -80,10 +84,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return value;
         }
 
+        boolean cachingAllowed = !isOwn(key) || cacheLocalEntries;
+
+        Object marker = cachingAllowed ? nearCache.mapKeyToMarker(key) : null;
+
         value = super.getInternal(key);
 
-        if (!isOwn(key) || cacheLocalEntries) {
-            nearCache.put(key, toData(value));
+        if (cachingAllowed) {
+            nearCache.updateKeyIfMappedToMarker(key, marker, toData(value));
         }
 
         return value;
@@ -99,22 +107,28 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return new CompletedFuture<Data>(
                     getNodeEngine().getSerializationService(),
                     value,
-                    getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
+                    getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR));
         }
 
-        ICompletableFuture<Data> future = super.getAsyncInternal(key);
-        future.andThen(new ExecutionCallback<Data>() {
-            @Override
-            public void onResponse(Data response) {
-                if (!isOwn(key) || cacheLocalEntries) {
-                    nearCache.put(key, response);
-                }
-            }
+        boolean cachingAllowed = !isOwn(key) || cacheLocalEntries;
 
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        });
+        final Object marker = cachingAllowed ? nearCache.mapKeyToMarker(key) : null;
+
+        ICompletableFuture<Data> future = super.getAsyncInternal(key);
+
+        if (cachingAllowed) {
+            future.andThen(new ExecutionCallback<Data>() {
+                @Override
+                public void onResponse(Data response) {
+                    nearCache.updateKeyIfMappedToMarker(key, marker, response);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                }
+            });
+        }
+
         return future;
     }
 
@@ -246,6 +260,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
         getCachedValue(keys, resultingKeyValuePairs);
 
+        Map<Data, Object> markers = getMarkersMap(keys);
+
         int currentSize = resultingKeyValuePairs.size();
         super.getAllObjectInternal(keys, resultingKeyValuePairs);
 
@@ -254,10 +270,28 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             Data key = toData(resultingKeyValuePairs.get(i++));
             Data value = toData(resultingKeyValuePairs.get(i++));
 
-            if (!isOwn(key) || cacheLocalEntries) {
-                nearCache.put(key, value);
+            boolean cachingAllowed = !isOwn(key) || cacheLocalEntries;
+
+            Object marker = cachingAllowed ? markers.get(key) : null;
+
+            if (cachingAllowed) {
+                nearCache.updateKeyIfMappedToMarker(key, marker, value);
             }
         }
+    }
+
+    private Map<Data, Object> getMarkersMap(List<Data> keys) {
+        if (CollectionUtil.isEmpty(keys)) {
+            return Collections.emptyMap();
+        }
+
+        Map<Data, Object> markers = createHashMap(keys.size());
+        for (Data key : keys) {
+            boolean cachingAllowed = !isOwn(key) || cacheLocalEntries;
+            Object marker = cachingAllowed ? nearCache.mapKeyToMarker(key) : null;
+            markers.put(key, marker);
+        }
+        return markers;
     }
 
     @Override
@@ -342,7 +376,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected boolean isOwn(Data key) {
         int partitionId = partitionService.getPartitionId(key);
-        return partitionService.getPartitionOwner(partitionId).equals(thisAddress);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        return thisAddress.equals(partitionOwner);
     }
 
     public NearCache getNearCache() {
