@@ -1244,13 +1244,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public Future submitToKey(K key, EntryProcessor entryProcessor) {
+    public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         return submitToKeyInternal(keyData, entryProcessor);
     }
 
-    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+    public ICompletableFuture submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         ClientMessage request =
                 MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
 

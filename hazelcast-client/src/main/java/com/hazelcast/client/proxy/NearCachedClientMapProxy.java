@@ -44,7 +44,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
@@ -281,7 +280,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+    public ICompletableFuture submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         invalidateNearCache(keyData);
         return super.submitToKeyInternal(keyData, entryProcessor);
     }

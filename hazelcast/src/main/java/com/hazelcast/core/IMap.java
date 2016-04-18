@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.LegacyAsyncMap;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.JobTracker;
@@ -32,7 +33,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -72,7 +73,7 @@ import java.util.concurrent.TimeUnit;
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
@@ -271,22 +272,40 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
 
     /**
      * Asynchronously gets the given key.
-     * <code>
-     * Future future = map.getAsync(key);
+     * <pre>
+     * ICompletableFuture future = map.getAsync(key);
      * // do some other stuff, when ready get the result.
      * Object value = future.get();
-     * </code>
-     * Future.get() will block until the actual map.get() completes.
+     * </pre>
+     * {@link ICompletableFuture#get()} will block until the actual map.get() completes.
      * If the application requires timely response,
-     * then Future.get(timeout, timeunit) can be used.
-     * <code>
-     * try{
-     * Future future = map.getAsync(key);
-     * Object value = future.get(40, TimeUnit.MILLISECOND);
-     * }catch (TimeoutException t) {
+     * then {@link ICompletableFuture#get(long, TimeUnit)} can be used.
+     * <pre>
+     * try {
+     *   ICompletableFuture future = map.getAsync(key);
+     *   Object value = future.get(40, TimeUnit.MILLISECOND);
+     * }
+     * catch (TimeoutException t) {
      * // time wasn't enough
      * }
-     * </code>
+     * </pre>
+     * Additionally, the client can schedule an {@link ExecutionCallback} to be invoked upon
+     * completion of the {@code ICompletableFuture} via
+     * {@link ICompletableFuture#andThen(ExecutionCallback)} or
+     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * <pre>
+     *     // assuming a IMap&lt;String, String&gt;
+     *     ICompletableFuture&lt;String&gt; future = map.getAsync("a");
+     *     future.andThen(new ExecutionCallback&lt;String&gt;() {
+     *         public void onResponse(String response) {
+     *             // do something with value in response
+     *         }
+     *
+     *         public void onFailure(Throwable t) {
+     *             // handle failure
+     *         }
+     *     });
+     * </pre>
      * ExecutionException is never thrown.
      * <p/>
      * <p><b>Warning:</b></p>
@@ -294,31 +313,48 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param key the key of the map entry.
-     * @return Future from which the value of the key can be retrieved.
-     * @throws NullPointerException if the specified key is null.
-     * @see java.util.concurrent.Future
+     * @param   key the key of the map entry.
+     * @return  ICompletableFuture from which the value of the key can be retrieved.
+     * @throws  NullPointerException if the specified key is null.
+     * @see     ICompletableFuture
      */
     ICompletableFuture<V> getAsync(K key);
 
     /**
      * Asynchronously puts the given key and value.
-     * <code>
-     * Future future = map.putAsync(key, value);
+     * <pre>
+     * ICompletableFuture future = map.putAsync(key, value);
      * // do some other stuff, when ready get the result.
      * Object oldValue = future.get();
-     * </code>
-     * Future.get() will block until the actual map.put() completes.
+     * </pre>
+     * ICompletableFuture.get() will block until the actual map.put() completes.
      * If the application requires a timely response,
      * then you can use Future.get(timeout, timeunit).
-     * <code>
-     * try{
-     * Future future = map.putAsync(key, newValue);
-     * Object oldValue = future.get(40, TimeUnit.MILLISECOND);
-     * }catch (TimeoutException t) {
+     * <pre>
+     * try {
+     *   ICompletableFuture future = map.putAsync(key, newValue);
+     *   Object oldValue = future.get(40, TimeUnit.MILLISECOND);
+     * }
+     * catch (TimeoutException t) {
      * // time wasn't enough
      * }
-     * </code>
+     * </pre>
+     * Additionally, the client can schedule an {@link ExecutionCallback} to be invoked upon
+     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
+     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * <pre>
+     *     // assuming a IMap&lt;String, String&gt;
+     *     ICompletableFuture&lt;String&gt; future = map.putAsync("a", "b");
+     *     future.andThen(new ExecutionCallback&lt;String&gt;() {
+     *         public void onResponse(String response) {
+     *             // do something with the old value returned by put operation
+     *         }
+     *
+     *         public void onFailure(Throwable t) {
+     *             // handle failure
+     *         }
+     *     });
+     * </pre>
      * ExecutionException is never thrown.
      * <p/>
      * <p><b>Warning:</b></p>
@@ -326,11 +362,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param key   the key of the map entry.
-     * @param value the new value of the map entry.
-     * @return Future from which the old value of the key can be retrieved.
-     * @throws NullPointerException if the specified key or value is null.
-     * @see java.util.concurrent.Future
+     * @param   key   the key of the map entry.
+     * @param   value the new value of the map entry.
+     * @return  ICompletableFuture from which the old value of the key can be retrieved.
+     * @throws  NullPointerException if the specified key or value is null.
+     * @see     ICompletableFuture
      */
     ICompletableFuture<V> putAsync(K key, V value);
 
@@ -338,22 +374,39 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * Asynchronously puts the given key and value into this map with a given ttl (time to live) value.
      * Entry will expire and get evicted after the ttl. If ttl is 0, then
      * the entry lives forever.
-     * <code>
-     * Future future = map.putAsync(key, value, ttl, timeunit);
+     * <pre>
+     * ICompletableFuture future = map.putAsync(key, value, ttl, timeunit);
      * // do some other stuff, when ready get the result
      * Object oldValue = future.get();
-     * </code>
-     * Future.get() will block until the actual map.get() completes.
+     * </pre>
+     * ICompletableFuture.get() will block until the actual map.put() completes.
      * If your application requires a timely response,
      * then you can use Future.get(timeout, timeunit).
-     * <code>
-     * try{
-     * Future future = map.putAsync(key, newValue, ttl, timeunit);
-     * Object oldValue = future.get(40, TimeUnit.MILLISECOND);
-     * }catch (TimeoutException t) {
-     * // time wasn't enough
+     * <pre>
+     * try {
+     *   ICompletableFuture future = map.putAsync(key, newValue, ttl, timeunit);
+     *   Object oldValue = future.get(40, TimeUnit.MILLISECOND);
      * }
-     * </code>
+     * catch (TimeoutException t) {
+     *   // time wasn't enough
+     * }
+     * </pre>
+     * The client can schedule an {@link ExecutionCallback} to be invoked upon
+     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
+     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * <pre>
+     *     // assuming a IMap&lt;String, String&gt;
+     *     ICompletableFuture&lt;String&gt; future = map.putAsync("a", "b", 5, TimeUnit.MINUTES);
+     *     future.andThen(new ExecutionCallback&lt;String&gt;() {
+     *         public void onResponse(String response) {
+     *             // do something with old value returned by put operation
+     *         }
+     *
+     *         public void onFailure(Throwable t) {
+     *             // handle failure
+     *         }
+     *     });
+     * </pre>
      * ExecutionException is never thrown.
      * <p/>
      * <p><b>Warning 1:</b></p>
@@ -364,14 +417,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * <p><b>Warning 2:</b></p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
      *
-     * @param key      the key of the map entry.
-     * @param value    the new value of the map entry.
-     * @param ttl      maximum time for this entry to stay in the map.
-     *                 0 means infinite.
-     * @param timeunit time unit for the ttl.
-     * @return Future from which the old value of the key can be retrieved.
-     * @throws NullPointerException if the specified key or value is null.
-     * @see java.util.concurrent.Future
+     * @param   key      the key of the map entry.
+     * @param   value    the new value of the map entry.
+     * @param   ttl      maximum time for this entry to stay in the map.
+     *                   0 means infinite.
+     * @param   timeunit time unit for the ttl.
+     * @return  ICompletableFuture from which the old value of the key can be retrieved.
+     * @throws  NullPointerException if the specified key or value is null.
+     * @see     ICompletableFuture
      */
     ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
 
@@ -380,21 +433,38 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * the entry lives forever.
      * Similar to the put operation except that set
      * doesn't return the old value, which is more efficient.
-     * <pre>{@code Future<Void> future = map.setAsync(key, value);
-     * // do some other stuff, when ready get the result
+     * <pre>
+     * ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value);
+     * // do some other stuff, when ready wait for completion
      * future.get();
-     * }</pre>
-     * Future.get() will block until the actual map.get() completes.
+     * </pre>
+     * ICompletableFuture.get() will block until the actual map.set() operation completes.
      * If your application requires a timely response,
-     * then you can use Future.get(timeout, timeunit).
-     * <pre>{@code
-     * try{
-     *     Future<Void> future = map.setAsync(key, newValue);
+     * then you can use ICompletableFuture.get(timeout, timeunit).
+     * <pre>
+     * try {
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, newValue);
      *     future.get(40, TimeUnit.MILLISECOND);
-     * }catch (TimeoutException t) {
+     * }
+     * catch (TimeoutException t) {
      *     // time wasn't enough
      * }
-     * }</pre>
+     * </pre>
+     * You can also schedule an {@link ExecutionCallback} to be invoked upon
+     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
+     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * <pre>
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync("a", "b");
+     *     future.andThen(new ExecutionCallback&lt;String&gt;() {
+     *         public void onResponse(Void response) {
+     *             // Set operation was completed
+     *         }
+     *
+     *         public void onFailure(Throwable t) {
+     *             // handle failure
+     *         }
+     *     });
+     * </pre>
      * ExecutionException is never thrown.
      * <p/>
      * <p><b>Warning 1:</b></p>
@@ -403,11 +473,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * defined in the <tt>key</tt>'s class.
      * <p/>
      *
-     * @param key   the key of the map entry.
-     * @param value the new value of the map entry.
-     * @return Future on which to block.
-     * @throws NullPointerException if the specified key or value is null.
-     * @see java.util.concurrent.Future
+     * @param   key   the key of the map entry.
+     * @param   value the new value of the map entry.
+     * @return  ICompletableFuture on which to block waiting for the operation to complete or
+     *          register an {@link ExecutionCallback} to be invoked upon completion.
+     * @throws  NullPointerException if the specified key or value is null.
+     * @see     ICompletableFuture
      */
     ICompletableFuture<Void> setAsync(K key, V value);
 
@@ -417,21 +488,38 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * the entry lives forever.
      * Similar to the put operation except that set
      * doesn't return the old value, which is more efficient.
-     * <pre>{@code Future<Void> future = map.setAsync(key, value, ttl, timeunit);
-     * // do some other stuff, when ready get the result
-     * future.get();
-     * }</pre>
-     * Future.get() will block until the actual map.get() completes.
+     * <pre>
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync(key, value, ttl, timeunit);
+     *     // do some other stuff, when you want to make sure set operation is complete:
+     *     future.get();
+     * </pre>
+     * ICompletableFuture.get() will block until the actual map set operation completes.
      * If your application requires a timely response,
-     * then you can use Future.get(timeout, timeunit).
-     * <pre>{@code
-     * try{
-     *     Future<Void> future = map.setAsync(key, newValue, ttl, timeunit);
+     * then you can use {@link ICompletableFuture#get(long, TimeUnit)}.
+     * <pre>
+     * try {
+     *     ICompletableFuture<Void> future = map.setAsync(key, newValue, ttl, timeunit);
      *     future.get(40, TimeUnit.MILLISECOND);
-     * }catch (TimeoutException t) {
+     * }
+     * catch (TimeoutException t) {
      *     // time wasn't enough
      * }
-     * }</pre>
+     * </pre>
+     * You can also schedule an {@link ExecutionCallback} to be invoked upon
+     * completion of the {@code ICompletableFuture} via {@link ICompletableFuture#andThen(ExecutionCallback)} or
+     * {@link ICompletableFuture#andThen(ExecutionCallback, Executor)}:
+     * <pre>
+     *     ICompletableFuture&lt;Void&gt; future = map.setAsync("a", "b", 5, TimeUnit.MINUTES);
+     *     future.andThen(new ExecutionCallback&lt;String&gt;() {
+     *         public void onResponse(Void response) {
+     *             // Set operation was completed
+     *         }
+     *
+     *         public void onFailure(Throwable t) {
+     *             // handle failure
+     *         }
+     *     });
+     * </pre>
      * ExecutionException is never thrown.
      * <p/>
      * <p><b>Warning 1:</b></p>
@@ -442,29 +530,34 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
      * <p><b>Warning 2:</b></p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
      *
-     * @param key      the key of the map entry.
-     * @param value    the new value of the map entry.
-     * @param ttl      maximum time for this entry to stay in the map.
-     *                 0 means infinite.
-     * @param timeunit time unit for the ttl.
-     * @return Future on which to block.
-     * @throws NullPointerException if the specified key or value is null.
-     * @see java.util.concurrent.Future
+     * @param   key      the key of the map entry.
+     * @param   value    the new value of the map entry.
+     * @param   ttl      maximum time for this entry to stay in the map.
+     *                   0 means infinite.
+     * @param   timeunit time unit for the ttl.
+     * @return  ICompletableFuture on which client code can block waiting for the operation to
+     *                            complete or provide an {@link ExecutionCallback} to be invoked
+     *                            upon set operation completion.
+     * @throws  NullPointerException if the specified key or value is null.
+     * @see     ICompletableFuture
      */
     ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
-     * Asynchronously removes the given key.
+     * Asynchronously removes the given key, returning an {@link ICompletableFuture} on which
+     * the caller can provide an {@link ExecutionCallback} to be invoked upon remove operation
+     * completion or block waiting for the operation to complete with {@link ICompletableFuture#get()}.
      * <p/>
      * <p><b>Warning:</b></p>
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param key The key of the map entry to remove.
-     * @return A {@link java.util.concurrent.Future} from which the value
-     * removed from the map can be retrieved.
-     * @throws NullPointerException if the specified key is null.
+     * @param   key The key of the map entry to remove.
+     * @return  {@link ICompletableFuture} from which the value removed from the map can be
+     *          retrieved.
+     * @throws  NullPointerException if the specified key is null.
+     * @see     ICompletableFuture
      */
     ICompletableFuture<V> removeAsync(K key);
 
@@ -1473,16 +1566,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseAsyncMap<K, V> {
 
     /**
      * Applies the user defined EntryProcessor to the entry mapped by the key.
-     * Returns immediately with a Future representing that task.
+     * Returns immediately with a ICompletableFuture representing that task.
      * <p/>
-     * EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the operation of EntryProcessor.
+     * EntryProcessor is not cancellable, so calling ICompletableFuture.cancel() method
+     * won't cancel the operation of EntryProcessor.
      *
      * @param key            key to be processed
      * @param entryProcessor processor to process the key
-     * @return Future from which the result of the operation can be retrieved.
-     * @see java.util.concurrent.Future
+     * @return ICompletableFuture from which the result of the operation can be retrieved.
+     * @see ICompletableFuture
      */
-    Future submitToKey(K key, EntryProcessor entryProcessor);
+    ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor);
 
     /**
      * Applies the user defined EntryProcessor to the all entries in the map.
