@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
@@ -42,12 +44,17 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
 
-    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
+    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
+                                      ClientProperties properties, int poolSize) {
+        int internalPoolSize = properties.getInteger(ClientProperty.INTERNAL_EXECUTOR_POOL_SIZE);
+        if (internalPoolSize <= 0) {
+            internalPoolSize = Integer.parseInt(ClientProperty.INTERNAL_EXECUTOR_POOL_SIZE.getDefaultValue());
+        }
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
-        internalExecutor = new ScheduledThreadPoolExecutor(3,
+        internalExecutor = new ScheduledThreadPoolExecutor(internalPoolSize,
                 new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -129,20 +136,20 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public void shutdown() {
-        shutdownExecutor("user", userExecutor);
-        shutdownExecutor("internal", internalExecutor);
+        shutdownExecutor("user", userExecutor, LOGGER);
+        shutdownExecutor("internal", internalExecutor, LOGGER);
     }
 
-    private void shutdownExecutor(String name, ExecutorService executor) {
+    public static void shutdownExecutor(String name, ExecutorService executor, ILogger logger) {
         executor.shutdown();
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                LOGGER.warning(name + " executor awaitTermination could not completed in "
+                logger.warning(name + " executor awaitTermination could not completed in "
                         + TERMINATE_TIMEOUT_SECONDS + " seconds");
             }
         } catch (InterruptedException e) {
-            LOGGER.warning(name + " executor await termination is interrupted", e);
+            logger.warning(name + " executor await termination is interrupted", e);
         }
     }
 

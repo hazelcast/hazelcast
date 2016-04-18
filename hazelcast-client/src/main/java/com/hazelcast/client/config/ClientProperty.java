@@ -83,7 +83,12 @@ public enum ClientProperty implements HazelcastProperty {
      * eventually be removed when the experimental marker is removed.</p>
      * <p>Discovery SPI is <b>disabled</b> by default</p>
      */
-    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false);
+    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false),
+
+    /**
+     * Configures pool size of internal client executor. Private configuration, for internal usage only.
+     */
+    INTERNAL_EXECUTOR_POOL_SIZE("hazelcast.client.internal.executor.pool.size", 3);
 
     private final String name;
     private final String defaultValue;
