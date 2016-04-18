@@ -28,10 +28,13 @@ import com.hazelcast.nio.IOUtil;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -84,6 +87,7 @@ public final class PhoneHome {
 
     public void shutdown() {
     }
+
 
     public String convertToLetter(int size) {
         String letter;
@@ -139,9 +143,9 @@ public final class PhoneHome {
         //Calculate connected clients to the cluster.
         Map<ClientType, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
 
         Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-
         PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
         parameterCreator.addParam("version", version);
         parameterCreator.addParam("m", hazelcastNode.getLocalMember().getUuid());
@@ -157,6 +161,18 @@ public final class PhoneHome {
         parameterCreator.addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)));
         parameterCreator.addParam("cuptm", Long.toString(clusterUpTime));
         parameterCreator.addParam("nuptm", Long.toString(runtimeMxBean.getUptime()));
+        parameterCreator.addParam("jvmn", runtimeMxBean.getVmName());
+        parameterCreator.addParam("jvmv", System.getProperty("java.version"));
+
+        try {
+            parameterCreator.addParam("osn", osMxBean.getName());
+            parameterCreator.addParam("osa", osMxBean.getArch());
+            parameterCreator.addParam("osv", osMxBean.getVersion());
+        } catch (SecurityException e) {
+            parameterCreator.addParam("osn", "N/A");
+            parameterCreator.addParam("osa", "N/A");
+            parameterCreator.addParam("osv", "N/A");
+        }
         String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
         fetchWebService(urlStr);
 
@@ -172,7 +188,7 @@ public final class PhoneHome {
             conn.setConnectTimeout(TIMEOUT * 2);
             conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
-        }  catch (IOException ignored) {
+        } catch (IOException ignored) {
             EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(in);
@@ -200,7 +216,11 @@ public final class PhoneHome {
             } else {
                 hasParameterBefore = true;
             }
-            builder.append(key).append("=").append(value);
+            try {
+                builder.append(key).append("=").append(URLEncoder.encode(value, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                ExceptionUtil.rethrow(e);
+            }
             parameters.put(key, value);
             return this;
         }
