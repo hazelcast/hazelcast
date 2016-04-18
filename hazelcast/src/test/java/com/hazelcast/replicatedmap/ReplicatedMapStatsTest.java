@@ -175,7 +175,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(stats.getLastAccessTime() > lastAccessTime);
+                assertTrue(stats.getLastAccessTime() >= lastAccessTime);
             }
         });
     }
@@ -194,7 +194,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         Thread.sleep(5);
         replicatedMap.put(key, "value2");
         long lastUpdateTime2 = replicatedMap.getReplicatedMapStats().getLastUpdateTime();
-        assertTrue(lastUpdateTime2 > lastUpdateTime);
+        assertTrue(lastUpdateTime2 >= lastUpdateTime);
     }
 
     @Test
@@ -222,7 +222,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(stats.getLastUpdateTime() > lastUpdateTime);
+                assertTrue(stats.getLastUpdateTime() >= lastUpdateTime);
             }
         });
     }
