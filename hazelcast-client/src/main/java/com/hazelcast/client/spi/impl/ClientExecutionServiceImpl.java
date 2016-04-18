@@ -20,6 +20,8 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
@@ -36,20 +38,26 @@ import java.util.concurrent.TimeUnit;
 
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
+    public static final HazelcastProperty INTERNAL_EXECUTOR_POOL_SIZE
+            = new HazelcastProperty("hazelcast.client.internal.executor.pool.size", 3);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
     private final ILogger logger;
 
     private final ExecutorService userExecutor;
     private final ScheduledExecutorService internalExecutor;
 
-    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize
-            , LoggingService loggingService) {
+    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader,
+                                      HazelcastProperties properties, int poolSize, LoggingService loggingService) {
+        int internalPoolSize = properties.getInteger(INTERNAL_EXECUTOR_POOL_SIZE);
+        if (internalPoolSize <= 0) {
+            internalPoolSize = Integer.parseInt(INTERNAL_EXECUTOR_POOL_SIZE.getDefaultValue());
+        }
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
             executorPoolSize = Runtime.getRuntime().availableProcessors();
         }
         logger = loggingService.getLogger(ClientExecutionService.class);
-        internalExecutor = new ScheduledThreadPoolExecutor(3,
+        internalExecutor = new ScheduledThreadPoolExecutor(internalPoolSize,
                 new PoolExecutorThreadFactory(threadGroup, name + ".internal-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
@@ -127,11 +135,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public void shutdown() {
-        shutdownExecutor("user", userExecutor);
-        shutdownExecutor("internal", internalExecutor);
+        shutdownExecutor("user", userExecutor, logger);
+        shutdownExecutor("internal", internalExecutor, logger);
     }
 
-    private void shutdownExecutor(String name, ExecutorService executor) {
+    public static void shutdownExecutor(String name, ExecutorService executor, ILogger logger) {
         executor.shutdown();
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);

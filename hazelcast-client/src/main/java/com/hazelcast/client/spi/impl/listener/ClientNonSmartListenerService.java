@@ -26,12 +26,14 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
@@ -39,7 +41,6 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     private final Map<ClientRegistrationKey, ClientEventRegistration> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, ClientEventRegistration>();
-    private final Object listenerRegLock = new Object();
 
     public ClientNonSmartListenerService(HazelcastClientInstanceImpl client,
                                          int eventThreadCount, int eventQueueCapacity) {
@@ -47,21 +48,29 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
     }
 
     @Override
-    public String registerListener(ListenerMessageCodec codec, EventHandler handler) {
-        synchronized (listenerRegLock) {
-            String userRegistrationId = UuidUtil.newUnsecureUuidString();
-            ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
-            try {
-                ClientEventRegistration registration = invoke(registrationKey);
-                registrations.put(registrationKey, registration);
-            } catch (Exception e) {
-                throw new HazelcastException("Listener can not be added", e);
+    public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
+        Future<String> future = registrationExecutor.submit(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                String userRegistrationId = UuidUtil.newUnsecureUuidString();
+                ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
+                try {
+                    ClientEventRegistration registration = invoke(registrationKey);
+                    registrations.put(registrationKey, registration);
+                } catch (Exception e) {
+                    throw new HazelcastException("Listener can not be added", e);
+                }
+                return userRegistrationId;
             }
-            return userRegistrationId;
+        });
+        try {
+            return future.get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
-    public ClientEventRegistration invoke(ClientRegistrationKey registrationKey) throws Exception {
+    private ClientEventRegistration invoke(ClientRegistrationKey registrationKey) throws Exception {
         EventHandler handler = registrationKey.getHandler();
         handler.beforeListenerRegister();
         ClientMessage request = registrationKey.getCodec().encodeAddRequest(false);
@@ -78,25 +87,33 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
     }
 
     @Override
-    public boolean deregisterListener(String userRegistrationId) {
-        synchronized (listenerRegLock) {
-            ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-            ClientEventRegistration registration = registrations.get(key);
+    public boolean deregisterListener(final String userRegistrationId) {
+        Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
+                ClientEventRegistration registration = registrations.get(key);
 
-            if (registration == null) {
-                return false;
-            }
+                if (registration == null) {
+                    return false;
+                }
 
-            ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
-            try {
-                Future future = new ClientInvocation(client, request).invoke();
-                future.get();
-                removeEventHandler(registration.getCallId());
-                registrations.remove(key);
-            } catch (Exception e) {
-                throw new HazelcastException("Listener with id " + userRegistrationId + " could not be removed", e);
+                ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
+                try {
+                    Future future = new ClientInvocation(client, request).invoke();
+                    future.get();
+                    removeEventHandler(registration.getCallId());
+                    registrations.remove(key);
+                } catch (Exception e) {
+                    throw new HazelcastException("Listener with id " + userRegistrationId + " could not be removed", e);
+                }
+                return true;
             }
-            return true;
+        });
+        try {
+            return future.get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -107,17 +124,15 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void connectionAdded(Connection connection) {
-        executionService.executeInternal(new Runnable() {
+        registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
-                synchronized (listenerRegLock) {
-                    for (ClientRegistrationKey registrationKey : registrations.keySet()) {
-                        try {
-                            ClientEventRegistration registration = invoke(registrationKey);
-                            registrations.put(registrationKey, registration);
-                        } catch (Exception e) {
-                            logger.warning("Listener " + registrationKey + " could not be added ");
-                        }
+                for (ClientRegistrationKey registrationKey : registrations.keySet()) {
+                    try {
+                        ClientEventRegistration registration = invoke(registrationKey);
+                        registrations.put(registrationKey, registration);
+                    } catch (Exception e) {
+                        logger.warning("Listener " + registrationKey + " could not be added ");
                     }
                 }
             }
@@ -127,25 +142,37 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void connectionRemoved(Connection connection) {
-        synchronized (listenerRegLock) {
-            for (Map.Entry<ClientRegistrationKey, ClientEventRegistration> entry : registrations.entrySet()) {
-                removeEventHandler(entry.getValue().getCallId());
+        registrationExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+                for (Map.Entry<ClientRegistrationKey, ClientEventRegistration> entry : registrations.entrySet()) {
+                    removeEventHandler(entry.getValue().getCallId());
+                }
             }
-        }
+        });
     }
 
     //For Testing
-    public Collection<ClientEventRegistration> getActiveRegistrations(String uuid) {
-        synchronized (listenerRegLock) {
-            ClientEventRegistration registration = registrations.get(new ClientRegistrationKey(uuid));
-            if (registration == null) {
-                return Collections.EMPTY_LIST;
-            }
-            LinkedList<ClientEventRegistration> activeRegistrations = new LinkedList<ClientEventRegistration>();
-            if (getEventHandler(registration.getCallId()) != null) {
-                activeRegistrations.add(registration);
-            }
-            return activeRegistrations;
+    public Collection<ClientEventRegistration> getActiveRegistrations(final String uuid) {
+        Future<Collection<ClientEventRegistration>> future = registrationExecutor.submit(
+                new Callable<Collection<ClientEventRegistration>>() {
+                    @Override
+                    public Collection<ClientEventRegistration> call() throws Exception {
+                        ClientEventRegistration registration = registrations.get(new ClientRegistrationKey(uuid));
+                        if (registration == null) {
+                            return Collections.EMPTY_LIST;
+                        }
+                        LinkedList<ClientEventRegistration> activeRegistrations = new LinkedList<ClientEventRegistration>();
+                        if (getEventHandler(registration.getCallId()) != null) {
+                            activeRegistrations.add(registration);
+                        }
+                        return activeRegistrations;
+                    }
+                });
+        try {
+            return future.get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 }
