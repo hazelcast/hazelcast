@@ -116,9 +116,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Probe(name = "callTimeoutCount", level = MANDATORY)
     final MwCounter callTimeoutCount = MwCounter.newMwCounter();
 
-    @Probe(name = "retryCount", level = MANDATORY)
-    final MwCounter retryCount = MwCounter.newMwCounter();
-
     final NodeEngineImpl nodeEngine;
     final Node node;
     final ILogger logger;

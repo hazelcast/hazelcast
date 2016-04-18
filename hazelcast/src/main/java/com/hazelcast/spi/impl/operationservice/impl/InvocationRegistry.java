@@ -24,8 +24,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -139,15 +137,6 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     @Override
     public Iterator<Invocation> iterator() {
         return invocations.values().iterator();
-    }
-
-    /**
-     * Intention to expose the entry set is to mutate it.
-     *
-     * @return set of invocations in this registry
-     */
-    public Set<Map.Entry<Long, Invocation>> entrySet() {
-        return invocations.entrySet();
     }
 
     /**

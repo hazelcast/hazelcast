@@ -45,7 +45,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.logging.Level;
 
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
@@ -71,8 +70,6 @@ import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.logging.Level.FINEST;
-import static java.util.logging.Level.WARNING;
 
 /**
  * The Invocation evaluates a Operation invocation.
@@ -117,6 +114,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     // The last time a heartbeat was received for the invocation. 0 indicates that no heartbeat was received at all
     volatile long lastHeartbeatMillis;
+
+    volatile boolean retryRequested;
 
     final NodeEngineImpl nodeEngine;
     final OperationServiceImpl operationService;
@@ -359,7 +358,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             case RETRY_INVOCATION:
                 if (invokeCount < tryCount) {
                     // we are below the tryCount, so lets retry
-                    handleRetry(cause);
+                    retryRequested = true;
                 } else {
                     // we can't retry anymore, so lets send the cause to the future.
                     notifyNormalResponse(cause, 0);
@@ -418,7 +417,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         op.setWaitTimeout(waitTimeout);
 
         invokeCount--;
-        handleRetry("invocation timeout");
+        retryRequested = true;
     }
 
     // This method can be called concurrently
@@ -448,19 +447,23 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         future.complete(pendingResponse);
     }
 
-    private void handleRetry(Object cause) {
-        operationService.retryCount.inc();
-
-        if (invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
-            Level level = invokeCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
-            if (logger.isLoggable(level)) {
-                logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
-            }
+    /**
+     * Detects if a retry is required and retries the operation if needed.
+     *
+     * This method is called from the InvocationMonitorThread.
+     *
+     * @return
+     */
+    boolean detectAndHandleRetry() {
+        if (!retryRequested) {
+            return false;
         }
 
+        retryRequested = false;
         operationService.invocationRegistry.deregister(this);
 
         if (future.interrupted) {
+            // todo: do we want to return true here because we are not going to retry; but terminate with a interrupt
             future.complete(INTERRUPTED);
         } else {
             if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
@@ -470,6 +473,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                 nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
             }
         }
+        return true;
     }
 
     /**
@@ -480,7 +484,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      * If no heart-beat has been received, then the future.set is called with HEARTBEAT_TIMEOUT
      * and true is returned.
      *
-     * gets called from the monitor-thread
+     * This method is called from the InvocationMonitorThread.
      *
      * @return true if there is a timeout detected, false otherwise.
      */
@@ -535,7 +539,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         TIMEOUT
     }
 
-    // gets called from the monitor-thread
+    /**
+     * Detects if the backup has run in a timeout; and will act accordingly
+     *
+     * This method is called from the InvocationMonitorThread.
+     */
     boolean detectAndHandleBackupTimeout(long timeoutMillis) {
         // If the backups have completed, we are done.
         // This check also filters out all non backup-aware operations since they backupsExpected will always be equal to the
@@ -563,24 +571,19 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             // primary fails. The consequence is that the backups never will be made and the effects of the map.put, even though
             // it returned a value, will never be visible. So if we would complete the future, a response is send even though
             // its changes never made it into the system.
-            resetAndReInvoke();
+            retryRequested = true;
+            invokeCount = 0;
+            pendingResponse = VOID;
+            pendingResponseReceivedMillis = -1;
+            backupsExpected = 0;
+            backupsCompleted = 0;
+            lastHeartbeatMillis = 0;
             return false;
         }
 
         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
         future.complete(pendingResponse);
         return true;
-    }
-
-    private void resetAndReInvoke() {
-        operationService.invocationRegistry.deregister(this);
-        invokeCount = 0;
-        pendingResponse = VOID;
-        pendingResponseReceivedMillis = -1;
-        backupsExpected = 0;
-        backupsCompleted = 0;
-        lastHeartbeatMillis = 0;
-        doInvoke(false);
     }
 
     @Override
