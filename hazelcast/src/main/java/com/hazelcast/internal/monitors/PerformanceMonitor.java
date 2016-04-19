@@ -24,16 +24,14 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.monitors.PerformanceMonitorPlugin.DISABLED;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.System.arraycopy;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * The PerformanceMonitor is a debugging tool that provides insight in all kinds of potential performance and stability issues.
- * The actual logic to provide such insights, is placed in the {@link PerformanceMonitorPlugin}.
+ * The actual logic to provide such insights, is responsibility of the {@link PerformanceMonitorPlugin}.
  */
 public class PerformanceMonitor {
 
@@ -82,20 +80,22 @@ public class PerformanceMonitor {
             = new HazelcastProperty("hazelcast.performance.monitor.human.friendly.format", true);
 
     /**
-     * Configures the output directory of the performance log files.
+     * Configures the output directory of the performance log files. The directory is not automatically created.
      *
      * Defaults to the 'user.dir'.
      */
     public static final HazelcastProperty DIRECTORY
             = new HazelcastProperty("hazelcast.performance.monitor.directory", "" + System.getProperty("user.dir"));
 
-    final boolean singleLine;
+    /**
+     * By default the PerformanceMonitor will output to a dedicated file. However in some cases this is not an option
+     * and the one can only write to the existing logfile.
+     */
+    public static final HazelcastProperty SKIP_FILE
+            = new HazelcastProperty("hazelcast.performance.monitor.skip.file", false);
+
     final HazelcastProperties properties;
-    final String directory;
     PerformanceLog performanceLog;
-    final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
-            new PerformanceMonitorPlugin[0]
-    );
 
     final ILogger logger;
     final String fileName;
@@ -114,12 +114,10 @@ public class PerformanceMonitor {
         this.logger = logger;
         this.properties = properties;
         this.enabled = isEnabled(properties);
-        this.directory = properties.getString(DIRECTORY);
 
         if (enabled) {
             logger.info("PerformanceMonitor is enabled");
         }
-        this.singleLine = !properties.getBoolean(HUMAN_FRIENDLY_FORMAT);
     }
 
     private boolean isEnabled(HazelcastProperties properties) {
@@ -133,7 +131,7 @@ public class PerformanceMonitor {
         if (s != null) {
             logger.warning("Don't use deprecated 'hazelcast.performance.monitoring.enabled' "
                     + "but use '" + ENABLED.getName() + "' instead. "
-                    + "The former name will be removed in Hazelcast 3.8.");
+                    + "The former property will be removed in Hazelcast 3.8.");
         }
         return Boolean.parseBoolean(s);
     }
@@ -150,12 +148,14 @@ public class PerformanceMonitor {
      * @param plugin the plugin to register
      * @throws NullPointerException if plugin is null.
      */
-    public void register(PerformanceMonitorPlugin plugin) {
+    public synchronized void register(final PerformanceMonitorPlugin plugin) {
         checkNotNull(plugin, "plugin can't be null");
 
         if (!enabled) {
             return;
         }
+
+        start();
 
         long periodMillis = plugin.getPeriodMillis();
         if (periodMillis < -1) {
@@ -171,37 +171,30 @@ public class PerformanceMonitor {
         plugin.onStart();
 
         if (periodMillis > 0) {
-            // it is a periodic task
-            scheduler.scheduleAtFixedRate(new MonitorTaskRunnable(plugin), 0, periodMillis, MILLISECONDS);
+            scheduler.scheduleAtFixedRate(new RenderPluginTask(plugin), 0, periodMillis, MILLISECONDS);
         } else {
-            addStaticPlugin(plugin);
+            scheduler.execute(new Runnable() {
+                @Override
+                public void run() {
+                    performanceLog.addStaticPlugin(plugin);
+                }
+            });
         }
     }
 
-    private void addStaticPlugin(PerformanceMonitorPlugin plugin) {
-        for (; ; ) {
-            PerformanceMonitorPlugin[] oldPlugins = staticTasks.get();
-            PerformanceMonitorPlugin[] newPlugins = new PerformanceMonitorPlugin[oldPlugins.length + 1];
-            arraycopy(oldPlugins, 0, newPlugins, 0, oldPlugins.length);
-            newPlugins[oldPlugins.length] = plugin;
-            if (staticTasks.compareAndSet(oldPlugins, newPlugins)) {
-                break;
-            }
-        }
-    }
-
-    public void start() {
-        if (!enabled) {
+    private void start() {
+        if (scheduler != null) {
             return;
         }
 
-        this.performanceLog = new PerformanceLog(this);
+        this.performanceLog = properties.getBoolean(SKIP_FILE)
+                ? new PerformanceLogLogger(this)
+                : new PerformanceLogFile(this);
         this.scheduler = new ScheduledThreadPoolExecutor(1, new PerformanceMonitorThreadFactory());
-
         logger.info("PerformanceMonitor started");
     }
 
-    public void shutdown() {
+    public synchronized void shutdown() {
         if (!enabled) {
             return;
         }
@@ -209,13 +202,16 @@ public class PerformanceMonitor {
         if (scheduler != null) {
             scheduler.shutdownNow();
         }
+
+        // todo: closing should be done from scheduler.
+        performanceLog.close();
     }
 
-    private class MonitorTaskRunnable implements Runnable {
+    private class RenderPluginTask implements Runnable {
 
         private final PerformanceMonitorPlugin plugin;
 
-        MonitorTaskRunnable(PerformanceMonitorPlugin plugin) {
+        RenderPluginTask(PerformanceMonitorPlugin plugin) {
             this.plugin = plugin;
         }
 

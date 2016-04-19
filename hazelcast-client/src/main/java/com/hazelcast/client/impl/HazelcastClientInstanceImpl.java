@@ -347,7 +347,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService.start();
         clientExtension.afterStart(this);
 
-        performanceMonitor.start();
         performanceMonitor.register(
                 new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
         performanceMonitor.register(

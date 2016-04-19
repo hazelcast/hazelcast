@@ -16,25 +16,30 @@
 
 package com.hazelcast.internal.monitors;
 
-import static com.hazelcast.internal.monitors.PerformanceMonitor.HUMAN_FRIENDLY_FORMAT;
+import com.hazelcast.logging.ILogger;
 
-abstract class PerformanceLog {
+/**
+ * A {@link PerformanceLog} that writes to the general logger. See {@link PerformanceMonitor#SKIP_FILE}.
+ */
+class PerformanceLogLogger extends PerformanceLog {
 
-    protected final PerformanceMonitor monitor;
-    protected final PerformanceLogWriter logWriter;
+     private final ILogger logger;
 
-    PerformanceLog(PerformanceMonitor monitor) {
-        this.monitor = monitor;
-        this.logWriter = monitor.properties.getBoolean(HUMAN_FRIENDLY_FORMAT)
-                ? new MultiLinePerformanceLogWriter()
-                : new SingleLinePerformanceLogWriter() ;
+    PerformanceLogLogger(PerformanceMonitor monitor) {
+        super(monitor);
+
+        this.logger = monitor.logger;
     }
 
-
-    abstract void render(PerformanceMonitorPlugin plugin);
-
-     void close() {
+    @Override
+    public void addStaticPlugin(PerformanceMonitorPlugin plugin) {
+        render(plugin);
     }
 
-    public abstract void addStaticPlugin(PerformanceMonitorPlugin plugin);
+    @Override
+    public void render(PerformanceMonitorPlugin plugin) {
+        logWriter.clean();
+        logWriter.write(plugin);
+        logger.info(logWriter.sb.toString());
+    }
 }

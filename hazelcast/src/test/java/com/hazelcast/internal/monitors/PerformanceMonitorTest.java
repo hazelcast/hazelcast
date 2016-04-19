@@ -6,6 +6,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,7 +46,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     public void register_whenNullPlugin() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
                 new Config().setProperty(PerformanceMonitor.ENABLED.getName(), "true"));
-        performanceMonitor.start();
+
         performanceMonitor.register(null);
     }
 
@@ -54,13 +55,12 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
                 new Config().setProperty(PerformanceMonitor.ENABLED.getName(), "false"));
 
-        performanceMonitor.start();
         PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
         when(plugin.getPeriodMillis()).thenReturn(1l);
 
         performanceMonitor.register(plugin);
 
-        assertEquals(0, performanceMonitor.staticTasks.get().length);
+        assertNull(performanceMonitor.performanceLog);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -68,7 +68,6 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
                 new Config().setProperty(PerformanceMonitor.ENABLED.getName(), "true"));
 
-        performanceMonitor.start();
         PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
         when(plugin.getPeriodMillis()).thenReturn(-2l);
 
@@ -80,46 +79,31 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
                 new Config().setProperty(PerformanceMonitor.ENABLED.getName(), "true"));
 
-        performanceMonitor.start();
         PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
         when(plugin.getPeriodMillis()).thenReturn(0l);
 
         performanceMonitor.register(plugin);
 
-        assertEquals(0, performanceMonitor.staticTasks.get().length);
+        PerformanceLogFile logFile = (PerformanceLogFile)performanceMonitor.performanceLog;
+        assertEquals(0, logFile.staticPlugins.get().length);
     }
 
     @Test
     public void register_whenMonitorEnabled_andPluginStatic() {
         PerformanceMonitor performanceMonitor = newPerformanceMonitor(
                 new Config().setProperty(PerformanceMonitor.ENABLED.getName(), "true"));
-        performanceMonitor.start();
 
-
-        performanceMonitor.start();
-        PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
+        final PerformanceMonitorPlugin plugin = mock(PerformanceMonitorPlugin.class);
         when(plugin.getPeriodMillis()).thenReturn(PerformanceMonitorPlugin.STATIC);
 
         performanceMonitor.register(plugin);
 
-        assertArrayEquals(new PerformanceMonitorPlugin[]{plugin}, performanceMonitor.staticTasks.get());
-    }
-
-    @Test
-    public void start_whenDisabled() {
-        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PerformanceMonitor.ENABLED.getName(), "false"));
-        performanceMonitor.start();
-
-        assertNull(performanceMonitor.performanceLog);
-    }
-
-    @Test
-    public void start_whenEnabled() {
-        PerformanceMonitor performanceMonitor = newPerformanceMonitor(
-                new Config().setProperty(PerformanceMonitor.ENABLED.getName(), "true"));
-        performanceMonitor.start();
-
-        assertNotNull(performanceMonitor.performanceLog);
+        final PerformanceLogFile logFile = (PerformanceLogFile)performanceMonitor.performanceLog;
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertArrayEquals(new PerformanceMonitorPlugin[]{plugin}, logFile.staticPlugins.get());
+            }
+        });
     }
 }
