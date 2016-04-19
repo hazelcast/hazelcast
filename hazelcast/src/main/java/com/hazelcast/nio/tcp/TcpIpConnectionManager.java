@@ -106,6 +106,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final IOThreadingModel ioThreadingModel;
+    private final MetricsRegistry metricsRegistry;
 
     private volatile boolean live;
 
@@ -151,7 +152,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
-
+        this.metricsRegistry = metricsRegistry;
         metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
@@ -468,6 +469,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         if (acceptorThread != null) {
             logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
             acceptorThread.shutdown();
+            metricsRegistry.deregister(acceptorThread);
             acceptorThread = null;
         }
 
@@ -477,6 +479,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 serverSocketChannel,
                 this);
         acceptorThread.start();
+        metricsRegistry.scanAndRegister(acceptorThread, "tcp." + acceptorThread.getName());
     }
 
     @Override
