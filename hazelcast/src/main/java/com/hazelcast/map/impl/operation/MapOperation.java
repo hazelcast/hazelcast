@@ -64,14 +64,18 @@ public abstract class MapOperation extends AbstractNamedOperation {
 
         mapService = getService();
         mapServiceContext = mapService.getMapServiceContext();
-        mapContainer = mapServiceContext.getMapContainer(name);
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
 
         innerBeforeRun();
     }
 
     public void innerBeforeRun() throws Exception {
-        getOrCreateRecordStore();
+        recordStore = getRecordStoreOrNull();
+        if (recordStore == null) {
+            mapContainer = mapServiceContext.getMapContainer(name);
+        } else {
+            mapContainer = recordStore.getMapContainer();
+        }
     }
 
     @Override
@@ -126,16 +130,16 @@ public abstract class MapOperation extends AbstractNamedOperation {
         recordStore.evictEntries();
     }
 
-    private void getOrCreateRecordStore() {
+    private RecordStore getRecordStoreOrNull() {
         int partitionId = getPartitionId();
         if (partitionId == -1) {
-            return;
+            return null;
         }
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         if (createRecordStoreOnDemand) {
-            recordStore = partitionContainer.getRecordStore(name);
+            return partitionContainer.getRecordStore(name);
         } else {
-            recordStore = partitionContainer.getExistingRecordStore(name);
+            return partitionContainer.getExistingRecordStore(name);
         }
     }
 }
