@@ -34,6 +34,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -68,6 +69,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -787,5 +789,18 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         hazelcastInstance.shutdown();
 
         assertOpenEventually("Put operations should not hang.", testFinishedLatch);
+    }
+
+    @Test(timeout = 120000)
+    public void testMemberAddedWithListeners_thenCheckOperationsNotHanging() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.INTERNAL_EXECUTOR_POOL_SIZE.getName(), "1");
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        IMap map = client.getMap("map");
+        map.addEntryListener(mock(MapListener.class), true);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
+        String key = generateKeyOwnedBy(h2);
+        map.get(key);
     }
 }
