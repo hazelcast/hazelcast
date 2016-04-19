@@ -81,8 +81,17 @@ public class PerformanceMonitor {
     public static final HazelcastProperty HUMAN_FRIENDLY_FORMAT
             = new HazelcastProperty("hazelcast.performance.monitor.human.friendly.format", true);
 
+    /**
+     * Configures the output directory of the performance log files.
+     *
+     * Defaults to the 'user.dir'.
+     */
+    public static final HazelcastProperty DIRECTORY
+            = new HazelcastProperty("hazelcast.performance.monitor.directory", "" + System.getProperty("user.dir"));
+
     final boolean singleLine;
     final HazelcastProperties properties;
+    final String directory;
     PerformanceLog performanceLog;
     final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
             new PerformanceMonitorPlugin[0]
@@ -105,6 +114,8 @@ public class PerformanceMonitor {
         this.logger = logger;
         this.properties = properties;
         this.enabled = isEnabled(properties);
+        this.directory = properties.getString(DIRECTORY);
+
         if (enabled) {
             logger.info("PerformanceMonitor is enabled");
         }
