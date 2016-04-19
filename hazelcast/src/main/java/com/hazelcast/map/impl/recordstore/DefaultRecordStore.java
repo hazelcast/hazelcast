@@ -681,7 +681,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         value = mapDataStore.add(key, value, now);
         onStore(record);
 
-        if (record == null) {
+        boolean newRecord = record == null;
+        if (newRecord) {
             record = createRecord(value, ttl, now);
             storage.put(key, record);
         } else {
@@ -689,8 +690,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
 
+        updateStatsOnPut(newRecord);
         saveIndex(record, oldValue);
         return oldValue;
+    }
+
+    private void updateStatsOnPut(boolean newRecord) {
+        // lastUpdateTime
+        if(!newRecord) {
+          updateStatsOnGet();
+        }
+    }
+
+    private void updateStatsOnGet() {
+        // lastAccessTime
+        // hit
     }
 
     @Override
