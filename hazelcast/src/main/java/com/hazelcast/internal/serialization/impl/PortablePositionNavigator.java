@@ -431,7 +431,7 @@ public class PortablePositionNavigator {
             //
             int index = Integer.valueOf(extractArgumentsFromAttributeName(token));
             if (index < 0) {
-                throw new IllegalArgumentException("Array index cannot be negative in " + nestedPath);
+                throw new IllegalArgumentException("Array index " + index + " cannot be negative in " + nestedPath);
             }
             int len = getCurrentArrayLength(fd);
 

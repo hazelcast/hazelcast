@@ -16,11 +16,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.LIST;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.PORTABLE;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
@@ -81,17 +83,24 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    public void extractorWithParam_nullCollection() {
+        execute(Input.of(HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount[0]", 1), mv),
+                Expected.of(NullPointerException.class, IllegalArgumentException.class));
+    }
+
+    @Test
     public void extractorWithParam_indexOutOfBound() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[2]", 1), mv),
-                Expected.of(IndexOutOfBoundsException.class));
+                Expected.of(IndexOutOfBoundsException.class, NullPointerException.class));
     }
 
     @Test
     public void extractorWithParam_negativeInput() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[-1]", 1), mv),
-                Expected.of(IndexOutOfBoundsException.class));
+                Expected.of(ArrayIndexOutOfBoundsException.class, IllegalArgumentException.class));
     }
 
     @Test
@@ -143,13 +152,6 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
                 Expected.of(IllegalArgumentException.class));
     }
 
-    @Test
-    public void extractorWithParam_nullCollection() {
-        execute(Input.of(HUNT_NULL_LIMB),
-                Query.of(Predicates.equal("tattoosCount[0]", 1), mv),
-                Expected.of(NullPointerException.class));
-    }
-
     protected AbstractExtractionTest.Configurator getInstanceConfigurator() {
         return new AbstractExtractionTest.Configurator() {
             @Override
@@ -166,18 +168,23 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         };
     }
 
+    @SuppressWarnings("unchecked")
     public static class LimbTattoosCountExtractor extends ValueExtractor {
         @Override
         public void extract(Object target, Object arguments, ValueCollector collector) {
-            Integer parsedId = Integer.parseInt((String)arguments);
-            int size;
+            Integer parsedId = Integer.parseInt((String) arguments);
+            Integer size;
             if (target instanceof Person) {
                 size = ((Person) target).limbs_list.get(parsedId).tattoos_list.size();
-
             } else {
                 PortableReader reader = (PortableReader) target;
-                // reader.read("limbs_portable[" + arguments + "]")
-                size = 0;
+                size = null;
+                try {
+                    Object result = reader.read("limbs_portable[" + parsedId + "].tattoos_portable");
+                    size = ((String[]) result).length;
+                } catch (IOException e) {
+                    // ignore
+                }
             }
             collector.addObject(size);
         }
@@ -188,7 +195,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         return axes(
                 asList(OBJECT),
                 asList(NO_INDEX),
-                asList(PORTABLE)
+                asList(PORTABLE, LIST)
         );
     }
 

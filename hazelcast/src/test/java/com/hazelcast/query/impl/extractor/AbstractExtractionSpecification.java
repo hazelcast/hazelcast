@@ -2,10 +2,8 @@ package com.hazelcast.query.impl.extractor;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.extractor.specification.ComplexDataStructure;
 import com.hazelcast.query.impl.predicates.AbstractPredicate;
-import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.query.impl.predicates.PredicateTestUtils;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -74,7 +72,7 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
      */
     protected static class Expected {
         Object[] objects;
-        Class<? extends Throwable> throwable;
+        Class<? extends Throwable>[] throwables;
 
         public static Expected of(Object... objects) {
             Expected expected = new Expected();
@@ -84,7 +82,13 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
 
         public static Expected of(Class<? extends Throwable> throwable) {
             Expected expected = new Expected();
-            expected.throwable = throwable;
+            expected.throwables = new Class[]{throwable};
+            return expected;
+        }
+
+        public static Expected of(Class<? extends Throwable>... throwables) {
+            Expected expected = new Expected();
+            expected.throwables = throwables;
             return expected;
         }
 
