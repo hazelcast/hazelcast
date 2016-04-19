@@ -26,6 +26,7 @@ import com.hazelcast.spi.annotation.Beta;
  * @since 3.2
  */
 @Beta
+@Deprecated
 public interface AsyncAtomicLong extends IAtomicLong {
 
     /**

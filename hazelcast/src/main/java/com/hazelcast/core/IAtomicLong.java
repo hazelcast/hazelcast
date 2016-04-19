@@ -20,6 +20,26 @@ package com.hazelcast.core;
  * IAtomicLong is a redundant and highly available distributed alternative to the
  * {@link java.util.concurrent.atomic.AtomicLong java.util.concurrent.atomic.AtomicLong}.
  *
+ * Asynchronous variants of all methods have been introduced in version 3.7.
+ * Async methods return immediately an {@link ICompletableFuture} from which the operation's result
+ * can be obtained either in a blocking manner or by registering a callback to be executed
+ * upon completion. For example:
+ *
+ * <p>
+ * <pre>
+ *     ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
+ *     future.andThen(new ExecutionCallback&lt;Long&gt;() {
+ *          void onResponse(Long response) {
+ *              // do something with the result
+ *          }
+ *
+ *          void onFailure(Throwable t) {
+ *              // handle failure
+ *          }
+ *     });
+ * </pre>
+ * </p>
+ *
  * @see IAtomicReference
  */
 public interface IAtomicLong extends DistributedObject {
@@ -139,4 +159,181 @@ public interface IAtomicLong extends DistributedObject {
      * @since 3.2
      */
     <R> R apply(IFunction<Long, R> function);
+
+    /**
+     * Atomically adds the given value to the current value.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     * The operations result can be obtained in a blocking way, or a
+     * callback can be provided for execution upon completion, as demonstrated in the following examples:
+     * <p>
+     * <pre>
+     *     ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
+     *     // do something else, then read the result
+     *     Long result = future.get(); // this method will block until the result is available
+     * </pre>
+     * </p>
+     * <p>
+     * <pre>
+     *     ICompletableFuture&lt;Long&gt; future = atomicLong.addAndGetAsync(13);
+     *     future.andThen(new ExecutionCallback&lt;Long&gt;() {
+     *          void onResponse(Long response) {
+     *              // do something with the result
+     *          }
+     *
+     *          void onFailure(Throwable t) {
+     *              // handle failure
+     *          }
+     *     });
+     * </pre>
+     * </p>
+     *
+     * @param delta the value to add
+     * @return an {@link ICompletableFuture} bearing the response
+     * @since 3.7
+     */
+    ICompletableFuture<Long> addAndGetAsync(long delta);
+
+    /**
+     * Atomically sets the value to the given updated value
+     * only if the current value {@code ==} the expected value.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @param expect the expected value
+     * @param update the new value
+     * @return an {@link ICompletableFuture} with value true if successful; or false if the actual value
+     *         was not equal to the expected value.
+     * @since 3.7
+     */
+    ICompletableFuture<Boolean> compareAndSetAsync(long expect, long update);
+
+    /**
+     * Atomically decrements the current value by one.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @return an {@link ICompletableFuture} with the updated value.
+     * @since 3.7
+     */
+    ICompletableFuture<Long> decrementAndGetAsync();
+
+    /**
+     * Gets the current value. This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @return an {@link ICompletableFuture} with the current value
+     * @since 3.7
+     */
+    ICompletableFuture<Long> getAsync();
+
+    /**
+     * Atomically adds the given value to the current value.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @param delta the value to add
+     * @return an {@link ICompletableFuture} with the old value before the addition
+     * @since 3.7
+     */
+    ICompletableFuture<Long> getAndAddAsync(long delta);
+
+    /**
+     * Atomically sets the given value and returns the old value.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @param newValue the new value
+     * @return an {@link ICompletableFuture} with the old value
+     * @since 3.7
+     */
+    ICompletableFuture<Long> getAndSetAsync(long newValue);
+
+    /**
+     * Atomically increments the current value by one.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @return an {@link ICompletableFuture} with the updated value
+     * @since 3.7
+     */
+    ICompletableFuture<Long> incrementAndGetAsync();
+
+    /**
+     * Atomically increments the current value by one.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @return an {@link ICompletableFuture} with the old value
+     * @since 3.7
+     */
+    ICompletableFuture<Long> getAndIncrementAsync();
+
+    /**
+     * Atomically sets the given value.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @param newValue the new value
+     * @return an {@link ICompletableFuture} API consumers can use to track execution of this request
+     * @since 3.7
+     */
+    ICompletableFuture<Void> setAsync(long newValue);
+
+    /**
+     * Alters the currently stored value by applying a function on it.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @param function the function
+     * @throws IllegalArgumentException if function is null.
+     * @return an {@link ICompletableFuture} API consumers can use to track execution of this request
+     * @since 3.7
+     */
+    ICompletableFuture<Void> alterAsync(IFunction<Long, Long> function);
+
+    /**
+     * Alters the currently stored value by applying a function on it and gets the result.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @param function the function
+     * @return an {@link ICompletableFuture} with the new value.
+     * @throws IllegalArgumentException if function is null.
+     * @since 3.7
+     */
+    ICompletableFuture<Long> alterAndGetAsync(IFunction<Long, Long> function);
+
+    /**
+     * Alters the currently stored value by applying a function on it on and gets the old value.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     *
+     * @param function the function
+     * @return an {@link ICompletableFuture} with the old value
+     * @throws IllegalArgumentException if function is null.
+     * @since 3.7
+     */
+    ICompletableFuture<Long> getAndAlterAsync(IFunction<Long, Long> function);
+
+    /**
+     * Applies a function on the value, the actual stored value will not change.
+     * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
+     * Example:
+     * <p>
+     * <pre>
+     *     class IsOneFunction implements IFunction&lt;Long, Boolean&gt; {
+     *       &#64;Override
+     *       public Boolean apply(Long input) {
+     *         return input.equals(1L);
+     *       }
+     *     }
+     *
+     *     ICompletableFuture<Boolean> future = atomicLong.applyAsync(new IsOneFunction());
+     *     future.andThen(new ExecutionCallback&lt;Boolean&gt;() {
+     *        void onResponse(Boolean response) {
+     *            // do something with the response
+     *        }
+     *
+     *        void onFailure(Throwable t) {
+     *            // handle failure
+     *        }
+     *     });
+     * </pre>
+     * </p>
+     *
+     * @param function the function
+     * @return an {@link ICompletableFuture} with the result of the function application
+     * @throws IllegalArgumentException if function is null.
+     * @since 3.7
+     */
+    <R> ICompletableFuture<R> applyAsync(IFunction<Long, R> function);
 }
