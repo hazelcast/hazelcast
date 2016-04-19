@@ -22,11 +22,15 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.nearcache.InvalidationCounter;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
@@ -49,6 +53,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected NearCache nearCache;
     protected boolean cacheLocalEntries;
+    protected InvalidationCounter invalidationCounter;
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine) {
         super(name, mapService, nodeEngine);
@@ -65,6 +70,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         this.nearCache = nearCacheProvider.getOrCreateNearCache(name);
         this.cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
+
+        HazelcastProperties properties = mapServiceContext.getNodeEngine().getProperties();
+        int partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
+        this.invalidationCounter = new InvalidationCounter(partitionCount);
     }
 
     // this operation returns the object in data format except
@@ -79,10 +88,18 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return value;
         }
 
+        long count = invalidationCounter.increase(key);
+
         value = super.getInternal(key);
 
         if (!isOwn(key) || cacheLocalEntries) {
-            nearCache.put(key, toData(value));
+            if (!invalidationCounter.maybeStale(key, count)) {
+                nearCache.put(key, toData(value));
+
+                if (invalidationCounter.maybeStale(key, count)) {
+                    invalidateCache(key);
+                }
+            }
         }
 
         return value;
@@ -125,6 +142,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        invalidationCounter.increase(key);
         invalidateCache(key);
         return super.putInternal(key, value, ttl, timeunit);
     }
@@ -319,6 +337,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected void invalidateCache(Data key) {
         if (key != null) {
+            invalidationCounter.increase(key);
             nearCache.remove(key);
         }
     }
@@ -338,10 +357,13 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected boolean isOwn(Data key) {
         int partitionId = partitionService.getPartitionId(key);
-        return partitionService.getPartitionOwner(partitionId).equals(thisAddress);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        return thisAddress.equals(partitionOwner);
     }
 
     public NearCache getNearCache() {
         return nearCache;
     }
+
+
 }
