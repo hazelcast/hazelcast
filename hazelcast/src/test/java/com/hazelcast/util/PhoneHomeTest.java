@@ -13,6 +13,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.RuntimeMXBean;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -43,6 +46,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         PhoneHome phoneHome = new PhoneHome();
         sleepAtLeastMillis(1);
         Map<String, String> parameters = phoneHome.phoneHome(node1, "test_version", false);
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
 
         assertEquals(parameters.get("version"), "test_version");
         assertEquals(parameters.get("m"), node1.getLocalMember().getUuid() );
@@ -58,6 +63,11 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertFalse(Integer.parseInt(parameters.get("cuptm")) < 0);
         assertNotEquals(parameters.get("nuptm"), "0");
         assertNotEquals(parameters.get("nuptm"), parameters.get("cuptm"));
+        assertEquals(parameters.get("osn"), osMxBean.getName());
+        assertEquals(parameters.get("osa"), osMxBean.getArch());
+        assertEquals(parameters.get("osv"), osMxBean.getVersion());
+        assertEquals(parameters.get("jvmn"), runtimeMxBean.getVmName());
+        assertEquals(parameters.get("jvmv"), System.getProperty("java.version"));
     }
 
     @Test
