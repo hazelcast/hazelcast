@@ -329,7 +329,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private ClientExecutionServiceImpl initExecutionService() {
         return new ClientExecutionServiceImpl(instanceName, threadGroup,
-                config.getClassLoader(), config.getExecutorPoolSize(), loggingService);
+                config.getClassLoader(), properties, config.getExecutorPoolSize(), loggingService);
     }
 
     public void start() {

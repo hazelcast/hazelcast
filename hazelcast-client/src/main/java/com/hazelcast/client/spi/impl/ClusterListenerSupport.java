@@ -33,7 +33,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -75,8 +75,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
         ThreadGroup threadGroup = client.getThreadGroup();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        PoolExecutorThreadFactory threadFactory =
-                new PoolExecutorThreadFactory(threadGroup, client.getName() + ".cluster-", classLoader);
+        SingleExecutorThreadFactory threadFactory =
+                new SingleExecutorThreadFactory(threadGroup, classLoader, client.getName() + ".cluster-");
         return Executors.newSingleThreadExecutor(threadFactory);
     }
 
