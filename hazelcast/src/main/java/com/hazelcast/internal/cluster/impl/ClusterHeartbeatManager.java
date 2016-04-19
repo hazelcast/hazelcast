@@ -34,15 +34,14 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
 import java.net.ConnectException;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.createMemberInfoList;
+import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
 
 /**
@@ -143,12 +142,12 @@ public class ClusterHeartbeatManager {
             long clusterTime = clusterClock.getClusterTime();
             if (logger.isFineEnabled()) {
                 logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
-                        member, new Date(clusterTime), new Date(timestamp)));
+                        member, timeToString(clusterTime), timeToString(timestamp)));
             }
 
             if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
                 logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
-                        new Date(clusterTime), new Date(timestamp)));
+                        timeToString(clusterTime), timeToString(timestamp)));
                 return;
             }
 
@@ -168,7 +167,7 @@ public class ClusterHeartbeatManager {
             if (clusterTime - timestamp > maxNoMasterConfirmationMillis / 2) {
                 logger.warning(
                         format("Ignoring master confirmation from %s, since it is expired (now: %s, timestamp: %s)",
-                                member, new Date(clusterTime), new Date(timestamp)));
+                                member, timeToString(clusterTime), timeToString(timestamp)));
                 return;
             }
             masterConfirmationTimes.put(member, clusterTime);
@@ -198,9 +197,8 @@ public class ClusterHeartbeatManager {
             long absoluteClockJump = Math.abs(clockJump);
 
             if (absoluteClockJump > CLOCK_JUMP_THRESHOLD) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
                 logger.info(format("System clock apparently jumped from %s to %s since last heartbeat (%+d ms)",
-                        sdf.format(new Date(lastHeartBeat)), sdf.format(new Date(now)), clockJump));
+                        timeToString(lastHeartBeat), timeToString(now), clockJump));
 
                 // We only set cluster clock, if clock jumps more than threshold.
                 // If the last cluster-time diff we've seen is significantly different than what we read now,
@@ -262,13 +260,13 @@ public class ClusterHeartbeatManager {
         long heartbeatTime = getHeartbeatTime(member);
         if ((now - heartbeatTime) > maxNoHeartbeatMillis) {
             logger.warning(format("Removing %s because it has not sent any heartbeats for %d ms."
-                    + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
-                    new Date(now), new Date(heartbeatTime)));
+                            + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
+                    timeToString(now), timeToString(heartbeatTime)));
             clusterService.removeAddress(member.getAddress());
             return true;
         }
         if (logger.isFinestEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
-            logger.finest(format("Not receiving any heartbeats from %s since %s", member, new Date(heartbeatTime)));
+            logger.finest(format("Not receiving any heartbeats from %s since %s", member, timeToString(heartbeatTime)));
         }
         return false;
     }
@@ -280,7 +278,7 @@ public class ClusterHeartbeatManager {
         }
         if (now - lastConfirmation > maxNoMasterConfirmationMillis) {
             logger.warning(format("Removing %s because it has not sent any master confirmation for %d ms. "
-                    + " Last confirmation time was %s", member, maxNoMasterConfirmationMillis, new Date(lastConfirmation)));
+                    + " Last confirmation time was %s", member, maxNoMasterConfirmationMillis, timeToString(lastConfirmation)));
             clusterService.removeAddress(member.getAddress());
             return true;
         }
