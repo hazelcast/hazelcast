@@ -28,6 +28,9 @@ import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -36,6 +39,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.UuidUtil;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -61,6 +65,11 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TopicTest extends HazelcastTestSupport {
+
+    @Before
+    public void setup(){
+        setLoggingLog4j();
+    }
 
     @Test
     public void testDestroyTopicRemovesStatistics() {
@@ -230,7 +239,7 @@ public class TopicTest extends HazelcastTestSupport {
         final int count = 1000;
         final String randomTopicName = randomString();
 
-        Config config = new Config();
+        Config config = new Config().setProperty(GroupProperty.PARTITION_COUNT.getName(),"10");
         config.getTopicConfig(randomTopicName).setGlobalOrderingEnabled(true);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);

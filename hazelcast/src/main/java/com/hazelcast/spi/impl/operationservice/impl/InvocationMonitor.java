@@ -70,7 +70,7 @@ import static java.util.logging.Level.INFO;
  */
 public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
-    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
+    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 5000;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
 
     private final NodeEngineImpl nodeEngine;
@@ -99,7 +99,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     @Probe
     private final long heartbeatBroadcastPeriodMillis;
     @Probe
-    private final long invocationScanPeriodMillis = 100;
+    private final long invocationScanPeriodMillis = 1000;
 
     //todo: we need to get rid of the nodeEngine dependency
     public InvocationMonitor(NodeEngineImpl nodeEngine,

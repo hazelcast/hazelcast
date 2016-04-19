@@ -77,7 +77,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class Invocation implements OperationResponseHandler, Runnable {
+public abstract class Invocation implements OperationResponseHandler {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -260,11 +260,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
     }
 
-    @Override
-    public void run() {
-        doInvoke(false);
-    }
-
     private boolean engineActive() {
         if (nodeEngine.isRunning()) {
             return true;
@@ -284,7 +279,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      *
      * @return true if the initialization was a success.
      */
-    boolean initInvocationTarget() {
+    private boolean initInvocationTarget() {
         invTarget = getTarget();
 
         if (invTarget == null) {
@@ -326,6 +321,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                     + ", current-response: : " + response);
         }
 
+        if (retryRequested) {
+            System.out.println("sendResponse while retryRequested with resp:" + response);
+            return;
+        }
+
+
         if (response instanceof CallTimeoutResponse) {
             notifyCallTimeout();
         } else if (response instanceof ErrorResponse || response instanceof Throwable) {
@@ -345,17 +346,21 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     void notifyError(Object error) {
-        assert error != null;
-
         Throwable cause = error instanceof Throwable
                 ? (Throwable) error
                 : ((ErrorResponse) error).getCause();
+
+        if (retryRequested) {
+            System.out.println("notifyError while retryRequest: " + cause.getClass() + " " + cause.getMessage());
+            return;
+        }
 
         switch (onException(cause)) {
             case THROW_EXCEPTION:
                 notifyNormalResponse(cause, 0);
                 break;
             case RETRY_INVOCATION:
+                cause.printStackTrace();
                 if (invokeCount < tryCount) {
                     // we are below the tryCount, so lets retry
                     retryRequested = true;
@@ -370,6 +375,10 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     void notifyNormalResponse(Object value, int expectedBackups) {
+//        if(retryRequested){
+//            return;
+//        }
+
         // if a regular response comes and there are backups, we need to wait for the backups
         // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
 
@@ -400,6 +409,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
+        if (retryRequested) {
+            System.out.println("notifyCallTimeout while retryRequested");
+            return;
+        }
+
+
         if (logger.isFinestEnabled()) {
             logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
         }
@@ -466,11 +481,18 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             // todo: do we want to return true here because we are not going to retry; but terminate with a interrupt
             future.complete(INTERRUPTED);
         } else {
+            Runnable retryTask = new Runnable() {
+                @Override
+                public void run() {
+                    doInvoke(false);
+                }
+            };
+
             if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                 // fast retry for the first few invocations
-                operationService.asyncExecutor.execute(this);
+                operationService.asyncExecutor.execute(retryTask);
             } else {
-                nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+                nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, retryTask, tryPauseMillis, MILLISECONDS);
             }
         }
         return true;
