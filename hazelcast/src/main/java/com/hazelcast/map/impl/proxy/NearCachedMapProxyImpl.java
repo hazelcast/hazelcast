@@ -29,8 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
@@ -71,9 +69,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         this.nearCache = nearCacheProvider.getOrCreateNearCache(name);
         this.cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
 
-        HazelcastProperties properties = mapServiceContext.getNodeEngine().getProperties();
-        int partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
-        this.invalidationCounter = new InvalidationCounter(partitionCount);
+        this.invalidationCounter = new InvalidationCounter(271);
     }
 
     // this operation returns the object in data format except
