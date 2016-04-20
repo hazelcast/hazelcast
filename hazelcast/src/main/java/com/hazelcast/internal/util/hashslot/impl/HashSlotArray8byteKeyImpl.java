@@ -95,7 +95,7 @@ public class HashSlotArray8byteKeyImpl extends HashSlotArrayBase implements Hash
         mem.putLong(slotBase(baseAddress, slot) + KEY_1_OFFSET, key);
     }
 
-    @Override protected long hash(long key, long ignored) {
+    @Override protected long keyHash(long key, long ignored) {
         return fastLongMix(key);
     }
 }

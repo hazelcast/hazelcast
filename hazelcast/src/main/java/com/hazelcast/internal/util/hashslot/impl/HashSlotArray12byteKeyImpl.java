@@ -108,7 +108,7 @@ public final class HashSlotArray12byteKeyImpl extends HashSlotArrayBase implemen
         return mem.getInt(slotBase(baseAddress, slot) + offsetOfUnassignedSentinel) != unassignedSentinel;
     }
 
-    @Override protected long hash(long key1, long key2) {
+    @Override protected long keyHash(long key1, long key2) {
         return fastLongMix(key1 + fastIntMix((int) key2));
     }
 }
