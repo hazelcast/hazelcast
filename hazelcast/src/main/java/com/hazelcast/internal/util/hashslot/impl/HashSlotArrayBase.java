@@ -223,7 +223,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         if (size == expansionThreshold()) {
             resizeTo(CapacityUtil.nextCapacity(capacity()));
         }
-        long slot = hash(key1, key2) & mask();
+        long slot = keyHash(key1, key2) & mask();
         while (isSlotAssigned(slot)) {
             if (equal(key1OfSlot(slot), key2OfSlot(slot), key1, key2)) {
                 return -valueAddrOfSlot(slot);
@@ -237,7 +237,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
 
     protected final long get0(long key1, long key2) {
         assertValid();
-        long slot = hash(key1, key2) & mask();
+        long slot = keyHash(key1, key2) & mask();
         final long wrappedAround = slot;
         while (isSlotAssigned(slot)) {
             if (equal(key1OfSlot(slot), key2OfSlot(slot), key1, key2)) {
@@ -253,7 +253,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
 
     protected final boolean remove0(long key1, long key2) {
         assertValid();
-        long slot = hash(key1, key2) & mask();
+        long slot = keyHash(key1, key2) & mask();
         final long wrappedAround = slot;
         while (isSlotAssigned(slot)) {
             if (equal(key1OfSlot(slot), key2OfSlot(slot), key1, key2)) {
@@ -280,17 +280,15 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         while (true) {
             slotCurr = ((slotPrev = slotCurr) + 1) & mask;
             while (isSlotAssigned(slotCurr)) {
-                slotOther = hash(key1OfSlot(slotCurr), key2OfSlot(slotCurr)) & mask;
+                slotOther = slotHash(baseAddress, slotCurr) & mask;
+                // slotPrev <= slotCurr means we're at or to the right of the original slot.
+                // slotPrev > slotCurr means we're to the left of the original slot because we've wrapped around.
                 if (slotPrev <= slotCurr) {
-                    // we're to the right of the original slot.
                     if (slotPrev >= slotOther || slotOther > slotCurr) {
                         break;
                     }
-                } else {
-                    // we've wrapped around.
-                    if (slotPrev >= slotOther && slotOther > slotCurr) {
-                        break;
-                    }
+                } else if (slotPrev >= slotOther && slotOther > slotCurr) {
+                    break;
                 }
                 slotCurr = (slotCurr + 1) & mask;
             }
@@ -333,8 +331,12 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         mem.putLong(slotBase + KEY_2_OFFSET, key2);
     }
 
-    protected long hash(long key1, long key2) {
+    protected long keyHash(long key1, long key2) {
         return fastLongMix(fastLongMix(key1) + key2);
+    }
+
+    protected long slotHash(long baseAddress, long slot) {
+        return keyHash(key1OfSlot(baseAddress, slot), key2OfSlot(baseAddress, slot));
     }
 
     protected boolean equal(long key1a, long key2a, long key1b, long key2b) {
@@ -443,15 +445,13 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         final long mask = mask();
         for (long slot = oldCapacity; --slot >= 0;) {
             if (isAssigned(oldAddress, slot)) {
-                long key1 = key1OfSlot(oldAddress, slot);
-                long key2 = key2OfSlot(oldAddress, slot);
-                long valueAddress = slotBase(oldAddress, slot) + valueOffset;
-                long newSlot = hash(key1, key2) & mask;
+                long newSlot = slotHash(oldAddress, slot) & mask;
                 while (isSlotAssigned(newSlot)) {
                     newSlot = (newSlot + 1) & mask;
                 }
-                putKey(baseAddress, newSlot, key1, key2);
-                mem.copyMemory(valueAddress, valueAddrOfSlot(newSlot), valueLength);
+                putKey(baseAddress, newSlot, key1OfSlot(oldAddress, slot), key2OfSlot(oldAddress, slot));
+                final long valueAddrOfOldSlot = slotBase(oldAddress, slot) + valueOffset;
+                mem.copyMemory(valueAddrOfOldSlot, valueAddrOfSlot(newSlot), valueLength);
             }
         }
         oldMalloc.free(oldAddress - HEADER_SIZE, oldAllocatedSize);
