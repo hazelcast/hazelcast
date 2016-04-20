@@ -8,10 +8,16 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SelectNow_NonBlockingIOThreadTest extends NonBlockingIOThreadAbstractTest {
+public class SelectWithSelectorFix_NonBlockingIOThreadTest
+        extends NonBlockingIOThreadAbstractTest {
 
     @Override
     protected SelectorMode selectorMode() {
-        return SelectorMode.SELECT_NOW;
+        return SelectorMode.SELECT_WITH_FIX;
+    }
+
+    @Override
+    protected void beforeStartThread() {
+        thread.setSelectorWorkaroundTest(true);
     }
 }

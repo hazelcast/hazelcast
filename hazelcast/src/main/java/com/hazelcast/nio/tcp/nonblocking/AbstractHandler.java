@@ -27,7 +27,6 @@ import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
@@ -39,7 +38,6 @@ public abstract class AbstractHandler implements MigratableHandler {
     protected final TcpIpConnection connection;
     protected final TcpIpConnectionManager connectionManager;
     protected final IOService ioService;
-    protected Selector selector;
     protected NonBlockingIOThread ioThread;
     protected SelectionKey selectionKey;
     private final int initialOps;
@@ -56,7 +54,6 @@ public abstract class AbstractHandler implements MigratableHandler {
         this.connection = connection;
         this.ioThread = ioThread;
         this.ioThreadId = ioThread.id;
-        this.selector = ioThread.getSelector();
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.ioService = connectionManager.getIoService();
@@ -83,9 +80,13 @@ public abstract class AbstractHandler implements MigratableHandler {
 
     protected SelectionKey getSelectionKey() throws IOException {
         if (selectionKey == null) {
-            selectionKey = socketChannel.register(selector, initialOps, this);
+            selectionKey = socketChannel.register(ioThread.getSelector(), initialOps, this);
         }
         return selectionKey;
+    }
+
+    final void setSelectionKey(SelectionKey selectionKey) {
+        this.selectionKey = selectionKey;
     }
 
     final void registerOp(int operation) throws IOException {
@@ -142,7 +143,6 @@ public abstract class AbstractHandler implements MigratableHandler {
         ioThreadId = ioThread.id;
         selectionKey.cancel();
         selectionKey = null;
-        selector = null;
 
         newOwner.addTaskAndWakeup(new Runnable() {
             @Override
@@ -167,7 +167,6 @@ public abstract class AbstractHandler implements MigratableHandler {
             return;
         }
 
-        selector = newOwner.getSelector();
         selectionKey = getSelectionKey();
         registerOp(initialOps);
     }

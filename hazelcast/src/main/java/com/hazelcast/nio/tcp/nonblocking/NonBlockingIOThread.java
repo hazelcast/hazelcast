@@ -22,13 +22,17 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -41,6 +45,14 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     // WARNING: This value has significant effect on idle CPU usage!
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
+    // When we detect Selector.select returning prematurely
+    // for more than SELECT_IDLE_COUNT_THRESHOLD then we rebuild the selector
+    private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
+    // for tests only
+    private static final Random RANDOM = new Random();
+    // when testing, we simulate the selector bug randomly with one out of TEST_SELECTOR_BUG_PROBABILITY
+    private static final int TEST_SELECTOR_BUG_PROBABILITY = Integer.parseInt(
+            System.getProperty("hazelcast.io.selector.bug.probability", "16"));
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     // this field is set during construction and is meant for the probes so that the read/write handler can
@@ -56,43 +68,50 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private final SwCounter selectorIOExceptionCount = newSwCounter();
     @Probe
     private final SwCounter completedTaskCount = newSwCounter();
+    // count number of times the selector was rebuilt (if selectWorkaround is enabled)
+    @Probe
+    private final SwCounter selectorRebuildCount = newSwCounter();
 
     private final ILogger logger;
 
-    private final Selector selector;
+    private Selector selector;
 
     private final NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
 
-    private final boolean selectNow;
+    private final SelectorMode selectMode;
 
+    // last time select unblocked with some keys selected
     private volatile long lastSelectTimeMs;
+    // set to true while testing
+    private boolean selectorWorkaroundTest;
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
                                ILogger logger,
                                NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
-        this(threadGroup, threadName, logger, oomeHandler, false);
+        this(threadGroup, threadName, logger, oomeHandler, SelectorMode.SELECT);
     }
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
                                ILogger logger,
                                NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
-                               boolean selectNow) {
-        this(threadGroup, threadName, logger, oomeHandler, selectNow, newSelector(logger));
+                               SelectorMode selectMode) {
+        this(threadGroup, threadName, logger, oomeHandler, selectMode, newSelector(logger));
     }
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
                                ILogger logger,
                                NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
-                               boolean selectNow,
+                               SelectorMode selectMode,
                                Selector selector) {
         super(threadGroup, threadName);
         this.logger = logger;
-        this.selectNow = selectNow;
+        this.selectMode = selectMode;
         this.oomeHandler = oomeHandler;
         this.selector = selector;
+        this.selectorWorkaroundTest = false;
     }
 
     private static Selector newSelector(ILogger logger) {
@@ -154,7 +173,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
      */
     public void addTaskAndWakeup(Runnable task) {
         taskQueue.add(task);
-        if (!selectNow) {
+        if (selectMode != SelectorMode.SELECT_NOW) {
             selector.wakeup();
         }
     }
@@ -171,10 +190,20 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         try {
             for (; ; ) {
                 try {
-                    if (selectNow) {
-                        runSelectNowLoop();
-                    } else {
-                        runSelectLoop();
+                    switch (selectMode) {
+                        case SELECT_WITH_FIX:
+                            selectLoopWithFix();
+                            break;
+                        case SELECT_NOW:
+                            selectNowLoop();
+                            break;
+                        case SELECT:
+                            selectLoop();
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Selector.select mode not set, use -Dhazelcast.io.selectorMode="
+                                    + "{select|selectnow|selectwithfix} to explicitly specify select mode or leave empty for "
+                                    + "default select mode.");
                     }
                     // break the for loop; we are done
                     break;
@@ -210,25 +239,53 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         }
     }
 
-    private void runSelectLoop() throws IOException {
+    private void selectLoop() throws IOException {
         while (!isInterrupted()) {
             processTaskQueue();
 
             int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
             if (selectedKeys > 0) {
-                lastSelectTimeMs = currentTimeMillis();
                 handleSelectionKeys();
             }
         }
     }
 
-    private void runSelectNowLoop() throws IOException {
+    private void selectLoopWithFix() throws IOException {
+        int idleCount = 0;
+        while (!isInterrupted()) {
+            processTaskQueue();
+
+            long before = currentTimeMillis();
+            int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
+            if (selectedKeys > 0) {
+                idleCount = 0;
+                handleSelectionKeys();
+            } else if (!taskQueue.isEmpty()) {
+                idleCount = 0;
+            } else {
+                // no keys were selected, not interrupted by wakeup therefore we hit an issue with JDK/network stack
+                long selectTimeTaken = currentTimeMillis() - before;
+                idleCount = selectTimeTaken < SELECT_WAIT_TIME_MILLIS ? idleCount + 1 : 0;
+
+                if (selectorBugDetected(idleCount)) {
+                    rebuildSelector();
+                    idleCount = 0;
+                }
+            }
+        }
+    }
+
+    private boolean selectorBugDetected(int idleCount) {
+        return idleCount > SELECT_IDLE_COUNT_THRESHOLD
+                || (selectorWorkaroundTest && RANDOM.nextInt(TEST_SELECTOR_BUG_PROBABILITY) == 1);
+    }
+
+    private void selectNowLoop() throws IOException {
         while (!isInterrupted()) {
             processTaskQueue();
 
             int selectedKeys = selector.selectNow();
             if (selectedKeys > 0) {
-                lastSelectTimeMs = currentTimeMillis();
                 handleSelectionKeys();
             }
         }
@@ -264,6 +321,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     }
 
     private void handleSelectionKeys() {
+        lastSelectTimeMs = currentTimeMillis();
         Iterator<SelectionKey> it = selector.selectedKeys().iterator();
         while (it.hasNext()) {
             SelectionKey sk = it.next();
@@ -307,8 +365,43 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         interrupt();
     }
 
+    // this method is always invoked in this thread
+    // after we have blocked for selector.select in #runSelectLoopWithSelectorFix
+    private void rebuildSelector() {
+        selectorRebuildCount.inc();
+        Selector newSelector = newSelector(logger);
+        Selector oldSelector = this.selector;
+
+        // reset each handler's selectionKey, cancel the old keys
+        for (SelectionKey key : oldSelector.keys()) {
+            AbstractHandler handler = (AbstractHandler) key.attachment();
+            SelectableChannel channel = key.channel();
+            try {
+                int ops = key.interestOps();
+                SelectionKey newSelectionKey = channel.register(newSelector, ops, handler);
+                handler.setSelectionKey(newSelectionKey);
+            } catch (ClosedChannelException e) {
+                logger.info("Channel was closed while trying to register with new selector.");
+            } catch (CancelledKeyException e) {
+                // a CancelledKeyException may be thrown in key.interestOps
+                // in this case, since the key is already cancelled, just do nothing
+                EmptyStatement.ignore(e);
+            }
+            key.cancel();
+        }
+
+        // close the old selector and substitute with new one
+        closeSelector();
+        this.selector = newSelector;
+        logger.warning("Recreated Selector because of possible java/network stack bug.");
+    }
+
     @Override
     public String toString() {
         return getName();
+    }
+
+    void setSelectorWorkaroundTest(boolean selectorWorkaroundTest) {
+        this.selectorWorkaroundTest = selectorWorkaroundTest;
     }
 }

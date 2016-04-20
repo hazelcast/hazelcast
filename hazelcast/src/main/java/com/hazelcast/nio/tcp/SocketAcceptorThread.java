@@ -21,7 +21,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.tcp.nonblocking.SelectorMode;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -32,12 +32,15 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class SocketAcceptorThread extends Thread {
     private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
+    private static final long SELECT_TIMEOUT_MILLIS = SECONDS.toMillis(60);
+    private static final int SELECT_IDLE_COUNT_THRESHOLD = 10;
 
     private final ServerSocketChannel serverSocketChannel;
     private final TcpIpConnectionManager connectionManager;
@@ -47,7 +50,19 @@ public class SocketAcceptorThread extends Thread {
     private final SwCounter eventCount = newSwCounter();
     @Probe
     private final SwCounter exceptionCount = newSwCounter();
+    // count number of times the selector was recreated (if selectWorkaround is enabled)
+    @Probe
+    private final SwCounter selectorRecreateCount = newSwCounter();
+    // last time select returned
     private volatile long lastSelectTimeMs;
+
+    // When true, enables workaround for bug occuring when SelectorImpl.select returns immediately
+    // with no channels selected, resulting in 100% CPU usage while doing no progress.
+    // See issue: https://github.com/hazelcast/hazelcast/issues/7943
+    private final boolean selectorWorkaround = (SelectorMode.getConfiguredValue() == SelectorMode.SELECT_WITH_FIX);
+
+    private Selector selector;
+    private SelectionKey selectionKey;
 
     public SocketAcceptorThread(
             ThreadGroup threadGroup,
@@ -77,26 +92,28 @@ public class SocketAcceptorThread extends Thread {
             logger.finest("Starting SocketAcceptor on " + serverSocketChannel);
         }
 
-        Selector selector = null;
         try {
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            acceptLoop(selector);
+            selectionKey = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+            if (selectorWorkaround) {
+                acceptLoopWithSelectorFix();
+            } else {
+                acceptLoop();
+            }
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } catch (IOException e) {
             logger.severe(e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
-            closeSelector(selector);
+            closeSelector();
         }
     }
 
-    private void acceptLoop(Selector selector) throws IOException {
+    private void acceptLoop() throws IOException {
         while (connectionManager.isLive()) {
             // block until new connection or interruption.
             int keyCount = selector.select();
-            lastSelectTimeMs = System.currentTimeMillis();
             if (isInterrupted()) {
                 break;
             }
@@ -104,19 +121,60 @@ public class SocketAcceptorThread extends Thread {
                 continue;
             }
             Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-            while (it.hasNext()) {
-                SelectionKey sk = it.next();
-                it.remove();
-                // of course it is acceptable!
-                if (sk.isValid() && sk.isAcceptable()) {
-                    eventCount.inc();
-                    acceptSocket();
+            handleSelectionKeys(it);
+        }
+    }
+
+    private void acceptLoopWithSelectorFix() throws IOException {
+        int idleCount = 0;
+        while (connectionManager.isLive()) {
+            // block with a timeout until new connection or interruption.
+            long before = currentTimeMillis();
+            int keyCount = selector.select(SELECT_TIMEOUT_MILLIS);
+            if (isInterrupted()) {
+                break;
+            }
+            if (keyCount == 0) {
+                long selectTimeTaken = currentTimeMillis() - before;
+                idleCount = selectTimeTaken < SELECT_TIMEOUT_MILLIS ? idleCount + 1 : 0;
+                // select unblocked before timing out with no keys selected --> bug detected
+                if (idleCount > SELECT_IDLE_COUNT_THRESHOLD) {
+                    // rebuild the selector
+                    rebuildSelector();
+                    idleCount = 0;
                 }
+                continue;
+            }
+            idleCount = 0;
+            Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+            handleSelectionKeys(it);
+        }
+    }
+
+    private void rebuildSelector() throws IOException {
+        selectorRecreateCount.inc();
+        // cancel existing selection key, register new one on the new selector
+        selectionKey.cancel();
+        closeSelector();
+        Selector newSelector = Selector.open();
+        selector = newSelector;
+        selectionKey = serverSocketChannel.register(newSelector, SelectionKey.OP_ACCEPT);
+    }
+
+    private void handleSelectionKeys(Iterator<SelectionKey> it) {
+        lastSelectTimeMs = currentTimeMillis();
+        while (it.hasNext()) {
+            SelectionKey sk = it.next();
+            it.remove();
+            // of course it is acceptable!
+            if (sk.isValid() && sk.isAcceptable()) {
+                eventCount.inc();
+                acceptSocket();
             }
         }
     }
 
-    private void closeSelector(Selector selector) {
+    private void closeSelector() {
         if (selector == null) {
             return;
         }
@@ -188,7 +246,7 @@ public class SocketAcceptorThread extends Thread {
         } catch (Exception e) {
             exceptionCount.inc();
             logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
-            IOUtil.closeResource(socketChannel);
+            closeResource(socketChannel);
         }
     }
 

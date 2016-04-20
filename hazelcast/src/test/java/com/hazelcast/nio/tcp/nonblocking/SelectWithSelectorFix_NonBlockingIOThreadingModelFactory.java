@@ -4,7 +4,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.nio.tcp.IOThreadingModelFactory;
 import com.hazelcast.nio.tcp.MockIOService;
 
-public class SelectNow_NonBlockingIOThreadingModelFactory implements IOThreadingModelFactory {
+public class SelectWithSelectorFix_NonBlockingIOThreadingModelFactory
+        implements IOThreadingModelFactory {
 
     @Override
     public NonBlockingIOThreadingModel create(
@@ -14,7 +15,8 @@ public class SelectNow_NonBlockingIOThreadingModelFactory implements IOThreading
                 ioService.loggingService,
                 metricsRegistry,
                 ioService.hazelcastThreadGroup);
-        threadingModel.setSelectorMode(SelectorMode.SELECT_NOW);
+        threadingModel.setSelectorMode(SelectorMode.SELECT_WITH_FIX);
+        threadingModel.setSelectorWorkaroundTest(true);
         return threadingModel;
     }
 }

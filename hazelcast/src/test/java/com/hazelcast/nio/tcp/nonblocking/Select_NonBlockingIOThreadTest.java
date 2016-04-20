@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 public class Select_NonBlockingIOThreadTest extends NonBlockingIOThreadAbstractTest {
 
     @Override
-    protected boolean selectNow() {
-        return false;
+    protected SelectorMode selectorMode() {
+        return SelectorMode.SELECT;
     }
 }
