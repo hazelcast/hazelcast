@@ -68,5 +68,38 @@ public class TopicConfigTest {
     public void testSetGlobalOrderingEnabled() {
         TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(true);
         assertTrue(topicConfig.isGlobalOrderingEnabled());
+        try {
+        	topicConfig.setMultiThreadingEnabled(true);
+        	assertTrue("multi-threading must be disabled when global-ordering is enabled", false);
+        } catch (IllegalArgumentException e) {
+        	// anticipated..
+        }
+        assertFalse(topicConfig.isMultiThreadingEnabled());
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.TopicConfig#isMultiThreadingEnabled()}.
+     */
+    @Test
+    public void testIsMultiThreadingEnabled() {
+        TopicConfig topicConfig = new TopicConfig();
+        assertFalse(topicConfig.isMultiThreadingEnabled());
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.TopicConfig#setMultiThreadingEnabled(boolean)}.
+     */
+    @Test
+    public void testSetMultiThreadingEnabled() {
+        TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(false);
+        topicConfig.setMultiThreadingEnabled(true);
+        assertTrue(topicConfig.isMultiThreadingEnabled());
+        try {
+        	topicConfig.setGlobalOrderingEnabled(true);
+        	assertTrue("global-ordering must be disabled when multi-threading is enabled", false);
+        } catch (IllegalArgumentException e) {
+        	// anticipated..
+        }
+        assertFalse(topicConfig.isGlobalOrderingEnabled());
     }
 }

@@ -37,6 +37,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     private final TopicService topicService;
     private final LocalTopicStatsImpl topicStats;
     private final Member localMember;
+    private boolean multithreaded;
 
     public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
@@ -51,6 +52,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     public void initialize() {
         NodeEngine nodeEngine = getNodeEngine();
         TopicConfig config = nodeEngine.getConfig().findTopicConfig(name);
+        multithreaded = config.isMultiThreadingEnabled();
         for (ListenerConfig listenerConfig : config.getMessageListenerConfigs()) {
             initialize(listenerConfig);
         }
@@ -91,7 +93,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     public void publishInternal(Data message) {
         TopicEvent topicEvent = new TopicEvent(name, message, localMember.getAddress());
         topicStats.incrementPublishes();
-        topicService.publishEvent(name, topicEvent);
+        topicService.publishEvent(name, topicEvent, multithreaded);
     }
 
     public String addMessageListenerInternal(MessageListener listener) {
