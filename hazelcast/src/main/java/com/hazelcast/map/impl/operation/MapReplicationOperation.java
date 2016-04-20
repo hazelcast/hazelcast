@@ -101,6 +101,12 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
         return new RecordReplicationInfo(key, mapServiceContext.toData(record.getValue()), info);
     }
 
+    private RecordStore getRecordStore(String mapName) {
+        final boolean skipLoadingOnRecordStoreCreate = true;
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getRecordStore(getPartitionId(), mapName, skipLoadingOnRecordStoreCreate);
+    }
 
     /**
      * Holder for raw IMap key-value pairs and their metadata.
@@ -137,13 +143,10 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
 
         private void applyState() {
             if (data != null) {
-                MapService mapService = getService();
-                MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-
                 for (Entry<String, Set<RecordReplicationInfo>> dataEntry : data.entrySet()) {
                     Set<RecordReplicationInfo> recordReplicationInfos = dataEntry.getValue();
                     final String mapName = dataEntry.getKey();
-                    RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapName);
+                    RecordStore recordStore = getRecordStore(mapName);
                     recordStore.reset();
 
                     for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
@@ -232,12 +235,9 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
 
 
         private void applyState() {
-            MapService mapService = getService();
-            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-
             for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
                 String mapName = entry.getKey();
-                RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapName);
+                RecordStore recordStore = getRecordStore(mapName);
                 WriteBehindStore mapDataStore = (WriteBehindStore) recordStore.getMapDataStore();
 
                 mapDataStore.reset();

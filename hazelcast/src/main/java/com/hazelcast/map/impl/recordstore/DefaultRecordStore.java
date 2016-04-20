@@ -73,6 +73,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final MapKeyLoader keyLoader;
     // loadingFutures are modified by partition threads and could be accessed by query threads
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
+    // record store may be created with or without triggering the load
+    // this flag guards that the loading on create is invoked not more than once.
+    private boolean loadedOnCreate;
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
@@ -81,10 +84,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.logger = logger;
         this.keyLoader = keyLoader;
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
+        this.loadedOnCreate = false;
     }
 
     public void startLoading() {
-        if (mapStoreContext.isMapLoader()) {
+        if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
+            loadedOnCreate = true;
             loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
         }
     }

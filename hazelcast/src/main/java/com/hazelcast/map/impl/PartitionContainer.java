@@ -29,6 +29,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -47,6 +48,15 @@ public class PartitionContainer {
             RecordStore recordStore = createRecordStore(name);
             recordStore.startLoading();
             return recordStore;
+        }
+    };
+
+    final ConstructorFunction<String, RecordStore> recordStoreConstructorSkipLoading
+            = new ConstructorFunction<String, RecordStore>() {
+
+        @Override
+        public RecordStore createNew(String name) {
+            return createRecordStore(name);
         }
     };
 
@@ -105,6 +115,10 @@ public class PartitionContainer {
         return maps;
     }
 
+    public Collection<RecordStore> getAllRecordStores() {
+        return maps.values();
+    }
+
     public int getPartitionId() {
         return partitionId;
     }
@@ -115,6 +129,11 @@ public class PartitionContainer {
 
     public RecordStore getRecordStore(String name) {
         return ConcurrencyUtil.getOrPutSynchronized(maps, name, this, recordStoreConstructor);
+    }
+
+    public RecordStore getRecordStore(String name, boolean skipLoadingOnCreate) {
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, this, skipLoadingOnCreate
+                ? recordStoreConstructorSkipLoading : recordStoreConstructor);
     }
 
     public RecordStore getRecordStoreForHotRestart(String name) {
