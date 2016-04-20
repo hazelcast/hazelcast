@@ -40,16 +40,16 @@ public class TupleReader implements ObjectReader<Tuple> {
         Object key = readTupleEntries(objectDataInput, objectReaderFactory, keySize);
         Object value = readTupleEntries(objectDataInput, objectReaderFactory, valueSize);
 
-        if (key instanceof Object[]) {
+        if (keySize > 1) {
             return
-                    value instanceof Object[]
+                    valueSize > 1
                             ?
                             defaultTupleFactory.tuple((Object[]) key, (Object[]) value)
                             :
                             defaultTupleFactory.tuple((Object[]) key, value);
         } else {
             return
-                    value instanceof Object[]
+                    valueSize > 1
                             ?
                             defaultTupleFactory.tuple(key, (Object[]) value)
                             :

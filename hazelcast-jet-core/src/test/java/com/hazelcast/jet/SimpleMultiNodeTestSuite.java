@@ -63,6 +63,36 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
+    @Repeat(500)
+    public void simpleArrayEmitTest() throws Exception {
+        Application application = createApplication("simpleArrayEmitTest");
+
+        IList<Integer[]> sourceList = SERVER.getList(randomName());
+        IList<Integer[]> targetList = SERVER.getList(randomName());
+
+        try {
+            DAG dag = createDAG();
+
+            int CNT = 10;
+            for (int i = 0; i < CNT; i++) {
+                sourceList.add(new Integer[]{i});
+            }
+
+            Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class, 1);
+            addVertices(dag, vertex);
+            vertex.addSourceList(sourceList.getName());
+            vertex.addSinkList(targetList.getName());
+            executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+
+            for (int i = 0; i < CNT; i++) {
+                assertEquals(i, (int)targetList.get(i)[0]);
+            }
+        } finally {
+            application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
     @Repeat(100)
     public void shufflingListBadShufflingListName1() throws Exception {
         shufflingListTest(1, "target.shufflingListTest", "prefix0");
