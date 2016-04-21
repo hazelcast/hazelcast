@@ -28,7 +28,7 @@ import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.io.DataType;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.spi.executor.TaskContext;
 import com.hazelcast.spi.NodeEngine;
 
@@ -70,7 +70,7 @@ public class DefaultProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public TupleFactory getTupleFactory() {
+    public JetTupleFactory getTupleFactory() {
         return this.containerContext.getTupleFactory();
     }
 

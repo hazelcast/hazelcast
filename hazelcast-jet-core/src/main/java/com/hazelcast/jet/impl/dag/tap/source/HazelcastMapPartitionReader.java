@@ -26,9 +26,9 @@ import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
+import com.hazelcast.jet.spi.data.tuple.JetTupleConvertor;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -40,13 +40,13 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
-public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<Tuple<K, V>> {
+public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<JetTuple<K, V>> {
     private final MapConfig mapConfig;
     private final CalculationStrategy calculationStrategy;
 
-    private final TupleConvertor<Record, K, V> tupleConverter = new TupleConvertor<Record, K, V>() {
+    private final JetTupleConvertor<Record, K, V> tupleConverter = new JetTupleConvertor<Record, K, V>() {
         @Override
-        public Tuple<K, V> convert(Record record, SerializationService ss) {
+        public JetTuple<K, V> convert(Record record, SerializationService ss) {
             Object value;
 
             if (mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY) {
@@ -67,7 +67,7 @@ public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<T
     public HazelcastMapPartitionReader(ContainerDescriptor containerDescriptor,
                                        String name,
                                        int partitionId,
-                                       TupleFactory tupleFactory,
+                                       JetTupleFactory tupleFactory,
                                        Vertex vertex) {
         super(containerDescriptor, name, partitionId, tupleFactory, vertex, ByReferenceDataTransferringStrategy.INSTANCE);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
@@ -87,11 +87,6 @@ public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<T
     }
 
     @Override
-    protected void onClose() {
-
-    }
-
-    @Override
     public void onOpen() {
         NodeEngineImpl nei = (NodeEngineImpl) this.nodeEngine;
         SerializationService ss = nei.getSerializationService();
@@ -104,5 +99,10 @@ public class HazelcastMapPartitionReader<K, V> extends AbstractHazelcastReader<T
     @Override
     public boolean readFromPartitionThread() {
         return true;
+    }
+
+    @Override
+    protected void onClose() {
+
     }
 }

@@ -27,7 +27,7 @@ import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.Serializable;
@@ -38,7 +38,7 @@ public class DefaultContainerContext implements ContainerContext {
     private final int id;
     private final Vertex vertex;
     private final NodeEngine nodeEngine;
-    private final TupleFactory tupleFactory;
+    private final JetTupleFactory tupleFactory;
     private final ApplicationContext applicationContext;
     private final ConcurrentMap<CounterKey, Accumulator> accumulatorMap;
 
@@ -46,7 +46,7 @@ public class DefaultContainerContext implements ContainerContext {
                                    ApplicationContext applicationContext,
                                    int id,
                                    Vertex vertex,
-                                   TupleFactory tupleFactory) {
+                                   JetTupleFactory tupleFactory) {
         this.id = id;
         this.vertex = vertex;
         this.nodeEngine = nodeEngine;
@@ -87,7 +87,7 @@ public class DefaultContainerContext implements ContainerContext {
     }
 
     @Override
-    public TupleFactory getTupleFactory() {
+    public JetTupleFactory getTupleFactory() {
         return this.tupleFactory;
     }
 

@@ -23,7 +23,7 @@ import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.Serializable;
@@ -60,7 +60,7 @@ public interface ContainerDescriptor {
     /**
      * @return - factory to construct tuples;
      */
-    TupleFactory getTupleFactory();
+    JetTupleFactory getTupleFactory();
 
     /**
      * @return - application of JET-config;

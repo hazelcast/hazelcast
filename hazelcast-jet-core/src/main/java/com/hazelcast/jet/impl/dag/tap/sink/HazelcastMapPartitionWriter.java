@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -67,7 +67,7 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
         for (int i = 0; i < chunk.size(); i++) {
-            Tuple tuple = (Tuple) chunk.get(i);
+            JetTuple tuple = (JetTuple) chunk.get(i);
 
             Object dataKey;
             Object dataValue;

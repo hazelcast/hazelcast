@@ -22,9 +22,9 @@ import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
+import com.hazelcast.jet.spi.data.tuple.JetTupleConvertor;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -41,12 +41,12 @@ import java.util.List;
 import java.util.Map;
 
 
-public class HazelcastMultiMapPartitionReader<K, V> extends AbstractHazelcastReader<Tuple<K, V>> {
+public class HazelcastMultiMapPartitionReader<K, V> extends AbstractHazelcastReader<JetTuple<K, V>> {
     private final CalculationStrategy calculationStrategy;
-    private final TupleConvertor<Map.Entry<Data, MultiMapValue>, K, V> tupleConverter =
-            new TupleConvertor<Map.Entry<Data, MultiMapValue>, K, V>() {
+    private final JetTupleConvertor<Map.Entry<Data, MultiMapValue>, K, V> tupleConverter =
+            new JetTupleConvertor<Map.Entry<Data, MultiMapValue>, K, V>() {
                 @Override
-                public Tuple<K, V> convert(final Map.Entry<Data, MultiMapValue> entry, SerializationService ss) {
+                public JetTuple<K, V> convert(final Map.Entry<Data, MultiMapValue> entry, SerializationService ss) {
                     K key = ss.toObject(entry.getKey());
                     Collection<MultiMapRecord> multiMapRecordList = entry.getValue().getCollection(false);
                     List<MultiMapRecord> list;
@@ -75,7 +75,7 @@ public class HazelcastMultiMapPartitionReader<K, V> extends AbstractHazelcastRea
     public HazelcastMultiMapPartitionReader(ContainerDescriptor containerDescriptor,
                                             String name,
                                             int partitionId,
-                                            TupleFactory tupleFactory,
+                                            JetTupleFactory tupleFactory,
                                             Vertex vertex) {
         super(
                 containerDescriptor,

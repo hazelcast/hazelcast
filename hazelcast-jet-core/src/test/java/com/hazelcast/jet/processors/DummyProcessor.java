@@ -24,8 +24,6 @@ import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class DummyProcessor implements TupleContainerProcessor<Integer, String, Integer, String> {
     @Override
     public void beforeProcessing(ProcessorContext processorContext) {
@@ -42,7 +40,8 @@ public class DummyProcessor implements TupleContainerProcessor<Integer, String, 
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Integer, String>> outputStream, ProcessorContext processorContext) throws Exception {
+    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Integer, String>> outputStream,
+                                     ProcessorContext processorContext) throws Exception {
         return true;
     }
 

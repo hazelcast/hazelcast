@@ -16,18 +16,18 @@
 
 package com.hazelcast.jet.impl.data.tuple;
 
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
+import com.hazelcast.jet.spi.data.tuple.JetTupleConvertor;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Iterator;
 
-public class TupleIterator<R, K, V> implements Iterator<Tuple<K, V>> {
+public class TupleIterator<R, K, V> implements Iterator<JetTuple<K, V>> {
     private final Iterator<R> iterator;
-    private final TupleConvertor<R, K, V> convertor;
+    private final JetTupleConvertor<R, K, V> convertor;
     private final SerializationService serializationService;
 
-    public TupleIterator(Iterator<R> iterator, TupleConvertor<R, K, V> convertor, SerializationService serializationService) {
+    public TupleIterator(Iterator<R> iterator, JetTupleConvertor<R, K, V> convertor, SerializationService serializationService) {
         this.iterator = iterator;
         this.convertor = convertor;
         this.serializationService = serializationService;
@@ -43,7 +43,7 @@ public class TupleIterator<R, K, V> implements Iterator<Tuple<K, V>> {
     }
 
     @Override
-    public Tuple<K, V> next() {
+    public JetTuple<K, V> next() {
         return convertor.convert(iterator.next(), serializationService);
     }
 }

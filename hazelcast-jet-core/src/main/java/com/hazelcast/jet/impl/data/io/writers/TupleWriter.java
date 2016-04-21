@@ -19,19 +19,19 @@ package com.hazelcast.jet.impl.data.io.writers;
 import com.hazelcast.jet.impl.data.io.Types;
 import com.hazelcast.jet.spi.data.io.ObjectWriter;
 import com.hazelcast.jet.spi.data.io.ObjectWriterFactory;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.nio.ObjectDataOutput;
 
-public class TupleWriter implements ObjectWriter<Tuple> {
+public class TupleWriter implements ObjectWriter<JetTuple> {
     @Override
-    public void writeType(Tuple object,
+    public void writeType(JetTuple object,
                           ObjectDataOutput objectDataOutput,
                           ObjectWriterFactory objectWriterFactory) throws Exception {
         objectDataOutput.write(Types.TUPLE.getTypeID());
     }
 
     @Override
-    public void writePayLoad(Tuple tuple,
+    public void writePayLoad(JetTuple tuple,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws Exception {
         int keySize = tuple.keySize();
@@ -58,7 +58,7 @@ public class TupleWriter implements ObjectWriter<Tuple> {
     }
 
     @Override
-    public void write(Tuple tuple,
+    public void write(JetTuple tuple,
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws Exception {
         writeType(tuple, objectDataOutput, objectWriterFactory);

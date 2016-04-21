@@ -23,7 +23,7 @@ import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.DataReader;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.spi.strategy.DataTransferringStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -41,7 +41,7 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractHazelcastReader.class);
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
-    protected final TupleFactory tupleFactory;
+    protected final JetTupleFactory tupleFactory;
     protected final ContainerDescriptor containerDescriptor;
     protected long position;
     protected Iterator<V> iterator;
@@ -115,7 +115,7 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
     public AbstractHazelcastReader(ContainerDescriptor containerDescriptor,
                                    String name,
                                    int partitionId,
-                                   TupleFactory tupleFactory,
+                                   JetTupleFactory tupleFactory,
                                    Vertex vertex,
                                    DataTransferringStrategy dataTransferringStrategy
     ) {

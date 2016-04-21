@@ -19,7 +19,7 @@ package com.hazelcast.jet.spi.dag.tap;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.DataReader;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 
 /**
  * Represents abstract source tap;
@@ -35,7 +35,7 @@ public abstract class SourceTap implements Tap {
      */
     public abstract DataReader[] getReaders(ContainerDescriptor containerDescriptor,
                                             Vertex vertex,
-                                            TupleFactory tupleFactory);
+                                            JetTupleFactory tupleFactory);
 
     public boolean isSource() {
         return true;

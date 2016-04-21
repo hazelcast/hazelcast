@@ -20,7 +20,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,7 +34,7 @@ import java.util.Arrays;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class DefaultTuple<K, V> implements Tuple<K, V> {
+public class DefaultJetTuple<K, V> implements JetTuple<K, V> {
     private Object[] data;
 
     private int keySize;
@@ -43,15 +43,15 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
 
     private CalculationStrategy calculationStrategy;
 
-    public DefaultTuple() {
+    public DefaultJetTuple() {
 
     }
 
-    DefaultTuple(K key, V value) {
+    DefaultJetTuple(K key, V value) {
         this(key, value, -1, null);
     }
 
-    DefaultTuple(K key, V value, int partitionId, CalculationStrategy calculationStrategy) {
+    DefaultJetTuple(K key, V value, int partitionId, CalculationStrategy calculationStrategy) {
         checkNotNull(key);
         checkNotNull(value);
 
@@ -66,11 +66,11 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
         this.calculationStrategy = calculationStrategy;
     }
 
-    DefaultTuple(K key, V[] values) {
+    DefaultJetTuple(K key, V[] values) {
         this(key, values, -1, null);
     }
 
-    DefaultTuple(K key, V[] values, int partitionId, CalculationStrategy calculationStrategy) {
+    DefaultJetTuple(K key, V[] values, int partitionId, CalculationStrategy calculationStrategy) {
         checkNotNull(key);
         checkNotNull(values);
 
@@ -83,11 +83,11 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
         this.calculationStrategy = calculationStrategy;
     }
 
-    DefaultTuple(K[] key, V[] values) {
+    DefaultJetTuple(K[] key, V[] values) {
         this(key, values, -1, null);
     }
 
-    DefaultTuple(K[] key, V[] values, int partitionId, CalculationStrategy calculationStrategy) {
+    DefaultJetTuple(K[] key, V[] values, int partitionId, CalculationStrategy calculationStrategy) {
         checkNotNull(key);
         checkNotNull(values);
 
@@ -224,7 +224,7 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
             return false;
         }
 
-        DefaultTuple<?, ?> tuple = (DefaultTuple<?, ?>) o;
+        DefaultJetTuple<?, ?> tuple = (DefaultJetTuple<?, ?>) o;
 
         if (keySize != tuple.keySize) {
             return false;

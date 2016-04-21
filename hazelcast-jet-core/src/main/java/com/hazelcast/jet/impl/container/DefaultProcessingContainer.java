@@ -19,14 +19,14 @@ package com.hazelcast.jet.impl.container;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 
 public class DefaultProcessingContainer extends AbstractProcessingContainer {
     public DefaultProcessingContainer(Vertex vertex,
                                       ContainerProcessorFactory containerProcessorFactory,
                                       NodeEngine nodeEngine,
-                                      ApplicationContext applicationContext, TupleFactory tupleFactory) {
+                                      ApplicationContext applicationContext, JetTupleFactory tupleFactory) {
         super(vertex, containerProcessorFactory, nodeEngine, applicationContext, tupleFactory);
     }
 

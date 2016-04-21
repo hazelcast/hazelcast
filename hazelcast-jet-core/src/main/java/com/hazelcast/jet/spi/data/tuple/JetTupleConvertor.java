@@ -30,7 +30,7 @@ import com.hazelcast.spi.serialization.SerializationService;
  * @param <K> - type of keys in the output tuple;
  * @param <V> - type of value in the output tuple;
  */
-public interface TupleConvertor<R, K, V> {
+public interface JetTupleConvertor<R, K, V> {
     /**
      * Performs converting of java-heap object into the tuple representation of object;
      *
@@ -38,5 +38,5 @@ public interface TupleConvertor<R, K, V> {
      * @param ss     - Hazelcast serialization  service;
      * @return - corresponding tuple representation;
      */
-    Tuple<K, V> convert(R object, SerializationService ss);
+    JetTuple<K, V> convert(R object, SerializationService ss);
 }

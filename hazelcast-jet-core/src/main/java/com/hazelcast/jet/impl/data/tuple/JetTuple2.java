@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.data.tuple;
 
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class Tuple2<K, V> implements Tuple<K, V> {
+public class JetTuple2<K, V> implements JetTuple<K, V> {
     private K key;
     private V value;
 
@@ -39,16 +39,16 @@ public class Tuple2<K, V> implements Tuple<K, V> {
 
     private CalculationStrategy calculationStrategy;
 
-    public Tuple2() {
+    public JetTuple2() {
         this.keySize = 1;
         this.valueSize = 1;
     }
 
-    public Tuple2(K key, V value) {
+    public JetTuple2(K key, V value) {
         this(key, value, -1, null);
     }
 
-    Tuple2(K key, V value, int partitionId, CalculationStrategy calculationStrategy) {
+    JetTuple2(K key, V value, int partitionId, CalculationStrategy calculationStrategy) {
         checkNotNull(key);
         checkNotNull(value);
 
@@ -195,7 +195,7 @@ public class Tuple2<K, V> implements Tuple<K, V> {
             return false;
         }
 
-        Tuple2<?, ?> tuple2 = (Tuple2<?, ?>) o;
+        JetTuple2<?, ?> tuple2 = (JetTuple2<?, ?>) o;
 
         if (!key.equals(tuple2.key)) {
             return false;
