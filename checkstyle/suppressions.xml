@@ -305,6 +305,7 @@
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/RecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/AbstractEvictableRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/DefaultRecordStore"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/AbstractRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxyImpl"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/operation/MapOperationProvider"/>

@@ -128,6 +128,11 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
+    public int getLockedEntryCount() {
+        return locks.size();
+    }
+
+    @Override
     public long getRemainingLeaseTime(Data key) {
         LockResource lock = locks.get(key);
         if (lock == null) {

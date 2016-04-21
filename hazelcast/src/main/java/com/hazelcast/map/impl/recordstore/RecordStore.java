@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
@@ -35,7 +36,7 @@ import java.util.Set;
 /**
  * Defines a record-store.
  */
-public interface RecordStore<R extends Record> {
+public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     /**
      * Default TTL value of a record.
@@ -104,6 +105,8 @@ public interface RecordStore<R extends Record> {
     MapEntries getAll(Set<Data> keySet);
 
     boolean containsKey(Data dataKey);
+
+    int getLockedEntryCount();
 
     Object replace(Data dataKey, Object update);
 
