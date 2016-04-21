@@ -17,6 +17,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.memory.MemoryAccessor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteOrder;
@@ -119,6 +120,14 @@ public final class HashUtil {
      * Returns the MurmurHash3_x86_32 hash.
      */
     public static int MurmurHash3_x86_32_direct(long address, int offset, int len, int seed) {
+        return MurmurHash3_x86_32_direct(MEM, address, offset, len, seed, !LITTLE_ENDIAN);
+    }
+
+    /**
+     * Returns the MurmurHash3_x86_32 hash.
+     */
+    public static int MurmurHash3_x86_32_direct(MemoryAccessor memoryAccessor, long address,
+                                                int offset, int len, int seed, boolean useBigEndian) {
         int c1 = 0xcc9e2d51;
         int c2 = 0x1b873593;
 
@@ -128,11 +137,11 @@ public final class HashUtil {
 
         for (int i = offset; i < roundedEnd; i += 4) {
             // little endian load order
-            int k1 = LITTLE_ENDIAN ? MEM.getInt(address + i)
-                    : (MEM.getByte(address + i) & 0xff)
-                    | ((MEM.getByte(address + i + 1) & 0xff) << 8)
-                    | ((MEM.getByte(address + i + 2) & 0xff) << 16)
-                    | (MEM.getByte(address + i + 3) << 24);
+            int k1 = !useBigEndian ? memoryAccessor.getInt(address + i)
+                    : (memoryAccessor.getByte(address + i) & 0xff)
+                    | ((memoryAccessor.getByte(address + i + 1) & 0xff) << 8)
+                    | ((memoryAccessor.getByte(address + i + 2) & 0xff) << 16)
+                    | (memoryAccessor.getByte(address + i + 3) << 24);
             k1 *= c1;
             // ROTL32(k1,15);
             k1 = (k1 << 15) | (k1 >>> 17);
@@ -149,13 +158,13 @@ public final class HashUtil {
 
         switch (len & 0x03) {
             case 3:
-                k1 = (MEM.getByte(address + roundedEnd + 2) & 0xff) << 16;
+                k1 = (memoryAccessor.getByte(address + roundedEnd + 2) & 0xff) << 16;
                 // fallthrough
             case 2:
-                k1 |= (MEM.getByte(address + roundedEnd + 1) & 0xff) << 8;
+                k1 |= (memoryAccessor.getByte(address + roundedEnd + 1) & 0xff) << 8;
                 // fallthrough
             case 1:
-                k1 |= MEM.getByte(address + roundedEnd) & 0xff;
+                k1 |= memoryAccessor.getByte(address + roundedEnd) & 0xff;
                 k1 *= c1;
                 // ROTL32(k1,15);
                 k1 = (k1 << 15) | (k1 >>> 17);
@@ -284,11 +293,17 @@ public final class HashUtil {
         return h1;
     }
 
-    public static long MurmurHash3_x64_64_direct(long address, int offset, int len) {
-        return MurmurHash3_x64_64_direct(address, offset, len, DEFAULT_MURMUR_SEED);
+    public static long MurmurHash3_x64_64_direct(long address, int offset, int len, final int seed) {
+        return MurmurHash3_x64_64_direct(MEM, address, offset, len, seed, !LITTLE_ENDIAN);
     }
 
-    public static long MurmurHash3_x64_64_direct(long address, int offset, int len, final int seed) {
+
+    public static long MurmurHash3_x64_64_direct(long address, int offset, int len) {
+        return MurmurHash3_x64_64_direct(MEM, address, offset, len, DEFAULT_MURMUR_SEED, !LITTLE_ENDIAN);
+    }
+
+    public static long MurmurHash3_x64_64_direct(MemoryAccessor memoryAccessor, long address, int offset, int len,
+                                                 final int seed, boolean useBigEndian) {
         long h1 = 0x9368e53c2f6af274L ^ seed;
         long h2 = 0x586dcd208f7cd3fdL ^ seed;
 
@@ -299,8 +314,8 @@ public final class HashUtil {
         long k2 = 0;
 
         for (int i = 0; i < len / 16; i++) {
-            k1 = MurmurHash3_getBlock_direct(address, (i * 2 * 8) + offset);
-            k2 = MurmurHash3_getBlock_direct(address, ((i * 2 + 1) * 8) + offset);
+            k1 = MurmurHash3_getBlock_direct(memoryAccessor, address, (i * 2 * 8) + offset, useBigEndian);
+            k2 = MurmurHash3_getBlock_direct(memoryAccessor, address, ((i * 2 + 1) * 8) + offset, useBigEndian);
 
             // bmix(state);
             k1 *= c1;
@@ -330,36 +345,36 @@ public final class HashUtil {
         int tail = ((len >>> 4) << 4) + offset;
         switch (len & 15) {
             case 15:
-                k2 ^= (long) MEM.getByte(address + tail + 14) << 48;
+                k2 ^= (long) memoryAccessor.getByte(address + tail + 14) << 48;
             case 14:
-                k2 ^= (long) MEM.getByte(address + tail + 13) << 40;
+                k2 ^= (long) memoryAccessor.getByte(address + tail + 13) << 40;
             case 13:
-                k2 ^= (long) MEM.getByte(address + tail + 12) << 32;
+                k2 ^= (long) memoryAccessor.getByte(address + tail + 12) << 32;
             case 12:
-                k2 ^= (long) MEM.getByte(address + tail + 11) << 24;
+                k2 ^= (long) memoryAccessor.getByte(address + tail + 11) << 24;
             case 11:
-                k2 ^= (long) MEM.getByte(address + tail + 10) << 16;
+                k2 ^= (long) memoryAccessor.getByte(address + tail + 10) << 16;
             case 10:
-                k2 ^= (long) MEM.getByte(address + tail + 9) << 8;
+                k2 ^= (long) memoryAccessor.getByte(address + tail + 9) << 8;
             case 9:
-                k2 ^= MEM.getByte(address + tail + 8);
+                k2 ^= memoryAccessor.getByte(address + tail + 8);
 
             case 8:
-                k1 ^= (long) MEM.getByte(address + tail + 7) << 56;
+                k1 ^= (long) memoryAccessor.getByte(address + tail + 7) << 56;
             case 7:
-                k1 ^= (long) MEM.getByte(address + tail + 6) << 48;
+                k1 ^= (long) memoryAccessor.getByte(address + tail + 6) << 48;
             case 6:
-                k1 ^= (long) MEM.getByte(address + tail + 5) << 40;
+                k1 ^= (long) memoryAccessor.getByte(address + tail + 5) << 40;
             case 5:
-                k1 ^= (long) MEM.getByte(address + tail + 4) << 32;
+                k1 ^= (long) memoryAccessor.getByte(address + tail + 4) << 32;
             case 4:
-                k1 ^= (long) MEM.getByte(address + tail + 3) << 24;
+                k1 ^= (long) memoryAccessor.getByte(address + tail + 3) << 24;
             case 3:
-                k1 ^= (long) MEM.getByte(address + tail + 2) << 16;
+                k1 ^= (long) memoryAccessor.getByte(address + tail + 2) << 16;
             case 2:
-                k1 ^= (long) MEM.getByte(address + tail + 1) << 8;
+                k1 ^= (long) memoryAccessor.getByte(address + tail + 1) << 8;
             case 1:
-                k1 ^= MEM.getByte(address + tail);
+                k1 ^= memoryAccessor.getByte(address + tail);
 
                 // bmix();
                 k1 *= c1;
@@ -408,18 +423,18 @@ public final class HashUtil {
                 | ((key[i + 7] & 0x00000000000000FFL) << 56);
     }
 
-    private static long MurmurHash3_getBlock_direct(long address, int i) {
-        if (LITTLE_ENDIAN) {
-            return MEM.getLong(address + i);
+    private static long MurmurHash3_getBlock_direct(MemoryAccessor memoryAccessor, long address, int i, boolean useBigEndian) {
+        if (!useBigEndian) {
+            return memoryAccessor.getLong(address + i);
         } else {
-            return ((MEM.getByte(address + i) & 0x00000000000000FFL))
-                    | ((MEM.getByte(address + i + 1) & 0x00000000000000FFL) << 8)
-                    | ((MEM.getByte(address + i + 2) & 0x00000000000000FFL) << 16)
-                    | ((MEM.getByte(address + i + 3) & 0x00000000000000FFL) << 24)
-                    | ((MEM.getByte(address + i + 4) & 0x00000000000000FFL) << 32)
-                    | ((MEM.getByte(address + i + 5) & 0x00000000000000FFL) << 40)
-                    | ((MEM.getByte(address + i + 6) & 0x00000000000000FFL) << 48)
-                    | ((MEM.getByte(address + i + 7) & 0x00000000000000FFL) << 56);
+            return ((memoryAccessor.getByte(address + i) & 0x00000000000000FFL))
+                    | ((memoryAccessor.getByte(address + i + 1) & 0x00000000000000FFL) << 8)
+                    | ((memoryAccessor.getByte(address + i + 2) & 0x00000000000000FFL) << 16)
+                    | ((memoryAccessor.getByte(address + i + 3) & 0x00000000000000FFL) << 24)
+                    | ((memoryAccessor.getByte(address + i + 4) & 0x00000000000000FFL) << 32)
+                    | ((memoryAccessor.getByte(address + i + 5) & 0x00000000000000FFL) << 40)
+                    | ((memoryAccessor.getByte(address + i + 6) & 0x00000000000000FFL) << 48)
+                    | ((memoryAccessor.getByte(address + i + 7) & 0x00000000000000FFL) << 56);
         }
     }
 
@@ -467,7 +482,7 @@ public final class HashUtil {
     /**
      * A function that calculates the index (e.g. to be used in an array/list) for a given hash. The returned value will always
      * be equal or larger than 0 and will always be smaller than 'length'.
-     *
+     * <p>
      * The reason this function exists is to deal correctly with negative and especially the Integer.MIN_VALUE; since that can't
      * be used safely with a Math.abs function.
      *
@@ -493,7 +508,7 @@ public final class HashUtil {
      * keys are nearly-ordered by their hashed values so when adding one container's
      * values to the other, the number of collisions can skyrocket into the worst case
      * possible.
-     * <p/>
+     * <p>
      * <p>If it is known that hash containers will not be added to each other
      * (will be used for counting only, for example) then some speed can be gained by
      * not perturbing keys before hashing and returning a value of zero for all possible
