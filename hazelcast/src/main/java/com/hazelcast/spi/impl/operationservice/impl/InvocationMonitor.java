@@ -38,8 +38,6 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -72,7 +70,7 @@ import static java.util.logging.Level.INFO;
  */
 public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
-    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
+    private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 5000;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
 
     private final NodeEngineImpl nodeEngine;
@@ -88,6 +86,8 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     private final SwCounter backupTimeoutsCount = newSwCounter();
     @Probe(name = "normalTimeouts", level = MANDATORY)
     private final SwCounter normalTimeoutsCount = newSwCounter();
+    @Probe(name = "retries", level = MANDATORY)
+    private final SwCounter retryCount = newSwCounter();
     @Probe
     private final SwCounter heartbeatPacketsReceived = newSwCounter();
     @Probe
@@ -99,7 +99,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     @Probe
     private final long heartbeatBroadcastPeriodMillis;
     @Probe
-    private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
+    private final long invocationScanPeriodMillis = 1000;
 
     //todo: we need to get rid of the nodeEngine dependency
     public InvocationMonitor(NodeEngineImpl nodeEngine,
@@ -129,7 +129,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private ScheduledExecutorService newScheduler(final HazelcastThreadGroup threadGroup) {
         // the scheduler is configured with a single thread; so prevent concurrency problems.
-        ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        return new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new InvocationMonitorThread(r, threadGroup);
@@ -142,7 +142,6 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
                 return thread;
             }
         });
-        return scheduler;
     }
 
     private long invocationTimeoutMillis(HazelcastProperties properties) {
@@ -226,32 +225,18 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
         @Override
         public void run() {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Scanning all invocations");
-            }
-
-            if (invocationRegistry.size() == 0) {
-                return;
-            }
-
             int backupTimeouts = 0;
             int normalTimeouts = 0;
             int invocationCount = 0;
+            int retries = 0;
 
-            Set<Map.Entry<Long, Invocation>> invocations = invocationRegistry.entrySet();
-            Iterator<Map.Entry<Long, Invocation>> iterator = invocations.iterator();
-            while (iterator.hasNext()) {
+            for (Invocation inv : invocationRegistry) {
                 invocationCount++;
-                Map.Entry<Long, Invocation> entry = iterator.next();
-                Long callId = entry.getKey();
-                Invocation inv = entry.getValue();
-
-                if (duplicate(inv, callId, iterator)) {
-                    continue;
-                }
 
                 try {
-                    if (inv.detectAndHandleTimeout(invocationTimeoutMillis)) {
+                    if (inv.detectAndHandleRetry()) {
+                        retries++;
+                    } else if (inv.detectAndHandleTimeout(invocationTimeoutMillis)) {
                         normalTimeouts++;
                     } else if (inv.detectAndHandleBackupTimeout(backupTimeoutMillis)) {
                         backupTimeouts++;
@@ -264,53 +249,23 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
             backupTimeoutsCount.inc(backupTimeouts);
             normalTimeoutsCount.inc(normalTimeouts);
-            log(invocationCount, backupTimeouts, normalTimeouts);
+            retryCount.inc(retries);
+            log(invocationCount, backupTimeouts, normalTimeouts, retries);
         }
 
-        /**
-         * The reason for the following if check is a workaround for the problem explained below.
-         *
-         * Problematic scenario :
-         * If an invocation with callId 1 is retried twice for any reason,
-         * two new innovations created and registered to invocation registry with callId’s 2 and 3 respectively.
-         * Both new invocations are sharing the same operation
-         * When one of the new invocations, say the one with callId 2 finishes, it de-registers itself from the
-         * invocation registry.
-         * When doing the de-registration it sets the shared operation’s callId to 0.
-         * After that when the invocation with the callId 3 completes, it tries to de-register itself from
-         * invocation registry
-         * but fails to do so since the invocation callId and the callId on the operation is not matching anymore
-         * When InvocationMonitor thread kicks in, it sees that there is an invocation in the registry,
-         * and asks whether invocation is finished or not.
-         * Even if the remote node replies with invocation is timed out,
-         * It can’t be de-registered from the registry because of aforementioned non-matching callId scenario.
-         *
-         * Workaround:
-         * When InvocationMonitor kicks in, it will do a check for invocations that are completed
-         * but their callId's are not matching with their operations. If any invocation found for that type,
-         * it is removed from the invocation registry.
-         */
-        private boolean duplicate(Invocation inv, long callId, Iterator iterator) {
-            if (callId != inv.op.getCallId() && inv.future.isDone()) {
-                iterator.remove();
-                return true;
-            }
-
-            return false;
-        }
-
-        private void log(int invocationCount, int backupTimeouts, int invocationTimeouts) {
+        private void log(int invocationCount, int backupTimeouts, int invocationTimeouts, int retries) {
             Level logLevel = null;
-            if (backupTimeouts > 0 || invocationTimeouts > 0) {
+            if (backupTimeouts > 0 || invocationTimeouts > 0 || retries > 0) {
                 logLevel = INFO;
             } else if (logger.isFineEnabled()) {
                 logLevel = FINE;
             }
 
             if (logLevel != null) {
-                logger.log(logLevel, "Invocations:" + invocationCount
+                logger.log(logLevel, "Scanned:" + invocationCount
                         + " timeouts:" + invocationTimeouts
-                        + " backup-timeouts:" + backupTimeouts);
+                        + " backup-timeouts:" + backupTimeouts
+                        + " retries:" + retries);
             }
         }
     }
