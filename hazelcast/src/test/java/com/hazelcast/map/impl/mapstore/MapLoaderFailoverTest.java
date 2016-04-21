@@ -94,7 +94,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    // FIXED @Ignore //https://github.com/hazelcast/hazelcast/issues/6056
+    // FIXES https://github.com/hazelcast/hazelcast/issues/6056
     public void testLoadsAll_whenInitialLoaderNodeRemovedAfterLoading() throws Exception {
         Config cfg = newConfig("default", LAZY);
         HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
@@ -108,6 +108,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
         hz3.getLifecycleService().terminate();
         assertClusterSizeEventually(2, nodes[0]);
+
         map.loadAll(true);
 
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
@@ -142,7 +143,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    // FIXED https://github.com/hazelcast/hazelcast/issues/7959
+    // FIXES https://github.com/hazelcast/hazelcast/issues/7959
     public void testLoadsAll_whenInitialLoaderNodeRemovedWhileLoadingAndNoBackups() throws Exception {
         PausingMapLoader<Integer, Integer> pausingLoader = new PausingMapLoader<Integer, Integer>(mapLoader, 5000);
 
@@ -181,7 +182,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         Config cfg = new Config();
         cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
         cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE));
-        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "31");
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "13");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setImplementation(loader).setInitialLoadMode(loadMode);

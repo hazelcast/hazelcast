@@ -74,8 +74,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     // loadingFutures are modified by partition threads and could be accessed by query threads
     protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
     // record store may be created with or without triggering the load
-    // this flag guards that the loading on create is invoked not more than once.
+    // this flag guards that the loading on create is invoked not more than once should the record store be migrated.
     private boolean loadedOnCreate;
+    // records if the record store has been loaded just before the migrations starts
+    // if so, the loading should NOT be started after the migration commit
+    private boolean loadedOnPreMigration;
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
@@ -88,10 +91,28 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     public void startLoading() {
-        if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
-            loadedOnCreate = true;
-            loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+        if (logger.isFinestEnabled()) {
+            logger.finest("StartLoading invoked " + getStateMessage());
         }
+        if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
+            if (!loadedOnPreMigration) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Triggering load " + getStateMessage());
+                }
+                loadedOnCreate = true;
+                loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+            } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Promoting to loaded on migration " + getStateMessage());
+                }
+                keyLoader.promoteToLoadedOnMigration();
+            }
+        }
+    }
+
+    @Override
+    public void setPreMigrationLoadedStatus(boolean loaded) {
+        loadedOnPreMigration = loaded;
     }
 
     @Override
@@ -101,6 +122,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("loadAll invoked " + getStateMessage());
+        }
+
         logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
         Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
         loadingFutures.add(loadingKeysFuture);
@@ -960,5 +985,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Record record = getRecordOrNull(toData(delayedEntry.getKey()), now, false);
             onStore(record);
         }
+    }
+
+    private String getStateMessage() {
+        return "on partitionId=" + partitionId + " on " + mapServiceContext.getNodeEngine().getThisAddress()
+                + " loadedOnCreate=" + loadedOnCreate + " loadedOnPreMigration=" + loadedOnPreMigration
+                + " isLoaded=" + isLoaded();
     }
 }

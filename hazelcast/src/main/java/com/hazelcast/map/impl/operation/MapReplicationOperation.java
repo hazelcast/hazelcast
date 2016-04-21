@@ -115,11 +115,16 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
     protected class MapReplicationStateHolder implements DataSerializable {
 
         protected Map<String, Set<RecordReplicationInfo>> data;
+        // propagates the information if the given record store has been already loaded with map-loaded
+        // if so, the loading won't be triggered again after a migration to avoid duplicate loading.
+        protected Map<String, Boolean> loaded;
 
         private void prepare(PartitionContainer container, int replicaIndex) {
             data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
+            loaded = new HashMap<String, Boolean>(container.getMaps().size());
             for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
                 RecordStore recordStore = entry.getValue();
+
                 MapContainer mapContainer = recordStore.getMapContainer();
                 MapConfig mapConfig = mapContainer.getMapConfig();
                 if (mapConfig.getTotalBackupCount() < replicaIndex) {
@@ -127,6 +132,7 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                 }
                 MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
                 String mapName = entry.getKey();
+                loaded.put(mapName, recordStore.isLoaded());
                 // now prepare data to migrate records
                 Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
                 final Iterator<Record> iterator = recordStore.iterator();
@@ -148,6 +154,7 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                     final String mapName = dataEntry.getKey();
                     RecordStore recordStore = getRecordStore(mapName);
                     recordStore.reset();
+                    recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
 
                     for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                         Data key = recordReplicationInfo.getKey();
@@ -163,13 +170,19 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(data.size());
-            for (Entry<String, Set<RecordReplicationInfo>> mapEntry : data.entrySet()) {
-                out.writeUTF(mapEntry.getKey());
-                Set<RecordReplicationInfo> recordReplicationInfos = mapEntry.getValue();
+            for (Entry<String, Set<RecordReplicationInfo>> dataEntry : data.entrySet()) {
+                out.writeUTF(dataEntry.getKey());
+                Set<RecordReplicationInfo> recordReplicationInfos = dataEntry.getValue();
                 out.writeInt(recordReplicationInfos.size());
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     out.writeObject(recordReplicationInfo);
                 }
+            }
+
+            out.writeInt(loaded.size());
+            for (Entry<String, Boolean> loadedEntry : loaded.entrySet()) {
+                out.writeUTF(loadedEntry.getKey());
+                out.writeBoolean(loadedEntry.getValue());
             }
         }
 
@@ -186,6 +199,12 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                     recordReplicationInfos.add(recordReplicationInfo);
                 }
                 data.put(name, recordReplicationInfos);
+            }
+
+            int loadedSize = in.readInt();
+            loaded = new HashMap<String, Boolean>(loadedSize);
+            for (int i = 0; i < loadedSize; i++) {
+                loaded.put(in.readUTF(), in.readBoolean());
             }
         }
     }
