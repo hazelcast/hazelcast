@@ -21,7 +21,7 @@ import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 import java.util.Iterator;
@@ -79,8 +79,8 @@ public class WordGeneratorProcessor implements ContainerProcessor<Object, String
 
             if (object instanceof String) {
                 text = (String) object;
-            } else if (object instanceof Tuple) {
-                text = (String) ((Tuple) object).getValue(0);
+            } else if (object instanceof JetTuple) {
+                text = (String) ((JetTuple) object).getValue(0);
             } else {
                 if (object == null) {
                     throw new IllegalStateException("Null object");

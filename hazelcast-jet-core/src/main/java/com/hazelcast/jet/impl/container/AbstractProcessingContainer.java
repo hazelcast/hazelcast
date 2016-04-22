@@ -46,7 +46,7 @@ import com.hazelcast.jet.spi.dag.tap.SinkTap;
 import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.spi.data.DataWriter;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -89,7 +89,7 @@ public abstract class AbstractProcessingContainer extends
 
     private final int awaitSecondsTimeOut;
 
-    private final TupleFactory tupleFactory;
+    private final JetTupleFactory tupleFactory;
 
     private final ContainerTask[] containerTasks;
 
@@ -111,7 +111,7 @@ public abstract class AbstractProcessingContainer extends
                                        ContainerProcessorFactory containerProcessorFactory,
                                        NodeEngine nodeEngine,
                                        ApplicationContext applicationContext,
-                                       TupleFactory tupleFactory) {
+                                       JetTupleFactory tupleFactory) {
         super(vertex, STATE_MACHINE_FACTORY, nodeEngine, applicationContext, tupleFactory);
 
         this.vertex = vertex;

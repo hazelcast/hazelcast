@@ -19,7 +19,7 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.impl.data.tuple.Tuple2;
+import com.hazelcast.jet.impl.data.tuple.JetTuple2;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
@@ -67,7 +67,7 @@ public class WordSorterProcessor implements TupleContainerProcessor<String, Inte
 
         while (iterator.hasNext()) {
             Map.Entry<String, Integer> entry = iterator.next();
-            outputStream.consume(new Tuple2<String, Integer>(entry.getKey(), entry.getValue()));
+            outputStream.consume(new JetTuple2<String, Integer>(entry.getKey(), entry.getValue()));
 
             if (idx == chunkSize) {
                 return false;

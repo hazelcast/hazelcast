@@ -11,7 +11,7 @@ import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataReader;
 import com.hazelcast.jet.spi.data.DataWriter;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -118,7 +118,7 @@ public class VertexImplTest {
         final String sourceTapName = "sourceTapName";
         SourceTap sourceTap = new SourceTap() {
             @Override
-            public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, TupleFactory tupleFactory) {
+            public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
                 return new DataReader[0];
             }
 

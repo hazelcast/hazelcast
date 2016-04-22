@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.dag.tap.source;
 
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.spi.dag.Vertex;
 
 import java.io.File;
@@ -30,7 +30,7 @@ public class DataFileReader extends AbstractHazelcastReader<String> {
     public DataFileReader(ContainerDescriptor containerDescriptor,
                           Vertex vertex,
                           int partitionId,
-                          TupleFactory tupleFactory,
+                          JetTupleFactory tupleFactory,
                           String name,
                           long start,
                           long end

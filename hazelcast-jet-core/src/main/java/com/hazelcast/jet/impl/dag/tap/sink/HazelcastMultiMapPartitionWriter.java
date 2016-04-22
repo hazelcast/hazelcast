@@ -20,7 +20,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -47,8 +47,8 @@ public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
     protected void processChunk(ProducerInputStream chunk) {
         for (int i = 0; i < chunk.size(); i++) {
             Object object = chunk.get(i);
-            if (object instanceof Tuple) {
-                Tuple tuple = (Tuple) object;
+            if (object instanceof JetTuple) {
+                JetTuple tuple = (JetTuple) object;
                 Data dataKey = tuple.getKeyData(getNodeEngine());
                 Collection<MultiMapRecord> coll = this.container.getMultiMapValueOrNull(dataKey).getCollection(false);
                 long recordId = this.container.nextId();

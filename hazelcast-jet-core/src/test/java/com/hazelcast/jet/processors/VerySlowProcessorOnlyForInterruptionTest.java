@@ -21,6 +21,7 @@ import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.jet.spi.data.tuple.Tuple;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
 import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;

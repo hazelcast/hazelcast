@@ -20,9 +20,9 @@ import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.impl.data.tuple.Tuple2;
+import com.hazelcast.jet.impl.data.tuple.JetTuple2;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
 
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WordCounterProcessor implements ContainerProcessor<String, Tuple<String, Integer>> {
+public class WordCounterProcessor implements ContainerProcessor<String, JetTuple<String, Integer>> {
 
 
     private static final AtomicInteger taskCounter = new AtomicInteger(0);
@@ -50,7 +50,7 @@ public class WordCounterProcessor implements ContainerProcessor<String, Tuple<St
 
     @Override
     public boolean process(ProducerInputStream<String> inputStream,
-                           ConsumerOutputStream<Tuple<String, Integer>> outputStream,
+                           ConsumerOutputStream<JetTuple<String, Integer>> outputStream,
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
         for (String word : inputStream) {
@@ -67,7 +67,7 @@ public class WordCounterProcessor implements ContainerProcessor<String, Tuple<St
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<String, Integer>> outputStream,
+    public boolean finalizeProcessor(ConsumerOutputStream<JetTuple<String, Integer>> outputStream,
                                      ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
 
@@ -82,7 +82,7 @@ public class WordCounterProcessor implements ContainerProcessor<String, Tuple<St
             while (this.finalizationIterator.hasNext()) {
                 String word = (String) this.finalizationIterator.next();
 
-                outputStream.consume(new Tuple2<String, Integer>(word, this.cache.get(word)));
+                outputStream.consume(new JetTuple2<String, Integer>(word, this.cache.get(word)));
 
                 if (idx == chunkSize - 1) {
                     break;

@@ -18,21 +18,21 @@ package com.hazelcast.jet.impl.data.io.readers;
 
 import com.hazelcast.jet.spi.data.io.ObjectReader;
 import com.hazelcast.jet.spi.data.io.ObjectReaderFactory;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
 
-public class TupleReader implements ObjectReader<Tuple> {
-    private final TupleFactory defaultTupleFactory;
+public class TupleReader implements ObjectReader<JetTuple> {
+    private final JetTupleFactory defaultTupleFactory;
 
-    public TupleReader(TupleFactory defaultTupleFactory) {
+    public TupleReader(JetTupleFactory defaultTupleFactory) {
         this.defaultTupleFactory = defaultTupleFactory;
     }
 
     @Override
-    public Tuple read(ObjectDataInput objectDataInput,
+    public JetTuple read(ObjectDataInput objectDataInput,
                       ObjectReaderFactory objectReaderFactory) throws IOException {
         int keySize = objectDataInput.readInt();
         int valueSize = objectDataInput.readInt();

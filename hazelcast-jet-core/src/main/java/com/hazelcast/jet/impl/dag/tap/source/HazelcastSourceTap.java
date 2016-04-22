@@ -22,7 +22,7 @@ import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.dag.tap.SourceTap;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataReader;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -46,7 +46,7 @@ public class HazelcastSourceTap extends SourceTap {
         return this.tapType;
     }
 
-    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, TupleFactory tupleFactory) {
+    public DataReader[] getReaders(ContainerDescriptor containerDescriptor, Vertex vertex, JetTupleFactory tupleFactory) {
         List<DataReader> readers = new ArrayList<DataReader>();
 
         if (TapType.HAZELCAST_LIST == this.tapType) {

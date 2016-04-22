@@ -20,14 +20,12 @@ import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.impl.data.tuple.Tuple2;
+import com.hazelcast.jet.impl.data.tuple.JetTuple2;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
-import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
 
-public class CountProcessor implements ContainerProcessor<Object, Tuple<Long, Integer>> {
+public class CountProcessor implements ContainerProcessor<Object, JetTuple<Long, Integer>> {
     private int result = 0;
 
     @Override
@@ -37,7 +35,7 @@ public class CountProcessor implements ContainerProcessor<Object, Tuple<Long, In
 
     @Override
     public boolean process(ProducerInputStream<Object> inputStream,
-                           ConsumerOutputStream<Tuple<Long, Integer>> outputStream,
+                           ConsumerOutputStream<JetTuple<Long, Integer>> outputStream,
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
         result += inputStream.size();
@@ -45,10 +43,10 @@ public class CountProcessor implements ContainerProcessor<Object, Tuple<Long, In
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Long, Integer>> outputStream,
+    public boolean finalizeProcessor(ConsumerOutputStream<JetTuple<Long, Integer>> outputStream,
                                      ProcessorContext processorContext) throws Exception {
         System.out.println("result=" + result + " " + processorContext.getNodeEngine().getLocalMember());
-        outputStream.consume(new Tuple2<>(0L, result));
+        outputStream.consume(new JetTuple2<>(0L, result));
         return true;
     }
 

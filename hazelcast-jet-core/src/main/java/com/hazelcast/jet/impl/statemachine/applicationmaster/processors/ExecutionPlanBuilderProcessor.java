@@ -25,14 +25,14 @@ import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.impl.container.DefaultDataChannel;
 import com.hazelcast.jet.impl.container.DefaultProcessingContainer;
-import com.hazelcast.jet.impl.data.tuple.DefaultTupleFactory;
+import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.spi.config.JetApplicationConfig;
 import com.hazelcast.jet.spi.dag.DAG;
 import com.hazelcast.jet.spi.dag.Edge;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
 import com.hazelcast.spi.NodeEngine;
 
@@ -49,7 +49,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<DAG> {
     private final NodeEngine nodeEngine;
-    private final TupleFactory tupleFactory;
+    private final JetTupleFactory tupleFactory;
     private final ClassLoader applicationClassLoader;
     private final ApplicationMaster applicationMaster;
     private final ApplicationContext applicationContext;
@@ -84,7 +84,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
         this.nodeEngine = applicationMaster.getNodeEngine();
         this.applicationContext = applicationMaster.getApplicationContext();
         this.applicationClassLoader = this.applicationContext.getLocalizationStorage().getClassLoader();
-        this.tupleFactory = new DefaultTupleFactory();
+        this.tupleFactory = new DefaultJetTupleFactory();
     }
 
     @Override

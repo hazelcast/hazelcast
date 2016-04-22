@@ -25,9 +25,9 @@ import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
-import com.hazelcast.jet.spi.data.tuple.TupleConvertor;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
+import com.hazelcast.jet.spi.data.tuple.JetTupleConvertor;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -39,11 +39,11 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.List;
 
-public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<Tuple<K, V>> {
+public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<JetTuple<K, V>> {
     private final CalculationStrategy calculationStrategy;
-    private final TupleConvertor<CollectionItem, K, V> tupleConverter = new TupleConvertor<CollectionItem, K, V>() {
+    private final JetTupleConvertor<CollectionItem, K, V> tupleConverter = new JetTupleConvertor<CollectionItem, K, V>() {
         @Override
-        public Tuple<K, V> convert(CollectionItem item, SerializationService ss) {
+        public JetTuple<K, V> convert(CollectionItem item, SerializationService ss) {
             return tupleFactory.tuple(
                     (K[]) new Object[]{item.getItemId()},
                     (V[]) new Object[]{ss.toObject(item.getValue())},
@@ -55,7 +55,7 @@ public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<
 
     public HazelcastListPartitionReader(ContainerDescriptor containerDescriptor,
                                         String name,
-                                        TupleFactory tupleFactory,
+                                        JetTupleFactory tupleFactory,
                                         Vertex vertex) {
         super(containerDescriptor,
                 name,

@@ -20,7 +20,7 @@ import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.Vertex;
 import com.hazelcast.jet.spi.dag.tap.TapType;
 import com.hazelcast.jet.spi.data.DataReader;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 
 public final class HazelcastReaderFactory {
     private HazelcastReaderFactory() {
@@ -31,7 +31,7 @@ public final class HazelcastReaderFactory {
                                               String name,
                                               ContainerDescriptor containerDescriptor,
                                               int partitionId,
-                                              TupleFactory tupleFactory,
+                                              JetTupleFactory tupleFactory,
                                               Vertex vertex) {
         switch (tapType) {
             case HAZELCAST_LIST:
@@ -52,7 +52,7 @@ public final class HazelcastReaderFactory {
                                        int partitionId,
                                        long start,
                                        long end,
-                                       TupleFactory tupleFactory,
+                                       JetTupleFactory tupleFactory,
                                        Vertex vertex) {
         switch (tapType) {
             case FILE:

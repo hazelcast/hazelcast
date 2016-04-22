@@ -17,7 +17,7 @@
 package com.hazelcast.jet.spi.processor.tuple;
 
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
 
 /**
  * Factory to create JET-processors which work with tuples;
@@ -28,6 +28,6 @@ import com.hazelcast.jet.spi.data.tuple.Tuple;
  * @param <ValueOutPut> - type of output tuple  value part;
  */
 public interface TupleContainerProcessorFactory<KeyInput, ValueInput, KeyOutPut, ValueOutPut>
-        extends ContainerProcessorFactory<Tuple<KeyInput, ValueInput>, Tuple<KeyOutPut, ValueOutPut>> {
+        extends ContainerProcessorFactory<JetTuple<KeyInput, ValueInput>, JetTuple<KeyOutPut, ValueOutPut>> {
 
 }

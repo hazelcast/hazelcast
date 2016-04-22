@@ -28,7 +28,7 @@ import com.hazelcast.jet.api.statemachine.container.ContainerState;
 import com.hazelcast.jet.api.statemachine.container.ContainerStateMachineFactory;
 import com.hazelcast.jet.impl.processor.context.DefaultContainerContext;
 import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.TupleFactory;
+import com.hazelcast.jet.spi.data.tuple.JetTupleFactory;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ public abstract class AbstractContainer
     public AbstractContainer(ContainerStateMachineFactory<SI, SS, SO> stateMachineFactory,
                              NodeEngine nodeEngine,
                              ApplicationContext applicationContext,
-                             TupleFactory tupleFactory) {
+                             JetTupleFactory tupleFactory) {
         this(null, stateMachineFactory, nodeEngine, applicationContext, tupleFactory);
     }
 
@@ -60,7 +60,7 @@ public abstract class AbstractContainer
                              ContainerStateMachineFactory<SI, SS, SO> stateMachineFactory,
                              NodeEngine nodeEngine,
                              ApplicationContext applicationContext,
-                             TupleFactory tupleFactory) {
+                             JetTupleFactory tupleFactory) {
         this.nodeEngine = nodeEngine;
         String name = vertex == null ? applicationContext.getName() : vertex.getName();
         this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, applicationContext);

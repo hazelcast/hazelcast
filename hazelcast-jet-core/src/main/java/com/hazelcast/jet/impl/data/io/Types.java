@@ -40,7 +40,7 @@ import com.hazelcast.jet.impl.data.io.writers.NullObjectWriter;
 import com.hazelcast.jet.impl.data.io.writers.ShortWriter;
 import com.hazelcast.jet.impl.data.io.writers.StringWriter;
 import com.hazelcast.jet.impl.data.io.writers.TupleWriter;
-import com.hazelcast.jet.impl.data.tuple.DefaultTupleFactory;
+import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.spi.data.io.DataType;
 import com.hazelcast.jet.spi.data.io.ObjectReader;
 import com.hazelcast.jet.spi.data.io.ObjectWriter;
@@ -63,7 +63,7 @@ public enum Types implements DataType {
     TUPLE((byte) -3,
             Tuple.class,
             new TupleWriter(),
-            new TupleReader(new DefaultTupleFactory())
+            new TupleReader(new DefaultJetTupleFactory())
     ),
     STRING((byte) -2,
             String.class,

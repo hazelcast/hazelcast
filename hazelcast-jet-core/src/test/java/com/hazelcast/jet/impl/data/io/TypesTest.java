@@ -15,7 +15,7 @@
  */
 package com.hazelcast.jet.impl.data.io;
 
-import com.hazelcast.jet.impl.data.tuple.Tuple2;
+import com.hazelcast.jet.impl.data.tuple.JetTuple2;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,21 +39,21 @@ public class TypesTest {
         this.type = type;
     }
 
-    @Parameterized.Parameters(name="object={0}, type={1}")
+    @Parameterized.Parameters(name = "object={0}, type={1}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                { true , Types.BOOLEAN },
-                { (byte) 0 , Types.BYTE },
-                { 'c' , Types.CHAR },
-                { 0.0d , Types.DOUBLE },
-                { 0.0f , Types.FLOAT },
-                { 0 , Types.INT },
-                { 0L , Types.LONG },
-                { (short) 0 , Types.SHORT },
-                { "string" , Types.STRING },
-                { null , Types.NULL },
-                { new Tuple2<>(0, 0) , Types.TUPLE },
-                { new Object() , Types.OBJECT }
+        return Arrays.asList(new Object[][]{
+                {true, Types.BOOLEAN},
+                {(byte) 0, Types.BYTE},
+                {'c', Types.CHAR},
+                {0.0d, Types.DOUBLE},
+                {0.0f, Types.FLOAT},
+                {0, Types.INT},
+                {0L, Types.LONG},
+                {(short) 0, Types.SHORT},
+                {"string", Types.STRING},
+                {null, Types.NULL},
+                {new JetTuple2<>(0, 0), Types.TUPLE},
+                {new Object(), Types.OBJECT}
         });
     }
 
