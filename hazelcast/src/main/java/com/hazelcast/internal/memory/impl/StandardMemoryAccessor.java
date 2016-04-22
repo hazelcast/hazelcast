@@ -20,6 +20,7 @@ import com.hazelcast.internal.memory.MemoryAccessor;
 
 import java.lang.reflect.Field;
 
+import static com.hazelcast.internal.memory.impl.AlignmentUtil.IS_PLATFORM_BIG_ENDIAN;
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE;
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 
@@ -38,6 +39,10 @@ public final class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
         }
     }
 
+    @Override
+    public boolean isBigEndian() {
+        return IS_PLATFORM_BIG_ENDIAN;
+    }
 
     // Address-based memory access
 
