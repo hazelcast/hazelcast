@@ -54,10 +54,10 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.CALL_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.HEARTBEAT_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.VOID;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.CALL_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.INTERRUPTED;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.VOID;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
@@ -336,7 +336,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
         } else {
             // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-            future.complete(response);
+            complete(response);
         }
     }
 
@@ -395,7 +395,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // We are going to notify the future that a response is available. This can happen when:
         // - we had a regular operation (so no backups we need to wait for) that completed.
         // - we had a backup-aware operation that has completed, but also all its backups have completed.
-        future.complete(value);
+        complete(value);
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -408,7 +408,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         if (!(op instanceof BlockingOperation)) {
             // If the call is not a BLockingOperation, then in case of a call-timeout, we are not going to retry. Only
             // blocking operations are going to be retried because they rely on a repeated execution mechanism.
-            future.complete(CALL_TIMEOUT);
+            complete(CALL_TIMEOUT);
             return;
         }
 
@@ -445,7 +445,12 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // We are the lucky ones since we just managed to complete the last backup for this invocation and since the
         // pendingResponse is set, we can set it on the future.
-        future.complete(pendingResponse);
+        complete(pendingResponse);
+    }
+
+    private void complete(Object value) {
+        operationService.invocationRegistry.deregister(this);
+        future.complete(value);
     }
 
     private void handleRetry(Object cause) {
@@ -458,11 +463,11 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             }
         }
 
-        operationService.invocationRegistry.deregister(this);
-
         if (future.interrupted) {
-            future.complete(INTERRUPTED);
+            complete(INTERRUPTED);
         } else {
+            operationService.invocationRegistry.deregister(this);
+
             if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                 // fast retry for the first few invocations
                 operationService.asyncExecutor.execute(this);
@@ -488,7 +493,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         HeartbeatTimeout heartbeatTimeout = detectTimeout(heartbeatTimeoutMillis);
 
         if (heartbeatTimeout == TIMEOUT) {
-            future.complete(HEARTBEAT_TIMEOUT);
+            complete(HEARTBEAT_TIMEOUT);
             return true;
         } else {
             return false;
@@ -568,7 +573,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        future.complete(pendingResponse);
+        complete(pendingResponse);
         return true;
     }
 

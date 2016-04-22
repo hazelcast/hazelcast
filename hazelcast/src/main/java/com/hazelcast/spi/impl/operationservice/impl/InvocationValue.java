@@ -16,29 +16,32 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-final class InternalResponse {
+/**
+ * Contains some predefined values for the Invocation.
+ */
+final class InvocationValue {
 
     /**
-     * A response indicating that an operation is considered to be dead. So the system has no way of
+     * A value indicating that an operation is considered to be dead. So the system has no way of
      * figuring out what happened to the operation or to its response.
      */
-    static final Object HEARTBEAT_TIMEOUT = new InternalResponse("Invocation::HEARTBEAT_TIMEOUT");
+    static final Object HEARTBEAT_TIMEOUT = new InvocationValue("Invocation::HEARTBEAT_TIMEOUT");
 
     /**
-     * A response indicating that an operation got rejected on the executing side because its call timeout expired.
+     * A value indicating that an operation got rejected on the executing side because its call timeout expired.
      */
-    static final Object CALL_TIMEOUT = new InternalResponse("Invocation::CALL_TIMEOUT");
+    static final Object CALL_TIMEOUT = new InvocationValue("Invocation::CALL_TIMEOUT");
 
     /**
-     * A response indicating that the operation execution was interrupted.
+     * A value indicating that the operation execution was interrupted.
      */
-    static final Object INTERRUPTED = new InternalResponse("Invocation::INTERRUPTED");
+    static final Object INTERRUPTED = new InvocationValue("Invocation::INTERRUPTED");
 
-    static final Object VOID = new InternalResponse("VOID");
+    static final Object VOID = new InvocationValue("VOID");
 
     private String toString;
 
-    InternalResponse(String toString) {
+    private InvocationValue(String toString) {
         this.toString = toString;
     }
 
