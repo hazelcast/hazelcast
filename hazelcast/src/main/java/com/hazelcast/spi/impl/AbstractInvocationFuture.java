@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -52,6 +53,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     // Reduce the risk of rare disastrous classloading in first call to
     // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
     static {
+        @SuppressFBWarnings("DLS_DEAD_STORE_OF_CLASS_LITERAL")
         Class<?> ensureLoaded = LockSupport.class;
     }
 
