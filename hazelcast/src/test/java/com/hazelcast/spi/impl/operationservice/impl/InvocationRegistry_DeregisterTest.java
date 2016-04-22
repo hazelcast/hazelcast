@@ -38,7 +38,7 @@ public class InvocationRegistry_DeregisterTest extends HazelcastTestSupport {
         operationService = getOperationServiceImpl(hz);
         ILogger logger = nodeEngine.getLogger(InvocationRegistry.class);
         registry = new InvocationRegistry(nodeEngine.getProperties(), logger, CONCURRENCY_LEVEL);
-        initialHighPriorityCallId = registry.highSequence.get();
+        initialHighPriorityCallId = registry.prioritySequence.get();
     }
 
     @Test
@@ -48,7 +48,7 @@ public class InvocationRegistry_DeregisterTest extends HazelcastTestSupport {
 
         registry.deregister(invocation);
 
-        assertTrue(registry.highInvocations.isEmpty());
+        assertTrue(registry.priorityInvocations.isEmpty());
         assertEquals(0, invocation.op.getCallId());
     }
 
@@ -67,9 +67,9 @@ public class InvocationRegistry_DeregisterTest extends HazelcastTestSupport {
         registry.register(invocation);
         registry.deregister(invocation);
 
-        assertEquals(initialHighPriorityCallId - 1, registry.highSequence.get());
-        assertTrue(registry.highInvocations.isEmpty());
-        assertNull(registry.highInvocations.get(-1l));
+        assertEquals(initialHighPriorityCallId - 1, registry.prioritySequence.get());
+        assertTrue(registry.priorityInvocations.isEmpty());
+        assertNull(registry.priorityInvocations.get(-1l));
         assertEquals(0, invocation.op.getCallId());
     }
 
@@ -87,10 +87,10 @@ public class InvocationRegistry_DeregisterTest extends HazelcastTestSupport {
         Invocation invocation = newInvocation(new DummyOperation(partitionId));
         registry.register(invocation);
 
-        int invocationOffset = registry.lowInvocationIndex(invocation.op.getCallId());
+        int invocationOffset = registry.regularInvocationIndex(invocation.op.getCallId());
         registry.deregister(invocation);
 
-        assertNull(registry.lowInvocations.get(invocationOffset));
+        assertNull(registry.regularInvocations.get(invocationOffset));
         // and of course the call id needs to be set.
         assertEquals(0, invocation.op.getCallId());
     }
@@ -101,9 +101,9 @@ public class InvocationRegistry_DeregisterTest extends HazelcastTestSupport {
         registry.register(invocation);
         registry.deregister(invocation);
 
-        assertEquals(initialHighPriorityCallId, registry.highSequence.get());
-        assertTrue(registry.highInvocations.isEmpty());
-        assertNull(registry.highInvocations.get(-1l));
+        assertEquals(initialHighPriorityCallId, registry.prioritySequence.get());
+        assertTrue(registry.priorityInvocations.isEmpty());
+        assertNull(registry.priorityInvocations.get(-1l));
         assertEquals(0, invocation.op.getCallId());
     }
 
@@ -115,16 +115,16 @@ public class InvocationRegistry_DeregisterTest extends HazelcastTestSupport {
 
         // then we force overwriting this invocation by a newer one that falls into the same slot.
         Invocation newerInvocation = newInvocation(new DummyOperation());
-        setCallId(newerInvocation.op, initialInvocation.op.getCallId() + registry.lowInvocationsLength);
-        int index = registry.lowInvocationIndex(initialInvocation.op.getCallId());
-        assertSame(initialInvocation, registry.lowInvocations.get(index));
-        registry.lowInvocations.set(index, newerInvocation);
+        setCallId(newerInvocation.op, initialInvocation.op.getCallId() + registry.regularInvocationsLength);
+        int index = registry.regularInvocationIndex(initialInvocation.op.getCallId());
+        assertSame(initialInvocation, registry.regularInvocations.get(index));
+        registry.regularInvocations.set(index, newerInvocation);
 
         // now we try to deregister the initial invocation.
         registry.deregister(initialInvocation);
 
-        assertEquals(initialHighPriorityCallId, registry.highSequence.get());
-        assertTrue(registry.highInvocations.isEmpty());
+        assertEquals(initialHighPriorityCallId, registry.prioritySequence.get());
+        assertTrue(registry.priorityInvocations.isEmpty());
         assertSame(newerInvocation, registry.get(newerInvocation.op.getCallId()));
         assertEquals(0, initialInvocation.op.getCallId());
     }

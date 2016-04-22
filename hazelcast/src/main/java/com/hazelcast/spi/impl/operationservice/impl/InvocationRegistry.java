@@ -26,7 +26,6 @@ import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.QuickMath;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -48,6 +47,8 @@ import static com.hazelcast.spi.properties.GroupProperty.MAX_CONCURRENT_INVOCATI
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.QuickMath.modPowerOfTwo;
+import static com.hazelcast.util.QuickMath.nextPowerOfTwo;
 import static java.lang.Math.min;
 import static java.lang.Math.pow;
 import static java.lang.Math.round;
@@ -71,7 +72,7 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
  *
  * <h2>Low Priority Invocations</h2>
  * Low priority invocations have relatively uncontended callId sequence and the invocations are stored in the
- * {@link #lowInvocations} AtomicReferenceArray to prevent {@link Long} and CHM.Node litter. Most of the calls in HZ are
+ * {@link #regularInvocations} AtomicReferenceArray to prevent {@link Long} and CHM.Node litter. Most of the calls in HZ are
  * low priority operations.
  *
  * <h3>Partition specific and member specific invocations</h3>
@@ -93,7 +94,7 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
  * <h3>Low priority call id's</h3>
  * In Hazelcast 3.6 and before a single AtomicLong was used as a sequence to generate call id's for all invocations. The
  * problem is that this causes contention since all threads will fight for the same cache line. To reduce contention for
- * low priority invocations, there is a {@link AtomicLongArray} called the {@link #lowSequences} of longs. In this array
+ * low priority invocations, there is a {@link AtomicLongArray} called the {@link #regularSequences} of longs. In this array
  * the sequences are padded to prevent false sharing.
  *
  * Each sequence in the array is initialized with the sequenceIndex. If concurrency level is 10, the following sequences are
@@ -109,7 +110,7 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
  * The low priority call id's can wrap; in that case they will be reset to their initial value. So the same id could be generated
  * twice, but it would take a very long time for it to happen. With a concurrency level of 512 and 10^9 invocations per
  * second, it would take +/- 6 months for this to happen. When a duplicate id is created and a pending invocation is found in
- * the lowInvocations array, a new id is generated. So it will not happen that 2 invocations, invoked by the same member,
+ * the regularInvocations array, a new id is generated. So it will not happen that 2 invocations, invoked by the same member,
  * with the same sequence id are active at any given moment.
  *
  * <h3>Back pressure</h3>
@@ -131,9 +132,9 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
  * </ol>
  *
  * High priority invocations get a negative callId which keeps decrementing by 1, unlike low priority operations, which get a
- * positive callId and are incremented with <code>concurrencyLevel</code> There is some contention on the {@link #highSequence}
+ * positive callId and are incremented with <code>concurrencyLevel</code> There is some contention on the {@link #prioritySequence}
  * since it is shared between all threads, but high priority operations are not that frequent so contention should not be an
- * issue. No wrap detection is added to the highSequence because with 10^9 invocations per second, it would take almost 300 year
+ * issue. No wrap detection is added to the prioritySequence because with 10^9 invocations per second, it would take almost 300 year
  * for the counter to wrap.
  *
  * High priority invocations are completely independent of low priority invocations. Also high priority operations do not claim
@@ -155,22 +156,23 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
 
     private static final int MAX_DELAY_MS = 500;
 
-    // Contains the low priority sequences.
-    // this array will have length 'concurrencyLevel * SEQUENCE_ALIGNMENT' to prevent false sharing.
-    final AtomicLongArray lowSequences;
-
-    // the length of the invocation array (will be a positive power of two)
-    final int lowInvocationsLength;
-
     // high priority sequences are negative and start from -1.
-    final AtomicLong highSequence = new AtomicLong(-1);
+    final AtomicLong prioritySequence = new AtomicLong(-1);
 
     // contains the high priority invocations
     @Probe(name = "invocations.pending[highPriority]", level = MANDATORY)
-    final ConcurrentMap<Long, Invocation> highInvocations = new ConcurrentHashMap<Long, Invocation>();
+    final ConcurrentMap<Long, Invocation> priorityInvocations = new ConcurrentHashMap<Long, Invocation>();
 
     // contains the low priority invocations
-    final AtomicReferenceArray<Invocation> lowInvocations;
+    final AtomicReferenceArray<Invocation> regularInvocations;
+
+    // Contains the low priority sequences.
+    // this array will have length 'concurrencyLevel * SEQUENCE_ALIGNMENT' to prevent false sharing.
+    final AtomicLongArray regularSequences;
+
+    // the length of the invocation array (will be a positive power of two)
+    final int regularInvocationsLength;
+
 
     @Probe
     private final Counter backoffTotalMs = newMwCounter();
@@ -183,21 +185,21 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     public InvocationRegistry(HazelcastProperties properties, ILogger logger, int concurrencyLevel) {
         this.logger = logger;
         // we upgrade the concurrency to power of 2 so we can do a cheap mod.
-        this.concurrencyLevel = QuickMath.nextPowerOfTwo(concurrencyLevel);
+        this.concurrencyLevel = nextPowerOfTwo(concurrencyLevel);
 
         this.backoffTimeoutMs = getBackoffTimeoutMs(properties);
         this.partitionCount = properties.getInteger(PARTITION_COUNT);
 
         // todo: can the length cause problems due to wrapping and ending in another stripe?
-        this.lowInvocationsLength = getMaxConcurrentInvocations(properties);
+        this.regularInvocationsLength = getMaxConcurrentInvocations(properties);
 
         //todo: do we want to deal with padding for false sharing here?
         // the problem is that is will consume more memory than without padding.
         // and how much chance is there that 2 threads at the same time will hit the same cache line
         // since subsequent calls for the same partition will be very far apart.
-        this.lowInvocations = new AtomicReferenceArray<Invocation>(lowInvocationsLength);
+        this.regularInvocations = new AtomicReferenceArray<Invocation>(regularInvocationsLength);
 
-        this.lowSequences = newLowSequences();
+        this.regularSequences = newRegularSequences();
     }
 
     @Override
@@ -210,7 +212,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
 
         checkPositive(invocations, "Can't have '" + MAX_CONCURRENT_INVOCATIONS + "' with a value smaller than 1");
 
-        return QuickMath.nextPowerOfTwo(invocations);
+        return nextPowerOfTwo(invocations);
     }
 
     private static int getBackoffTimeoutMs(HazelcastProperties props) {
@@ -225,7 +227,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      *
      * @return the created AtomicLongArray.
      */
-    private AtomicLongArray newLowSequences() {
+    private AtomicLongArray newRegularSequences() {
         AtomicLongArray lowSequences = new AtomicLongArray(concurrencyLevel * SEQUENCE_ALIGNMENT);
 
         for (int sequenceIndex = 0; sequenceIndex < concurrencyLevel; sequenceIndex++) {
@@ -245,18 +247,18 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      */
     public Invocation get(long callId) {
         if (callId < 0) {
-            return getHigh(callId);
+            return getPriority(callId);
         } else {
-            return getLow(callId);
+            return getRegular(callId);
         }
     }
 
-    private Invocation getHigh(long callId) {
-        return highInvocations.get(callId);
+    private Invocation getPriority(long callId) {
+        return priorityInvocations.get(callId);
     }
 
-    private Invocation getLow(long callId) {
-        Invocation invocation = lowInvocations.get(lowInvocationIndex(callId));
+    private Invocation getRegular(long callId) {
+        Invocation invocation = regularInvocations.get(regularInvocationIndex(callId));
 
         if (invocation == null || invocation.op.getCallId() != callId) {
             // no invocation was found, or an invocation with a different callId was found in the same slot.
@@ -278,9 +280,9 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         assert invocation.op.getCallId() == 0 : "can't register twice: " + invocation;
 
         if (invocation.op.isUrgent()) {
-            registerHigh(invocation);
+            registerPriority(invocation);
         } else {
-            registerLow(invocation);
+            registerRegular(invocation);
         }
     }
 
@@ -289,15 +291,15 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      *
      * @param invocation the invocation to register.
      */
-    private void registerHigh(Invocation invocation) {
+    private void registerPriority(Invocation invocation) {
         // we use negative callId's to indicate high priority invocations.
-        long callId = highSequence.getAndDecrement();
+        long callId = prioritySequence.getAndDecrement();
 
         setCallId(invocation.op, callId);
 
-        // registers the invocation in the highInvocations-CHM
+        // registers the invocation in the priorityInvocations-CHM
         // at this point other threads could access the invocation.
-        highInvocations.put(callId, invocation);
+        priorityInvocations.put(callId, invocation);
     }
 
     /**
@@ -308,7 +310,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * idGenerator.
      *
      * The next step is determining a callId. We increment the idGenerator with the idGeneratorsCount and based on this
-     * callId we determine the slot in the lowInvocations-AtomicReferenceArray. If slot is free and we can cas
+     * callId we determine the slot in the regularInvocations-AtomicReferenceArray. If slot is free and we can cas
      * in the invocation, we are done. But if the slot it taken, we need to generate a new callId.
      *
      * Eventually the following things can happen:
@@ -319,20 +321,20 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      *
      * @param invocation the invocation to register.
      */
-    private void registerLow(Invocation invocation) {
+    private void registerRegular(Invocation invocation) {
         int partitionId = partitionId(invocation);
 
-        int sequenceIndex = lowSequenceIndex(partitionId);
+        int sequenceIndex = regularSequenceIndex(partitionId);
         int iteration = 0;
         long remainingTimeoutMs = 0;
         for (; ; ) {
             // First we determine a call-id and set it in the operation.
-            long callId = newLowCallId(sequenceIndex);
+            long callId = nextRegularCallId(sequenceIndex);
             setCallId(invocation.op, callId);
 
-            // Then we try to put the invocation in the lowInvocations-array.
-            int invocationIndex = lowInvocationIndex(callId);
-            if (lowInvocations.compareAndSet(invocationIndex, null, invocation)) {
+            // Then we try to put the invocation in the regularInvocations-array.
+            int invocationIndex = regularInvocationIndex(callId);
+            if (regularInvocations.compareAndSet(invocationIndex, null, invocation)) {
                 // We are lucky since we managed to set the invocation in the slot.
                 // At this point the invocation is visible to other threads.
                 return;
@@ -380,13 +382,13 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     /**
-     * Returns the index of the call-id generator in the {@link #lowSequences} for a given partitionId.
+     * Returns the index of the call-id generator in the {@link #regularSequences} for a given partitionId.
      *
      * This index does not include the padding. To determine the real index in the array, it needs to be multiplied by
      * {@link #SEQUENCE_ALIGNMENT}.
      */
-    private int lowSequenceIndex(long partitionId) {
-        return (int) QuickMath.modPowerOfTwo(partitionId, concurrencyLevel);
+    private int regularSequenceIndex(long partitionId) {
+        return (int) modPowerOfTwo(partitionId, concurrencyLevel);
     }
 
 
@@ -396,11 +398,11 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * @param sequenceIndex the index of the callId sequence.
      * @return the created call id.
      */
-    private long newLowCallId(int sequenceIndex) {
+    private long nextRegularCallId(int sequenceIndex) {
         int offset = sequenceIndex * SEQUENCE_ALIGNMENT;
 
         for (; ; ) {
-            long callId = lowSequences.addAndGet(offset, concurrencyLevel);
+            long callId = regularSequences.addAndGet(offset, concurrencyLevel);
 
             if (callId > 0) {
                 return callId;
@@ -408,7 +410,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
 
             // the counter has wrapped, we try to reset the counter and try again.
             // Resetting the counter is simple since the initial value is equal to the sequenceIndex
-            lowSequences.compareAndSet(offset, callId, sequenceIndex);
+            regularSequences.compareAndSet(offset, callId, sequenceIndex);
         }
     }
 
@@ -473,27 +475,27 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      */
     public void deregister(Invocation invocation) {
         if (invocation.op.getCallId() < 0) {
-            deregisterHigh(invocation);
+            deregisterPriority(invocation);
         } else {
-            deregisterLow(invocation);
+            deregisterRegular(invocation);
         }
     }
 
-    private void deregisterHigh(Invocation invocation) {
-        highInvocations.remove(invocation.op.getCallId());
+    private void deregisterPriority(Invocation invocation) {
+        priorityInvocations.remove(invocation.op.getCallId());
         setCallId(invocation.op, 0);
     }
 
-    private void deregisterLow(Invocation invocation) {
+    private void deregisterRegular(Invocation invocation) {
         long callId = invocation.op.getCallId();
 
         // todo: there is a potential race here since this could be called concurrently
         // todo: why do we need to set the counter to 0?
         setCallId(invocation.op, 0);
 
-        int index = lowInvocationIndex(callId);
+        int index = regularInvocationIndex(callId);
 
-        boolean success = lowInvocations.compareAndSet(index, invocation, null);
+        boolean success = regularInvocations.compareAndSet(index, invocation, null);
 
         if (!success && logger.isFinestEnabled()) {
             logger.finest("failed to deregister callId: " + callId + " " + invocation + ", no invocation was found.");
@@ -503,28 +505,28 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     // ==================================================================
 
     /**
-     * Gets the index in the {@link #lowInvocations} for a low priority invocation.
+     * Gets the index in the {@link #regularInvocations} for a low priority invocation.
      *
      * The passed in callId should be positive.
      *
      * @param callId the callId of the invocation.
      * @return the index.
      */
-    int lowInvocationIndex(long callId) {
-        return (int) QuickMath.modPowerOfTwo(callId, lowInvocationsLength);
+    int regularInvocationIndex(long callId) {
+        return (int) modPowerOfTwo(callId, regularInvocationsLength);
     }
 
 
     /**
      * Returns the number of pending invocations.
      *
-     * The size operation is relatively expensive since it needs to scan through the lowInvocationsLength.
+     * The size operation is relatively expensive since it needs to scan through the regularInvocationsLength.
      * This should be quite fast since the prefetcher has a predictable pattern it can deal with.
      *
      * @return the number of pending invocations.
      */
     public int size() {
-        return highInvocations.size() + getPendingLowPriorityInvocations();
+        return priorityInvocations.size() + getPendingRegularInvocations();
     }
 
     /**
@@ -533,10 +535,10 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
      * @return the number of pending low priority invocations.
      */
     @Probe(name = "invocations.pending[lowPriority]", level = MANDATORY)
-    private int getPendingLowPriorityInvocations() {
+    private int getPendingRegularInvocations() {
         int result = 0;
-        for (int k = 0; k < lowInvocationsLength; k++) {
-            if (lowInvocations.get(k) != null) {
+        for (int k = 0; k < regularInvocationsLength; k++) {
+            if (regularInvocations.get(k) != null) {
                 result++;
             }
         }
@@ -595,19 +597,19 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
             for (; ; ) {
                 index++;
 
-                if (index >= lowInvocations.length()) {
+                if (index >= regularInvocations.length()) {
                     break;
                 }
 
-                invocation = lowInvocations.get(index);
+                invocation = regularInvocations.get(index);
                 if (invocation != null) {
                     return true;
                 }
             }
 
-            // todo: we could make use of an empty iterator if the highInvocations is empty
+            // todo: we could make use of an empty iterator if the priorityInvocations is empty
             // this prevents creation of litter.
-            iterator = highInvocations.values().iterator();
+            iterator = priorityInvocations.values().iterator();
             return iterator.hasNext();
         }
 

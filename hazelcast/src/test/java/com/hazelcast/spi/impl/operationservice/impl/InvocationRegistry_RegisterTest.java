@@ -44,7 +44,7 @@ public class InvocationRegistry_RegisterTest extends HazelcastTestSupport {
         operationService = getOperationServiceImpl(hz);
         ILogger logger = nodeEngine.getLogger(InvocationRegistry.class);
         registry = new InvocationRegistry(nodeEngine.getProperties(), logger, CONCURRENCY_LEVEL);
-        initialHighPriorityCallId = registry.highSequence.get();
+        initialHighPriorityCallId = registry.prioritySequence.get();
     }
 
     private Invocation newInvocation(Operation op) {
@@ -53,12 +53,12 @@ public class InvocationRegistry_RegisterTest extends HazelcastTestSupport {
 
     @Test
     public void construction() {
-        assertTrue(registry.highInvocations.isEmpty());
-        assertEquals(initialHighPriorityCallId, registry.highSequence.get());
+        assertTrue(registry.priorityInvocations.isEmpty());
+        assertEquals(initialHighPriorityCallId, registry.prioritySequence.get());
 
-        assertEquals(CONCURRENCY_LEVEL * SEQUENCE_ALIGNMENT, registry.lowSequences.length());
+        assertEquals(CONCURRENCY_LEVEL * SEQUENCE_ALIGNMENT, registry.regularSequences.length());
         for (int k = 0; k < CONCURRENCY_LEVEL; k++) {
-            long actual = registry.lowSequences.get(k * SEQUENCE_ALIGNMENT);
+            long actual = registry.regularSequences.get(k * SEQUENCE_ALIGNMENT);
             assertEquals(k, actual);
         }
     }
@@ -77,9 +77,9 @@ public class InvocationRegistry_RegisterTest extends HazelcastTestSupport {
         Invocation invocation = newInvocation(new DummyPriorityOperation(partitionId));
         registry.register(invocation);
 
-        assertEquals(initialHighPriorityCallId - 1, registry.highSequence.get());
-        assertEquals(1, registry.highInvocations.size());
-        assertSame(invocation, registry.highInvocations.get(initialHighPriorityCallId));
+        assertEquals(initialHighPriorityCallId - 1, registry.prioritySequence.get());
+        assertEquals(1, registry.priorityInvocations.size());
+        assertSame(invocation, registry.priorityInvocations.get(initialHighPriorityCallId));
         assertEquals(invocation.op.getCallId(), initialHighPriorityCallId);
     }
 
@@ -89,19 +89,19 @@ public class InvocationRegistry_RegisterTest extends HazelcastTestSupport {
         registry.register(invocation);
 
         // make sure nothing is done on the priority section
-        assertEquals(initialHighPriorityCallId, registry.highSequence.get());
-        assertTrue(registry.highInvocations.isEmpty());
+        assertEquals(initialHighPriorityCallId, registry.prioritySequence.get());
+        assertTrue(registry.priorityInvocations.isEmpty());
 
         // check if the call id was set correctly and if we can find the invocation for the given callId.
         long callId = invocation.op.getCallId();
         assertTrue("call id should be larger than 0", callId > 0);
         assertSame(invocation, registry.get(callId));
 
-        // one of the lowSequences must have increased; we don't know which one because a lowSequence is selected at random.
+        // one of the regularSequences must have increased; we don't know which one because a lowSequence is selected at random.
         // so we need to look through all sequences.
         boolean found = false;
         for (int sequenceIndex = 0; sequenceIndex < CONCURRENCY_LEVEL; sequenceIndex++) {
-            long sequence = registry.lowSequences.get(sequenceIndex * SEQUENCE_ALIGNMENT);
+            long sequence = registry.regularSequences.get(sequenceIndex * SEQUENCE_ALIGNMENT);
             if (sequence != sequenceIndex) {
                 if (sequence == sequenceIndex + CONCURRENCY_LEVEL) {
                     found = true;
@@ -118,19 +118,19 @@ public class InvocationRegistry_RegisterTest extends HazelcastTestSupport {
     public void whenLowPriority_andPartitionSpecific() {
         int partitionId = 0;
         int offset = (partitionId % CONCURRENCY_LEVEL) * SEQUENCE_ALIGNMENT;
-        long oldCallId = registry.lowSequences.get(offset);
+        long oldCallId = registry.regularSequences.get(offset);
 
         Invocation invocation = newInvocation(new DummyOperation(partitionId));
         registry.register(invocation);
 
         // make sure nothing is done on the priority section
-        assertEquals(initialHighPriorityCallId, registry.highSequence.get());
-        assertTrue(registry.highInvocations.isEmpty());
+        assertEquals(initialHighPriorityCallId, registry.prioritySequence.get());
+        assertTrue(registry.priorityInvocations.isEmpty());
 
         // now we check if the invocation can be find on the right position
         long expectedCallId = oldCallId + CONCURRENCY_LEVEL;
-        assertEquals(expectedCallId, registry.lowSequences.get(offset));
-        Invocation actual = registry.lowInvocations.get((int) (expectedCallId % registry.lowSequences.length()));
+        assertEquals(expectedCallId, registry.regularSequences.get(offset));
+        Invocation actual = registry.regularInvocations.get((int) (expectedCallId % registry.regularSequences.length()));
         assertSame(invocation, actual);
         // and of course the call id needs to be set.
         assertEquals(expectedCallId, invocation.op.getCallId());
