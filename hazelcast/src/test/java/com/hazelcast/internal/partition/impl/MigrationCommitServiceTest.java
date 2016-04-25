@@ -458,18 +458,27 @@ public class MigrationCommitServiceTest
 
     private void assertMigrationSourceCommit(final MigrationInfo migration)
             throws InterruptedException {
-        final TestMigrationAwareService service = getService(migration.getSource());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                final TestMigrationAwareService service = getService(migration.getSource());
 
-        final String msg = getAssertMessage(migration, service);
+                final String msg = getAssertMessage(migration, service);
 
-        final PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
-        final PartitionMigrationEvent sourceCommitEvent = service.getCommitEvents().get(0);
+                assertFalse(service.getBeforeEvents().isEmpty());
+                assertFalse(service.getCommitEvents().isEmpty());
 
-        assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
-        assertSourcePartitionMigrationEvent(msg, sourceCommitEvent, migration);
+                final PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
+                final PartitionMigrationEvent sourceCommitEvent = service.getCommitEvents().get(0);
 
-        assertReplicaVersionsAndServiceData(msg, migration.getSource(), migration.getPartitionId(),
-                migration.getSourceNewReplicaIndex());
+                assertSourcePartitionMigrationEvent(msg, beforeEvent, migration);
+                assertSourcePartitionMigrationEvent(msg, sourceCommitEvent, migration);
+
+                assertReplicaVersionsAndServiceData(msg, migration.getSource(), migration.getPartitionId(),
+                        migration.getSourceNewReplicaIndex());
+            }
+        });
     }
 
     private void assertMigrationSourceRollback(final MigrationInfo migration)
