@@ -22,16 +22,18 @@ import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import org.junit.Assert;
+import com.hazelcast.util.Clock;
 
-import java.util.concurrent.ConcurrentMap;
 import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
 
 class MockJoiner extends AbstractJoiner {
 
     private final Collection<Address> joinAddresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes;
     private final Object joinerLock;
+
+    private Address masterAddress;
 
     MockJoiner(Node node, Collection<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Object joinerLock) {
         super(node);
@@ -42,25 +44,27 @@ class MockJoiner extends AbstractJoiner {
 
     public void doJoin() {
         synchronized (joinerLock) {
-            Address master;
 
-            final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
-            for (int i = 0; !node.joined() && node.isRunning() && i < 2000; i++) {
+            ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
+            long joinStartTime = Clock.currentTimeMillis();
+            long maxJoinMillis = getMaxJoinMillis();
+
+            while (node.isRunning() && !node.joined()
+                    && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 try {
-                    master = node.getMasterAddress();
-                    if (master == null) {
-                        master = findCurrentMasterAddress();
-                        node.setMasterAddress(master);
-                    }
+                    lookupMasterAddress();
 
-                    Assert.assertNotNull(master);
-                    if (master.equals(node.getThisAddress())) {
+                    if (node.getThisAddress().equals(masterAddress)) {
                         node.setJoined();
                         node.setAsMaster();
                         break;
                     }
 
-                    clusterJoinManager.sendJoinRequest(master, true);
+                    if (masterAddress != null) {
+                        node.setMasterAddress(masterAddress);
+                        clusterJoinManager.sendJoinRequest(masterAddress, true);
+                    }
+
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -74,27 +78,39 @@ class MockJoiner extends AbstractJoiner {
         }
     }
 
-    private Address findCurrentMasterAddress() {
-        NodeEngineImpl nodeEngine = null;
-        for (Address address : joinAddresses) {
-            NodeEngineImpl ne = nodes.get(address);
-            if (ne != null && ne.isRunning() && ne.getNode().joined()) {
-                nodeEngine = ne;
-                break;
-            }
+    private void lookupMasterAddress() {
+        NodeEngineImpl nodeEngine = findAliveNodeEngine();
+        if (nodeEngine == null) {
+            masterAddress = node.getThisAddress();
+            return;
         }
-        Address master = null;
-        if (nodeEngine != null) {
-            if (nodeEngine.getNode().isMaster()) {
-                master = nodeEngine.getThisAddress();
-            } else {
-                master = nodeEngine.getMasterAddress();
-            }
+
+        Address master;
+        if (nodeEngine.getNode().isMaster()) {
+            master = nodeEngine.getThisAddress();
+        } else {
+            master = nodeEngine.getMasterAddress();
         }
+
         if (master == null) {
-            master = node.getThisAddress();
+            masterAddress = node.getThisAddress();
+            return;
         }
-        return master;
+
+        NodeEngineImpl masterNodeEngine = nodes.get(master);
+        if (masterNodeEngine != null && masterNodeEngine.isRunning() && masterNodeEngine.getNode().joined()) {
+            masterAddress = master;
+        }
+    }
+
+    private NodeEngineImpl findAliveNodeEngine() {
+        for (Address address : joinAddresses) {
+            NodeEngineImpl nodeEngine = nodes.get(address);
+            if (nodeEngine != null && nodeEngine.isRunning() && nodeEngine.getNode().joined()) {
+                return nodeEngine;
+            }
+        }
+        return null;
     }
 
     public void searchForOtherClusters() {
