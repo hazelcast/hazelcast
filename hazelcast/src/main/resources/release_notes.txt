@@ -77,6 +77,28 @@ a `SAXParse` exception is thrown. [5528]
 
 The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
 
+*3.6.3*
+
+The following are the fixed issues for 3.6.3 release.
+
+- When using `InstanceOfPredicate`, the method `toObject` at the server side causes `NullPointerException`, since the class loader is not set and it is null. Default class loader should be used if it is not set by the configuration to avoid the exception. [7977]
+- There may be cases when the server may return a list of entries larger than the requested page size. In this case the client should not put any anchor into the list that is on a page greater than the requested page. [7976]
+- When a remote invocation waits indefinitely on the internal executor, a deadlock may occur since its response would use the same executor and since the invocation monitor runs on the same executor. [7944]
+- Already published messages should be retrieved after `StaleSequenceException` occurs when `ReliableMessageListener` is registered at the client side. [7928]
+- The case of response being equal to null in the class `ClientDelegatingFuture` should be handled. [7901]
+- Detection of JCache should be improved. Currently Hazelcast checks if the class `javax.cache.Caching` is available and, if so, Hazelcast creates the JCache service and configures the client protocol messages. However, some older snapshots of JCache JARs have the Caching class available, but other classes are missing. This causes `Class not found` exceptions when members are started. [7899]
+- When connection gets an exception from the socket and the method `destroyConnection` is called before connection is authenticated, the client does not have an endpoint and it is not in the map of connections. Hence, the connection cannot be closed. [7866]
+- Upon subsequent destroy and create operations of IMap, there can be more than one map container referenced by different record stores at the same time. Therefore, indexes can be created in an unexpected map container and this can lead to return less than expected number of results when IMap is queried. [7838]
+- After the client is shut down, there should be no invocations left. The method `assert()` of `ClientInvocationServiceSupport` fails. [7836]
+
+The following are the enhancements performed for 3.6.3 release.
+
+- Phone home should include environment information, such as the operating system name, version and kernel architecture. [7970]
+- Exceptions, which are thrown when the method `isMemberSafe()` is called, should go into finest level. When there are topology changes some exceptions are expected. The method `getFutureResult()` should log exceptions as `finest()`, not `warn()`. [7904]
+- Protocol version should be 1 instead of 0. It was set as 0 for the response messages. [7900]
+
+
+
 *3.6.2*
 
 The following are the fixed issues for 3.6.2 release.
@@ -97,7 +119,7 @@ The following are the fixed issues for 3.6.2 release.
 - The test `IOBalancerMemoryLeakTest.testMemoryLeak` fails due to a socket exception that reads as "unexpected end of file from server". [6496]
 
 
-The following are the enhancement issues fixed for 3.6.2 release.
+The following are the enhancements performed for 3.6.2 release.
 
 - Hazelcast Docker images are big in size; it would be better to clean them up and reduce their sizes. [7553]
 - It would be better to provide an `enterprise-javadoc.jar` in the Hazelcast Enterprise bundle. This way IDEs can auto-import the Javadocs for the Enterprise APIs and provide context sensitive completion/help within the IDE. [7245]
