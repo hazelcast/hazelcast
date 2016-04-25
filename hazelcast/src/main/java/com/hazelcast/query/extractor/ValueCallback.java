@@ -21,7 +21,7 @@ package com.hazelcast.query.extractor;
  *
  * @param <T>
  */
-public abstract class ValueFilter<T> {
+public abstract class ValueCallback<T> {
 
     /**
      * TODO
@@ -29,8 +29,6 @@ public abstract class ValueFilter<T> {
      * @param value
      * @return
      */
-    public boolean apply(T value) {
-        return true;
-    }
+    public abstract void onResult(T value);
 
 }

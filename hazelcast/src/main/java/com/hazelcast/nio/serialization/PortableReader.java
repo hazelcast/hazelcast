@@ -197,31 +197,6 @@ public interface PortableReader {
      */
     Portable[] readPortableArray(String fieldName) throws IOException;
 
-    // TODO won't be public
-    Object read(String path) throws IOException;
-
-//    /**
-//     * Enables reading from fields and returning multiple results, e.g. using [any] quantifier
-//     * In example: body.legs[any].name will return the names of all legs contained by the legs array.
-//     *
-//     * @param fieldName
-//     * @param collector
-//     * @return
-//     * @throws IOException
-//     */
-//    boolean collect(String fieldName, ValueCollector collector) throws IOException;
-//
-//    /**
-//     * Enables reading from fields and returning multiple results, e.g. using [any] quantifier
-//     * In example: body.legs[any].name will return the names of all legs contained by the legs array.
-//     *
-//     * @param fieldName
-//     * @param collector
-//     * @return
-//     * @throws IOException
-//     */
-//    boolean collect(String fieldName, ValueCollector collector, ValueFilter filter) throws IOException;
-
     /**
      * {@link PortableWriter#getRawDataOutput()}.
      * <p/>

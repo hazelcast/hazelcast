@@ -4,10 +4,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -16,7 +17,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -171,22 +171,21 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     @SuppressWarnings("unchecked")
     public static class LimbTattoosCountExtractor extends ValueExtractor {
         @Override
-        public void extract(Object target, Object arguments, ValueCollector collector) {
+        public void extract(Object target, Object arguments, final ValueCollector collector) {
             Integer parsedId = Integer.parseInt((String) arguments);
-            Integer size;
             if (target instanceof Person) {
-                size = ((Person) target).limbs_list.get(parsedId).tattoos_list.size();
+                Integer size = ((Person) target).limbs_list.get(parsedId).tattoos_list.size();
+                collector.addObject(size);
             } else {
-                PortableReader reader = (PortableReader) target;
-                size = null;
-                try {
-                    Object result = reader.read("limbs_portable[" + parsedId + "].tattoos_portable");
-                    size = ((String[]) result).length;
-                } catch (IOException e) {
-                    // ignore
-                }
+                ValueReader reader = (ValueReader) target;
+                reader.read("limbs_portable[" + parsedId + "].tattoos_portable", new ValueCallback() {
+                    @Override
+                    public void onResult(Object value) {
+                        collector.addObject(((String[]) value).length);
+                    }
+                });
             }
-            collector.addObject(size);
+
         }
     }
 

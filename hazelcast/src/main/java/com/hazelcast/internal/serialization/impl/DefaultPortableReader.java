@@ -24,6 +24,8 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.query.extractor.ValueCallback;
+import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -33,7 +35,7 @@ import java.util.Set;
 /**
  * Can't be accessed concurrently
  */
-public class DefaultPortableReader implements PortableReader {
+public class DefaultPortableReader extends ValueReader implements PortableReader {
 
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
@@ -561,6 +563,24 @@ public class DefaultPortableReader implements PortableReader {
             }
         } finally {
             in.position(currentPos);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void read(String path, ValueCallback callback) {
+        try {
+            Object result = read(path);
+            if (result instanceof MultiResult) {
+                MultiResult multiResult = (MultiResult) result;
+                for (Object singleResult : multiResult.getResults()) {
+                    callback.onResult(singleResult);
+                }
+            } else {
+                callback.onResult(result);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage(), e);
         }
     }
 

@@ -27,17 +27,8 @@ public abstract class ValueReader<T> {
      * TODO
      *
      * @param path
-     * @param collector
+     * @param callback
      */
-    public abstract void read(String path, ValueCollector<T> collector);
-
-    /**
-     * TODO
-     *
-     * @param path
-     * @param collector
-     * @param filter
-     */
-    public abstract void read(String path, ValueCollector<T> collector, ValueFilter<T> filter);
+    public abstract void read(String path, ValueCallback<T> callback);
 
 }
