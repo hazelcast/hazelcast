@@ -17,9 +17,11 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -41,11 +43,16 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
 
     private PartitionRuntimeState partitionState;
 
+    private MigrationInfo migrationInfo;
+
+    private boolean success;
+
     public MigrationCommitOperation() {
     }
 
-    public MigrationCommitOperation(PartitionRuntimeState partitionState) {
+    public MigrationCommitOperation(PartitionRuntimeState partitionState, MigrationInfo migrationInfo) {
         this.partitionState = partitionState;
+        this.migrationInfo = migrationInfo;
     }
 
     @Override
@@ -53,11 +60,17 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
         NodeEngine nodeEngine = getNodeEngine();
         if (!nodeEngine.isRunning()) {
             throw new HazelcastInstanceNotActiveException("This node is shutting down!");
+        } else {
+            final Member localMember = nodeEngine.getLocalMember();
+            if (!localMember.getUuid().equals(migrationInfo.getDestinationUuid())) {
+                throw new IllegalStateException("This member " + localMember
+                        + " is migration destination but it is restarted. Migration: " + migrationInfo);
+            }
         }
 
         partitionState.setEndpoint(getCallerAddress());
         InternalPartitionServiceImpl partitionService = getService();
-        partitionService.processPartitionRuntimeState(partitionState);
+        success = partitionService.processPartitionRuntimeState(partitionState);
     }
 
     @Override
@@ -67,7 +80,7 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return success;
     }
 
     @Override
@@ -89,11 +102,14 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
         super.readInternal(in);
         partitionState = new PartitionRuntimeState();
         partitionState.readData(in);
+        migrationInfo = new MigrationInfo();
+        migrationInfo.readData(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         partitionState.writeData(out);
+        migrationInfo.writeData(out);
     }
 }

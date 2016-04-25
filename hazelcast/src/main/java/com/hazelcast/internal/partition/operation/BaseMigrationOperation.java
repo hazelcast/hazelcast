@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -58,6 +59,7 @@ abstract class BaseMigrationOperation extends AbstractOperation
         try {
             onMigrationStart();
             verifyPartitionStateVersion();
+            verifyMemberUuid();
             verifyClusterState();
         } catch (Exception e) {
             onMigrationComplete(false);
@@ -75,6 +77,21 @@ abstract class BaseMigrationOperation extends AbstractOperation
 
             // this is expected when cluster member list changes during migration
             throw new PartitionStateVersionMismatchException(partitionStateVersion, localPartitionStateVersion);
+        }
+    }
+
+    private void verifyMemberUuid() {
+        Member localMember = getNodeEngine().getLocalMember();
+        if (localMember.getAddress().equals(migrationInfo.getSource())) {
+            if (!localMember.getUuid().equals(migrationInfo.getSourceUuid())) {
+                throw new IllegalStateException("This member " + localMember
+                        + " is the migration source but has a different uuid! Migration: " + migrationInfo);
+            }
+        } else if (localMember.getAddress().equals(migrationInfo.getDestination())) {
+            if (!localMember.getUuid().equals(migrationInfo.getDestinationUuid())) {
+                throw new IllegalStateException("This member " + localMember
+                        + " is the migration destination but has a different uuid! Migration: " + migrationInfo);
+            }
         }
     }
 

@@ -333,7 +333,7 @@ public class MigrationManager {
                 logger.finest("Sending commit operation for: " + migrationInfo);
             }
             PartitionRuntimeState partitionState = partitionService.createMigrationCommitPartitionState(migrationInfo);
-            MigrationCommitOperation operation = new MigrationCommitOperation(partitionState);
+            MigrationCommitOperation operation = new MigrationCommitOperation(partitionState, migrationInfo);
             Future<Boolean> future = nodeEngine.getOperationService()
                     .createInvocationBuilder(SERVICE_NAME, operation,
                             migrationInfo.getDestination())
@@ -343,7 +343,7 @@ public class MigrationManager {
             if (logger.isFinestEnabled()) {
                 logger.finest("Migration commit result: " + result + " for migration : " + migrationInfo);
             }
-            return true;
+            return result;
         } catch (Throwable t) {
             if (t instanceof MemberLeftException || t instanceof TargetNotMemberException) {
                 logger.warning("Migration commit failed for " + migrationInfo + " since destination left the cluster");
@@ -521,8 +521,10 @@ public class MigrationManager {
 
             if (destination != null) {
                 // Promotion will be executed when new partition owner gets this completed migration.
+                // TODO destination uuid?
+                String destinationeUuid = partitionStateManager.getMemberUuid(destination);
                 MigrationInfo migration =
-                        new MigrationInfo(partition.getPartitionId(), null, destination, -1, -1, index, 0);
+                        new MigrationInfo(partitionId, null, null, destination, destinationeUuid, -1, -1, index, 0);
                 migration.setMaster(node.getThisAddress());
                 migration.setStatus(MigrationInfo.MigrationStatus.SUCCESS);
                 partitionService.getMigrationManager().addCompletedMigration(migration);
@@ -673,7 +675,8 @@ public class MigrationManager {
         }
 
         private void assignNewPartitionOwner(int partitionId, InternalPartitionImpl currentPartition, Address newOwner) {
-            MigrationInfo migrationInfo = new MigrationInfo(partitionId, null, newOwner, -1, -1, -1, 0);
+            String destinationUuid = partitionStateManager.getMemberUuid(newOwner);
+            MigrationInfo migrationInfo = new MigrationInfo(partitionId, null, null, newOwner, destinationUuid, -1, -1, -1, 0);
             PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
             partitionEventManager.sendMigrationEvent(migrationInfo, MigrationEvent.MigrationStatus.STARTED);
             currentPartition.setReplicaAddress(0, newOwner);
@@ -741,8 +744,11 @@ public class MigrationManager {
 
                     partition.setReplicaAddress(sourceCurrentReplicaIndex, null);
                 } else {
-                    MigrationInfo migration = new MigrationInfo(partitionId, source, destination, sourceCurrentReplicaIndex,
-                            sourceNewReplicaIndex, destinationCurrentReplicaIndex, destinationNewReplicaIndex);
+                    String sourceUuid = partitionStateManager.getMemberUuid(source);
+                    String destinationUuid = partitionStateManager.getMemberUuid(destination);
+                    MigrationInfo migration = new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid,
+                            sourceCurrentReplicaIndex, sourceNewReplicaIndex,
+                            destinationCurrentReplicaIndex, destinationNewReplicaIndex);
 
                     migrationCount.value++;
                     migrations.offer(migration);

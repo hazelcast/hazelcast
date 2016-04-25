@@ -547,6 +547,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
 
+
+
         return applyNewState(partitionState, sender);
     }
 
@@ -567,6 +569,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 }
 
                 return true;
+            }
+
+            if (node.getClusterService().getClusterState() == ClusterState.ACTIVE
+                    && !partitionState.isKnownOrNewMember(nodeEngine.getLocalMember())) {
+                logger.warning("Ignoring partition table update since this member is not a known member in partition table yet");
+                return false;
             }
 
             partitionStateManager.setVersion(newVersion);

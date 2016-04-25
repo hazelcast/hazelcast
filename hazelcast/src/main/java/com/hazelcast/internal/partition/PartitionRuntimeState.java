@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
@@ -155,6 +156,16 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         this.completedMigrations = completedMigrations;
     }
 
+    public boolean isKnownOrNewMember(Member member) {
+        for (MemberInfo m : members) {
+            if (member.getAddress().equals(m.getAddress())) {
+                return member.getUuid().equals(m.getUuid());
+            }
+        }
+
+        return true;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         version = in.readInt();
@@ -253,4 +264,5 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
     public int getId() {
         return PartitionDataSerializerHook.PARTITION_STATE;
     }
+
 }
