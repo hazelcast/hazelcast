@@ -49,6 +49,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
@@ -324,7 +325,8 @@ public class NodeEngineImpl implements NodeEngine {
         T service = serviceManager.getService(serviceName);
         if (service == null) {
             if (isRunning()) {
-                throw new HazelcastException("Service with name '" + serviceName + "' not found!");
+                throw new HazelcastException("Service with name '" + serviceName + "' not found!",
+                        new ServiceNotFoundException("Service with name '" + serviceName + "' not found!"));
             } else {
                 throw new RetryableHazelcastException("HazelcastInstance[" + getThisAddress()
                         + "] is not active!");

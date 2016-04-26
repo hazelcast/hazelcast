@@ -24,6 +24,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -40,16 +42,23 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
+ * <p>
  * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of
  * {@link AbstractHazelcastCacheManager} is managed by {@link HazelcastServerCachingProvider}.
- * <p>As it lives on a node JVM, it has reference to {@link CacheService} and {@link NodeEngine} where this
- * manager make calls.</p>
- * <p>When JCache server implementation is configured, an instance of this class will be returned when
- * {@link javax.cache.spi.CachingProvider#getCacheManager()} is called.</p>
+ * </p>
+ * <p>
+ * As it lives on a node JVM, it has reference to {@link CacheService} and {@link NodeEngine} where this
+ * manager make calls.
+ * </p>
+ * <p>
+ * When JCache server implementation is configured, an instance of this class will be returned when
+ * {@link javax.cache.spi.CachingProvider#getCacheManager()} is called.
+ * </p>
  */
 public class HazelcastServerCacheManager
         extends AbstractHazelcastCacheManager {
 
+    private final HazelcastInstanceImpl instance;
     private final NodeEngine nodeEngine;
     private final ICacheService cacheService;
 
@@ -57,12 +66,22 @@ public class HazelcastServerCacheManager
                                        URI uri, ClassLoader classLoader, Properties properties) {
         super(cachingProvider, hazelcastInstance, uri, classLoader, properties);
 
-        CacheDistributedObject setupRef =
-                hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        nodeEngine = setupRef.getNodeEngine();
-        cacheService = setupRef.getService();
-
-        // TODO should we destroy the ref like "setupRef.destroy();"
+        /*
+         * TODO
+         *
+         * A new interface, such as `InternalHazelcastInstance` (has `getOriginalInstance()` method),
+         * might be introduced. Then underlying actual (original) Hazelcast instance is retrieved through this.
+         *
+         * Original Hazelcast instance is used for getting `NodeEngine` and `ICacheService`.
+         * Also it is used for passing full cache name directly by this cache manager itself.
+         */
+        if (hazelcastInstance instanceof HazelcastInstanceProxy) {
+            instance = ((HazelcastInstanceProxy) hazelcastInstance).getOriginal();
+        } else {
+            instance = (HazelcastInstanceImpl) hazelcastInstance;
+        }
+        nodeEngine = instance.node.getNodeEngine();
+        cacheService = nodeEngine.getService(ICacheService.SERVICE_NAME);
     }
 
     @Override
@@ -100,31 +119,15 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName) {
-        return cacheService.getCacheConfig(cacheName);
-    }
-
-    @Override
-    protected <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
-        CacheCreateConfigOperation cacheCreateConfigOperation = new CacheCreateConfigOperation(cacheConfig);
-        OperationService operationService = nodeEngine.getOperationService();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-        InternalCompletableFuture<CacheConfig<K, V>> f =
-                operationService.invokeOnPartition(CacheService.SERVICE_NAME,
-                                                   cacheCreateConfigOperation, partitionId);
-        return f.join();
-    }
-
-    @Override
     protected <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig) {
         cacheService.putCacheConfigIfAbsent(cacheConfig);
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> findConfig(String cacheName,
-                                                  String simpleCacheName,
-                                                  boolean createAlsoOnOthers,
-                                                  boolean syncCreate) {
+    protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName,
+                                                       String simpleCacheName,
+                                                       boolean createAlsoOnOthers,
+                                                       boolean syncCreate) {
         CacheConfig<K, V> config = cacheService.getCacheConfig(cacheName);
         if (config == null) {
             CacheSimpleConfig simpleConfig = cacheService.findCacheConfig(simpleCacheName);
@@ -140,21 +143,21 @@ public class HazelcastServerCacheManager
             }
             if (config == null) {
                 // If still cache config not found, try to find it from partition
-                config = getCacheConfigFromPartition(cacheName, simpleCacheName);
+                config = getCacheConfig(cacheName, simpleCacheName);
             }
             if (config != null) {
                 // Cache config possibly is not exist on other nodes, so create also on them if absent
-                createConfig(cacheName, config, createAlsoOnOthers, syncCreate);
+                createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
             }
         }
         return config;
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> createConfig(String cacheName,
-                                                    CacheConfig<K, V> config,
-                                                    boolean createAlsoOnOthers,
-                                                    boolean syncCreate) {
+    protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName,
+                                                         CacheConfig<K, V> config,
+                                                         boolean createAlsoOnOthers,
+                                                         boolean syncCreate) {
         CacheConfig<K, V> currentCacheConfig = cacheService.getCacheConfig(cacheName);
         OperationService operationService = nodeEngine.getOperationService();
         // Create cache config on all nodes.
@@ -174,11 +177,13 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
-        return new CacheProxy<K, V>(cacheConfig, nodeEngine, cacheService, this);
+        CacheProxy<K, V> cacheProxy = (CacheProxy<K, V>) instance.getCacheByFullName(cacheConfig.getNameWithPrefix());
+        cacheProxy.setCacheManager(this);
+        return cacheProxy;
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix, String cacheName) {
+    protected <K, V> CacheConfig<K, V> getCacheConfig(String cacheNameWithPrefix, String cacheName) {
         CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         InternalCompletableFuture<CacheConfig> f =

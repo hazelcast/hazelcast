@@ -18,25 +18,30 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
- * <p>Destroys the cache on the cluster or on a single node by calling
- * {@link CacheService#deleteCache(String, boolean, String, boolean)}.
+ * <p>
+ * Destroys the cache on the cluster or on a single node by calling
+ * {@link ICacheService#deleteCache(String, String, boolean)}.
  * </p>
- * @see CacheService#deleteCache(String, boolean, String, boolean)
+ * @see ICacheService#deleteCache(String, String, boolean)
  */
 public class CacheDestroyOperation
         extends AbstractNamedOperation
         implements IdentifiedDataSerializable, MutatingOperation {
 
-    boolean isLocal;
+    private boolean isLocal;
 
     public CacheDestroyOperation() {
     }
@@ -51,10 +56,24 @@ public class CacheDestroyOperation
     }
 
     @Override
-    public void run()
-            throws Exception {
-        final ICacheService service = getService();
-        service.deleteCache(name, isLocal, getCallerUuid(), true);
+    public void run() throws Exception {
+        ICacheService service = getService();
+        service.deleteCache(name, getCallerUuid(), true);
+        if (!isLocal) {
+            destroyCacheOnAllMembers(name, getCallerUuid());
+        }
+    }
+
+    private void destroyCacheOnAllMembers(String name, String callerUuid) {
+        NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
+        for (Member member : members) {
+            if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
+                CacheDestroyOperation op = new CacheDestroyOperation(name, true);
+                operationService.invokeOnTarget(ICacheService.SERVICE_NAME, op, member.getAddress());
+            }
+        }
     }
 
     @Override
@@ -68,15 +87,13 @@ public class CacheDestroyOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(isLocal);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         isLocal = in.readBoolean();
     }

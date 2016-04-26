@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectUtil;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -43,7 +44,8 @@ public class GetDistributedObjectsMessageTask
 
         List<DistributedObjectInfo> coll = new ArrayList<DistributedObjectInfo>(distributedObjects.size());
         for (DistributedObject distributedObject : distributedObjects) {
-            coll.add(new DistributedObjectInfo(distributedObject.getServiceName(), distributedObject.getName()));
+            String name = DistributedObjectUtil.getName(distributedObject);
+            coll.add(new DistributedObjectInfo(distributedObject.getServiceName(), name));
         }
         return coll;
     }

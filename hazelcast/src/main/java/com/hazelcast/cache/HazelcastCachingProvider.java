@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -65,6 +66,11 @@ public final class HazelcastCachingProvider
      * Hazelcast instance name property
      */
     public static final String HAZELCAST_INSTANCE_NAME = "hazelcast.instance.name";
+
+    /**
+     * Hazelcast instance itself property
+     */
+    public static final String HAZELCAST_INSTANCE_ITSELF = "hazelcast.instance.itself";
 
     private static final String CLIENT_CACHING_PROVIDER_CLASS = "com.hazelcast.client.cache.impl.HazelcastClientCachingProvider";
     private static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
@@ -123,6 +129,18 @@ public final class HazelcastCachingProvider
     public static Properties propertiesByInstanceName(String instanceName) {
         final Properties properties = new Properties();
         properties.setProperty(HAZELCAST_INSTANCE_NAME, instanceName);
+        return properties;
+    }
+
+    /**
+     * Create the {@link java.util.Properties} with the provided instance itself.
+     *
+     * @param instance the instance itself to be used
+     * @return the properties instance pre-configured with the instance itself
+     */
+    public static Properties propertiesByInstanceItself(HazelcastInstance instance) {
+        final Properties properties = new Properties();
+        properties.put(HAZELCAST_INSTANCE_ITSELF, instance);
         return properties;
     }
 
