@@ -32,6 +32,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
@@ -39,6 +40,11 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
+/**
+ * Inserts the {@link MapEntries} for a single partition to the local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
+ * <p/>
+ * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
+ */
 public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
 
     private MapEntries mapEntries;
@@ -51,6 +57,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
 
+    @SuppressWarnings("unused")
     public PutAllOperation() {
     }
 

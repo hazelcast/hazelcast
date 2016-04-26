@@ -45,6 +45,7 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
         this.recordInfos = recordInfos;
     }
 
+    @SuppressWarnings("unused")
     public PutAllBackupOperation() {
     }
 

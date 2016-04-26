@@ -77,6 +77,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -112,6 +113,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
+import static java.lang.Math.round;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
@@ -126,7 +128,24 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     private static final int CHECK_IF_LOADED_TIMEOUT_SECONDS = 60;
 
     /**
-     * Defines the initial size of arrays per partition for {@link IMap#putAll(Map)} calls.
+     * Defines the batch size for operations of {@link IMap#putAll(Map)} calls.
+     *
+     * A value of {@code 0} disables the batching and will send a single operation per member with all map entries.
+     *
+     * If you set this value too high, you may ran into OOME or blocked network pipelines due to huge operations.
+     * If you set this value too low, you will lower the performance of the putAll() operation.
+     */
+    @Beta
+    private static final HazelcastProperty MAP_PUT_ALL_BATCH_SIZE
+            = new HazelcastProperty("hazelcast.map.put.all.batch.size", 0);
+
+    /**
+     * Defines the initial size of entry arrays per partition for {@link IMap#putAll(Map)} calls.
+     *
+     * {@link IMap#putAll(Map)} splits up the entries of the user input map per partition,
+     * to eventually send the entries the correct target nodes.
+     * So the method creates multiple arrays with map entries per partition.
+     * This value determines how the initial size of these arrays is calculated.
      *
      * The default value of {@code 0} uses an educated guess, depending on the map size, which is a good overall strategy.
      * If you insert entries which don't match a normal partition distribution you should configure this factor.
@@ -135,14 +154,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      *
      * As a rule of thumb you can try the following values:
      * <ul>
-     * <li>{@code 10} for map sizes about 100 entries</li>
-     * <li>{@code 5} for map sizes between 500 and 5000 entries</li>
-     * <li>{@code 1.5} for map sizes between about 50000 entries</li>
+     * <li>{@code 10.0} for map sizes up to 500 entries</li>
+     * <li>{@code 5.0} for map sizes between 500 and 5000 entries</li>
+     * <li>{@code 1.5} for map sizes between up to 50000 entries</li>
+     * <li>{@code 1.0} for map sizes beyond 50000 entries</li>
      * </ul>
      *
      * If you set this value too high, you will waste memory.
      * If you set this value too low, you will suffer from expensive {@link java.util.Arrays#copyOf} calls.
      */
+    @Beta
     private static final HazelcastProperty MAP_PUT_ALL_INITIAL_SIZE_FACTOR
             = new HazelcastProperty("hazelcast.map.put.all.initial.size.factor", 0);
 
@@ -161,6 +182,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
 
+    private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
 
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine) {
@@ -182,6 +204,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
 
+        this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
     }
 
@@ -700,16 +723,39 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * If there are e.g. five keys for a single member, there will only be a single remote invocation
      * instead of having five remote invocations.
      * <p/>
+     * There is also an optional support for batching to send smaller packages.
      * Takes care about {@code null} checks for keys and values.
      */
+    @SuppressWarnings({"checkstyle:npathcomplexity", "UnnecessaryBoxing"})
     protected void putAllInternal(Map<?, ?> map) {
         try {
             int mapSize = map.size();
+            if (mapSize == 0) {
+                return;
+            }
+
+            boolean useBatching = isPutAllUseBatching(mapSize);
             int partitionCount = partitionService.getPartitionCount();
-            int initialSize = getPutAllInitialSize(mapSize, partitionCount);
+            int initialSize = getPutAllInitialSize(useBatching, mapSize, partitionCount);
 
             Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
-            List<Future> futures = new ArrayList<Future>(partitionCount);
+            List<Future> futures = new ArrayList<Future>(getPutAllFutureSize(mapSize, useBatching, partitionCount));
+
+            // init counters for batching
+            Long[] counterPerMember = null;
+            Address[] addresses = null;
+            if (useBatching) {
+                counterPerMember = new Long[partitionCount];
+                addresses = new Address[partitionCount];
+                for (Entry<Address, List<Integer>> addressListEntry : memberPartitionsMap.entrySet()) {
+                    Long counter = new Long(0);
+                    Address address = addressListEntry.getKey();
+                    for (int partitionId : addressListEntry.getValue()) {
+                        counterPerMember[partitionId] = counter;
+                        addresses[partitionId] = address;
+                    }
+                }
+            }
 
             // fill entriesPerPartition
             MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
@@ -726,6 +772,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 }
 
                 entries.add(keyData, toData(entry.getValue()));
+
+                if (useBatching) {
+                    long currentSize = ++counterPerMember[partitionId];
+                    if (currentSize % putAllBatchSize == 0) {
+                        List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
+                        invokePutAllOperation(addresses[partitionId], partitions, futures, entriesPerPartition);
+                    }
+                }
             }
 
             // invoke operations for entriesPerPartition
@@ -742,16 +796,28 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    private boolean isPutAllUseBatching(int mapSize) {
+        // we check if the feature is enabled and if the map size is bigger than a single batch per member
+        return (putAllBatchSize > 0 && mapSize > putAllBatchSize * getNodeEngine().getClusterService().getSize());
+    }
+
     @SuppressWarnings("checkstyle:magicnumber")
-    private int getPutAllInitialSize(int mapSize, int partitionCount) {
+    private int getPutAllInitialSize(boolean useBatching, int mapSize, int partitionCount) {
+        if (mapSize == 1) {
+            return 1;
+        }
+        if (useBatching) {
+            return putAllBatchSize;
+        }
         if (putAllInitialSizeFactor < 1) {
-            if (mapSize == 1) {
-                return 1;
-            }
             // this is an educated guess for the initial size of the entries per partition, depending on the map size
             return (int) ceil(20f * mapSize / partitionCount / log10(mapSize));
         }
         return (int) ceil(putAllInitialSizeFactor * mapSize / partitionCount);
+    }
+
+    private int getPutAllFutureSize(int mapSize, boolean useBatching, int partitionCount) {
+        return (useBatching ? round((float) partitionCount * mapSize / putAllBatchSize) : partitionCount);
     }
 
     private void invokePutAllOperation(Address address, List<Integer> memberPartitions, List<Future> futures,
@@ -764,6 +830,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 partitions[index++] = partitionId;
             }
         }
+        if (index == 0) {
+            return;
+        }
         // trim partition array to real size
         if (index < size) {
             partitions = Arrays.copyOf(partitions, index);
@@ -774,8 +843,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         MapEntries[] entries = new MapEntries[size];
         long totalSize = 0;
         for (int partitionId : partitions) {
+            int batchSize = entriesPerPartition[partitionId].size();
+            assert (putAllBatchSize == 0 || batchSize <= putAllBatchSize);
             entries[index++] = entriesPerPartition[partitionId];
-            totalSize += entriesPerPartition[partitionId].size();
+            totalSize += batchSize;
+            entriesPerPartition[partitionId] = null;
+        }
+        if (totalSize == 0) {
+            return;
         }
 
         Future future = createPutAllOperationFuture(name, totalSize, partitions, entries, address);

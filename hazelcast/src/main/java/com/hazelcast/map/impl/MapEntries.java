@@ -84,6 +84,13 @@ public final class MapEntries implements IdentifiedDataSerializable {
         return (keys == null || keys.size() == 0);
     }
 
+    public void clear() {
+        if (keys != null) {
+            keys.clear();
+            values.clear();
+        }
+    }
+
     public void putAllToList(Collection<Map.Entry<Data, Data>> targetList) {
         if (keys == null) {
             return;

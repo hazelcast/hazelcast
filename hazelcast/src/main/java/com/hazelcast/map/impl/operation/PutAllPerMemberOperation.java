@@ -16,22 +16,30 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.Future;
 
-public class PutAllPerMemberOperation extends MapOperation implements DataSerializable {
+/**
+ * Inserts the {@link MapEntries} for all partitions of a member via locally invoked {@link PutAllOperation}.
+ * <p/>
+ * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
+ */
+public class PutAllPerMemberOperation extends MapOperation implements IdentifiedDataSerializable {
 
     private int[] partitions;
     private MapEntries[] mapEntries;
 
+    @SuppressWarnings("unused")
     public PutAllPerMemberOperation() {
     }
 
@@ -50,12 +58,12 @@ public class PutAllPerMemberOperation extends MapOperation implements DataSerial
             op.setNodeEngine(nodeEngine)
                     .setPartitionId(partitions[i])
                     .setReplicaIndex(getReplicaIndex())
-                    .setServiceName(getServiceName())
                     .setService(getService())
                     .setCallerUuid(getCallerUuid());
             OperationAccessor.setCallerAddress(op, getCallerAddress());
             futures[i] = nodeEngine.getOperationService().invokeOnPartition(op);
         }
+        // TODO: this should be done non-blocking to free the operation thread as soon as possible
         for (Future future : futures) {
             future.get();
         }
@@ -67,7 +75,7 @@ public class PutAllPerMemberOperation extends MapOperation implements DataSerial
 
     @Override
     public Object getResponse() {
-        return true;
+        return null;
     }
 
     @Override
@@ -89,5 +97,15 @@ public class PutAllPerMemberOperation extends MapOperation implements DataSerial
             entry.readData(in);
             mapEntries[i] = entry;
         }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_ALL_PER_MEMBER;
     }
 }
