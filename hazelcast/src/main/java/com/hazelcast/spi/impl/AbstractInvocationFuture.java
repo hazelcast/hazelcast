@@ -46,6 +46,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  *
  * @param <V>
  */
+@SuppressFBWarnings(value = "DLS_DEAD_STORE_OF_CLASS_LITERAL", justification = "Recommended way to prevent classloading bug")
 public abstract class AbstractInvocationFuture<V> implements InternalCompletableFuture<V> {
 
     static final Object VOID = "VOID";
@@ -53,7 +54,6 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     // Reduce the risk of rare disastrous classloading in first call to
     // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
     static {
-        @SuppressFBWarnings("DLS_DEAD_STORE_OF_CLASS_LITERAL")
         Class<?> ensureLoaded = LockSupport.class;
     }
 
