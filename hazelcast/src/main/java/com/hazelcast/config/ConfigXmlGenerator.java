@@ -400,8 +400,15 @@ public class ConfigXmlGenerator {
             }
             gen.close();
         }
-        gen.node("check-class-def-errors", c.isCheckClassDefErrors())
-                .close();
+        gen.node("check-class-def-errors", c.isCheckClassDefErrors());
+        JavaSerializationFilterConfig javaSerializationFilterConfig = c.getJavaSerializationFilterConfig();
+        if (javaSerializationFilterConfig != null) {
+            gen.open("java-serialization-filter");
+            appendFilterList(gen, "blacklist", javaSerializationFilterConfig.getBlacklist());
+            appendFilterList(gen, "whitelist", javaSerializationFilterConfig.getWhitelist());
+            gen.close();
+        }
+        gen.close();
     }
 
     private static String classNameOrClass(String className, Class clazz) {
@@ -1396,6 +1403,20 @@ public class ConfigXmlGenerator {
             String className = value instanceof String ? (String) value : value.getClass().getName();
             gen.node(elementName, className, "factory-id", factory.getKey().toString());
         }
+    }
+
+    private static void appendFilterList(XmlGenerator gen, String listName, ClassFilter classFilterList) {
+        if (classFilterList.isEmpty()) {
+            return;
+        }
+        gen.open(listName);
+        for (String className : classFilterList.getClasses()) {
+            gen.node("class", className);
+        }
+        for (String packageName : classFilterList.getPackages()) {
+            gen.node("package", packageName);
+        }
+        gen.close();
     }
 
     private static final class XmlGenerator {

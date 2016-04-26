@@ -1784,6 +1784,8 @@ https://hazelcast.org/documentation/.
         * <check-class-def-errors>:
             If set to true, serialization system will check the class definitions error at the start of serialization process
             and throw a Serialization Exception with the error definition.
+        * <java-serialization-filter>:
+            Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
     -->
     <serialization>
         <portable-version>0</portable-version>
@@ -1802,6 +1804,17 @@ https://hazelcast.org/documentation/.
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
+        <java-serialization-filter>
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <class>java.lang.String</class>
+                <class>example.Foo</class>
+                <package>com.acme.app</package>
+                <package>com.acme.app.subpkg</package>
+            </whitelist>
+        </java-serialization-filter>
     </serialization>
     <!--
         ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====

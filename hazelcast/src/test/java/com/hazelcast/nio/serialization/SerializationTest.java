@@ -85,7 +85,7 @@ public class SerializationTest extends HazelcastTestSupport {
         globalSerializerConfig.setOverrideJavaSerialization(true);
         final AtomicInteger writeCounter = new AtomicInteger();
         final AtomicInteger readCounter = new AtomicInteger();
-        final JavaSerializer javaSerializer = new JavaSerializer(true, false);
+        final JavaSerializer javaSerializer = new JavaSerializer(true, false, null);
         SerializationConfig serializationConfig = new SerializationConfig().setGlobalSerializerConfig(
                 globalSerializerConfig.setImplementation(new StreamSerializer<Object>() {
                     @Override

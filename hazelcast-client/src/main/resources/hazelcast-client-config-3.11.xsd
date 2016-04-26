@@ -526,6 +526,13 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="check-class-def-errors" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="java-serialization-filter" type="java-serialization-filter" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Basic protection against untrusted deserialization based on class/package blacklisting and whitelisting.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="serialization-factory">
@@ -553,6 +560,44 @@
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
+    <xs:complexType name="java-serialization-filter">
+        <xs:all>
+            <xs:element name="blacklist" type="filter-list" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Blacklisted classes and packages, which are not allowed to be deserialized.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="whitelist" type="filter-list" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Whitelisted classes and packages, which are allowed to be deserialized. If the list is empty
+                        (no class or package name provided) then all classes are allowed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="filter-list">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="class" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of a class to be included in the list.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="package" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of a package to be included in the list.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+
     <xs:complexType name="socket-interceptor">
         <xs:all>
             <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>

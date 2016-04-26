@@ -134,6 +134,17 @@
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
+        <java-serialization-filter>
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <class>java.lang.String</class>
+                <class>example.Foo</class>
+                <package>com.acme.app</package>
+                <package>com.acme.app.subpkg</package>
+            </whitelist>
+        </java-serialization-filter>
     </serialization>
 
     <native-memory enabled="false" allocator-type="POOLED">
