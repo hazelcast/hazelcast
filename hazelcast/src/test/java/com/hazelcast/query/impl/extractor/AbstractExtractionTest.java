@@ -168,10 +168,10 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
         setup(query);
 
         // WHEN
-        doWithMap();
-        putTestDataToMap(input.objects);
         Collection<?> values = null;
         try {
+            doWithMap();
+            putTestDataToMap(input.objects);
             values = map.values(query.predicate);
         } catch (Exception ex) {
             // EXPECT

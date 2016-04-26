@@ -2,12 +2,10 @@ package com.hazelcast.query.impl.extractor.specification;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -77,9 +75,12 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
 
     @Override
     protected void doWithMap() {
-        String key = UUID.randomUUID().toString();
-        map.put(key, KRUEGER.getPortable());
-        map.remove(key);
+        // init fully populated object to handle nulls properly
+        if (mv == PORTABLE) {
+            String key = UUID.randomUUID().toString();
+            map.put(key, KRUEGER.getPortable());
+            map.remove(key);
+        }
     }
 
     @Test
@@ -289,9 +290,9 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> parametrisationData() {
         return axes(
-                asList(BINARY),//, OBJECT),
-                asList(NO_INDEX),//, UNORDERED, ORDERED),
-                asList(PORTABLE) //PORTABLE/*,, ARRAY/*, LIST,*/)
+                asList(BINARY, OBJECT),
+                asList(NO_INDEX, UNORDERED, ORDERED),
+                asList(LIST, ARRAY, PORTABLE)
         );
     }
 

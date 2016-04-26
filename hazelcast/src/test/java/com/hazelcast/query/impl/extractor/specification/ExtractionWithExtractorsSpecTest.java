@@ -5,6 +5,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
@@ -63,9 +64,12 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
 
     @Override
     protected void doWithMap() {
-        String key = UUID.randomUUID().toString();
-        map.put(key, KRUEGER.getPortable());
-        map.remove(key);
+        // init fully populated object to handle nulls properly
+        if (mv == PORTABLE) {
+            String key = UUID.randomUUID().toString();
+            map.put(key, KRUEGER.getPortable());
+            map.remove(key);
+        }
     }
 
     @Test
@@ -100,7 +104,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     public void extractorWithParam_negativeInput() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[-1]", 1), mv),
-                Expected.of(ArrayIndexOutOfBoundsException.class, IllegalArgumentException.class));
+                Expected.of(ArrayIndexOutOfBoundsException.class, QueryException.class));
     }
 
     @Test
@@ -135,14 +139,14 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     public void extractorWithParam_wrongInput_noArgumentWithBrackets() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[]", 1), mv),
-                Expected.of(NumberFormatException.class));
+                Expected.of(QueryException.class));
     }
 
     @Test
     public void extractorWithParam_wrongInput_noArgumentNoBrackets() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount", 1), mv),
-                Expected.of(NumberFormatException.class));
+                Expected.of(QueryException.class));
     }
 
     @Test

@@ -3,7 +3,6 @@ package com.hazelcast.query.impl.extractor.specification;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,15 +22,6 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.PORTABLE;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.SINGLE;
-import static java.util.Arrays.asList;
-import static com.hazelcast.config.InMemoryFormat.BINARY;
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.PORTABLE;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.SINGLE;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Finger;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
@@ -82,9 +72,12 @@ public class ExtractionInPortableSpecTest extends AbstractExtractionTest {
 
     @Override
     protected void doWithMap() {
-        String key = UUID.randomUUID().toString();
-        map.put(key, KRUEGER.getPortable());
-        map.remove(key);
+        // init fully populated object to handle nulls properly
+        if (mv == PORTABLE) {
+            String key = UUID.randomUUID().toString();
+            map.put(key, KRUEGER.getPortable());
+            map.remove(key);
+        }
     }
 
     @Test

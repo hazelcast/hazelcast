@@ -177,8 +177,8 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     public static Collection<Object[]> parametrisationData() {
         return axes(
                 asList(BINARY, OBJECT),
-                asList(NO_INDEX, UNORDERED, ORDERED),
-                asList(ARRAY)
+                asList(NO_INDEX, ORDERED, UNORDERED),
+                asList(ARRAY, PORTABLE)
         );
     }
 
