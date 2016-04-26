@@ -46,6 +46,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.Supplier;
 
@@ -89,6 +90,7 @@ public class DefaultClientExtension implements ClientExtension {
             return builder
                     .setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
+                    .setProperties(new HazelcastProperties(config.getProperties()))
                     .setManagedContext(new HazelcastClientManagedContext(client, config.getManagedContext()))
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)

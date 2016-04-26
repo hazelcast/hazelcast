@@ -187,6 +187,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
             ss = builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
+                    .setProperties(node.getProperties())
                     .setManagedContext(hazelcastInstance.managedContext)
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)

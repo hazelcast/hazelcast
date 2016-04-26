@@ -23,11 +23,13 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteOrder;
 
+@SuppressWarnings({"checkstyle:methodcount"})
 public interface SerializationServiceBuilder {
 
     SerializationServiceBuilder setVersion(byte version);
@@ -35,6 +37,15 @@ public interface SerializationServiceBuilder {
     SerializationServiceBuilder setPortableVersion(int portableVersion);
 
     SerializationServiceBuilder setClassLoader(ClassLoader classLoader);
+
+    /**
+     * Sets Hazelcast group properties configured for given instance.
+     *
+     * @deprecated This method was added to Hazelcast 3.10.x branch just to allow backporting of deserialization protection
+     *             feature. It's not part of Hazelcast 3.11+ API.
+     */
+    @Deprecated
+    SerializationServiceBuilder setProperties(HazelcastProperties properties);
 
     SerializationServiceBuilder setConfig(SerializationConfig config);
 
