@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
@@ -47,6 +48,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
+ * <p>
  * Abstract {@link HazelcastCacheManager} (also {@link CacheManager} as indirect) implementation
  * provides shared functionality to server and client cache managers.
  * There are two cache managers which can be accessed via their providers.
@@ -54,6 +56,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *     <li>Client: HazelcastClientCacheManager.</li>
  *     <li>Server: HazelcastServerCacheManager.</li>
  * </ul>
+ * </p>
  * <p>
  *    {@link AbstractHazelcastCacheManager} manages the lifecycle of the caches created or accessed through itself.
  * </p>
@@ -113,7 +116,7 @@ public abstract class AbstractHazelcastCacheManager
             throw new CacheException("A cache named " + cacheName + " already exists.");
         }
         // Create cache config on all nodes as sync
-        CacheConfig<K, V> currentCacheConfig = createConfig(cacheName, newCacheConfig, true, true);
+        CacheConfig<K, V> currentCacheConfig = createCacheConfig(cacheName, newCacheConfig, true, true);
         // Create cache proxy object with cache config
         ICacheInternal<K, V> cacheProxy = createCacheProxy(newCacheConfig);
         if (currentCacheConfig == null) {
@@ -238,7 +241,7 @@ public abstract class AbstractHazelcastCacheManager
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICacheInternal<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
-            CacheConfig<K, V> cacheConfig = findConfig(cacheNameWithPrefix, cacheName, true, true);
+            CacheConfig<K, V> cacheConfig = findCacheConfig(cacheNameWithPrefix, cacheName, true, true);
             if (cacheConfig == null) {
                 // No cache found
                 return null;
@@ -347,6 +350,11 @@ public abstract class AbstractHazelcastCacheManager
             cache.destroy();
         }
         caches.clear();
+
+        postDestroy();
+    }
+
+    protected void postDestroy() {
     }
 
     @Override
@@ -368,16 +376,15 @@ public abstract class AbstractHazelcastCacheManager
      * @return the calculated cache prefix.
      */
     protected String cacheNamePrefix() {
-        StringBuilder sb = new StringBuilder("/hz");
-        if (!isDefaultURI) {
-            sb.append('/').append(uri.toASCIIString());
+        String cacheNamePrefix =
+                CacheUtil.getPrefix(
+                        isDefaultURI ? null : uri,
+                        isDefaultClassLoader ? null : getClassLoader());
+        if (cacheNamePrefix == null) {
+            return HazelcastCacheManager.CACHE_MANAGER_PREFIX;
+        } else {
+            return HazelcastCacheManager.CACHE_MANAGER_PREFIX + cacheNamePrefix;
         }
-        ClassLoader classLoader = getClassLoader();
-        if (!isDefaultClassLoader && classLoader != null) {
-            sb.append('/').append(classLoader.toString());
-        }
-        sb.append('/');
-        return sb.toString();
     }
 
     @Override
@@ -422,22 +429,18 @@ public abstract class AbstractHazelcastCacheManager
 
     protected abstract <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig);
 
-    protected abstract <K, V> CacheConfig<K, V> findConfig(String cacheName,
-                                                           String simpleCacheName,
-                                                           boolean createAlsoOnOthers,
-                                                           boolean syncCreate);
+    protected abstract <K, V> CacheConfig<K, V> findCacheConfig(String cacheName,
+                                                                String simpleCacheName,
+                                                                boolean createAlsoOnOthers,
+                                                                boolean syncCreate);
 
-    protected abstract <K, V> CacheConfig<K, V> createConfig(String cacheName,
-                                                             CacheConfig<K, V> config,
-                                                             boolean createAlsoOnOthers,
-                                                             boolean syncCreate);
+    protected abstract <K, V> CacheConfig<K, V> createCacheConfig(String cacheName,
+                                                                  CacheConfig<K, V> config,
+                                                                  boolean createAlsoOnOthers,
+                                                                  boolean syncCreate);
 
-    protected abstract <K, V> CacheConfig<K, V> getCacheConfigLocal(String cacheName);
-
-    protected abstract <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig);
-
-    protected abstract <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName,
-                                                                            String simpleCacheName);
+    protected abstract <K, V> CacheConfig<K, V> getCacheConfig(String cacheName,
+                                                               String simpleCacheName);
 
     protected abstract void postClose();
 

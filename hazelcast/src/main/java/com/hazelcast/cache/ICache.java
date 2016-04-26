@@ -18,6 +18,7 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.PrefixedDistributedObject;
 
 import javax.cache.Cache;
 import javax.cache.expiry.ExpiryPolicy;
@@ -96,7 +97,7 @@ import java.util.Set;
  * @since 3.3.1
  */
 public interface ICache<K, V>
-        extends javax.cache.Cache<K, V> {
+        extends javax.cache.Cache<K, V>, PrefixedDistributedObject {
 
     /**
      * Asynchronously retrieves the mapped value of the given key using a custom

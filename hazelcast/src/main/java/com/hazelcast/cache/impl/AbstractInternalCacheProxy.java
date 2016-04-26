@@ -51,7 +51,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
@@ -130,7 +129,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     }
 
     protected <T> InternalCompletableFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
-        final int partitionId = getPartitionId(getNodeEngine(), keyData);
+        final int partitionId = getPartitionId(keyData);
         return invoke(op, partitionId, completionOperation);
     }
 

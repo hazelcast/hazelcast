@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
@@ -189,6 +190,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
+    public <K, V> ICache<K, V> getCache(String name) {
+        return getOriginal().getCache(name);
+    }
+
+    @Override
     public Cluster getCluster() {
         return getOriginal().getCluster();
     }
@@ -268,7 +274,7 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         return getOriginal().getSerializationService();
     }
 
-    protected HazelcastInstanceImpl getOriginal() {
+    public HazelcastInstanceImpl getOriginal() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance == null) {
             throw new HazelcastInstanceNotActiveException();

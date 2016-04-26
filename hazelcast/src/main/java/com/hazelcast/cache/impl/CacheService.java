@@ -49,7 +49,8 @@ import com.hazelcast.spi.PartitionReplicationEvent;
  */
 public class CacheService extends AbstractCacheService {
 
-    @Override protected CachePartitionSegment newPartitionSegment(int partitionId) {
+    @Override
+    protected CachePartitionSegment newPartitionSegment(int partitionId) {
         return new CachePartitionSegment(this, partitionId);
     }
 

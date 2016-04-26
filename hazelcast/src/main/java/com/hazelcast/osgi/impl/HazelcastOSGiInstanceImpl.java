@@ -16,6 +16,7 @@
 
 package com.hazelcast.osgi.impl;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.ClientService;
@@ -130,6 +131,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public <E> ITopic<E> getReliableTopic(String name) {
         return delegatedInstance.getReliableTopic(name);
+    }
+
+    @Override
+    public <K, V> ICache<K, V> getCache(String name) {
+        return delegatedInstance.getCache(name);
     }
 
     @Override
