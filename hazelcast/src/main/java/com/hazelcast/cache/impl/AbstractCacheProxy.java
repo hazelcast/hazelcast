@@ -18,15 +18,14 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -346,13 +345,12 @@ abstract class AbstractCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
-            final SerializationService serializationService = getNodeEngine().getSerializationService();
             OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
             final Map<Integer, Object> results = getNodeEngine().getOperationService()
                     .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
-                total += (Integer) serializationService.toObject(result);
+                total += (Integer) getNodeEngine().toObject(result);
             }
             return total;
         } catch (Throwable t) {

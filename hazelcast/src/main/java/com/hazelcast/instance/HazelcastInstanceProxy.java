@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
@@ -40,9 +41,9 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
@@ -68,6 +69,7 @@ import java.util.concurrent.ConcurrentMap;
  * </li>
  * </ol>
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class HazelcastInstanceProxy implements HazelcastInstance, SerializationServiceSupport {
     protected volatile HazelcastInstanceImpl original;
     private final String name;
@@ -188,6 +190,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
+    public <K, V> ICache<K, V> getCache(String name) {
+        return getOriginal().getCache(name);
+    }
+
+    @Override
     public Cluster getCluster() {
         return getOriginal().getCluster();
     }
@@ -263,11 +270,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         getLifecycleService().shutdown();
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return getOriginal().getSerializationService();
     }
 
-    protected HazelcastInstanceImpl getOriginal() {
+    public HazelcastInstanceImpl getOriginal() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance == null) {
             throw new HazelcastInstanceNotActiveException();

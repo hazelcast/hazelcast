@@ -18,7 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
@@ -234,12 +233,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     private ILogger getLogger() {
         return clientEngine.getLogger(getClass());
-    }
-
-    public void sendClientMessage(ClientMessage clientMessage) {
-        Connection conn = getConnection();
-        //TODO framing not implemented yet, should be split into frames before writing to connection
-        conn.write(clientMessage);
     }
 
     @Override

@@ -5,8 +5,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import java.io.IOException;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class InvalidRawDataPortable2 extends RawDataPortable {
 
     InvalidRawDataPortable2() {

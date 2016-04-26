@@ -16,11 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.partition.IPartition;
+
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
@@ -28,21 +29,20 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
  */
 public final class PartitionInvocation extends Invocation {
 
-    public PartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                               ExecutionCallback callback, boolean resultDeserialized) {
-        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
-                callTimeout, callback, resultDeserialized);
+    public PartitionInvocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
+                               long callTimeoutMillis, boolean deserialize) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
     }
 
     @Override
     public Address getTarget() {
-        return getPartition().getReplicaAddress(replicaIndex);
+        IPartition partition = nodeEngine.getPartitionService().getPartition(op.getPartitionId());
+        return partition.getReplicaAddress(op.getReplicaIndex());
     }
 
     @Override
     ExceptionAction onException(Throwable t) {
-        final ExceptionAction action = op.onInvocationException(t);
-        return action != null ? action : ExceptionAction.THROW_EXCEPTION;
+        ExceptionAction action = op.onInvocationException(t);
+        return action != null ? action : THROW_EXCEPTION;
     }
 }

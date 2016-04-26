@@ -16,10 +16,11 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -28,13 +29,27 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
+import static com.hazelcast.util.CollectionUtil.addToValueList;
+import static com.hazelcast.util.CollectionUtil.getItemAtPositionOrNull;
+import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.CollectionUtil.toIntArray;
+import static com.hazelcast.util.CollectionUtil.toLongArray;
+import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -42,86 +57,135 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CollectionUtilTest {
+public class CollectionUtilTest extends HazelcastTestSupport {
 
     @Test
-    public void getItemAtPositionOrNull_whenEmptyArray_thenReturnNull() {
+    public void testConstructor() {
+        assertUtilityConstructor(CollectionUtil.class);
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertTrue(isEmpty(EMPTY_LIST));
+        assertFalse(isEmpty(singletonList(23)));
+    }
+
+    @Test
+    public void testIsNotEmpty() {
+        assertFalse(isNotEmpty(EMPTY_LIST));
+        assertTrue(isNotEmpty(singletonList(23)));
+    }
+
+    @Test
+    public void testAddToValueList() {
+        List<Integer> list = new ArrayList<Integer>();
+        list.add(23);
+
+        Map<String, List<Integer>> map = new HashMap<String, List<Integer>>();
+        map.put("existingKey", list);
+
+        addToValueList(map, "existingKey", 42);
+
+        assertEquals(1, map.size());
+        assertEquals(2, list.size());
+        assertTrue(list.contains(42));
+    }
+
+    @Test
+    public void testAddToValueList_whenKeyDoesNotExist_thenNewListIsCreated() {
+        Map<String, List<Integer>> map = new HashMap<String, List<Integer>>();
+
+        addToValueList(map, "nonExistingKey", 42);
+
+        assertEquals(1, map.size());
+
+        List<Integer> list = map.get("nonExistingKey");
+        assertEquals(1, list.size());
+        assertTrue(list.contains(42));
+    }
+
+    @Test
+    public void testGetItemAtPositionOrNull_whenEmptyArray_thenReturnNull() {
         Collection<Object> src = new LinkedHashSet<Object>();
-        Object result = CollectionUtil.getItemAtPositionOrNull(src, 0);
+        Object result = getItemAtPositionOrNull(src, 0);
 
         assertNull(result);
     }
 
     @Test
-    public void getItemAtPositionOrNull_whenPositionExist_thenReturnTheItem() {
+    public void testGetItemAtPositionOrNull_whenPositionExist_thenReturnTheItem() {
         Object obj = new Object();
         Collection<Object> src = new LinkedHashSet<Object>();
         src.add(obj);
 
-        Object result = CollectionUtil.getItemAtPositionOrNull(src, 0);
+        Object result = getItemAtPositionOrNull(src, 0);
 
         assertSame(obj, result);
     }
 
     @Test
-    public void getItemAtPositionOrNull_whenSmallerArray_thenReturnNull() {
+    public void testGetItemAtPositionOrNull_whenSmallerArray_thenReturnNull() {
         Object obj = new Object();
         Collection<Object> src = new LinkedHashSet<Object>();
         src.add(obj);
 
-        Object result = CollectionUtil.getItemAtPositionOrNull(src, 1);
+        Object result = getItemAtPositionOrNull(src, 1);
 
         assertNull(result);
     }
 
     @Test
-    public void getItemAsPositionOrNull_whenInputImplementsList_thenDoNotUserIterator() {
+    @SuppressWarnings("unchecked")
+    public void testGetItemAsPositionOrNull_whenInputImplementsList_thenDoNotUserIterator() {
         Object obj = new Object();
 
         List<Object> src = mock(List.class);
         when(src.size()).thenReturn(1);
         when(src.get(0)).thenReturn(obj);
 
-        Object result = CollectionUtil.getItemAtPositionOrNull(src, 0);
+        Object result = getItemAtPositionOrNull(src, 0);
 
         assertSame(obj, result);
         verify(src, never()).iterator();
     }
 
     @Test
-    public void objectToDataCollection_size() {
+    public void testObjectToDataCollection_size() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        Collection list = new ArrayList();
+        Collection<Object> list = new ArrayList<Object>();
         list.add(1);
         list.add("foo");
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(list, serializationService);
+
+        Collection<Data> dataCollection = objectToDataCollection(list, serializationService);
+
         assertEquals(list.size(), dataCollection.size());
-
     }
 
     @Test(expected = NullPointerException.class)
-    public void objectToDataCollection_withNullItem() {
+    public void testObjectToDataCollection_withNullItem() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        Collection list = new ArrayList();
+        Collection<Object> list = new ArrayList<Object>();
         list.add(null);
-        CollectionUtil.objectToDataCollection(list, serializationService);
+
+        objectToDataCollection(list, serializationService);
     }
 
     @Test(expected = NullPointerException.class)
-    public void objectToDataCollection_withNullCollection() {
+    public void testObjectToDataCollection_withNullCollection() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        CollectionUtil.objectToDataCollection(null, serializationService);
-    }
 
+        objectToDataCollection(null, serializationService);
+    }
 
     @Test
-    public void objectToDataCollection_deserializeBack() {
+    public void testObjectToDataCollection_deserializeBack() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        Collection list = new ArrayList();
+        Collection<Object> list = new ArrayList<Object>();
         list.add(1);
         list.add("foo");
 
-        Collection<Data> dataCollection = CollectionUtil.objectToDataCollection(list, serializationService);
+        Collection<Data> dataCollection = objectToDataCollection(list, serializationService);
+
         Iterator<Data> it1 = dataCollection.iterator();
         Iterator it2 = list.iterator();
         while (it1.hasNext() && it2.hasNext()) {
@@ -129,5 +193,45 @@ public class CollectionUtilTest {
         }
     }
 
+    @Test
+    public void testToIntArray() {
+        List<Integer> list = new ArrayList<Integer>();
+        list.add(42);
+        list.add(23);
+        list.add(Integer.MAX_VALUE);
 
+        int[] intArray = toIntArray(list);
+
+        assertNotNull(intArray);
+        assertEquals(list.size(), intArray.length);
+        assertEquals(list.get(0).intValue(), intArray[0]);
+        assertEquals(list.get(1).intValue(), intArray[1]);
+        assertEquals(list.get(2).intValue(), intArray[2]);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testToIntArray_whenNull_thenThrowNPE() {
+        toIntArray(null);
+    }
+
+    @Test
+    public void testToLongArray() {
+        List<Long> list = new ArrayList<Long>();
+        list.add(42L);
+        list.add(23L);
+        list.add(Long.MAX_VALUE);
+
+        long[] longArray = toLongArray(list);
+
+        assertNotNull(longArray);
+        assertEquals(list.size(), longArray.length);
+        assertEquals(list.get(0).longValue(), longArray[0]);
+        assertEquals(list.get(1).longValue(), longArray[1]);
+        assertEquals(list.get(2).longValue(), longArray[2]);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testToLongArray_whenNull_thenThrowNPE() {
+        toLongArray(null);
+    }
 }

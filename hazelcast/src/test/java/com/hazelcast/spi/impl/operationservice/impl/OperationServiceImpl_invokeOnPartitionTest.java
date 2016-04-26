@@ -42,7 +42,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
     private HazelcastInstance remote;
 
     @Before
-    public void setup(){
+    public void setup() {
         HazelcastInstance[] nodes = createHazelcastInstanceFactory(2).newInstances();
         warmUpPartitions(nodes);
 
@@ -52,23 +52,23 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
     }
 
     @Test
-    public void whenLocalPartition(){
+    public void whenLocalPartition() {
         String expected = "foobar";
         DummyOperation operation = new DummyOperation(expected);
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
                 null, operation, getPartitionId(local));
-        assertEquals(expected, invocation.getSafely());
+        assertEquals(expected, invocation.join());
     }
 
     @Test
-    public void whenRemotePartition(){
+    public void whenRemotePartition() {
         String expected = "foobar";
         DummyOperation operation = new DummyOperation(expected);
 
         InternalCompletableFuture<String> invocation = operationService.invokeOnPartition(
                 null, operation, getPartitionId(remote));
-        assertEquals(expected, invocation.getSafely());
+        assertEquals(expected, invocation.join());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSup
                 null, operation, getPartitionId(remote));
 
         try {
-            invocation.getSafely();
+            invocation.join();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

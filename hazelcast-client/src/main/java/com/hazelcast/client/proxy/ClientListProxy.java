@@ -49,9 +49,9 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.Preconditions;
 
@@ -60,6 +60,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+/**
+ * Proxy implementation of {@link IList}.
+ *
+ * @param <E> the type of elements in this list
+ */
 public class ClientListProxy<E> extends PartitionSpecificClientProxy implements IList<E> {
 
     public ClientListProxy(String serviceName, String name) {
@@ -133,7 +138,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
         ClientMessage request = ListIteratorCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request);
         ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.response;
+        List<Data> resultCollection = resultParameters.response;
         SerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService).iterator();
     }

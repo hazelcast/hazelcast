@@ -40,6 +40,8 @@ import com.hazelcast.collection.impl.queue.operations.RemoveOperation;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
 import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
 import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitBackupOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.TxnCommitOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnOfferOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPeekOperation;
@@ -53,11 +55,11 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollBackupOpe
 import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY;
@@ -117,6 +119,9 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int IS_EMPTY = 40;
     public static final int REMAINING_CAPACITY = 41;
 
+    public static final int TXN_COMMIT = 42;
+    public static final int TXN_COMMIT_BACKUP = 43;
+
 
     public int getFactoryId() {
         return F_ID;
@@ -124,7 +129,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[REMAINING_CAPACITY + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[TXN_COMMIT_BACKUP + 1];
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferOperation();
@@ -332,6 +337,18 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new RemainingCapacityOperation();
+            }
+        };
+        constructors[TXN_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnCommitOperation();
+            }
+        };
+        constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnCommitBackupOperation();
             }
         };
 

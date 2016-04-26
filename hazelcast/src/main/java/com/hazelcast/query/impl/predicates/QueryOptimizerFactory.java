@@ -16,17 +16,17 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.HazelcastProperty;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Arrays;
 
 /**
- * Creates {@link QueryOptimizer} according to GroupProperties configuration.
- *
+ * Creates {@link QueryOptimizer} according to {@link HazelcastProperties} configuration.
  */
 public final class QueryOptimizerFactory {
+
     public enum Type {
         NONE,
         RULES
@@ -36,13 +36,9 @@ public final class QueryOptimizerFactory {
     }
 
     /**
-     * Creates new QueryOptimizer. The exact implementation depends on
-     * GroupProperties.
-     *
-     * @param properties
-     * @return
+     * Creates new QueryOptimizer. The exact implementation depends on {@link HazelcastProperties}.
      */
-    public static QueryOptimizer newOptimizer(GroupProperties properties) {
+    public static QueryOptimizer newOptimizer(HazelcastProperties properties) {
         HazelcastProperty property = GroupProperty.QUERY_OPTIMIZER_TYPE;
         String string = properties.getString(property);
         Type type;

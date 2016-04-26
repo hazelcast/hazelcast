@@ -3,9 +3,10 @@ package com.hazelcast.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -19,13 +20,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.TestPartitionUtils.getAllReplicaAddresses;
 import static com.hazelcast.test.TestPartitionUtils.getOngoingReplicaSyncRequests;
 import static com.hazelcast.test.TestPartitionUtils.getOwnedReplicaVersions;
 import static com.hazelcast.test.TestPartitionUtils.getScheduledReplicaSyncRequests;
+import static junit.framework.TestCase.assertNotNull;
 
 public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSupport {
+
+    public enum NodeLeaveType {
+        SHUTDOWN,
+        TERMINATE
+    }
 
     private TestHazelcastInstanceFactory hazelcastInstanceFactory;
 
@@ -49,10 +57,33 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         hazelcastInstanceFactory.terminateAll();
     }
 
-    final protected void terminateInstances(List<HazelcastInstance> terminatingInstances) {
-        for (HazelcastInstance instance : terminatingInstances) {
-            instance.getLifecycleService().terminate();
+    final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType) {
+        assertNotNull(nodeLeaveType);
+
+        final List<Thread> threads = new ArrayList<Thread>();
+        final CountDownLatch latch = new CountDownLatch(instances.size());
+        for (final HazelcastInstance instance : instances) {
+            threads.add(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (nodeLeaveType == NodeLeaveType.SHUTDOWN) {
+                        instance.getLifecycleService().shutdown();
+                        latch.countDown();
+                    } else if (nodeLeaveType == NodeLeaveType.TERMINATE ){
+                        instance.getLifecycleService().terminate();
+                        latch.countDown();
+                    } else {
+                        System.err.println("Invalid node leave type: " + nodeLeaveType);
+                    }
+                }
+            }));
         }
+
+        for (Thread t : threads) {
+            t.start();
+        }
+
+        assertOpenEventually(latch);
     }
 
     final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp() {
@@ -79,7 +110,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         Config config = getConfig();
         config.setProperty("hazelcast.partition.max.parallel.replications", Integer.toString(getMaxParallelReplicaSyncCount()));
         for (int i = 0; i < nodeCount; i++) {
-            config.getMapConfig(getIthMapName(i)).setBackupCount(i);
+            config.getMapConfig(getIthMapName(i)).setBackupCount(Math.min(i, InternalPartition.MAX_BACKUP_COUNT));
         }
         return config;
     }
@@ -107,7 +138,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
             Node survivingNode = getNode(instance);
             Address survivingNodeAddress = survivingNode.getThisAddress();
 
-            for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
+            for (IPartition partition : survivingNode.getPartitionService().getPartitions()) {
                 if (partition.isOwnerOrBackup(survivingNodeAddress)) {
                     for (int replicaIndex = 0; replicaIndex < getNodeCount(); replicaIndex++) {
                         if (survivingNodeAddress.equals(partition.getReplicaAddress(replicaIndex))) {

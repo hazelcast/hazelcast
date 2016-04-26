@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
@@ -31,11 +31,9 @@ public final class TargetInvocation extends Invocation {
 
     private final Address target;
 
-    public TargetInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                            Address target, int tryCount, long tryPauseMillis, long callTimeout,
-                            ExecutionCallback callback, boolean resultDeserialized) {
-        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
-                tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized);
+    public TargetInvocation(OperationServiceImpl operationService, Operation op, Address target,
+                            int tryCount, long tryPauseMillis, long callTimeoutMillis, boolean deserialize) {
+        super(operationService, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
         this.target = target;
     }
 
@@ -46,6 +44,6 @@ public final class TargetInvocation extends Invocation {
 
     @Override
     ExceptionAction onException(Throwable t) {
-        return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onInvocationException(t);
+        return t instanceof MemberLeftException ? THROW_EXCEPTION : op.onInvocationException(t);
     }
 }

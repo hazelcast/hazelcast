@@ -17,13 +17,30 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.concurrent.TimeUnit;
 
 public interface InternalPartitionService extends IPartitionService {
 
+    /**
+     * Retry count for migration operations.
+     */
+    int MIGRATION_RETRY_COUNT = 6;
+
+    /**
+     * Retry pause for migration operations.
+     */
+    long MIGRATION_RETRY_PAUSE = 10000;
+
+    /**
+     * Delay for anti-entropy replica synchronization.
+     */
     long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
+
+    /**
+     * Retry delay for replica synchronization.
+     */
     long REPLICA_SYNC_RETRY_DELAY = 500L;
 
     /**
@@ -52,17 +69,17 @@ public interface InternalPartitionService extends IPartitionService {
 
     boolean prepareToSafeShutdown(long timeout, TimeUnit seconds);
 
-    InternalPartition[] getPartitions();
+    InternalPartition[] getInternalPartitions();
 
     void firstArrangement();
+
+    PartitionRuntimeState createPartitionState();
+
+    boolean isPartitionReplicaVersionStale(int partitionId, long[] versions, int replicaIndex);
 
     long[] getPartitionReplicaVersions(int partitionId);
 
     void updatePartitionReplicaVersions(int partitionId, long[] replicaVersions, int replicaIndex);
 
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
-
-    void setPartitionReplicaVersions(int partitionId, long[] versions, int replicaOffset);
-
-    void clearPartitionReplicaVersions(int partitionId);
 }

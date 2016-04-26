@@ -18,14 +18,14 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -88,11 +88,11 @@ public class PartitionContainer {
         IPartitionService ps = nodeEngine.getPartitionService();
         OperationService opService = nodeEngine.getOperationService();
         ExecutionService execService = nodeEngine.getExecutionService();
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
 
         MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
                 execService, mapContainer.toData());
-        keyLoader.setMaxBatch(groupProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
+        keyLoader.setMaxBatch(hazelcastProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
@@ -125,7 +125,8 @@ public class PartitionContainer {
         return maps.get(mapName);
     }
 
-    public void destroyMap(String name) {
+    public void destroyMap(MapContainer mapContainer) {
+        String name = mapContainer.getName();
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {
             recordStore.destroy();
@@ -136,11 +137,14 @@ public class PartitionContainer {
             // this IMap partition.
             clearLockStore(name);
         }
+
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        mapServiceContext.removeMapContainer(mapContainer);
     }
 
     private void clearLockStore(String name) {
         final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         if (lockService != null) {
             final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);

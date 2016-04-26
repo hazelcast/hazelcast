@@ -17,6 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
@@ -29,13 +31,23 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static java.lang.Math.max;
+import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 public class SocketAcceptorThread extends Thread {
-    private static final int SHUTDOWN_TIMEOUT_MILLIS = 1000 * 10;
+    private static final long SHUTDOWN_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
     private final ServerSocketChannel serverSocketChannel;
     private final TcpIpConnectionManager connectionManager;
     private final ILogger logger;
     private final IOService ioService;
+    @Probe
+    private final SwCounter eventCount = newSwCounter();
+    @Probe
+    private final SwCounter exceptionCount = newSwCounter();
+    private volatile long lastSelectTimeMs;
 
     public SocketAcceptorThread(
             ThreadGroup threadGroup,
@@ -47,6 +59,16 @@ public class SocketAcceptorThread extends Thread {
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLogger(this.getClass().getName());
+    }
+
+    /**
+     * A probe that measure how long this {@link SocketAcceptorThread} has not received any events.
+     *
+     * @return the idle time in ms.
+     */
+    @Probe
+    private long idleTimeMs() {
+        return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }
 
     @Override
@@ -74,6 +96,7 @@ public class SocketAcceptorThread extends Thread {
         while (connectionManager.isLive()) {
             // block until new connection or interruption.
             int keyCount = selector.select();
+            lastSelectTimeMs = System.currentTimeMillis();
             if (isInterrupted()) {
                 break;
             }
@@ -86,6 +109,7 @@ public class SocketAcceptorThread extends Thread {
                 it.remove();
                 // of course it is acceptable!
                 if (sk.isValid() && sk.isAcceptable()) {
+                    eventCount.inc();
                     acceptSocket();
                 }
             }
@@ -120,6 +144,8 @@ public class SocketAcceptorThread extends Thread {
                 socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, false);
             }
         } catch (Exception e) {
+            exceptionCount.inc();
+
             if (e instanceof ClosedChannelException && !connectionManager.isLive()) {
                 // ClosedChannelException
                 // or AsynchronousCloseException
@@ -160,6 +186,7 @@ public class SocketAcceptorThread extends Thread {
             socketChannel.configureBlocking(connectionManager.getIoThreadingModel().isBlocking());
             connectionManager.newConnection(socketChannel, null);
         } catch (Exception e) {
+            exceptionCount.inc();
             logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
             IOUtil.closeResource(socketChannel);
         }

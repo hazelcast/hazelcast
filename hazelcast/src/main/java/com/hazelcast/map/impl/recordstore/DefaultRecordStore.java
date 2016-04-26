@@ -59,6 +59,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.emptyList;
 
@@ -300,9 +301,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl) {
+    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads) {
         checkIfLoaded();
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl);
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl, blockReads);
     }
 
     @Override
@@ -329,7 +330,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public boolean isTransactionallyLocked(Data key) {
-        return lockStore != null && lockStore.isTransactionallyLocked(key);
+        return lockStore != null && lockStore.shouldBlockReads(key);
     }
 
     @Override
@@ -606,18 +607,29 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return mapEntries;
     }
 
-    protected Map loadEntries(Set<Data> keys) {
+    protected Map<Data, Object> loadEntries(Set<Data> keys) {
         Map loadedEntries = mapDataStore.loadAll(keys);
         if (loadedEntries == null || loadedEntries.isEmpty()) {
             return Collections.emptyMap();
         }
+
+        // holds serialized keys and if values are serialized, also holds them in serialized format.
+        Map<Data, Object> resultMap = createHashMap(loadedEntries.size());
+
         // add loaded key-value pairs to this record-store.
         Set entrySet = loadedEntries.entrySet();
         for (Object object : entrySet) {
             Map.Entry entry = (Map.Entry) object;
-            putFromLoad(toData(entry.getKey()), entry.getValue());
+
+            Data key = toData(entry.getKey());
+            Object value = entry.getValue();
+
+            resultMap.put(key, value);
+
+            putFromLoad(key, value);
+
         }
-        return loadedEntries;
+        return resultMap;
     }
 
     protected void addMapEntrySet(Object key, Object value, MapEntries mapEntries) {
@@ -635,7 +647,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             addMapEntrySet(entry.getKey(), entry.getValue(), mapEntries);
         }
     }
-
 
     @Override
     public boolean containsKey(Data key) {

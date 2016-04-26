@@ -1,14 +1,14 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -53,7 +53,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         responseHandler = mock(OperationResponseHandler.class);
     }
 
-     @Test
+    @Test
     public void runTask() {
         final AtomicLong counter = new AtomicLong();
         operationRunner.run(new Runnable() {
@@ -208,7 +208,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationRunner.run(packet);
     }
 
-    public abstract class DummyWaitingOperation extends AbstractOperation implements WaitSupport {
+    public abstract class DummyWaitingOperation extends AbstractOperation implements BlockingOperation {
         WaitNotifyKey waitNotifyKey = new WaitNotifyKey() {
             @Override
             public String getServiceName() {

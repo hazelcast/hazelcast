@@ -20,10 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.net.UnknownHostException;
@@ -32,12 +32,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TestHazelcastInstanceFactory {
@@ -48,7 +49,7 @@ public class TestHazelcastInstanceFactory {
     private final AtomicInteger nodeIndex = new AtomicInteger();
 
     protected TestNodeRegistry registry;
-    protected final CopyOnWriteArrayList<Address> addresses = new CopyOnWriteArrayList<Address>();
+    protected final ConcurrentMap<Integer, Address> addressMap = new ConcurrentHashMap<Integer, Address>();
     private final int count;
 
     public TestHazelcastInstanceFactory(int count) {
@@ -61,7 +62,7 @@ public class TestHazelcastInstanceFactory {
 
     public TestHazelcastInstanceFactory() {
         this.count = 0;
-        this.registry = new TestNodeRegistry(addresses);
+        this.registry = new TestNodeRegistry(addressMap.values());
     }
 
     public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
@@ -88,8 +89,11 @@ public class TestHazelcastInstanceFactory {
     }
 
     private void initFactory(Collection<Address> addresses) {
-        this.addresses.addAll(addresses);
-        this.registry = new TestNodeRegistry(this.addresses);
+        int ix = 0;
+        for (Address address : addresses) {
+            addressMap.put(ix++, address);
+        }
+        this.registry = new TestNodeRegistry(addressMap.values());
     }
 
     /**
@@ -141,12 +145,15 @@ public class TestHazelcastInstanceFactory {
 
     private Address pickAddress() {
         int id = nodeIndex.getAndIncrement();
-        if (addresses.size() > id) {
-            return addresses.get(id);
+
+        Address currentAddress = addressMap.get(id);
+        if (currentAddress != null) {
+            return currentAddress;
         }
-        Address address = createAddress("127.0.0.1", PORTS.incrementAndGet());
-        addresses.add(address);
-        return address;
+
+        Address newAddress = createAddress("127.0.0.1", PORTS.incrementAndGet());
+        addressMap.put(id, newAddress);
+        return newAddress;
     }
 
     public HazelcastInstance[] newInstances() {
@@ -253,20 +260,20 @@ public class TestHazelcastInstanceFactory {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
-        config.setProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT, "120");
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL, "1");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config.setProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
+        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
     }
 
     public Collection<Address> getKnownAddresses() {
-        return Collections.unmodifiableCollection(addresses);
+        return Collections.unmodifiableCollection(addressMap.values());
     }
 
     @Override
     public String toString() {
-        return "TestHazelcastInstanceFactory{addresses=" + addresses + '}';
+        return "TestHazelcastInstanceFactory{addresses=" + addressMap.values() + '}';
     }
 
     public TestNodeRegistry getRegistry() {

@@ -17,6 +17,8 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
@@ -30,9 +32,23 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static java.lang.Math.max;
+import static java.lang.System.currentTimeMillis;
+
+/**
+ * ClientReadHandler gets called by an IO-thread when there is space available to write to.
+ * It then writes some of its enqueued data to the socket from a bytebuffer.
+ */
 public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
 
+    @Probe(name = "writeQueueSize")
     private final Queue<ClientMessage> writeQueue = new ConcurrentLinkedQueue<ClientMessage>();
+    @Probe(name = "bytesWritten")
+    private final SwCounter bytesWritten = newSwCounter();
+    @Probe(name = "messagesWritten")
+    private final SwCounter messagesWritten = newSwCounter();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -50,8 +66,20 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         buffer = IOUtil.newByteBuffer(bufferSize, direct);
     }
 
+    @Probe(name = "idleTimeMs", level = DEBUG)
+    private long idleTimeMs() {
+        return max(currentTimeMillis() - lastHandle, 0);
+    }
+
+    @Probe(name = "isScheduled", level = DEBUG)
+    private long isScheduled() {
+        return informSelector.get() ? 0 : 1;
+    }
+
     @Override
     public void handle() throws Exception {
+        eventCount.inc();
+
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             return;
@@ -87,7 +115,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         }
 
         buffer.flip();
-        socketChannel.write(buffer);
+        bytesWritten.inc(socketChannel.write(buffer));
 
         if (buffer.hasRemaining()) {
             buffer.compact();
@@ -108,7 +136,11 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     }
 
     private ClientMessage poll() {
-        return writeQueue.poll();
+        ClientMessage message = writeQueue.poll();
+        if (message != null) {
+            messagesWritten.inc();
+        }
+        return message;
     }
 
     @Override

@@ -16,21 +16,14 @@
 
 package com.hazelcast.wan.impl;
 
-import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.WanTargetClusterConfig;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.StripedExecutor;
-import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.wan.WanReplicationEndpoint;
-import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -47,8 +40,6 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     private final ILogger logger;
 
     private final Map<String, WanReplicationPublisherDelegate> wanReplications = initializeWanReplicationPublisherMapping();
-    private final Object mutex = new Object();
-    private volatile StripedExecutor executor;
 
     public WanReplicationServiceImpl(Node node) {
         this.node = node;
@@ -71,73 +62,28 @@ public class WanReplicationServiceImpl implements WanReplicationService {
             if (wanReplicationConfig == null) {
                 return null;
             }
-            List<WanTargetClusterConfig> targets = wanReplicationConfig.getTargetClusterConfigs();
-            WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[targets.size()];
+            List<WanPublisherConfig> publisherConfigs = wanReplicationConfig.getWanPublisherConfigs();
+            WanReplicationEndpoint[] targetEndpoints = new WanReplicationEndpoint[publisherConfigs.size()];
             int count = 0;
-            for (WanTargetClusterConfig targetClusterConfig : targets) {
+            for (WanPublisherConfig publisherConfig : publisherConfigs) {
                 WanReplicationEndpoint target;
                 try {
-                    if (targetClusterConfig.getReplicationImplObject() != null) {
-                        target = (WanReplicationEndpoint) targetClusterConfig.getReplicationImplObject();
+                    if (publisherConfig.getImplementation() != null) {
+                        target = (WanReplicationEndpoint) publisherConfig.getImplementation();
                     } else {
                         target = ClassLoaderUtil
-                                .newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
+                                .newInstance(node.getConfigClassLoader(), publisherConfig.getClassName());
                     }
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
-                String groupName = targetClusterConfig.getGroupName();
-                String password = targetClusterConfig.getGroupPassword();
-                String[] addresses = new String[targetClusterConfig.getEndpoints().size()];
-                targetClusterConfig.getEndpoints().toArray(addresses);
-                target.init(node, groupName, password, addresses);
+                target.init(node, wanReplicationConfig, publisherConfig);
                 targetEndpoints[count++] = target;
             }
             wr = new WanReplicationPublisherDelegate(name, targetEndpoints);
             wanReplications.put(name, wr);
             return wr;
         }
-    }
-
-    @Override
-    public void handle(final Packet packet) {
-        StripedExecutor ex = getExecutor();
-        ex.execute(new StripedRunnable() {
-            @Override
-            public void run() {
-                try {
-                    WanReplicationEvent replicationEvent = (WanReplicationEvent) node.nodeEngine.toObject(packet);
-                    String serviceName = replicationEvent.getServiceName();
-                    ReplicationSupportingService service = node.nodeEngine.getService(serviceName);
-                    service.onReplicationEvent(replicationEvent);
-                } catch (Exception e) {
-                    logger.severe(e);
-                }
-            }
-
-            @Override
-            public int getKey() {
-                return packet.getPartitionId();
-            }
-        });
-    }
-
-    private StripedExecutor getExecutor() {
-        StripedExecutor ex = executor;
-        if (ex == null) {
-            synchronized (mutex) {
-                if (executor == null) {
-                    HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-                    executor = new StripedExecutor(node.getLogger(WanReplicationServiceImpl.class),
-                            threadGroup.getThreadNamePrefix("wan"),
-                            threadGroup.getInternalThreadGroup(),
-                            ExecutorConfig.DEFAULT_POOL_SIZE,
-                            ExecutorConfig.DEFAULT_QUEUE_CAPACITY);
-                }
-                ex = executor;
-            }
-        }
-        return ex;
     }
 
     @Override
@@ -152,10 +98,6 @@ public class WanReplicationServiceImpl implements WanReplicationService {
                         }
                     }
                 }
-            }
-            StripedExecutor ex = executor;
-            if (ex != null) {
-                ex.shutdown();
             }
             wanReplications.clear();
         }

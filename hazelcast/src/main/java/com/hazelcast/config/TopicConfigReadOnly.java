@@ -46,6 +46,10 @@ public class TopicConfigReadOnly extends TopicConfig {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }
 
+    public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
+        throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+    }
+
     public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
         throw new UnsupportedOperationException("This config is read-only topic: " + getName());
     }

@@ -16,39 +16,40 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.monitors.BuildInfoPlugin;
 import com.hazelcast.internal.monitors.ConfigPropertiesPlugin;
+import com.hazelcast.internal.monitors.InvocationPlugin;
+import com.hazelcast.internal.monitors.MetricsPlugin;
 import com.hazelcast.internal.monitors.OverloadedConnectionsPlugin;
 import com.hazelcast.internal.monitors.PendingInvocationsPlugin;
-import com.hazelcast.internal.monitors.MetricsPlugin;
 import com.hazelcast.internal.monitors.PerformanceMonitor;
 import com.hazelcast.internal.monitors.SlowOperationPlugin;
 import com.hazelcast.internal.monitors.SystemPropertiesPlugin;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
@@ -60,9 +61,12 @@ import com.hazelcast.spi.impl.packetdispatcher.impl.PacketDispatcherImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
-import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
+import com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -70,7 +74,8 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_METRICS_LEVEL;
+import static com.hazelcast.spi.properties.GroupProperty.PERFORMANCE_METRICS_LEVEL;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be
@@ -106,8 +111,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.loggingService = node.loggingService;
         this.serializationService = node.getSerializationService();
         this.logger = node.getLogger(NodeEngine.class.getName());
-        ProbeLevel probeLevel = node.getGroupProperties().getEnum(PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
-        this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
+        this.metricsRegistry = newMetricRegistry(node);
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManagerImpl(this);
         this.executionService = new ExecutionServiceImpl(this);
@@ -118,19 +122,37 @@ public class NodeEngineImpl implements NodeEngine {
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
         this.packetDispatcher = new PacketDispatcherImpl(
                 logger,
-                operationService,
+                operationService.getOperationExecutor(),
+                operationService.getAsyncResponseHandler(),
+                operationService.getInvocationMonitor(),
                 eventService,
-                wanReplicationService,
                 new ConnectionManagerPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
-        this.performanceMonitor = new PerformanceMonitor(
-                node.hazelcastInstance,
-                loggingService.getLogger(PerformanceMonitor.class),
-                node.getHazelcastThreadGroup(),
-                node.groupProperties);
+        this.performanceMonitor = newPerformanceMonitor();
+
+        serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
+        serviceManager.registerService(WaitNotifyService.SERVICE_NAME, waitNotifyService);
     }
 
-     class ConnectionManagerPacketHandler implements PacketHandler {
+    private MetricsRegistryImpl newMetricRegistry(Node node) {
+        ProbeLevel probeLevel = node.getProperties().getEnum(PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        return new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
+    }
+
+    private PerformanceMonitor newPerformanceMonitor() {
+        Member localMember = node.getLocalMember();
+        Address address = localMember.getAddress();
+        String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
+        String name = "performance-" + addressString + "-" + currentTimeMillis();
+
+        return new PerformanceMonitor(
+                name,
+                loggingService.getLogger(PerformanceMonitor.class),
+                node.getHazelcastThreadGroup(),
+                node.getProperties());
+    }
+
+    class ConnectionManagerPacketHandler implements PacketHandler {
         // ConnectionManager is only available after the NodeEngineImpl is available.
         @Override
         public void handle(Packet packet) throws Exception {
@@ -148,6 +170,10 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void start() {
+        metricsRegistry.collectMetrics(operationService);
+        metricsRegistry.collectMetrics(proxyService);
+        metricsRegistry.collectMetrics(eventService);
+
         serviceManager.start();
         proxyService.init();
         operationService.start();
@@ -164,6 +190,11 @@ public class NodeEngineImpl implements NodeEngine {
         performanceMonitor.register(new PendingInvocationsPlugin(this));
         performanceMonitor.register(new MetricsPlugin(this));
         performanceMonitor.register(new SlowOperationPlugin(this));
+        performanceMonitor.register(new InvocationPlugin(this));
+    }
+
+    public ServiceManager getServiceManager() {
+        return serviceManager;
     }
 
     @Override
@@ -230,8 +261,7 @@ public class NodeEngineImpl implements NodeEngine {
         return proxyService;
     }
 
-    @Override
-    public InternalWaitNotifyService getWaitNotifyService() {
+    public WaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
     }
 
@@ -286,15 +316,17 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public GroupProperties getGroupProperties() {
-        return node.getGroupProperties();
+    public HazelcastProperties getProperties() {
+        return node.getProperties();
     }
 
+    @Override
     public <T> T getService(String serviceName) {
         T service = serviceManager.getService(serviceName);
         if (service == null) {
             if (isRunning()) {
-                throw new HazelcastException("Service with name '" + serviceName + "' not found!");
+                throw new HazelcastException("Service with name '" + serviceName + "' not found!",
+                        new ServiceNotFoundException("Service with name '" + serviceName + "' not found!"));
             } else {
                 throw new RetryableHazelcastException("HazelcastInstance[" + getThisAddress()
                         + "] is not active!");

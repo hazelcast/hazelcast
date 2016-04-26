@@ -17,7 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
@@ -40,7 +40,7 @@ import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
  */
 public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, V> {
 
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
     protected Extractors extractors;
 
     @Override
@@ -101,7 +101,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
      * Static version of the extractAttributeValue() method used when the caller does not have
      * an instance of the QueryableEntry, but is in possession of key and value.
      */
-    static Object extractAttributeValue(Extractors extractors, SerializationService serializationService,
+    static Object extractAttributeValue(Extractors extractors, InternalSerializationService serializationService,
                                         String attributeName, Data key, Object value) throws QueryException {
         Object result = extractAttributeValueIfAttributeQueryConstant(serializationService, attributeName, key, value);
         if (result == null) {
@@ -116,7 +116,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     /**
      * Static version of the extractAttributeValueIfAttributeQueryConstant() method that needs key and value upfront.
      */
-    private static Object extractAttributeValueIfAttributeQueryConstant(SerializationService serializationService,
+    private static Object extractAttributeValueIfAttributeQueryConstant(InternalSerializationService serializationService,
                                                                         String attributeName, Data key, Object value) {
         if (KEY_ATTRIBUTE_NAME.value().equals(attributeName)) {
             return serializationService.toObject(key);
@@ -139,7 +139,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     private static Object extractAttributeValueFromTargetObject(Extractors extractors,
-                                                                SerializationService serializationService,
+                                                                InternalSerializationService serializationService,
                                                                 String attributeName, Object target) {
         if (target instanceof Portable || target instanceof Data) {
             Data targetData = serializationService.toData(target);
@@ -156,7 +156,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return extractors.extract(targetObject, attributeName);
     }
 
-    private static Comparable extractViaPortable(SerializationService serializationService,
+    private static Comparable extractViaPortable(InternalSerializationService serializationService,
                                                  String attributeName, Data data) {
         try {
             return PortableExtractor.extractValue(serializationService, data, attributeName);

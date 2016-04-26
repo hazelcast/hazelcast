@@ -42,6 +42,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     private long expirationTime = -1;
     private long acquireTime = -1L;
     private boolean transactional;
+    private boolean blockReads;
     private Map<String, ConditionInfo> conditions;
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
@@ -74,7 +75,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    boolean lock(String owner, long threadId, long referenceId, long leaseTime, boolean transactional) {
+    boolean lock(String owner, long threadId, long referenceId, long leaseTime, boolean transactional, boolean blockReads) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
@@ -83,6 +84,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             acquireTime = Clock.currentTimeMillis();
             setExpirationTime(leaseTime);
             this.transactional = transactional;
+            this.blockReads = blockReads;
             return true;
         } else if (isLockedBy(owner, threadId)) {
             if (!transactional && this.referenceId == referenceId) {
@@ -92,16 +94,25 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             lockCount++;
             setExpirationTime(leaseTime);
             this.transactional = transactional;
+            this.blockReads = blockReads;
             return true;
         }
         return false;
     }
 
+    /**
+     * This method is used to extend the already locked resource in the prepare phase of the transactions.
+     * It also marks the resource true to block reads.
+     * @param caller
+     * @param threadId
+     * @param leaseTime
+     * @return
+     */
     boolean extendLeaseTime(String caller, long threadId, long leaseTime) {
         if (!isLockedBy(caller, threadId)) {
             return false;
         }
-
+        this.blockReads = true;
         if (expirationTime < Long.MAX_VALUE) {
             setExpirationTime(expirationTime - Clock.currentTimeMillis() + leaseTime);
         }
@@ -255,6 +266,8 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         acquireTime = -1L;
         cancelEviction();
         version = 0;
+        transactional = false;
+        blockReads = false;
     }
 
     void cancelEviction() {
@@ -275,6 +288,11 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     @Override
     public boolean isTransactional() {
         return transactional;
+    }
+
+    @Override
+    public boolean shouldBlockReads() {
+        return blockReads;
     }
 
     @Override
@@ -331,6 +349,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         out.writeLong(expirationTime);
         out.writeLong(acquireTime);
         out.writeBoolean(transactional);
+        out.writeBoolean(blockReads);
 
         int conditionCount = getConditionCount();
         out.writeInt(conditionCount);
@@ -378,6 +397,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         expirationTime = in.readLong();
         acquireTime = in.readLong();
         transactional = in.readBoolean();
+        blockReads = in.readBoolean();
 
         int len = in.readInt();
         if (len > 0) {

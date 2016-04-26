@@ -40,7 +40,7 @@ public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "configureFetchSize:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {false},
                 {true}
         });

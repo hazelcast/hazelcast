@@ -28,7 +28,7 @@ public class DurationTest
         extends javax.cache.expiry.DurationTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

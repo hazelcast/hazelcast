@@ -25,12 +25,14 @@ import org.junit.runners.model.Statement;
  * Typically such a test will expect an {@code AssertionError} to be thrown.
  */
 public class AssertEnabledFilterRule implements TestRule {
-    @Override public Statement apply(final Statement base, final Description description) {
+    @Override
+    public Statement apply(final Statement base, final Description description) {
         if (description.getAnnotation(RequireAssertEnabled.class) == null) {
             return base;
         }
         return new Statement() {
-            @Override public void evaluate() throws Throwable {
+            @Override
+            public void evaluate() throws Throwable {
                 boolean assertEnabled = false;
                 assert assertEnabled = true;
                 if (assertEnabled) {

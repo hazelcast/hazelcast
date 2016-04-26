@@ -75,15 +75,30 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 }
                 getCollection().add(new CollectionItem(itemId, value));
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
-                final String serviceName = getServiceName();
-                final String txnId = tx.getTxnId();
-                tx.add(new CollectionTransactionLogRecord(itemId, name, partitionId, serviceName, txnId, op));
+                putToRecord(op);
                 return true;
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
         return false;
+    }
+
+    protected void putToRecord(CollectionTxnOperation operation) {
+        CollectionTransactionLogRecord logRecord = (CollectionTransactionLogRecord) tx.get(name);
+        if (logRecord == null) {
+            logRecord = new CollectionTransactionLogRecord(getServiceName(), tx.getTxnId(), name, partitionId);
+            tx.add(logRecord);
+        }
+        logRecord.addOperation(operation);
+    }
+
+    private void removeFromRecord(long itemId) {
+        CollectionTransactionLogRecord logRecord = (CollectionTransactionLogRecord) tx.get(name);
+        int size = logRecord.removeOperation(itemId);
+        if (size == 0) {
+            tx.remove(name);
+        }
     }
 
     public boolean remove(E e) {
@@ -113,7 +128,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
             if (item != null) {
                 if (reservedItemId == item.getItemId()) {
                     iterator.remove();
-                    tx.remove(reservedItemId);
+                    removeFromRecord(reservedItemId);
                     itemIdSet.remove(reservedItemId);
                     return true;
                 }
@@ -121,13 +136,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
-                tx.add(new CollectionTransactionLogRecord(
-                        item.getItemId(),
-                        name,
-                        partitionId,
-                        getServiceName(),
-                        tx.getTxnId(),
-                        op));
+                putToRecord(op);
                 return true;
             }
         } catch (Throwable t) {

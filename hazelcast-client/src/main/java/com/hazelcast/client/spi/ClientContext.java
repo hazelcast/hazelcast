@@ -20,9 +20,12 @@ import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.serialization.SerializationService;
 
+/**
+ * Context holding all the required services, managers and the configuration for a Hazelcast Client
+ */
 public final class ClientContext {
 
     private final SerializationService serializationService;
@@ -92,7 +95,7 @@ public final class ClientContext {
     }
 
     public void removeProxy(ClientProxy proxy) {
-        proxyManager.removeProxy(proxy.getServiceName(), proxy.getName());
+        proxyManager.removeProxy(proxy.getServiceName(), proxy.getDistributedObjectName());
     }
 
     public ClientConfig getClientConfig() {

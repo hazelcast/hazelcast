@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation code for the {@link com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService}.
+ * Contains the implementation code for the {@link com.hazelcast.spi.impl.waitnotifyservice.WaitNotifyService}.
  */
 package com.hazelcast.spi.impl.waitnotifyservice.impl;

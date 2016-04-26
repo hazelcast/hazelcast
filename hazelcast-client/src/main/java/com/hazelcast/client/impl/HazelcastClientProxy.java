@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -44,15 +45,16 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
@@ -130,6 +132,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public ILock getLock(String key) {
         return getClient().getLock(key);
+    }
+
+    @Override
+    public <K, V> ICache<K, V> getCache(String name) {
+        return getClient().getCache(name);
     }
 
     @Override

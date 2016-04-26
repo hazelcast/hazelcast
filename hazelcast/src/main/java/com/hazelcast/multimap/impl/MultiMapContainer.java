@@ -56,7 +56,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
     }
@@ -70,11 +70,11 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public boolean isTransactionallyLocked(Data key) {
-        return lockStore != null && lockStore.isTransactionallyLocked(key);
+        return lockStore != null && lockStore.shouldBlockReads(key);
     }
 
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl) {
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl);
+    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads) {
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl, blockReads);
     }
 
     public boolean unlock(Data key, String caller, long threadId, long referenceId) {
@@ -181,7 +181,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }

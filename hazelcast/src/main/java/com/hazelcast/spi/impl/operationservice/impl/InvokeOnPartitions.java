@@ -79,7 +79,7 @@ final class InvokeOnPartitions {
         for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             Address address = mp.getKey();
             List<Integer> partitions = mp.getValue();
-            PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
+            PartitionIteratingOperation pi = new PartitionIteratingOperation(operationFactory, partitions);
             Future future = operationService.createInvocationBuilder(serviceName, pi, address)
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
@@ -95,7 +95,7 @@ final class InvokeOnPartitions {
                 Future future = response.getValue();
                 PartitionIteratingOperation.PartitionResponse result = (PartitionIteratingOperation.PartitionResponse)
                         nodeEngine.toObject(future.get());
-                partitionResults.putAll(result.asMap());
+                result.addResults(partitionResults);
             } catch (Throwable t) {
                 if (operationService.logger.isFinestEnabled()) {
                     operationService.logger.finest(t);

@@ -18,6 +18,8 @@ package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -25,13 +27,12 @@ import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.spi.properties.GroupProperty;
 
-import static com.hazelcast.instance.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
-import static com.hazelcast.instance.GroupProperty.IO_THREAD_COUNT;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.properties.GroupProperty.IO_BALANCER_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
 
 /**
  * It attempts to detect and fix a selector imbalance problem.
@@ -47,7 +48,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via
  * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.MigrationStrategy}.
  *
- * Measuring interval can be customized via {@link com.hazelcast.instance.GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
+ * Measuring interval can be customized via {@link GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
  * It doesn't leverage {@link com.hazelcast.nio.ConnectionListener} capability
  * provided by {@link com.hazelcast.nio.ConnectionManager} to observe connections as it has to be notified
@@ -105,25 +106,15 @@ public class IOBalancer {
     public void connectionAdded(TcpIpConnection connection) {
         NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
         NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Added handlers for: " + connection);
-        }
-
-        inLoadTracker.addHandler(socketReader);
-        outLoadTracker.addHandler(socketWriter);
+        inLoadTracker.notifyHandlerAdded(socketReader);
+        outLoadTracker.notifyHandlerAdded(socketWriter);
     }
 
     public void connectionRemoved(TcpIpConnection connection) {
         NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
         NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Removing handlers from: " + connection);
-        }
-
-        inLoadTracker.removeHandler(socketReader);
-        outLoadTracker.removeHandler(socketWriter);
+        inLoadTracker.notifyHandlerRemoved(socketReader);
+        outLoadTracker.notifyHandlerRemoved(socketWriter);
     }
 
     public void start() {
@@ -211,4 +202,5 @@ public class IOBalancer {
     public void signalMigrationComplete() {
         migrationCompletedCount.inc();
     }
+
 }

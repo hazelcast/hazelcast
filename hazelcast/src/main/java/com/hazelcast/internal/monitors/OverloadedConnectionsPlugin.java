@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.OutboundFrame;
@@ -28,6 +26,9 @@ import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.nio.tcp.spinning.SpinningSocketWriter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ItemCounter;
 
 import java.text.NumberFormat;
@@ -37,11 +38,9 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD;
 import static java.lang.Math.min;
 import static java.util.Collections.emptySet;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The OverloadedConnectionsPlugin checks all the connections and samples the content of the packet
@@ -52,6 +51,34 @@ import static java.util.Collections.emptySet;
  * plugin is disabled by default.
  */
 public class OverloadedConnectionsPlugin extends PerformanceMonitorPlugin {
+
+    /**
+     * The period in seconds the PerformanceMonitor OverloadedConnectionPlugin runs.
+     *
+     * With the OverloadedConnectionsPlugin one can see what is going on inside a connection with a huge
+     * number of pending packets. It makes use of sampling to give some impression of the content.
+     *
+     * This plugin can be very expensive to use and should only be used as a debugging aid; should not be
+     * used in production due to the fact that packets could be deserialized.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    public static final HazelcastProperty PERIOD_SECONDS
+            = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.period.seconds", 0, SECONDS);
+
+    /**
+     * The minimum number of packets in the connection before it is considered to be overloaded.
+     */
+    public static final HazelcastProperty THRESHOLD
+            = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.threshold", 10000);
+
+    /**
+     * The number of samples to take from a single overloaded connection. Increasing the number of packages gives
+     * more accuracy of the content, but it will come at greater price.
+     */
+    public static final HazelcastProperty SAMPLES
+            = new HazelcastProperty("hazelcast.performance.monitor.overloaded.connections.samples", 1000);
+
     private static final Queue<OutboundFrame> EMPTY_QUEUE = new LinkedList<OutboundFrame>();
 
     private final SerializationService serializationService;
@@ -71,10 +98,10 @@ public class OverloadedConnectionsPlugin extends PerformanceMonitorPlugin {
         this.logger = nodeEngine.getLogger(OverloadedConnectionsPlugin.class);
         this.defaultFormat.setMinimumFractionDigits(3);
 
-        GroupProperties props = nodeEngine.getGroupProperties();
-        this.periodMillis = props.getMillis(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_PERIOD_SECONDS);
-        this.threshold = props.getInteger(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_THRESHOLD);
-        this.samples = props.getInteger(PERFORMANCE_MONITOR_OVERLOADED_CONNECTIONS_SAMPLES);
+        HazelcastProperties props = nodeEngine.getProperties();
+        this.periodMillis = props.getMillis(PERIOD_SECONDS);
+        this.threshold = props.getInteger(THRESHOLD);
+        this.samples = props.getInteger(SAMPLES);
     }
 
     @Override

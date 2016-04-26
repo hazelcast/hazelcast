@@ -19,13 +19,6 @@ package com.hazelcast.instance;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.ConfigCheck;
-import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
-import com.hazelcast.internal.cluster.impl.JoinRequest;
-import com.hazelcast.internal.cluster.impl.MulticastJoiner;
-import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
@@ -41,17 +34,25 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ConfigCheck;
+import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.cluster.impl.MulticastJoiner;
+import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -62,11 +63,12 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.PhoneHome;
+import com.hazelcast.util.UuidUtil;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -76,86 +78,82 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
+import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
+import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
+import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
+import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
+        "checkstyle:classfanoutcomplexity"})
 public class Node {
+
+    private static final int THREAD_SLEEP_DURATION_MS = 500;
+
+    public final HazelcastInstanceImpl hazelcastInstance;
+
+    public final Config config;
+
+    public final NodeEngineImpl nodeEngine;
+    public final ClientEngineImpl clientEngine;
+
+    public final InternalPartitionServiceImpl partitionService;
+    public final ClusterServiceImpl clusterService;
+    public final MulticastService multicastService;
+    public final DiscoveryService discoveryService;
+    public final TextCommandServiceImpl textCommandService;
+    public final LoggingServiceImpl loggingService;
+
+    public final ConnectionManager connectionManager;
+
+    public final Address address;
+    public final MemberImpl localMember;
+
+    public final SecurityContext securityContext;
 
     private final ILogger logger;
 
     private final AtomicBoolean joined = new AtomicBoolean(false);
-
-    private volatile NodeState state;
-
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
-    private final SerializationService serializationService;
+    private final PhoneHome phoneHome = new PhoneHome();
 
-    public final NodeEngineImpl nodeEngine;
-
-    public final ClientEngineImpl clientEngine;
-
-    public final InternalPartitionServiceImpl partitionService;
-
-    public final ClusterServiceImpl clusterService;
-
-    public final MulticastService multicastService;
-
-    public final DiscoveryService discoveryService;
-
-    public final ConnectionManager connectionManager;
-
-    public final TextCommandServiceImpl textCommandService;
-
-    public final Config config;
-
-    public final GroupProperties groupProperties;
-
-    public final Address address;
-
-    public final MemberImpl localMember;
-
-    private volatile Address masterAddress;
-
-    public final HazelcastInstanceImpl hazelcastInstance;
-
-    public final LoggingServiceImpl loggingService;
-
-    private final Joiner joiner;
+    private final InternalSerializationService serializationService;
+    private final ClassLoader configClassLoader;
 
     private final NodeExtension nodeExtension;
 
-    private ManagementCenterService managementCenterService;
-
-    public final SecurityContext securityContext;
-
-    private final ClassLoader configClassLoader;
-
+    private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
-
-    private final PhoneHome phoneHome = new PhoneHome();
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
+    private final Joiner joiner;
 
     private final boolean liteMember;
 
-    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
-        return nodeContext.createNodeExtension(this);
-    }
+    private ManagementCenterService managementCenterService;
 
+    private volatile NodeState state;
+
+    private volatile Address masterAddress;
+
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
         this.liteMember = config.isLiteMember();
         this.configClassLoader = config.getClassLoader();
-        this.groupProperties = new GroupProperties(config);
+        this.properties = new HazelcastProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
 
-        String loggingType = groupProperties.getString(GroupProperty.LOGGING_TYPE);
+        String loggingType = properties.getString(LOGGING_TYPE);
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
@@ -168,12 +166,14 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address), hazelcastInstance, memberAttributes, liteMember);
+            localMember = new MemberImpl(address, true, createMemberUuid(address),
+                    hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
 
             this.nodeExtension = createNodeExtension(nodeContext);
+            nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -186,7 +186,6 @@ public class Node {
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
-            nodeExtension.printNodeInfo();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             discoveryService = createDiscoveryService(config);
             joiner = nodeContext.createJoiner(this);
@@ -194,6 +193,7 @@ public class Node {
             try {
                 serverSocketChannel.close();
             } catch (Throwable ignored) {
+                EmptyStatement.ignore(ignored);
             }
             throw ExceptionUtil.rethrow(e);
         }
@@ -223,6 +223,7 @@ public class Node {
         return factory.newDiscoveryService(settings);
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private void initializeListeners(Config config) {
         for (final ListenerConfig listenerCfg : config.getListenerConfigs()) {
             Object listener = listenerCfg.getImplementation();
@@ -264,6 +265,13 @@ public class Node {
                 known = true;
             }
 
+            if (listener instanceof InternalMigrationListener) {
+                final InternalPartitionServiceImpl partitionService =
+                        (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+                partitionService.setInternalMigrationListener((InternalMigrationListener) listener);
+                known = true;
+            }
+
             if (nodeExtension.registerListener(listener)) {
                 known = true;
             }
@@ -276,11 +284,15 @@ public class Node {
         }
     }
 
+    protected NodeExtension createNodeExtension(NodeContext nodeContext) {
+        return nodeContext.createNodeExtension(this);
+    }
+
     public ManagementCenterService getManagementCenterService() {
         return managementCenterService;
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 
@@ -331,11 +343,11 @@ public class Node {
                     hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
-        if (groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_ENABLED)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {
             discoveryService.start();
         }
 
-        if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
+        if (properties.getBoolean(SHUTDOWNHOOK_ENABLED)) {
             logger.finest("Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
@@ -358,6 +370,7 @@ public class Node {
         phoneHome.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
         if (logger.isFinestEnabled()) {
@@ -370,7 +383,7 @@ public class Node {
         }
 
         if (!terminate) {
-            final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
+            final int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
@@ -392,11 +405,17 @@ public class Node {
         joined.set(false);
         setMasterAddress(null);
         try {
-            if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
+            if (properties.getBoolean(SHUTDOWNHOOK_ENABLED)) {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
+        } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+
+        try {
             discoveryService.destroy();
         } catch (Throwable ignored) {
+            EmptyStatement.ignore(ignored);
         }
 
         try {
@@ -432,7 +451,7 @@ public class Node {
             securityContext.destroy();
         }
         logger.finest("Destroying serialization service...");
-        serializationService.destroy();
+        serializationService.dispose();
 
         hazelcastThreadGroup.destroy();
         nodeExtension.shutdown();
@@ -448,6 +467,7 @@ public class Node {
 
     /**
      * Indicates that node is not shutting down or it has not already shut down
+     *
      * @return true if node is not shutting down or it has not already shut down
      */
     public boolean isRunning() {
@@ -461,7 +481,7 @@ public class Node {
         logger.info("Node is already shutting down... Waiting for shutdown process to complete...");
         while (state != NodeState.SHUT_DOWN) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(THREAD_SLEEP_DURATION_MS);
             } catch (InterruptedException e) {
                 logger.warning("Interrupted while waiting for shutdown!");
                 return;
@@ -507,8 +527,8 @@ public class Node {
         return loggingService.getLogger(clazz);
     }
 
-    public GroupProperties getGroupProperties() {
-        return groupProperties;
+    public HazelcastProperties getProperties() {
+        return properties;
     }
 
     public TextCommandService getTextCommandService() {
@@ -590,7 +610,7 @@ public class Node {
         }
 
         if (!joined()) {
-            long maxJoinTimeMillis = groupProperties.getMillis(GroupProperty.MAX_JOIN_SECONDS);
+            long maxJoinTimeMillis = properties.getMillis(MAX_JOIN_SECONDS);
             logger.severe("Could not join cluster in " + maxJoinTimeMillis + " ms. Shutting down now!");
             shutdownNodeByFiringEvents(Node.this, true);
         }
@@ -604,11 +624,10 @@ public class Node {
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.verify();
 
-        if (groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_ENABLED)) {
+        if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {
             //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
-            return new DiscoveryJoiner(this, discoveryService,
-                    groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
+            return new DiscoveryJoiner(this, discoveryService, properties.getBoolean(DISCOVERY_SPI_PUBLIC_IP_ENABLED));
         } else {
             if (join.getMulticastConfig().isEnabled() && multicastService != null) {
                 logger.info("Creating MulticastJoiner");

@@ -34,10 +34,9 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastTestRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.RunParallel;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,10 +52,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
@@ -67,8 +67,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunParallel
-@RunWith(HazelcastTestRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapNearCacheTest {
 
@@ -489,6 +489,35 @@ public class ClientMapNearCacheTest {
         });
     }
 
+
+    @Test
+    public void testMemberLoadAll_invalidates_clientNearCache() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+
+        Config config = member.getConfig();
+        SimpleMapStore store = new SimpleMapStore();
+        final MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(store);
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        populateNearCache(clientMap, mapSize);
+
+        IMap<Integer, Integer> map = member.getMap(mapName);
+        map.loadAll(true);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertThatOwnedEntryCountEquals(clientMap, 0);
+            }
+        });
+    }
+
     @Test
     public void testAfterLoadAllWithDefinedKeysNearCacheIsInvalidated() {
         int mapSize = 1000;
@@ -544,6 +573,37 @@ public class ClientMapNearCacheTest {
         }
 
         clientMap.putAll(hashMap);
+
+        assertTrueEventually(new AssertTask() {
+            public void run() throws Exception {
+                assertThatOwnedEntryCountEquals(clientMap, 0);
+            }
+        });
+    }
+
+
+    @Test
+    public void testMemberPutAll_invalidates_clientNearCache() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
+
+        HazelcastInstance client = getClient(hazelcastFactory, newInvalidationAndCacheLocalEntriesEnabledNearCacheConfig(mapName));
+
+        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>();
+        for (int i = 0; i < mapSize; i++) {
+            clientMap.put(i, i);
+            hashMap.put(i, i);
+        }
+
+        for (int i = 0; i < mapSize; i++) {
+            clientMap.get(i);
+        }
+
+        IMap<Integer, Integer> memberMap = member.getMap(mapName);
+        memberMap.putAll(hashMap);
 
         assertTrueEventually(new AssertTask() {
             public void run() throws Exception {
@@ -1009,6 +1069,17 @@ public class ClientMapNearCacheTest {
         map.destroy();
     }
 
+    @Test
+    public void testNearCacheGetAsyncTwice() throws ExecutionException, InterruptedException {
+        NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
+
+        map.getAsync(1).get();
+        Thread.sleep(1000);
+        assertNull(map.getAsync(1).get());
+    }
+
     protected void populateNearCache(IMap<Integer, Integer> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -1148,7 +1219,7 @@ public class ClientMapNearCacheTest {
 
     protected Config newConfig() {
         Config config = new Config();
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED, String.valueOf(batchInvalidationEnabled));
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), String.valueOf(batchInvalidationEnabled));
         return config;
     }
 

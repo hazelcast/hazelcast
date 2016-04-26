@@ -28,7 +28,7 @@ public class CacheMBStatisticsBeanTest
         extends org.jsr107.tck.management.CacheMBStatisticsBeanTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -32,7 +32,7 @@ public class RingbufferServiceTest extends HazelcastTestSupport {
     public void rollbackMigration() {
         Ringbuffer ringbuffer = hz.getRingbuffer("foo");
         int partitionId = getPartitionId(hz, ringbuffer.getName());
-        PartitionMigrationEvent partitionEvent = new PartitionMigrationEvent(DESTINATION, partitionId);
+        PartitionMigrationEvent partitionEvent = new PartitionMigrationEvent(DESTINATION, partitionId, -1, 0);
 
         service.rollbackMigration(partitionEvent);
 

@@ -18,6 +18,7 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.PrefixedDistributedObject;
 
 import javax.cache.Cache;
 import javax.cache.expiry.ExpiryPolicy;
@@ -96,7 +97,7 @@ import java.util.Set;
  * @since 3.3.1
  */
 public interface ICache<K, V>
-        extends javax.cache.Cache<K, V> {
+        extends javax.cache.Cache<K, V>, PrefixedDistributedObject {
 
     /**
      * Asynchronously retrieves the mapped value of the given key using a custom
@@ -113,7 +114,7 @@ public interface ICache<K, V>
      *
      * @param key The key whose associated value is to be returned.
      *
-     * @return ICompletableFuture to retrieve the value assigned to the given key.
+     * @return ICompletableFuture retrieve the value assigned to the given key.
      *
      * @throws java.lang.NullPointerException if given key is null
      * @throws javax.cache.CacheException if any exception
@@ -141,7 +142,7 @@ public interface ICache<K, V>
      * @param expiryPolicy The custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #getAsync(Object)}.
      *
-     * @return ICompletableFuture to retrieve the value assigned to the given key.
+     * @return ICompletableFuture retrieve the value assigned to the given key.
      *
      * @throws java.lang.NullPointerException if given key is null.
      * @throws javax.cache.CacheException if any exception
@@ -166,7 +167,7 @@ public interface ICache<K, V>
      * @param key The key whose associated value is to be returned.
      * @param value The value to be associated with the specified key.
      *
-     * @return ICompletableFuture to get notified when the operation succeeds.
+     * @return ICompletableFuture notify when the operation succeeds.
      *
      * @throws java.lang.NullPointerException if the given key or value is null.
      * @throws javax.cache.CacheException if any exception
@@ -198,7 +199,7 @@ public interface ICache<K, V>
      * @param expiryPolicy The custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #putAsync(Object, Object)}.
      *
-     * @return ICompletableFuture to get notified when the operation succeeds.
+     * @return ICompletableFuture notify when the operation succeeds.
      *
      * @throws java.lang.NullPointerException if the given key or value is null.
      * @throws javax.cache.CacheException if any exception
@@ -236,7 +237,7 @@ public interface ICache<K, V>
      * @param key   The key that is associated with the specified value.
      * @param value The value to which the specified key is associated.
      *
-     * @return ICompletableFuture to retrieve if a previous value was assigned with the key
+     * @return ICompletableFuture notify if a previous value was assigned with the key
      *
      * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if any exception
@@ -278,7 +279,7 @@ public interface ICache<K, V>
      *                     a null value is equivalent to
      *                     {@link #putIfAbsentAsync(Object, Object)}
      *
-     * @return ICompletableFuture to retrieve if a previous value was assigned with the key
+     * @return ICompletableFuture notify if a previous value was assigned with the key
      *
      * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if any exception
@@ -309,7 +310,7 @@ public interface ICache<K, V>
      * @param key The key whose associated value is to be returned.
      * @param value The value that is associated with the specified key.
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key.
+     * @return ICompletableFuture retrieve a possible previously assigned value for the given key.
      *
      * @throws java.lang.NullPointerException if the given key or value is null.
      * @throws javax.cache.CacheException if any exception
@@ -342,7 +343,7 @@ public interface ICache<K, V>
      * @param expiryPolicy The custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #getAndPutAsync(Object, Object)}.
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key.
+     * @return ICompletableFuture retrieve a possible previously assigned value for the given key.
      *
      * @throws java.lang.NullPointerException if the given key or value is null.
      * @throws javax.cache.CacheException if any exception
@@ -372,7 +373,7 @@ public interface ICache<K, V>
      *
      * @param key The key whose mapping is to be removed.
      *
-     * @return ICompletableFuture to retrieve if mapping could be removed or not.
+     * @return ICompletableFuture notify if mapping could be removed or not.
      *
      * @throws java.lang.NullPointerException if the given key is null.
      * @throws javax.cache.CacheException if any exception
@@ -411,7 +412,7 @@ public interface ICache<K, V>
      * @param key The key whose mapping is to be removed if the mapped value is oldValue.
      * @param oldValue The value expected to be associated with the specified key.
      *
-     * @return ICompletableFuture to retrieve if mapping could be removed or not.
+     * @return ICompletableFuture notify if mapping could be removed or not.
      *
      * @throws java.lang.NullPointerException if the given key or oldValue is null.
      * @throws javax.cache.CacheException if any exception
@@ -438,7 +439,7 @@ public interface ICache<K, V>
      *
      * @param key The key to be removed and whose associated value is to be returned.
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the removed key.
+     * @return ICompletableFuture retrieve a possible previously assigned value for the removed key.
      *
      * @throws java.lang.NullPointerException if the given key is null.
      * @throws javax.cache.CacheException if any exception
@@ -460,7 +461,7 @@ public interface ICache<K, V>
      * @param key The key whose associated value is to be replaced.
      * @param value The new value to be associated with the specified key.
      *
-     * @return ICompletableFuture to get notified if the operation succeed or not.
+     * @return ICompletableFuture notify if the operation succeeds or not.
      *
      * @throws java.lang.NullPointerException if the given key or value is null.
      * @throws javax.cache.CacheException if any exception
@@ -489,7 +490,7 @@ public interface ICache<K, V>
      * @param expiryPolicy The custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #replaceAsync(Object, Object)}
      *
-     * @return ICompletableFuture to get notified if the operation succeed or not.
+     * @return ICompletableFuture notify if the operation succeeds or not.
      *
      * @throws java.lang.NullPointerException if the given key or value is null.
      * @throws javax.cache.CacheException if any exception
@@ -534,7 +535,7 @@ public interface ICache<K, V>
      * @param oldValue The old value expected to be associated with the specified key.
      * @param newValue The new value to be associated with the specified key.
      *
-     * @return ICompletableFuture to get notified if the operation succeed or not.
+     * @return ICompletableFuture notify if the operation succeeds or not.
      *
      * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null.
      * @throws javax.cache.CacheException if any exception
@@ -841,7 +842,7 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key      The key with whose value is replaced.
+     * @param key      The key with the value to be replaced.
      * @param oldValue The old value expected to be associated with the specified key.
      * @param newValue The new value to be associated with the specified key.
      * @param expiryPolicy The custom expiry policy for this operation,
@@ -984,18 +985,18 @@ public interface ICache<K, V>
      * The ordering of iteration over entries is undefined.
      * </p>
      * <p>
-     * During iteration, any entries that are
+     * During iteration, any entries that are:
      * <ul>
-     * <li>Read will have their appropriate CacheEntryReadListeners notified</li>
-     * <li>Removed will have their appropriate CacheEntryRemoveListeners notified</li>
+     * <li>read will have their appropriate CacheEntryReadListeners notified.</li>
+     * <li>removed will have their appropriate CacheEntryRemoveListeners notified.</li>
      * </ul>
      * </p>
      * {@link java.util.Iterator#next()} may return null if the entry is no
      * longer present, has expired or has been evicted.
      *
      * @param fetchSize size for fetching keys in bulk.
-     *                  This size can be though as page size for iteration.
-     *                  But notice that at every fetch, only keys are retrieved not values.
+     *                  This size can be thought of as page size for iteration.
+     *                  But notice that at every fetch, only keys are retrieved, not values.
      *                  Values are retrieved on each iterate.
      *
      * @see #iterator()

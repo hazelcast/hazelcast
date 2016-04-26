@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
+
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;

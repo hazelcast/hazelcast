@@ -1,16 +1,14 @@
 package com.hazelcast.serviceprovider;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.experimental.categories.Category;
-
-
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 

@@ -2,9 +2,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,7 +46,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, getPartitionId(local));
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
     @Test
@@ -59,7 +59,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, partitionId);
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
     @Test
@@ -75,14 +75,14 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");
-        f.getSafely();
+        f.join();
     }
 
     @Test
     public void invokeOnPartition_outerLocal_innerSameInstance_callsDifferentPartition_mappedToSameThread() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT, "2");
-        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT, "1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "2");
+        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         HazelcastInstance local = createHazelcastInstance(config);
         final OperationService operationService = getOperationService(local);
 
@@ -94,7 +94,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");
-        f.getSafely();
+        f.join();
     }
 
     @Test
@@ -106,7 +106,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
         InternalCompletableFuture f = operationService.invokeOnTarget(null, outerOperation, getAddress(local));
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
         InternalCompletableFuture f = operationService.invokeOnTarget(null, outerOperation, getAddress(local));
 
-        assertEquals(RESPONSE, f.getSafely());
+        assertEquals(RESPONSE, f.join());
     }
 
 }

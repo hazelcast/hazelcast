@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;

@@ -17,14 +17,16 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.MigrationManager;
+import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -63,15 +65,16 @@ public final class MigrationOperation extends BaseMigrationOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, Collection<Operation> tasks) {
-        super(migrationInfo);
+    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, Collection<Operation> tasks,
+            int partitionStateVersion) {
+        super(migrationInfo, partitionStateVersion);
         this.replicaVersions = replicaVersions;
         this.tasks = tasks;
     }
 
     @Override
-    public Object getResponse() {
-        return success;
+    protected MigrationParticipant getMigrationParticipantType() {
+        return MigrationParticipant.DESTINATION;
     }
 
     @Override
@@ -82,8 +85,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
             doRun();
         } catch (Throwable t) {
             logMigrationFailure(t);
+            success = false;
             failureReason = t;
         } finally {
+            onMigrationComplete();
             if (!success) {
                 onExecutionFailure(failureReason);
             }
@@ -115,7 +120,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private boolean startMigration() {
-        return migrationInfo.startProcessing();
+        return migrationInfo.startProcessing() && addActiveMigration();
     }
 
     private void logMigrationCancelled() {
@@ -124,8 +129,11 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private void afterMigrate() {
         if (success) {
-            InternalPartitionService partitionService = getService();
-            partitionService.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions, 1);
+            InternalPartitionServiceImpl partitionService = getService();
+            PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+            int destinationNewReplicaIndex = migrationInfo.getDestinationNewReplicaIndex();
+            int replicaOffset = destinationNewReplicaIndex <= 1 ? 1 : destinationNewReplicaIndex;
+            replicaManager.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions, replicaOffset);
             if (getLogger().isFinestEnabled()) {
                 getLogger().finest("ReplicaVersions are set after migration. partitionId="
                         + migrationInfo.getPartitionId() + " replicaVersions=" + Arrays.toString(replicaVersions));
@@ -150,8 +158,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private void migrate() throws Exception {
-        addActiveMigration();
-
         for (Operation op : tasks) {
             prepareOperation(op);
             try {
@@ -166,15 +172,17 @@ public final class MigrationOperation extends BaseMigrationOperation {
         success = true;
     }
 
-    private void addActiveMigration() {
+    private boolean addActiveMigration() {
         InternalPartitionServiceImpl partitionService = getService();
-        partitionService.addActiveMigration(migrationInfo);
+        MigrationManager migrationManager = partitionService.getMigrationManager();
+        return migrationManager.addActiveMigration(migrationInfo);
     }
 
     private void runMigrationTask(Operation op) throws Exception {
         MigrationAwareService service = op.getService();
-        PartitionMigrationEvent event =
-                new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getPartitionId());
+        PartitionMigrationEvent event = new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
+                migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
+                migrationInfo.getDestinationNewReplicaIndex());
         service.beforeMigration(event);
         op.beforeRun();
         op.run();

@@ -65,6 +65,15 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     void initPartitionsContainers();
 
+    /**
+     * Clears all map partitions which are expected to have lesser backups
+     * than given.
+     *
+     * @param partitionId partition id
+     * @param backupCount backup count
+     */
+    void clearMapsHavingLesserBackupCountThan(int partitionId, int backupCount);
+
     void clearPartitionData(int partitionId);
 
     MapService getService();
@@ -124,4 +133,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     Extractors getExtractors(String mapName);
 
     void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
+
+    void removeMapContainer(MapContainer mapContainer);
 }

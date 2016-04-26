@@ -17,9 +17,9 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.IPartitionLostEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareService;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.util.Map.Entry;
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -176,7 +176,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         return new CachedQueryEntry();
     }
 
-    protected void init(Object entry, SerializationService serializationService, Data key, Object value, Extractors extractors) {
+    protected void init(Object entry, InternalSerializationService serializationService, Data key, Object value, Extractors extractors) {
         ((CachedQueryEntry) entry).init(serializationService, key, value, extractors);
     }
 

@@ -22,10 +22,9 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.LazyEntryViewFromRecord;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.Storage;
-import com.hazelcast.map.impl.recordstore.StorageImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.IPartition;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
 /**
@@ -92,7 +91,7 @@ public class EvictorImpl implements Evictor {
         int sampleCount = evictionPolicy.getSampleCount();
         Storage storage = recordStore.getStorage();
 
-        return (Iterable<EntryView>) ((StorageImpl) storage).getRandomSamples(sampleCount);
+        return (Iterable<EntryView>) storage.getRandomSamples(sampleCount);
     }
 
     protected static long getNow() {

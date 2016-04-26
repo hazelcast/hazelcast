@@ -20,13 +20,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
 
@@ -35,6 +36,7 @@ import java.util.Map;
  *
  * todo: what is the purpose of the client engine.
  */
+@PrivateApi
 public interface ClientEngine {
 
     int getClientEndpointCount();

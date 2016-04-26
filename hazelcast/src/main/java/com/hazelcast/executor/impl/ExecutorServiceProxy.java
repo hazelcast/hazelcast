@@ -36,6 +36,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -200,8 +201,9 @@ public class ExecutorServiceProxy
         String uuid = newUnsecureUuidString();
         int partitionId = getTaskPartitionId(callable);
 
-        CallableTaskOperation op = new CallableTaskOperation(name, uuid, callableData);
-        ICompletableFuture future = invoke(partitionId, op);
+        Operation op = new CallableTaskOperation(name, uuid, callableData)
+                .setPartitionId(partitionId);
+        ICompletableFuture future = invokeOnPartition(op);
         boolean sync = checkSync();
         if (sync) {
             try {
@@ -220,12 +222,6 @@ public class ExecutorServiceProxy
         }
     }
 
-    private InternalCompletableFuture invoke(int partitionId, CallableTaskOperation op) {
-        NodeEngine nodeEngine = getNodeEngine();
-        OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(DistributedExecutorService.SERVICE_NAME, op, partitionId);
-    }
-
     @Override
     public <T> Future<T> submit(Callable<T> task) {
         final int partitionId = getTaskPartitionId(task);
@@ -241,8 +237,9 @@ public class ExecutorServiceProxy
         String uuid = newUnsecureUuidString();
 
         boolean sync = !preventSync && checkSync();
-        CallableTaskOperation op = new CallableTaskOperation(name, uuid, taskData);
-        ICompletableFuture future = invoke(partitionId, op);
+        Operation op = new CallableTaskOperation(name, uuid, taskData)
+                .setPartitionId(partitionId);
+        ICompletableFuture future = invokeOnPartition(op);
         if (sync) {
             Object response;
             try {

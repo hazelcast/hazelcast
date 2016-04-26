@@ -21,14 +21,12 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -38,6 +36,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -227,7 +226,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private void publishEntryEvent() {
         if (hasRegisteredListenerForThisMap()) {
             nullifyOldValueIfNecessary();
-            final MapEventPublisher mapEventPublisher = getMapEventPublisher();
             mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
         }
     }
@@ -238,7 +236,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 && mapContainer.getWanMergePolicy() == null) {
             return;
         }
-        final MapEventPublisher mapEventPublisher = getMapEventPublisher();
         final Data key = dataKey;
 
         if (REMOVED.equals(eventType)) {
@@ -251,11 +248,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
-    }
-
-    private MapEventPublisher getMapEventPublisher() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getMapEventPublisher();
     }
 
     @Override

@@ -27,6 +27,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.ThreadUtil;
 
+/**
+ * Proxy implementation of {@link TransactionalSet}.
+ *
+ * @param <E> the type of elements in this set
+ */
 public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalSet<E> {
 
     public ClientTxnSetProxy(String name, ClientTransactionContext transactionContext) {

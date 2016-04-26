@@ -16,26 +16,22 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.String.format;
 import static java.util.Collections.unmodifiableSet;
 
 /**
  * Container for configured Hazelcast properties ({@see HazelcastProperty}).
  * <p/>
- * A {@link HazelcastProperty} can be set as:
- * <p><ul>
- * <li>an environmental variable using {@link System#setProperty(String, String)}</li>
- * <li>the programmatic configuration using {@link Config#setProperty(String, String)}</li>
- * <li>the XML configuration
- * {@see http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties}</li>
- * </ul></p>
+ * Deprecated since Hazelcast 3.7.
+ * This is private API, don't use it.
  */
+@Deprecated
+@SuppressWarnings("unused")
 public abstract class HazelcastProperties {
 
     private final Set<String> keys;
@@ -49,6 +45,20 @@ public abstract class HazelcastProperties {
      *
      * @param nullableProperties  {@link Properties} used to configure the {@link HazelcastProperty} values.
      *                            Properties are allowed to be null.
+     * @param hazelcastProperties array of {@link HazelcastProperty} to configure
+     */
+    protected HazelcastProperties(Properties nullableProperties, HazelcastProperty[] hazelcastProperties) {
+        this(nullableProperties);
+    }
+
+    /**
+     * Creates a container with configured Hazelcast properties.
+     * <p/>
+     * Uses the environmental value if no value is defined in the configuration.
+     * Uses the default value if no environmental value is defined.
+     *
+     * @param nullableProperties {@link Properties} used to configure the {@link HazelcastProperty} values.
+     *                           Properties are allowed to be null.
      */
     protected HazelcastProperties(Properties nullableProperties) {
         if (nullableProperties != null) {
@@ -92,11 +102,6 @@ public abstract class HazelcastProperties {
         String systemProperty = property.getSystemProperty();
         if (systemProperty != null) {
             return systemProperty;
-        }
-
-        HazelcastProperty parent = property.getParent();
-        if (parent != null) {
-            return getString(parent);
         }
 
         return property.getDefaultValue();
@@ -189,31 +194,8 @@ public abstract class HazelcastProperties {
      * @param property the {@link GroupProperty} to get the value from
      * @return the enum
      * @throws IllegalArgumentException if the enum value can't be found
-     * @deprecated since 3.7 use {@link #getEnum(HazelcastProperty, Class)} instead.
      */
     public <E extends Enum> E getEnum(GroupProperty property, Class<E> enumClazz) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Returns the configured enum value of a {@link GroupProperty}.
-     * <p/>
-     * The case of the enum is ignored.
-     *
-     * @param property the {@link GroupProperty} to get the value from
-     * @return the enum
-     * @throws IllegalArgumentException if the enum value can't be found
-     */
-    public <E extends Enum> E getEnum(HazelcastProperty property, Class<E> enumClazz) {
-        String value = getString(property);
-
-        for (E enumConstant : enumClazz.getEnumConstants()) {
-            if (enumConstant.name().equalsIgnoreCase(value)) {
-                return enumConstant;
-            }
-        }
-
-        throw new IllegalArgumentException(format("value '%s' for property '%s' is not a valid %s value",
-                value, property.getName(), enumClazz.getName()));
     }
 }

@@ -16,33 +16,32 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
-import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
-import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
+import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
+import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
 import java.net.ConnectException;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
-import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.createMemberInfoList;
+import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
 
 /**
@@ -94,42 +93,44 @@ public class ClusterHeartbeatManager {
         clusterClock = clusterService.getClusterClock();
         logger = node.getLogger(getClass());
 
-        maxNoHeartbeatMillis = node.groupProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
-        maxNoMasterConfirmationMillis = node.groupProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
+        HazelcastProperties hazelcastProperties = node.getProperties();
+        maxNoHeartbeatMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
+        maxNoMasterConfirmationMillis = hazelcastProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
 
-        heartbeatIntervalMillis = getHeartBeatInterval(node.groupProperties);
+        heartbeatIntervalMillis = getHeartBeatInterval(hazelcastProperties);
         pingIntervalMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
-        icmpEnabled = node.groupProperties.getBoolean(GroupProperty.ICMP_ENABLED);
-        icmpTtl = node.groupProperties.getInteger(GroupProperty.ICMP_TTL);
-        icmpTimeoutMillis = (int) node.groupProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
+        icmpEnabled = hazelcastProperties.getBoolean(GroupProperty.ICMP_ENABLED);
+        icmpTtl = hazelcastProperties.getInteger(GroupProperty.ICMP_TTL);
+        icmpTimeoutMillis = (int) hazelcastProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
     }
 
-    private static long getHeartBeatInterval(GroupProperties groupProperties) {
-        long heartbeatInterval = groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+    private static long getHeartBeatInterval(HazelcastProperties hazelcastProperties) {
+        long heartbeatInterval = hazelcastProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
     }
 
     void init() {
         ExecutionService executionService = nodeEngine.getExecutionService();
+        HazelcastProperties hazelcastProperties = node.getProperties();
 
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 heartBeat();
             }
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
-        long masterConfirmationInterval = node.groupProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
+        long masterConfirmationInterval = hazelcastProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
         masterConfirmationInterval = (masterConfirmationInterval > 0 ? masterConfirmationInterval : 1);
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
 
-        long memberListPublishInterval = node.groupProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
+        long memberListPublishInterval = hazelcastProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
         memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
-        executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
+        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 sendMemberListToOthers();
             }
@@ -141,12 +142,12 @@ public class ClusterHeartbeatManager {
             long clusterTime = clusterClock.getClusterTime();
             if (logger.isFineEnabled()) {
                 logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
-                        member, new Date(clusterTime), new Date(timestamp)));
+                        member, timeToString(clusterTime), timeToString(timestamp)));
             }
 
             if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
                 logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
-                        new Date(clusterTime), new Date(timestamp)));
+                        timeToString(clusterTime), timeToString(timestamp)));
                 return;
             }
 
@@ -166,7 +167,7 @@ public class ClusterHeartbeatManager {
             if (clusterTime - timestamp > maxNoMasterConfirmationMillis / 2) {
                 logger.warning(
                         format("Ignoring master confirmation from %s, since it is expired (now: %s, timestamp: %s)",
-                                member, new Date(clusterTime), new Date(timestamp)));
+                                member, timeToString(clusterTime), timeToString(timestamp)));
                 return;
             }
             masterConfirmationTimes.put(member, clusterTime);
@@ -196,9 +197,8 @@ public class ClusterHeartbeatManager {
             long absoluteClockJump = Math.abs(clockJump);
 
             if (absoluteClockJump > CLOCK_JUMP_THRESHOLD) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
                 logger.info(format("System clock apparently jumped from %s to %s since last heartbeat (%+d ms)",
-                        sdf.format(new Date(lastHeartBeat)), sdf.format(new Date(now)), clockJump));
+                        timeToString(lastHeartBeat), timeToString(now), clockJump));
 
                 // We only set cluster clock, if clock jumps more than threshold.
                 // If the last cluster-time diff we've seen is significantly different than what we read now,
@@ -260,13 +260,13 @@ public class ClusterHeartbeatManager {
         long heartbeatTime = getHeartbeatTime(member);
         if ((now - heartbeatTime) > maxNoHeartbeatMillis) {
             logger.warning(format("Removing %s because it has not sent any heartbeats for %d ms."
-                    + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
-                    new Date(now), new Date(heartbeatTime)));
+                            + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
+                    timeToString(now), timeToString(heartbeatTime)));
             clusterService.removeAddress(member.getAddress());
             return true;
         }
         if (logger.isFinestEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
-            logger.finest(format("Not receiving any heartbeats from %s since %s", member, new Date(heartbeatTime)));
+            logger.finest(format("Not receiving any heartbeats from %s since %s", member, timeToString(heartbeatTime)));
         }
         return false;
     }
@@ -278,7 +278,7 @@ public class ClusterHeartbeatManager {
         }
         if (now - lastConfirmation > maxNoMasterConfirmationMillis) {
             logger.warning(format("Removing %s because it has not sent any master confirmation for %d ms. "
-                    + " Last confirmation time was %s", member, maxNoMasterConfirmationMillis, new Date(lastConfirmation)));
+                    + " Last confirmation time was %s", member, maxNoMasterConfirmationMillis, timeToString(lastConfirmation)));
             clusterService.removeAddress(member.getAddress());
             return true;
         }

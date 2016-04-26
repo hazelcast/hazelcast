@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -26,13 +25,14 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersion;
 import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
@@ -54,6 +54,7 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -120,7 +121,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i] = new PartitionContainer(this, i);
         }
-        nodeEngine.getExecutionService().getDefaultScheduledExecutor().scheduleWithFixedDelay(new Runnable() {
+        nodeEngine.getExecutionService().getGlobalTaskScheduler().scheduleWithRepetition(new Runnable() {
             @Override
             public void run() {
                 if (clusterService.getSize() == 1) {
@@ -349,11 +350,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
-        // no-op
-    }
-
-    @Override
-    public void clearPartitionReplica(int partitionId) {
         // no-op
     }
 

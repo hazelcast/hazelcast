@@ -9,8 +9,8 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -60,7 +60,7 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
         closeConnectionBetween(h2, h3);
 
         assertOpenEventually(memberShipListener.latch);
-        assertClusterSizeEventually(2,h1);
+        assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
         assertClusterSizeEventually(1, h3);
 
@@ -89,8 +89,8 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "30");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "30");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         return config;
     }
 

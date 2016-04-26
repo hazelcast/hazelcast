@@ -399,16 +399,4 @@ public class ClientMessageTest {
             throws Exception {
         ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE << 1);
     }
-
-    @Test
-    public void testMaxMessageSize()
-            throws Exception {
-        assertEquals(Integer.MAX_VALUE, ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE));
-    }
-
-    @Test
-    public void testLargeMessageSize()
-            throws Exception {
-        assertEquals(Integer.MAX_VALUE, ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE / 2 + 1000));
-    }
 }

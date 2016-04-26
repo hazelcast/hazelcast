@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
@@ -41,6 +42,7 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
@@ -199,7 +201,9 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
             } else {
                 testValue = value;
             }
-            queryEntry = new QueryEntry(nodeEngine.getSerializationService(), key, testValue, null);
+            InternalSerializationService serializationService =
+                    (InternalSerializationService) nodeEngine.getSerializationService();
+            queryEntry = new QueryEntry(serializationService, key, testValue, null);
         }
         return filter == null || filter.eval(queryEntry != null ? queryEntry : key);
     }

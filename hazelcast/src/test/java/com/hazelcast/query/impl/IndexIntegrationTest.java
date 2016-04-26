@@ -25,7 +25,6 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -37,6 +36,7 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -73,7 +73,7 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         long amount = 5L;
 
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT,"1");
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setEvictionPolicy(EvictionPolicy.LFU);
         mapConfig.setMinEvictionCheckMillis(0);
@@ -258,7 +258,6 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         Collection<Integer> payloadField;
 
         SillySequence() {
-
         }
 
         SillySequence(int from, int count) {

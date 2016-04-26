@@ -28,11 +28,6 @@ public enum ExceptionAction {
     RETRY_INVOCATION,
 
     /**
-     * Indicates that more waiting can be done (e.g. a Condition.await)
-     */
-    CONTINUE_WAIT,
-
-    /**
      * Indicates that the exception should be bubble up.
      */
     THROW_EXCEPTION

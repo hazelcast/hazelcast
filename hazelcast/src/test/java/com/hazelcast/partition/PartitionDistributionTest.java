@@ -22,9 +22,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -165,7 +164,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
     }
 
     private void testPartitionDistribution(int partitionCount, int dataNodeCount, int liteNodeCount, Config config, Config liteConfig) throws InterruptedException {
-        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         int nodeCount = dataNodeCount + liteNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(nodeCount);
@@ -175,7 +174,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
             instances[i] = factory.newHazelcastInstance(config);
         }
 
-        liteConfig.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
+        liteConfig.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         liteConfig.setLiteMember(true);
         for (int i = dataNodeCount; i < nodeCount; i++) {
             instances[i] = factory.newHazelcastInstance(liteConfig);

@@ -3,8 +3,8 @@ package com.hazelcast.nio.serialization;
 import java.io.IOException;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class MainPortable implements Portable {
 
     byte b;

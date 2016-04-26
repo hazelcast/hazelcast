@@ -26,6 +26,18 @@ import static com.hazelcast.util.JsonUtil.getObject;
 
 public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
+    public static final String JSON_CREATION_TIME = "creationTime";
+    public static final String JSON_TOTAL_PHYSICAL = "totalPhysical";
+    public static final String JSON_FREE_PHYSICAL = "freePhysical";
+    public static final String JSON_MAX_NATIVE_MEMORY = "maxNativeMemory";
+    public static final String JSON_COMMITTED_NATIVE_MEMORY = "committedNativeMemory";
+    public static final String JSON_USED_NATIVE_MEMORY = "usedNativeMemory";
+    public static final String JSON_FREE_NATIVE_MEMORY = "freeNativeMemory";
+    public static final String JSON_MAX_HEAP = "maxHeap";
+    public static final String JSON_COMMITTED_HEAP = "committedHeap";
+    public static final String JSON_USED_HEAP = "usedHeap";
+    public static final String JSON_GC_STATS = "gcStats";
+
     private long creationTime;
 
     private long totalPhysical;
@@ -58,10 +70,10 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     public LocalMemoryStatsImpl(MemoryStats memoryStats) {
         setTotalPhysical(memoryStats.getTotalPhysical());
         setFreePhysical(memoryStats.getFreePhysical());
-        setMaxNativeMemory(memoryStats.getMaxNativeMemory());
-        setCommittedNativeMemory(memoryStats.getCommittedNativeMemory());
-        setUsedNativeMemory(memoryStats.getUsedNativeMemory());
-        setFreeNativeMemory(memoryStats.getFreeNativeMemory());
+        setMaxNativeMemory(memoryStats.getMaxNative());
+        setCommittedNativeMemory(memoryStats.getCommittedNative());
+        setUsedNativeMemory(memoryStats.getUsedNative());
+        setFreeNativeMemory(memoryStats.getFreeNative());
         setMaxMetadata(memoryStats.getMaxMetadata());
         setUsedMetadata(memoryStats.getUsedMetadata());
         setMaxHeap(memoryStats.getMaxHeap());
@@ -89,7 +101,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getMaxNativeMemory() {
+    public long getMaxNative() {
         return maxNativeMemory;
     }
 
@@ -98,16 +110,16 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getCommittedNativeMemory() {
+    public long getCommittedNative() {
         return committedNativeMemory;
     }
 
-    public void setCommittedNativeMemory(long allocated) {
-        this.committedNativeMemory = allocated;
+    public void setCommittedNativeMemory(long committed) {
+        this.committedNativeMemory = committed;
     }
 
     @Override
-    public long getUsedNativeMemory() {
+    public long getUsedNative() {
         return usedNativeMemory;
     }
 
@@ -116,7 +128,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public long getFreeNativeMemory() {
+    public long getFreeNative() {
         return freeNativeMemory;
     }
 
@@ -191,38 +203,38 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
-        root.add("totalPhysical", totalPhysical);
-        root.add("freePhysical", freePhysical);
-        root.add("maxNativeMemory", maxNativeMemory);
-        root.add("committedNativeMemory", committedNativeMemory);
-        root.add("usedNativeMemory", usedNativeMemory);
-        root.add("freeNativeMemory", freeNativeMemory);
-        root.add("maxHeap", maxHeap);
-        root.add("committedHeap", committedHeap);
-        root.add("usedHeap", usedHeap);
+        root.add(JSON_CREATION_TIME, creationTime);
+        root.add(JSON_TOTAL_PHYSICAL, totalPhysical);
+        root.add(JSON_FREE_PHYSICAL, freePhysical);
+        root.add(JSON_MAX_NATIVE_MEMORY, maxNativeMemory);
+        root.add(JSON_COMMITTED_NATIVE_MEMORY, committedNativeMemory);
+        root.add(JSON_USED_NATIVE_MEMORY, usedNativeMemory);
+        root.add(JSON_FREE_NATIVE_MEMORY, freeNativeMemory);
+        root.add(JSON_MAX_HEAP, maxHeap);
+        root.add(JSON_COMMITTED_HEAP, committedHeap);
+        root.add(JSON_USED_HEAP, usedHeap);
         if (gcStats == null) {
             gcStats = new LocalGCStatsImpl();
         }
-        root.add("gcStats", gcStats.toJson());
+        root.add(JSON_GC_STATS, gcStats.toJson());
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
-        totalPhysical = getLong(json, "totalPhysical", -1L);
-        freePhysical = getLong(json, "freePhysical", -1L);
-        maxNativeMemory = getLong(json, "maxNativeMemory", -1L);
-        committedNativeMemory = getLong(json, "committedNativeMemory", -1L);
-        usedNativeMemory = getLong(json, "usedNativeMemory", -1L);
-        freeNativeMemory = getLong(json, "freeNativeMemory", -1L);
-        maxHeap = getLong(json, "maxHeap", -1L);
-        committedHeap = getLong(json, "committedHeap", -1L);
-        usedHeap = getLong(json, "usedHeap", -1L);
+        creationTime = getLong(json, JSON_CREATION_TIME, -1L);
+        totalPhysical = getLong(json, JSON_TOTAL_PHYSICAL, -1L);
+        freePhysical = getLong(json, JSON_FREE_PHYSICAL, -1L);
+        maxNativeMemory = getLong(json, JSON_MAX_NATIVE_MEMORY, -1L);
+        committedNativeMemory = getLong(json, JSON_COMMITTED_NATIVE_MEMORY, -1L);
+        usedNativeMemory = getLong(json, JSON_USED_NATIVE_MEMORY, -1L);
+        freeNativeMemory = getLong(json, JSON_FREE_NATIVE_MEMORY, -1L);
+        maxHeap = getLong(json, JSON_MAX_HEAP, -1L);
+        committedHeap = getLong(json, JSON_COMMITTED_HEAP, -1L);
+        usedHeap = getLong(json, JSON_USED_HEAP, -1L);
         gcStats = new LocalGCStatsImpl();
-        if (json.get("gcStats") != null) {
-            gcStats.fromJson(getObject(json, "gcStats"));
+        if (json.get(JSON_GC_STATS) != null) {
+            gcStats.fromJson(getObject(json, JSON_GC_STATS));
         }
     }
 

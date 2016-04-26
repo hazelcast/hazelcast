@@ -17,10 +17,10 @@
 package com.hazelcast.collection.impl.queue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * Peek operation for Queue.

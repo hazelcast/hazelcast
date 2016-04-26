@@ -25,11 +25,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -174,7 +175,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(stats.getLastAccessTime() > lastAccessTime);
+                assertTrue(stats.getLastAccessTime() >= lastAccessTime);
             }
         });
     }
@@ -193,7 +194,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
         Thread.sleep(5);
         replicatedMap.put(key, "value2");
         long lastUpdateTime2 = replicatedMap.getReplicatedMapStats().getLastUpdateTime();
-        assertTrue(lastUpdateTime2 > lastUpdateTime);
+        assertTrue(lastUpdateTime2 >= lastUpdateTime);
     }
 
     @Test
@@ -221,7 +222,7 @@ public class ReplicatedMapStatsTest extends HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertTrue(stats.getLastUpdateTime() > lastUpdateTime);
+                assertTrue(stats.getLastUpdateTime() >= lastUpdateTime);
             }
         });
     }

@@ -22,14 +22,11 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
-
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -139,8 +136,8 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         InternalOperationService operationService = nodeEngine.getOperationService();
         Future<Boolean> isPrimaryOnNode =
                 operationService.invokeOnTarget(ICacheService.SERVICE_NAME,
-                                                createCacheOwnerStateGetterOperation(fullCacheName, partitionId),
-                                                node.getThisAddress());
+                        createCacheOwnerStateGetterOperation(fullCacheName, partitionId),
+                        node.getThisAddress());
         assertEquals(expectedState, isPrimaryOnNode.get());
     }
 

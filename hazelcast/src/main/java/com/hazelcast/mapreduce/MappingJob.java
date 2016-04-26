@@ -16,10 +16,10 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.spi.annotation.Beta;
+
 import java.util.List;
 import java.util.Map;
-
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * <p>

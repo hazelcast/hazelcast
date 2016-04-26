@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.management.dto;
 
-import com.hazelcast.config.EvictionPolicy;
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;

@@ -34,10 +34,11 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionalObjectKey;
-import java.util.HashMap;
-import java.util.Map;
+
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
+import java.util.HashMap;
+import java.util.Map;
 
 public class XATransactionContextImpl implements TransactionContext {
 

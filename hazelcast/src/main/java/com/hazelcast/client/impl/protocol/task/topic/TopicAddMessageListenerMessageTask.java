@@ -30,13 +30,17 @@ import com.hazelcast.security.permission.TopicPermission;
 import com.hazelcast.topic.impl.DataAwareMessage;
 import com.hazelcast.topic.impl.TopicService;
 
+import static com.hazelcast.util.HashUtil.hashToIndex;
+
 import java.security.Permission;
+import java.util.Random;
 
 public class TopicAddMessageListenerMessageTask
         extends AbstractCallableMessageTask<TopicAddMessageListenerCodec.RequestParameters>
         implements MessageListener {
 
     private Data partitionKey;
+    private Random rand = new Random();
 
     public TopicAddMessageListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -105,6 +109,15 @@ public class TopicAddMessageListenerMessageTask
         String publisherUuid = message.getPublishingMember().getUuid();
         ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,
                 message.getPublishTime(), publisherUuid);
-        sendClientMessage(partitionKey, eventMessage);
+
+        boolean isMultithreaded = nodeEngine.getConfig().getTopicConfig(parameters.name).isMultiThreadingEnabled();
+        if (isMultithreaded) {
+            int key = rand.nextInt();
+            int partitionId = hashToIndex(key, nodeEngine.getPartitionService().getPartitionCount());
+            eventMessage.setPartitionId(partitionId);
+            sendClientMessage(eventMessage);
+        } else {
+            sendClientMessage(partitionKey, eventMessage);
+        }
     }
 }

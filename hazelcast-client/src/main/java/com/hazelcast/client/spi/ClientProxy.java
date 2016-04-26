@@ -23,13 +23,17 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
+/**
+ * Base class for Client proxies.
+ * Allows the Client to proxy operations through Nodes
+ */
 public abstract class ClientProxy implements DistributedObject {
 
     protected final String name;
@@ -73,7 +77,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public String getPartitionKey() {
-        return StringPartitioningStrategy.getPartitionKey(getName());
+        return StringPartitioningStrategy.getPartitionKey(getDistributedObjectName());
     }
 
     @Override
@@ -81,17 +85,27 @@ public abstract class ClientProxy implements DistributedObject {
         return serviceName;
     }
 
+    protected String getDistributedObjectName() {
+        return name;
+    }
+
     @Override
     public final void destroy() {
-
-        onDestroy();
-        ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(name, getServiceName());
-        context.removeProxy(this);
-        try {
-            new ClientInvocation(getClient(), clientMessage).invoke().get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+        if (preDestroy()) {
+            onDestroy();
+            ClientMessage clientMessage =
+                    ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
+            context.removeProxy(this);
+            try {
+                new ClientInvocation(getClient(), clientMessage).invoke().get();
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
+    }
+
+    protected boolean preDestroy() {
+        return true;
     }
 
     /**
@@ -184,7 +198,7 @@ public abstract class ClientProxy implements DistributedObject {
         if (!instanceName.equals(that.getInstanceName())) {
             return false;
         }
-        if (!name.equals(that.name)) {
+        if (!getDistributedObjectName().equals(that.getDistributedObjectName())) {
             return false;
         }
         if (!serviceName.equals(that.serviceName)) {
@@ -199,7 +213,7 @@ public abstract class ClientProxy implements DistributedObject {
         String instanceName = getInstanceName();
         int result = instanceName.hashCode();
         result = 31 * result + serviceName.hashCode();
-        result = 31 * result + name.hashCode();
+        result = 31 * result + getDistributedObjectName().hashCode();
         return result;
     }
 }

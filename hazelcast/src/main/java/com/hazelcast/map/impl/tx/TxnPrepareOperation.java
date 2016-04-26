@@ -50,10 +50,24 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     public void run() throws Exception {
         if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), LOCK_TTL_MILLIS)) {
             ILogger logger = getLogger();
-            logger.severe("Locked: [" + recordStore.isLocked(getKey()) + "], key: [" + getKey() + ']');
+            if (logger.isFinestEnabled()) {
+                logger.finest("Locked: [" + recordStore.isLocked(getKey()) + "], key: [" + getKey() + ']');
+            }
             throw new TransactionException("Lock is not owned by the transaction! ["
                     + recordStore.getLockOwnerInfo(getKey()) + ']');
         }
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof TransactionException) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("failed to execute:" + this, e);
+            }
+            return;
+        }
+        super.logError(e);
     }
 
     @Override

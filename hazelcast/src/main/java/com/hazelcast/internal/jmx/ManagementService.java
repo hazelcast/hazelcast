@@ -19,9 +19,9 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -53,7 +53,7 @@ public class ManagementService implements DistributedObjectListener {
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
-        this.enabled = instance.node.groupProperties.getBoolean(GroupProperty.ENABLE_JMX);
+        this.enabled = instance.node.getProperties().getBoolean(GroupProperty.ENABLE_JMX);
         if (!enabled) {
             this.instanceMBean = null;
             this.registrationId = null;

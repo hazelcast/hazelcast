@@ -16,12 +16,14 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.spi.properties.GroupProperty;
+
 /**
  * A {@link com.hazelcast.core.HazelcastException} that is thrown when the system won't handle more load due to
  * an overload.
  *
  * This exception is thrown when backpressure is enabled. For more information see
- * {@link com.hazelcast.instance.GroupProperties#BACKPRESSURE_ENABLED}.
+ * {@link GroupProperty#BACKPRESSURE_ENABLED}.
  */
 public class HazelcastOverloadException extends HazelcastException {
 

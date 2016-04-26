@@ -17,7 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 
@@ -62,7 +62,7 @@ public final class IOUtil {
      * {@link com.hazelcast.internal.serialization.impl.DataSerializer}! If the stream
      * format is ever changed this extraction method needs to be changed too!
      */
-    public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
+    public static long extractOperationCallId(Data data, InternalSerializationService serializationService) throws IOException {
         ObjectDataInput input = serializationService.createObjectDataInput(data);
         boolean identified = input.readBoolean();
         if (identified) {

@@ -18,12 +18,13 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
@@ -59,7 +60,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * XA {@link Transaction} implementation.
- *
+ * <p>
  * This class does not need to be thread-safe, it is only used via XAResource
  * All visibility guarantees handled by XAResource
  */
@@ -227,6 +228,11 @@ public final class XATransaction implements Transaction {
     @Override
     public State getState() {
         return state;
+    }
+
+    @Override
+    public TransactionType getTransactionType() {
+        return TransactionType.TWO_PHASE;
     }
 
     @Override

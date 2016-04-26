@@ -1,9 +1,9 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryBackupProcessor;
@@ -107,9 +107,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
     public void programmaticImplCreationTest() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = getConfig();
-        WanTargetClusterConfig targetClusterConfig = config.getWanReplicationConfig("dummyWan").getTargetClusterConfigs().get(0);
+        WanPublisherConfig publisherConfig= config.getWanReplicationConfig("dummyWan").getWanPublisherConfigs().get(0);
         DummyWanReplication dummyWanReplication = new DummyWanReplication();
-        targetClusterConfig.setReplicationImplObject(dummyWanReplication);
+        publisherConfig.setImplementation(dummyWanReplication);
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         assertEquals(dummyWanReplication, getWanReplicationImpl(instance));
     }
@@ -120,7 +120,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         WanReplicationConfig wanConfig = new WanReplicationConfig();
         wanConfig.setName("dummyWan");
 
-        wanConfig.addTargetClusterConfig(getTargetClusterConfig());
+        wanConfig.addWanPublisherConfig(getPublisherConfig());
 
         WanReplicationRef wanRef = new WanReplicationRef();
         wanRef.setName("dummyWan");
@@ -131,11 +131,10 @@ public class WanReplicationTest extends HazelcastTestSupport {
         return config;
     }
 
-    private WanTargetClusterConfig getTargetClusterConfig() {
-        WanTargetClusterConfig target = new WanTargetClusterConfig();
-        target.setReplicationImpl(DummyWanReplication.class.getName());
-        target.addEndpoint("127.0.0.1:9999");
-        return target;
+    private WanPublisherConfig getPublisherConfig() {
+        WanPublisherConfig publisherConfig = new WanPublisherConfig();
+        publisherConfig.setClassName(DummyWanReplication.class.getName());
+        return publisherConfig;
     }
 
     private DummyWanReplication getWanReplicationImpl(HazelcastInstance instance) {

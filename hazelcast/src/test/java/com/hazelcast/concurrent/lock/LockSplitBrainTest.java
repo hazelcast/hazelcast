@@ -9,8 +9,8 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -58,8 +58,8 @@ public class LockSplitBrainTest extends HazelcastTestSupport {
             }
         });
 
-        closeConnectionBetween(h1,h3);
-        closeConnectionBetween(h2,h3);
+        closeConnectionBetween(h1, h3);
+        closeConnectionBetween(h2, h3);
 
         assertOpenEventually(memberShipListener.latch);
         assertClusterSizeEventually(2, h1);
@@ -83,8 +83,8 @@ public class LockSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "3");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "1");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "3");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "1");
         return config;
     }
 

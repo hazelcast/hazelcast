@@ -84,14 +84,14 @@ public class ClusterListTest extends HazelcastTestSupport {
             listTest1.add("item" + i);
         }
         assertTrue(list1.addAll(listTest1));
-        assertSizeEventually(100,list2);
+        assertSizeEventually(100, list2);
         List listTest2 = new ArrayList();
         for (int i = 30; i < 40; i++) {
             listTest2.add("item" + i);
         }
         assertTrue(list2.containsAll(listTest2));
         assertTrue(list2.retainAll(listTest2));
-        assertSizeEventually(10,list1);
+        assertSizeEventually(10, list1);
         assertTrue(list1.removeAll(listTest2));
         assertSizeEventually(0, list1);
     }
@@ -110,7 +110,7 @@ public class ClusterListTest extends HazelcastTestSupport {
         }
         instances[0].shutdown();
         assertSizeEventually(50, list2);
-         for (int i = 50; i < 100; i++) {
+        for (int i = 50; i < 100; i++) {
             list2.add("item" + i);
         }
         for (int i = 0; i < 100; i++) {

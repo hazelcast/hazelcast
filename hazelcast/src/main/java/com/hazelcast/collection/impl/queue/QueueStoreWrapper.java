@@ -17,19 +17,15 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.QuickMath;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,8 +42,6 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
 
     private static final int DEFAULT_MEMORY_LIMIT = 1000;
     private static final int DEFAULT_BULK_LOAD = 250;
-    private static final int OUTPUT_SIZE = 1024;
-    private static final int BUFFER_SIZE_FACTOR = 8;
 
     private static final String STORE_BINARY = "binary";
 
@@ -78,7 +72,8 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
      * @param serializationService serialization service.
      * @return returns a new instance of {@link QueueStoreWrapper}
      */
-    public static QueueStoreWrapper create(String name, QueueStoreConfig storeConfig, SerializationService serializationService) {
+    public static QueueStoreWrapper create(String name, QueueStoreConfig storeConfig
+            , SerializationService serializationService, ClassLoader classLoader) {
         checkNotNull(name, "name should not be null");
         checkNotNull(serializationService, "serializationService should not be null");
 
@@ -88,7 +83,6 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
             return storeWrapper;
         }
         // create queue store.
-        final ClassLoader classLoader = serializationService.getClassLoader();
         final QueueStore queueStore = createQueueStore(name, storeConfig, classLoader);
         if (queueStore != null) {
             storeWrapper.setEnabled(storeConfig.isEnabled());
@@ -151,16 +145,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         final Object actualValue;
         if (binary) {
             // WARNING: we can't pass original Data to the user
-            int size = QuickMath.normalize(value.dataSize(), BUFFER_SIZE_FACTOR);
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(size);
-            try {
-                out.writeData(value);
-                actualValue = out.toByteArray();
-            } catch (IOException e) {
-                throw new HazelcastException(e);
-            } finally {
-                IOUtil.closeResource(out);
-            }
+            actualValue = Arrays.copyOf(value.toByteArray(), value.totalSize());
         } else {
             actualValue = serializationService.toObject(value);
         }
@@ -178,17 +163,10 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
             // WARNING: we can't pass original Data to the user
             // TODO: @mm - is there really an advantage of using binary storeAll?
             // since we need to do array copy for each item.
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(OUTPUT_SIZE);
-            try {
-                for (Map.Entry<Long, Data> entry : map.entrySet()) {
-                    out.writeData(entry.getValue());
-                    objectMap.put(entry.getKey(), out.toByteArray());
-                    out.clear();
-                }
-            } catch (IOException e) {
-                throw new HazelcastException(e);
-            } finally {
-                IOUtil.closeResource(out);
+            for (Map.Entry<Long, Data> entry : map.entrySet()) {
+                Data value = entry.getValue();
+                byte[] copy = Arrays.copyOf(value.toByteArray(), value.totalSize());
+                objectMap.put(entry.getKey(), copy);
             }
         } else {
             for (Map.Entry<Long, Data> entry : map.entrySet()) {
@@ -221,14 +199,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         final Object val = store.load(key);
         if (binary) {
             byte[] dataBuffer = (byte[]) val;
-            ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-            Data data;
-            try {
-                data = in.readData();
-            } catch (IOException e) {
-                throw new HazelcastException(e);
-            }
-            return data;
+            return new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
         }
         return serializationService.toData(val);
     }
@@ -247,13 +218,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         if (binary) {
             for (Map.Entry<Long, ?> entry : map.entrySet()) {
                 byte[] dataBuffer = (byte[]) entry.getValue();
-                ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-                Data data;
-                try {
-                    data = in.readData();
-                } catch (IOException e) {
-                    throw new HazelcastException(e);
-                }
+                Data data = new HeapData(Arrays.copyOf(dataBuffer, dataBuffer.length));
                 dataMap.put(entry.getKey(), data);
             }
         } else {

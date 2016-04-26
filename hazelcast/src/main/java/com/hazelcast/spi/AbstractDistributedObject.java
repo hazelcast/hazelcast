@@ -24,6 +24,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 /**
  * Abstract DistributedObject implementation. Useful to provide basic functionality.
+ *
  * @param <S>
  */
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
@@ -38,26 +39,44 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         this.service = service;
     }
 
+    protected String getDistributedObjectName() {
+        return getName();
+    }
+
     protected Data getNameAsPartitionAwareData() {
-        String name = getName();
+        String name = getDistributedObjectName();
         return getNodeEngine().getSerializationService().toData(name, PARTITIONING_STRATEGY);
     }
 
     @Override
     public String getPartitionKey() {
-        return StringPartitioningStrategy.getPartitionKey(getName());
+        return StringPartitioningStrategy.getPartitionKey(getDistributedObjectName());
     }
 
     @Override
     public final void destroy() {
-        NodeEngine engine = getNodeEngine();
-        ProxyService proxyService = engine.getProxyService();
-        proxyService.destroyDistributedObject(getServiceName(), getName());
-        postDestroy();
+        if (preDestroy()) {
+            NodeEngine engine = getNodeEngine();
+            ProxyService proxyService = engine.getProxyService();
+            proxyService.destroyDistributedObject(getServiceName(), getDistributedObjectName());
+            postDestroy();
+        }
     }
 
-    protected int getPartitionId(Data key) {
+    protected final Data toData(Object object) {
+        return getNodeEngine().toData(object);
+    }
+
+    protected final <E> InternalCompletableFuture<E> invokeOnPartition(Operation operation) {
+        return getNodeEngine().getOperationService().invokeOnPartition(operation);
+    }
+
+    protected final int getPartitionId(Data key) {
         return getNodeEngine().getPartitionService().getPartitionId(key);
+    }
+
+    protected boolean preDestroy() {
+        return true;
     }
 
     protected void postDestroy() {
@@ -126,9 +145,9 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
             return false;
         }
 
-        DistributedObject that = (DistributedObject) o;
-        Object name = getName();
-        if (name != null ? !name.equals(that.getName()) : that.getName() != null) {
+        AbstractDistributedObject that = (AbstractDistributedObject) o;
+        Object name = getDistributedObjectName();
+        if (name != null ? !name.equals(that.getDistributedObjectName()) : that.getDistributedObjectName() != null) {
             return false;
         }
 
@@ -143,7 +162,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     @Override
     public int hashCode() {
         int result = getServiceName() != null ? getServiceName().hashCode() : 0;
-        result = 31 * result + (getName() != null ? getName().hashCode() : 0);
+        result = 31 * result + (getDistributedObjectName() != null ? getDistributedObjectName().hashCode() : 0);
         return result;
     }
 

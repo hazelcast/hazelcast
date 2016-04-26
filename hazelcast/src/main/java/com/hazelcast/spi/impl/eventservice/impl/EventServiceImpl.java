@@ -17,12 +17,13 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -38,9 +39,10 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
 
 import java.io.Closeable;
@@ -56,12 +58,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
-public class EventServiceImpl implements InternalEventService {
+public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     public static final String EVENT_SYNC_FREQUENCY_PROP = "hazelcast.event.sync.frequency";
 
@@ -91,17 +93,17 @@ public class EventServiceImpl implements InternalEventService {
     private final MwCounter totalFailures = newMwCounter();
     @Probe(name = "rejectedCount")
     private final MwCounter rejectedCount = newMwCounter();
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final int eventSyncFrequency;
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.logger = nodeEngine.getLogger(EventService.class.getName());
-        GroupProperties groupProperties = nodeEngine.getNode().getGroupProperties();
-        this.eventThreadCount = groupProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
-        this.eventQueueCapacity = groupProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
-        this.eventQueueTimeoutMs = groupProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        this.eventThreadCount = hazelcastProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
+        this.eventQueueCapacity = hazelcastProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
+        this.eventQueueTimeoutMs = hazelcastProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
         int eventSyncFrequency;
         try {
             eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));
@@ -125,8 +127,11 @@ public class EventServiceImpl implements InternalEventService {
         this.deregistrationExceptionHandler
                 = new FutureUtilExceptionHandler(logger, "Member left while de-registering listener...");
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
+    }
 
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "event");
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndRegister(this, "event");
     }
 
     @Override

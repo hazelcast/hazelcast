@@ -37,8 +37,8 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * Provides base features for predicates, such as extraction and convertion of the attribute's value.
  * It also handles apply() on MultiResult.
  */
-public abstract class AbstractPredicate
-        implements Predicate, IdentifiedDataSerializable {
+public abstract class AbstractPredicate<K, V>
+        implements Predicate<K, V>, IdentifiedDataSerializable {
 
     String attributeName;
     private transient volatile AttributeType attributeType;
@@ -51,7 +51,7 @@ public abstract class AbstractPredicate
     }
 
     @Override
-    public boolean apply(Map.Entry mapEntry) {
+    public boolean apply(Map.Entry<K, V> mapEntry) {
         Object attributeValue = readAttributeValue(mapEntry);
         if (attributeValue instanceof MultiResult) {
             return applyForMultiResult(mapEntry, (MultiResult) attributeValue);

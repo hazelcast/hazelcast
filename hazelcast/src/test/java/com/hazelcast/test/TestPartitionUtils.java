@@ -2,13 +2,14 @@ package com.hazelcast.test;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
+import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.ArrayList;
@@ -28,16 +29,16 @@ public class TestPartitionUtils {
     private TestPartitionUtils() {
     }
 
-    public static InternalPartitionServiceState getInternalPartitionServiceState(HazelcastInstance instance) {
-        return getInternalPartitionServiceState(getNode(instance));
+    public static PartitionServiceState getPartitionServiceState(HazelcastInstance instance) {
+        return getPartitionServiceState(getNode(instance));
     }
 
-    public static InternalPartitionServiceState getInternalPartitionServiceState(Node node) {
+    public static PartitionServiceState getPartitionServiceState(Node node) {
         if (node == null) {
-            return InternalPartitionServiceState.SAFE;
+            return PartitionServiceState.SAFE;
         }
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) node.getPartitionService();
-        return partitionService.getMemberState();
+        return partitionService.getPartitionReplicaStateChecker().getPartitionServiceState();
     }
 
     public static Map<Integer, long[]> getAllReplicaVersions(List<HazelcastInstance> instances) throws InterruptedException {
@@ -61,7 +62,7 @@ public class TestPartitionUtils {
     private static void collectOwnedReplicaVersions(Node node, Map<Integer, long[]> replicaVersions) throws InterruptedException {
         InternalPartitionService partitionService = node.getPartitionService();
         Address nodeAddress = node.getThisAddress();
-        for (InternalPartition partition : partitionService.getPartitions()) {
+        for (IPartition partition : partitionService.getPartitions()) {
             if (nodeAddress.equals(partition.getOwnerOrNull())) {
                 int partitionId = partition.getPartitionId();
                 replicaVersions.put(partitionId, getReplicaVersions(node, partitionId));

@@ -17,12 +17,13 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 /**
@@ -45,7 +46,7 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.txnLock(getKey(), lockOwner, lockThreadId, getCallId(), LOCK_TTL_MILLIS)) {
+        if (!recordStore.txnLock(getKey(), lockOwner, lockThreadId, getCallId(), LOCK_TTL_MILLIS, true)) {
             throw new TransactionException("Lock is not owned by the transaction! Caller: " + lockOwner
                     + ", Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }

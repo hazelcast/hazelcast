@@ -16,6 +16,8 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.wan.ReplicationEventObject;
@@ -24,7 +26,7 @@ import com.hazelcast.wan.WanReplicationEvent;
 
 public class DummyWanReplication implements WanReplicationEndpoint {
 
-    public void init(Node node, String groupName, String password, String... targets) {
+    public void init(Node node, WanReplicationConfig wanReplicationConfig, WanPublisherConfig wanPublisherConfig) {
     }
 
     public void recordUpdated(Record record) {

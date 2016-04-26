@@ -16,8 +16,8 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
@@ -38,6 +38,7 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -52,13 +53,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.createJobProcessInformation;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
 
 /**
  * The JobSupervisor is the overall control instance of a map reduce job. There is one JobSupervisor per
@@ -151,7 +152,7 @@ public class JobSupervisor {
 
         if (future != null) {
             // Might be already cancelled by another members exception
-            ExceptionUtil.fixRemoteStackTrace(throwable, Thread.currentThread().getStackTrace(),
+            fixAsyncStackTrace(throwable, Thread.currentThread().getStackTrace(),
                     "Operation failed on node: " + remoteAddress);
             future.setResult(throwable);
         }
@@ -401,8 +402,8 @@ public class JobSupervisor {
 
     private void asyncCancelRemoteOperations(final Set<Address> addresses) {
         final NodeEngine nodeEngine = mapReduceService.getNodeEngine();
-        ScheduledExecutorService executor = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-        executor.submit(new Runnable() {
+        TaskScheduler taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
+        taskScheduler.submit(new Runnable() {
 
             @Override
             public void run() {

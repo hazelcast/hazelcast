@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -283,6 +284,38 @@ public interface HazelcastInstance {
      * @return {@link ISemaphore} proxy for the given name
      */
     ISemaphore getSemaphore(String name);
+
+    /**
+     * <p>
+     * Returns the cache instance with the specified prefixed cache name.
+     * </p>
+     *
+     * <p>
+     * Prefixed cache name is the name with URI and classloader prefixes if available.
+     * There is no Hazelcast prefix (`/hz/`). For example, `myURI/foo`.
+     *
+     * <code>
+     *     <prefixed_cache_name> = [<uri_prefix>/] + [<cl_prefix>/] + <pure_cache_name>
+     * </code>
+     * where `<pure_cache_name>` is the cache name without any prefix. For example `foo`.
+     *
+     * As seen from the definition, URI and classloader prefixes are optional.
+     *
+     * URI prefix is generated as content of this URI as a US-ASCII string. (<code>uri.toASCIIString()</code>)
+     * Classloader prefix is generated as string representation of the specified classloader. (<code>cl.toString()</code>)
+     *
+     * @see com.hazelcast.cache.CacheUtil#getPrefixedCacheName(String, java.net.URI, ClassLoader)
+     * </p>
+     *
+     * @param name the prefixed name of the cache
+     * @return the cache instance with the specified prefixed name
+     *
+     * @throws com.hazelcast.cache.CacheNotExistsException  if there is no configured or created cache
+     *                                                      with the specified prefixed name
+     * @throws java.lang.IllegalStateException              if a valid (rather than `1.0.0-PFD` or `0.x` versions)
+     *                                                      JCache library is not exist at classpath
+     */
+    <K, V> ICache<K, V> getCache(String name);
 
     /**
      * Returns all {@link DistributedObject}'s such as; queue, map, set, list, topic, lock, multimap.

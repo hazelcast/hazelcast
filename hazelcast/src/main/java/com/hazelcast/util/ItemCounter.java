@@ -16,9 +16,14 @@
 
 package com.hazelcast.util;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.util.Collections.sort;
 
 /**
  * Non Thread-Safe Counter of things. It allows to count items without worrying about nulls.
@@ -35,6 +40,31 @@ public final class ItemCounter<T> {
      */
     public Set<T> keySet() {
         return map.keySet();
+    }
+
+
+    /**
+     * Returns a List of keys in descending value order.
+     *
+     * @return the list of keys
+     */
+    public List<T> descendingKeys() {
+        List<T> list = new ArrayList<T>(map.keySet());
+
+        sort(list, new Comparator<T>() {
+            @Override
+            public int compare(T o1, T o2) {
+                MutableLong l1 = map.get(o1);
+                MutableLong l2 = map.get(o2);
+                return compare(l2.value, l1.value);
+            }
+
+            private int compare(long x, long y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+        });
+
+        return list;
     }
 
     /**
@@ -111,6 +141,10 @@ public final class ItemCounter<T> {
         long oldValue = entry.value;
         entry.value = value;
         return oldValue;
+    }
+
+    public void remove(T item) {
+        map.remove(item);
     }
 
     @Override

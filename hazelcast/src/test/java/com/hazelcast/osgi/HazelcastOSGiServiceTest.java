@@ -16,7 +16,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import org.osgi.framework.BundleException;
 import org.osgi.framework.ServiceReference;
 
@@ -24,10 +23,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -114,7 +113,7 @@ public class HazelcastOSGiServiceTest {
 
     @After
     public void tearDown() throws BundleException {
-        try  {
+        try {
             bundle.stop();
             bundle = null;
             registerDeregisterListener = null;
@@ -220,7 +219,7 @@ public class HazelcastOSGiServiceTest {
             try {
                 testBundle.start();
                 fail("OSGI service could not be activated because of exception while registering default instance. " +
-                     "It is expected to get `IllegalStateException` here!");
+                        "It is expected to get `IllegalStateException` here!");
             } catch (IllegalStateException e) {
                 // Since bundle is not active, it is expected to get `IllegalStateException`
             }
@@ -249,7 +248,7 @@ public class HazelcastOSGiServiceTest {
             try {
                 testBundle.start();
                 fail("OSGI service could not be activated because of exception while registering default instance. " +
-                     "It is expected to get `IllegalStateException` here!");
+                        "It is expected to get `IllegalStateException` here!");
             } catch (IllegalStateException e) {
                 // Since bundle is not active, it is expected to get `IllegalStateException`
             }
@@ -335,11 +334,11 @@ public class HazelcastOSGiServiceTest {
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance();
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                     osgiInstance.getConfig().getGroupConfig().getName());
+                osgiInstance.getConfig().getGroupConfig().getName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                     instance.getConfig().getGroupConfig().getName());
+                instance.getConfig().getGroupConfig().getName());
     }
 
     @Test
@@ -350,11 +349,11 @@ public class HazelcastOSGiServiceTest {
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                     osgiInstance.getConfig().getGroupConfig().getName());
+                osgiInstance.getConfig().getGroupConfig().getName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                     instance.getConfig().getGroupConfig().getName());
+                instance.getConfig().getGroupConfig().getName());
     }
 
     @Test
@@ -366,11 +365,11 @@ public class HazelcastOSGiServiceTest {
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                     osgiInstance.getConfig().getGroupConfig().getName());
+                osgiInstance.getConfig().getGroupConfig().getName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
         assertEquals(HazelcastInternalOSGiService.DEFAULT_GROUP_NAME,
-                     instance.getConfig().getGroupConfig().getName());
+                instance.getConfig().getGroupConfig().getName());
     }
 
     @Test
@@ -384,11 +383,11 @@ public class HazelcastOSGiServiceTest {
 
         HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance(config);
         assertEquals(GROUP_NAME,
-                     osgiInstance.getConfig().getGroupConfig().getName());
+                osgiInstance.getConfig().getGroupConfig().getName());
 
         HazelcastInstance instance = osgiInstance.getDelegatedInstance();
         assertEquals(GROUP_NAME,
-                     instance.getConfig().getGroupConfig().getName());
+                instance.getConfig().getGroupConfig().getName());
     }
 
     @Test
@@ -608,7 +607,7 @@ public class HazelcastOSGiServiceTest {
             try {
                 service.newHazelcastInstance();
                 fail("OSGI service is not active so it is not in operation mode. " +
-                     "It is expected to get `IllegalStateException` here!");
+                        "It is expected to get `IllegalStateException` here!");
             } catch (IllegalStateException e) {
                 // Since bundle is not active, it is expected to get `IllegalStateException`
             }

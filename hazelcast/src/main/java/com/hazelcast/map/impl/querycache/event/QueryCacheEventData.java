@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache.event;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * Event data contract which is sent to subscriber side.

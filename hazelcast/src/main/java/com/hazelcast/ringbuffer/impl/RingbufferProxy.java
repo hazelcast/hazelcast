@@ -90,23 +90,26 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
 
     @Override
     public long size() {
-        GenericOperation op = new GenericOperation(name, OPERATION_SIZE);
-        InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        Operation op = new GenericOperation(name, OPERATION_SIZE)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Long> f = invokeOnPartition(op);
+        return f.join();
     }
 
     @Override
     public long tailSequence() {
-        GenericOperation op = new GenericOperation(name, OPERATION_TAIL);
-        InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        Operation op = new GenericOperation(name, OPERATION_TAIL)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Long> f = invokeOnPartition(op);
+        return f.join();
     }
 
     @Override
     public long headSequence() {
-        GenericOperation op = new GenericOperation(name, OPERATION_HEAD);
-        InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        Operation op = new GenericOperation(name, OPERATION_HEAD)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Long> f = invokeOnPartition(op);
+        return f.join();
     }
 
     @Override
@@ -117,22 +120,20 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
             return config.getCapacity();
         }
 
-        GenericOperation op = new GenericOperation(name, OPERATION_REMAINING_CAPACITY);
-        InternalCompletableFuture f = invoke(op);
-        return (Long) f.getSafely();
+        Operation op = new GenericOperation(name, OPERATION_REMAINING_CAPACITY)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Long> f = invokeOnPartition(op);
+        return f.join();
     }
 
     @Override
     public long add(E item) {
         checkNotNull(item, "item can't be null");
 
-        AddOperation op = new AddOperation(name, toData(item), OVERWRITE);
-        InternalCompletableFuture<Long> f = invoke(op);
-        return f.getSafely();
-    }
-
-    private Data toData(E item) {
-        return getNodeEngine().getSerializationService().toData(item);
+        Operation op = new AddOperation(name, toData(item), OVERWRITE)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Long> f = invokeOnPartition(op);
+        return f.join();
     }
 
     @Override
@@ -140,16 +141,18 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         checkNotNull(item, "item can't be null");
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
-        AddOperation op = new AddOperation(name, toData(item), overflowPolicy);
-        return invoke(op);
+        Operation op = new AddOperation(name, toData(item), overflowPolicy)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(op);
     }
 
     @Override
     public E readOne(long sequence) throws InterruptedException {
         checkSequence(sequence);
 
-        ReadOneOperation op = new ReadOneOperation(name, sequence);
-        InternalCompletableFuture<E> f = invoke(op);
+        Operation op = new ReadOneOperation(name, sequence)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<E> f = invokeOnPartition(op);
         try {
             return f.get();
         } catch (Throwable t) {
@@ -164,7 +167,8 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         checkFalse(collection.isEmpty(), "collection can't be empty");
         checkTrue(collection.size() <= MAX_BATCH_SIZE, "collection can't be larger than " + MAX_BATCH_SIZE);
 
-        AddAllOperation op = new AddAllOperation(name, toDataArray(collection), overflowPolicy);
+        Operation op = new AddAllOperation(name, toDataArray(collection), overflowPolicy)
+                .setPartitionId(partitionId);
         OperationService operationService = getOperationService();
         return operationService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(Long.MAX_VALUE)
@@ -191,16 +195,12 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         checkTrue(minCount <= config.getCapacity(), "the minCount should be smaller than or equal to the capacity");
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
-        ReadManyOperation op = new ReadManyOperation(name, startSequence, minCount, maxCount, filter);
+        Operation op = new ReadManyOperation(name, startSequence, minCount, maxCount, filter)
+                .setPartitionId(partitionId);
         OperationService operationService = getOperationService();
         return operationService.createInvocationBuilder(null, op, partitionId)
                 .setCallTimeout(Long.MAX_VALUE)
                 .invoke();
-    }
-
-    private <T> InternalCompletableFuture<T> invoke(Operation op) {
-        OperationService operationService = getOperationService();
-        return operationService.invokeOnPartition(null, op, partitionId);
     }
 
     private static void checkSequence(long sequence) {

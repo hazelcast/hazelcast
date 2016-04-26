@@ -62,37 +62,37 @@ public class QueueConfigTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setAsyncBackupCount_whenItsNegative(){
+    public void setAsyncBackupCount_whenItsNegative() {
         QueueConfig config = new QueueConfig();
         config.setAsyncBackupCount(-1);
     }
 
     @Test
-    public void setAsyncBackupCount_whenItsZero(){
+    public void setAsyncBackupCount_whenItsZero() {
         QueueConfig config = new QueueConfig();
         config.setAsyncBackupCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setAsyncBackupCount_whenTooLarge(){
+    public void setAsyncBackupCount_whenTooLarge() {
         QueueConfig config = new QueueConfig();
         config.setAsyncBackupCount(200); //max allowed is 6..
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setBackupCount_whenItsNegative(){
+    public void setBackupCount_whenItsNegative() {
         QueueConfig config = new QueueConfig();
         config.setBackupCount(-1);
     }
 
     @Test
-    public void setBackupCount_whenItsZero(){
+    public void setBackupCount_whenItsZero() {
         QueueConfig config = new QueueConfig();
         config.setBackupCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setBackupCount_tooLarge(){
+    public void setBackupCount_tooLarge() {
         QueueConfig config = new QueueConfig();
         config.setBackupCount(200); //max allowed is 6..
     }

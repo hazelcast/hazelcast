@@ -25,48 +25,56 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
 import static com.hazelcast.nio.Packet.FLAG_BIND;
 import static com.hazelcast.nio.Packet.FLAG_EVENT;
 import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_WAN_REPLICATION;
+import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
+import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
 
 /**
  * Default {@link PacketDispatcher} implementation.
  */
-public class PacketDispatcherImpl implements PacketDispatcher {
+public final class PacketDispatcherImpl implements PacketDispatcher {
 
     private final ILogger logger;
-    private final PacketHandler eventPacketHandler;
-    private final PacketHandler wanReplicationPacketHandler;
-    private final PacketHandler operationPacketHandler;
-    private final PacketHandler connectionPacketHandler;
+    private final PacketHandler eventService;
+    private final PacketHandler operationExecutor;
+    private final PacketHandler connectionManager;
+    private final PacketHandler responseHandler;
+    private final PacketHandler invocationMonitor;
 
     public PacketDispatcherImpl(ILogger logger,
-                                PacketHandler operationPacketHandler,
-                                PacketHandler eventPacketHandler,
-                                PacketHandler wanReplicationPacketHandler,
-                                PacketHandler connectionPacketHandler) {
+                                PacketHandler operationExecutor,
+                                PacketHandler responseHandler,
+                                PacketHandler invocationMonitor,
+                                PacketHandler eventService,
+                                PacketHandler connectionManager) {
         this.logger = logger;
-        this.operationPacketHandler = operationPacketHandler;
-        this.eventPacketHandler = eventPacketHandler;
-        this.wanReplicationPacketHandler = wanReplicationPacketHandler;
-        this.connectionPacketHandler = connectionPacketHandler;
+        this.responseHandler = responseHandler;
+        this.eventService = eventService;
+        this.invocationMonitor = invocationMonitor;
+        this.connectionManager = connectionManager;
+        this.operationExecutor = operationExecutor;
     }
 
     @Override
     public void dispatch(Packet packet) {
         try {
             if (packet.isFlagSet(FLAG_OP)) {
-                operationPacketHandler.handle(packet);
+                if (packet.isFlagSet(FLAG_RESPONSE)) {
+                    responseHandler.handle(packet);
+                } else if (packet.isFlagSet(FLAG_OP_CONTROL)) {
+                    invocationMonitor.handle(packet);
+                } else {
+                    operationExecutor.handle(packet);
+                }
             } else if (packet.isFlagSet(FLAG_EVENT)) {
-                eventPacketHandler.handle(packet);
-            } else if (packet.isFlagSet(FLAG_WAN_REPLICATION)) {
-                wanReplicationPacketHandler.handle(packet);
+                eventService.handle(packet);
             } else if (packet.isFlagSet(FLAG_BIND)) {
-                connectionPacketHandler.handle(packet);
+                connectionManager.handle(packet);
             } else {
                 logger.severe("Unknown packet type! Header: " + packet.getFlags());
             }
         } catch (Throwable t) {
             inspectOutputMemoryError(t);
-            logger.severe("Failed to process packet:" + packet, t);
+            logger.severe("Failed to process:" + packet, t);
         }
     }
 }

@@ -2,9 +2,9 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -98,7 +98,7 @@ public class MapEntrySetTest extends HazelcastTestSupport {
         Set<Map.Entry<String, String>> result = map.entrySet(TruePredicate.INSTANCE);
 
         QueryResultCollection collection = assertInstanceOf(QueryResultCollection.class, result);
-        QueryResultRow row = (QueryResultRow)collection.getRows().iterator().next();
+        QueryResultRow row = (QueryResultRow) collection.getRows().iterator().next();
         assertEquals(serializationService.toData("1"), row.getKey());
         assertEquals(serializationService.toData("a"), row.getValue());
     }

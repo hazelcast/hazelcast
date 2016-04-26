@@ -91,8 +91,8 @@ public class ListSetMapReduceLiteMemberTest
         JobTracker jobTracker = instance.getJobTracker(listName);
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromList(list));
         ICompletableFuture<Map<String, Integer>> ICompletableFuture = job.chunkSize(10).mapper(new ListSetMapper())
-                                                                         .combiner(new ListSetCombinerFactory())
-                                                                         .reducer(new ListSetReducerFactory()).submit();
+                .combiner(new ListSetCombinerFactory())
+                .reducer(new ListSetReducerFactory()).submit();
 
         Map<String, Integer> result = ICompletableFuture.get();
         assertEquals(1, result.size());
@@ -116,8 +116,8 @@ public class ListSetMapReduceLiteMemberTest
         JobTracker jobTracker = instance.getJobTracker(setName);
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromSet(set));
         ICompletableFuture<Map<String, Integer>> ICompletableFuture = job.chunkSize(10).mapper(new ListSetMapper())
-                                                                         .combiner(new ListSetCombinerFactory())
-                                                                         .reducer(new ListSetReducerFactory()).submit();
+                .combiner(new ListSetCombinerFactory())
+                .reducer(new ListSetReducerFactory()).submit();
 
         Map<String, Integer> result = ICompletableFuture.get();
 

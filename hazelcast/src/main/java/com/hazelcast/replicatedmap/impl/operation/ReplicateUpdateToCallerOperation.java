@@ -27,8 +27,8 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -103,8 +103,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractOperation implemen
 
     private void notifyCaller() {
         OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();
-        InvocationRegistry registry = operationService.getInvocationsRegistry();
-        registry.notifyBackupComplete(callId);
+        operationService.getResponseHandler().notifyBackupComplete(callId);
     }
 
     @Override

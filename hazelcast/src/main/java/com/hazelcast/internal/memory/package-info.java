@@ -15,8 +15,6 @@
  */
 
 /**
- * <p>
- *     Internal memory management API
- * </p>
+ * SPI that deals with memory operations.
  */
 package com.hazelcast.internal.memory;

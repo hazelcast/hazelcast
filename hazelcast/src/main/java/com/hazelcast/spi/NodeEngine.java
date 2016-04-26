@@ -19,14 +19,14 @@ package com.hazelcast.spi;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -86,13 +86,6 @@ public interface NodeEngine {
      * @return the ProxyService.
      */
     ProxyService getProxyService();
-
-    /**
-     * Gets the WaitNotifyService.
-     *
-     * @return the WaitNotifyService.
-     */
-    WaitNotifyService getWaitNotifyService();
 
     /**
      * Gets the WanReplicationService.
@@ -163,13 +156,13 @@ public interface NodeEngine {
     ClassLoader getConfigClassLoader();
 
     /**
-     * Returns the GroupProperties.
+     * Returns the HazelcastProperties.
      * <p/>
      * The returned value will never change and will never be null.
      *
-     * @return the GroupProperties
+     * @return the HazelcastProperties
      */
-    GroupProperties getGroupProperties();
+    HazelcastProperties getProperties();
 
     /**
      * Gets the logger for a given name.
@@ -233,6 +226,7 @@ public interface NodeEngine {
 
     /**
      * Indicates that node is not shutting down or it has not already shut down
+     *
      * @return true if node is not shutting down or it has not already shut down
      */
     boolean isRunning();
@@ -245,12 +239,22 @@ public interface NodeEngine {
     HazelcastInstance getHazelcastInstance();
 
     /**
+     * Gets the service with the given name.
+     *
+     * @param serviceName the name of the service
+     * @param <T> the type of the service.
+     * @return the found service, or HazelcastException in case of failure. Null will not be returned.
+     */
+    <T> T getService(String serviceName);
+
+    /**
      * Gets the {@link SharedService} for the given serviceName.
      *
      * @param serviceName the name of the shared service to get.
      * @param <T>
      * @return the found service, or null if the service was not found.
      * @throws NullPointerException if the serviceName is null.
+     * @deprecated since 3.7. Use {@link #getService(String)} instead.
      */
     <T extends SharedService> T getSharedService(String serviceName);
 }

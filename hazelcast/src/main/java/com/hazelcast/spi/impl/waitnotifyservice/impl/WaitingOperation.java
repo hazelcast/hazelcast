@@ -18,10 +18,10 @@ package com.hazelcast.spi.impl.waitnotifyservice.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -38,22 +38,22 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 class WaitingOperation extends AbstractOperation implements Delayed, PartitionAwareOperation {
     final Queue<WaitingOperation> queue;
     final Operation op;
-    final WaitSupport waitSupport;
+    final BlockingOperation blockingOperation;
     final long expirationTime;
     volatile boolean valid = true;
     volatile Object cancelResponse;
 
-    WaitingOperation(Queue<WaitingOperation> queue, WaitSupport waitSupport) {
-        this.op = (Operation) waitSupport;
-        this.waitSupport = waitSupport;
+    WaitingOperation(Queue<WaitingOperation> queue, BlockingOperation blockingOperation) {
+        this.op = (Operation) blockingOperation;
+        this.blockingOperation = blockingOperation;
         this.queue = queue;
-        this.expirationTime = getExpirationTime(waitSupport);
+        this.expirationTime = getExpirationTime(blockingOperation);
 
         setPartitionId(op.getPartitionId());
     }
 
-    private long getExpirationTime(WaitSupport waitSupport) {
-        long waitTimeout = waitSupport.getWaitTimeout();
+    private long getExpirationTime(BlockingOperation blockingOperation) {
+        long waitTimeout = blockingOperation.getWaitTimeout();
         if (waitTimeout < 0) {
             return -1;
         }
@@ -99,7 +99,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     }
 
     public boolean shouldWait() {
-        return waitSupport.shouldWait();
+        return blockingOperation.shouldWait();
     }
 
     @Override
@@ -136,7 +136,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
 
         valid = false;
         if (expired) {
-            waitSupport.onWaitExpire();
+            blockingOperation.onWaitExpire();
         } else {
             OperationResponseHandler responseHandler = op.getOperationResponseHandler();
             responseHandler.sendResponse(op, cancelResponse);
@@ -185,7 +185,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     }
 
     public void onExpire() {
-        waitSupport.onWaitExpire();
+        blockingOperation.onWaitExpire();
     }
 
     public void cancel(Object error) {

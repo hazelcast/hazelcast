@@ -17,9 +17,8 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.nio.Address;
 
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
@@ -54,7 +53,6 @@ public abstract class InvocationBuilder {
      */
     public static final boolean DEFAULT_DESERIALIZE_RESULT = true;
 
-    protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
@@ -70,22 +68,19 @@ public abstract class InvocationBuilder {
     /**
      * Creates an InvocationBuilder
      *
-     * @param nodeEngine  the nodeEngine
      * @param serviceName the name of the service
      * @param op          the operation to execute
      * @param partitionId the id of the partition upon which to execute the operation
      * @param target      the target machine. Either the partitionId or the target needs to be set.
      */
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                             int partitionId, Address target) {
-        this.nodeEngine = nodeEngine;
+    protected InvocationBuilder(String serviceName, Operation op, int partitionId, Address target) {
         this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
         this.target = target;
     }
 
-     /**
+    /**
      * Sets the replicaIndex.
      *
      * @param replicaIndex the replica index
@@ -164,6 +159,7 @@ public abstract class InvocationBuilder {
 
     /**
      * Gets the operation to execute.
+     *
      * @return the operation to execute
      */
     public Operation getOp() {
@@ -174,7 +170,7 @@ public abstract class InvocationBuilder {
      * Gets the replicaIndex.
      *
      * @return the replicaIndex
-      */
+     */
 
     public int getReplicaIndex() {
         return replicaIndex;
@@ -201,7 +197,7 @@ public abstract class InvocationBuilder {
     /**
      * Returns the target machine.
      *
-     * @return  the target machine.
+     * @return the target machine.
      */
     public Address getTarget() {
         return target;
@@ -210,7 +206,7 @@ public abstract class InvocationBuilder {
     /**
      * Returns the partition id.
      *
-     * @return  the partition id.
+     * @return the partition id.
      */
     public int getPartitionId() {
         return partitionId;

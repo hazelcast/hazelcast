@@ -30,7 +30,6 @@ import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.DefaultNodeContext;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -38,6 +37,7 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.FirewallingTcpIpConnectionManager;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -63,8 +63,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.ClusterState.ACTIVE;
 import static com.hazelcast.cluster.ClusterState.FROZEN;
-import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.instance.HazelcastInstanceManager.newHazelcastInstance;
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -91,8 +91,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     private void testClusterMerge(boolean multicast) throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         String firstGroupName = generateRandomString(10);
         config1.getGroupConfig().setName(firstGroupName);
 
@@ -103,8 +103,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         join1.getTcpIpConfig().addMember("127.0.0.1");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config2.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config2.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config2.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         String secondGroupName = generateRandomString(10);
         config2.getGroupConfig().setName(secondGroupName);
 
@@ -138,8 +138,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     @Test
     public void testClusterShouldNotMergeDifferentGroupName() throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         String firstGroupName = generateRandomString(10);
         config1.getGroupConfig().setName(firstGroupName);
 
@@ -149,8 +149,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         join1.getTcpIpConfig().addMember("127.0.0.1");
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config2.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config2.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config2.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         String secondGroupName = generateRandomString(10);
         config2.getGroupConfig().setName(secondGroupName);
 
@@ -226,8 +226,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     private void testMergeAfterSplitBrain(boolean multicast) throws InterruptedException {
         String groupName = generateRandomString(10);
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.getGroupConfig().setName(groupName);
 
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -381,8 +381,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     private static Config buildConfig(boolean multicastEnabled, int port) {
         Config c = new Config();
-        c.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        c.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        c.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        c.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
 
         NetworkConfig networkConfig = c.getNetworkConfig();
         networkConfig.setPort(port).setPortAutoIncrement(false);
@@ -399,9 +399,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         // bigger port to make sure address.hashCode() check pass during merge!
         config1.getNetworkConfig().setPort(5901);
         config1.getGroupConfig().setName(groupName);
-        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "5");
-        config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "0");
-        config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "0");
+        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "5");
+        config1.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "0");
+        config1.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "0");
         config1.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
                 switch (event.getState()) {
@@ -419,9 +419,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         Config config2 = new Config();
         config2.getGroupConfig().setName(groupName);
         config2.getNetworkConfig().setPort(5701);
-        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "5");
-        config2.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "0");
-        config2.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "0");
+        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "5");
+        config2.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "0");
+        config2.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "0");
         Hazelcast.newHazelcastInstance(config2);
 
         assertFalse("Latch should not be countdown!", latch.await(3, TimeUnit.SECONDS));
@@ -437,21 +437,19 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         testClusterMerge_when_split_not_detected_by_master(false);
     }
 
-    private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled)
-            throws InterruptedException {
+    private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled) throws InterruptedException {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "15");
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS, "10");
-        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "15");
+        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS.getName(), "10");
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
-        networkConfig.getJoin().getTcpIpConfig()
-                .setEnabled(!multicastEnabled).addMember("127.0.0.1");
+        networkConfig.getJoin().getTcpIpConfig().setEnabled(!multicastEnabled).addMember("127.0.0.1");
 
         HazelcastInstance hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
         HazelcastInstance hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
@@ -675,8 +673,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     private Config buildConfig(final String groupName, final boolean liteMember) {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.getGroupConfig().setName(groupName);
         config.setLiteMember(liteMember);
 
@@ -694,11 +692,11 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "15");
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS, "10");
-        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "15");
+        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS.getName(), "10");
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.getJoin().getMulticastConfig().setEnabled(false);
@@ -766,11 +764,11 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         Config config = new Config();
         String groupName = generateRandomString(10);
         config.getGroupConfig().setName(groupName);
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "10");
-        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "15");
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS, "40");
-        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "15");
+        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "40");
+        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS.getName(), "10");
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.getJoin().getMulticastConfig().setEnabled(false);

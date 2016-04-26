@@ -5,12 +5,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -73,7 +73,7 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
             InternalPartitionService partitionService = nodeEngine.getPartitionService();
             int sourcePartitionId = partitionService.getPartitionId(sourceKey);
             OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
-            int threadCount = operationService.operationExecutor.getPartitionOperationThreadCount();
+            int threadCount = operationService.operationExecutor.getPartitionThreadCount();
             int sourceThreadId = sourcePartitionId % threadCount;
 
             while (true) {

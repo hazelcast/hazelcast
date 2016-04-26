@@ -86,8 +86,6 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         if (recordInfo != null) {
             evict();
         }
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         if (!disableWanReplicationEvent) {
             publishWANReplicationEventBackup(mapServiceContext, mapEventPublisher);
         }

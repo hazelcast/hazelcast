@@ -28,7 +28,7 @@ public class ConfigurationTest
         extends javax.cache.configuration.ConfigurationTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

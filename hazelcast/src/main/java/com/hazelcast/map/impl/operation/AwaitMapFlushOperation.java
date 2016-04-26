@@ -21,13 +21,12 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
@@ -37,7 +36,7 @@ import java.io.IOException;
  * @see NotifyMapFlushOperation
  */
 public class AwaitMapFlushOperation
-        extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, WaitSupport {
+        extends MapOperation implements PartitionAwareOperation, ReadonlyOperation, BlockingOperation {
 
     /**
      * Flush will end after execution of this sequenced store-operation.
@@ -57,8 +56,6 @@ public class AwaitMapFlushOperation
     @Override
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
-
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
 
         MapDataStore mapDataStore = recordStore.getMapDataStore();
         if (!(mapDataStore instanceof WriteBehindStore)) {

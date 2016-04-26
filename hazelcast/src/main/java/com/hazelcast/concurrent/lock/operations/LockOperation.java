@@ -22,12 +22,12 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 
-public class LockOperation extends BaseLockOperation implements WaitSupport, BackupAwareOperation {
+public class LockOperation extends BaseLockOperation implements BlockingOperation, BackupAwareOperation {
 
     public LockOperation() {
     }

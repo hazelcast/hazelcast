@@ -16,18 +16,16 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT;
 import static com.hazelcast.internal.monitors.PerformanceMonitorPlugin.DISABLED;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.arraycopy;
@@ -39,34 +37,109 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class PerformanceMonitor {
 
+    /**
+     * Use the performance monitor to see internal performance metrics. Currently this is quite
+     * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
+     * the future, all kinds of new metrics will be added.
+     * <p/>
+     * The performance monitor logs all metrics into the log file.
+     * <p/>
+     * For more detailed information, please check the PERFORMANCE_METRICS_LEVEL.
+     * <p/>
+     * The default is false.
+     */
+    public static final HazelcastProperty ENABLED
+            = new HazelcastProperty("hazelcast.performance.monitor.enabled", false);
+
+    /**
+     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
+     * <p/>
+     * This property sets the maximum size in MB for a single file.
+     * <p/>
+     * Every HazelcastInstance will get its own history of log files.
+     * <p/>
+     * The default is 10.
+     */
+    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
+            = new HazelcastProperty("hazelcast.performance.monitor.max.rolled.file.size.mb", 10);
+
+    /**
+     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
+     * <p/>
+     * This property sets the maximum number of rolling files to keep on disk.
+     * <p/>
+     * The default is 10.
+     */
+    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT
+            = new HazelcastProperty("hazelcast.performance.monitor.max.rolled.file.count", 10);
+
+    /**
+     * Determines if a human friendly, but more difficult to parse, output format is selected for dumping the metrics.
+     * <p/>
+     * The default is true.
+     */
+    public static final HazelcastProperty HUMAN_FRIENDLY_FORMAT
+            = new HazelcastProperty("hazelcast.performance.monitor.human.friendly.format", true);
+
+    /**
+     * Configures the output directory of the performance log files.
+     *
+     * Defaults to the 'user.dir'.
+     */
+    public static final HazelcastProperty DIRECTORY
+            = new HazelcastProperty("hazelcast.performance.monitor.directory", "" + System.getProperty("user.dir"));
+
     final boolean singleLine;
-    final HazelcastInstance hazelcastInstance;
     final HazelcastProperties properties;
+    final String directory;
     PerformanceLog performanceLog;
     final AtomicReference<PerformanceMonitorPlugin[]> staticTasks = new AtomicReference<PerformanceMonitorPlugin[]>(
             new PerformanceMonitorPlugin[0]
     );
 
     final ILogger logger;
+    final String fileName;
+
     private final boolean enabled;
     private ScheduledExecutorService scheduler;
     private final HazelcastThreadGroup hzThreadGroup;
 
-    public PerformanceMonitor(HazelcastInstance hazelcastInstance,
-                              ILogger logger,
-                              HazelcastThreadGroup hzThreadGroup,
-                              HazelcastProperties properties) {
-        this.hazelcastInstance = hazelcastInstance;
+    public PerformanceMonitor(
+            String fileName,
+            ILogger logger,
+            HazelcastThreadGroup hzThreadGroup,
+            HazelcastProperties properties) {
+        this.fileName = fileName;
         this.hzThreadGroup = hzThreadGroup;
         this.logger = logger;
         this.properties = properties;
-        this.enabled = properties.getBoolean(PERFORMANCE_MONITOR_ENABLED);
-        this.singleLine = !properties.getBoolean(PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
+        this.enabled = isEnabled(properties);
+        this.directory = properties.getString(DIRECTORY);
+
+        if (enabled) {
+            logger.info("PerformanceMonitor is enabled");
+        }
+        this.singleLine = !properties.getBoolean(HUMAN_FRIENDLY_FORMAT);
     }
 
+    private boolean isEnabled(HazelcastProperties properties) {
+        String s = properties.getString(ENABLED);
+        if (s != null) {
+            return properties.getBoolean(ENABLED);
+        }
+
+        // check for the old property name
+        s = properties.get("hazelcast.performance.monitoring.enabled");
+        if (s != null) {
+            logger.warning("Don't use deprecated 'hazelcast.performance.monitoring.enabled' "
+                    + "but use '" + ENABLED.getName() + "' instead. "
+                    + "The former name will be removed in Hazelcast 3.8.");
+        }
+        return Boolean.parseBoolean(s);
+    }
 
     /**
-     * Registers a MonitorTask to it will be scheduled.
+     * Registers a PerformanceMonitorPlugin.
      *
      * This method is threadsafe.
      *
@@ -74,11 +147,11 @@ public class PerformanceMonitor {
      *
      * If the PerformanceMonitor is disabled, the call is ignored.
      *
-     * @param plugin the monitorTask to register
-     * @throws NullPointerException if monitorTask is null.
+     * @param plugin the plugin to register
+     * @throws NullPointerException if plugin is null.
      */
     public void register(PerformanceMonitorPlugin plugin) {
-        checkNotNull(plugin, "monitorTask can't be null");
+        checkNotNull(plugin, "plugin can't be null");
 
         if (!enabled) {
             return;
@@ -138,20 +211,27 @@ public class PerformanceMonitor {
         }
     }
 
-    class MonitorTaskRunnable implements Runnable {
+    private class MonitorTaskRunnable implements Runnable {
+
         private final PerformanceMonitorPlugin plugin;
 
-        public MonitorTaskRunnable(PerformanceMonitorPlugin plugin) {
+        MonitorTaskRunnable(PerformanceMonitorPlugin plugin) {
             this.plugin = plugin;
         }
 
         @Override
         public void run() {
-            performanceLog.render(plugin);
+            try {
+                performanceLog.render(plugin);
+            } catch (Throwable t) {
+                // we need to catch any exception; otherwise the task is going to be removed by the scheduler.
+                logger.severe(t);
+            }
         }
     }
 
     private class PerformanceMonitorThreadFactory implements ThreadFactory {
+
         @Override
         public Thread newThread(Runnable target) {
             return new Thread(

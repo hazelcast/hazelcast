@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
@@ -11,20 +10,22 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.concurrent.Future;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import java.lang.reflect.Field;
+import java.util.Iterator;
+import java.util.concurrent.Future;
+
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,7 +79,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     @Test
     public void testNoStuckInvocationsWhenRetriedMultipleTimes() throws Exception {
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "3000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
@@ -93,17 +94,16 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
                 , op, remoteNodeEngine.getThisAddress());
         Field invocationField = InvocationFuture.class.getDeclaredField("invocation");
         invocationField.setAccessible(true);
-        Invocation invocation = (Invocation) invocationField.get(future);
+        final Invocation invocation = (Invocation) invocationField.get(future);
 
         invocation.notifyError(new RetryableHazelcastException());
         invocation.notifyError(new RetryableHazelcastException());
-
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection<Invocation> invocations = operationService.invocationsRegistry.invocations();
-                assertEquals(0, invocations.size());
+                Iterator<Invocation> invocations = operationService.invocationRegistry.iterator();
+                assertFalse(invocations.hasNext());
             }
         });
     }

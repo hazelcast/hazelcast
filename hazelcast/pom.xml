@@ -124,6 +124,7 @@
                                 </Export-Package>
                                 <Import-Package>
                                     !org.junit,
+                                    !com.hazelcast.*,
                                     !com.eclipsesource.json,
                                     sun.misc;resolution:=optional,
                                     javax.cache;resolution:=optional,
@@ -190,6 +191,8 @@
                             <target>
                                 <copy file="${basedir}/src/main/resources/hazelcast-default.xml"
                                       tofile="${basedir}/target/hazelcast.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-full-example.xml"/>
                             </target>
                         </configuration>
                     </execution>

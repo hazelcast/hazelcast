@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapContainer;
@@ -37,6 +37,7 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationPublisher;
 
@@ -81,12 +82,12 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     @Override
     public void publishWanReplicationUpdateBackup(String mapName, EntryView entryView) {
-        //NOP
+        // NOP
     }
 
     @Override
     public void publishWanReplicationRemoveBackup(String mapName, Data key, long removeTime) {
-        //NOP
+        // NOP
     }
 
     @Override
@@ -183,16 +184,14 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         return registrations;
     }
 
-    //CHECKSTYLE:OFF
     protected boolean doFilter(EventFilter filter, Data dataKey,
                                Object dataOldValue, Object dataValue, EntryEventType eventType, String mapNameOrNull) {
-
         if (filter instanceof MapPartitionLostEventFilter) {
             return false;
         }
 
-        // below, order of ifs are important.
-        // QueryEventFilter is instance of EntryEventFilter.
+        // the order of the following ifs is important!
+        // QueryEventFilter is instance of EntryEventFilter
         if (filter instanceof EventListenerFilter) {
             if (!filter.eval(eventType.getType())) {
                 return false;
@@ -200,43 +199,34 @@ public class MapEventPublisherImpl implements MapEventPublisher {
                 filter = ((EventListenerFilter) filter).getEventFilter();
             }
         }
-
         if (filter instanceof TrueEventFilter) {
             return true;
         }
-
         if (filter instanceof QueryEventFilter) {
             return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue, mapNameOrNull);
         }
-
         if (filter instanceof EntryEventFilter) {
             return processEntryEventFilter(filter, dataKey);
         }
-
         throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
-    //CHECKSTYLE:ON
 
     protected boolean isIncludeValue(EventFilter filter) {
-        // below, order of ifs are important.
-        // QueryEventFilter is instance of EntryEventFilter.
-        // SyntheticEventFilter wraps an event filter.
+        // the order of the following ifs is important!
+        // QueryEventFilter is instance of EntryEventFilter
+        // SyntheticEventFilter wraps an event filter
         if (filter instanceof EventListenerFilter) {
             filter = ((EventListenerFilter) filter).getEventFilter();
         }
-
         if (filter instanceof TrueEventFilter) {
             return true;
         }
-
         if (filter instanceof QueryEventFilter) {
             return ((QueryEventFilter) filter).isIncludeValue();
         }
-
         if (filter instanceof EntryEventFilter) {
             return ((EntryEventFilter) filter).isIncludeValue();
         }
-
         throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
 
@@ -262,6 +252,11 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     public void hintMapEvent(Address caller, String mapName, EntryEventType eventType,
                              int numberOfEntriesAffected, int partitionId) {
         // NOP
+    }
+
+    @Override
+    public boolean hasEventListener(String mapName) {
+        return eventService.hasEventRegistration(SERVICE_NAME, mapName);
     }
 
     protected Collection<EventRegistration> getRegistrations(String mapName) {
@@ -297,7 +292,8 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
         Extractors extractors = getExtractorsForMapName(mapNameOrNull);
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryableEntry entry = new CachedQueryEntry(serializationService, dataKey, testValue, extractors);
+        QueryableEntry entry = new CachedQueryEntry((InternalSerializationService) serializationService,
+                dataKey, testValue, extractors);
         return queryEventFilter.eval(entry);
     }
 
@@ -321,5 +317,4 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         return new EntryEventData(thisNodesAddress, mapName, caller,
                 dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
     }
-
 }

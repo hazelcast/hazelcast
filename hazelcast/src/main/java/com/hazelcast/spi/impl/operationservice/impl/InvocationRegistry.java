@@ -18,19 +18,12 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.metrics.MetricsProvider;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
-import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.internal.util.counters.SwCounter;
-import java.util.Collection;
+
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,8 +32,6 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
  * The InvocationsRegistry is responsible for the registration of all pending invocations. Using the InvocationRegistry the
@@ -57,7 +48,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
-public class InvocationRegistry {
+public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -65,27 +56,18 @@ public class InvocationRegistry {
 
     @Probe(name = "invocations.pending", level = MANDATORY)
     private final ConcurrentMap<Long, Invocation> invocations;
-    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final CallIdSequence callIdSequence;
 
-    @Probe(name = "response.normal.count", level = MANDATORY)
-    private final SwCounter responseNormalCounter = newSwCounter();
-    @Probe(name = "response.timeout.count", level = MANDATORY)
-    private final SwCounter responseTimeoutCounter = newSwCounter();
-    @Probe(name = "response.backup.count", level = MANDATORY)
-    private final MwCounter responseBackupCounter = newMwCounter();
-    @Probe(name = "response.error.count", level = MANDATORY)
-    private final SwCounter responseErrorCounter = newSwCounter();
-
-    public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
-                              int concurrencyLevel) {
-        this.nodeEngine = nodeEngine;
+    public InvocationRegistry(ILogger logger, CallIdSequence callIdSequence, int concurrencyLevel) {
         this.logger = logger;
-        this.callIdSequence = backpressureRegulator.newCallIdSequence();
+        this.callIdSequence = callIdSequence;
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
+    }
 
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
+    @Override
+    public void provideMetrics(MetricsRegistry metricsRegistry) {
+        metricsRegistry.scanAndRegister(this, "operation");
     }
 
     @Probe(name = "invocations.usedPercentage")
@@ -154,8 +136,9 @@ public class InvocationRegistry {
         return invocations.size();
     }
 
-    public Collection<Invocation> invocations() {
-        return invocations.values();
+    @Override
+    public Iterator<Invocation> iterator() {
+        return invocations.values().iterator();
     }
 
     /**
@@ -177,90 +160,8 @@ public class InvocationRegistry {
         return invocations.get(callId);
     }
 
-    /**
-     * Notifies the invocation that a Response is available.
-     *
-     * @param response The response that is available.
-     * @param sender   Endpoint who sent the response
-     */
-    public void notify(Response response, Address sender) {
-        if (response instanceof NormalResponse) {
-            notifyNormalResponse((NormalResponse) response, sender);
-        } else if (response instanceof BackupResponse) {
-            notifyBackupComplete(response.getCallId());
-        } else if (response instanceof CallTimeoutResponse) {
-            notifyCallTimeout((CallTimeoutResponse) response, sender);
-        } else if (response instanceof ErrorResponse) {
-            notifyErrorResponse((ErrorResponse) response, sender);
-        } else {
-            logger.severe("Unrecognized response: " + response);
-        }
-    }
-
-    public void notifyBackupComplete(long callId) {
-        responseBackupCounter.inc();
-
-        try {
-            Invocation invocation = invocations.get(callId);
-
-            // It can happen that a {@link BackupResponse} is send without the Invocation being available anymore.
-            // This is because the InvocationRegistry will automatically release invocations where the backup is
-            // taking too much time.
-            if (invocation == null) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("No Invocation found for BackupResponse with callId " + callId);
-                }
-                return;
-            }
-
-            invocation.notifySingleBackupComplete();
-        } catch (Exception e) {
-            ReplicaErrorLogger.log(e, logger);
-        }
-    }
-
-    private void notifyErrorResponse(ErrorResponse response, Address sender) {
-        responseErrorCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
-
-        if (invocation == null) {
-            if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
-            }
-            return;
-        }
-
-        invocation.notifyError(response.getCause());
-    }
-
-    private void notifyNormalResponse(NormalResponse response, Address sender) {
-        responseNormalCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
-
-        if (invocation == null) {
-            if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
-            }
-            return;
-        }
-        invocation.notifyNormalResponse(response.getValue(), response.getBackupCount());
-    }
-
-    private void notifyCallTimeout(CallTimeoutResponse response, Address sender) {
-        responseTimeoutCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
-
-        if (invocation == null) {
-            if (nodeEngine.isRunning()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
-            }
-            return;
-        }
-        invocation.notifyCallTimeout();
-    }
-
     public void reset() {
-        for (Invocation invocation : invocations.values()) {
+        for (Invocation invocation : this) {
             try {
                 invocation.notifyError(new MemberLeftException());
             } catch (Throwable e) {
@@ -270,7 +171,7 @@ public class InvocationRegistry {
     }
 
     public void shutdown() {
-        for (Invocation invocation : invocations.values()) {
+        for (Invocation invocation : this) {
             try {
                 invocation.notifyError(new HazelcastInstanceNotActiveException());
             } catch (Throwable e) {
@@ -278,5 +179,4 @@ public class InvocationRegistry {
             }
         }
     }
-
 }

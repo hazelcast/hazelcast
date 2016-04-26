@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,7 +30,6 @@ import static org.mockito.Mockito.verify;
 
 /**
  * ByteArrayObjectDataInput Tester.
- *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -38,13 +37,13 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
 
     final static byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-    protected SerializationService mockSerializationService;
+    protected InternalSerializationService mockSerializationService;
     protected ByteArrayObjectDataInput in;
     protected ByteOrder byteOrder;
 
     @Before
     public void before() throws Exception {
-        mockSerializationService = mock(SerializationService.class);
+        mockSerializationService = mock(InternalSerializationService.class);
         initDataInput();
     }
 

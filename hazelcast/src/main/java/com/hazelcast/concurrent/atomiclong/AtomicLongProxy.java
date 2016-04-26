@@ -32,8 +32,6 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -46,17 +44,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-    }
-
-    private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
-        try {
-            OperationService operationService = getNodeEngine().getOperationService();
-            //noinspection unchecked
-            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(
-                    AtomicLongService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
     }
 
     @Override
@@ -75,150 +62,224 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
 
     @Override
     public long addAndGet(long delta) {
-        return asyncAddAndGet(delta).getSafely();
+        return addAndGetAsync(delta).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
+        Operation operation = new AddAndGetOperation(name, delta).setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncAddAndGet(long delta) {
-        Operation operation = new AddAndGetOperation(name, delta);
-        return asyncInvoke(operation);
+        return addAndGetAsync(delta);
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        return asyncCompareAndSet(expect, update).getSafely();
+        return compareAndSetAsync(expect, update).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
+        Operation operation = new CompareAndSetOperation(name, expect, update)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Boolean> asyncCompareAndSet(long expect, long update) {
-        Operation operation = new CompareAndSetOperation(name, expect, update);
-        return asyncInvoke(operation);
+        return compareAndSetAsync(expect, update);
     }
 
     @Override
     public void set(long newValue) {
-        asyncSet(newValue).getSafely();
+        setAsync(newValue).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAsync(long newValue) {
+        Operation operation = new SetOperation(name, newValue)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Void> asyncSet(long newValue) {
-        Operation operation = new SetOperation(name, newValue);
-        return asyncInvoke(operation);
+        return setAsync(newValue);
     }
 
     @Override
     public long getAndSet(long newValue) {
-        return asyncGetAndSet(newValue).getSafely();
+        return getAndSetAsync(newValue).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndSetAsync(long newValue) {
+        Operation operation = new GetAndSetOperation(name, newValue)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncGetAndSet(long newValue) {
-        Operation operation = new GetAndSetOperation(name, newValue);
-        return asyncInvoke(operation);
+        return getAndSetAsync(newValue);
     }
 
     @Override
     public long getAndAdd(long delta) {
-        return asyncGetAndAdd(delta).getSafely();
+        return getAndAddAsync(delta).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
+        Operation operation = new GetAndAddOperation(name, delta)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncGetAndAdd(long delta) {
-        Operation operation = new GetAndAddOperation(name, delta);
-        return asyncInvoke(operation);
+        return getAndAddAsync(delta);
     }
 
     @Override
     public long decrementAndGet() {
-        return asyncDecrementAndGet().getSafely();
+        return decrementAndGetAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> decrementAndGetAsync() {
+        return addAndGetAsync(-1);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncDecrementAndGet() {
-        return asyncAddAndGet(-1);
+        return addAndGetAsync(-1);
     }
 
     @Override
     public long get() {
-        return asyncGet().getSafely();
+        return getAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAsync() {
+        Operation operation = new GetOperation(name)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncGet() {
-        GetOperation operation = new GetOperation(name);
-        return asyncInvoke(operation);
+        return getAsync();
     }
 
     @Override
     public long incrementAndGet() {
-        return asyncIncrementAndGet().getSafely();
+        return incrementAndGetAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> incrementAndGetAsync() {
+        return addAndGetAsync(1);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncIncrementAndGet() {
-        return asyncAddAndGet(1);
+        return addAndGetAsync(1);
     }
 
     @Override
     public long getAndIncrement() {
-        return asyncGetAndIncrement().getSafely();
+        return getAndIncrementAsync().join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndIncrementAsync() {
+        return getAndAddAsync(1);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncGetAndIncrement() {
-        return asyncGetAndAdd(1);
+        return getAndAddAsync(1);
     }
 
     @Override
     public void alter(IFunction<Long, Long> function) {
-        asyncAlter(function).getSafely();
+        alterAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> alterAsync(IFunction<Long, Long> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new AlterOperation(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Void> asyncAlter(IFunction<Long, Long> function) {
-        isNotNull(function, "function");
-
-        Operation operation = new AlterOperation(name, function);
-        return asyncInvoke(operation);
+        return alterAsync(function);
     }
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
-        return asyncAlterAndGet(function).getSafely();
+        return alterAndGetAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> alterAndGetAsync(IFunction<Long, Long> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new AlterAndGetOperation(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncAlterAndGet(IFunction<Long, Long> function) {
-        isNotNull(function, "function");
-
-        Operation operation = new AlterAndGetOperation(name, function);
-        return asyncInvoke(operation);
+        return alterAndGetAsync(function);
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
-        return asyncGetAndAlter(function).getSafely();
+        return getAndAlterAsync(function).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<Long> getAndAlterAsync(IFunction<Long, Long> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new GetAndAlterOperation(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public InternalCompletableFuture<Long> asyncGetAndAlter(IFunction<Long, Long> function) {
-        isNotNull(function, "function");
-
-        Operation operation = new GetAndAlterOperation(name, function);
-        return asyncInvoke(operation);
+        return getAndAlterAsync(function);
     }
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
-        return asyncApply(function).getSafely();
+        return applyAsync(function).join();
+    }
+
+    @Override
+    public <R> InternalCompletableFuture<R> applyAsync(IFunction<Long, R> function) {
+        isNotNull(function, "function");
+
+        Operation operation = new ApplyOperation<R>(name, function)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public <R> InternalCompletableFuture<R> asyncApply(IFunction<Long, R> function) {
-        isNotNull(function, "function");
-
-        Operation operation = new ApplyOperation<R>(name, function);
-        return asyncInvoke(operation);
+        return applyAsync(function);
     }
 
     @Override

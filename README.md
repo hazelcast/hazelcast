@@ -1,4 +1,4 @@
-## Hazelcast is a clustering and highly scalable data distribution platform for Java.
+## Hazelcast is a clustering and highly scalable data distribution platform.
 
 With its various distributed data structures, distributed caching capabilities, elastic nature, memcache support,
 integration with Spring and Hibernate and more importantly with so many happy users, Hazelcast is feature-rich,
@@ -116,7 +116,7 @@ Please join the mail group if you are interested in using or developing Hazelcas
 
 #### License
 
-Hazelcast is available under the Apache 2 License. Please see the [Licensing appendix](http://docs.hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#license-questions) for more information.
+Hazelcast is available under the Apache 2 License. Please see the [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing) for more information.
 
 #### Copyright
 

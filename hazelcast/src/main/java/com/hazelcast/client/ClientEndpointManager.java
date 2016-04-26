@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 import java.util.Set;
@@ -26,6 +27,7 @@ import java.util.Set;
  *
  * All the methods are thread-safe.
  */
+@PrivateApi
 public interface ClientEndpointManager {
 
     /**

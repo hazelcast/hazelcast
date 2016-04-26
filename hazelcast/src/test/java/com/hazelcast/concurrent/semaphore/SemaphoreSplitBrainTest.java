@@ -9,8 +9,8 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -34,7 +34,7 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceManager.shutdownAll();
+        HazelcastInstanceManager.terminateAll();
     }
 
     @Test
@@ -92,12 +92,12 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "3");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "1");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "3");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "1");
         return config;
     }
 
-    private class TestLifeCycleListener implements LifecycleListener {
+    private static class TestLifeCycleListener implements LifecycleListener {
 
         CountDownLatch latch;
 
@@ -113,7 +113,7 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
         }
     }
 
-    private class TestMemberShipListener implements MembershipListener {
+    private static class TestMemberShipListener implements MembershipListener {
 
         final CountDownLatch latch;
 

@@ -57,22 +57,22 @@ public class DefaultMemoryStats implements MemoryStats {
     }
 
     @Override
-    public long getMaxNativeMemory() {
+    public long getMaxNative() {
         return 0;
     }
 
     @Override
-    public long getCommittedNativeMemory() {
+    public long getCommittedNative() {
         return 0;
     }
 
     @Override
-    public long getUsedNativeMemory() {
+    public long getUsedNative() {
         return 0;
     }
 
     @Override
-    public long getFreeNativeMemory() {
+    public long getFreeNative() {
         return 0;
     }
 

@@ -228,7 +228,8 @@ public final class SortingUtil {
         }
         int size = list.size();
         int pageSize = pagingPredicate.getPageSize();
-        for (int i = pageSize; i <= size; i += pageSize) {
+        int page = pagingPredicate.getPage();
+        for (int i = pageSize; i <= size && nearestPage < page; i += pageSize) {
             Map.Entry anchor = list.get(i - 1);
             nearestPage++;
             PagingPredicateAccessor.setAnchor(pagingPredicate, nearestPage, anchor);

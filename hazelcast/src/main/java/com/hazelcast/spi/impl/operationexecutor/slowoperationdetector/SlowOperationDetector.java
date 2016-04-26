@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
 import static java.lang.String.format;
 
 /**
@@ -67,6 +67,7 @@ public final class SlowOperationDetector {
     private final CurrentOperationData[] partitionCurrentOperationData;
 
     private final DetectorThread detectorThread;
+    private final boolean enabled;
 
     private boolean isFirstLog = true;
 
@@ -74,23 +75,23 @@ public final class SlowOperationDetector {
     public SlowOperationDetector(LoggingService loggingServices,
                                  OperationRunner[] genericOperationRunners,
                                  OperationRunner[] partitionOperationRunners,
-                                 GroupProperties groupProperties,
+                                 HazelcastProperties hazelcastProperties,
                                  HazelcastThreadGroup hazelcastThreadGroup) {
 
         this.logger = loggingServices.getLogger(SlowOperationDetector.class);
 
-        this.slowOperationThresholdNanos = groupProperties.getNanos(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
-        this.logPurgeIntervalNanos = groupProperties.getNanos(SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
-        this.logRetentionNanos = groupProperties.getNanos(SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
-        this.isStackTraceLoggingEnabled = groupProperties.getBoolean(SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED);
+        this.slowOperationThresholdNanos = hazelcastProperties.getNanos(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
+        this.logPurgeIntervalNanos = hazelcastProperties.getNanos(SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
+        this.logRetentionNanos = hazelcastProperties.getNanos(SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
+        this.isStackTraceLoggingEnabled = hazelcastProperties.getBoolean(SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED);
 
         this.genericOperationRunners = genericOperationRunners;
         this.partitionOperationRunners = partitionOperationRunners;
 
         this.genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
         this.partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
-
-        this.detectorThread = initDetectorThread(hazelcastThreadGroup, groupProperties);
+        this.enabled = hazelcastProperties.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED);
+        this.detectorThread = newDetectorThread(hazelcastThreadGroup);
     }
 
     public List<SlowOperationDTO> getSlowOperationDTOs() {
@@ -99,6 +100,14 @@ public final class SlowOperationDetector {
             slowOperationDTOs.add(slowOperationLog.createDTO());
         }
         return slowOperationDTOs;
+    }
+
+    public void start() {
+        if (enabled) {
+            detectorThread.start();
+        } else {
+            logger.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
+        }
     }
 
     public void shutdown() {
@@ -114,14 +123,8 @@ public final class SlowOperationDetector {
         return currentOperationDataArray;
     }
 
-    private DetectorThread initDetectorThread(HazelcastThreadGroup hazelcastThreadGroup,
-                                              GroupProperties groupProperties) {
+    private DetectorThread newDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
         DetectorThread thread = new DetectorThread(hazelcastThreadGroup);
-        if (groupProperties.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED)) {
-            thread.start();
-        } else {
-            logger.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
-        }
         return thread;
     }
 

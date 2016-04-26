@@ -16,16 +16,16 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
 
-import static com.hazelcast.instance.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
-import static com.hazelcast.instance.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 
@@ -79,9 +79,9 @@ public class QueryResultSizeLimiter {
         this.mapServiceContext = mapServiceContext;
         this.logger = logger;
 
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        this.maxResultLimit = getMaxResultLimit(groupProperties);
-        this.maxLocalPartitionsLimitForPreCheck = getMaxLocalPartitionsLimitForPreCheck(groupProperties);
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        this.maxResultLimit = getMaxResultLimit(hazelcastProperties);
+        this.maxLocalPartitionsLimitForPreCheck = getMaxLocalPartitionsLimitForPreCheck(hazelcastProperties);
         this.resultLimitPerPartition = maxResultLimit * MAX_RESULT_LIMIT_FACTOR / (float) getPartitionCount(nodeEngine);
 
         this.isQueryResultLimitEnabled = (maxResultLimit != DISABLED);
@@ -144,8 +144,8 @@ public class QueryResultSizeLimiter {
         return localSize;
     }
 
-    private int getMaxResultLimit(GroupProperties groupProperties) {
-        int maxResultLimit = groupProperties.getInteger(QUERY_RESULT_SIZE_LIMIT);
+    private int getMaxResultLimit(HazelcastProperties hazelcastProperties) {
+        int maxResultLimit = hazelcastProperties.getInteger(QUERY_RESULT_SIZE_LIMIT);
 
         if (maxResultLimit == -1) {
             return DISABLED;
@@ -160,8 +160,8 @@ public class QueryResultSizeLimiter {
         return maxResultLimit;
     }
 
-    private int getMaxLocalPartitionsLimitForPreCheck(GroupProperties groupProperties) {
-        int maxLocalPartitionLimitForPreCheck = groupProperties.getInteger(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK);
+    private int getMaxLocalPartitionsLimitForPreCheck(HazelcastProperties hazelcastProperties) {
+        int maxLocalPartitionLimitForPreCheck = hazelcastProperties.getInteger(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK);
         if (maxLocalPartitionLimitForPreCheck == -1) {
             return DISABLED;
         }

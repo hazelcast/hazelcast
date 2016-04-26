@@ -17,9 +17,9 @@
 package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.HazelcastProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
     private final List<String> keyList = new ArrayList<String>();
 
     public ConfigPropertiesPlugin(NodeEngineImpl nodeEngine) {
-        this(nodeEngine.getLogger(ConfigPropertiesPlugin.class), nodeEngine.getNode().getGroupProperties());
+        this(nodeEngine.getLogger(ConfigPropertiesPlugin.class), nodeEngine.getProperties());
     }
 
     public ConfigPropertiesPlugin(ILogger logger, HazelcastProperties properties) {

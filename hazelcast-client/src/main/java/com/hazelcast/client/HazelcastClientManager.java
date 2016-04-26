@@ -16,27 +16,23 @@
 
 package com.hazelcast.client;
 
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Collections;
-
-import com.hazelcast.util.EmptyStatement;
-
-import java.util.concurrent.ConcurrentMap;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.OutOfMemoryHandler;
-
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.DefaultClientConnectionManagerFactory;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.core.DuplicateInstanceNameException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.util.EmptyStatement;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /***
  * This is central manager for all Hazelcast clients in JVM;

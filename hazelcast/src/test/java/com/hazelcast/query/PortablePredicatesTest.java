@@ -16,7 +16,7 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.Portable;
@@ -46,7 +46,7 @@ public class PortablePredicatesTest {
 
     private static final short FACTORY_ID = 1;
 
-    private final SerializationService serializationService = new DefaultSerializationServiceBuilder()
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
             .addPortableFactory(FACTORY_ID, new TestPortableFactory())
             .build();
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,11 +31,11 @@ import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
 
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final DataOutputStream dataOut;
     private final ByteOrder byteOrder;
 
-    public ObjectDataOutputStream(OutputStream outputStream, SerializationService serializationService) {
+    public ObjectDataOutputStream(OutputStream outputStream, InternalSerializationService serializationService) {
         this.serializationService = serializationService;
         this.dataOut = new DataOutputStream(outputStream);
         this.byteOrder = serializationService.getByteOrder();

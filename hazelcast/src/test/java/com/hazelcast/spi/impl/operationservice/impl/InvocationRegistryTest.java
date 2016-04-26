@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -35,13 +35,13 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(BACKPRESSURE_ENABLED, "false");
+        config.setProperty(BACKPRESSURE_ENABLED.getName(), "false");
         local = createHazelcastInstance(config);
         warmUpPartitions(local);
         nodeEngine = getNodeEngineImpl(local);
 
         operationService = (OperationServiceImpl) getOperationService(local);
-        invocationRegistry = operationService.invocationsRegistry;
+        invocationRegistry = operationService.invocationRegistry;
     }
 
     private Invocation newInvocation() {
@@ -49,7 +49,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(nodeEngine, null, op, op.getPartitionId(), 0, 0, 0, 0, null, false);
+        return new PartitionInvocation(operationService, op, 0, 0, 0, false);
     }
 
     // ====================== register ===============================
@@ -164,7 +164,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
 
         invocationRegistry.reset();
 
-        InvocationFuture f = invocation.invocationFuture;
+        InvocationFuture f = invocation.future;
         try {
             f.get();
             fail();
@@ -183,9 +183,9 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.shutdown();
 
-        InvocationFuture f = invocation.invocationFuture;
+        InvocationFuture f = invocation.future;
         try {
-            f.getSafely();
+            f.join();
             fail();
         } catch (HazelcastInstanceNotActiveException expected) {
         }

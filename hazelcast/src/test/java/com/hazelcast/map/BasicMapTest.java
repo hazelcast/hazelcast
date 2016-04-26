@@ -65,25 +65,26 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
-    static final int instanceCount = 3;
-    static final Random rand = new Random();
+    private static final int INSTANCE_COUNT = 3;
+    private static final Random RANDOM = new Random();
 
     HazelcastInstance[] instances;
 
     @Before
     public void init() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         Config config = getConfig();
         instances = factory.newInstances(config);
     }
 
     HazelcastInstance getInstance() {
-        return instances[rand.nextInt(instanceCount)];
+        return instances[RANDOM.nextInt(INSTANCE_COUNT)];
     }
 
     @Test
+    @SuppressWarnings({"UnnecessaryBoxing", "BooleanConstructorCall"})
     public void testBoxedPrimitives() {
-        IMap map = getInstance().getMap("testPrimitives");
+        IMap<String, Object> map = getInstance().getMap("testPrimitives");
 
         assertPutGet(map, new Boolean(true));
         assertPutGet(map, new Boolean(false));
@@ -103,7 +104,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertPutGet(map, new Character('x'));
     }
 
-    public void assertPutGet(Map map, Object value) {
+    public void assertPutGet(Map<String, Object> map, Object value) {
         String key = UUID.randomUUID().toString();
         map.put(key, value);
         assertEquals(value, map.get(key));
@@ -111,7 +112,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testArrays() {
-        IMap map = getInstance().getMap("testArrays");
+        IMap<String, Object> map = getInstance().getMap("testArrays");
 
         boolean[] booleanArray = {true, false};
         map.put("boolean", booleanArray);
@@ -129,7 +130,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("byte", byteArray);
         assertArrayEquals(byteArray, (short[]) map.get("byte"));
 
-        long[] longArray = {1l, 2l};
+        long[] longArray = {1L, 2L};
         map.put("long", longArray);
         assertArrayEquals(longArray, (long[]) map.get("long"));
 
@@ -145,7 +146,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("char", charArray);
         assertArrayEquals(charArray, (char[]) map.get("char"));
 
-        Object[] objectArray = {"foo", null, new Integer(3)};
+        Object[] objectArray = {"foo", null, Integer.decode("3")};
         map.put("object", objectArray);
         assertArrayEquals(objectArray, (Object[]) map.get("object"));
     }
@@ -188,8 +189,9 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapEvictAndListener() throws InterruptedException {
+    public void testMapEvictAndListener() {
         IMap<String, String> map = getInstance().getMap("testMapEvictAndListener");
+
         final String value1 = "/home/data/file1.dat";
         final String value2 = "/home/data/file2.dat";
 
@@ -197,6 +199,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         map.addEntryListener(new EntryAdapter<String, String>() {
+            @Override
             public void entryEvicted(EntryEvent<String, String> event) {
                 if (value1.equals(event.getOldValue())) {
                     newList.add(event.getOldValue());
@@ -221,6 +224,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testMapEntryListener() {
         IMap<String, String> map = getInstance().getMap("testMapEntryListener");
+
         final CountDownLatch latchAdded = new CountDownLatch(1);
         final CountDownLatch latchRemoved = new CountDownLatch(1);
         final CountDownLatch latchUpdated = new CountDownLatch(1);
@@ -228,16 +232,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latchEvicted = new CountDownLatch(1);
 
         map.addEntryListener(new EntryListener<String, String>() {
+            @Override
             public void entryAdded(EntryEvent event) {
                 latchAdded.countDown();
             }
 
+            @Override
             public void entryRemoved(EntryEvent event) {
                 assertEquals("hello", event.getKey());
                 assertEquals("new world", event.getOldValue());
                 latchRemoved.countDown();
             }
 
+            @Override
             public void entryUpdated(EntryEvent event) {
                 assertEquals("world", event.getOldValue());
                 assertEquals("new world", event.getValue());
@@ -245,6 +252,7 @@ public class BasicMapTest extends HazelcastTestSupport {
                 latchUpdated.countDown();
             }
 
+            @Override
             public void entryEvicted(EntryEvent event) {
                 entryRemoved(event);
             }
@@ -259,6 +267,7 @@ public class BasicMapTest extends HazelcastTestSupport {
                 latchCleared.countDown();
             }
         }, true);
+
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");
@@ -282,21 +291,24 @@ public class BasicMapTest extends HazelcastTestSupport {
      * Test for issue #181
      */
     @Test
-    public void testMapKeyListenerWithRemoveAndUnlock() throws InterruptedException {
+    public void testMapKeyListenerWithRemoveAndUnlock() throws Exception {
+        int count = 20;
         IMap<String, String> map = getInstance().getMap("testMapKeyListenerWithRemoveAndUnlock");
+
         final String key = "key";
-        final int count = 20;
         final CountDownLatch latch = new CountDownLatch(count * 2);
         map.addEntryListener(new EntryAdapter<String, String>() {
-            public void entryAdded(final EntryEvent<String, String> e) {
+            @Override
+            public void entryAdded(EntryEvent<String, String> e) {
                 testEvent(e);
             }
 
-            public void entryRemoved(final EntryEvent<String, String> e) {
+            @Override
+            public void entryRemoved(EntryEvent<String, String> e) {
                 testEvent(e);
             }
 
-            private void testEvent(final EntryEvent<String, String> e) {
+            private void testEvent(EntryEvent<String, String> e) {
                 if (key.equals(e.getKey())) {
                     latch.countDown();
                 } else {
@@ -311,10 +323,8 @@ public class BasicMapTest extends HazelcastTestSupport {
             map.remove(key);
             map.unlock(key);
         }
-        assertTrue("Listener events are missing! Remaining: " + latch.getCount(),
-                latch.await(5, TimeUnit.SECONDS));
+        assertTrue("Listener events are missing! Remaining: " + latch.getCount(), latch.await(5, TimeUnit.SECONDS));
     }
-
 
     @Test
     public void testMapRemove() {
@@ -365,13 +375,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.clear();
         assertEquals(map.size(), 0);
 
-        //this test is going to be enabled as soon as the size has been fixed (since it also triggers unwanted recordstore creation)
-        //we need to make sure there are no unwanted recordstores (consumes memory) being created because of the clear.
-        //so we are going to check one of the partitions if it has a recordstore and then we can safely assume that the
-        //rest of the partitions have no record store either.
-        //MapService mapService  = getNode(hz).nodeEngine.getService(MapService.SERVICE_NAME);
-        //RecordStore recordStore = mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
-        //assertNull(recordStore);
+        // TODO: This test is going to be enabled as soon as the size has been fixed (since it also triggers unwanted RecordStore
+        // creation). We need to make sure there are no unwanted RecordStores (consumes memory) being created because of the
+        // clear. So we are going to check one of the partitions if it has a RecordStore and then we can safely assume that the
+        // rest of the partitions have no record store either.
+        // MapService mapService  = getNode(hz).nodeEngine.getService(MapService.SERVICE_NAME);
+        // RecordStore recordStore = mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
+        // assertNull(recordStore);
     }
 
     @Test
@@ -401,10 +411,11 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapTryRemove() throws InterruptedException {
+    public void testMapTryRemove() throws Exception {
         final IMap<Object, Object> map = getInstance().getMap("testMapTryRemove");
         map.put("key1", "value1");
         map.lock("key1");
+
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         final CountDownLatch latch3 = new CountDownLatch(1);
@@ -424,6 +435,7 @@ public class BasicMapTest extends HazelcastTestSupport {
                 }
             }
         });
+
         thread.start();
         latch2.await();
         map.unlock("key1");
@@ -449,7 +461,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.size(), 0);
     }
 
-
     @Test
     public void testMapSet() {
         IMap<String, String> map = getInstance().getMap("testMapSet");
@@ -465,7 +476,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.get("key2"), "value2");
     }
 
-
     @Test
     public void testMapContainsKey() {
         IMap<String, String> map = getInstance().getMap("testMapContainsKey");
@@ -480,10 +490,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(map.containsKey("key5"), false);
     }
 
-
     @Test
     public void testMapContainsValue() {
-        IMap map = getInstance().getMap("testMapContainsValue");
+        IMap<Integer, Integer> map = getInstance().getMap("testMapContainsValue");
         map.put(1, 1);
         map.put(2, 2);
         map.put(3, 3);
@@ -507,7 +516,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapSize() {
-        IMap map = getInstance().getMap("testMapSize");
+        IMap<Integer, Integer> map = getInstance().getMap("testMapSize");
         assertEquals(map.size(), 0);
         map.put(1, 1);
         assertEquals(map.size(), 1);
@@ -518,36 +527,37 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapReplace() {
-        IMap map = getInstance().getMap("testMapReplace");
+        IMap<Integer, Integer> map = getInstance().getMap("testMapReplace");
         map.put(1, 1);
         assertNull(map.replace(2, 1));
         assertNull(map.get(2));
         map.put(2, 2);
-        assertEquals(2, map.replace(2, 3));
-        assertEquals(3, map.get(2));
+        assertEquals(2, map.replace(2, 3).intValue());
+        assertEquals(3, map.get(2).intValue());
     }
 
     @Test
     public void testMapReplaceIfSame() {
-        IMap map = getInstance().getMap("testMapReplaceIfSame");
+        IMap<Integer, Integer> map = getInstance().getMap("testMapReplaceIfSame");
         map.put(1, 1);
         assertFalse(map.replace(1, 2, 3));
         assertTrue(map.replace(1, 1, 2));
-        assertEquals(map.get(1), 2);
+        assertEquals(map.get(1).intValue(), 2);
         map.put(2, 2);
         assertTrue(map.replace(2, 2, 3));
-        assertEquals(map.get(2), 3);
+        assertEquals(map.get(2).intValue(), 3);
         assertTrue(map.replace(2, 3, 4));
-        assertEquals(map.get(2), 4);
+        assertEquals(map.get(2).intValue(), 4);
     }
 
     @Test
-    public void testMapLockAndUnlockAndTryLock() throws InterruptedException {
+    public void testMapLockAndUnlockAndTryLock() throws Exception {
         final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlockAndTryLock");
         map.lock("key0");
         map.lock("key1");
         map.lock("key2");
         map.lock("key3");
+
         final AtomicBoolean check1 = new AtomicBoolean(false);
         final AtomicBoolean check2 = new AtomicBoolean(false);
         final CountDownLatch latch0 = new CountDownLatch(1);
@@ -576,7 +586,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         });
         thread.start();
 
-        Thread.sleep(1000);
+        sleepSeconds(1);
         map.unlock("key0");
 
         assertTrue(latch0.await(3, TimeUnit.SECONDS));
@@ -592,7 +602,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapIsLocked() throws InterruptedException {
+    public void testMapIsLocked() throws Exception {
         final IMap<Object, Object> map = getInstance().getMap("testMapIsLocked");
         map.lock("key1");
         assertTrue(map.isLocked("key1"));
@@ -619,13 +629,13 @@ public class BasicMapTest extends HazelcastTestSupport {
         thread.join();
     }
 
-
     @Test
     public void testEntryView() {
         Config config = new Config();
         config.getMapConfig("default").setStatisticsEnabled(true);
         HazelcastInstance instance = getInstance();
-        final IMap<Integer, Integer> map = instance.getMap("testEntryView");
+
+        IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
         map.put(1, 1);
@@ -644,7 +654,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
         EntryView<Integer, Integer> entryView2 = map.getEntryView(2);
         EntryView<Integer, Integer> entryView3 = map.getEntryView(3);
-
 
         assertEquals((Integer) 1, entryView1.getKey());
         assertEquals((Integer) 2, entryView2.getKey());
@@ -673,22 +682,22 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrue(entryView1.getLastUpdateTime() >= time1 && entryView1.getLastUpdateTime() <= time2);
         assertTrue(entryView2.getLastUpdateTime() >= time3);
         assertTrue(entryView3.getLastUpdateTime() >= time1 && entryView3.getLastUpdateTime() <= time2);
-
     }
 
     @Test
-    public void testMapTryPut() throws InterruptedException {
+    public void testMapTryPut() {
         final IMap<Object, Object> map = getInstance().getMap("testMapTryPut");
         final String key1 = "key1";
         final String key2 = "key2";
         map.lock(key1);
+
         final AtomicInteger counter = new AtomicInteger(6);
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch waitTryPutFailure = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    if (map.tryPut(key1, "value1", 100, TimeUnit.MILLISECONDS) == false) {
+                    if (!map.tryPut(key1, "value1", 100, TimeUnit.MILLISECONDS)) {
                         counter.decrementAndGet();
                         waitTryPutFailure.countDown();
                     }
@@ -722,22 +731,21 @@ public class BasicMapTest extends HazelcastTestSupport {
         });
 
         thread.start();
-
         assertOpenEventually(waitTryPutFailure);
 
         map.unlock("key1");
-
         assertOpenEventually(latch);
+
         assertEquals(0, counter.get());
         assertJoinable(thread);
     }
 
     @Test
     public void testGetPutRemoveAsync() {
-        final IMap<Object, Object> map = getInstance().getMap("testGetPutRemoveAsync");
-        Future<Object> ff = map.putAsync(1, 1);
+        IMap<Integer, Object> map = getInstance().getMap("testGetPutRemoveAsync");
+        Future<Object> future = map.putAsync(1, 1);
         try {
-            assertEquals(null, ff.get());
+            assertEquals(null, future.get());
             assertEquals(1, map.putAsync(1, 2).get());
             assertEquals(2, map.getAsync(1).get());
             assertEquals(2, map.removeAsync(1).get());
@@ -750,24 +758,25 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAllPutAll() throws InterruptedException {
+    public void testGetAllPutAll() {
         warmUpPartitions(instances);
-        final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
-        Set ss = new HashSet();
-        ss.add(1);
-        ss.add(3);
-        map.getAll(ss);
+        IMap<Integer, Integer> map = getInstance().getMap("testGetAllPutAll");
+        Set<Integer> set = new HashSet<Integer>();
+        set.add(1);
+        set.add(3);
+        map.getAll(set);
         assertTrue(map.isEmpty());
 
-        Map mm = new HashMap();
         int size = 100;
+        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
+
         map.putAll(mm);
         assertEquals(size, map.size());
         for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), i);
+            assertEquals(map.get(i).intValue(), i);
         }
 
         size = 10000;
@@ -777,75 +786,79 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.putAll(mm);
         assertEquals(size, map.size());
         for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), i);
+            assertEquals(map.get(i).intValue(), i);
         }
 
-        ss = new HashSet();
-        ss.add(1);
-        ss.add(3);
-        Map m2 = map.getAll(ss);
+        set = new HashSet<Integer>();
+        set.add(1);
+        set.add(3);
+        Map m2 = map.getAll(set);
         assertEquals(m2.size(), 2);
         assertEquals(m2.get(1), 1);
         assertEquals(m2.get(3), 3);
     }
 
     @Test
-    // todo fails in parallel
-    public void testPutAllBackup() throws InterruptedException {
+    public void testPutAllBackup() {
+        int size = 100;
+
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        final IMap<Object, Object> map = instance1.getMap("testPutAllBackup");
-        final IMap<Object, Object> map2 = instance2.getMap("testPutAllBackup");
+
+        IMap<Integer, Integer> map1 = instance1.getMap("testPutAllBackup");
+        IMap<Integer, Integer> map2 = instance2.getMap("testPutAllBackup");
         warmUpPartitions(instances);
 
-        Map mm = new HashMap();
-        final int size = 100;
+        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
-        map.putAll(mm);
-        assertEquals(size, map.size());
+
+        map2.putAll(mm);
+        assertEquals(size, map2.size());
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i));
+            assertEquals(i, map2.get(i).intValue());
         }
 
         instance2.shutdown();
-        assertEquals(size, map.size());
+        assertEquals(size, map1.size());
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i));
+            assertEquals(i, map1.get(i).intValue());
         }
     }
 
     @Test
-    // todo fails in parallel
-    public void testPutAllTooManyEntriesWithBackup() throws InterruptedException {
+    public void testPutAllTooManyEntriesWithBackup() {
+        int size = 10000;
+
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        final IMap<Object, Object> map = instance1.getMap("testPutAllBackup");
-        final IMap<Object, Object> map2 = instance2.getMap("testPutAllBackup");
+        IMap<Integer, Integer> map1 = instance1.getMap("testPutAllTooManyEntries");
+        IMap<Integer, Integer> map2 = instance2.getMap("testPutAllTooManyEntries");
         warmUpPartitions(instances);
 
-        Map mm = new HashMap();
-        final int size = 10000;
+        Map<Integer, Integer> mm = new HashMap<Integer, Integer>();
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
-        map.putAll(mm);
-        assertEquals(size, map.size());
+
+        map2.putAll(mm);
+        assertEquals(size, map2.size());
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i));
+            assertEquals(i, map2.get(i).intValue());
         }
 
         instance2.shutdown();
-        assertEquals(size, map.size());
+        assertEquals(size, map1.size());
         for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i));
+            assertEquals(i, map1.get(i).intValue());
         }
     }
 
     @Test
-    public void testMapListenersWithValue() throws InterruptedException {
-        final IMap<Object, Object> map = getInstance().getMap("testMapListenersWithValue");
+    public void testMapListenersWithValue() {
+        IMap<Object, Object> map = getInstance().getMap("testMapListenersWithValue");
+
         final Object[] addedKey = new Object[1];
         final Object[] addedValue = new Object[1];
         final Object[] updatedKey = new Object[1];
@@ -855,16 +868,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedValue = new Object[1];
 
         EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+            @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
             }
 
+            @Override
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 removedKey[0] = event.getKey();
                 removedValue[0] = event.getOldValue();
             }
 
+            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updatedKey[0] = event.getKey();
                 oldValue[0] = event.getOldValue();
@@ -876,19 +892,18 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
-
             }
 
             @Override
             public void mapCleared(MapEvent event) {
-
             }
         };
         map.addEntryListener(listener, true);
+
         map.put("key", "value");
         map.put("key", "value2");
         map.remove("key");
-        Thread.sleep(1000);
+        sleepSeconds(1);
 
         assertEquals(addedKey[0], "key");
         assertEquals(addedValue[0], "value");
@@ -899,10 +914,10 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(removedValue[0], "value2");
     }
 
-
     @Test
-    public void testMapQueryListener() throws InterruptedException {
-        final IMap<Object, Object> map = getInstance().getMap(randomMapName());
+    public void testMapQueryListener() {
+        IMap<Object, Object> map = getInstance().getMap(randomMapName());
+
         final Object[] addedKey = new Object[1];
         final Object[] addedValue = new Object[1];
         final Object[] updatedKey = new Object[1];
@@ -912,37 +927,39 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedValue = new Object[1];
 
         EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+            @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
             }
 
+            @Override
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 removedKey[0] = event.getKey();
                 removedValue[0] = event.getOldValue();
             }
 
+            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updatedKey[0] = event.getKey();
                 oldValue[0] = event.getOldValue();
                 newValue[0] = event.getValue();
             }
 
+            @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
 
             @Override
             public void mapEvicted(MapEvent event) {
-
             }
 
             @Override
             public void mapCleared(MapEvent event) {
-
             }
         };
-
         map.addEntryListener(listener, new StartsWithPredicate("a"), null, true);
+
         map.put("key1", "abc");
         map.put("key2", "bcd");
         map.put("key2", "axyz");
@@ -950,7 +967,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals("key1", addedKey[0]);
                 assertEquals("abc", addedValue[0]);
                 assertEquals("key2", updatedKey[0]);
@@ -962,7 +979,8 @@ public class BasicMapTest extends HazelcastTestSupport {
         });
     }
 
-    static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
+    private static class StartsWithPredicate implements Predicate<Object, Object>, Serializable {
+
         String pref;
 
         StartsWithPredicate(String pref) {
@@ -982,8 +1000,9 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapListenersWithValueAndKeyFiltered() throws InterruptedException {
-        final IMap<Object, Object> map = getInstance().getMap("testMapListenersWithValueAndKeyFiltered");
+    public void testMapListenersWithValueAndKeyFiltered() {
+        IMap<Object, Object> map = getInstance().getMap("testMapListenersWithValueAndKeyFiltered");
+
         final Object[] addedKey = new Object[1];
         final Object[] addedValue = new Object[1];
         final Object[] updatedKey = new Object[1];
@@ -993,36 +1012,39 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedValue = new Object[1];
 
         EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+            @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
             }
 
+            @Override
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 removedKey[0] = event.getKey();
                 removedValue[0] = event.getOldValue();
             }
 
+            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updatedKey[0] = event.getKey();
                 oldValue[0] = event.getOldValue();
                 newValue[0] = event.getValue();
             }
 
+            @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
 
             @Override
             public void mapEvicted(MapEvent event) {
-
             }
 
             @Override
             public void mapCleared(MapEvent event) {
-
             }
         };
         map.addEntryListener(listener, "key", true);
+
         map.put("keyx", "valuex");
         map.put("key", "value");
         map.put("key", "value2");
@@ -1031,7 +1053,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.remove("keyx");
         map.remove("key");
         map.remove("keyz");
-        Thread.sleep(1000);
+        sleepSeconds(1);
 
         assertEquals(addedKey[0], "key");
         assertEquals(addedValue[0], "value");
@@ -1042,10 +1064,10 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals(removedValue[0], "value2");
     }
 
-
     @Test
-    public void testMapListenersWithoutValue() throws InterruptedException {
-        final IMap<Object, Object> map = getInstance().getMap("testMapListenersWithoutValue");
+    public void testMapListenersWithoutValue() {
+        IMap<Object, Object> map = getInstance().getMap("testMapListenersWithoutValue");
+
         final Object[] addedKey = new Object[1];
         final Object[] addedValue = new Object[1];
         final Object[] updatedKey = new Object[1];
@@ -1080,19 +1102,18 @@ public class BasicMapTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
-
             }
 
             @Override
             public void mapCleared(MapEvent event) {
-
             }
         };
         map.addEntryListener(listener, false);
+
         map.put("key", "value");
         map.put("key", "value2");
         map.remove("key");
-        Thread.sleep(1000);
+        sleepSeconds(1);
 
         assertEquals(addedKey[0], "key");
         assertEquals(addedValue[0], null);
@@ -1104,21 +1125,21 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutWithTtl() throws InterruptedException {
+    public void testPutWithTtl() {
         final IMap<String, String> map = getInstance().getMap("testPutWithTtl");
 
         map.put("key", "value", 2, TimeUnit.SECONDS);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertNull(map.get("key"));
             }
         }, 30);
     }
 
     @Test
-    public void testMapEntryProcessor() throws InterruptedException {
+    public void testMapEntryProcessor() {
         IMap<Integer, Integer> map = getInstance().getMap("testMapEntryProcessor");
         map.put(1, 1);
         EntryProcessor entryProcessor = new SampleEntryProcessor();
@@ -1128,30 +1149,29 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testIfWeCarryRecordVersionInfoToReplicas() {
-        final String mapName = randomMapName();
-        final int mapSize = 1000;
-        final int expectedRecordVersion = 3;
+        String mapName = randomMapName();
+        int mapSize = 1000;
+        int expectedRecordVersion = 3;
 
-        final HazelcastInstance node1 = instances[1];
+        HazelcastInstance node1 = instances[1];
 
-        final IMap<Integer, Integer> map1 = node1.getMap(mapName);
+        IMap<Integer, Integer> map1 = node1.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
-            map1.put(i, 0);//version 0.
-            map1.put(i, 1);//version 1.
-            map1.put(i, 2);//version 2.
-            map1.put(i, 3);//version 3.
+            map1.put(i, 0); // version 0
+            map1.put(i, 1); // version 1
+            map1.put(i, 2); // version 2
+            map1.put(i, 3); // version 3
         }
-        final HazelcastInstance node2 = instances[2];
+        HazelcastInstance node2 = instances[2];
 
         node1.shutdown();
 
-        final IMap<Integer, Integer> map3 = node2.getMap(mapName);
+        IMap<Integer, Integer> map3 = node2.getMap(mapName);
 
         for (int i = 0; i < mapSize; i++) {
-            final EntryView<Integer, Integer> entryView = map3.getEntryView(i);
+            EntryView<Integer, Integer> entryView = map3.getEntryView(i);
             assertEquals(expectedRecordVersion, entryView.getVersion());
         }
-
     }
 
     @Test
@@ -1495,9 +1515,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullValue)");
 
-        // We need to run the putAll() tests a second time passing in a map with more than (partitionCount * 3) entries,
-        // because MapProxySupport#putAllInternal() takes a different code path if there are more than that many entries.
-        final int entryLimit = (instanceCount * 3) + 1;
+        // we need to run the putAll() tests a second time passing in a map with more than (partitionCount * 3) entries,
+        // because MapProxySupport#putAllInternal() takes a different code path if there are more than that many entries
+        final int entryLimit = (INSTANCE_COUNT * 3) + 1;
 
         for (int i = 0; i < entryLimit; i++) {
             mapWithNullKey.put("key" + i, "value" + i);
@@ -1530,20 +1550,20 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrue(description + " did not throw a NullPointerException.", threwNpe);
     }
 
-    static class SampleEntryProcessor implements EntryProcessor, EntryBackupProcessor, Serializable {
+    private static class SampleEntryProcessor implements EntryProcessor<Integer, Integer>, EntryBackupProcessor<Integer, Integer>,
+            Serializable {
 
-        public Object process(Map.Entry entry) {
-            entry.setValue((Integer) entry.getValue() + 1);
+        public Object process(Map.Entry<Integer, Integer> entry) {
+            entry.setValue(entry.getValue() + 1);
             return true;
         }
 
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
             return SampleEntryProcessor.this;
         }
 
-        public void processBackup(Map.Entry entry) {
-            entry.setValue((Integer) entry.getValue() + 1);
+        public void processBackup(Map.Entry<Integer, Integer> entry) {
+            entry.setValue(entry.getValue() + 1);
         }
     }
-
 }

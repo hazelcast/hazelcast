@@ -16,8 +16,8 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperty.QUERY_OPTIMIZER_TYPE;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_OPTIMIZER_TYPE;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -37,28 +37,28 @@ public class QueryOptimizerFactoryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void newOptimizer_whenUnknownValue_thenThrowIllegalArgumentException() {
-        GroupProperties groupProperties = createMockGroupProperties(QUERY_OPTIMIZER_TYPE, "foo");
-        QueryOptimizerFactory.newOptimizer(groupProperties);
+        HazelcastProperties hazelcastProperties = createMockHazelcastProperties(QUERY_OPTIMIZER_TYPE, "foo");
+        QueryOptimizerFactory.newOptimizer(hazelcastProperties);
     }
 
     @Test
     public void newOptimizer_whenPropertyContainsRule_thenCreateRulesBasedOptimizer() {
-        GroupProperties groupProperties = createMockGroupProperties(QUERY_OPTIMIZER_TYPE, "RULES");
-        QueryOptimizer queryOptimizer = QueryOptimizerFactory.newOptimizer(groupProperties);
+        HazelcastProperties hazelcastProperties = createMockHazelcastProperties(QUERY_OPTIMIZER_TYPE, "RULES");
+        QueryOptimizer queryOptimizer = QueryOptimizerFactory.newOptimizer(hazelcastProperties);
 
         assertThat(queryOptimizer, instanceOf(RuleBasedQueryOptimizer.class));
     }
 
     @Test
     public void newOptimizer_whenPropertyContainsNone_thenCreateEmptyOptimizer() {
-        GroupProperties groupProperties = createMockGroupProperties(QUERY_OPTIMIZER_TYPE, "NONE");
-        QueryOptimizer queryOptimizer = QueryOptimizerFactory.newOptimizer(groupProperties);
+        HazelcastProperties hazelcastProperties = createMockHazelcastProperties(QUERY_OPTIMIZER_TYPE, "NONE");
+        QueryOptimizer queryOptimizer = QueryOptimizerFactory.newOptimizer(hazelcastProperties);
 
         assertThat(queryOptimizer, instanceOf(EmptyOptimizer.class));
     }
 
-    private GroupProperties createMockGroupProperties(HazelcastProperty property, String stringValue) {
-        GroupProperties properties = mock(GroupProperties.class);
+    private HazelcastProperties createMockHazelcastProperties(HazelcastProperty property, String stringValue) {
+        HazelcastProperties properties = mock(HazelcastProperties.class);
         when(properties.getString(property)).thenReturn(stringValue);
         return properties;
     }

@@ -7,7 +7,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
@@ -18,7 +18,7 @@ public abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport
 
     public static boolean mappedToSameThread(OperationService operationService, int partitionId1, int partitionId2) {
         OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
-        ClassicOperationExecutor executor = (ClassicOperationExecutor) operationServiceImpl.getOperationExecutor();
+        OperationExecutorImpl executor = (OperationExecutorImpl) operationServiceImpl.getOperationExecutor();
         int thread1 = executor.toPartitionThreadIndex(partitionId1);
         int thread2 = executor.toPartitionThreadIndex(partitionId2);
         return thread1 == thread2;
@@ -49,7 +49,7 @@ public abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport
                 f = operationService.invokeOnTarget(null, innerOperation, getNodeEngine().getThisAddress());
             }
 
-            result = f.getSafely();
+            result = f.join();
         }
 
         @Override

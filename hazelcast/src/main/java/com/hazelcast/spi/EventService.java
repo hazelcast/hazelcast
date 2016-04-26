@@ -26,16 +26,16 @@ public interface EventService {
     /**
      * Returns the event thread count.
      *
-     * @see com.hazelcast.instance.GroupProperty#EVENT_THREAD_COUNT
      * @return the event thread count
+     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_THREAD_COUNT
      */
     int getEventThreadCount();
 
     /**
      * Returns the queue capacity per event thread.
      *
-     * @see com.hazelcast.instance.GroupProperty#EVENT_QUEUE_CAPACITY
      * @return the queue capacity per event thread
+     * @see com.hazelcast.spi.properties.GroupProperty#EVENT_QUEUE_CAPACITY
      */
     int getEventQueueCapacity();
 
@@ -50,8 +50,8 @@ public interface EventService {
      * Registers a local only listener.
      *
      * @param serviceName service name
-     * @param topic topic name
-     * @param listener listener instance
+     * @param topic       topic name
+     * @param listener    listener instance
      * @return event registration
      */
     EventRegistration registerLocalListener(String serviceName, String topic, Object listener);
@@ -60,9 +60,9 @@ public interface EventService {
      * Registers a local only listener with an event filter.
      *
      * @param serviceName service name
-     * @param topic topic name
-     * @param filter event filter
-     * @param listener listener instance
+     * @param topic       topic name
+     * @param filter      event filter
+     * @param listener    listener instance
      * @return event registration
      */
     EventRegistration registerLocalListener(String serviceName, String topic, EventFilter filter, Object listener);
@@ -71,8 +71,8 @@ public interface EventService {
      * Registers a listener on all cluster nodes.
      *
      * @param serviceName service name
-     * @param topic topic name
-     * @param listener listener instance
+     * @param topic       topic name
+     * @param listener    listener instance
      * @return event registration
      */
     EventRegistration registerListener(String serviceName, String topic, Object listener);
@@ -81,9 +81,9 @@ public interface EventService {
      * Registers a listener on all cluster nodes with an event filter.
      *
      * @param serviceName service name
-     * @param topic topic name
-     * @param filter event filter
-     * @param listener listener instance
+     * @param topic       topic name
+     * @param filter      event filter
+     * @param listener    listener instance
      * @return event registration
      */
     EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);
@@ -92,10 +92,9 @@ public interface EventService {
      * Deregisters a listener with the given registration id.
      *
      * @param serviceName service name
-     * @param topic topic name
-     * @param id registration id
+     * @param topic       topic name
+     * @param id          registration id
      * @return true if listener is deregistered successfully, false otherwise
-     *
      * @see EventRegistration#getId()
      * @see #registerListener(String, String, Object)
      * @see #registerLocalListener(String, String, Object)
@@ -106,7 +105,7 @@ public interface EventService {
      * Deregisters all listeners belonging to the given service and topic.
      *
      * @param serviceName service name
-     * @param topic topic name
+     * @param topic       topic name
      */
     void deregisterAllListeners(String serviceName, String topic);
 
@@ -114,7 +113,7 @@ public interface EventService {
      * Returns all registrations belonging to the given service and topic.
      *
      * @param serviceName service name
-     * @param topic topic name
+     * @param topic       topic name
      * @return registrations
      */
     Collection<EventRegistration> getRegistrations(String serviceName, String topic);
@@ -123,7 +122,7 @@ public interface EventService {
      * Returns all registrations belonging to the given service and topic as an array.
      *
      * @param serviceName service name
-     * @param topic topic name
+     * @param topic       topic name
      * @return registrations array
      */
     EventRegistration[] getRegistrationsAsArray(String serviceName, String topic);
@@ -132,8 +131,8 @@ public interface EventService {
      * Returns true if a listener is registered with the specified service name and topic.
      *
      * @param serviceName service name
-     * @param topic topic name
-     * @return  true if a listener is registered with specified service name and topic,
+     * @param topic       topic name
+     * @return true if a listener is registered with specified service name and topic,
      * false otherwise.
      */
     boolean hasEventRegistration(String serviceName, String topic);
@@ -142,42 +141,41 @@ public interface EventService {
      * Publishes an event for all event registrations belonging to the specified service name and topic.
      *
      * @param serviceName service name
-     * @param topic topic name
-     * @param event event object
-     * @param orderKey order key
+     * @param topic       topic name
+     * @param event       event object
+     * @param orderKey    order key
      */
     void publishEvent(String serviceName, String topic, Object event, int orderKey);
 
     /**
      * Publishes an event for a specific event registration.
      *
-     * @param serviceName service name
+     * @param serviceName  service name
      * @param registration event registration
-     * @param event event object
-     * @param orderKey order key
+     * @param event        event object
+     * @param orderKey     order key
      */
     void publishEvent(String serviceName, EventRegistration registration, Object event, int orderKey);
 
     /**
      * Publishes an event for multiple event registrations.
      *
-     * @param serviceName service name
+     * @param serviceName   service name
      * @param registrations multiple event registrations
-     * @param event event object
-     * @param orderKey order key
+     * @param event         event object
+     * @param orderKey      order key
      */
     void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
 
     /**
      * Publishes an event for multiple event registrations, excluding local ones.
      *
-     * @param serviceName service name
+     * @param serviceName   service name
      * @param registrations multiple event registrations
-     * @param event event object
-     * @param orderKey order key
+     * @param event         event object
+     * @param orderKey      order key
      */
     void publishRemoteEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
-
 
     /**
      * Executes an event callback on a random event thread.
@@ -191,5 +189,4 @@ public interface EventService {
      * @see com.hazelcast.util.executor.StripedRunnable
      */
     void executeEventCallback(Runnable callback);
-
 }

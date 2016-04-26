@@ -46,7 +46,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
         DummyOperation operation = new DummyOperation(expected);
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
                 null, operation, getAddress(local));
-        assertEquals(expected, invocation.getSafely());
+        assertEquals(expected, invocation.join());
 
         //todo: we need to verify that the call was run on the calling thread
     }
@@ -57,7 +57,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
         DummyOperation operation = new DummyOperation(expected);
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
                 null, operation, getAddress(remote));
-        assertEquals(expected, invocation.getSafely());
+        assertEquals(expected, invocation.join());
     }
 
     //this test is very slow, so it is marked as a nightly test
@@ -73,7 +73,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, remoteAddress);
 
         try {
-            invocation.getSafely();
+            invocation.join();
             fail();
         } catch (TargetNotMemberException e) {
         }
@@ -86,7 +86,7 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
                 null, operation, getAddress(remote));
 
         try {
-            invocation.getSafely();
+            invocation.join();
             fail();
         } catch (ExpectedRuntimeException expected) {
         }

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
@@ -31,7 +31,6 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
@@ -43,6 +42,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -61,9 +61,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
+import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
@@ -84,7 +84,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     protected final NodeEngine nodeEngine;
     protected final ILogger logger;
     protected final QueryResultSizeLimiter queryResultSizeLimiter;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final IPartitionService partitionService;
     protected final QueryOptimizer queryOptimizer;
     protected final OperationService operationService;
@@ -96,7 +96,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     public MapQueryEngineImpl(MapServiceContext mapServiceContext, QueryOptimizer optimizer) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
         this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
@@ -104,7 +104,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         this.operationService = nodeEngine.getOperationService();
         this.clusterService = nodeEngine.getClusterService();
         this.localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        this.parallelEvaluation = nodeEngine.getGroupProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
+        this.parallelEvaluation = nodeEngine.getProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
         this.executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
     }
 

@@ -19,7 +19,6 @@ package com.hazelcast.replicatedmap.impl;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.replicatedmap.impl.operation.MergeOperation;
@@ -30,7 +29,9 @@ import com.hazelcast.replicatedmap.merge.MergePolicyProvider;
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;

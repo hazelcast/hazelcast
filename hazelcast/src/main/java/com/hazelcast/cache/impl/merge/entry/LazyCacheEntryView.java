@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.merge.entry;
 
 import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * An implementation of {@link com.hazelcast.cache.CacheEntryView}

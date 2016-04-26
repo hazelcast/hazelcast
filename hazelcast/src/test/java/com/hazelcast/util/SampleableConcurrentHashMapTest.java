@@ -52,7 +52,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
     public void applyIfAbsentTest() throws Throwable {
         final SampleableConcurrentHashMap<String, String> map =
                 new SampleableConcurrentHashMap<String, String>(10);
-        
+
         assertEquals(map.applyIfAbsent("key", new IFunction<String, String>() {
             @Override
             public String apply(String input) {
@@ -100,6 +100,6 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
             }
         });
 
-        assertEquals(map.size(),0);
+        assertEquals(map.size(), 0);
     }
 }

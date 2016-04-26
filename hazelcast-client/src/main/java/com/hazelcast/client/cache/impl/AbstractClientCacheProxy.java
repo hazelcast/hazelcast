@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
 import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -34,8 +33,8 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -74,9 +73,8 @@ abstract class AbstractClientCacheProxy<K, V>
         }
     };
 
-    protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
-                                       HazelcastClientCacheManager cacheManager) {
-        super(cacheConfig, clientContext, cacheManager);
+    protected AbstractClientCacheProxy(CacheConfig cacheConfig) {
+        super(cacheConfig);
     }
 
     protected Object getFromNearCache(Data keyData, boolean async) {

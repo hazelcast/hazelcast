@@ -17,10 +17,10 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.cache.Cache;
 import java.util.Iterator;
@@ -60,7 +60,7 @@ public class ClusterWideIterator<K, V>
         final OperationService operationService = cacheProxy.getNodeEngine().getOperationService();
         final InternalCompletableFuture<CacheKeyIteratorResult> f = operationService
                 .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
-        return f.getSafely();
+        return f.join();
     }
 
     @Override

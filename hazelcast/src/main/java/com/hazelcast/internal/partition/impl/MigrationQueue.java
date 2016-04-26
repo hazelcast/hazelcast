@@ -26,61 +26,55 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Manages migration tasks and migration status flag for {@link InternalPartitionServiceImpl} safely. Once a migration task
- * is added to the queue, queue has to be notified via {@link MigrationQueue#afterTaskCompletion(Runnable)} after its execution.
+ * Manages migration tasks and migration status flag for {@link InternalPartitionServiceImpl} safely.
+ * Once a migration task is added to the queue, queue has to be notified
+ * via {@link MigrationQueue#afterTaskCompletion(MigrationRunnable)} after its execution.
  */
 class MigrationQueue {
 
     private final AtomicInteger migrateTaskCount = new AtomicInteger();
 
-    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+    private final BlockingQueue<MigrationRunnable> queue = new LinkedBlockingQueue<MigrationRunnable>();
 
     @SuppressFBWarnings(value = "RV_RETURN_VALUE_IGNORED",
             justification = "offer will always be successful since queue is unbounded")
-    public void add(Runnable task) {
-        if (task instanceof InternalPartitionServiceImpl.MigrateTask) {
-            migrateTaskCount.incrementAndGet();
-        }
-
+    public void add(MigrationRunnable task) {
+        migrateTaskCount.incrementAndGet();
         queue.offer(task);
     }
 
-    public Runnable poll(int timeout, TimeUnit unit)
+    public MigrationRunnable poll(int timeout, TimeUnit unit)
             throws InterruptedException {
         return queue.poll(timeout, unit);
     }
 
     public void clear() {
-        List<Runnable> sink = new ArrayList<Runnable>();
+        List<MigrationRunnable> sink = new ArrayList<MigrationRunnable>();
         queue.drainTo(sink);
 
-        for (Runnable task : sink) {
+        for (MigrationRunnable task : sink) {
             afterTaskCompletion(task);
         }
     }
 
-    public void afterTaskCompletion(Runnable task) {
-        if (task instanceof InternalPartitionServiceImpl.MigrateTask) {
-            if (migrateTaskCount.decrementAndGet() < 0) {
-                throw new IllegalStateException();
-            }
+    public void afterTaskCompletion(MigrationRunnable task) {
+        if (migrateTaskCount.decrementAndGet() < 0) {
+            throw new IllegalStateException();
         }
+    }
+
+    public int migrationTaskCount() {
+        return migrateTaskCount.get();
     }
 
     public boolean hasMigrationTasks() {
         return migrateTaskCount.get() > 0;
     }
 
-    public boolean isEmpty() {
-        return queue.isEmpty();
-    }
-
-    public boolean isNonEmpty() {
-        return !queue.isEmpty();
-    }
-
-    public int size() {
-        return queue.size();
+    @Override
+    public String toString() {
+        return "MigrationQueue{" + "migrateTaskCount=" + migrateTaskCount
+                + ", queue=" + queue + '}';
     }
 
 }

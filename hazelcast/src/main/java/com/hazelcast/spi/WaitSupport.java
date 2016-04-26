@@ -16,19 +16,8 @@
 
 package com.hazelcast.spi;
 
-
 /**
- * A interface that can be implemented to participate in the Wait/Notify System.
- *
- * See {@link  com.hazelcast.spi.WaitNotifyService}.
+ * @deprecated this class is deprecated since 3.7. Use {@link BlockingOperation} instead.
  */
-public interface WaitSupport {
-
-    WaitNotifyKey getWaitKey();
-
-    boolean shouldWait();
-
-    long getWaitTimeout();
-
-    void onWaitExpire();
+public interface WaitSupport extends BlockingOperation {
 }

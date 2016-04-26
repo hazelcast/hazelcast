@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -77,13 +76,15 @@ public class CacheProxy<K, V>
 
     protected final ILogger logger;
 
-    private AbstractHazelcastCacheManager cacheManager;
+    private HazelcastServerCacheManager cacheManager;
 
-    protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService,
-                         HazelcastServerCacheManager cacheManager) {
+    CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
-        this.cacheManager = cacheManager;
         logger = getNodeEngine().getLogger(getClass());
+    }
+
+    void setCacheManager(HazelcastServerCacheManager cacheManager) {
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -103,9 +104,9 @@ public class CacheProxy<K, V>
         final Data k = serializationService.toData(key);
         Operation operation = operationProvider.createContainsKeyOperation(k);
         OperationService operationService = getNodeEngine().getOperationService();
-        int partitionId = getPartitionId(getNodeEngine(), k);
+        int partitionId = getPartitionId(k);
         InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-        return f.getSafely();
+        return f.join();
     }
 
     @Override
@@ -234,9 +235,9 @@ public class CacheProxy<K, V>
         Operation op = operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
         try {
             OperationService operationService = getNodeEngine().getOperationService();
-            int partitionId = getPartitionId(getNodeEngine(), keyData);
+            int partitionId = getPartitionId(keyData);
             final InternalCompletableFuture<T> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
-            final T safely = f.getSafely();
+            final T safely = f.join();
             waitCompletionLatch(completionId);
             return safely;
         } catch (CacheException ce) {
@@ -272,11 +273,6 @@ public class CacheProxy<K, V>
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
     public CacheManager getCacheManager() {
         return cacheManager;
     }
@@ -295,8 +291,11 @@ public class CacheProxy<K, V>
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
         final ICacheService service = getService();
-        final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
-                cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
+        final CacheEventListenerAdaptor<K, V> entryListener =
+                new CacheEventListenerAdaptor<K, V>(this,
+                                                    cacheEntryListenerConfiguration,
+                                                    getNodeEngine().getSerializationService(),
+                                                    getNodeEngine().getHazelcastInstance());
         final String regId =
                 service.registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
@@ -358,9 +357,11 @@ public class CacheProxy<K, V>
 
         final EventFilter filter = new CachePartitionLostEventFilter();
         final ICacheService service = getService();
+        injectDependencies(listener);
         final EventRegistration registration =
                 service.getNodeEngine().getEventService()
                         .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
+
         return registration.getId();
     }
 

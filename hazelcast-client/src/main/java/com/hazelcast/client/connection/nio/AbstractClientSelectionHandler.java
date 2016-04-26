@@ -17,6 +17,8 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
@@ -25,22 +27,46 @@ import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+
+/**
+ * The AbstractClientSelectionHandler gets called by an IO-thread when there is data available to read,
+ * or space available to write.
+ */
 public abstract class AbstractClientSelectionHandler implements SelectionHandler, Runnable {
 
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
     protected final ClientConnection connection;
     protected final ClientConnectionManager connectionManager;
+    @Probe(name = "eventCount")
+    protected final SwCounter eventCount = newSwCounter();
     private final NonBlockingIOThread ioThread;
-    private SelectionKey sk;
+    @Probe
+    private final int ioThreadId;
+    private volatile SelectionKey sk;
 
     public AbstractClientSelectionHandler(final ClientConnection connection, NonBlockingIOThread ioThread,
                                           LoggingService loggingService) {
         this.connection = connection;
         this.ioThread = ioThread;
+        this.ioThreadId = ioThread.id;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = loggingService.getLogger(getClass().getName());
+    }
+
+    @Probe(level = DEBUG)
+    private long opsInterested() {
+        SelectionKey selectionKey = this.sk;
+        return selectionKey == null ? -1 : selectionKey.interestOps();
+    }
+
+    @Probe(level = DEBUG)
+    private long opsReady() {
+        SelectionKey selectionKey = this.sk;
+        return selectionKey == null ? -1 : selectionKey.readyOps();
     }
 
     protected void shutdown() {
@@ -51,9 +77,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
         if (sk != null) {
             sk.cancel();
         }
-        connectionManager.destroyConnection(connection);
-        logger.warning(Thread.currentThread().getName() + " Closing socket to endpoint "
-                + connection.getEndPoint() + ", Cause:" + e);
+        connectionManager.destroyConnection(connection, e);
     }
 
     final void registerOp(final int operation) {

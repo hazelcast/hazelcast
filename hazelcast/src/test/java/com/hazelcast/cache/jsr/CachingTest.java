@@ -29,7 +29,7 @@ public class CachingTest
         extends org.jsr107.tck.CachingTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 

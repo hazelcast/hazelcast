@@ -17,9 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -27,13 +25,11 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.partition.IPartition;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -41,32 +37,40 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.ClusterState.FROZEN;
+import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.CALL_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.INTERRUPTED;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.VOID;
+import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
+import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
+import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
+import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__RESPONSE_AVAILABLE;
+import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.TIMEOUT;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
@@ -75,6 +79,7 @@ import static java.util.logging.Level.WARNING;
  * <p/>
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
@@ -92,121 +97,108 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Operation op;
 
+    // The first time this invocation got executed. This field is used to determine how long an invocation has actually
+    // been running.
+    @SuppressWarnings("checkstyle:visibilitymodifier")
+    public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
+
     // The time in millis when the response of the primary has been received.
     volatile long pendingResponseReceivedMillis = -1;
     // contains the pending response from the primary. It is pending because it could be that backups need to complete.
-    volatile Object pendingResponse;
+    volatile Object pendingResponse = VOID;
     // number of expected backups. Is set correctly as soon as the pending response is set. See {@link NormalResponse}
     volatile int backupsExpected;
     // number of backups that have completed. See {@link BackupResponse}.
     volatile int backupsCompleted;
-    // A flag to prevent multiple responses to be send tot he Invocation. Only needed for local operations.
+
+    // todo: this should not be needed; it is taken care of by the future anyway
+    // A flag to prevent multiple responses to be send to the Invocation. Only needed for local operations.
     volatile Boolean responseReceived = FALSE;
 
-    final long callTimeout;
+    // The last time a heartbeat was received for the invocation. 0 indicates that no heartbeat was received at all
+    volatile long lastHeartbeatMillis;
+
     final NodeEngineImpl nodeEngine;
-    final String serviceName;
-    final int partitionId;
-    final int replicaIndex;
+    final OperationServiceImpl operationService;
+    final InvocationFuture future;
+    final ILogger logger;
     final int tryCount;
     final long tryPauseMillis;
-    final ILogger logger;
-    final boolean resultDeserialized;
+    final long callTimeoutMillis;
+
     boolean remote;
     Address invTarget;
     MemberImpl targetMember;
-    final InvocationFuture invocationFuture;
-    final OperationServiceImpl operationService;
 
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
-
-    Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
-               boolean resultDeserialized) {
-        this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
+    Invocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
+               long callTimeoutMillis, boolean deserialize) {
+        this.operationService = operationService;
         this.logger = operationService.invocationLogger;
-        this.nodeEngine = nodeEngine;
-        this.serviceName = serviceName;
+        this.nodeEngine = operationService.nodeEngine;
         this.op = op;
-        this.partitionId = partitionId;
-        this.replicaIndex = replicaIndex;
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
-        this.callTimeout = getCallTimeout(callTimeout);
-        this.invocationFuture = new InvocationFuture(operationService, this, callback);
-        this.resultDeserialized = resultDeserialized;
+        this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
+        this.future = new InvocationFuture(operationService, this, deserialize);
     }
 
     abstract ExceptionAction onException(Throwable t);
 
     protected abstract Address getTarget();
 
-    IPartition getPartition() {
-        return nodeEngine.getPartitionService().getPartition(partitionId);
-    }
-
-    @Override
-    public boolean isLocal() {
-        return true;
-    }
-
-    private long getCallTimeout(long callTimeout) {
-        if (callTimeout > 0) {
-            return callTimeout;
+    private long getCallTimeoutMillis(long callTimeoutMillis) {
+        if (callTimeoutMillis > 0) {
+            return callTimeoutMillis;
         }
 
-        long defaultCallTimeout = operationService.defaultCallTimeoutMillis;
-        if (!(op instanceof WaitSupport)) {
-            return defaultCallTimeout;
+        long defaultCallTimeoutMillis = operationService.defaultCallTimeoutMillis;
+        if (!(op instanceof BlockingOperation)) {
+            return defaultCallTimeoutMillis;
         }
 
         long waitTimeoutMillis = op.getWaitTimeout();
         if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
             /*
              * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
-             * long callTimeout = Math.min(waitTimeoutMillis, defaultCallTimeout);
-             * callTimeout = Math.max(a, minTimeout);
-             * return callTimeout;
+             * long callTimeoutMillis = Math.min(waitTimeoutMillis, defaultCallTimeout);
+             * callTimeoutMillis = Math.max(a, minTimeout);
+             * return callTimeoutMillis;
              *
              * Below two lines are shortened version of above*
              * using min(max(x,y),z)=max(min(x,z),min(y,z))
              */
             long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT);
-            return Math.min(max, defaultCallTimeout);
+            return Math.min(max, defaultCallTimeoutMillis);
         }
-        return defaultCallTimeout;
+        return defaultCallTimeoutMillis;
     }
 
     public final InvocationFuture invoke() {
-        invokeInternal(false);
-        return invocationFuture;
+        invoke0(false);
+        return future;
     }
 
-    public final void invokeAsync() {
-        invokeInternal(true);
+    public final InvocationFuture invokeAsync() {
+        invoke0(true);
+        return future;
     }
 
-    private void invokeInternal(boolean isAsync) {
+    private void invoke0(boolean isAsync) {
         if (invokeCount > 0) {
-            // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
-        }
-
-        if (op.getCallId() != 0) {
+        } else if (op.getCallId() != 0) {
             throw new IllegalStateException("An operation[" + op + "] can not be used for multiple invocations!");
         }
 
         try {
-            setCallTimeout(op, callTimeout);
+            setCallTimeout(op, callTimeoutMillis);
             setCallerAddress(op, nodeEngine.getThisAddress());
-            op.setNodeEngine(nodeEngine)
-                    .setServiceName(serviceName)
-                    .setPartitionId(partitionId)
-                    .setReplicaIndex(replicaIndex);
+            op.setNodeEngine(nodeEngine);
 
-            boolean isAllowed = operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op, isAsync);
+            boolean isAllowed = operationService.operationExecutor.isInvocationAllowed(op, isAsync);
             if (!isAllowed && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -218,9 +210,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private void handleInvocationException(Exception e) {
         if (e instanceof RetryableException) {
-            notify(e);
+            notifyError(e);
         } else {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -239,7 +231,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         setInvocationTime(op, nodeEngine.getClusterService().getClusterClock().getClusterTime());
-        operationService.invocationsRegistry.register(this);
+        operationService.invocationRegistry.register(this);
         if (remote) {
             doInvokeRemote();
         } else {
@@ -255,20 +247,17 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         responseReceived = FALSE;
         op.setOperationResponseHandler(this);
 
-        OperationExecutor executor = operationService.operationExecutor;
         if (isAsync) {
-            executor.execute(op);
+            operationService.operationExecutor.execute(op);
         } else {
-            executor.runOnCallingThreadIfPossible(op);
+            operationService.operationExecutor.runOrExecute(op);
         }
-
     }
 
     private void doInvokeRemote() {
-        boolean sent = operationService.send(op, invTarget);
-        if (!sent) {
-            operationService.invocationsRegistry.deregister(this);
-            notify(new RetryableIOException("Packet not send to -> " + invTarget));
+        if (!operationService.send(op, invTarget)) {
+            operationService.invocationRegistry.deregister(this);
+            notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
 
@@ -278,14 +267,14 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        if (nodeEngine.isRunning()) {
+        NodeState state = nodeEngine.getNode().getState();
+        if (state == NodeState.ACTIVE) {
             return true;
         }
 
-        final NodeState state = nodeEngine.getNode().getState();
         boolean allowed = state == NodeState.PASSIVE && (op instanceof AllowedDuringPassiveState);
         if (!allowed) {
-            notify(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
+            notifyError(new HazelcastInstanceNotActiveException("State: " + state + " Operation: " + op.getClass()));
             remote = false;
         }
         return allowed;
@@ -297,116 +286,73 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      * @return true if the initialization was a success.
      */
     boolean initInvocationTarget() {
-        Address thisAddress = nodeEngine.getThisAddress();
-
         invTarget = getTarget();
 
-        final ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
             notifyWithExceptionWhenTargetIsNull();
             return false;
         }
 
-        targetMember = clusterService.getMember(invTarget);
+        targetMember = nodeEngine.getClusterService().getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            notifyError(
+                    new TargetNotMemberException(invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName()));
             return false;
         }
 
-        if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
-                    + " is not equal to the partition id of invocation: " + partitionId));
-            return false;
-        }
-
-        if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
-                    + " is not equal to the replica index of invocation: " + replicaIndex));
-            return false;
-        }
-
-        remote = !thisAddress.equals(invTarget);
+        remote = !nodeEngine.getThisAddress().equals(invTarget);
         return true;
     }
 
     private void notifyWithExceptionWhenTargetIsNull() {
-        Address thisAddress = nodeEngine.getThisAddress();
         ClusterService clusterService = nodeEngine.getClusterService();
 
-        if (!nodeEngine.isRunning()) {
-            notify(new HazelcastInstanceNotActiveException());
-            return;
-        }
-
         ClusterState clusterState = clusterService.getClusterState();
-        if (clusterState == ClusterState.FROZEN || clusterState == ClusterState.PASSIVE) {
-            notify(new IllegalStateException("Partitions can't be assigned since cluster-state: "
-                    + clusterState));
-            return;
+        if (clusterState == FROZEN || clusterState == PASSIVE) {
+            notifyError(new IllegalStateException("Partitions can't be assigned since cluster-state: " + clusterState));
+        } else if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+            notifyError(new NoDataMemberInClusterException(
+                    "Partitions can't be assigned since all nodes in the cluster are lite members"));
+        } else {
+            notifyError(new WrongTargetException(nodeEngine.getThisAddress(), null, op.getPartitionId(),
+                    op.getReplicaIndex(), op.getClass().getName(), op.getServiceName()));
         }
-
-        if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-            final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
-                    "Partitions can't be assigned since all nodes in the cluster are lite members");
-            notify(exception);
-            return;
-        }
-
-        notify(new WrongTargetException(thisAddress, null, partitionId,
-                replicaIndex, op.getClass().getName(), serviceName));
     }
 
     @Override
-    public void sendResponse(Operation op, Object obj) {
+    public void sendResponse(Operation op, Object response) {
         if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
-                    + ", current-response: : " + obj);
-        }
-        notify(obj);
-    }
-
-    //this method is called by the operation service to signal the invocation that something has happened, e.g.
-    //a response is returned.
-    void notify(Object response) {
-        if (response == null) {
-            response = NULL_RESPONSE;
+                    + ", current-response: : " + response);
         }
 
         if (response instanceof CallTimeoutResponse) {
             notifyCallTimeout();
-            return;
-        }
-
-        if (response instanceof ErrorResponse || response instanceof Throwable) {
+        } else if (response instanceof ErrorResponse || response instanceof Throwable) {
             notifyError(response);
-            return;
-        }
-
-        if (response instanceof NormalResponse) {
+        } else if (response instanceof NormalResponse) {
             NormalResponse normalResponse = (NormalResponse) response;
             notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
-            return;
+        } else {
+            // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
+            complete(response);
         }
+    }
 
-        // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-        invocationFuture.set(response);
+    @Override
+    public boolean isLocal() {
+        return true;
     }
 
     void notifyError(Object error) {
         assert error != null;
 
-        Throwable cause;
-        if (error instanceof Throwable) {
-            cause = (Throwable) error;
-        } else {
-            cause = ((ErrorResponse) error).getCause();
-        }
+        Throwable cause = error instanceof Throwable
+                ? (Throwable) error
+                : ((ErrorResponse) error).getCause();
 
         switch (onException(cause)) {
-            case CONTINUE_WAIT:
-                handleContinueWait();
-                break;
             case THROW_EXCEPTION:
                 notifyNormalResponse(cause, 0);
                 break;
@@ -425,12 +371,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     void notifyNormalResponse(Object value, int expectedBackups) {
-        if (value == null) {
-            value = NULL_RESPONSE;
-        }
-
-        //if a regular response came and there are backups, we need to wait for the backs.
-        //when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
+        // if a regular response comes and there are backups, we need to wait for the backups
+        // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
 
         if (expectedBackups > backupsCompleted) {
             // So the invocation has backups and since not all backups have completed, we need to wait.
@@ -453,35 +395,38 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // We are going to notify the future that a response is available. This can happen when:
         // - we had a regular operation (so no backups we need to wait for) that completed.
         // - we had a backup-aware operation that has completed, but also all its backups have completed.
-        invocationFuture.set(value);
+        complete(value);
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
-        operationService.callTimeoutCount.inc();
-
         if (logger.isFinestEnabled()) {
-            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: "
-                    + toString());
+            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: " + this);
         }
 
-        if (op instanceof WaitSupport) {
-            // decrement wait-timeout by call-timeout
-            long waitTimeout = op.getWaitTimeout();
-            waitTimeout -= callTimeout;
-            op.setWaitTimeout(waitTimeout);
+        if (!(op instanceof BlockingOperation)) {
+            // If the call is not a BLockingOperation, then in case of a call-timeout, we are not going to retry. Only
+            // blocking operations are going to be retried because they rely on a repeated execution mechanism.
+            complete(CALL_TIMEOUT);
+            return;
         }
+
+        // decrement wait-timeout by call-timeout
+        long waitTimeout = op.getWaitTimeout();
+        waitTimeout -= callTimeoutMillis;
+        op.setWaitTimeout(waitTimeout);
 
         invokeCount--;
         handleRetry("invocation timeout");
     }
 
-    void notifySingleBackupComplete() {
+    // This method can be called concurrently
+    void notifyBackupComplete() {
         int newBackupsCompleted = BACKUPS_COMPLETED.incrementAndGet(this);
 
         Object pendingResponse = this.pendingResponse;
-        if (pendingResponse == null) {
+        if (pendingResponse == VOID) {
             // No pendingResponse has been set, so we are done since the invocation on the primary needs to complete first.
             return;
         }
@@ -500,56 +445,17 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // We are the lucky ones since we just managed to complete the last backup for this invocation and since the
         // pendingResponse is set, we can set it on the future.
-        invocationFuture.set(pendingResponse);
+        complete(pendingResponse);
     }
 
-    boolean checkInvocationTimeout() {
-        long maxCallTimeout = invocationFuture.getMaxCallTimeout();
-        long expirationTime = op.getInvocationTime() + maxCallTimeout;
-
-        boolean done = invocationFuture.isDone();
-        boolean hasResponse = pendingResponse != null;
-        boolean hasWaitingThreads = invocationFuture.getWaitingThreadsCount() > 0;
-        boolean notExpired = maxCallTimeout == Long.MAX_VALUE
-                || expirationTime < 0
-                || expirationTime >= Clock.currentTimeMillis();
-
-        if (hasResponse || hasWaitingThreads || notExpired || done) {
-            return false;
-        }
-
-        operationService.getIsStillRunningService().timeoutInvocationIfNotExecuting(this);
-        return true;
-    }
-
-    Object newOperationTimeoutException(long totalTimeoutMs) {
-        operationService.operationTimeoutCount.inc();
-
-        boolean hasResponse = this.pendingResponse != null;
-        int backupsExpected = this.backupsExpected;
-        int backupsCompleted = this.backupsCompleted;
-
-        if (hasResponse) {
-            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
-                    + " Aborting invocation! " + toString()
-                    + " Not all backups have completed! "
-                    + " backups-expected:" + backupsExpected
-                    + " backups-completed: " + backupsCompleted);
-        } else {
-            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
-                    + " Aborting invocation! " + toString()
-                    + " No response has been received! "
-                    + " backups-expected:" + backupsExpected
-                    + " backups-completed: " + backupsCompleted);
-        }
-    }
-
-    private void handleContinueWait() {
-        invocationFuture.set(WAIT_RESPONSE);
+    private void complete(Object value) {
+        operationService.invocationRegistry.deregister(this);
+        future.complete(value);
     }
 
     private void handleRetry(Object cause) {
         operationService.retryCount.inc();
+
         if (invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
             Level level = invokeCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
             if (logger.isLoggable(level)) {
@@ -557,29 +463,85 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             }
         }
 
-        operationService.invocationsRegistry.deregister(this);
-
-        if (invocationFuture.interrupted) {
-            invocationFuture.set(INTERRUPTED_RESPONSE);
-            return;
-        }
-
-        if (!invocationFuture.set(WAIT_RESPONSE)) {
-            logger.finest("Cannot retry " + toString() + ", because a different response is already set: "
-                    + invocationFuture.response);
-            return;
-        }
-
-        ExecutionService ex = nodeEngine.getExecutionService();
-        // fast retry for the first few invocations
-        if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
-            operationService.asyncExecutor.execute(this);
+        if (future.interrupted) {
+            complete(INTERRUPTED);
         } else {
-            ex.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
+            operationService.invocationRegistry.deregister(this);
+
+            if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
+                // fast retry for the first few invocations
+                operationService.asyncExecutor.execute(this);
+            } else {
+                nodeEngine.getExecutionService().schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+            }
         }
     }
 
-    boolean checkBackupTimeout(long timeoutMillis) {
+    /**
+     * Checks if this Invocation has received a heart-beat in time.
+     *
+     * If the response is already set, or if a heart-beat has been received in time, then the false is returned.
+     *
+     * If no heart-beat has been received, then the future.set is called with HEARTBEAT_TIMEOUT
+     * and true is returned.
+     *
+     * gets called from the monitor-thread
+     *
+     * @return true if there is a timeout detected, false otherwise.
+     */
+    boolean detectAndHandleTimeout(long heartbeatTimeoutMillis) {
+        HeartbeatTimeout heartbeatTimeout = detectTimeout(heartbeatTimeoutMillis);
+
+        if (heartbeatTimeout == TIMEOUT) {
+            complete(HEARTBEAT_TIMEOUT);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    HeartbeatTimeout detectTimeout(long heartbeatTimeoutMillis) {
+        if (pendingResponse != VOID) {
+            // if there is a response, then we won't timeout.
+            return NO_TIMEOUT__RESPONSE_AVAILABLE;
+        }
+
+        long callTimeoutMillis = op.getCallTimeout();
+        if (callTimeoutMillis <= 0 || callTimeoutMillis == Long.MAX_VALUE) {
+            return NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
+        }
+
+        // a call is always allowed to execute as long as its own call timeout.
+        long deadlineMillis = op.getInvocationTime() + callTimeoutMillis;
+        if (deadlineMillis > nodeEngine.getClusterService().getClusterClock().getClusterTime()) {
+            return NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
+        }
+
+        // on top of its own call timeout, it is allowed to execute until there is a heart beat timeout.
+        // so if the callTimeout = 5m, and the heartbeatTimeout = 1m, then it allowed to execute for
+        // at least 6 minutes before it is timing out.
+        long lastHeartbeatMillis = this.lastHeartbeatMillis;
+        long heartBeatExpirationTimeMillis = lastHeartbeatMillis == 0
+                ? op.getInvocationTime() + callTimeoutMillis + heartbeatTimeoutMillis
+                : lastHeartbeatMillis + heartbeatTimeoutMillis;
+
+        if (heartBeatExpirationTimeMillis > Clock.currentTimeMillis()) {
+            return NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
+        }
+
+        return TIMEOUT;
+    }
+
+    enum HeartbeatTimeout {
+        NO_TIMEOUT__CALL_TIMEOUT_DISABLED,
+        NO_TIMEOUT__RESPONSE_AVAILABLE,
+        NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED,
+        NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED,
+        TIMEOUT
+    }
+
+    // gets called from the monitor-thread
+    boolean detectAndHandleBackupTimeout(long timeoutMillis) {
         // If the backups have completed, we are done.
         // This check also filters out all non backup-aware operations since they backupsExpected will always be equal to the
         // backupsCompleted.
@@ -592,7 +554,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         // If no response has yet been received, we we are done. We are only going to re-invoke an operation
         // if the response of the primary has been received, but the backups have not replied.
-        boolean responseReceived = pendingResponse != null;
+        boolean responseReceived = pendingResponse != VOID;
 
         if (allBackupsComplete || !responseReceived || !timeout) {
             return false;
@@ -610,18 +572,19 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        invocationFuture.set(pendingResponse);
+        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        complete(pendingResponse);
         return true;
     }
 
     private void resetAndReInvoke() {
-        operationService.invocationsRegistry.deregister(this);
+        operationService.invocationRegistry.deregister(this);
         invokeCount = 0;
-        pendingResponse = null;
+        pendingResponse = VOID;
         pendingResponseReceivedMillis = -1;
         backupsExpected = 0;
         backupsCompleted = 0;
+        lastHeartbeatMillis = 0;
         doInvoke(false);
     }
 
@@ -636,15 +599,17 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         return "Invocation{"
-                + "serviceName='" + serviceName + '\''
-                + ", op=" + op
-                + ", partitionId=" + partitionId
-                + ", replicaIndex=" + replicaIndex
+                + "op=" + op
                 + ", tryCount=" + tryCount
                 + ", tryPauseMillis=" + tryPauseMillis
                 + ", invokeCount=" + invokeCount
-                + ", callTimeout=" + callTimeout
+                + ", callTimeoutMillis=" + callTimeoutMillis
+                + ", firstInvocationTimeMs=" + firstInvocationTimeMillis
+                + ", firstInvocationTime='" + timeToString(firstInvocationTimeMillis) + "'"
+                + ", lastHeartbeatMillis=" + lastHeartbeatMillis
+                + ", lastHeartbeatTime='" + timeToString(lastHeartbeatMillis) + "'"
                 + ", target=" + invTarget
+                + ", pendingResponse={" + pendingResponse + "}"
                 + ", backupsExpected=" + backupsExpected
                 + ", backupsCompleted=" + backupsCompleted
                 + ", connection=" + connectionStr

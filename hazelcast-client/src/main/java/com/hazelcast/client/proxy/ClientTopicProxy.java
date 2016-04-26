@@ -27,11 +27,16 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
+/**
+ * Proxy implementation of {@link ITopic}.
+ *
+ * @param <E> message type
+ */
 public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements ITopic<E> {
 
     public ClientTopicProxy(String serviceName, String objectId) {

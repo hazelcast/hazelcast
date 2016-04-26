@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.partition.IPartitionLostEvent;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 /**
  * An interface that can be implemented by SPI services to get notified of when a partition-related event occurs; for example,

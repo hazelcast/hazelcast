@@ -16,15 +16,16 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -47,9 +48,10 @@ public class ReplicaSyncRetryResponse extends Operation
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
 
-        partitionService.clearReplicaSyncRequest(partitionId, replicaIndex);
+        partitionService.getReplicaManager().clearReplicaSyncRequest(partitionId, replicaIndex);
 
-        InternalPartitionImpl partition = partitionService.getPartitionImpl(partitionId);
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
         Address thisAddress = getNodeEngine().getThisAddress();
         ILogger logger = getLogger();
 
@@ -59,7 +61,7 @@ public class ReplicaSyncRetryResponse extends Operation
                 logger.finest("Retrying replica sync request for partitionId=" + partitionId
                     + ", initial-replicaIndex=" + replicaIndex + ", current-replicaIndex=" + currentReplicaIndex);
             }
-            partitionService.triggerPartitionReplicaSync(partitionId, currentReplicaIndex,
+            partitionService.getReplicaManager().triggerPartitionReplicaSync(partitionId, currentReplicaIndex,
                     InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
 
         } else if (logger.isFinestEnabled()) {

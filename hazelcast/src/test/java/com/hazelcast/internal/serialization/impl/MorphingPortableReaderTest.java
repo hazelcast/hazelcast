@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * MorphingPortableReader Tester.
- *
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -61,8 +60,8 @@ public class MorphingPortableReaderTest {
 
     @After
     public void after() throws Exception {
-        service1.destroy();
-        service2.destroy();
+        service1.dispose();
+        service2.dispose();
     }
 
     @Test
@@ -311,4 +310,4 @@ public class MorphingPortableReaderTest {
         reader.readByteArray("byte");
     }
 
-} 
+}

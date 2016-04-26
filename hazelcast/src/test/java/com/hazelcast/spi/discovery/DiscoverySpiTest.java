@@ -82,7 +82,7 @@ public class DiscoverySpiTest
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.6.xsd");
+        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.7.xsd");
         Schema schema = factory.newSchema(schemaResource);
 
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -243,8 +243,8 @@ public class DiscoverySpiTest
     private static void setEnvironment(String key, String value) throws Exception {
         Class[] classes = Collections.class.getDeclaredClasses();
         Map<String, String> env = System.getenv();
-        for(Class cl : classes) {
-            if("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
+        for (Class cl : classes) {
+            if ("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
                 Field field = cl.getDeclaredField("m");
                 field.setAccessible(true);
                 Object obj = field.get(env);
@@ -256,14 +256,13 @@ public class DiscoverySpiTest
 
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(Address address, DiscoveryConfig config, DiscoveryMode mode) {
         return new DiscoveryServiceSettings().setConfigClassLoader(DiscoverySpiTest.class.getClassLoader())
-                                             .setDiscoveryConfig(config).setDiscoveryMode(mode).setLogger(LOGGER)
-                                             .setDiscoveryNode(new SimpleDiscoveryNode(address));
+                .setDiscoveryConfig(config).setDiscoveryMode(mode).setLogger(LOGGER)
+                .setDiscoveryNode(new SimpleDiscoveryNode(address));
     }
 
     private static class PropertyDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
-        public
-        PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+        public PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
             super(logger, properties);
         }
 

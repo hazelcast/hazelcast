@@ -20,7 +20,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 import java.util.List;
@@ -33,7 +32,45 @@ import java.util.List;
  * It exposes methods that will not be called by regular code, like shutdown, but will only be called by
  * the the SPI management.
  */
-public interface InternalOperationService extends OperationService, PacketHandler {
+public interface InternalOperationService extends OperationService {
+
+    String SERVICE_NAME = "hz:impl:operationService";
+
+    /**
+     * Returns the size of the response queue.
+     *
+     * @return the size of the response queue.
+     */
+    int getResponseQueueSize();
+
+    int getOperationExecutorQueueSize();
+
+    int getPriorityOperationExecutorQueueSize();
+
+    int getRunningOperationsCount();
+
+    int getRemoteOperationsCount();
+
+    /**
+     * Returns the number of executed operations.
+     *
+     * @return the number of executed operations.
+     */
+    long getExecutedOperationCount();
+
+    /**
+     * Returns the number of partition threads.
+     *
+     * @return the number of partition threads.
+     */
+    int getPartitionThreadCount();
+
+    /**
+     * Returns the number of generic threads.
+     *
+     * @return number of generic threads.
+     */
+    int getGenericThreadCount();
 
     /**
      * Checks if this call is timed out. A timed out call is not going to be executed.
@@ -42,6 +79,16 @@ public interface InternalOperationService extends OperationService, PacketHandle
      * @return true if it is timed out, false otherwise.
      */
     boolean isCallTimedOut(Operation op);
+
+    /**
+     * Returns true if the given operation is allowed to run on the calling thread, false otherwise.
+     * If this method returns true, then the operation can be executed using {@link #runOperationOnCallingThread(Operation)}
+     * method, otherwise {@link #executeOperation(Operation)} should be used.
+     *
+     * @param op the operation to check.
+     * @return true if the operation is allowed to run on the calling thread, false otherwise.
+     */
+    boolean isRunAllowed(Operation op);
 
     /**
      * Executes a PartitionSpecificRunnable.

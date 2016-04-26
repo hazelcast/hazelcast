@@ -20,11 +20,9 @@ import com.hazelcast.concurrent.lock.operations.LocalLockCleanupOperation;
 import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -40,6 +38,8 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -68,7 +68,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
             containers[i] = new LockStoreContainer(this, i);
         }
 
-        maxLeaseTimeInMillis = getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties());
+        maxLeaseTimeInMillis = getMaxLeaseTimeInMillis(nodeEngine.getProperties());
     }
 
     NodeEngine getNodeEngine() {
@@ -246,7 +246,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearPartition(event.getPartitionId());
+            clearLockStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         } else {
             int partitionId = event.getPartitionId();
             scheduleEvictions(partitionId);
@@ -269,23 +269,20 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         }
     }
 
-    private void clearPartition(int partitionId) {
-        final LockStoreContainer container = containers[partitionId];
-        for (LockStoreImpl ls : container.getLockStores()) {
-            ls.clear();
-        }
-    }
-
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartition(event.getPartitionId());
+            clearLockStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearPartition(partitionId);
+    private void clearLockStoresHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        LockStoreContainer container = containers[partitionId];
+        for (LockStoreImpl lockStore : container.getLockStores()) {
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > lockStore.getTotalBackupCount()) {
+                lockStore.clear();
+            }
+        }
     }
 
     @Override
@@ -308,7 +305,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         releaseLocksOwnedBy(clientUuid);
     }
 
-    public static long getMaxLeaseTimeInMillis(GroupProperties groupProperties) {
-        return groupProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
+    public static long getMaxLeaseTimeInMillis(HazelcastProperties hazelcastProperties) {
+        return hazelcastProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
     }
 }

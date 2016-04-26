@@ -16,7 +16,7 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.ObjectWithBigDecimal;
@@ -33,8 +33,8 @@ import com.hazelcast.query.SampleObjects.ObjectWithSqlDate;
 import com.hazelcast.query.SampleObjects.ObjectWithSqlTimestamp;
 import com.hazelcast.query.SampleObjects.ObjectWithUUID;
 import com.hazelcast.query.impl.DateHelperTest;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -61,7 +61,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class SqlPredicateTest {
 
-    final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testEqualsWhenSqlMatches() {

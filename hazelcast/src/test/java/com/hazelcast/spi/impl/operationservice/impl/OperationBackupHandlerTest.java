@@ -2,8 +2,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -44,8 +44,8 @@ public class OperationBackupHandlerTest extends HazelcastTestSupport {
 
     public void setup(boolean backPressureEnabled) {
         Config config = new Config()
-                .setProperty(GroupProperty.BACKPRESSURE_ENABLED, String.valueOf(backPressureEnabled))
-                .setProperty(GroupProperty.BACKPRESSURE_SYNCWINDOW, "1");
+                .setProperty(GroupProperty.BACKPRESSURE_ENABLED.getName(), String.valueOf(backPressureEnabled))
+                .setProperty(GroupProperty.BACKPRESSURE_SYNCWINDOW.getName(), "1");
 
         // we create a nice big cluster so that we have enough backups.
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(BACKUPS + 1).newInstances(config);

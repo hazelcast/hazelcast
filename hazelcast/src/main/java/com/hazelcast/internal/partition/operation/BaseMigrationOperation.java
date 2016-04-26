@@ -19,8 +19,14 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -29,25 +35,47 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
-public abstract class BaseMigrationOperation extends AbstractOperation
+abstract class BaseMigrationOperation extends AbstractOperation
         implements MigrationCycleOperation, PartitionAwareOperation {
 
     protected MigrationInfo migrationInfo;
     protected boolean success;
+    protected int partitionStateVersion;
 
-    public BaseMigrationOperation() {
+    BaseMigrationOperation() {
     }
 
-    public BaseMigrationOperation(MigrationInfo migrationInfo) {
+    BaseMigrationOperation(MigrationInfo migrationInfo, int partitionStateVersion) {
         this.migrationInfo = migrationInfo;
+        this.partitionStateVersion = partitionStateVersion;
         setPartitionId(migrationInfo.getPartitionId());
     }
 
     @Override
     public final void beforeRun() throws Exception {
-        super.beforeRun();
-        verifyClusterState();
+        try {
+            onMigrationStart();
+            verifyPartitionStateVersion();
+            verifyClusterState();
+        } catch (Exception e) {
+            onMigrationComplete(false);
+            throw e;
+        }
+    }
+
+    private void verifyPartitionStateVersion() {
+        InternalPartitionService partitionService = getService();
+        int localPartitionStateVersion = partitionService.getPartitionStateVersion();
+        if (partitionStateVersion != localPartitionStateVersion) {
+            if (getNodeEngine().getThisAddress().equals(migrationInfo.getMaster())) {
+                return;
+            }
+
+            // this is expected when cluster member list changes during migration
+            throw new PartitionStateVersionMismatchException(partitionStateVersion, localPartitionStateVersion);
+        }
     }
 
     private void verifyClusterState() {
@@ -58,9 +86,33 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         }
         final Node node = nodeEngine.getNode();
         if (!node.getNodeExtension().isStartCompleted()) {
-            throw new IllegalStateException("Partition table received before startup is completed. "
+            throw new IllegalStateException("Migration operation is received before startup is completed. "
                     + "Caller: " + getCallerAddress());
         }
+    }
+
+    void onMigrationStart() {
+        InternalPartitionServiceImpl partitionService = getService();
+        InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
+        migrationListener.onMigrationStart(getMigrationParticipantType(), migrationInfo);
+    }
+
+    void onMigrationComplete() {
+        onMigrationComplete(success);
+    }
+
+    void onMigrationComplete(boolean result) {
+        InternalPartitionServiceImpl partitionService = getService();
+        InternalMigrationListener migrationListener = partitionService.getInternalMigrationListener();
+        migrationListener.onMigrationComplete(getMigrationParticipantType(), migrationInfo, result);
+    }
+
+    protected abstract InternalMigrationListener.MigrationParticipant getMigrationParticipantType();
+
+    InternalPartition getPartition() {
+        InternalPartitionServiceImpl partitionService = getService();
+        return partitionService.getPartitionStateManager()
+                .getPartitionImpl(migrationInfo.getPartitionId());
     }
 
     public MigrationInfo getMigrationInfo() {
@@ -89,14 +141,29 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     }
 
     @Override
+    public void logError(Throwable e) {
+        if (e instanceof PartitionStateVersionMismatchException) {
+            ILogger logger = getLogger();
+            if (logger.isFineEnabled()) {
+                logger.log(Level.FINE, e.getMessage(), e);
+            }
+            return;
+        }
+
+        super.logError(e);
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         migrationInfo.writeData(out);
+        out.writeInt(partitionStateVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         migrationInfo = new MigrationInfo();
         migrationInfo.readData(in);
+        partitionStateVersion = in.readInt();
     }
 
     @Override

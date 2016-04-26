@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.jmx;
 
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -61,7 +61,7 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     protected HazelcastMBean(T managedObject, ManagementService service) {
         this.managedObject = managedObject;
         this.service = service;
-        updateIntervalSec = service.instance.node.groupProperties.getLong(GroupProperty.JMX_UPDATE_INTERVAL_SECONDS);
+        updateIntervalSec = service.instance.node.getProperties().getLong(GroupProperty.JMX_UPDATE_INTERVAL_SECONDS);
     }
 
     public void register(HazelcastMBean mbean) {

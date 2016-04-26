@@ -16,7 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
-import java.util.concurrent.ScheduledExecutorService;
+import com.hazelcast.spi.TaskScheduler;
 
 /**
  * Factory for EntryTaskSchedulers.
@@ -40,14 +40,14 @@ public final class EntryTaskSchedulerFactory {
      * <p/>
      * EntryTaskScheduler implementation is thread-safe.
      *
-     * @param scheduledExecutorService ScheduledExecutorService instance to execute the second
+     * @param taskScheduler ScheduledExecutorService instance to execute the second
      * @param entryProcessor           bulk processor
      * @return EntryTaskScheduler that will run all second operations in bulk
      */
-    public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService,
+    public static <K, V> EntryTaskScheduler<K, V> newScheduler(TaskScheduler taskScheduler,
                                                                ScheduledEntryProcessor<K, V> entryProcessor,
                                                                ScheduleType scheduleType) {
-        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, scheduleType);
+        return new SecondsBasedEntryTaskScheduler<K, V>(taskScheduler, entryProcessor, scheduleType);
     }
 
 }

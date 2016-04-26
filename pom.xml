@@ -859,11 +859,11 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <parallel>none</parallel>
-                            <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
+                            <argLine>-Xms512m -Xmx2G -XX:MaxPermSize=128M
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
-                                -Dhazelcast.test.use.network=true
+                                -Dhazelcast.test.use.network=false
                                 -Djavax.management.builder.initial=${javax.management.builder.initial}
                                 -DCacheManagerImpl=${CacheManagerImpl}
                                 -Djavax.cache.Cache=${CacheImpl}
@@ -871,6 +871,12 @@
                                 -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
                             </argLine>
+                            <includes>
+                                <include>**/**.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/jsr/**.java</exclude>
+                            </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
                             </groups>

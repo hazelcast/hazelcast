@@ -26,14 +26,11 @@ import com.hazelcast.util.UuidUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
 public class LifecycleServiceImpl implements LifecycleService {
-
-    public static final int DEFAULT_GRACEFUL_SHUTDOWN_WAIT = 30;
 
     private final HazelcastInstanceImpl instance;
     private final ConcurrentMap<String, LifecycleListener> lifecycleListeners
@@ -79,30 +76,15 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     @Override
     public void shutdown() {
-        synchronized (lifecycleLock) {
-            fireLifecycleEvent(SHUTTING_DOWN);
-            ManagementService managementService = instance.managementService;
-            if (managementService != null) {
-                managementService.destroy();
-            }
-            final Node node = instance.node;
-            if (node != null) {
-                final NodeShutdownLatch shutdownLatch = new NodeShutdownLatch(node);
-                node.shutdown(false);
-                HazelcastInstanceManager.remove(instance);
-                shutdownLatch.await(getShutdownTimeoutSeconds(node), TimeUnit.SECONDS);
-            }
-            fireLifecycleEvent(SHUTDOWN);
-        }
-    }
-
-    private static int getShutdownTimeoutSeconds(Node node) {
-        int gracefulShutdownMaxWaitSeconds = node.groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
-        return Math.min(DEFAULT_GRACEFUL_SHUTDOWN_WAIT, gracefulShutdownMaxWaitSeconds);
+        shutdown(false);
     }
 
     @Override
     public void terminate() {
+        shutdown(true);
+    }
+
+    private void shutdown(boolean terminate) {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
             ManagementService managementService = instance.managementService;
@@ -111,7 +93,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             }
             final Node node = instance.node;
             if (node != null) {
-                node.shutdown(true);
+                node.shutdown(terminate);
             }
             HazelcastInstanceManager.remove(instance);
             fireLifecycleEvent(SHUTDOWN);

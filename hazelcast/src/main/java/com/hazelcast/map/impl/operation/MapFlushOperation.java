@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
@@ -39,7 +38,6 @@ public class MapFlushOperation extends MapOperation implements BackupAwareOperat
 
     @Override
     public void run() {
-        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         sequence = recordStore.softFlush();
     }
 

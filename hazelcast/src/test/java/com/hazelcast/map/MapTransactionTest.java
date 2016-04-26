@@ -26,17 +26,15 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -47,6 +45,7 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -68,10 +67,14 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -89,6 +92,60 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     private final TransactionOptions options = new TransactionOptions()
             .setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+
+    @Test
+    public void testTransactionAtomicity_withMapAndQueue() throws ExecutionException, InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstance();
+
+        Future<Object> future = spawn(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                IQueue<Object> queue = instance.getQueue("queue");
+                IMap<Object, Object> map = instance.getMap("map");
+                Object item = queue.take();
+                return map.get(item);
+            }
+        });
+        TransactionOptions options = new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.ONE_PHASE);
+        TransactionContext context = instance.newTransactionContext(options);
+        context.beginTransaction();
+
+        TransactionalQueue<Object> queue = context.getQueue("queue");
+        TransactionalMap<Object, Object> map = context.getMap("map");
+
+        queue.offer("item-99");
+        for (int i = 0; i < 100; i++) {
+            map.put("item-" + i, "value");
+        }
+
+        context.commitTransaction();
+
+        assertEquals("value", future.get());
+    }
+
+    @Test
+    public void testNotToBlockReads() throws ExecutionException, InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstance();
+
+        TransactionContext context = instance.newTransactionContext();
+        context.beginTransaction();
+
+        TransactionalMap<Object, Object> map = context.getMap("map");
+
+        map.put("key", "value");
+
+        Future<Object> future = spawn(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                IMap<Object, Object> map = instance.getMap("map");
+                return map.get("key");
+            }
+        });
+
+        assertNull(future.get());
+
+        context.commitTransaction();
+    }
 
     //unfortunately the bug can't be detected by a unit test since the exception is thrown in a background thread (and logged)
     @Test
@@ -257,7 +314,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         };
         new Thread(runnable).start();
         assertOpenEventually(thresholdReached);
-        h2.shutdown();
+        terminateInstance(h2);
         assertOpenEventually(transactionCompletedLatch);
         for (int i = 0; i < size; i++) {
             assertNull(map.get(i));
@@ -440,7 +497,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     @Test
     public void testTxnGetForUpdateTxnFails() throws TransactionException {
         Config config = getConfig();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "5000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "5000");
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
@@ -746,60 +803,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("2", map2.get("2"));
     }
 
-    @Test(expected = OperationTimeoutException.class)
-    public void test_containsKey_throwsException_whenKeyLockedInTxn() throws TransactionException, InterruptedException {
-        final String mapName = "default";
-
-        Config config = getConfig();
-        final HazelcastInstance instance = createHazelcastInstance(config);
-        final IMap map = instance.getMap(mapName);
-        map.put(1, 1);
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                instance.executeTransaction(options, new TransactionalTask<Boolean>() {
-                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                        TransactionalMap<Object, Object> txMap = context.getMap(mapName);
-                        txMap.getForUpdate(1);
-
-                        latch.countDown();
-                        sleepSeconds(Integer.MAX_VALUE);
-                        return null;
-                    }
-                });
-
-            }
-        }).start();
-
-        assertOpenEventually(latch);
-
-        // this is used to set wait-timeout for contains-key operation.
-        MapProxyImpl mapProxy = (MapProxyImpl) map;
-        MapOperationProvider operationProvider
-                = ((MapService) mapProxy.getService()).getMapServiceContext().getMapOperationProvider(mapName);
-        mapProxy.setOperationProvider(new WaitTimeoutSetterMapOperationProvider(operationProvider));
-
-        map.containsKey(1);
-    }
-
-    private static class WaitTimeoutSetterMapOperationProvider extends DefaultMapOperationProvider {
-
-        private final MapOperationProvider operationProvider;
-
-        public WaitTimeoutSetterMapOperationProvider(MapOperationProvider operationProvider) {
-            this.operationProvider = operationProvider;
-        }
-
-        @Override
-        public MapOperation createContainsKeyOperation(String name, Data dataKey) {
-            MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, dataKey);
-            containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(3));
-            return containsKeyOperation;
-        }
-    }
-
     @Test
     public void testTxnContainsKey() throws TransactionException {
         Config config = getConfig();
@@ -819,7 +822,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertTrue(b);
     }
-
 
     @Test
     public void testTxnReplace2() throws TransactionException {
@@ -870,7 +872,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         inst.shutdown();
     }
-
 
     @Test
     // TODO: @mm - Review following case...
@@ -1232,7 +1233,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     }
 
-
     @Test(expected = IllegalArgumentException.class)
     public void testValuesWithPagingPredicate() throws TransactionException {
         final int nodeCount = 1;
@@ -1403,7 +1403,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
     }
 
-
     @Test
     public void testGetForUpdate_LoadsKeyFromMapLoader_whenKeyDoesNotExistsInDb() {
         final String mapName = randomMapName();
@@ -1425,7 +1424,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
             }
         });
     }
-
 
     @Test
     public void testGetForUpdate_LoadsKeyFromMapLoader_whenKeyExistsInDb() {
@@ -1493,6 +1491,22 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 return null;
             }
         });
+    }
+
+    private static class WaitTimeoutSetterMapOperationProvider extends DefaultMapOperationProvider {
+
+        private final MapOperationProvider operationProvider;
+
+        public WaitTimeoutSetterMapOperationProvider(MapOperationProvider operationProvider) {
+            this.operationProvider = operationProvider;
+        }
+
+        @Override
+        public MapOperation createContainsKeyOperation(String name, Data dataKey) {
+            MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, dataKey);
+            containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(3));
+            return containsKeyOperation;
+        }
     }
 
 }

@@ -75,7 +75,7 @@ public abstract class HazelcastOSGiScriptingTest {
 
     @After
     public void tearDown() throws BundleException {
-        try  {
+        try {
             bundle.stop();
             bundle = null;
         } finally {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -25,6 +24,7 @@ import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.logging.Level;
 
@@ -35,31 +35,30 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry} to provides some clues
- * about the internal Hazelcast state.
+ * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry}
+ * to provide some clues about the internal Hazelcast state.
  * <p/>
  * Health monitor can be configured with system properties.
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
+ * {@link GroupProperty#HEALTH_MONITORING_LEVEL}
  * This property can be one of the following:
  * {@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints.
  * {@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default).
  * {@link HealthMonitorLevel#OFF}    => does not print anything.
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
+ * {@link GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
+ * {@link GroupProperty#HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE}
  * Threshold: Percentage of max memory currently in use
  * <p/>
- * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
+ * {@link GroupProperty#HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE}
  * Threshold: CPU system/process load
  */
 public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
-    private static final int PERCENTAGE_INT_MULTIPLIER = 100;
     private static final double THRESHOLD_PERCENTAGE_INVOCATIONS = 70;
     private static final double THRESHOLD_INVOCATIONS = 1000;
 
@@ -79,9 +78,9 @@ public class HealthMonitor {
         this.metricRegistry = node.nodeEngine.getMetricsRegistry();
         this.monitorLevel = getHealthMonitorLevel();
         this.thresholdMemoryPercentage
-                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
+                = node.getProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE);
         this.thresholdCPUPercentage
-                = node.getGroupProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
+                = node.getProperties().getInteger(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE);
         this.monitorThread = initMonitorThread();
         this.healthMetrics = new HealthMetrics();
     }
@@ -91,7 +90,7 @@ public class HealthMonitor {
             return null;
         }
 
-        int delaySeconds = node.getGroupProperties().getSeconds(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS);
+        int delaySeconds = node.getProperties().getSeconds(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS);
         return new HealthMonitorThread(delaySeconds);
     }
 
@@ -107,7 +106,7 @@ public class HealthMonitor {
     }
 
     private HealthMonitorLevel getHealthMonitorLevel() {
-        String healthMonitorLevel = node.getGroupProperties().getString(GroupProperty.HEALTH_MONITORING_LEVEL);
+        String healthMonitorLevel = node.getProperties().getString(GroupProperty.HEALTH_MONITORING_LEVEL);
         return valueOf(healthMonitorLevel);
     }
 
@@ -120,7 +119,7 @@ public class HealthMonitor {
                     node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
-            this.performanceLogHint = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_ENABLED);
+            this.performanceLogHint = node.getProperties().getBoolean(PerformanceMonitor.ENABLED);
         }
 
         @Override
@@ -162,12 +161,12 @@ public class HealthMonitor {
                 return;
             }
 
-            // we only log the hint once.
+            // we only log the hint once
             performanceLogHint = false;
 
             logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
                             + "enable the PerformanceMonitor by adding the property -D%s=true",
-                    LINE_SEPARATOR, GroupProperty.PERFORMANCE_MONITOR_ENABLED));
+                    LINE_SEPARATOR, PerformanceMonitor.ENABLED));
         }
     }
 
@@ -246,15 +245,15 @@ public class HealthMonitor {
                 = metricRegistry.newLongGauge("os.freeSwapSpaceSize");
 
         final LongGauge operationServiceExecutorQueueSize
-                = metricRegistry.newLongGauge("operation.queue.size");
+                = metricRegistry.newLongGauge("operation.queueSize");
         final LongGauge operationServiceExecutorPriorityQueueSize
-                = metricRegistry.newLongGauge("operation.priority-queue.size");
+                = metricRegistry.newLongGauge("operation.priorityQueueSize");
         final LongGauge operationServiceResponseQueueSize
-                = metricRegistry.newLongGauge("operation.response-queue.size");
+                = metricRegistry.newLongGauge("operation.responseQueueSize");
         final LongGauge operationServiceRunningOperationsCount
-                = metricRegistry.newLongGauge("operation.running.count");
+                = metricRegistry.newLongGauge("operation.runningCount");
         final LongGauge operationServiceCompletedOperationsCount
-                = metricRegistry.newLongGauge("operation.completed.count");
+                = metricRegistry.newLongGauge("operation.completedCount");
         final LongGauge operationServicePendingInvocationsCount
                 = metricRegistry.newLongGauge("operation.invocations.pending");
         final DoubleGauge operationServicePendingInvocationsPercentage
@@ -279,7 +278,7 @@ public class HealthMonitor {
             memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read() / runtimeMaxMemory.read();
         }
 
-        public boolean exceedsThreshold() {
+        boolean exceedsThreshold() {
             if (memoryUsedOfMaxPercentage > thresholdMemoryPercentage) {
                 return true;
             }
@@ -381,6 +380,8 @@ public class HealthMonitor {
                     .append(numberToUnit(runtimeUsedMemory.read())).append(", ");
             sb.append("heap.memory.free=")
                     .append(numberToUnit(runtimeFreeMemory.read())).append(", ");
+            sb.append("heap.memory.available=")
+                    .append(numberToUnit(runtimeAvailableMemory.read())).append(", ");
             sb.append("heap.memory.total=")
                     .append(numberToUnit(runtimeTotalMemory.read())).append(", ");
             sb.append("heap.memory.max=")
@@ -428,28 +429,28 @@ public class HealthMonitor {
 
         private void renderNativeMemory() {
             MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
-            if (memoryStats.getMaxNativeMemory() <= 0L) {
+            if (memoryStats.getMaxNative() <= 0L) {
                 return;
             }
 
-            final long usedNative = memoryStats.getUsedNativeMemory();
+            final long usedNative = memoryStats.getUsedNative();
             sb.append("native.memory.used=")
               .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
-                    .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getFreeNative())).append(", ");
             sb.append("native.memory.total=")
-                    .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
             sb.append("native.memory.max=")
-                    .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
+              .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
             final long maxMeta = memoryStats.getMaxMetadata();
             if (maxMeta > 0) {
                 final long usedMeta = memoryStats.getUsedMetadata();
-                sb.append("native.memory.meta.used=")
+                sb.append("native.meta.memory.used=")
                   .append(numberToUnit(usedMeta)).append(", ");
-                sb.append("native.memory.meta.free=")
+                sb.append("native.meta.memory.free=")
                   .append(numberToUnit(maxMeta - usedMeta)).append(", ");
-                sb.append("native.memory.meta.percentage=")
-                  .append(numberToUnit((PERCENTAGE_INT_MULTIPLIER * usedMeta) / (usedNative + usedMeta))).append(", ");
+                sb.append("native.meta.memory.percentage=")
+                  .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
             }
         }
 
@@ -498,19 +499,19 @@ public class HealthMonitor {
      * @param p the given number
      * @return a string of the given number as a format float with two decimal places and a period
      */
-    public static String percentageString(double p) {
-        return format("%.2f", p) + "%";
+    private static String percentageString(double p) {
+        return format("%.2f%%", p);
     }
 
-    public static String numberToUnit(long number) {
-        //CHECKSTYLE:OFF
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static String numberToUnit(long number) {
         for (int i = 6; i > 0; i--) {
-            double step = Math.pow(1024, i); // 1024 is for 1024 kb is 1 MB etc
+            // 1024 is for 1024 kb is 1 MB etc
+            double step = Math.pow(1024, i);
             if (number > step) {
                 return format("%3.1f%s", number / step, UNITS[i]);
             }
         }
-        //CHECKSTYLE:ON
         return Long.toString(number);
     }
 }

@@ -16,24 +16,39 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
+
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.List;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link PerformanceMonitorPlugin} that displays the slow executing operations. For more information see
  * {@link com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector}.
  */
 public class SlowOperationPlugin extends PerformanceMonitorPlugin {
+
+    /**
+     * The period in seconds the SlowOperationPlugin runs.
+     *
+     * With the slow operation plugin, slow executing operation can be found. This is done by checking
+     * on the caller side which operations take a lot of time executing.
+     *
+     * This plugin is very cheap to use.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty(
+            "hazelcast.performance.monitor.slowoperations.period.seconds", 60, SECONDS);
 
     private final InternalOperationService operationService;
     private final long periodMillis;
@@ -46,12 +61,12 @@ public class SlowOperationPlugin extends PerformanceMonitorPlugin {
     }
 
     private long getPeriodMillis(NodeEngineImpl nodeEngine) {
-        GroupProperties props = nodeEngine.getGroupProperties();
-        if (!props.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED)) {
+        HazelcastProperties props = nodeEngine.getProperties();
+        if (!props.getBoolean(GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
             return DISABLED;
         }
 
-        return props.getMillis(PERFORMANCE_MONITOR_SLOW_OPERATIONS_PERIOD_SECONDS);
+        return props.getMillis(PERIOD_SECONDS);
     }
 
     @Override

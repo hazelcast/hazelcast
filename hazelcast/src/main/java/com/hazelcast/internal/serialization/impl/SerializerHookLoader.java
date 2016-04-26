@@ -26,10 +26,10 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Loads auto registered serializers using {@link com.hazelcast.nio.serialization.SerializerHook}

@@ -17,8 +17,9 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.config.ClientSecurityConfig;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
@@ -31,14 +32,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.InitialMembershipEvent;
-import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -73,6 +70,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -728,7 +726,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         //retry to connect to cluster forever(never shutdown the client)
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         //Retry all requests forever(until client is shutdown)
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> map = client.getMap(randomMapName());
@@ -754,7 +752,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         //Retry all requests
         clientConfig.getNetworkConfig().setRedoOperation(true);
         //Retry all requests forever(until client is shutdown)
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Object, Object> map = client.getMap(randomMapName());
@@ -792,5 +790,18 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         hazelcastInstance.shutdown();
 
         assertOpenEventually("Put operations should not hang.", testFinishedLatch);
+    }
+
+    @Test(timeout = 120000)
+    public void testMemberAddedWithListeners_thenCheckOperationsNotHanging() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientExecutionServiceImpl.INTERNAL_EXECUTOR_POOL_SIZE.getName(), "1");
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        IMap map = client.getMap("map");
+        map.addEntryListener(mock(MapListener.class), true);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
+        String key = generateKeyOwnedBy(h2);
+        map.get(key);
     }
 }

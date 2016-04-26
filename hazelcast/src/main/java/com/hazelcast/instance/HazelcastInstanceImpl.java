@@ -16,6 +16,9 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cache.HazelcastCacheManager;
+import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -31,6 +34,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
@@ -51,9 +55,9 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.internal.monitors.HealthMonitor;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.jmx.ManagementService;
+import com.hazelcast.internal.monitors.HealthMonitor;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
@@ -67,6 +71,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -86,10 +91,11 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-@SuppressWarnings("unchecked")
 @PrivateApi
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class HazelcastInstanceImpl implements HazelcastInstance {
 
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Node node;
 
     final ILogger logger;
@@ -293,6 +299,25 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    public <K, V> ICache<K, V> getCache(String name) {
+        checkNotNull(name, "Retrieving a cache instance with a null name is not allowed!");
+        return getCacheByFullName(HazelcastCacheManager.CACHE_MANAGER_PREFIX + name);
+    }
+
+    public <K, V> ICache<K, V> getCacheByFullName(String fullName) {
+        checkNotNull(fullName, "Retrieving a cache instance with a null name is not allowed!");
+        try {
+            return getDistributedObject(ICacheService.SERVICE_NAME, fullName);
+        } catch (HazelcastException e) {
+            if (e.getCause() instanceof ServiceNotFoundException) {
+                throw new IllegalStateException(ICacheService.CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
     public Cluster getCluster() {
         return node.clusterService;
     }
@@ -349,6 +374,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         ProxyService proxyService = node.nodeEngine.getProxyService();
         return (T) proxyService.getDistributedObject(serviceName, name);
@@ -366,7 +392,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
         return proxyService.removeProxyListener(registrationId);
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return node.getSerializationService();
     }
 

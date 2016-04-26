@@ -24,7 +24,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
-import com.hazelcast.nio.tcp.NewClientWriteHandler;
+import com.hazelcast.nio.tcp.ClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -52,21 +52,21 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private static final long TIMEOUT = 3;
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "out.writeQueueSize")
+    @Probe(name = "writeQueueSize")
     public final Queue<OutboundFrame> writeQueue;
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    @Probe(name = "out.priorityWriteQueueSize")
+    @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> urgentWriteQueue;
 
     private final ILogger logger;
     private final SocketChannelWrapper socketChannel;
     private ByteBuffer outputBuffer;
-    @Probe(name = "out.bytesWritten")
+    @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "out.normalFramesWritten")
+    @Probe(name = "normalFramesWritten")
     private final SwCounter normalFramesWritten = newSwCounter();
-    @Probe(name = "out.priorityFramesWritten")
+    @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
     private final MetricsRegistry metricsRegistry;
     private volatile long lastWriteTime;
@@ -81,7 +81,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         this.writeQueue = new ConcurrentLinkedQueue<OutboundFrame>();
         this.urgentWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
         // sensors
-        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
     }
 
     @Override
@@ -93,17 +93,17 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    @Probe(name = "out.writeQueuePendingBytes")
+    @Probe(name = "writeQueuePendingBytes")
     public long bytesPending() {
         return bytesPending(writeQueue);
     }
 
-    @Probe(name = "out.priorityWriteQueuePendingBytes")
+    @Probe(name = "priorityWriteQueuePendingBytes")
     public long priorityBytesPending() {
         return bytesPending(urgentWriteQueue);
     }
 
-    @Probe(name = "out.idleTimeMs")
+    @Probe(name = "idleTimeMs")
     private long idleTimeMs() {
         return Math.max(currentTimeMillis() - lastWriteTime, 0);
     }
@@ -137,14 +137,14 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     @Override
     public void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
-        urgentWriteQueue.add(new TaskFrame() {
+        urgentWriteQueue.add(new TaskFrame(new Runnable() {
             @Override
             public void run() {
                 logger.info("Setting protocol: " + protocol);
                 createWriter(protocol);
                 latch.countDown();
             }
-        });
+        }));
 
         try {
             latch.await(TIMEOUT, TimeUnit.SECONDS);
@@ -164,7 +164,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
             outputBuffer.put(stringToBytes(CLUSTER));
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-            writeHandler = new NewClientWriteHandler();
+            writeHandler = new ClientWriteHandler();
         } else {
             configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
             writeHandler = new TextWriteHandler(connection);
@@ -194,8 +194,9 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
                 return null;
             }
 
-            if (frame instanceof TaskFrame) {
-                ((TaskFrame) frame).run();
+            if (frame.getClass() == TaskFrame.class) {
+                TaskFrame taskFrame = (TaskFrame) frame;
+                taskFrame.task.run();
                 continue;
             }
 
@@ -221,7 +222,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         urgentWriteQueue.clear();
 
         ShutdownTask shutdownTask = new ShutdownTask();
-        offer(shutdownTask);
+        offer(new TaskFrame(shutdownTask));
         shutdownTask.awaitCompletion();
     }
 
@@ -309,9 +310,13 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    private abstract class TaskFrame implements OutboundFrame {
+    private static final class TaskFrame implements OutboundFrame {
 
-        abstract void run();
+        private final Runnable task;
+
+        private TaskFrame(Runnable task) {
+            this.task = task;
+        }
 
         @Override
         public boolean isUrgent() {
@@ -319,11 +324,11 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    private class ShutdownTask extends TaskFrame {
+    private class ShutdownTask implements Runnable {
         private final CountDownLatch latch = new CountDownLatch(1);
 
         @Override
-        void run() {
+        public void run() {
             try {
                 socketChannel.closeOutbound();
             } catch (IOException e) {

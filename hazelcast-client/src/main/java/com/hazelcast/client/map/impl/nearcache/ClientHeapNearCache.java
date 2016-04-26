@@ -22,9 +22,9 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.nearcache.NearCacheRecord;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -104,10 +104,8 @@ public class ClientHeapNearCache<K>
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value;
-        if (object == null) {
-            value = NULL_OBJECT;
-        } else {
+        Object value = null;
+        if (object != null) {
             SerializationService serializationService = context.getSerializationService();
             if (inMemoryFormat == InMemoryFormat.BINARY) {
                 value = serializationService.toData(object);
@@ -117,6 +115,7 @@ public class ClientHeapNearCache<K>
                 throw new IllegalArgumentException();
             }
         }
+        value = value == null ? NULL_OBJECT : value;
         cache.put(key, new NearCacheRecord(key, value));
     }
 

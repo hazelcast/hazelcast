@@ -17,9 +17,10 @@
 package com.hazelcast.spi.impl.servicemanager.impl;
 
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -34,50 +35,46 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-
+import com.hazelcast.spi.ConfigurableService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.SharedService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptorProvider;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
-import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-
+import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.lang.reflect.Constructor;
-
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
-
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Collection;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SharedService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.spi.ConfigurableService;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ServiceManagerImpl implements ServiceManager {
@@ -192,16 +189,11 @@ public final class ServiceManagerImpl implements ServiceManager {
 
     private void registerCacheServiceIfAvailable() {
         //CacheService Optional initialization
-        try {
-            //search for jcache api jar on classpath
-            final String localClassName = "javax.cache.Caching";
-            ClassLoader classLoader = nodeEngine.getConfigClassLoader();
-            Class theClass = ClassLoaderUtil.loadClass(classLoader, localClassName);
-            if (theClass != null) {
-                ICacheService service = createService(ICacheService.class);
-                registerService(ICacheService.SERVICE_NAME, service);
-            }
-        } catch (ClassNotFoundException e) {
+        //search for jcache api jar on classpath
+        if (JCacheDetector.isJcacheAvailable(nodeEngine.getConfigClassLoader(), logger)) {
+            ICacheService service = createService(ICacheService.class);
+            registerService(ICacheService.SERVICE_NAME, service);
+        } else {
             logger.finest("javax.cache api is not detected on classpath. Skipping CacheService...");
         }
     }
@@ -307,7 +299,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         }
     }
 
-    private synchronized void registerService(String serviceName, Object service) {
+    public synchronized void registerService(String serviceName, Object service) {
         if (logger.isFinestEnabled()) {
             logger.finest("Registering service: '" + serviceName + "'");
         }

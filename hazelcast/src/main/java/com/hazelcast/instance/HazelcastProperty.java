@@ -17,85 +17,41 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static java.lang.String.format;
-
 /**
  * Interface for Hazelcast Member and Client properties.
+ *
+ * Deprecated since Hazelcast 3.7.
+ * This is private API, don't use it.
  */
 @PrivateApi
-public final class HazelcastProperty {
+@Deprecated
+@SuppressWarnings("unused")
+public interface HazelcastProperty {
 
-    private final String name;
-    private final String defaultValue;
-    private final TimeUnit timeUnit;
-    private final HazelcastProperty parent;
-
-    public HazelcastProperty(String name) {
-        this(name, (String) null);
-    }
-
-    public HazelcastProperty(String name, boolean defaultValue) {
-        this(name, defaultValue ? "true" : "false");
-    }
-
-    public HazelcastProperty(String name, Integer defaultValue) {
-        this(name, String.valueOf(defaultValue));
-    }
-
-    public HazelcastProperty(String name, Byte defaultValue) {
-        this(name, String.valueOf(defaultValue));
-    }
-
-    public HazelcastProperty(String name, Integer defaultValue, TimeUnit timeUnit) {
-        this(name, String.valueOf(defaultValue), timeUnit);
-    }
-
-    public HazelcastProperty(String name, Long defaultValue, TimeUnit timeUnit) {
-        this(name, Long.toString(defaultValue), timeUnit);
-    }
-
-    public HazelcastProperty(String name, HazelcastProperty groupProperty) {
-        this(name, groupProperty.getDefaultValue(), groupProperty.timeUnit, groupProperty);
-    }
-
-    protected HazelcastProperty(String name, String defaultValue) {
-        this(name, defaultValue, null);
-    }
-
-    protected HazelcastProperty(String name, String defaultValue, TimeUnit timeUnit) {
-        this(name, defaultValue, timeUnit, null);
-    }
-
-    public HazelcastProperty(String name, String defaultValue, TimeUnit timeUnit, HazelcastProperty parent) {
-        checkHasText(name, "The property name cannot be null or empty!");
-        this.name = name;
-        this.defaultValue = defaultValue;
-        this.timeUnit = timeUnit;
-        this.parent = parent;
-    }
-
+    /**
+     * Gets the index of the property.
+     *
+     * @return index of the property
+     */
+    int getIndex();
 
     /**
      * Returns the property name.
      *
      * @return the property name
      */
-    public String getName() {
-        return name;
-    }
+    String getName();
 
     /**
      * Returns the default value of the property.
      *
      * @return the default value or <tt>null</tt> if none is defined
      */
-    public String getDefaultValue() {
-        return defaultValue;
-    }
+    String getDefaultValue();
 
     /**
      * Returns the {@link TimeUnit} of the property.
@@ -103,52 +59,31 @@ public final class HazelcastProperty {
      * @return the {@link TimeUnit}
      * @throws IllegalArgumentException if no {@link TimeUnit} is defined
      */
-    public TimeUnit getTimeUnit() {
-        if (timeUnit == null) {
-            throw new IllegalArgumentException(format("groupProperty %s has no TimeUnit defined!", this));
-        }
-
-        return timeUnit;
-    }
+    TimeUnit getTimeUnit();
 
     /**
      * Returns the parent {@link GroupProperty} of the property.
      *
      * @return the parent {@link GroupProperty} or <tt>null</tt> if none is defined
      */
-    public HazelcastProperty getParent() {
-        return parent;
-    }
-
+    GroupProperty getParent();
 
     /**
      * Sets the environmental value of the property.
      *
      * @param value the value to set
      */
-    public void setSystemProperty(String value) {
-        System.setProperty(name, value);
-    }
+    void setSystemProperty(String value);
 
     /**
      * Gets the environmental value of the property.
      *
      * @return the value of the property
      */
-
-    public String getSystemProperty() {
-        return System.getProperty(name);
-    }
+    String getSystemProperty();
 
     /**
      * Clears the environmental value of the property.
      */
-    public String clearSystemProperty() {
-        return System.clearProperty(name);
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
+    String clearSystemProperty();
 }

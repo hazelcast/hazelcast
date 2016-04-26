@@ -32,73 +32,73 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
+import static com.hazelcast.util.CollectionUtil.toIntArray;
+
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
-    private List<Integer> partitions;
     private OperationFactory operationFactory;
-    private Map<Integer, Object> results;
-
-    public PartitionIteratingOperation(List<Integer> partitions, OperationFactory operationFactory) {
-        this.partitions = partitions != null ? partitions : Collections.<Integer>emptyList();
-        this.operationFactory = operationFactory;
-    }
+    private int[] partitions;
+    private Object[] results;
 
     public PartitionIteratingOperation() {
     }
 
+    public PartitionIteratingOperation(OperationFactory operationFactory, List<Integer> partitions) {
+        this.operationFactory = operationFactory;
+        this.partitions = toIntArray(partitions);
+    }
+
     @Override
     public void run() throws Exception {
-        results = new HashMap<Integer, Object>(partitions.size());
         try {
-            Map<Integer, ResponseQueue> responses = executeOperations();
-            getResults(responses);
+            Object[] responses = executeOperations();
+            results = resolveResponses(responses);
         } catch (Exception e) {
             getLogger(getNodeEngine()).severe(e);
         }
     }
 
-    private void getResults(Map<Integer, ResponseQueue> responses) throws InterruptedException {
-        for (Map.Entry<Integer, ResponseQueue> responseQueueEntry : responses.entrySet()) {
-            final ResponseQueue queue = responseQueueEntry.getValue();
-            final Integer key = responseQueueEntry.getKey();
-            final Object result = queue.get();
-            if (result instanceof NormalResponse) {
-                results.put(key, ((NormalResponse) result).getValue());
-            } else {
-                results.put(key, result);
-            }
-        }
-    }
-
-    private Map<Integer, ResponseQueue> executeOperations() {
+    private Object[] executeOperations() {
         NodeEngine nodeEngine = getNodeEngine();
-        Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
-        for (final int partitionId : partitions) {
+        Object[] responses = new Object[partitions.length];
+        for (int i = 0; i < partitions.length; i++) {
             ResponseQueue responseQueue = new ResponseQueue();
-            final Operation op = operationFactory.createOperation();
-            op.setNodeEngine(nodeEngine)
-                    .setPartitionId(partitionId)
+            responses[i] = responseQueue;
+
+            Operation operation = operationFactory.createOperation();
+            operation.setNodeEngine(nodeEngine)
+                    .setPartitionId(partitions[i])
                     .setReplicaIndex(getReplicaIndex())
                     .setOperationResponseHandler(responseQueue)
                     .setServiceName(getServiceName())
                     .setService(getService())
                     .setCallerUuid(getCallerUuid());
-            OperationAccessor.setCallerAddress(op, getCallerAddress());
-            responses.put(partitionId, responseQueue);
-            nodeEngine.getOperationService().executeOperation(op);
+            OperationAccessor.setCallerAddress(operation, getCallerAddress());
+            nodeEngine.getOperationService().executeOperation(operation);
         }
         return responses;
     }
 
-    @Override
-    public void afterRun() throws Exception {
+    /**
+     * Replaces the {@link ResponseQueue} entries with its results.
+     *
+     * The responses array is reused to avoid the allocation of a new array.
+     */
+    private Object[] resolveResponses(Object[] responses) throws InterruptedException {
+        for (int i = 0; i < responses.length; i++) {
+            ResponseQueue queue = (ResponseQueue) responses[i];
+            Object result = queue.get();
+            if (result instanceof NormalResponse) {
+                responses[i] = ((NormalResponse) result).getValue();
+            } else {
+                responses[i] = result;
+            }
+        }
+        return responses;
     }
 
     private ILogger getLogger(NodeEngine nodeEngine) {
@@ -106,8 +106,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
     public Object getResponse() {
-        return new PartitionResponse(results);
+        return new PartitionResponse(partitions, results);
     }
 
     @Override
@@ -118,17 +122,18 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     private static class ResponseQueue implements OperationResponseHandler {
-        final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
+
+        private final BlockingQueue<Object> queue = ResponseQueueFactory.newResponseQueue();
 
         @Override
         public void sendResponse(Operation op, Object obj) {
-            if (!b.offer(obj)) {
+            if (!queue.offer(obj)) {
                 throw new HazelcastException("Response could not be queued for transportation");
             }
         }
 
         public Object get() throws InterruptedException {
-            return b.take();
+            return queue.take();
         }
 
         @Override
@@ -150,39 +155,40 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        int pCount = partitions.size();
-        out.writeInt(pCount);
-        for (Integer partition : partitions) {
-            out.writeInt(partition);
-        }
+
         out.writeObject(operationFactory);
+        out.writeIntArray(partitions);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int pCount = in.readInt();
-        partitions = new ArrayList<Integer>(pCount);
-        for (int i = 0; i < pCount; i++) {
-            partitions.add(in.readInt());
-        }
+
         operationFactory = in.readObject();
+        partitions = in.readIntArray();
     }
 
-    // To make serialization of HashMap faster.
+    // implements IdentifiedDataSerializable to speed up serialization of arrays
     public static final class PartitionResponse implements IdentifiedDataSerializable {
 
-        private Map<Integer, Object> results;
+        private int[] partitions;
+        private Object[] results;
 
         public PartitionResponse() {
         }
 
-        public PartitionResponse(Map<Integer, Object> results) {
-            this.results = results != null ? results : Collections.<Integer, Object>emptyMap();
+        PartitionResponse(int[] partitions, Object[] results) {
+            this.partitions = partitions;
+            this.results = results;
         }
 
-        public Map<? extends Integer, ?> asMap() {
-            return results;
+        public void addResults(Map<Integer, Object> partitionResults) {
+            if (results == null) {
+                return;
+            }
+            for (int i = 0; i < results.length; i++) {
+                partitionResults.put(partitions[i], results[i]);
+            }
         }
 
         @Override
@@ -197,28 +203,25 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            int len = results != null ? results.size() : 0;
-            out.writeInt(len);
-            if (len > 0) {
-                for (Map.Entry<Integer, Object> entry : results.entrySet()) {
-                    out.writeInt(entry.getKey());
-                    out.writeObject(entry.getValue());
+            out.writeIntArray(partitions);
+            int resultLength = (results != null ? results.length : 0);
+            out.writeInt(resultLength);
+            if (resultLength > 0) {
+                for (Object result : results) {
+                    out.writeObject(result);
                 }
             }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            int len = in.readInt();
-            if (len > 0) {
-                results = new HashMap<Integer, Object>(len);
-                for (int i = 0; i < len; i++) {
-                    int pid = in.readInt();
-                    Object value = in.readObject();
-                    results.put(pid, value);
+            partitions = in.readIntArray();
+            int resultLength = in.readInt();
+            if (resultLength > 0) {
+                results = new Object[resultLength];
+                for (int i = 0; i < resultLength; i++) {
+                    results[i] = in.readObject();
                 }
-            } else {
-                results = Collections.emptyMap();
             }
         }
     }

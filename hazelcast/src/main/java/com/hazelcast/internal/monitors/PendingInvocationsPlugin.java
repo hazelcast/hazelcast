@@ -16,23 +16,42 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.ItemCounter;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A {@link PerformanceMonitorPlugin} that aggregates the pending invocation so that per type of operation, the occurrence
  * count is displayed.
  */
 public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
+
+    /**
+     * The period in seconds the PerformanceMonitor PendingInvocationPlugin runs.
+     *
+     * With the pending invocation plugins an aggregation is made per type of operation how many pending
+     * invocations there are.
+     *
+     * This plugin is very cheap to use.
+     *
+     * If set to 0, the plugin is disabled.
+     */
+    public static final HazelcastProperty PERIOD_SECONDS
+            = new HazelcastProperty("hazelcast.performance.monitor.pending.invocations.period.seconds", 0, SECONDS);
+
+    /**
+     * The minimum number of invocations per type of operation before it start logging this particular operation.
+     */
+    public static final HazelcastProperty THRESHOLD
+            = new HazelcastProperty("hazelcast.performance.monitor.pending.invocations.threshold", 1);
 
     private final InvocationRegistry invocationRegistry;
     private final ItemCounter<Class> occurrenceMap = new ItemCounter<Class>();
@@ -42,11 +61,11 @@ public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
 
     public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
         InternalOperationService operationService = nodeEngine.getOperationService();
-        this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationsRegistry();
+        this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
         this.logger = nodeEngine.getLogger(PendingInvocationsPlugin.class);
-        GroupProperties props = nodeEngine.getGroupProperties();
-        this.periodMillis = props.getMillis(PERFORMANCE_MONITOR_PENDING_INVOCATIONS_PERIOD_SECONDS);
-        this.threshold = props.getInteger(PERFORMANCE_MONITOR_PENDING_INVOCATIONS_THRESHOLD);
+        HazelcastProperties props = nodeEngine.getProperties();
+        this.periodMillis = props.getMillis(PERIOD_SECONDS);
+        this.threshold = props.getInteger(THRESHOLD);
     }
 
     @Override
@@ -71,7 +90,7 @@ public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
     }
 
     private void scan() {
-        for (Invocation invocation : invocationRegistry.invocations()) {
+        for (Invocation invocation : invocationRegistry) {
             occurrenceMap.add(invocation.op.getClass(), 1);
         }
     }

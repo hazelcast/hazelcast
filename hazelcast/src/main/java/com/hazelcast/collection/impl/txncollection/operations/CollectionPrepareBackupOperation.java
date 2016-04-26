@@ -16,37 +16,41 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.CollectionTxnUtil;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 
 public class CollectionPrepareBackupOperation extends CollectionOperation implements BackupOperation {
 
-    private long itemId;
-    private boolean removeOperation;
+    private long[] itemIds;
     private String transactionId;
 
     public CollectionPrepareBackupOperation() {
     }
 
-    public CollectionPrepareBackupOperation(String name, long itemId, String transactionId, boolean removeOperation) {
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public CollectionPrepareBackupOperation(String name, long[] itemIds, String transactionId) {
         super(name);
-        this.itemId = itemId;
-        this.removeOperation = removeOperation;
+        this.itemIds = itemIds;
         this.transactionId = transactionId;
     }
 
     @Override
     public void run() throws Exception {
         CollectionContainer collectionContainer = getOrCreateContainer();
-        if (removeOperation) {
-            collectionContainer.reserveRemoveBackup(itemId, transactionId);
-        } else {
-            collectionContainer.reserveAddBackup(itemId, transactionId);
+        for (long itemId : itemIds) {
+            if (CollectionTxnUtil.isRemove(itemId)) {
+                collectionContainer.reserveRemoveBackup(itemId, transactionId);
+            } else {
+                collectionContainer.reserveAddBackup(-itemId, transactionId);
+            }
         }
     }
 
@@ -58,16 +62,14 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        out.writeBoolean(removeOperation);
         out.writeUTF(transactionId);
+        out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        removeOperation = in.readBoolean();
         transactionId = in.readUTF();
+        itemIds = in.readLongArray();
     }
 }

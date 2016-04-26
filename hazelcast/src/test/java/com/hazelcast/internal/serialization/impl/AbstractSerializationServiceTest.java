@@ -1,7 +1,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -44,7 +44,7 @@ public class AbstractSerializationServiceTest {
     public void setup() {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
         abstractSerializationService = (AbstractSerializationService) defaultSerializationServiceBuilder
-                .setVersion(SerializationService.VERSION_1).build();
+                .setVersion(InternalSerializationService.VERSION_1).build();
     }
 
     @Test
@@ -111,7 +111,7 @@ public class AbstractSerializationServiceTest {
 
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
         Data data = abstractSerializationService.toData(new StringBuffer());
-        abstractSerializationService.destroy();
+        abstractSerializationService.dispose();
         abstractSerializationService.toObject(data);
     }
 
@@ -129,7 +129,7 @@ public class AbstractSerializationServiceTest {
 
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
         Data data = abstractSerializationService.toData(new StringBuffer());
-        abstractSerializationService.destroy();
+        abstractSerializationService.dispose();
 
         BufferObjectDataInput in = abstractSerializationService.createObjectDataInput(data);
         in.position(HeapData.TYPE_OFFSET);
@@ -179,7 +179,7 @@ public class AbstractSerializationServiceTest {
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testSerializerFor_ServiceInactive() throws Exception {
-        abstractSerializationService.destroy();
+        abstractSerializationService.dispose();
         abstractSerializationService.serializerFor(new CustomSerializationTest.Foo());
     }
 

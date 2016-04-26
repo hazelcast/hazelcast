@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 /**
  * A factory for creating {@link BufferPool} instances.
@@ -26,5 +26,5 @@ import com.hazelcast.internal.serialization.SerializationService;
  */
 public interface BufferPoolFactory {
 
-    BufferPool create(SerializationService serializationService);
+    BufferPool create(InternalSerializationService serializationService);
 }

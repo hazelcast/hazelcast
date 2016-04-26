@@ -2,9 +2,11 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -99,6 +101,12 @@ public class MapValuesTest extends HazelcastTestSupport {
         // there should only be a value; no key.
         assertNull(row.getKey());
         assertEquals(serializationService.toData("a"), row.getValue());
+    }
+
+    @Test
+    public void testSerializationServiceNullClassLoaderProblem() throws Exception {
+        // If the classloader is null the following call throws NullPointerException
+        map.values(new InstanceOfPredicate(SampleObjects.PortableEmployee.class));
     }
 
     static class GoodPredicate implements Predicate<String, String> {

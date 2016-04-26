@@ -69,6 +69,14 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
 
     private HazelcastInstance getOrCreateInstance(ClassLoader classLoader, Properties properties, boolean isDefaultURI)
             throws URISyntaxException, IOException {
+        HazelcastInstance instanceItself =
+                (HazelcastInstance) properties.get(HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF);
+
+        // If instance itself is specified via properties, get instance through it.
+        if (instanceItself != null) {
+            return instanceItself;
+        }
+
         String location = properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION);
         // If config location is specified, get instance through it.
         if (location != null) {
@@ -102,6 +110,10 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
             return HazelcastClient.getHazelcastClientByName(instanceName);
         }
 
+        return getInstanceThroughDefaultInstanceIfItIsDefault(isDefaultURI);
+    }
+
+    private HazelcastInstance getInstanceThroughDefaultInstanceIfItIsDefault(boolean isDefaultURI) {
         HazelcastInstance instance = null;
         // No instance specified with name of config location,
         // so we are going on with the default one if the URI is the default.

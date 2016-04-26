@@ -452,64 +452,51 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         Node attName = node.getAttributes().getNamedItem("name");
         String name = getTextContent(attName);
 
-        Node attSnapshotEnabled = node.getAttributes().getNamedItem("snapshot-enabled");
-        boolean snapshotEnabled = getBooleanValue(getTextContent(attSnapshotEnabled));
-
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
         wanReplicationConfig.setName(name);
-        wanReplicationConfig.setSnapshotEnabled(snapshotEnabled);
 
         for (Node nodeTarget : childElements(node)) {
             String nodeName = cleanNodeName(nodeTarget);
-            if ("target-cluster".equals(nodeName)) {
-                WanTargetClusterConfig wanTarget = new WanTargetClusterConfig();
-                String groupName = getAttribute(nodeTarget, "group-name");
-                String groupPassword = getAttribute(nodeTarget, "group-password");
-                if (groupName != null) {
-                    wanTarget.setGroupName(groupName);
-                }
-                if (groupPassword != null) {
-                    wanTarget.setGroupPassword(groupPassword);
-                }
+            if ("wan-publisher".equals(nodeName)) {
+                WanPublisherConfig publisherConfig = new WanPublisherConfig();
+                publisherConfig.setGroupName(getAttribute(nodeTarget, "group-name"));
                 for (Node targetChild : childElements(nodeTarget)) {
-                    handleWanTargetConfig(wanTarget, targetChild);
+                    handleWanPublisherConfig(publisherConfig, targetChild);
                 }
-                wanReplicationConfig.addTargetClusterConfig(wanTarget);
+                wanReplicationConfig.addWanPublisherConfig(publisherConfig);
+            } else if ("wan-consumer".equals(nodeName)) {
+                WanConsumerConfig consumerConfig = new WanConsumerConfig();
+                for (Node targetChild : childElements(nodeTarget)) {
+                    handleWanConsumerConfig(consumerConfig, targetChild);
+                }
+                wanReplicationConfig.setWanConsumerConfig(consumerConfig);
             }
+
         }
         config.addWanReplicationConfig(wanReplicationConfig);
     }
 
-    private void handleWanTargetConfig(WanTargetClusterConfig wanTarget, Node targetChild) {
+    private void handleWanPublisherConfig(WanPublisherConfig publisherConfig, Node targetChild) {
         String targetChildName = cleanNodeName(targetChild);
-        if ("replication-impl".equals(targetChildName)) {
-            wanTarget.setReplicationImpl(getTextContent(targetChild));
-        } else if ("end-points".equals(targetChildName)) {
-            for (Node address : childElements(targetChild)) {
-                String addressNodeName = cleanNodeName(address);
-                if ("address".equals(addressNodeName)) {
-                    String addressStr = getTextContent(address);
-                    wanTarget.addEndpoint(addressStr);
-                }
-            }
-        } else if ("acknowledge-type".equals(targetChildName)) {
-            String acknowledgeType = getTextContent(targetChild);
-            wanTarget.setAcknowledgeType(WanAcknowledgeType.valueOf(upperCaseInternal(acknowledgeType)));
+        if ("class-name".equals(targetChildName)) {
+            publisherConfig.setClassName(getTextContent(targetChild));
         } else if ("queue-full-behavior".equals(targetChildName)) {
             String queueFullBehavior = getTextContent(targetChild);
-            wanTarget.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(queueFullBehavior)));
-        } else if ("batch-size".equals(targetChildName)) {
-            int batchSize = getIntegerValue("batch-size", getTextContent(targetChild));
-            wanTarget.setBatchSize(batchSize);
-        } else if ("batch-max-delay-millis".equals(targetChildName)) {
-            long batchMaxDelayMillis = getLongValue("batch-max-delay-millis", getTextContent(targetChild));
-            wanTarget.setBatchMaxDelayMillis(batchMaxDelayMillis);
+            publisherConfig.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(queueFullBehavior)));
         } else if ("queue-capacity".equals(targetChildName)) {
             int queueCapacity = getIntegerValue("queue-capacity", getTextContent(targetChild));
-            wanTarget.setQueueCapacity(queueCapacity);
-        } else if ("response-timeout-millis".equals(targetChildName)) {
-            long responseTimeoutMillis = getLongValue("response-timeout-millis", getTextContent(targetChild));
-            wanTarget.setResponseTimeoutMillis(responseTimeoutMillis);
+            publisherConfig.setQueueCapacity(queueCapacity);
+        } else if ("properties".equals(targetChildName)) {
+            fillProperties(targetChild, publisherConfig.getProperties());
+        }
+    }
+
+    private void handleWanConsumerConfig(WanConsumerConfig consumerConfig, Node targetChild) {
+        String targetChildName = cleanNodeName(targetChild);
+        if ("class-name".equals(targetChildName)) {
+            consumerConfig.setClassName(getTextContent(targetChild));
+        } else if ("properties".equals(targetChildName)) {
+            fillProperties(targetChild, consumerConfig.getProperties());
         }
     }
 
@@ -1220,6 +1207,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheConfig.setMergePolicy(value);
             } else if ("hot-restart".equals(nodeName)) {
                 cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
+            } else if ("disable-per-entry-invalidation-events".equals(nodeName)) {
+                cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(value));
             }
         }
         this.config.addCacheConfig(cacheConfig);
@@ -1634,6 +1623,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 tConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
+            } else if ("multi-threading-enabled".equals(nodeName)) {
+                tConfig.setMultiThreadingEnabled(getBooleanValue(getTextContent(n)));
             }
         }
         config.addTopicConfig(tConfig);

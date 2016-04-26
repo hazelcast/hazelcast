@@ -17,10 +17,10 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.HazelcastInstance;
@@ -83,7 +83,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
-        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST, "false");
+        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         config.getNetworkConfig().addAddress(illegalAddress).addAddress("localhost");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
 
@@ -100,7 +100,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig config = new ClientConfig();
-        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST, "false");
+        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         config.getNetworkConfig().setSmartRouting(false);
 
         InetSocketAddress socketAddress1 = server1.getCluster().getLocalMember().getSocketAddress();
@@ -133,8 +133,8 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
         final Connection connectionToServer = connectionManager.getConnection(serverAddress);
 
-        connectionManager.destroyConnection(connectionToServer);
-        connectionManager.destroyConnection(connectionToServer);
+        connectionManager.destroyConnection(connectionToServer, null);
+        connectionManager.destroyConnection(connectionToServer, null);
 
         assertEquals("connection removed should be called only once", 1, listener.count.get());
     }

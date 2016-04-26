@@ -16,6 +16,7 @@
 
 package com.hazelcast.osgi.impl;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.ClientService;
@@ -40,10 +41,10 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.osgi.HazelcastOSGiInstance;
-import com.hazelcast.osgi.HazelcastOSGiService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.osgi.HazelcastOSGiInstance;
+import com.hazelcast.osgi.HazelcastOSGiService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -130,6 +131,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public <E> ITopic<E> getReliableTopic(String name) {
         return delegatedInstance.getReliableTopic(name);
+    }
+
+    @Override
+    public <K, V> ICache<K, V> getCache(String name) {
+        return delegatedInstance.getCache(name);
     }
 
     @Override

@@ -17,20 +17,20 @@
 package com.hazelcast.collection.impl.txnqueue.operations;
 
 import com.hazelcast.collection.impl.queue.QueueContainer;
+import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
-import com.hazelcast.collection.impl.queue.operations.QueueOperation;
+import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
 /**
  * Peek operation for the transactional queue.
  */
-public class TxnPeekOperation extends QueueOperation implements WaitSupport {
+public class TxnPeekOperation extends QueueOperation implements BlockingOperation {
 
     private long itemId;
     private String transactionId;

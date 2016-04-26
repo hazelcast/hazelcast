@@ -18,15 +18,15 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.ascii.TextWriteHandler;
-import com.hazelcast.nio.tcp.NewClientWriteHandler;
+import com.hazelcast.nio.tcp.ClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
-import com.hazelcast.internal.util.counters.SwCounter;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -40,14 +40,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.stringToBytes;
-import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * The writing side of the {@link TcpIpConnection}.
@@ -92,18 +92,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].out");
     }
 
-    @Probe(name = "interestedOps", level = DEBUG)
-    private long interestOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.interestOps();
-    }
-
-    @Probe(name = "readyOps", level = DEBUG)
-    private long readyOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.readyOps();
-    }
-
     @Override
     public int totalFramesPending() {
         return writeQueue.size() + urgentWriteQueue.size();
@@ -141,7 +129,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
     @Probe(name = "idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
-        return max(System.currentTimeMillis() - lastWriteTime, 0);
+        return max(currentTimeMillis() - lastWriteTime, 0);
     }
 
     @Probe(name = "isScheduled", level = DEBUG)
@@ -181,7 +169,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
                 registerOp(SelectionKey.OP_WRITE);
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-                writeHandler = new NewClientWriteHandler();
+                writeHandler = new ClientWriteHandler();
             } else {
                 configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
                 writeHandler = new TextWriteHandler(connection);
@@ -224,8 +212,9 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
                 return null;
             }
 
-            if (frame instanceof TaskFrame) {
-                ((TaskFrame) frame).run();
+            if (frame.getClass() == TaskFrame.class) {
+                TaskFrame taskFrame = (TaskFrame) frame;
+                taskFrame.task.run();
                 continue;
             }
 
@@ -431,7 +420,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         urgentWriteQueue.clear();
 
         ShutdownTask shutdownTask = new ShutdownTask();
-        offer(shutdownTask);
+        offer(new TaskFrame(shutdownTask));
         shutdownTask.awaitCompletion();
     }
 
@@ -442,12 +431,12 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
     @Override
     public void requestMigration(NonBlockingIOThread newOwner) {
-        offer(new StartMigrationTask(newOwner));
+        offer(new TaskFrame(new StartMigrationTask(newOwner)));
     }
 
     @Override
     public String toString() {
-        return connection + ".writeHandler";
+        return connection + ".socketWriter";
     }
 
     /**
@@ -456,8 +445,13 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
      * - multiple NonBlockingIOThread-tasks for a SocketWriter on multiple NonBlockingIOThread
      * - multiple NonBlockingIOThread-tasks for a SocketWriter on the same NonBlockingIOThread.
      */
-    private abstract class TaskFrame implements OutboundFrame {
-        abstract void run();
+    private static final class TaskFrame implements OutboundFrame {
+
+        private final Runnable task;
+
+        private TaskFrame(Runnable task) {
+            this.task = task;
+        }
 
         @Override
         public boolean isUrgent() {
@@ -471,7 +465,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
      *
      * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
      */
-    private class StartMigrationTask extends TaskFrame {
+    private final class StartMigrationTask implements Runnable {
         // field is called 'theNewOwner' to prevent any ambiguity problems with the writeHandler.newOwner.
         // Else you get a lot of ugly WriteHandler.this.newOwner is ...
         private final NonBlockingIOThread theNewOwner;
@@ -481,7 +475,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         }
 
         @Override
-        void run() {
+        public void run() {
             assert newOwner == null : "No migration can be in progress";
 
             if (ioThread == theNewOwner) {
@@ -493,11 +487,11 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         }
     }
 
-    private class ShutdownTask extends TaskFrame {
+    private class ShutdownTask implements Runnable {
         private final CountDownLatch latch = new CountDownLatch(1);
 
         @Override
-        void run() {
+        public void run() {
             shutdown = true;
             try {
                 socketChannel.closeOutbound();

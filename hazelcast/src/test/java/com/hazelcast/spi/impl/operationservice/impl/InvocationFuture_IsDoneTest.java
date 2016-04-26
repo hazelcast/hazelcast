@@ -40,22 +40,13 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         assertTrue(future.isDone());
     }
 
-    @Test
-    public void whenWaitResponse() {
-        DummyOperation op = new GetLostPartitionOperation();
-
-        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
-        future.set(InternalResponse.WAIT_RESPONSE);
-
-        assertFalse(future.isDone());
-    }
 
     @Test
     public void whenInterruptedResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
-        future.set(InternalResponse.INTERRUPTED_RESPONSE);
+        future.complete(InvocationValue.INTERRUPTED);
 
         assertTrue(future.isDone());
     }
@@ -65,7 +56,7 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
-        future.set(InternalResponse.TIMEOUT_RESPONSE);
+        future.complete(InvocationValue.CALL_TIMEOUT);
 
         assertTrue(future.isDone());
     }

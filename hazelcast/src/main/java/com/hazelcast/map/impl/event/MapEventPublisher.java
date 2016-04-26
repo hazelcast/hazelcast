@@ -56,4 +56,6 @@ public interface MapEventPublisher {
      * some conditions internally.
      */
     void hintMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected, int partitionId);
+
+    boolean hasEventListener(String mapName);
 }

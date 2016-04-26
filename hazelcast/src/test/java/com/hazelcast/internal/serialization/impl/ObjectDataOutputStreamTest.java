@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.SerializationV1Dataserializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -26,17 +26,17 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class ObjectDataOutputStreamTest {
 
-    private SerializationService mockSerializationService;
+    private InternalSerializationService mockSerializationService;
     private ObjectDataOutputStream dataOutputStream;
     private OutputStream mockOutputStream;
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void before() throws Exception {
         DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        serializationService = defaultSerializationServiceBuilder.setVersion(SerializationService.VERSION_1).build();
+        serializationService = defaultSerializationServiceBuilder.setVersion(InternalSerializationService.VERSION_1).build();
 
-        mockSerializationService = mock(SerializationService.class);
+        mockSerializationService = mock(InternalSerializationService.class);
         Mockito.when(mockSerializationService.getByteOrder()).thenReturn(serializationService.getByteOrder());
 
         mockOutputStream = mock(OutputStream.class);

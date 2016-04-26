@@ -18,6 +18,8 @@ package com.hazelcast.spi;
 
 /**
  * Marker interface for non-thread-safe classes.
+ *
+ * @deprecated since 3.7.
  */
 public interface NonThreadSafe {
 }

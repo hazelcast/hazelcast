@@ -17,7 +17,8 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+
 import java.util.Hashtable;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
@@ -26,11 +27,11 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
  * Management bean for {@link com.hazelcast.spi.OperationService}
  */
 @ManagedDescription("HazelcastInstance.OperationService")
-public class OperationServiceMBean extends HazelcastMBean<OperationService> {
+public class OperationServiceMBean extends HazelcastMBean<InternalOperationService> {
 
     private static final int INITIAL_CAPACITY = 3;
 
-    public OperationServiceMBean(HazelcastInstance hazelcastInstance, OperationService operationService,
+    public OperationServiceMBean(HazelcastInstance hazelcastInstance, InternalOperationService operationService,
                                  ManagementService service) {
         super(operationService, service);
 
@@ -75,6 +76,6 @@ public class OperationServiceMBean extends HazelcastMBean<OperationService> {
     @ManagedAnnotation("operationThreadCount")
     @ManagedDescription("Number of threads executing operations")
     public long getOperationThreadCount() {
-        return managedObject.getPartitionOperationThreadCount();
+        return managedObject.getPartitionThreadCount();
     }
 }

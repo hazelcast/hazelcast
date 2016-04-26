@@ -16,17 +16,16 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -67,7 +66,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         textCommandService.sendResponse(command);
     }
 
-    private void handleChangeClusterState(HttpPostCommand command) throws UnsupportedEncodingException  {
+    private void handleChangeClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
         String groupName = URLDecoder.decode(strList[0], "UTF-8");
@@ -105,7 +104,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             res = res.replace("${STATUS}", "fail");
             res = res.replace("${STATE}", "null");
         }
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON , stringToBytes(res));
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
     private void handleGetClusterState(HttpPostCommand command) throws UnsupportedEncodingException {
@@ -129,7 +128,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             res = res.replace("${STATUS}", "fail");
             res = res.replace("${STATE}", "null");
         }
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON , stringToBytes(res));
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
     private void handleForceStart(HttpPostCommand command) throws UnsupportedEncodingException {
@@ -150,11 +149,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         } catch (Throwable throwable) {
             res = res.replace("${STATUS}", "fail");
         }
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON , stringToBytes(res));
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
         textCommandService.sendResponse(command);
     }
 
-    private void handleClusterShutdown(HttpPostCommand command)  throws UnsupportedEncodingException {
+    private void handleClusterShutdown(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
         String groupName = URLDecoder.decode(strList[0], "UTF-8");
@@ -176,7 +175,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         } catch (Throwable throwable) {
             res = res.replace("${STATUS}", "fail");
         }
-        command.setResponse(HttpCommand.CONTENT_TYPE_JSON , stringToBytes(res));
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
         textCommandService.sendResponse(command);
     }
 
@@ -215,7 +214,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleManagementCenterUrlChange(HttpPostCommand command) throws UnsupportedEncodingException {
-        if (textCommandService.getNode().getGroupProperties().getBoolean(GroupProperty.MC_URL_CHANGE_ENABLED)) {
+        if (textCommandService.getNode().getProperties().getBoolean(GroupProperty.MC_URL_CHANGE_ENABLED)) {
             byte[] res = HttpCommand.RES_204;
             byte[] data = command.getData();
             String[] strList = bytesToString(data).split("&");

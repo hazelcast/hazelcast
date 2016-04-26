@@ -71,14 +71,14 @@ public interface MapOperationProvider {
 
     MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues);
 
-    MapOperation createPutAllOperation(String name, MapEntries mapEntries, boolean initialLoad);
+    MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
     MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence);
 
     MapOperation createTxnDeleteOperation(String name, Data dataKey, long version);
 
     MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
-                                              boolean shouldLoad);
+                                              boolean shouldLoad, boolean blockReads);
 
     MapOperation createTxnSetOperation(String name, Data dataKey, Data value, long version, long ttl);
 

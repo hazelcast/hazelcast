@@ -45,7 +45,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         topic = hz.getReliableTopic(topicConfig.getName());
     }
 
-    @Test(timeout=600000)
+    @Test(timeout = 600000)
     public void test() throws InterruptedException {
         final StressMessageListener listener1 = new StressMessageListener(1);
         topic.addMessageListener(listener1);

@@ -17,16 +17,11 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.IPartition;
+import com.hazelcast.spi.partition.IPartition;
 
 public interface InternalPartition extends IPartition {
 
     int MAX_REPLICA_COUNT = MAX_BACKUP_COUNT + 1;
-
-    /**
-     * Indicates that a replica index is waiting for a backup sync
-     */
-    int SYNC_WAITING = -1;
 
     int getReplicaIndex(Address address);
 }

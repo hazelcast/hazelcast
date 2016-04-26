@@ -32,8 +32,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -299,7 +299,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testClientListenerDisconnected() throws InterruptedException {
         Config config = new Config();
-        config.setProperty(GroupProperty.IO_THREAD_COUNT, "1");
+        config.setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "1");
 
         final HazelcastInstance hz = hazelcastFactory.newHazelcastInstance(config);
         final HazelcastInstance hz2 = hazelcastFactory.newHazelcastInstance(config);

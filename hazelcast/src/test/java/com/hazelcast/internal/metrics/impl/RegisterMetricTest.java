@@ -78,7 +78,7 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         assertFalse(names.contains("foo.field2"));
         assertFalse(names.contains("foo.method1"));
         assertFalse(names.contains("foo.method2"));
- }
+    }
 
     public class MultiFieldAndMethod {
         @Probe

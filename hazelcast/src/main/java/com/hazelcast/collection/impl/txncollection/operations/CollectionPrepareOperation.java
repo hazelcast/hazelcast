@@ -17,29 +17,29 @@
 package com.hazelcast.collection.impl.txncollection.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
-import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 
 public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
-    private boolean removeOperation;
     private String transactionId;
-    private long itemId = -1;
+    private long[] itemIds;
 
     public CollectionPrepareOperation() {
     }
 
-    public CollectionPrepareOperation(int partitionId, String name, String serviceName, long itemId, String transactionId,
-                                      boolean removeOperation) {
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public CollectionPrepareOperation(int partitionId, String name, String serviceName, long[] itemIds, String transactionId) {
         super(name);
         setPartitionId(partitionId);
         setServiceName(serviceName);
-        this.itemId = itemId;
-        this.removeOperation = removeOperation;
+        this.itemIds = itemIds;
         this.transactionId = transactionId;
     }
 
@@ -50,13 +50,15 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionPrepareBackupOperation(name, itemId, transactionId, removeOperation);
+        return new CollectionPrepareBackupOperation(name, itemIds, transactionId);
     }
 
     @Override
     public void run() throws Exception {
         CollectionContainer collectionContainer = getOrCreateContainer();
-        collectionContainer.ensureReserve(itemId);
+        for (long itemId : itemIds) {
+            collectionContainer.ensureReserve(Math.abs(itemId));
+        }
     }
 
     @Override
@@ -67,16 +69,14 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        out.writeBoolean(removeOperation);
         out.writeUTF(transactionId);
+        out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        removeOperation = in.readBoolean();
         transactionId = in.readUTF();
+        itemIds = in.readLongArray();
     }
 }

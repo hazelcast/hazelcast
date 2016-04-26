@@ -16,19 +16,19 @@
 
 package com.hazelcast.topic.impl.reliable;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Message;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 
 
@@ -36,7 +36,7 @@ import com.hazelcast.topic.ReliableMessageListener;
  * An {@link com.hazelcast.core.ExecutionCallback} that will try to read an item from the ringbuffer or blocks
  * if no item is available. All data that are read is pushed into the {@link com.hazelcast.core.MessageListener}. It is
  * a self-perpetuating stream of async calls.
- *
+ * <p/>
  * The ReliableTopicRunner keeps track of the sequence.
  */
 class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {

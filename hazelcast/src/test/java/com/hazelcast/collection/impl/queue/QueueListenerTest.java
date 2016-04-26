@@ -98,12 +98,14 @@ public class QueueListenerTest extends HazelcastTestSupport {
     private static class DummyListener implements ItemListener, Serializable {
         final CountDownLatch latch = new CountDownLatch(2);
 
-        DummyListener() { }
+        DummyListener() {
+        }
 
         @Override
         public void itemAdded(ItemEvent item) {
             latch.countDown();
         }
+
         @Override
         public void itemRemoved(ItemEvent item) {
             latch.countDown();

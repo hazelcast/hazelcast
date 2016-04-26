@@ -16,16 +16,13 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
-import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.LifecycleService;
@@ -33,13 +30,13 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
-import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
  * ClientInvocation handles routing of a request from client
@@ -48,7 +45,7 @@ import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECO
  * 2) Should it be retried
  * 3) How many times it is retried
  */
-public class ClientInvocation implements Runnable, ExecutionCallback {
+public class ClientInvocation implements Runnable {
 
     public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     protected static final int UNASSIGNED_PARTITION = -1;
@@ -59,7 +56,6 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
-    private final int heartBeatInterval;
 
     private final Address address;
     private final int partitionId;
@@ -82,16 +78,13 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         this.address = address;
         this.connection = connection;
 
-        ClientProperties clientProperties = client.getClientProperties();
-        long waitTime = clientProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
+        HazelcastProperties hazelcastProperties = client.getProperties();
+        long waitTime = hazelcastProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
         long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
         retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
 
         logger = ((ClientInvocationServiceSupport) invocationService).invocationLogger;
         clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
-
-        int interval = clientProperties.getInteger(HEARTBEAT_INTERVAL);
-        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
@@ -123,9 +116,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
     }
 
     public ClientInvocationFuture invoke() {
-        if (clientMessage == null) {
-            throw new IllegalStateException("Request can not be null");
-        }
+        assert (clientMessage != null);
 
         try {
             invokeOnSelection();
@@ -161,7 +152,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         try {
             invoke();
         } catch (Throwable e) {
-            clientInvocationFuture.setResponse(e);
+            clientInvocationFuture.complete(e);
         }
     }
 
@@ -169,14 +160,14 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         if (clientMessage == null) {
             throw new IllegalArgumentException("response can't be null");
         }
-        clientInvocationFuture.setResponse(clientMessage);
+        clientInvocationFuture.complete(clientMessage);
 
     }
 
     public void notifyException(Throwable exception) {
 
         if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.setResponse(new HazelcastClientNotActiveException(exception.getMessage()));
+            clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage()));
             return;
         }
 
@@ -192,7 +183,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
                 }
             }
         }
-        clientInvocationFuture.setResponse(exception);
+        clientInvocationFuture.complete(exception);
     }
 
     private boolean handleRetry() {
@@ -217,7 +208,7 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
 
     private void rescheduleInvocation() {
         ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
-        executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS, this);
+        executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     protected boolean shouldRetry() {
@@ -228,27 +219,12 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
         return connection != null;
     }
 
-    boolean isConnectionHealthy(long elapsed) {
-        if (elapsed >= heartBeatInterval) {
-            if (sendConnection != null) {
-                return sendConnection.isHeartBeating();
-            } else {
-                return true;
-            }
-        }
-        return true;
-    }
-
     public EventHandler getEventHandler() {
         return handler;
     }
 
     public void setEventHandler(EventHandler handler) {
         this.handler = handler;
-    }
-
-    public int getHeartBeatInterval() {
-        return heartBeatInterval;
     }
 
     public boolean shouldBypassHeartbeatCheck() {
@@ -279,21 +255,6 @@ public class ClientInvocation implements Runnable, ExecutionCallback {
     }
 
     public static boolean isRetryable(Throwable t) {
-        return t instanceof IOException
-                || t instanceof HazelcastInstanceNotActiveException
-                || t instanceof AuthenticationException;
-    }
-
-
-    @Override
-    public void onResponse(Object response) {
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Failure during retry ", t);
-        }
-        clientInvocationFuture.setResponse(t);
+        return t instanceof IOException || t instanceof HazelcastInstanceNotActiveException;
     }
 }

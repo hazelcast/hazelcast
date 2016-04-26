@@ -27,7 +27,6 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
@@ -36,6 +35,7 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -45,6 +45,7 @@ import com.hazelcast.util.UuidUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
@@ -52,6 +53,14 @@ import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAM
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+/**
+ * Reliable proxy implementation of {@link ITopic}.
+ * <p/>
+ * Unlike other topics, a reliable topic has its own {@link com.hazelcast.ringbuffer.Ringbuffer} to store events and
+ * has its own executor to process events.
+ *
+ * @param <E> message type
+ */
 public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     private static final int MAX_BACKOFF = 2000;
@@ -263,23 +272,24 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
                 return;
             }
 
-            if (t instanceof StaleSequenceException) {
-                StaleSequenceException staleSequenceException = (StaleSequenceException) t;
+            if (t instanceof ExecutionException && t.getCause() instanceof StaleSequenceException) {
+                // StaleSequenceException.getHeadSeq() is not available on the client-side, see #7317
+                long remoteHeadSeq = ringbuffer.headSequence();
 
                 if (listener.isLossTolerant()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("MessageListener " + listener + " on topic: " + name + " ran into a stale sequence. "
                                 + "Jumping from oldSequence: " + sequence
-                                + " to sequence: " + staleSequenceException.getHeadSeq());
+                                + " to sequence: " + remoteHeadSeq);
                     }
-                    sequence = staleSequenceException.getHeadSeq();
+                    sequence = remoteHeadSeq;
                     next();
                     return;
                 }
 
                 logger.warning("Terminating MessageListener:" + listener + " on topic: " + name + ". "
                         + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                        + "head: " + staleSequenceException.getHeadSeq() + " sequence:" + sequence);
+                        + "head: " + remoteHeadSeq + " sequence:" + sequence);
             } else if (t instanceof HazelcastInstanceNotActiveException) {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Terminating MessageListener " + listener + " on topic: " + name + ". "

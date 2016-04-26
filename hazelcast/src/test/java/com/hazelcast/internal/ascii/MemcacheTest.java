@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,14 +59,14 @@ public class MemcacheTest extends HazelcastTestSupport {
 
     @BeforeClass
     public static void setup() throws IOException {
-        config.setProperty(GroupProperty.MEMCACHE_ENABLED.getName(),"true");
+        config.setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
     }
-    
+
     @AfterClass
     public static void tearDown() throws IOException {
         Hazelcast.shutdownAll();
     }
-    
+
     public MemcachedClient getMemcacheClient(HazelcastInstance instance) throws IOException {
         final LinkedList<InetSocketAddress> addresses = new LinkedList<InetSocketAddress>();
         addresses.add(instance.getCluster().getLocalMember().getSocketAddress());

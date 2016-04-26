@@ -47,7 +47,7 @@ public class MapPutAllMessageTask
         }
 
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
-        return operationProvider.createPutAllOperation(parameters.name, mapEntries, false);
+        return operationProvider.createPutAllOperation(parameters.name, mapEntries);
     }
 
     @Override

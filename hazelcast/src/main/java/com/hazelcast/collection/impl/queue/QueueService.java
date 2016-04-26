@@ -24,15 +24,14 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.IPartition;
-import com.hazelcast.partition.IPartitionService;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -46,7 +45,9 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -63,7 +64,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 /**
@@ -93,11 +93,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        ScheduledExecutorService defaultScheduledExecutor
-                = nodeEngine.getExecutionService().getDefaultScheduledExecutor();
-        QueueEvictionProcessor entryProcessor = new QueueEvictionProcessor(nodeEngine, this);
+        TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
+        QueueEvictionProcessor entryProcessor = new QueueEvictionProcessor(nodeEngine);
         this.queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(
-                defaultScheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+                globalScheduler, entryProcessor, ScheduleType.POSTPONE);
         this.logger = nodeEngine.getLogger(QueueService.class);
     }
 
@@ -177,18 +176,18 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearMigrationData(event.getPartitionId());
+            clearQueuesHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId());
+            clearQueuesHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
     }
 
-    private void clearMigrationData(int partitionId) {
+    private void clearQueuesHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
@@ -196,16 +195,15 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             final String name = entry.getKey();
             final QueueContainer container = entry.getValue();
             int containerPartitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
-            if (containerPartitionId == partitionId) {
+            if (containerPartitionId != partitionId) {
+                continue;
+            }
+
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > container.getConfig().getTotalBackupCount()) {
                 container.destroy();
                 iterator.remove();
             }
         }
-    }
-
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearMigrationData(partitionId);
     }
 
     @Override

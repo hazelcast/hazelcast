@@ -28,7 +28,7 @@ public class MutableConfigurationTest
         extends javax.cache.configuration.MutableConfigurationTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

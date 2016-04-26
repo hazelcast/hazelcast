@@ -18,7 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.record.AbstractRecord;
 import com.hazelcast.map.impl.record.DataRecordFactory;
@@ -62,7 +62,7 @@ public class IndexTest {
 
     static final short FACTORY_ID = 1;
 
-    final SerializationService ss = new DefaultSerializationServiceBuilder()
+    final InternalSerializationService ss = new DefaultSerializationServiceBuilder()
             .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     private PartitioningStrategy partitionStrategy = new DefaultPartitioningStrategy();

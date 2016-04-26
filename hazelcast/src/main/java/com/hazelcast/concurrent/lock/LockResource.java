@@ -30,6 +30,8 @@ public interface LockResource {
 
     boolean isTransactional();
 
+    boolean shouldBlockReads();
+
     long getThreadId();
 
     int getLockCount();

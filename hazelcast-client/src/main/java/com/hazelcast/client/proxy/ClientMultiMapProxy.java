@@ -83,6 +83,11 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
+ * Proxy implementation of {@link MultiMap}.
+ *
+ * @param <K> key
+ * @param <V> value
+ *
  * @author ali 5/19/13
  */
 public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K, V> {

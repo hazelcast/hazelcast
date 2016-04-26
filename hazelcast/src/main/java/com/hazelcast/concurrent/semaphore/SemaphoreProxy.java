@@ -27,7 +27,6 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -55,9 +54,10 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     public boolean init(int permits) {
         checkNotNegative(permits, "permits can't be negative");
 
-        InitOperation operation = new InitOperation(name, permits);
-        InternalCompletableFuture<Boolean> future = invoke(operation);
-        return future.getSafely();
+        Operation operation = new InitOperation(name, permits)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Boolean> future = invokeOnPartition(operation);
+        return future.join();
     }
 
     @Override
@@ -70,8 +70,9 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         checkNotNegative(permits, "permits can't be negative");
 
         try {
-            AcquireOperation operation = new AcquireOperation(name, permits, -1);
-            InternalCompletableFuture<Object> future = invoke(operation);
+            Operation operation = new AcquireOperation(name, permits, -1)
+                    .setPartitionId(partitionId);
+            InternalCompletableFuture<Object> future = invokeOnPartition(operation);
             future.get();
         } catch (Throwable t) {
             throw rethrowAllowInterrupted(t);
@@ -80,25 +81,28 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     @Override
     public int availablePermits() {
-        AvailableOperation operation = new AvailableOperation(name);
-        InternalCompletableFuture<Integer> future = invoke(operation);
-        return future.getSafely();
+        Operation operation = new AvailableOperation(name)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Integer> future = invokeOnPartition(operation);
+        return future.join();
     }
 
     @Override
     public int drainPermits() {
-        DrainOperation operation = new DrainOperation(name);
-        InternalCompletableFuture<Integer> future = invoke(operation);
-        return future.getSafely();
+        Operation operation = new DrainOperation(name)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Integer> future = invokeOnPartition(operation);
+        return future.join();
     }
 
     @Override
     public void reducePermits(int reduction) {
         checkNotNegative(reduction, "reduction can't be negative");
 
-        ReduceOperation operation = new ReduceOperation(name, reduction);
-        InternalCompletableFuture<Object> future = invoke(operation);
-        future.getSafely();
+        Operation operation = new ReduceOperation(name, reduction)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Object> future = invokeOnPartition(operation);
+        future.join();
     }
 
     @Override
@@ -110,9 +114,10 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     public void release(int permits) {
         checkNotNegative(permits, "permits can't be negative");
 
-        ReleaseOperation operation = new ReleaseOperation(name, permits);
-        InternalCompletableFuture future = invoke(operation);
-        future.getSafely();
+        Operation operation = new ReleaseOperation(name, permits)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture future = invokeOnPartition(operation);
+        future.join();
     }
 
     @Override
@@ -143,20 +148,13 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         checkNotNegative(permits, "permits can't be negative");
 
         try {
-            AcquireOperation operation = new AcquireOperation(name, permits, unit.toMillis(timeout));
-            Future<Boolean> future = invoke(operation);
+            Operation operation = new AcquireOperation(name, permits, unit.toMillis(timeout))
+                    .setPartitionId(partitionId);
+            Future<Boolean> future = invokeOnPartition(operation);
             return future.get();
         } catch (Throwable t) {
             throw rethrowAllowInterrupted(t);
         }
-    }
-
-    private <T> InternalCompletableFuture<T> invoke(Operation operation) {
-        NodeEngine nodeEngine = getNodeEngine();
-        OperationService operationService = nodeEngine.getOperationService();
-        //noinspection unchecked
-        return (InternalCompletableFuture) operationService.invokeOnPartition(
-                SemaphoreService.SERVICE_NAME, operation, partitionId);
     }
 
     @Override

@@ -34,6 +34,11 @@ import com.hazelcast.core.IFunction;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
+/**
+ * Proxy implementation of {@link IAtomicReference}.
+ *
+ * @param <E> type of referenced object
+ */
 public class ClientAtomicReferenceProxy<E> extends PartitionSpecificClientProxy implements IAtomicReference<E> {
 
     public ClientAtomicReferenceProxy(String serviceName, String objectId) {

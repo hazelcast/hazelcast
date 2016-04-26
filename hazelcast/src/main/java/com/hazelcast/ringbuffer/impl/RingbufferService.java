@@ -19,7 +19,6 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -29,6 +28,7 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,8 +37,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.partition.MigrationEndpoint.SOURCE;
+import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -122,33 +122,33 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == SOURCE) {
-            clearMigrationData(event.getPartitionId());
+            clearRingbuffersHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == DESTINATION) {
-            clearMigrationData(event.getPartitionId());
+            clearRingbuffersHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
     }
 
-    private void clearMigrationData(int partitionId) {
+    private void clearRingbuffersHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
         Iterator<Map.Entry<String, RingbufferContainer>> iterator = containers.entrySet().iterator();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         while (iterator.hasNext()) {
             Map.Entry<String, RingbufferContainer> entry = iterator.next();
             String name = entry.getKey();
             int containerPartitionId = partitionService.getPartitionId(getPartitionKey(name));
-            if (containerPartitionId == partitionId) {
+            if (containerPartitionId != partitionId) {
+                continue;
+            }
+
+            RingbufferContainer container = entry.getValue();
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > container.getConfig().getTotalBackupCount()) {
                 iterator.remove();
             }
         }
-    }
-
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearMigrationData(partitionId);
     }
 
     public RingbufferContainer getContainer(String name) {

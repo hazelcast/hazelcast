@@ -17,7 +17,6 @@
 package com.hazelcast.spring.security;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.security.IPermissionPolicy;
 
 import javax.security.auth.Subject;

@@ -24,8 +24,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.GroupProperty;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -65,8 +66,8 @@ public class SimpleReplicatedMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
-        cfg.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL, "NOISY");
-        cfg.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS, "5");
+        cfg.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL.getName(), "NOISY");
+        cfg.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName(), "5");
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleReplicatedMapTest");
         random = new Random();

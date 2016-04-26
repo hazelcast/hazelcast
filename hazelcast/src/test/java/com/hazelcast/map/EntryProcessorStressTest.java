@@ -55,7 +55,7 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
 
         final int maxIterations = 50;
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxIterations+1);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxIterations + 1);
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
 
         for (int iteration = 0; iteration < maxIterations; iteration++) {
@@ -92,7 +92,8 @@ public class EntryProcessorStressTest extends HazelcastTestSupport {
 
         private int id;
 
-        public SimpleEntryProcessor() {}
+        public SimpleEntryProcessor() {
+        }
 
         public SimpleEntryProcessor(Integer id) {
             this.id = id;

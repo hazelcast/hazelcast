@@ -17,6 +17,9 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOperation;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOperation;
@@ -28,19 +31,16 @@ import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.Node;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
 
@@ -104,8 +104,8 @@ public class ClusterJoinManager {
         clusterStateManager = clusterService.getClusterStateManager();
         clusterClock = clusterService.getClusterClock();
 
-        maxWaitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
-        waitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
+        maxWaitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
+        waitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
         whileFinalizeJoinsExceptionHandler = logAllExceptions(logger, "While waiting finalize join calls...",
                 Level.WARNING);
     }
@@ -424,7 +424,7 @@ public class ClusterJoinManager {
         nodeEngine.getOperationService().send(op, target);
     }
 
-    boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
+    private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
         MemberImpl member = clusterService.getMember(joinMessage.getAddress());
         if (member == null) {
             return false;
@@ -441,9 +441,11 @@ public class ClusterJoinManager {
                 Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
                 boolean isPostJoinOperation = postJoinOps != null && postJoinOps.length > 0;
                 PostJoinOperation postJoinOp = isPostJoinOperation ? new PostJoinOperation(postJoinOps) : null;
+                PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
+
                 Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()),
                         postJoinOp, clusterClock.getClusterTime(), clusterStateManager.getState(),
-                        node.partitionService.createPartitionState(), false);
+                        partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
             } else {
                 sendMasterAnswer(target);
@@ -494,7 +496,7 @@ public class ClusterJoinManager {
 
                 int count = members.size() - 1 + setJoins.size();
                 List<Future> calls = new ArrayList<Future>(count);
-                PartitionRuntimeState partitionState = node.partitionService.createPartitionState();
+                PartitionRuntimeState partitionState = node.getPartitionService().createPartitionState();
                 for (MemberInfo member : setJoins) {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,

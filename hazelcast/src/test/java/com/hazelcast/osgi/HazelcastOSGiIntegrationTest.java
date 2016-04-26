@@ -32,7 +32,7 @@ public class HazelcastOSGiIntegrationTest {
     @Configuration
     public Option[] config() {
         return options(bundle("reference:file:" + PathUtils.getBaseDir() + "/hazelcast/target/classes"),
-                       junitBundles());
+                junitBundles());
     }
 
     @After

@@ -201,7 +201,7 @@ public interface RecordStore<R extends Record> {
 
     int size();
 
-    boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl);
+    boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads);
 
     boolean extendLock(Data key, String caller, long threadId, long ttl);
 

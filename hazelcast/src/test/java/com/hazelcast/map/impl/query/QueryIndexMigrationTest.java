@@ -20,11 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.Value;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -189,7 +189,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     private Config newConfigWithIndex(String mapName, String attribute) {
         Config config = new Config();
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig(attribute, false));
         return config;
     }

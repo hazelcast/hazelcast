@@ -30,6 +30,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+
 public abstract class AbstractHandler implements MigratableHandler {
 
     protected final ILogger logger;
@@ -60,6 +62,18 @@ public abstract class AbstractHandler implements MigratableHandler {
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLogger(this.getClass().getName());
         this.initialOps = initialOps;
+    }
+
+    @Probe(level = DEBUG)
+    private long opsInterested() {
+        SelectionKey selectionKey = this.selectionKey;
+        return selectionKey == null ? -1 : selectionKey.interestOps();
+    }
+
+    @Probe(level = DEBUG)
+    private long opsReady() {
+        SelectionKey selectionKey = this.selectionKey;
+        return selectionKey == null ? -1 : selectionKey.readyOps();
     }
 
     @Override

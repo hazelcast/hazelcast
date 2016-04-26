@@ -16,12 +16,12 @@
 
 package com.hazelcast.topic.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
@@ -35,11 +35,13 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.MapUtil;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -63,6 +65,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
             };
     private EventService eventService;
     private ILogger logger;
+    private final AtomicInteger counter = new AtomicInteger(0);
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -143,9 +146,10 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         getLocalTopicStats(topicName).incrementReceives();
     }
 
-    public void publishEvent(String name, TopicEvent event) {
+    public void publishEvent(String name, TopicEvent event, boolean multithreaded) {
         Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
-        eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, name.hashCode());
+        int partitionId = multithreaded ? counter.incrementAndGet() : name.hashCode();
+        eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, partitionId);
     }
 
     public String addMessageListener(String name, MessageListener listener, boolean localOnly) {

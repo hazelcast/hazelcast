@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
@@ -37,11 +37,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The RingbufferContainer is responsible for storing the actual content of a ringbuffer.
- *
+ * <p/>
  * Currently the Ringbuffer is not a partitioned data-structure. So all data of a ringbuffer is stored in a single partition
  * and replicated to the replica's. No thread-safety is needed since a partition can only be accessed by a single thread at
  * any given moment.
- *
+ * <p/>
  * The ringItems is the ring that contains the actual items.
  * The ringExpiration contains the expiration time of an item.
  * The if a time to live is set, the ringExpiration is created. Otherwise it is null to safe space.

@@ -16,10 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedWriter;
@@ -31,12 +28,11 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
+import static com.hazelcast.internal.monitors.PerformanceMonitor.MAX_ROLLED_FILE_COUNT;
+import static com.hazelcast.internal.monitors.PerformanceMonitor.MAX_ROLLED_FILE_SIZE_MB;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static java.lang.Math.round;
 import static java.lang.String.format;
-import static java.lang.System.currentTimeMillis;
 
 /**
  * Represents the PerformanceLogFile.
@@ -48,12 +44,12 @@ final class PerformanceLog {
     private static final int ONE_MB = 1024 * 1024;
     private static final int INITIAL_CHAR_BUFF_SIZE = 4 * 1024;
 
-    // points to the file where the log content is written to.
+    // points to the file where the log content is written to
     volatile File file;
 
     private final PerformanceMonitor performanceMonitor;
     private final ILogger logger;
-    private final String pathname;
+    private final String fileName;
 
     private char[] charBuff = new char[INITIAL_CHAR_BUFF_SIZE];
     private int index;
@@ -61,7 +57,7 @@ final class PerformanceLog {
     private int maxRollingFileCount;
     private int maxRollingFileSizeBytes;
     private final PerformanceLogWriter logWriter;
-    // calling File.length generates a lot of litter; so we'll track it ourselves.
+    // calling File.length generates a lot of litter; so we'll track it ourselves
     private long fileLength;
 
     PerformanceLog(PerformanceMonitor performanceMonitor) {
@@ -70,27 +66,20 @@ final class PerformanceLog {
                 ? new SingleLinePerformanceLogWriter()
                 : new MultiLinePerformanceLogWriter();
         this.logger = performanceMonitor.logger;
-        this.pathname = getPathName(performanceMonitor.hazelcastInstance);
+        this.fileName = performanceMonitor.fileName + "-%03d.log";
 
-        this.maxRollingFileCount = performanceMonitor.properties.getInteger(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT);
-        // we accept a float so it becomes easier to testing to create a small file.
+        this.maxRollingFileCount = performanceMonitor.properties.getInteger(MAX_ROLLED_FILE_COUNT);
+        // we accept a float so it becomes easier to testing to create a small file
         this.maxRollingFileSizeBytes = round(
-                ONE_MB * performanceMonitor.properties.getFloat(PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB));
+                ONE_MB * performanceMonitor.properties.getFloat(MAX_ROLLED_FILE_SIZE_MB));
 
         logger.finest("maxRollingFileSizeBytes:" + maxRollingFileSizeBytes + " maxRollingFileCount:" + maxRollingFileCount);
-    }
-
-    private static String getPathName(HazelcastInstance hazelcastInstance) {
-        Member localMember = hazelcastInstance.getCluster().getLocalMember();
-        Address address = localMember.getAddress();
-        String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
-        return "performance-" + addressString + "-" + currentTimeMillis() + "-%03d.log";
     }
 
     public void render(PerformanceMonitorPlugin plugin) {
         try {
             if (file == null) {
-                file = new File(format(pathname, index));
+                file = new File(performanceMonitor.directory, format(fileName, index));
                 bufferedWriter = newWriter();
                 renderStaticPlugins();
             }
@@ -149,8 +138,8 @@ final class PerformanceLog {
         fileLength = 0;
         index++;
 
-        File file = new File(format(pathname, index - maxRollingFileCount));
-        // we don't care if the file was deleted or not.
+        File file = new File(format(fileName, index - maxRollingFileCount));
+        // we don't care if the file was deleted or not
         file.delete();
     }
 }

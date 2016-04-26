@@ -16,14 +16,16 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Various collection utility methods, mainly targeted to use internally.
@@ -34,52 +36,54 @@ public final class CollectionUtil {
     }
 
     /**
-     * Returns {@code true} if the given collection is null or empty, otherwise returns {@code false}.
+     * Returns {@code true} if the given collection is {@code null} or empty, otherwise returns {@code false}.
      *
-     * @param collection the given collection.
-     * @return {@code true} if collection is empty.
+     * @param collection the given collection
+     * @return {@code true} if collection is empty
      */
     public static boolean isEmpty(Collection collection) {
         return collection == null || collection.isEmpty();
     }
 
     /**
-     * Returns {@code true} if the given collection is not null and not empty, otherwise returns {@code false}.
+     * Returns {@code true} if the given collection is not {@code null} and not empty, otherwise returns {@code false}.
      *
-     * @param collection the given collection.
-     * @return {@code true} if collection is not empty.
+     * @param collection the given collection
+     * @return {@code true} if collection is not empty
      */
     public static boolean isNotEmpty(Collection collection) {
         return !isEmpty(collection);
     }
 
     /**
-     * Add value to list of values in the map. Creates a new list if it doesn't exist for the key
+     * Adds a value to a list of values in the map.
      *
-     * @param map
-     * @param key
-     * @param value
-     * @return the updated list of values.
+     * Creates a new list if no list is found for the key.
+     *
+     * @param map   the given map of lists
+     * @param key   the key of the target list
+     * @param value the value to add to the target list
+     * @return the updated list of values
      */
     public static <K, V> List<V> addToValueList(Map<K, List<V>> map, K key, V value) {
-
-        List<V> values = map.get(key);
-        if (values == null) {
-            values = new ArrayList<V>();
-            map.put(key, values);
+        List<V> valueList = map.get(key);
+        if (valueList == null) {
+            valueList = new ArrayList<V>();
+            map.put(key, valueList);
         }
-        values.add(value);
+        valueList.add(value);
 
-        return values;
+        return valueList;
     }
 
     /**
-     * Return n-th item or null if collection is smaller
+     * Returns the n-th item or {@code null} if collection is smaller.
      *
-     * @param collection
-     * @param position
-     * @param <T>
-     * @return
+     * @param collection the given collection
+     * @param position   position of the wanted item
+     * @return the item on position or {@code null} if the given collection is too small
+     *
+     * @throws NullPointerException if collection is {@code null}
      */
     public static <T> T getItemAtPositionOrNull(Collection<T> collection, int position) {
         if (position >= collection.size()) {
@@ -97,19 +101,55 @@ public final class CollectionUtil {
     }
 
     /**
-     * @param collection           collection of objects to be converted to collection of data
-     * @param serializationService will be used for converting object to data
+     * Converts a collection of any type to a collection of {@link Data}.
+     *
+     * @param collection           the given collection
+     * @param serializationService will be used for converting object to {@link Data}
      * @return collection of data
-     * @throws java.lang.NullPointerException if collection is null, or contains a null element
+     *
+     * @throws NullPointerException if collection is {@code null} or contains a {@code null} item
      */
-    public static <C> Collection<Data> objectToDataCollection(Collection<C> collection
-            , SerializationService serializationService) {
+    public static <C> Collection<Data> objectToDataCollection(Collection<C> collection,
+                                                              SerializationService serializationService) {
         List<Data> dataKeys = new ArrayList<Data>(collection.size());
-        for (C c : collection) {
-            Preconditions.checkNotNull(c);
-            dataKeys.add(serializationService.toData(c));
+        for (C item : collection) {
+            checkNotNull(item);
+            dataKeys.add(serializationService.toData(item));
         }
         return dataKeys;
     }
 
+    /**
+     * Converts a {@link Collection<Integer>} to a primitive {@code int[]} array.
+     *
+     * @param collection the given collection
+     * @return a primitive int[] array
+     *
+     * @throws NullPointerException if collection is {@code null}
+     */
+    public static int[] toIntArray(Collection<Integer> collection) {
+        int[] collectionArray = new int[collection.size()];
+        int index = 0;
+        for (Integer item : collection) {
+            collectionArray[index++] = item;
+        }
+        return collectionArray;
+    }
+
+    /**
+     * Converts a {@link Collection<Long>} to a primitive {@code long[]} array.
+     *
+     * @param collection the given collection
+     * @return a primitive long[] array
+     *
+     * @throws NullPointerException if collection is {@code null}
+     */
+    public static long[] toLongArray(Collection<Long> collection) {
+        long[] collectionArray = new long[collection.size()];
+        int index = 0;
+        for (Long item : collection) {
+            collectionArray[index++] = item;
+        }
+        return collectionArray;
+    }
 }

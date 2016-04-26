@@ -31,7 +31,6 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -39,8 +38,10 @@ import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.RecordingMapStore;
 import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWithCounter;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -70,10 +71,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -797,8 +800,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     private Config createChunkedMapLoaderConfig(String mapName, int chunkSize, ChunkedLoader chunkedLoader) {
         Config cfg = getConfig();
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
-        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), String.valueOf(chunkSize));
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -976,6 +979,41 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(1, mapStore.getLoadCount());
     }
 
+    @Test
+    public void testMapListener_containsOldValue_afterPutAll() {
+        Config config = newConfig(new SimpleMapStore<Integer, Integer>());
+
+        HazelcastInstance member = createHazelcastInstance(config);
+        IMap<Integer, Integer> imap = member.getMap(randomName());
+
+        // 1. first value is 1.
+        imap.put(1, 1);
+
+        final AtomicReference<Integer> oldValue = new AtomicReference<Integer>();
+        imap.addEntryListener(new EntryUpdatedListener<Integer, Integer>() {
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                oldValue.set(event.getOldValue());
+            }
+        }, true);
+
+        // 2. second value is 2.
+        HashMap<Integer, Integer> batch = new HashMap<Integer, Integer>();
+        batch.put(1, 2);
+
+        imap.putAll(batch);
+
+        // expect oldValue equals 1.
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Integer value = oldValue.get();
+                assertNotNull(value);
+                assertEquals(1, value.intValue());
+            }
+        });
+    }
+
     private Config newConfig(Object storeImpl) {
         return newConfig("default", storeImpl, 0, MapStoreConfig.InitialLoadMode.LAZY);
     }
@@ -1116,7 +1154,9 @@ public class MapStoreTest extends AbstractMapStoreTest {
         public Set loadAllKeys() {
             callCount.incrementAndGet();
             latchLoadAllKeys.countDown();
-            if (!loadAllKeys) return null;
+            if (!loadAllKeys) {
+                return null;
+            }
             return store.keySet();
         }
 
@@ -1330,7 +1370,9 @@ public class MapStoreTest extends AbstractMapStoreTest {
             }
             callCount.incrementAndGet();
             events.offer(STORE_EVENTS.LOAD_ALL_KEYS);
-            if (!loadAllKeys) return null;
+            if (!loadAllKeys) {
+                return null;
+            }
             return store.keySet();
         }
 

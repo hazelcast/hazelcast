@@ -28,7 +28,7 @@ public class EntryProcessorExceptionTest
         extends org.jsr107.tck.processor.EntryProcessorExceptionTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

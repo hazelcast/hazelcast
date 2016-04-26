@@ -4,11 +4,10 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
@@ -117,7 +116,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     private int getPartitionCount() {
         Node node = getNode(getHazelcastInstance());
         if (node != null) {
-            return node.groupProperties.getInteger(GroupProperty.PARTITION_COUNT);
+            return node.getProperties().getInteger(GroupProperty.PARTITION_COUNT);
         }
         return Integer.valueOf(GroupProperty.PARTITION_COUNT.getDefaultValue());
     }

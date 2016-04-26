@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.core.EntryListener;
@@ -58,7 +57,6 @@ import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +68,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.Collections.emptyMap;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.IMap} interface.
@@ -88,7 +87,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
         Data key = toData(k, partitionStrategy);
-        return (V) toObject(getInternal(key));
+        return toObject(getInternal(key));
     }
 
     @Override
@@ -104,7 +103,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data key = toData(k, partitionStrategy);
         Data value = toData(v);
         Data result = putInternal(key, value, ttl, timeunit);
-        return (V) toObject(result);
+        return toObject(result);
     }
 
     @Override
@@ -130,7 +129,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data key = toData(k, partitionStrategy);
         Data value = toData(v);
         Data result = putIfAbsentInternal(key, value, ttl, timeunit);
-        return (V) toObject(result);
+        return toObject(result);
     }
 
     @Override
@@ -162,7 +161,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
         Data key = toData(k, partitionStrategy);
         Data value = toData(v);
-        return (V) toObject(replaceInternal(key, value));
+        return toObject(replaceInternal(key, value));
     }
 
     @Override
@@ -186,7 +185,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
         Data key = toData(k, partitionStrategy);
         Data result = removeInternal(key);
-        return (V) toObject(result);
+        return toObject(result);
     }
 
     @Override
@@ -228,8 +227,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
-        Data k = toData(key, partitionStrategy);
-        lockSupport.lock(nodeEngine, k);
+        Data dataKey = toData(key, partitionStrategy);
+        lockSupport.lock(nodeEngine, dataKey);
     }
 
     @Override
@@ -237,8 +236,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkPositive(leaseTime, "leaseTime should be positive");
 
-        Data k = toData(key, partitionStrategy);
-        lockSupport.lock(getNodeEngine(), k, timeUnit.toMillis(leaseTime));
+        Data dataKey = toData(key, partitionStrategy);
+        lockSupport.lock(getNodeEngine(), dataKey, timeUnit.toMillis(leaseTime));
     }
 
     @Override
@@ -246,20 +245,20 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
-        Data k = toData(key, partitionStrategy);
-        lockSupport.unlock(nodeEngine, k);
+        Data dataKey = toData(key, partitionStrategy);
+        lockSupport.unlock(nodeEngine, dataKey);
     }
 
     @Override
     public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        return tryRemoveInternal(k, timeout, timeunit);
+        Data dataKey = toData(key, partitionStrategy);
+        return tryRemoveInternal(dataKey, timeout, timeunit);
     }
 
     @Override
-    public Future<V> getAsync(K k) {
+    public ICompletableFuture<V> getAsync(K k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
         Data key = toData(k, partitionStrategy);
@@ -277,7 +276,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future<V> putAsync(K key, V value) {
+    public ICompletableFuture<V> putAsync(K key, V value) {
         return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
@@ -286,14 +285,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        Data v = toData(value);
-        return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit),
+        Data dataKey = toData(key, partitionStrategy);
+        Data dataValue = toData(value);
+        return new DelegatingFuture<V>(putAsyncInternal(dataKey, dataValue, ttl, timeunit),
                 getNodeEngine().getSerializationService());
     }
 
     @Override
-    public Future<Void> setAsync(K key, V value) {
+    public ICompletableFuture<Void> setAsync(K key, V value) {
         return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
@@ -302,83 +301,83 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        Data v = toData(value);
-        return new DelegatingFuture<Void>(setAsyncInternal(k, v, ttl, timeunit),
+        Data dataKey = toData(key, partitionStrategy);
+        Data dataValue = toData(value);
+        return new DelegatingFuture<Void>(setAsyncInternal(dataKey, dataValue, ttl, timeunit),
                 getNodeEngine().getSerializationService());
     }
 
     @Override
-    public ICompletableFuture removeAsync(K key) {
+    public ICompletableFuture<V> removeAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        return new DelegatingFuture<V>(removeAsyncInternal(k), getNodeEngine().getSerializationService());
+        Data dataKey = toData(key, partitionStrategy);
+        return new DelegatingFuture<V>(removeAsyncInternal(dataKey), getNodeEngine().getSerializationService());
     }
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
         if (CollectionUtil.isEmpty(keys)) {
-            return Collections.emptyMap();
+            return emptyMap();
         }
 
         List<Data> requestedKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {
             checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-            Data k = toData(key, partitionStrategy);
-            requestedKeys.add(k);
+            Data dataKey = toData(key, partitionStrategy);
+            requestedKeys.add(dataKey);
         }
 
-        List resultingKeyValuePairs = new ArrayList(keys.size());
+        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keys.size());
         getAllObjectInternal(requestedKeys, resultingKeyValuePairs);
 
-        Map<Object, Object> result = MapUtil.createHashMap(keys.size());
+        Map<K, V> result = MapUtil.createHashMap(keys.size());
         for (int i = 0; i < resultingKeyValuePairs.size(); ) {
-            Object key = toObject(resultingKeyValuePairs.get(i++));
-            Object value = toObject(resultingKeyValuePairs.get(i++));
+            K key = toObject(resultingKeyValuePairs.get(i++));
+            V value = toObject(resultingKeyValuePairs.get(i++));
             result.put(key, value);
         }
-        return (Map<K, V>) result;
+        return result;
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
-        // Note, putAllInternal() will take care of the null key/value checks.
-        putAllInternal(m);
+    public void putAll(Map<? extends K, ? extends V> map) {
+        // NOTE: putAllInternal() will take care of the null key/value checks
+        putAllInternal(map);
     }
 
     @Override
     public boolean tryLock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        return lockSupport.tryLock(getNodeEngine(), k);
+        Data dataKey = toData(key, partitionStrategy);
+        return lockSupport.tryLock(getNodeEngine(), dataKey);
     }
 
     @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        return lockSupport.tryLock(getNodeEngine(), k, time, timeunit);
+        Data dataKey = toData(key, partitionStrategy);
+        return lockSupport.tryLock(getNodeEngine(), dataKey, time, timeunit);
     }
 
     @Override
-    public boolean tryLock(K key, long time, TimeUnit timeunit,
-                           long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException {
+    public boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseTimeUnit)
+            throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        return lockSupport.tryLock(getNodeEngine(), k, time, timeunit, leaseTime, leaseTimeunit);
+        Data dataKey = toData(key, partitionStrategy);
+        return lockSupport.tryLock(getNodeEngine(), dataKey, time, timeunit, leaseTime, leaseTimeUnit);
     }
 
     @Override
     public void forceUnlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data k = toData(key, partitionStrategy);
-        lockSupport.forceUnlock(getNodeEngine(), k);
+        Data dataKey = toData(key, partitionStrategy);
+        lockSupport.forceUnlock(getNodeEngine(), dataKey);
     }
 
     @Override
@@ -527,10 +526,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public EntryView<K, V> getEntryView(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(toData(key, partitionStrategy));
+        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView<K, V>) getEntryViewInternal(toData(key, partitionStrategy));
         if (entryViewInternal == null) {
             return null;
         }
@@ -569,10 +569,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     /**
-     * This method clears the map and deletaAll on MapStore which if connected to a database,
+     * This method clears the map and calls deleteAll on MapStore which if connected to a database,
      * will delete the records from that database.
      * <p/>
-     * If you wish to clear the map only without calling deleteAll, use
+     * If you wish to clear the map only without calling deleteAll, use #clearMapOnly.
      *
      * @see #clearMapOnly
      */
@@ -582,15 +582,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     /**
-     * This method clears the map.It does not invoke deleteAll on any associated MapStore.
+     * This method clears the map. It does not invoke deleteAll on any associated MapStore.
      *
      * @see #clear
      */
-    //TODO: Why is this not tested
-    //TODO: how come the implementation is the same as clear? I think this code is broken.
-    //TODO: This method also isn't part of the IMap API.
+    //TODO: why is this not tested?
+    //TODO: how come the implementation is the same as clear? I think this code is broken
+    //TODO: This method also isn't part of the IMap API
     public void clearMapOnly() {
-        //need a different method here that does not call deleteAll
+        // TODO: need a different method here that does not call deleteAll()
         clearInternal();
     }
 
@@ -668,7 +668,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             return queryEngine.queryLocalPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
         } else {
             QueryResult result = queryEngine.invokeQueryLocalPartitions(name, predicate, IterationType.KEY);
-            // todo: uqique is not needed since map keys are unique by nature.
+            // TODO: unique is not needed since map keys are unique by nature
             return new QueryResultCollection<K>(
                     getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
         }
@@ -687,8 +687,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (keys == null || keys.contains(null)) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        if (keys.size() == 0) {
-            throw new IllegalArgumentException(EMPTY_COLLECTION_IS_NOT_ALLOWED);
+        if (keys.isEmpty()) {
+            return emptyMap();
         }
         Set<Data> dataKeys = new HashSet<Data>(keys.size());
         for (K key : keys) {
@@ -725,8 +725,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         List<Data> result = new ArrayList<Data>();
 
         executeOnEntriesInternal(entryProcessor, predicate, result);
-        if (result == null || result.isEmpty()) {
-            return Collections.emptyMap();
+        if (result.isEmpty()) {
+            return emptyMap();
         }
 
         Map<K, Object> resultingMap = MapUtil.createHashMap(result.size() / 2);
@@ -740,11 +740,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return resultingMap;
     }
 
-
     @Override
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation) {
-
         HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
         JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
         return aggregate(supplier, aggregation, jobTracker);
@@ -754,7 +752,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation,
                                                     JobTracker jobTracker) {
-
         try {
             isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
@@ -775,7 +772,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             ICompletableFuture<Result> future = reducingJob.submit(collator);
             return future.get();
         } catch (Exception e) {
-            //todo: not what we want because it can lead to wrapping of even hazelcastexception
+            // TODO: not what we want, because it can lead to wrapping of HazelcastException
             throw new HazelcastException(e);
         }
     }
@@ -796,4 +793,3 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return "IMap{name='" + name + '\'' + '}';
     }
 }
-

@@ -17,9 +17,6 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessor;
@@ -27,6 +24,9 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,8 +67,8 @@ public final class MapDataStores {
     }
 
     private static WriteBehindQueue newWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
-        GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
-        final int capacity = groupProperties.getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
+        HazelcastProperties hazelcastProperties = mapServiceContext.getNodeEngine().getProperties();
+        final int capacity = hazelcastProperties.getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
         final AtomicInteger counter = mapServiceContext.getWriteBehindQueueItemCounter();
         return (writeCoalescing ? createDefaultWriteBehindQueue() : createBoundedWriteBehindQueue(capacity, counter));
     }

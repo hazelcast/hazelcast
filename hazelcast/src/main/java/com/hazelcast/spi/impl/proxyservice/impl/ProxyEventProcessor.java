@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.DistributedObjectUtil;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.Collection;
@@ -59,6 +60,6 @@ final class ProxyEventProcessor implements StripedRunnable {
 
     @Override
     public int getKey() {
-        return object.getName().hashCode();
+        return DistributedObjectUtil.getName(object).hashCode();
     }
 }

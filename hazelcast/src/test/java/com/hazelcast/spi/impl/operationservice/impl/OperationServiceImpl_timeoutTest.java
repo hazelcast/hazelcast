@@ -6,7 +6,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
@@ -32,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -51,7 +51,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        OperationServiceImplTest.assertNoLitterInOpService(hz);
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz);
     }
 
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
@@ -67,8 +67,8 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        OperationServiceImplTest.assertNoLitterInOpService(hz1);
-        OperationServiceImplTest.assertNoLitterInOpService(hz2);
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz1);
+        OperationServiceImpl_BasicTest.assertNoLitterInOpService(hz2);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     private void testOperationTimeout(int memberCount, boolean async) {
         assertTrue(memberCount > 0);
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "3000");
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(memberCount);
         HazelcastInstance[] instances = factory.newInstances(config);
@@ -125,7 +125,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
             });
         } else {
             try {
-                future.getSafely();
+                future.join();
                 fail("Should throw OperationTimeoutException!");
             } catch (OperationTimeoutException ignored) {
                 latch.countDown();
@@ -135,7 +135,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         assertOpenEventually("Should throw OperationTimeoutException", latch);
 
         for (HazelcastInstance instance : instances) {
-            OperationServiceImplTest.assertNoLitterInOpService(instance);
+            OperationServiceImpl_BasicTest.assertNoLitterInOpService(instance);
         }
     }
 
@@ -175,9 +175,8 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
     @Test
     public void testOperationTimeoutForLongRunningRemoteOperation() throws Exception {
-        int callTimeoutMillis = 500;
-        Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+        int callTimeoutMillis = 1000;
+        Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMillis);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -198,7 +197,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
     public void testOperationTimeoutForLongRunningLocalOperation() throws Exception {
         int callTimeoutMillis = 500;
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(callTimeoutMillis));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

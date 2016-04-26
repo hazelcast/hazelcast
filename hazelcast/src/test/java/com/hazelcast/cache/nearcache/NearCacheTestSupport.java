@@ -24,8 +24,8 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
     protected NearCache<Integer, String> createNearCache(String name,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
         return createNearCache(name,
-                               createNearCacheConfig(name, NearCacheConfig.DEFAULT_MEMORY_FORMAT),
-                               nearCacheRecordStore);
+                createNearCacheConfig(name, NearCacheConfig.DEFAULT_MEMORY_FORMAT),
+                nearCacheRecordStore);
     }
 
     protected class ManagedNearCacheRecordStore implements NearCacheRecordStore<Integer, String> {
@@ -364,7 +364,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         NearCacheConfig nearCacheConfig =
                 createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME,
-                                      NearCacheConfig.DEFAULT_MEMORY_FORMAT);
+                        NearCacheConfig.DEFAULT_MEMORY_FORMAT);
         if (useTTL) {
             nearCacheConfig.setTimeToLiveSeconds(NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS - 1);
         } else {

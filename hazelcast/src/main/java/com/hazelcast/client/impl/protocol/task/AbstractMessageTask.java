@@ -25,11 +25,12 @@ import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -47,7 +48,7 @@ public abstract class AbstractMessageTask<P>
     protected final Connection connection;
     protected final ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final ILogger logger;
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
@@ -124,7 +125,7 @@ public abstract class AbstractMessageTask<P>
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             logger.severe(message);
-            exception = new AuthenticationException(message);
+            exception = new RetryableHazelcastException(new AuthenticationException(message));
         } else {
             exception = new HazelcastInstanceNotActiveException();
         }

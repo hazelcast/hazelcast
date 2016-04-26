@@ -199,7 +199,7 @@ public class CacheResourceTest
     public void testCloseableCacheListener() {
         CachingProvider provider =
                 HazelcastServerCachingProvider
-                    .createCachingProvider(factory.newHazelcastInstance());
+                        .createCachingProvider(factory.newHazelcastInstance());
 
         CacheManager cacheManager = provider.getCacheManager();
 
@@ -208,8 +208,8 @@ public class CacheResourceTest
         Factory<CloseableListener> listenerFactory = FactoryBuilder.factoryOf(listener);
         CompleteConfiguration<Object, Object> configuration =
                 new CacheConfig()
-                    .addCacheEntryListenerConfiguration(
-                        new MutableCacheEntryListenerConfiguration(listenerFactory, null, true, false));
+                        .addCacheEntryListenerConfiguration(
+                                new MutableCacheEntryListenerConfiguration(listenerFactory, null, true, false));
 
         Cache<Object, Object> cache = cacheManager.createCache("test", configuration);
         cache.close();

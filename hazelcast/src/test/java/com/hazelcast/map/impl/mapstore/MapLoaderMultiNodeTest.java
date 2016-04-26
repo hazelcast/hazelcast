@@ -7,7 +7,7 @@ import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -159,8 +159,8 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
     protected Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
         Config cfg = getConfig();
         cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
-        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE, Integer.toString(BATCH_SIZE));
-        cfg.setProperty(GroupProperty.PARTITION_COUNT, "31");
+        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE));
+        cfg.setProperty(GroupProperty.PARTITION_COUNT.getName(), "31");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setImplementation(loader).setInitialLoadMode(loadMode);

@@ -1,9 +1,9 @@
 package com.hazelcast.spi;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +28,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     public static final String DUMMY_SERVICE_NAME = "foobar";
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void setup() {
@@ -164,7 +164,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_serviceName_whenOverridesGetServiceName_thenNotSerialized(){
+    public void test_serviceName_whenOverridesGetServiceName_thenNotSerialized() {
         OperationWithServiceNameOverride op = new OperationWithServiceNameOverride();
         assertNull(op.getRawServiceName());
         assertFalse("service name should not be set", op.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
@@ -176,7 +176,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_serviceName_whenNotOverridesServiceName_thenSerialized(){
+    public void test_serviceName_whenNotOverridesServiceName_thenSerialized() {
         DummyOperation op = new DummyOperation();
         op.setServiceName(DUMMY_SERVICE_NAME);
         assertSame(DUMMY_SERVICE_NAME, op.getRawServiceName());
@@ -189,7 +189,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         assertTrue("service name should be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
     }
 
-    public void assertCopy(String expected, String actual){
+    public void assertCopy(String expected, String actual) {
         assertEquals(expected, actual);
         assertNotSame(expected, actual);
     }
@@ -202,7 +202,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
             BufferObjectDataInput in = serializationService.createObjectDataInput(out.toByteArray());
             Constructor constructor = op.getClass().getConstructor();
             constructor.setAccessible(true);
-            Operation copiedOperation = (Operation)constructor.newInstance();
+            Operation copiedOperation = (Operation) constructor.newInstance();
             copiedOperation.readData(in);
             return copiedOperation;
         } catch (Exception e) {
@@ -211,7 +211,9 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     private static class DummyOperation extends AbstractOperation {
-        public DummyOperation(){}
+        public DummyOperation() {
+        }
+
         @Override
         public void run() throws Exception {
 
@@ -220,7 +222,8 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
 
     private static class OperationWithServiceNameOverride extends AbstractOperation {
-        public OperationWithServiceNameOverride(){}
+        public OperationWithServiceNameOverride() {
+        }
 
         @Override
         public void run() throws Exception {

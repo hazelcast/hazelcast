@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordStatistics;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * A class providing static factory methods that create various entry view objects.

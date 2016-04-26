@@ -28,7 +28,7 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -116,7 +116,7 @@ public class CacheEntryProcessorTest extends HazelcastTestSupport {
         CacheManager cacheManager = cachingProvider.getCacheManager();
         CompleteConfiguration<Integer, String> cacheConfig =
                 new MutableConfiguration<Integer, String>()
-                    .setTypes(Integer.class, String.class);
+                        .setTypes(Integer.class, String.class);
         ICache<Integer, String> cache = cacheManager.createCache("MyCache", cacheConfig).unwrap(ICache.class);
 
         for (int i = 0; i < ENTRY_COUNT; i++) {

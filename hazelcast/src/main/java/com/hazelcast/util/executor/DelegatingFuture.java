@@ -18,8 +18,9 @@ package com.hazelcast.util.executor;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -32,7 +33,7 @@ import java.util.concurrent.TimeoutException;
 public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
     private final ICompletableFuture future;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final V defaultValue;
     private final boolean hasDefaultValue;
     private final Object mutex = new Object();
@@ -46,7 +47,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
         this.future = future;
-        this.serializationService = serializationService;
+        this.serializationService = (InternalSerializationService) serializationService;
         this.defaultValue = defaultValue;
         this.hasDefaultValue = defaultValue != null;
     }
@@ -105,6 +106,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         if (object instanceof Data) {
             Data data = (Data) object;
             object = serializationService.toObject(data);
+            //todo do we need to call dispose data here
             serializationService.disposeData(data);
         }
         return (V) object;

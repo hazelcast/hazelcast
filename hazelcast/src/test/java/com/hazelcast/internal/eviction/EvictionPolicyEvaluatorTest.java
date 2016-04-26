@@ -1,17 +1,9 @@
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.internal.eviction.Evictable;
-import com.hazelcast.internal.eviction.EvictionCandidate;
-import com.hazelcast.internal.eviction.EvictionConfiguration;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
-import com.hazelcast.internal.eviction.EvictionPolicyType;
-import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

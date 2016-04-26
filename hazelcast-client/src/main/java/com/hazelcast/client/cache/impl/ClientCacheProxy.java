@@ -33,7 +33,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -79,9 +78,8 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 public class ClientCacheProxy<K, V>
         extends AbstractClientCacheProxy<K, V> {
 
-    public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext clientContext,
-                            HazelcastClientCacheManager cacheManager) {
-        super(cacheConfig, clientContext, cacheManager);
+    public ClientCacheProxy(CacheConfig<K, V> cacheConfig) {
+        super(cacheConfig);
     }
 
     public NearCache getNearCache() {
@@ -311,11 +309,6 @@ public class ClientCacheProxy<K, V>
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
     public CacheManager getCacheManager() {
         return cacheManager;
     }
@@ -335,8 +328,10 @@ public class ClientCacheProxy<K, V>
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         CacheEventListenerAdaptor<K, V> adaptor =
-                new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
-                        clientContext.getSerializationService());
+                new CacheEventListenerAdaptor<K, V>(this,
+                                                    cacheEntryListenerConfiguration,
+                                                    clientContext.getSerializationService(),
+                                                    clientContext.getHazelcastInstance());
         EventHandler handler = createHandler(adaptor);
         String regId = clientContext.getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
         if (regId != null) {
@@ -423,6 +418,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
         EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
+        injectDependencies(listener);
         return clientContext.getListenerService().registerListener(createPartitionLostListenerCodec(), handler);
     }
 

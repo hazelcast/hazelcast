@@ -6,10 +6,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -18,6 +18,7 @@ import org.junit.After;
 import java.util.UUID;
 
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -46,7 +47,6 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
         }
         hazelcastFactory.terminateAll();
     }
-
 
     /**
      * This test calls {@link IMap} methods once which are expected to throw {@link QueryResultSizeExceededException}.
@@ -110,9 +110,9 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
 
     private Config createConfig(int partitionCount, int limit, int preCheckTrigger) {
         Config config = new Config();
-        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT, String.valueOf(limit));
-        config.setProperty(GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, String.valueOf(preCheckTrigger));
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), valueOf(partitionCount));
+        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), valueOf(limit));
+        config.setProperty(GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName(), valueOf(preCheckTrigger));
         return config;
     }
 

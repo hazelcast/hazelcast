@@ -33,12 +33,12 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -51,6 +51,11 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
+/**
+ * Proxy implementation of {@link Ringbuffer}.
+ *
+ * @param <E> the type of elements in this ringbuffer
+ */
 public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<E> {
 
     private static final ClientMessageDecoder ADD_ASYNC_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {

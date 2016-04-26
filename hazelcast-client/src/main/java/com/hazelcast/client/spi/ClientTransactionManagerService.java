@@ -22,6 +22,11 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import javax.transaction.xa.Xid;
 
+/**
+ * Manages the execution of client transactions and provides {@link TransactionContext}s.
+ * <p/>
+ * Client equivalent of {@link com.hazelcast.transaction.TransactionManagerService}.
+ */
 public interface ClientTransactionManagerService {
 
     <T> T executeTransaction(TransactionalTask<T> task);

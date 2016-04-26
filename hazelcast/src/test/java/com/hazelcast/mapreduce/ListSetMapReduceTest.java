@@ -61,8 +61,8 @@ public class ListSetMapReduceTest
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromList(list));
         ICompletableFuture<Map<String, Integer>> ICompletableFuture = job.chunkSize(10).mapper(new ListSetMapper())
-                                                                         .combiner(new ListSetCombinerFactory())
-                                                                         .reducer(new ListSetReducerFactory()).submit();
+                .combiner(new ListSetCombinerFactory())
+                .reducer(new ListSetReducerFactory()).submit();
 
         Map<String, Integer> result = ICompletableFuture.get();
 
@@ -97,8 +97,8 @@ public class ListSetMapReduceTest
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<String, Integer> job = jobTracker.newJob(KeyValueSource.fromSet(set));
         ICompletableFuture<Map<String, Integer>> ICompletableFuture = job.chunkSize(10).mapper(new ListSetMapper())
-                                                                         .combiner(new ListSetCombinerFactory())
-                                                                         .reducer(new ListSetReducerFactory()).submit();
+                .combiner(new ListSetCombinerFactory())
+                .reducer(new ListSetReducerFactory()).submit();
 
         Map<String, Integer> result = ICompletableFuture.get();
 

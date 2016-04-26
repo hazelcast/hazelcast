@@ -17,12 +17,12 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.record.AbstractRecord;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 
@@ -143,6 +143,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         // NOP intentionally.
     }
 
+    @Override
     public Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount) {
         return records.getRandomSamples(sampleCount);
     }

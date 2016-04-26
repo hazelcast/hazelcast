@@ -2,10 +2,10 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,10 +29,10 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.NOISY.toString());
-        config.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS, "1");
-        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE, "70");
-        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE, "70");
+        config.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL.getName(), HealthMonitorLevel.NOISY.toString());
+        config.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName(), "1");
+        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE.getName(), "70");
+        config.setProperty(GroupProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE.getName(), "70");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         healthMonitor = new HealthMonitor(getNode(hz));

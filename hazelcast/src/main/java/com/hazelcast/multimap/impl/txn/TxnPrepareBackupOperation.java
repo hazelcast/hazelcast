@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
@@ -44,7 +45,7 @@ public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation impleme
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (!container.txnLock(dataKey, caller, threadId, getCallId(), ttl + LOCK_EXTENSION_TIME_IN_MILLIS)) {
+        if (!container.txnLock(dataKey, caller, threadId, getCallId(), ttl + LOCK_EXTENSION_TIME_IN_MILLIS, true)) {
             throw new TransactionException(
                     "Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey)
             );

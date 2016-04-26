@@ -28,7 +28,7 @@ public class MutableCacheEntryListenerConfigurationTest
         extends javax.cache.configuration.MutableCacheEntryListenerConfigurationTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

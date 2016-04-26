@@ -35,8 +35,8 @@ import com.hazelcast.spi.PartitionReplicationEvent;
  * <li>Data migration commit/rollback through {@link com.hazelcast.spi.MigrationAwareService}.</li>
  * </ul>
  * </p>
- * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when {@link javax.cache.Caching}
- * class is found on the classpath.</p>
+ * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when JCache
+ * is located on the classpath, as determined by {@link JCacheDetector#isJcacheAvailable(ClassLoader)}.</p>
  * <p>
  * If registered, it will provide all the above cache operations for all partitions of the node which it
  * is registered on.
@@ -49,7 +49,8 @@ import com.hazelcast.spi.PartitionReplicationEvent;
  */
 public class CacheService extends AbstractCacheService {
 
-    @Override protected CachePartitionSegment newPartitionSegment(int partitionId) {
+    @Override
+    protected CachePartitionSegment newPartitionSegment(int partitionId) {
         return new CachePartitionSegment(this, partitionId);
     }
 

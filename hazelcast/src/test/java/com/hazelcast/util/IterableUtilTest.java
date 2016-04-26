@@ -19,19 +19,17 @@ package com.hazelcast.util;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -50,7 +48,7 @@ public class IterableUtilTest {
         });
 
         Iterator<String> iter = strings.iterator();
-        for(Integer i : numbers) {
+        for (Integer i : numbers) {
             assertEquals(i.toString(), iter.next());
         }
     }
@@ -61,12 +59,12 @@ public class IterableUtilTest {
 
         assertEquals(Integer.valueOf(1), limitedIterator.next());
         assertEquals(Integer.valueOf(2), limitedIterator.next());
-        assertFalse( limitedIterator.hasNext() );
+        assertFalse(limitedIterator.hasNext());
     }
 
     @Test
     public void testIterableIsEmpty_whenNullUsed() throws Exception {
-        assertEquals( emptyList(), IterableUtil.nullToEmpty(null) );
-        assertEquals( numbers, IterableUtil.nullToEmpty(numbers) );
+        assertEquals(emptyList(), IterableUtil.nullToEmpty(null));
+        assertEquals(numbers, IterableUtil.nullToEmpty(numbers));
     }
 }

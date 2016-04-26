@@ -6,7 +6,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -20,9 +19,9 @@ public class NearCacheTest extends NearCacheTestSupport {
                                                          NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
         return new DefaultNearCache<Integer, String>(name,
-                                                     nearCacheConfig,
-                                                     createNearCacheContext(),
-                                                     nearCacheRecordStore);
+                nearCacheConfig,
+                createNearCacheContext(),
+                nearCacheRecordStore);
     }
 
     @Test

@@ -20,7 +20,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -33,6 +32,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
@@ -77,7 +77,7 @@ public abstract class AbstractJoiner implements Joiner {
         this.config = node.config;
         this.clusterService = node.getClusterService();
         this.clusterJoinManager = clusterService.getClusterJoinManager();
-        mergeNextRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
+        mergeNextRunDelayMs = node.getProperties().getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
     }
 
     @Override
@@ -148,7 +148,7 @@ public abstract class AbstractJoiner implements Joiner {
         boolean allConnected = false;
         if (node.joined()) {
             logger.finest("Waiting for all connections");
-            int connectAllWaitSeconds = node.groupProperties.getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
+            int connectAllWaitSeconds = node.getProperties().getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
             while (checkCount++ < connectAllWaitSeconds && !allConnected) {
                 try {
@@ -173,7 +173,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected final long getMaxJoinMillis() {
-        return node.getGroupProperties().getMillis(GroupProperty.MAX_JOIN_SECONDS);
+        return node.getProperties().getMillis(GroupProperty.MAX_JOIN_SECONDS);
     }
 
     protected final long getMaxJoinTimeToMasterNode() {
@@ -181,7 +181,7 @@ public abstract class AbstractJoiner implements Joiner {
         // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
         // hence we add 10 seconds more
         return TimeUnit.SECONDS.toMillis(MIN_WAIT_SECONDS_BEFORE_JOIN)
-                + node.getGroupProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
+                + node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
     }
 
     @SuppressWarnings({"checkstyle:methodlength", "checkstyle:returncount",

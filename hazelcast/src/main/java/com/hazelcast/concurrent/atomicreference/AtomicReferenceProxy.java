@@ -33,9 +33,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicReferenceService>
@@ -50,74 +48,65 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
-    private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation, NodeEngine nodeEngine) {
-        try {
-            OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(AtomicReferenceService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable throwable) {
-            throw rethrow(throwable);
-        }
-    }
-
     @Override
     public void alter(IFunction<E, E> function) {
-        asyncAlter(function).getSafely();
+        asyncAlter(function).join();
     }
 
     @Override
     public InternalCompletableFuture<Void> asyncAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new AlterOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new AlterOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public E alterAndGet(IFunction<E, E> function) {
-        return asyncAlterAndGet(function).getSafely();
+        return asyncAlterAndGet(function).join();
     }
 
     @Override
     public InternalCompletableFuture<E> asyncAlterAndGet(IFunction<E, E> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new AlterAndGetOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new AlterAndGetOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public E getAndAlter(IFunction<E, E> function) {
-        return asyncGetAndAlter(function).getSafely();
+        return asyncGetAndAlter(function).join();
     }
 
     @Override
     public InternalCompletableFuture<E> asyncGetAndAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new GetAndAlterOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new GetAndAlterOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public <R> R apply(IFunction<E, R> function) {
-        return asyncApply(function).getSafely();
+        return asyncApply(function).join();
     }
 
     @Override
     public <R> InternalCompletableFuture<R> asyncApply(IFunction<E, R> function) {
         isNotNull(function, "function");
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new ApplyOperation(name, nodeEngine.toData(function));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new ApplyOperation(name, toData(function))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public void clear() {
-        asyncClear().getSafely();
+        asyncClear().join();
     }
 
     @Override
@@ -127,84 +116,86 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return asyncCompareAndSet(expect, update).getSafely();
+        return asyncCompareAndSet(expect, update).join();
     }
 
     @Override
     public InternalCompletableFuture<Boolean> asyncCompareAndSet(E expect, E update) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new CompareAndSetOperation(name, nodeEngine.toData(expect), nodeEngine.toData(update));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new CompareAndSetOperation(name, toData(expect), toData(update))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public E get() {
-        return asyncGet().getSafely();
+        return asyncGet().join();
     }
 
     @Override
     public InternalCompletableFuture<E> asyncGet() {
-        Operation operation = new GetOperation(name);
-        return asyncInvoke(operation, getNodeEngine());
+        Operation operation = new GetOperation(name)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public boolean contains(E expected) {
-        return asyncContains(expected).getSafely();
+        return asyncContains(expected).join();
     }
 
     @Override
     public InternalCompletableFuture<Boolean> asyncContains(E value) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new ContainsOperation(name, nodeEngine.toData(value));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new ContainsOperation(name, toData(value))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public void set(E newValue) {
-        asyncSet(newValue).getSafely();
+        asyncSet(newValue).join();
     }
 
     @Override
     public InternalCompletableFuture<Void> asyncSet(E newValue) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new SetOperation(name, nodeEngine.toData(newValue));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new SetOperation(name, toData(newValue))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public E getAndSet(E newValue) {
-        return asyncGetAndSet(newValue).getSafely();
+        return asyncGetAndSet(newValue).join();
     }
 
     @Override
     public InternalCompletableFuture<E> asyncGetAndSet(E newValue) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new GetAndSetOperation(name, nodeEngine.toData(newValue));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new GetAndSetOperation(name, toData(newValue))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public E setAndGet(E update) {
-        return asyncSetAndGet(update).getSafely();
+        return asyncSetAndGet(update).join();
     }
 
     @Override
     public InternalCompletableFuture<E> asyncSetAndGet(E update) {
-        NodeEngine nodeEngine = getNodeEngine();
-        Operation operation = new SetAndGetOperation(name, nodeEngine.toData(update));
-        return asyncInvoke(operation, nodeEngine);
+        Operation operation = new SetAndGetOperation(name, toData(update))
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override
     public boolean isNull() {
-        return asyncIsNull().getSafely();
+        return asyncIsNull().join();
     }
 
     @Override
     public InternalCompletableFuture<Boolean> asyncIsNull() {
-        Operation operation = new IsNullOperation(name);
-        return asyncInvoke(operation, getNodeEngine());
+        Operation operation = new IsNullOperation(name)
+                .setPartitionId(partitionId);
+        return invokeOnPartition(operation);
     }
 
     @Override

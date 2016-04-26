@@ -16,8 +16,8 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
@@ -61,7 +62,6 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.logging.Level.WARNING;
 
 public class TransactionImpl implements Transaction {
 
@@ -79,10 +79,9 @@ public class TransactionImpl implements Transaction {
     private final TransactionType transactionType;
     private final boolean checkThreadAccess;
     private final ILogger logger;
-    private Long threadId;
-
     private final String txOwnerUuid;
     private final TransactionLog transactionLog;
+    private Long threadId;
     private long timeoutMillis;
     private State state = NO_TXN;
     private long startTime;
@@ -108,8 +107,8 @@ public class TransactionImpl implements Transaction {
         this.checkThreadAccess = txOwnerUuid == null;
 
         this.logger = nodeEngine.getLogger(getClass());
-        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", WARNING);
-        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.FINEST);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.FINEST);
         this.originatedFromClient = originatedFromClient;
     }
 
@@ -130,8 +129,8 @@ public class TransactionImpl implements Transaction {
         this.checkThreadAccess = false;
 
         this.logger = nodeEngine.getLogger(getClass());
-        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", WARNING);
-        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", WARNING);
+        this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.FINEST);
+        this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.FINEST);
     }
 
     @Override
@@ -238,14 +237,14 @@ public class TransactionImpl implements Transaction {
 
     /**
      * Checks if this Transaction needs to be prepared.
-     *
+     * <p>
      * Preparing a transaction costs time since the backup log potentially needs to be copied and
      * each logrecord needs to prepare its content (e.g. by acquiring locks). This takes time.
-     *
+     * <p>
      * If a transaction is local or if there is 1 or 0 items in the transaction log, instead of
      * preparing, we are just going to try to commit. If the lock is still acquired, the write
-     * succeeds, and if the lock isn't acquired, the write fails; the same effect as a prepare
-     * would have.
+     * succeeds, and if the lock isn't acquired, the write fails; this is the same effect as a
+     * prepare would have.
      *
      * @return true if {@link #prepare()} is required.
      */
@@ -348,7 +347,7 @@ public class TransactionImpl implements Transaction {
     /**
      * Some data-structures like the Transaction List rely on (empty) backup logs to be created before any change on the
      * data-structure is made. That is why when such a data-structure is loaded, it should the creation.
-     *
+     * <p>
      * Not every data-structure, e.g. the Transactional Map, relies on it and in some cases can even skip it.
      */
     public void ensureBackupLogsExist() {
@@ -457,6 +456,11 @@ public class TransactionImpl implements Transaction {
 
     protected PurgeTxBackupLogOperation createPurgeTxBackupLogOperation() {
         return new PurgeTxBackupLogOperation(txnId);
+    }
+
+    @Override
+    public TransactionType getTransactionType() {
+        return transactionType;
     }
 
     @Override

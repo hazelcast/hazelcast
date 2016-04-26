@@ -18,13 +18,17 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 
@@ -43,8 +47,11 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
 
     @Override
     public void run() throws Exception {
-        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
-        response = semaphoreContainer.memberRemoved(firstCaller);
+        SemaphoreService service = getService();
+        if (service.containsSemaphore(name)) {
+            SemaphoreContainer semaphoreContainer = service.getSemaphoreContainer(name);
+            response = semaphoreContainer.memberRemoved(firstCaller);
+        }
     }
 
     @Override
@@ -54,12 +61,15 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        final NodeEngine nodeEngine = getNodeEngine();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        IPartition partition = partitionService.getPartition(getPartitionId());
+        return partition.isLocal() && Boolean.TRUE.equals(response);
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new DeadMemberBackupOperation(name, firstCaller);
+        return new SemaphoreDeadMemberBackupOperation(name, firstCaller);
     }
 
     @Override
@@ -79,7 +89,7 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
 
     @Override
     public int getId() {
-        return SemaphoreDataSerializerHook.SEMAPHORE_DEAD_MEMBER_OPERATION;
+        return SemaphoreDataSerializerHook.DEAD_MEMBER_OPERATION;
     }
 
     @Override

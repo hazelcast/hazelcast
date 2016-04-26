@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.ClientEngine;
@@ -33,18 +34,14 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -62,6 +59,9 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.executor.ExecutorType;
 
@@ -122,13 +122,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.clientExceptionFactory = initClientExceptionFactory();
 
         ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(
-                endpointManager, this, nodeEngine.getExecutionService(), node.groupProperties);
+                endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
         heartBeatMonitor.start();
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
-        ClassLoader classLoader = nodeEngine.getConfigClassLoader();
-        boolean jcacheAvailable = ClassLoaderUtil.isClassAvailable(classLoader, "javax.cache.Caching");
+        boolean jcacheAvailable = JCacheDetector.isJcacheAvailable(nodeEngine.getConfigClassLoader());
         return new ClientExceptionFactory(jcacheAvailable);
     }
 
@@ -136,7 +135,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = Runtime.getRuntime().availableProcessors();
 
-        int threadCount = node.getGroupProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
+        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * THREADS_PER_CORE;
         }

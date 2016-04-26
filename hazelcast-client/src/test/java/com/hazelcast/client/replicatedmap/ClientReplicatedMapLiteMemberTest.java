@@ -2,7 +2,7 @@ package com.hazelcast.client.replicatedmap;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
-import com.hazelcast.client.config.ClientProperty;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -112,7 +112,7 @@ public class ClientReplicatedMapLiteMemberTest {
 
     private void configureDummyClientConnection(final HazelcastInstance instance) throws UnknownHostException {
         final InetSocketAddress socketAddress = getAddress(instance).getInetSocketAddress();
-        dummyClientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST, "false");
+        dummyClientConfig.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         final ClientNetworkConfig networkConfig = dummyClientConfig.getNetworkConfig();
         networkConfig.addAddress(socketAddress.getHostName() + ":" + socketAddress.getPort());
     }

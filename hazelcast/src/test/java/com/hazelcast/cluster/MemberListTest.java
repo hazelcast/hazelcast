@@ -22,12 +22,12 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -38,7 +38,12 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -162,9 +167,9 @@ public class MemberListTest {
 
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections. <String, Object> emptyMap()));
-        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections. <String, Object> emptyMap()));
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections. <String, Object> emptyMap()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
         n2.clusterService.updateMembers(members);
         n2.setMasterAddress(m2.getAddress());
 
@@ -202,8 +207,8 @@ public class MemberListTest {
         final Node n2 = TestUtil.getNode(h2);
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
         List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections. <String, Object> emptyMap()));
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections. <String, Object> emptyMap()));
+        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
+        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
         n2.clusterService.updateMembers(members);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
@@ -285,10 +290,9 @@ public class MemberListTest {
                 return instanceList;
             }
         }
-        throw
-            new IllegalStateException("Unable to create " + instanceCount
-                    + " instances from base port " + basePort
-                    + " at " + INSTANCE_CREATE_ATTEMPT_COUNT);
+        throw new IllegalStateException("Unable to create " + instanceCount
+                + " instances from base port " + basePort
+                + " at " + INSTANCE_CREATE_ATTEMPT_COUNT);
     }
 
     private static List<Config> buildConfigurations(int configCount, int basePort) {
@@ -311,18 +315,18 @@ public class MemberListTest {
     }
 
     private static Config buildConfig(boolean multicastEnabled) {
-        Config c = new Config();
-        c.getGroupConfig().setName("group").setPassword("pass");
-        c.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        c.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "5");
-        c.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "10");
-        c.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "2");
-        c.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS, "10");
-        c.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
-        final NetworkConfig networkConfig = c.getNetworkConfig();
+        Config config = new Config();
+        config.getGroupConfig().setName("group").setPassword("pass");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS.getName(), "2");
+        config.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "10");
+        final NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
         networkConfig.getJoin().getTcpIpConfig().setEnabled(!multicastEnabled);
         networkConfig.setPortAutoIncrement(false);
-        return c;
+        return config;
     }
 }

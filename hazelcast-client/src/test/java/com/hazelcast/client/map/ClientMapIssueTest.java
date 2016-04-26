@@ -17,13 +17,14 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperty;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -48,6 +49,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -92,6 +95,30 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testFutureGetCalledInCallback() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        IMap<Integer, Integer> map = client.getMap("map");
+        final ICompletableFuture<Integer> future = (ICompletableFuture<Integer>) map.getAsync(1);
+        final CountDownLatch latch = new CountDownLatch(1);
+        future.andThen(new ExecutionCallback<Integer>() {
+            public void onResponse(Integer response) {
+                try {
+                    future.get();
+                    latch.countDown();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        });
+        assertOpenEventually(latch, 10);
+    }
+
+    @Test
     @Category(NightlyTest.class)
     public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
         Config config = getConfig();
@@ -101,7 +128,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, "10");
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final IMap<String, String> map = client.getMap(randomMapName());
@@ -136,7 +163,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS, "10");
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "10");
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final IMap<String, String> map = client.getMap(randomMapName());
@@ -205,8 +232,82 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         final PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
 
-        final Collection<Integer> values = map.values(predicate);
+        Collection<Integer> values = map.values(predicate);
         assertEquals(pageSize, values.size());
+
+        /**
+         * There may be cases when the server may return a list of entries larger than the requested page size , in this case
+         * the client should not put any anchor into the list that is on a page greater than the requested page. The case occurs
+         * when multiple members exist in the cluster. E.g.:
+         * pageSize:5
+         * page:2
+         * Map entries are: (0,0), (1, 1), ... (50, 50)
+         * server may return entries: 5, 6,7,8,9,10,13, 15, 16, 19 . We should not put (19, 19) as an anchor for page 2 but
+         * only (9, 9) for page 1. The below code tests this issue.
+         */
+        // get the entries for page 0
+        predicate.setPage(0);
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        int i = 0;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // get the entries for page 0, double check if calling second time works fine
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = 0;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // get page 1, predicate anchors should be updated accordingly
+        predicate.nextPage();
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = pageSize;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // Make sure that the anchor is the last entry of the first page. i.e. it is (9, 9)
+        Map.Entry anchor = predicate.getAnchor();
+        assertEquals((2 * pageSize) -1, anchor.getKey());
+        assertEquals((2 * pageSize) -1, anchor.getValue());
+
+        // jump to page 4
+        predicate.setPage(4);
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = 4 * pageSize;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // Make sure that the new predicate is page 4 and last entry is: (24, 24)
+        anchor = predicate.getAnchor();
+        assertEquals((5 * pageSize) - 1, anchor.getKey());
+        assertEquals((5 * pageSize) - 1, anchor.getValue());
+
+        // jump to page 9
+        predicate.setPage(9);
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = 9 * pageSize;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // make sure that the anchor is now (10 * 5) -1 = (49, 49)
+        anchor = predicate.getAnchor();
+        assertEquals((10 * pageSize) -1, anchor.getKey());
+        assertEquals((10 * pageSize) -1, anchor.getValue());
     }
 
     @Test
@@ -237,12 +338,12 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     @Test
     public void testNoOperationTimeoutException_whenUserCodeLongRunning() {
         Config config = getConfig();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "100");
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
         hazelcastFactory.newHazelcastInstance(config);
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap(randomMapName());
-        SleepyProcessor sleepyProcessor = new SleepyProcessor(2000);
+        SleepyProcessor sleepyProcessor = new SleepyProcessor(SECONDS.toMillis(10));
         String key = randomString();
         String value = randomString();
         map.put(key, value);
@@ -257,6 +358,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             this.millis = millis;
         }
 
+        @Override
         public Object process(Map.Entry entry) {
             try {
 
@@ -267,6 +369,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             return entry.getValue();
         }
 
+        @Override
         public EntryBackupProcessor getBackupProcessor() {
             return null;
         }

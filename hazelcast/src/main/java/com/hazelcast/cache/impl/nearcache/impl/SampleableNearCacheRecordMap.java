@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.nearcache.impl;
 
-import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
 
 /**
  * Contract point for all record maps these supports entry sampling to be used for storage in near-cache.

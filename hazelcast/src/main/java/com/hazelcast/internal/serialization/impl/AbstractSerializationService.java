@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InputOutputFactory;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
@@ -55,7 +55,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.indexF
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractSerializationService implements SerializationService {
+public abstract class AbstractSerializationService implements InternalSerializationService {
 
     protected final ManagedContext managedContext;
     protected final InputOutputFactory inputOutputFactory;
@@ -83,11 +83,12 @@ public abstract class AbstractSerializationService implements SerializationServi
     private volatile boolean active = true;
     private final byte version;
 
-    private ILogger logger = Logger.getLogger(SerializationService.class);
+    private ILogger logger = Logger.getLogger(InternalSerializationService.class);
 
     AbstractSerializationService(InputOutputFactory inputOutputFactory, byte version, ClassLoader classLoader,
-            ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy, int initialOutputBufferSize,
-            BufferPoolFactory bufferPoolFactory) {
+                                 ManagedContext managedContext, PartitioningStrategy globalPartitionStrategy,
+                                 int initialOutputBufferSize,
+                                 BufferPoolFactory bufferPoolFactory) {
         this.inputOutputFactory = inputOutputFactory;
         this.version = version;
         this.classLoader = classLoader;
@@ -100,21 +101,21 @@ public abstract class AbstractSerializationService implements SerializationServi
 
     //region Serialization Service
     @Override
-    public final Data toData(Object obj) {
+    public final <B extends Data> B toData(Object obj) {
         return toData(obj, globalPartitioningStrategy);
     }
 
     @Override
-    public final Data toData(Object obj, PartitioningStrategy strategy) {
+    public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
         if (obj == null) {
             return null;
         }
         if (obj instanceof Data) {
-            return (Data) obj;
+            return (B) obj;
         }
 
         byte[] bytes = toBytes(obj, strategy);
-        return new HeapData(bytes);
+        return (B) new HeapData(bytes);
     }
 
     @Override
@@ -179,7 +180,7 @@ public abstract class AbstractSerializationService implements SerializationServi
         }
     }
 
-    private HazelcastSerializationException newHazelcastSerializationException(int typeId) {
+    private static HazelcastSerializationException newHazelcastSerializationException(int typeId) {
         return new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId + ". "
                 + "This exception is likely to be caused by differences in the serialization configuration between members "
                 + "or between clients and members.");
@@ -263,7 +264,7 @@ public abstract class AbstractSerializationService implements SerializationServi
         return version;
     }
 
-    public void destroy() {
+    public void dispose() {
         active = false;
         for (SerializerAdapter serializer : typeMap.values()) {
             serializer.destroy();
@@ -389,7 +390,7 @@ public abstract class AbstractSerializationService implements SerializationServi
         Class type = object.getClass();
 
         //2-Default serializers, Dataserializable, Portable, primitives, arrays, String and some helper Java types(BigInteger etc)
-        SerializerAdapter  serializer = lookupDefaultSerializer(type);
+        SerializerAdapter serializer = lookupDefaultSerializer(type);
 
         //3-Custom registered types by user
         if (serializer == null) {

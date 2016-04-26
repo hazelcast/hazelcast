@@ -28,7 +28,7 @@ public class CacheLoaderClientServerTest
         extends org.jsr107.tck.integration.CacheLoaderClientServerTest {
 
     @AfterClass
-    public static void cleanup(){
+    public static void cleanup() {
         JstTestUtil.cleanup();
     }
 }

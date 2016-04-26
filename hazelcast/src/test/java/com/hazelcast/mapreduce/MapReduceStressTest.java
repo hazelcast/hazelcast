@@ -128,8 +128,8 @@ public class MapReduceStressTest
             JobTracker jobTracker = hazelcastInstance.getJobTracker(HazelcastTestSupport.randomString());
             Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(map));
             JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(0).mapper(new GroupingTestMapper())
-                                                                      .combiner(new ObjectCombinerFactory())
-                                                                      .reducer(new ObjectReducerFactory()).submit();
+                    .combiner(new ObjectCombinerFactory())
+                    .reducer(new ObjectReducerFactory()).submit();
 
             try {
                 Map<String, BigInteger> result = future.get();

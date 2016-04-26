@@ -1,7 +1,7 @@
 package com.hazelcast.client.cluster;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
@@ -57,8 +57,8 @@ public class ClientClusterStateTest {
         warmUpPartitions(instances);
 
         changeClusterStateEventually(instance, ClusterState.FROZEN);
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final IMap<Object, Object> map = client.getMap(randomMapName());
+        HazelcastInstance client = factory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap(randomMapName());
         map.put(1, 1);
     }
 
@@ -67,8 +67,8 @@ public class ClientClusterStateTest {
         warmUpPartitions(instances);
 
         changeClusterStateEventually(instance, ClusterState.FROZEN);
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final IMap<Object, Object> map = client.getMap(randomMapName());
+        HazelcastInstance client = factory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap(randomMapName());
         map.get(1);
     }
 
@@ -82,9 +82,9 @@ public class ClientClusterStateTest {
     public void testClient_canNotExecuteWriteOperations_whenClusterState_passive() {
         warmUpPartitions(instances);
 
-        final ClientConfig clientConfig = new ClientConfig().setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, "3");
-        final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        final IMap<Object, Object> map = client.getMap(randomMapName());
+        ClientConfig clientConfig = new ClientConfig().setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        IMap<Object, Object> map = client.getMap(randomMapName());
         changeClusterStateEventually(instance, ClusterState.PASSIVE);
         map.put(1, 1);
     }
@@ -93,8 +93,8 @@ public class ClientClusterStateTest {
     public void testClient_canExecuteReadOperations_whenClusterState_passive() {
         warmUpPartitions(instances);
 
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final IMap<Object, Object> map = client.getMap(randomMapName());
+        HazelcastInstance client = factory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap(randomMapName());
         changeClusterStateEventually(instance, ClusterState.PASSIVE);
         map.get(1);
     }
@@ -112,9 +112,8 @@ public class ClientClusterStateTest {
 
         changeClusterStateEventually(instance, ClusterState.PASSIVE);
         instance.getCluster().changeClusterState(ClusterState.ACTIVE);
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final IMap<Object, Object> map = client.getMap(randomMapName());
+        HazelcastInstance client = factory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap(randomMapName());
         map.put(1, 1);
     }
-
 }

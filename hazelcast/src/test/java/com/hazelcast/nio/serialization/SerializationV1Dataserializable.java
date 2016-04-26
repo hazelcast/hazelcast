@@ -9,7 +9,7 @@ import java.util.Arrays;
 /**
  * Sample DataSerializable for testing internal constant serializers
  */
-public class SerializationV1Dataserializable implements DataSerializable{
+public class SerializationV1Dataserializable implements DataSerializable {
 
 
     byte aByte;
@@ -168,7 +168,7 @@ public class SerializationV1Dataserializable implements DataSerializable{
         if (string != null ? !string.equals(that.string) : that.string != null) {
             return false;
         }
-        if(!Arrays.equals(strings, that.strings)) {
+        if (!Arrays.equals(strings, that.strings)) {
             return false;
         }
         return true;

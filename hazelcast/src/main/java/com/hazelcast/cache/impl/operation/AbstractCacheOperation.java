@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -89,6 +90,20 @@ abstract class AbstractCacheOperation
             }
         }
         return super.onInvocationException(throwable);
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof CacheNotExistsException) {
+            // Since this exception can be thrown and will be retried, we don't want to log this exception under server,
+            // since it will cause a lot of noise.
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("failed to execute:" + this, e);
+            }
+            return;
+        }
+        super.logError(e);
     }
 
     @Override

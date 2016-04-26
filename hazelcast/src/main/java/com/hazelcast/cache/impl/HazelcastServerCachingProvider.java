@@ -73,6 +73,14 @@ public final class HazelcastServerCachingProvider
 
     private HazelcastInstance getOrCreateInstance(ClassLoader classLoader, Properties properties, boolean isDefaultURI)
             throws URISyntaxException, IOException {
+        HazelcastInstance instanceItself =
+                (HazelcastInstance) properties.get(HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF);
+
+        // If instance itself is specified via properties, get instance through it.
+        if (instanceItself != null) {
+            return instanceItself;
+        }
+
         String location = properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION);
         String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
 
@@ -106,6 +114,10 @@ public final class HazelcastServerCachingProvider
             return Hazelcast.getHazelcastInstanceByName(instanceName);
         }
 
+        return getInstanceThroughDefaultInstanceIfItIsDefault(isDefaultURI);
+    }
+
+    private HazelcastInstance getInstanceThroughDefaultInstanceIfItIsDefault(boolean isDefaultURI) {
         HazelcastInstance instance = null;
         // No instance specified with name or config location,
         // so we are going on with the default one if the URI is the default.

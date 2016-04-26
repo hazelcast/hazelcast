@@ -17,20 +17,17 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.monitors.PerformanceMonitor;
+import com.hazelcast.spi.properties.GroupProperty;
 
 /**
- * Container for configured Hazelcast properties ({@see GroupProperty}).
+ * Container for configured Hazelcast properties.
  * <p/>
- * A {@link GroupProperty} can be set as:
- * <p><ul>
- * <li>an environmental variable using {@link System#setProperty(String, String)}</li>
- * <li>the programmatic configuration using {@link Config#setProperty(String, String)}</li>
- * <li>the XML configuration
- * {@see http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties}</li>
- * </ul></p>
- * <p/>
- * The old property definitions are deprecated since Hazelcast 3.6. Please use the new {@link GroupProperty} definitions instead.
+ * The old property definitions are deprecated since Hazelcast 3.6.
+ * The whole class is deprecated since Hazelcast 3.7.
+ * This is private API, don't use it.
  */
+@Deprecated
 @SuppressWarnings("unused")
 public class GroupProperties extends HazelcastProperties {
 
@@ -41,19 +38,20 @@ public class GroupProperties extends HazelcastProperties {
     @Deprecated
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName();
     @Deprecated
-    public static final String PROP_PERFORMANCE_MONITOR_ENABLED = GroupProperty.PERFORMANCE_MONITOR_ENABLED.getName();
+    public static final String PROP_PERFORMANCE_MONITOR_ENABLED = PerformanceMonitor.ENABLED.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB
-            = GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB.getName();
+            = PerformanceMonitor.MAX_ROLLED_FILE_SIZE_MB.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT
-            = GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT.getName();
+            = PerformanceMonitor.MAX_ROLLED_FILE_COUNT.getName();
     @Deprecated
     public static final String PROP_PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT
-            = GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT.getName();
+            = PerformanceMonitor.HUMAN_FRIENDLY_FORMAT.getName();
     @Deprecated
     public static final String PROP_PHONE_HOME_ENABLED = GroupProperty.PHONE_HOME_ENABLED.getName();
     @Deprecated
+    @SuppressWarnings("checkstyle:constantname")
     public static final String PROP_PREFER_IPv4_STACK = GroupProperty.PREFER_IPv4_STACK.getName();
     @Deprecated
     public static final String PROP_IO_THREAD_COUNT = GroupProperty.IO_THREAD_COUNT.getName();
@@ -260,6 +258,7 @@ public class GroupProperties extends HazelcastProperties {
      *
      * @param config {@link Config} used to configure the {@link GroupProperty} values.
      */
+    @Deprecated
     public GroupProperties(Config config) {
         super(config.getProperties());
     }

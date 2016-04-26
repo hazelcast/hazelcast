@@ -16,14 +16,13 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
+import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
-import com.hazelcast.collection.impl.queue.QueueContainer;
-import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -34,24 +33,23 @@ import java.io.IOException;
  * Offer operation for the Transactional Queue.
  */
 
-public class TxnOfferOperation extends QueueBackupAwareOperation implements Notifier {
+public class TxnOfferOperation extends BaseTxnQueueOperation implements Notifier {
 
-    private long itemId;
+
     private Data data;
 
     public TxnOfferOperation() {
     }
 
     public TxnOfferOperation(String name, long itemId, Data data) {
-        super(name);
-        this.itemId = itemId;
+        super(name, itemId);
         this.data = data;
     }
 
     @Override
     public void run() throws Exception {
         QueueContainer createContainer = getOrCreateContainer();
-        response = createContainer.txnCommitOffer(itemId, data, false);
+        response = createContainer.txnCommitOffer(getItemId(), data, false);
     }
 
     @Override
@@ -72,7 +70,7 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnOfferBackupOperation(name, itemId, data);
+        return new TxnOfferBackupOperation(name, getItemId(), data);
     }
 
     @Override
@@ -86,6 +84,11 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
     }
 
     @Override
+    public boolean isRemoveOperation() {
+        return false;
+    }
+
+    @Override
     public int getId() {
         return QueueDataSerializerHook.TXN_OFFER;
     }
@@ -93,14 +96,12 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
         out.writeData(data);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
         data = in.readData();
     }
 }

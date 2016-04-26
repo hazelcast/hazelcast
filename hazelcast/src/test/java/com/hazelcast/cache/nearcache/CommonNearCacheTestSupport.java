@@ -9,7 +9,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastTestSupport;
-
 import org.junit.After;
 
 import java.util.ArrayList;
@@ -28,9 +27,9 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
 
     protected NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
         return
-            new NearCacheConfig()
-                    .setName(name)
-                    .setInMemoryFormat(inMemoryFormat);
+                new NearCacheConfig()
+                        .setName(name)
+                        .setInMemoryFormat(inMemoryFormat);
     }
 
     protected NearCacheContext createNearCacheContext() {
@@ -47,7 +46,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         scheduledExecutorServices.add(scheduledExecutorService);
         return new NearCacheExecutor() {
             @Override
-            public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
+            public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay,
                                                              long delay, TimeUnit unit) {
                 return scheduledExecutorService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
             }
@@ -55,7 +54,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected <K, V> NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
-            NearCacheContext nearCacheContext, InMemoryFormat inMemoryFormat) {
+                                                                           NearCacheContext nearCacheContext, InMemoryFormat inMemoryFormat) {
         switch (inMemoryFormat) {
             case BINARY:
                 return new NearCacheDataRecordStore<K, V>(nearCacheConfig, nearCacheContext);
@@ -68,7 +67,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        for (ScheduledExecutorService scheduledExecutorService  : scheduledExecutorServices) {
+        for (ScheduledExecutorService scheduledExecutorService : scheduledExecutorServices) {
             scheduledExecutorService.shutdown();
         }
         scheduledExecutorServices.clear();

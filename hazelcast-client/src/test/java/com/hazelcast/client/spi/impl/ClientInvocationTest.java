@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -109,7 +108,6 @@ public class ClientInvocationTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void executionCallback_FailOnShutdown() {
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
@@ -140,7 +138,7 @@ public class ClientInvocationTest extends HazelcastTestSupport {
 
                 @Override
                 public void onFailure(Throwable t) {
-                    if (t instanceof HazelcastClientNotActiveException) {
+                    if (t.getCause() instanceof HazelcastClientNotActiveException) {
                         shutdownLatch.countDown();
                     }
                     errorLatch.countDown();

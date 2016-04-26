@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 
@@ -179,14 +180,13 @@ public interface Cluster {
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
-     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
      *
-     * @throws IllegalStateException    if member-list changes during the transaction
-     *                                  or there are ongoing/pending migration operations
-     * @throws TransactionException     if there's already an ongoing transaction
-     *                                  or this transaction fails
-     *                                  or this transaction timeouts
-     *
+     * @throws IllegalStateException if member-list changes during the transaction
+     *                               or there are ongoing/pending migration operations
+     * @throws TransactionException  if there's already an ongoing transaction
+     *                               or this transaction fails
+     *                               or this transaction timeouts
+     * @see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
      * @see {@link #changeClusterState(ClusterState)}
      * @see {@link ClusterState#PASSIVE}
      * @since 3.6
@@ -203,15 +203,14 @@ public interface Cluster {
      * Any node can start the shutdown process. A shutdown command is sent to other nodes periodically until
      * either all other nodes leave the cluster or a configurable timeout occurs. If some of the nodes do not
      * shutdown before the timeout duration, shutdown can be also invoked on them.
-     * @see {@link com.hazelcast.instance.GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
      *
      * @param transactionOptions transaction options
-     * @throws IllegalStateException    if member-list changes during the transaction
-     *                                  or there are ongoing/pending migration operations
-     * @throws TransactionException     if there's already an ongoing transaction
-     *                                  or this transaction fails
-     *                                  or this transaction timeouts
-     *
+     * @throws IllegalStateException if member-list changes during the transaction
+     *                               or there are ongoing/pending migration operations
+     * @throws TransactionException  if there's already an ongoing transaction
+     *                               or this transaction fails
+     *                               or this transaction timeouts
+     * @see {@link GroupProperty#CLUSTER_SHUTDOWN_TIMEOUT_SECONDS}
      * @see {@link #changeClusterState(ClusterState)}
      * @see {@link ClusterState#PASSIVE}
      * @since 3.6

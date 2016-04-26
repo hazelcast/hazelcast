@@ -29,6 +29,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
@@ -90,7 +91,7 @@ public abstract class TransactionalMapProxySupport
 
     public Object getInternal(Data key) {
         MapService mapService = getService();
-        boolean nearCacheEnabled = mapService.getMapServiceContext().getMapContainer(name).isNearCacheEnabled();
+        boolean nearCacheEnabled = mapService.getMapServiceContext().getMapContainer(name).hasMemberNearCache();
         if (nearCacheEnabled) {
             Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
             if (cached != null) {
@@ -258,8 +259,9 @@ public abstract class TransactionalMapProxySupport
             return versionedValue;
         }
         NodeEngine nodeEngine = getNodeEngine();
+        boolean blockReads = tx.getTransactionType() == TransactionType.ONE_PHASE;
         MapOperation operation = operationProvider.createTxnLockAndGetOperation(name, key, timeout, timeout,
-                tx.getOwnerUuid(), shouldLoad);
+                tx.getOwnerUuid(), shouldLoad, blockReads);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);

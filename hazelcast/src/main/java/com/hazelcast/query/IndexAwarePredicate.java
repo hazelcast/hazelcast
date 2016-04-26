@@ -22,10 +22,13 @@ import com.hazelcast.query.impl.QueryableEntry;
 import java.util.Set;
 /**
  * This interface is used for create filterable Predicates.
+ *
+ * @param <K>
+ * @param <V>
  */
-public interface IndexAwarePredicate extends Predicate {
+public interface IndexAwarePredicate<K, V> extends Predicate<K, V> {
 
-    Set<QueryableEntry> filter(QueryContext queryContext);
+    Set<QueryableEntry<K, V>> filter(QueryContext queryContext);
 
     boolean isIndexed(QueryContext queryContext);
 }

@@ -21,7 +21,6 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -29,6 +28,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.EmptyStatement;
@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static java.lang.String.format;
+import static java.lang.String.valueOf;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -55,7 +56,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     HazelcastInstance getSingleNodeCluster(int slowOperationThresholdMillis) {
         Config config = new Config();
-        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, String.valueOf(slowOperationThresholdMillis));
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS.getName(),
+                valueOf(slowOperationThresholdMillis));
 
         return createHazelcastInstance(config);
     }

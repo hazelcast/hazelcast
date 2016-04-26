@@ -17,13 +17,14 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import static java.lang.String.format;
 
 /**
  * This exception is thrown when a query exceeds a configurable result size limit.
  *
- * @see com.hazelcast.instance.GroupProperty#QUERY_RESULT_SIZE_LIMIT
+ * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
  */
 public class QueryResultSizeExceededException extends HazelcastException {
 

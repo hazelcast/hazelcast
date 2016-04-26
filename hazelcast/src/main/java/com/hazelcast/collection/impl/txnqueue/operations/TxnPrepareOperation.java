@@ -16,12 +16,13 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -30,25 +31,26 @@ import java.io.IOException;
  */
 public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
-    private long itemId;
-    private boolean pollOperation;
+    private long[] itemIds;
     private String transactionId;
 
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(int partitionId, String name, long itemId, boolean pollOperation, String transactionId) {
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public TxnPrepareOperation(int partitionId, String name, long[] itemIds, String transactionId) {
         super(name);
         setPartitionId(partitionId);
-        this.itemId = itemId;
-        this.pollOperation = pollOperation;
+        this.itemIds = itemIds;
         this.transactionId = transactionId;
     }
 
     @Override
     public void run() throws Exception {
         QueueContainer queueContainer = getOrCreateContainer();
-        response = queueContainer.txnCheckReserve(itemId);
+        for (long itemId : itemIds) {
+            queueContainer.txnCheckReserve(Math.abs(itemId));
+        }
     }
 
     @Override
@@ -58,7 +60,7 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(name, itemId, pollOperation, transactionId);
+        return new TxnPrepareBackupOperation(name, itemIds, transactionId);
     }
 
     @Override
@@ -69,16 +71,14 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        out.writeBoolean(pollOperation);
         out.writeUTF(transactionId);
+        out.writeLongArray(itemIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        pollOperation = in.readBoolean();
         transactionId = in.readUTF();
+        itemIds = in.readLongArray();
     }
 }

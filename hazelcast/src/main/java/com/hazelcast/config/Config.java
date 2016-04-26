@@ -197,9 +197,13 @@ public class Config {
     /**
      * Gets a {@link HazelcastProperty} already set or from system properties if not exists.
      *
+     * Deprecated since Hazelcast 3.7, use {@link #getProperty(String)} instead.
+     *
      * @param property {@link HazelcastProperty} to get
      * @return value of the property
+     * @deprecated since Hazelcast 3.7
      */
+    @Deprecated
     public String getProperty(HazelcastProperty property) {
         return getProperty(property.getName());
     }
@@ -207,11 +211,14 @@ public class Config {
     /**
      * Sets the value of a {@link HazelcastProperty}.
      *
+     * Deprecated since Hazelcast 3.7, use {@link #setProperty(String, String)} instead.
+     *
      * @param property {@link HazelcastProperty} to set
      * @param value    value of the property
      * @return configured {@link Config} for chaining
-     * @see {@link HazelcastProperty} for properties that is used to configure client
+     * @deprecated since Hazelcast 3.7
      */
+    @Deprecated
     public Config setProperty(HazelcastProperty property, String value) {
         return setProperty(property.getName(), value);
     }
@@ -919,7 +926,6 @@ public class Config {
         }
         return getQuorumConfig("default");
     }
-
 
 
     public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {

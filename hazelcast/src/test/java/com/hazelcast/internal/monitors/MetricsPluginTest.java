@@ -15,8 +15,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperty.PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -31,8 +29,8 @@ public class MetricsPluginTest extends AbstractPerformanceMonitorPluginTest {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PERFORMANCE_MONITOR_ENABLED, "true");
-        config.setProperty(PERFORMANCE_MONITOR_METRICS_PERIOD_SECONDS, "1");
+        config.setProperty(PerformanceMonitor.ENABLED.getName(), "true");
+        config.setProperty(MetricsPlugin.PERIOD_SECONDS.getName(), "1");
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
         metricsRegistry = nodeEngineImpl.getMetricsRegistry();
@@ -71,6 +69,6 @@ public class MetricsPluginTest extends AbstractPerformanceMonitorPluginTest {
 
         // we just test a few to make sure the metrics are written.
         assertContains("client.endpoint.count=0");
-        assertContains("operation.response-queue.size=0");
+        assertContains("operation.responseQueueSize=0");
     }
 }

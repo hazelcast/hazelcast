@@ -22,7 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -43,6 +43,7 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationService;
@@ -105,8 +106,8 @@ public class DefaultNodeExtension implements NodeExtension {
         return null;
     }
 
-    public SerializationService createSerializationService() {
-        SerializationService ss;
+    public InternalSerializationService createSerializationService() {
+        InternalSerializationService ss;
         try {
             Config config = node.getConfig();
             ClassLoader configClassLoader = node.getConfigClassLoader();
@@ -118,9 +119,9 @@ public class DefaultNodeExtension implements NodeExtension {
             SerializationConfig serializationConfig = config.getSerializationConfig() != null
                     ? config.getSerializationConfig() : new SerializationConfig();
 
-            byte version = (byte) node.groupProperties.getInteger(GroupProperty.SERIALIZATION_VERSION);
+            byte version = (byte) node.getProperties().getInteger(GroupProperty.SERIALIZATION_VERSION);
 
-            ss = builder.setClassLoader(configClassLoader)
+            ss = (InternalSerializationService) builder.setClassLoader(configClassLoader)
                     .setConfig(serializationConfig)
                     .setManagedContext(hazelcastInstance.managedContext)
                     .setPartitioningStrategy(partitioningStrategy)
@@ -134,7 +135,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
-        String partitioningStrategyClassName = node.groupProperties.getString(GroupProperty.PARTITIONING_STRATEGY_CLASS);
+        String partitioningStrategyClassName = node.getProperties().getString(GroupProperty.PARTITIONING_STRATEGY_CLASS);
         if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {

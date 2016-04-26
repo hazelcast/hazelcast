@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.partition.impl;
 
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionListener;
-import com.hazelcast.internal.partition.PartitionReplicaChangeReason;
+import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
@@ -40,6 +39,12 @@ public class InternalPartitionImpl implements InternalPartition {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
         this.thisAddress = thisAddress;
+    }
+
+    InternalPartitionImpl(int partitionId, PartitionListener listener, Address thisAddress,
+            Address[] addresses) {
+        this(partitionId, listener, thisAddress);
+        this.addresses = addresses;
     }
 
     @Override
@@ -73,23 +78,34 @@ public class InternalPartitionImpl implements InternalPartition {
 
     // This method is called under InternalPartitionServiceImpl.lock,
     // so there's no need to guard `addresses` field or to use a CAS.
-    boolean onDeadAddress(Address deadAddress) {
+    int removeAddress(Address deadAddress) {
         Address[] currentAddresses = addresses;
+        Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
+
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (!deadAddress.equals(currentAddresses[i])) {
                 continue;
             }
 
-            Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
-            for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
-                newAddresses[a] = newAddresses[a + 1];
-            }
-            newAddresses[MAX_REPLICA_COUNT - 1] = null;
+            newAddresses[i] = null;
             addresses = newAddresses;
-            callPartitionListener(newAddresses, currentAddresses, PartitionReplicaChangeReason.MEMBER_REMOVED);
-            return true;
+            callPartitionListener(i, deadAddress, null);
+            return i;
         }
-        return false;
+        return -1;
+    }
+
+    void swapAddresses(int index1, int index2) {
+        Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
+
+        Address a1 = newAddresses[index1];
+        Address a2 = newAddresses[index2];
+        newAddresses[index1] = a2;
+        newAddresses[index2] = a1;
+
+        addresses = newAddresses;
+        callPartitionListener(index1, a1, a2);
+        callPartitionListener(index2, a2, a1);
     }
 
     // Not doing a defensive copy of given Address[]
@@ -111,23 +127,28 @@ public class InternalPartitionImpl implements InternalPartition {
     void setReplicaAddresses(Address[] newAddresses) {
         Address[] oldAddresses = addresses;
         addresses = newAddresses;
-        callPartitionListener(newAddresses, oldAddresses, PartitionReplicaChangeReason.ASSIGNMENT);
-
+        callPartitionListener(newAddresses, oldAddresses);
     }
 
-    private void callPartitionListener(Address[] newAddresses, Address[] oldAddresses,
-                                       PartitionReplicaChangeReason reason) {
+    void setReplicaAddress(int replicaIndex, Address newAddress) {
+        Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
+        Address oldAddress = newAddresses[replicaIndex];
+        newAddresses[replicaIndex] = newAddress;
+        addresses = newAddresses;
+        callPartitionListener(replicaIndex, oldAddress, newAddress);
+    }
+
+    private void callPartitionListener(Address[] newAddresses, Address[] oldAddresses) {
         if (partitionListener != null) {
             for (int replicaIndex = 0; replicaIndex < MAX_REPLICA_COUNT; replicaIndex++) {
                 Address oldAddress = oldAddresses[replicaIndex];
                 Address newAddress = newAddresses[replicaIndex];
-                callPartitionListener(replicaIndex, oldAddress, newAddress, reason);
+                callPartitionListener(replicaIndex, oldAddress, newAddress);
             }
         }
     }
 
-    private void callPartitionListener(int replicaIndex, Address oldAddress, Address newAddress,
-                                       PartitionReplicaChangeReason reason) {
+    private void callPartitionListener(int replicaIndex, Address oldAddress, Address newAddress) {
         boolean changed;
         if (oldAddress == null) {
             changed = newAddress != null;
@@ -136,9 +157,17 @@ public class InternalPartitionImpl implements InternalPartition {
         }
         if (changed) {
             PartitionReplicaChangeEvent event
-                    = new PartitionReplicaChangeEvent(partitionId, replicaIndex, oldAddress, newAddress, reason);
+                    = new PartitionReplicaChangeEvent(partitionId, replicaIndex, oldAddress, newAddress);
             partitionListener.replicaChanged(event);
         }
+    }
+
+    InternalPartitionImpl copy(PartitionListener listener) {
+        return new InternalPartitionImpl(partitionId, listener, thisAddress, Arrays.copyOf(addresses, MAX_REPLICA_COUNT));
+    }
+
+    Address[] getReplicaAddresses() {
+        return addresses;
     }
 
     @Override
@@ -153,8 +182,16 @@ public class InternalPartitionImpl implements InternalPartition {
 
     @Override
     public int getReplicaIndex(Address address) {
+        return getReplicaIndex(addresses, address);
+    }
+
+    public static int getReplicaIndex(Address[] addresses, Address address) {
+        if (address == null) {
+            return -1;
+        }
+
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            if (address.equals(getReplicaAddress(i))) {
+            if (address.equals(addresses[i])) {
                 return i;
             }
         }

@@ -160,6 +160,7 @@ public class HazelcastInstanceManagerTest extends HazelcastTestSupport {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
                 doAnswer(new Answer() {
                     final AtomicBoolean throwException = new AtomicBoolean(false);
+
                     @Override
                     public Object answer(InvocationOnMock invocation) throws Throwable {
                         if (throwException.compareAndSet(false, true)) {

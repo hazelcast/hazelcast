@@ -26,7 +26,7 @@ public class RingbufferMigrationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test() throws Exception{
+    public void test() throws Exception {
         HazelcastInstance hz1 = instanceFactory.newHazelcastInstance();
 
         for (int k = 0; k < 10 * CAPACITY; k++) {

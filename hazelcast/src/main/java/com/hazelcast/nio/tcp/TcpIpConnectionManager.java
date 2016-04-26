@@ -16,11 +16,12 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.cluster.impl.BindMessage;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -35,9 +36,9 @@ import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
@@ -54,10 +55,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
@@ -105,6 +106,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final IOThreadingModel ioThreadingModel;
+    private final MetricsRegistry metricsRegistry;
 
     private volatile boolean live;
 
@@ -150,7 +152,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
-
+        this.metricsRegistry = metricsRegistry;
         metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
@@ -467,6 +469,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         if (acceptorThread != null) {
             logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
             acceptorThread.shutdown();
+            metricsRegistry.deregister(acceptorThread);
             acceptorThread = null;
         }
 
@@ -476,6 +479,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 serverSocketChannel,
                 this);
         acceptorThread.start();
+        metricsRegistry.scanAndRegister(acceptorThread, "tcp." + acceptorThread.getName());
     }
 
     @Override

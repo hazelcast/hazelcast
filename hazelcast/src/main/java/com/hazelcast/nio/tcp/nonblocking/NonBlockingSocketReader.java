@@ -23,7 +23,7 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.TextReadHandler;
-import com.hazelcast.nio.tcp.NewClientReadHandler;
+import com.hazelcast.nio.tcp.ClientReadHandler;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.SocketWriter;
@@ -41,8 +41,8 @@ import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
-import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.StringUtil.bytesToString;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * A {@link SocketReader} tailored for non blocking IO.
@@ -79,19 +79,7 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
 
     @Probe(name = "idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
-        return Math.max(System.currentTimeMillis() - lastReadTime, 0);
-    }
-
-    @Probe(name = "interestedOps", level = DEBUG)
-    private long interestOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.interestOps();
-    }
-
-    @Probe(name = "readyOps", level = DEBUG)
-    private long readyOps() {
-        SelectionKey selectionKey = this.selectionKey;
-        return selectionKey == null ? -1 : selectionKey.readyOps();
+        return Math.max(currentTimeMillis() - lastReadTime, 0);
     }
 
     @Override
@@ -209,7 +197,7 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 socketWriter.setProtocol(CLIENT_BINARY_NEW);
-                readHandler = new NewClientReadHandler(connection, ioService);
+                readHandler = new ClientReadHandler(connection, ioService);
             } else {
                 configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 socketWriter.setProtocol(Protocols.TEXT);

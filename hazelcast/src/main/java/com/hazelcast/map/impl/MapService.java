@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.partition.IPartitionLostEvent;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
@@ -39,6 +38,7 @@ import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.WanReplicationEvent;
@@ -127,11 +127,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         migrationAwareService.rollbackMigration(event);
-    }
-
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        migrationAwareService.clearPartitionReplica(partitionId);
     }
 
     @Override

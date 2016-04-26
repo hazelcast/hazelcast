@@ -1,6 +1,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -19,7 +20,10 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -49,6 +53,22 @@ public class NodeEngineTest extends HazelcastTestSupport {
         SharedService sharedService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         assertNotNull(sharedService);
         assertTrue(sharedService instanceof LockService);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void getService_whenNullName() {
+        nodeEngine.getService(null);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void getService_whenNonExistingService() {
+        nodeEngine.getService("notexist");
+    }
+
+    @Test
+    public void getService_whenExistingService() {
+        Object sharedService = nodeEngine.getService(LockService.SERVICE_NAME);
+        assertInstanceOf(LockService.class, sharedService);
     }
 
     @Test

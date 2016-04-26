@@ -71,7 +71,7 @@ public final class ClientPartitionServiceImpl
         ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         // Use internal execution service for all partition refresh process (Do not use the user executor thread)
         ExecutorService internalExecutor = clientExecutionService.getInternalExecutor();
-        clientExecutionService.scheduleWithFixedDelay(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        clientExecutionService.scheduleWithRepetition(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
@@ -252,7 +252,6 @@ public final class ClientPartitionServiceImpl
                 if (client.getLifecycleService().isRunning()) {
                     logger.warning("Error while fetching cluster partition table!", e);
                 }
-            } finally {
                 updating.set(false);
             }
         }

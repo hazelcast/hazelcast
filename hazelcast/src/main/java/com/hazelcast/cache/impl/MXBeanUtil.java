@@ -44,25 +44,24 @@ public final class MXBeanUtil {
      * @param stats is mxbean parameter, a statistics mxbean.
      */
     public static void registerCacheObject(Object mxbean, String cacheManagerName, String name, boolean stats) {
-        //these can change during runtime, so always look it up
-        ObjectName registeredObjectName = calculateObjectName(cacheManagerName, name, stats);
-        try {
-            if (!isRegistered(cacheManagerName, name, stats)) {
-                mBeanServer.registerMBean(mxbean, registeredObjectName);
+        synchronized (mBeanServer) {
+            //these can change during runtime, so always look it up
+            ObjectName registeredObjectName = calculateObjectName(cacheManagerName, name, stats);
+            try {
+                if (!isRegistered(cacheManagerName, name, stats)) {
+                    mBeanServer.registerMBean(mxbean, registeredObjectName);
+                }
+            } catch (Exception e) {
+                throw new CacheException(
+                        "Error registering cache MXBeans for CacheManager " + registeredObjectName
+                                + " . Error was " + e.getMessage(), e);
             }
-        } catch (Exception e) {
-            throw new CacheException(
-                    "Error registering cache MXBeans for CacheManager " + registeredObjectName + " . Error was " + e.getMessage(),
-                    e);
         }
     }
 
     public static boolean isRegistered(String cacheManagerName, String name, boolean stats) {
-        Set<ObjectName> registeredObjectNames = null;
-
         ObjectName objectName = calculateObjectName(cacheManagerName, name, stats);
-        registeredObjectNames = mBeanServer.queryNames(objectName, null);
-
+        Set<ObjectName> registeredObjectNames = mBeanServer.queryNames(objectName, null);
         return !registeredObjectNames.isEmpty();
     }
 
@@ -73,18 +72,20 @@ public final class MXBeanUtil {
      * @param stats is mxbean, a statistics mxbean.
      */
     public static void unregisterCacheObject(String cacheManagerName, String name, boolean stats) {
-        Set<ObjectName> registeredObjectNames = null;
-
-        ObjectName objectName = calculateObjectName(cacheManagerName, name, stats);
-        registeredObjectNames = mBeanServer.queryNames(objectName, null);
-
-        //should just be one
-        for (ObjectName registeredObjectName : registeredObjectNames) {
-            try {
-                mBeanServer.unregisterMBean(registeredObjectName);
-            } catch (Exception e) {
-                throw new CacheException(
-                        "Error unregistering object instance " + registeredObjectName + " . Error was " + e.getMessage(), e);
+        synchronized (mBeanServer) {
+            ObjectName objectName = calculateObjectName(cacheManagerName, name, stats);
+            Set<ObjectName> registeredObjectNames = mBeanServer.queryNames(objectName, null);
+            if (isRegistered(cacheManagerName, name, stats)) {
+                //should just be one
+                for (ObjectName registeredObjectName : registeredObjectNames) {
+                    try {
+                        mBeanServer.unregisterMBean(registeredObjectName);
+                    } catch (Exception e) {
+                        throw new CacheException(
+                                "Error unregistering object instance " + registeredObjectName
+                                        + " . Error was " + e.getMessage(), e);
+                    }
+                }
             }
         }
     }

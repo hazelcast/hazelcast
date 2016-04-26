@@ -14,5 +14,6 @@ public class Invocation_InitInvocationTargetTest {
 
     @Test
     @Ignore//todo: needs to be implemented.
-    public void test(){}
+    public void test() {
+    }
 }

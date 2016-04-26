@@ -19,14 +19,14 @@ package com.hazelcast.executor.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -44,7 +44,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService,
+public class DistributedExecutorService implements ManagedService, RemoteService, LiveOperationsTracker,
         StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
@@ -161,9 +161,11 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     @Override
-    public boolean isOperationExecuting(Address callerAddress, String callerUuid, Object identifier) {
-        String uuid = String.valueOf(identifier);
-        return submittedTasks.containsKey(uuid);
+    public void populate(LiveOperations result) {
+        for (CallableProcessor processor : submittedTasks.values()) {
+            Operation op = processor.op;
+            result.add(op.getCallerAddress(), op.getCallId());
+        }
     }
 
     @Override

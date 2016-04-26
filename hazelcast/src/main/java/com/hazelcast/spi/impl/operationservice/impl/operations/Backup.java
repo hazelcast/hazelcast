@@ -16,15 +16,14 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.operations;
 
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.IPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -33,6 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
+import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -86,16 +86,23 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public void beforeRun() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();
-        IPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-        Address owner = partition.getReplicaAddress(getReplicaIndex());
-        if (nodeEngine.getThisAddress().equals(owner)) {
-            return;
-        }
+        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
+        ILogger logger = getLogger();
 
-        valid = false;
-        final ILogger logger = getLogger();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+        IPartition partition = partitionService.getPartition(partitionId);
+        Address owner = partition.getReplicaAddress(getReplicaIndex());
+        if (!nodeEngine.getThisAddress().equals(owner)) {
+            valid = false;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+            }
+        } else if (partitionService.isPartitionReplicaVersionStale(getPartitionId(), replicaVersions, getReplicaIndex())) {
+            valid = false;
+            if (logger.isFineEnabled()) {
+                long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
+                logger.fine("Ignoring stale backup! Current-versions: " + Arrays.toString(currentVersions)
+                        + ", Backup-versions: " + Arrays.toString(replicaVersions));
+            }
         }
     }
 
@@ -148,7 +155,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
         if (nodeEngine.getThisAddress().equals(originalCaller)) {
-            operationService.getInvocationsRegistry().notifyBackupComplete(callId);
+            operationService.getResponseHandler().notifyBackupComplete(callId);
         } else {
             BackupResponse backupResponse = new BackupResponse(callId, backupOp.isUrgent());
             operationService.send(backupResponse, originalCaller);

@@ -40,9 +40,9 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.Preconditions;
 
@@ -50,6 +50,11 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Proxy implementation of {@link ISet}.
+ *
+ * @param <E> the type of elements in this set
+ */
 public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements ISet<E> {
 
     public ClientSetProxy(String serviceName, String name) {

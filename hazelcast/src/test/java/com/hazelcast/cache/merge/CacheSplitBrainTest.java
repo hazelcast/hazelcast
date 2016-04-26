@@ -12,12 +12,11 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -302,7 +301,7 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         String key = generateKeyOwnedBy(h1);
         cache1.put(key, "value");
 
-        cache2.put(key,Integer.valueOf(1));
+        cache2.put(key, Integer.valueOf(1));
 
         // Allow merge process to continue
         mergeBlockingLatch.countDown();
@@ -318,8 +317,8 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.getGroupConfig().setName(generateRandomString(10));
         return config;
     }

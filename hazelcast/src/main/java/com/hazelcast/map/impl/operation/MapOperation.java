@@ -19,6 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -34,6 +36,10 @@ public abstract class MapOperation extends AbstractNamedOperation {
     protected transient MapService mapService;
     protected transient MapContainer mapContainer;
     protected transient MapServiceContext mapServiceContext;
+    protected transient MapEventPublisher mapEventPublisher;
+    protected transient RecordStore recordStore;
+
+    protected transient boolean createRecordStoreOnDemand = true;
 
     public MapOperation() {
     }
@@ -55,14 +61,21 @@ public abstract class MapOperation extends AbstractNamedOperation {
     @Override
     public void beforeRun() throws Exception {
         super.beforeRun();
+
         mapService = getService();
         mapServiceContext = mapService.getMapServiceContext();
-        mapContainer = mapServiceContext.getMapContainer(name);
+        mapEventPublisher = mapServiceContext.getMapEventPublisher();
+
         innerBeforeRun();
     }
 
-
     public void innerBeforeRun() throws Exception {
+        recordStore = getRecordStoreOrNull();
+        if (recordStore == null) {
+            mapContainer = mapServiceContext.getMapContainer(name);
+        } else {
+            mapContainer = recordStore.getMapContainer();
+        }
     }
 
     @Override
@@ -109,5 +122,24 @@ public abstract class MapOperation extends AbstractNamedOperation {
         }
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         nearCacheProvider.getNearCacheInvalidator().clear(name, owner, getCallerUuid());
+    }
+
+    protected void evict() {
+        assert recordStore != null : "Record-store cannot be null";
+
+        recordStore.evictEntries();
+    }
+
+    private RecordStore getRecordStoreOrNull() {
+        int partitionId = getPartitionId();
+        if (partitionId == -1) {
+            return null;
+        }
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        if (createRecordStoreOnDemand) {
+            return partitionContainer.getRecordStore(name);
+        } else {
+            return partitionContainer.getExistingRecordStore(name);
+        }
     }
 }

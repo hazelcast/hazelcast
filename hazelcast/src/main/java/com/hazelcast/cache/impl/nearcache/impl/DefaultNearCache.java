@@ -24,8 +24,8 @@ import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -87,7 +87,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     protected ScheduledFuture scheduleExpirationTask(NearCacheExecutor nearCacheExecutor,
                                                      ExpirationTask expirationTask) {
-        return nearCacheExecutor.scheduleWithFixedDelay(expirationTask,
+        return nearCacheExecutor.scheduleWithRepetition(expirationTask,
                 DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
                 DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
                 TimeUnit.SECONDS);

@@ -16,21 +16,81 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
+
+    @Test
+    public void testUpdatesInWriteDelayWindowDone_withStoreAllMethod() throws Exception {
+        final TestMapStore store = new TestMapStore();
+        Config config = newMapStoredConfig(store, 20);
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        IMap map = instance.getMap("default");
+
+        int numberOfPuts = 2;
+        for (int i = 0; i < numberOfPuts; i++) {
+            map.put(i, i);
+            sleepSeconds(4);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, store.getStoreAllCount());
+            }
+        });
+    }
+
+    protected Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapStoreConfig.setImplementation(store);
+
+        Config config = getConfig();
+        MapConfig mapConfig = config.getMapConfig("default");
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+
+        return config;
+    }
+
+
+    private static class TestMapStore extends MapStoreAdapter {
+
+        private final AtomicInteger storeAll = new AtomicInteger();
+
+        @Override
+        public void storeAll(Map map) {
+            storeAll.incrementAndGet();
+        }
+
+        public int getStoreAllCount() {
+            return storeAll.get();
+        }
+    }
+
 
     /**
      * Updates on same key should not shift store time.

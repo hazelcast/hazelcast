@@ -312,7 +312,7 @@ public abstract class CollectionContainer implements DataSerializable {
     }
 
     public long nextId() {
-        return idGenerator++;
+        return ++idGenerator;
     }
 
     void setId(long itemId) {

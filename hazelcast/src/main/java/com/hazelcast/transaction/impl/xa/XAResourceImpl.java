@@ -23,12 +23,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -247,7 +247,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         HashSet<SerializableXID> xids = new HashSet<SerializableXID>();
         xids.addAll(xaService.getPreparedXids());
         for (InternalCompletableFuture<SerializableList> future : futureList) {
-            SerializableList xidSet = future.getSafely();
+            SerializableList xidSet = future.join();
             for (Data xidData : xidSet) {
                 SerializableXID xid = nodeEngine.toObject(xidData);
                 xids.add(xid);
