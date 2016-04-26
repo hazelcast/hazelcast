@@ -120,7 +120,6 @@ public final class IOUtil {
     public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, InputStream in) throws IOException {
         return new FilteringObjectInputStream(in) {
             protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
-                System.err.println("Checking class " + desc.getName());
                 try {
                     // Check deserialization filters
                     super.resolveClass(desc);
