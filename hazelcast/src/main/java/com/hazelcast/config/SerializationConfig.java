@@ -63,6 +63,8 @@ public class SerializationConfig {
 
     private Set<ClassDefinition> classDefinitions;
 
+    private JavaSerializationFilterConfig javaSerializationFilterConfig;
+
     public SerializationConfig() {
     }
 
@@ -442,6 +444,23 @@ public class SerializationConfig {
         return this;
     }
 
+    /**
+     * @return the javaSerializationFilterConfig
+     */
+    public JavaSerializationFilterConfig getJavaSerializationFilterConfig() {
+        return javaSerializationFilterConfig;
+    }
+
+    /**
+     * Allows to configure deserialization protection filter.
+     *
+     * @param javaSerializationFilterConfig the javaSerializationFilterConfig to set (may be {@code null})
+     */
+    public SerializationConfig setJavaSerializationFilterConfig(JavaSerializationFilterConfig javaSerializationFilterConfig) {
+        this.javaSerializationFilterConfig = javaSerializationFilterConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "SerializationConfig{"
@@ -456,6 +475,7 @@ public class SerializationConfig {
                 + ", classDefinitions=" + classDefinitions
                 + ", byteOrder=" + byteOrder
                 + ", useNativeByteOrder=" + useNativeByteOrder
+                + ", javaSerializationFilterConfig=" + javaSerializationFilterConfig
                 + '}';
     }
 }

@@ -27,6 +27,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
+
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,6 +62,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -2380,6 +2383,38 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         GlobalSerializerConfig globalSerializerConfig = config.getSerializationConfig().getGlobalSerializerConfig();
         assertEquals(name, globalSerializerConfig.getClassName());
         assertTrue(globalSerializerConfig.isOverrideJavaSerialization());
+    }
+
+    @Test
+    public void testJavaSerializationFilter() {
+        String xml = HAZELCAST_START_TAG
+                + "  <serialization>\n"
+                + "      <java-serialization-filter>\n"
+                + "          <whitelist>\n"
+                + "              <class>java.lang.String</class>\n"
+                + "              <class>example.Foo</class>\n"
+                + "              <package>com.acme.app</package>\n"
+                + "              <package>com.acme.app.subpkg</package>\n"
+                + "          </whitelist>\n"
+                + "          <blacklist>\n"
+                + "              <class>com.acme.app.BeanComparator</class>\n"
+                + "          </blacklist>\n"
+                + "      </java-serialization-filter>\n"
+                + "  </serialization>\n"
+                + HAZELCAST_END_TAG;
+        
+        Config config = new InMemoryXmlConfig(xml);
+        JavaSerializationFilterConfig javaSerializationFilterConfig = config.getSerializationConfig().getJavaSerializationFilterConfig();
+        assertNotNull(javaSerializationFilterConfig);
+        ClassFilter blackList = javaSerializationFilterConfig.getBlacklist();
+        assertNotNull(blackList);
+        ClassFilter whiteList = javaSerializationFilterConfig.getWhitelist();
+        assertNotNull(whiteList);
+        assertTrue(whiteList.getClasses().contains("java.lang.String"));
+        assertTrue(whiteList.getClasses().contains("example.Foo"));
+        assertTrue(whiteList.getPackages().contains("com.acme.app"));
+        assertTrue(whiteList.getPackages().contains("com.acme.app.subpkg"));
+        assertTrue(blackList.getClasses().contains("com.acme.app.BeanComparator"));
     }
 
     @Test
