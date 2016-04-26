@@ -357,11 +357,12 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
         for (; ; ) {
             final Object oldState = state;
             if (isDone(oldState)) {
-                // it can be that this invocation future already received an answer, e.g. when an invocation already received a
-                // response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException.
-                logger.warning("The Future.complete(Object value) can only be called once. Request: " + invocationToString()
-                        + ", current response: " + getState() + ", new response: " + value);
-
+                if (oldState != value) {
+                    // it can be that this future already completed, e.g. when an invocation already
+                    // received a response, but before it cleans up itself, it receives a HazelcastInstanceNotActiveException.
+                    logger.warning("Future.complete(Object value) can only be called once. Request: " + invocationToString()
+                            + ", current value: " + oldState + ", offered value: " + value);
+                }
                 return false;
             }
 
