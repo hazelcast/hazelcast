@@ -154,11 +154,10 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         } else {
             cancelTtlEntry(marshalledKey);
         }
-        Object unmarshalledOldValue = unmarshall(oldValue);
         if (replicatedMapConfig.isStatisticsEnabled()) {
             getStats().incrementPuts(Clock.currentTimeMillis() - time);
         }
-        return unmarshalledOldValue;
+        return oldValue;
     }
 
     @Override
