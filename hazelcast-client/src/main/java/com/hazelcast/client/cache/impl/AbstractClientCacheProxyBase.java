@@ -17,16 +17,18 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.ICacheInternal;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -52,7 +54,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <K> the type of key
  * @param <V> the type of value
  */
-abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V> {
+abstract class AbstractClientCacheProxyBase<K, V>
+        extends ClientProxy
+        implements ICacheInternal<K, V> {
 
     static final int TIMEOUT = 10;
 
@@ -72,12 +76,12 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         }
     };
 
-    protected final ClientContext clientContext;
+    protected ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
     protected final String name;
     protected final String nameWithPrefix;
-    protected final ILogger logger;
+    protected ILogger logger;
     private final ConcurrentMap<Future, CompletionListener> loadAllCalls
             = new ConcurrentHashMap<Future, CompletionListener>();
 
@@ -86,25 +90,41 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
 
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
-    protected AbstractClientCacheProxyBase(CacheConfig cacheConfig, ClientContext clientContext) {
-        this.logger = clientContext.getLoggingService().getLogger(getClass());
+    protected AbstractClientCacheProxyBase(CacheConfig cacheConfig) {
+        super(ICacheService.SERVICE_NAME, cacheConfig.getName());
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
-        this.clientContext = clientContext;
+    }
+
+    protected void injectDependencies(Object obj) {
+        if (obj instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) obj).setHazelcastInstance(clientContext.getHazelcastInstance());
+        }
+    }
+
+    @Override
+    protected void onInitialize() {
+        clientContext = getContext();
+        logger = clientContext.getLoggingService().getLogger(getClass());
+    }
+
+    @Override
+    protected String getDistributedObjectName() {
+        return cacheConfig.getNameWithPrefix();
     }
 
     protected int nextCompletionId() {
         return completionIdCounter.incrementAndGet();
     }
 
-    //region close&destroy
     protected void ensureOpen() {
         if (isClosed()) {
             throw new IllegalStateException("Cache operations can not be performed. The cache closed");
         }
     }
 
+    @Override
     public void close() {
         if (!isClosed.compareAndSet(false, true)) {
             return;
@@ -129,32 +149,27 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         }
     }
 
-    public void destroy() {
+    @Override
+    protected boolean preDestroy() {
         close();
         if (!isDestroyed.compareAndSet(false, true)) {
-            return;
+            return false;
         }
         isClosed.set(true);
-        try {
-            int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
-            ClientMessage request = CacheDestroyCodec.encodeRequest(nameWithPrefix);
-            final ClientInvocation clientInvocation = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
-            final Future<ClientMessage> future = clientInvocation.invoke();
-            future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        return true;
     }
 
+    @Override
     public boolean isClosed() {
         return isClosed.get();
     }
 
+    @Override
     public boolean isDestroyed() {
         return isDestroyed.get();
     }
 
+    @Override
     public void open() {
         if (isDestroyed.get()) {
             throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
@@ -165,11 +180,22 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
     }
 
     protected abstract void closeListeners();
-    //endregion close&destroy
 
-    //region DISTRIBUTED OBJECT
-    public String getNameWithPrefix() {
+    @Override
+    public String getPrefixedName() {
         return nameWithPrefix;
+    }
+
+    /**
+     * Gets the full cache name with prefixes.
+     *
+     * @return the full cache name with prefixes
+     *
+     * @deprecated use #getPrefixedName instead
+     */
+    @Deprecated
+    public String getNameWithPrefix() {
+        return getPrefixedName();
     }
 
     protected <T> T toObject(Object data) {
@@ -208,6 +234,8 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         final CompletionListener compListener = completionListener != null ? completionListener : NULL_COMPLETION_LISTENER;
         ClientDelegatingFuture<V> delegatingFuture = null;
         try {
+            injectDependencies(completionListener);
+
             final long start = System.nanoTime();
             final ClientInvocationFuture future = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request).invoke();
@@ -256,7 +284,6 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
     }
 
     protected void onLoadAll(Set<Data> keys, Object response, long start, long end) {
-
     }
-    //endregion CacheLoader
+
 }

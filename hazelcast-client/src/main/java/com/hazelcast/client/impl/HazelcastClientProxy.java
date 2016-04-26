@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -131,6 +132,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public ILock getLock(String key) {
         return getClient().getLock(key);
+    }
+
+    @Override
+    public <K, V> ICache<K, V> getCache(String name) {
+        return getClient().getCache(name);
     }
 
     @Override

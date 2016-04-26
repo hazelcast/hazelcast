@@ -40,7 +40,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -138,38 +137,46 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     };
 
-    protected final HazelcastClientCacheManager cacheManager;
-    protected final NearCacheManager nearCacheManager;
+    protected HazelcastClientCacheManager cacheManager;
+    protected NearCacheManager nearCacheManager;
     // Object => Data or <V>
     protected NearCache<Data, Object> nearCache;
     protected String nearCacheMembershipRegistrationId;
 
-    protected final ClientCacheStatisticsImpl statistics;
-    protected final boolean statisticsEnabled;
+    protected ClientCacheStatisticsImpl statistics;
+    protected boolean statisticsEnabled;
 
     protected boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
 
-    protected AbstractClientInternalCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
-                                               HazelcastClientCacheManager cacheManager) {
-        super(cacheConfig, clientContext);
-        this.cacheManager = cacheManager;
-        this.nearCacheManager = clientContext.getNearCacheManager();
+    protected AbstractClientInternalCacheProxy(CacheConfig cacheConfig) {
+        super(cacheConfig);
         this.asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         this.syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         this.syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
+    }
+
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+
+        nearCacheManager = clientContext.getNearCacheManager();
 
         initNearCache();
 
         if (nearCache != null) {
-            this.statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis(),
-                    nearCache.getNearCacheStats());
+            statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis(),
+                                                       nearCache.getNearCacheStats());
         } else {
-            this.statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis());
+            statistics = new ClientCacheStatisticsImpl(System.currentTimeMillis());
         }
-        this.statisticsEnabled = cacheConfig.isStatisticsEnabled();
+        statisticsEnabled = cacheConfig.isStatisticsEnabled();
+    }
+
+    void setCacheManager(HazelcastClientCacheManager cacheManager) {
+        this.cacheManager = cacheManager;
     }
 
     private void initNearCache() {
@@ -216,7 +223,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     @Override
-    public void destroy() {
+    protected void onDestroy() {
         if (nearCache != null) {
             removeInvalidationListener();
             nearCacheManager.destroyNearCache(nearCache.getName());
@@ -224,7 +231,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         if (statisticsEnabled) {
             statistics.clear();
         }
-        super.destroy();
     }
 
     protected ClientInvocationFuture invoke(ClientMessage req, int partitionId, int completionId) {
@@ -969,4 +975,5 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             }
         }
     }
+
 }

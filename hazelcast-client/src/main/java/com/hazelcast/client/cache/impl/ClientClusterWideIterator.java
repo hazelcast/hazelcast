@@ -60,7 +60,7 @@ public class ClientClusterWideIterator<K, V>
 
     protected CacheKeyIteratorResult fetch() {
         ClientMessage request = CacheIterateCodec
-                .encodeRequest(cacheProxy.getNameWithPrefix(), partitionIndex, lastTableIndex, fetchSize);
+                .encodeRequest(cacheProxy.getPrefixedName(), partitionIndex, lastTableIndex, fetchSize);
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         try {
             ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionIndex);

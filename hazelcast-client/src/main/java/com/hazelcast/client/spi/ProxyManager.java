@@ -16,10 +16,11 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
+import com.hazelcast.client.cache.impl.ClientCacheProxyFactory;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -46,6 +47,7 @@ import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.spi.impl.listener.LazyDistributedObjectEvent;
 import com.hazelcast.collection.impl.list.ListService;
@@ -106,7 +108,6 @@ public final class ProxyManager {
     private static final String PROVIDER_ID = "com.hazelcast.client.spi.ClientProxyDescriptorProvider";
     private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES = new Class[]{String.class, String.class};
 
-
     private final HazelcastClientInstanceImpl client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxyFuture> proxies
@@ -149,7 +150,9 @@ public final class ProxyManager {
     public void init(ClientConfig config) {
         // register defaults
         register(MapService.SERVICE_NAME, createServiceProxyFactory(MapService.class));
-        register(CacheService.SERVICE_NAME, ClientCacheDistributedObject.class);
+        if (JCacheDetector.isJcacheAvailable(config.getClassLoader())) {
+            register(ICacheService.SERVICE_NAME, new ClientCacheProxyFactory(client));
+        }
         register(QueueService.SERVICE_NAME, ClientQueueProxy.class);
         register(MultiMapService.SERVICE_NAME, ClientMultiMapProxy.class);
         register(ListService.SERVICE_NAME, ClientListProxy.class);
@@ -230,6 +233,10 @@ public final class ProxyManager {
         }
     }
 
+    public ClientProxyFactory getClientProxyFactory(String serviceName) {
+        return proxyFactories.get(serviceName);
+    }
+
     public void register(final String serviceName, final Class<? extends ClientProxy> proxyType) {
         try {
             register(serviceName, new ClientProxyFactory() {
@@ -252,7 +259,7 @@ public final class ProxyManager {
         }
         final ClientProxyFactory factory = proxyFactories.get(service);
         if (factory == null) {
-            throw new IllegalArgumentException("No factory registered for service: " + service);
+            throw new ClientServiceNotFoundException("No factory registered for service: " + service);
         }
         final ClientProxy clientProxy = factory.create(id);
         proxyFuture = new ClientProxyFuture();
@@ -321,7 +328,7 @@ public final class ProxyManager {
     private void initialize(ClientProxy clientProxy) throws Exception {
         final Address initializationTarget = findNextAddressToSendCreateRequest();
         final Connection connection = getTargetOrOwnerConnection(initializationTarget);
-        final ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getName(),
+        final ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getDistributedObjectName(),
                 clientProxy.getServiceName(), initializationTarget);
         final ClientContext context = new ClientContext(client, this);
         new ClientInvocation(client, clientMessage, connection).invoke().get();
