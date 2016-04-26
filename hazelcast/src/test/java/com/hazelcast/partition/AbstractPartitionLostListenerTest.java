@@ -57,12 +57,12 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         hazelcastInstanceFactory.terminateAll();
     }
 
-    final protected void stopInstances(List<HazelcastInstance> terminatingInstances, final NodeLeaveType nodeLeaveType) {
+    final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType) {
         assertNotNull(nodeLeaveType);
 
         final List<Thread> threads = new ArrayList<Thread>();
-        final CountDownLatch latch = new CountDownLatch(terminatingInstances.size());
-        for (final HazelcastInstance instance : terminatingInstances) {
+        final CountDownLatch latch = new CountDownLatch(instances.size());
+        for (final HazelcastInstance instance : instances) {
             threads.add(new Thread(new Runnable() {
                 @Override
                 public void run() {
