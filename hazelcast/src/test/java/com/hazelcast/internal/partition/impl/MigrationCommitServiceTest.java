@@ -5,19 +5,14 @@ import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.service.TestGetOperation;
-import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.internal.partition.service.TestIncrementOperation;
+import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -34,7 +29,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -336,12 +330,6 @@ public class MigrationCommitServiceTest
 
         final Address oldReplicaOwner = partition.getReplicaAddress(replicaIndexToClear);
 
-        ClearReplicaOperation op = new ClearReplicaOperation();
-        op.setPartitionId(partitionId).setReplicaIndex(replicaIndexToClear).setService(partitionService);
-        final InvocationBuilder builder = getOperationService(instances[0])
-                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, op, partitionId);
-        builder.setReplicaIndex(replicaIndexToClear).invoke().get();
-
         partition.setReplicaAddress(replicaIndexToClear, null);
 
         assertTrueEventually(new AssertTask() {
@@ -352,18 +340,22 @@ public class MigrationCommitServiceTest
             }
         });
 
+        final HazelcastInstance oldReplicaOwnerInstance = factory.getInstance(oldReplicaOwner);
+        ClearReplicaRunnable op = new ClearReplicaRunnable(partitionId, getNodeEngineImpl(oldReplicaOwnerInstance));
+        getOperationService(oldReplicaOwnerInstance).execute(op);
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
                     throws Exception {
-                final TestMigrationAwareService service = getService(oldReplicaOwner);
-                assertFalse(service.contains(partitionId));
-
                 final long[] replicaVersions = TestPartitionUtils
                         .getReplicaVersions(factory.getInstance(oldReplicaOwner), partitionId);
                 assertArrayEquals(new long[InternalPartition.MAX_BACKUP_COUNT], replicaVersions);
             }
         });
+
+        TestMigrationAwareService migrationAwareService = getService(oldReplicaOwner);
+        migrationAwareService.clearPartitionReplica(partitionId);
 
         for (HazelcastInstance instance : instances) {
             final TestMigrationAwareService service = getNodeEngineImpl(instance)
@@ -629,47 +621,28 @@ public class MigrationCommitServiceTest
 
     }
 
-    static final class ClearReplicaOperation extends AbstractOperation
-            implements PartitionAwareOperation, MigrationCycleOperation {
+    static final class ClearReplicaRunnable implements PartitionSpecificRunnable {
 
-        public ClearReplicaOperation() {
+        private final int partitionId;
+
+        private final NodeEngineImpl nodeEngine;
+
+        public ClearReplicaRunnable(int partitionId, NodeEngineImpl nodeEngine) {
+            this.partitionId = partitionId;
+            this.nodeEngine = nodeEngine;
         }
 
         @Override
-        public void run() throws Exception {
-            int partitionId = getPartitionId();
-            InternalPartitionServiceImpl partitionService = getService();
+        public void run()  {
+            final InternalPartitionServiceImpl partitionService = nodeEngine.getService(InternalPartitionService.SERVICE_NAME);
             partitionService.getReplicaManager().cancelReplicaSync(partitionId);
-            clearPartition(partitionId, partitionService);
-        }
-
-        private void clearPartition(int partitionId, InternalPartitionServiceImpl partitionService) {
-            NodeEngine nodeEngine = getNodeEngine();
-            TestMigrationAwareService service = nodeEngine.getService(TestMigrationAwareService.SERVICE_NAME);
-            service.clearPartitionReplica(partitionId);
             partitionService.getReplicaManager().clearPartitionReplicaVersions(partitionId);
         }
 
-        @Override
-        public boolean returnsResponse() {
-            return true;
-        }
 
         @Override
-        public boolean validatesTarget() {
-            return false;
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in)
-                throws IOException {
-            super.readInternal(in);
-        }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out)
-                throws IOException {
-            super.writeInternal(out);
+        public int getPartitionId() {
+            return partitionId;
         }
 
     }
