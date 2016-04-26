@@ -31,4 +31,11 @@ public abstract class ValueReader<T> {
      */
     public abstract void read(String path, ValueCallback<T> callback);
 
+    /**
+     *
+     * @param path
+     * @param collector
+     */
+    public abstract void read(String path, ValueCollector<T> collector);
+
 }
