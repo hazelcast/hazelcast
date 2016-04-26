@@ -32,6 +32,7 @@ import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -233,7 +234,7 @@ public class TestClientRegistry {
         @Override
         public boolean write(OutboundFrame frame) {
             Node node = serverNodeEngine.getNode();
-            if (!node.isRunning()) {
+            if (node.getState() == NodeState.SHUT_DOWN) {
                 return false;
             }
             ClientMessage newPacket = readFromPacket((ClientMessage) frame);

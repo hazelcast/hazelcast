@@ -46,9 +46,21 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
 
     private static final int ITEM_COUNT_PER_MAP = 10000;
 
-    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},nodeCount:{1}")
+    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},nodeCount:{1},nodeLeaveType:{2}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{{1, 7}, {3, 7}, {6, 7}, {1, 10}, {3, 10}, {6, 10}});
+        return Arrays.asList(new Object[][]{{1, 7, NodeLeaveType.SHUTDOWN},
+                                            {1, 7, NodeLeaveType.TERMINATE},
+                                            {3, 7, NodeLeaveType.SHUTDOWN},
+                                            {3, 7, NodeLeaveType.TERMINATE},
+                                            {6, 7, NodeLeaveType.SHUTDOWN},
+                                            {6, 7, NodeLeaveType.TERMINATE},
+                                            {1, 10, NodeLeaveType.SHUTDOWN},
+                                            {1, 10, NodeLeaveType.TERMINATE},
+                                            {3, 10, NodeLeaveType.SHUTDOWN},
+                                            {3, 10, NodeLeaveType.TERMINATE},
+                                            {6, 10, NodeLeaveType.SHUTDOWN},
+                                            {6, 10, NodeLeaveType.TERMINATE}
+        });
     }
 
     @Override
@@ -61,18 +73,21 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     }
 
     @Parameterized.Parameter(0)
-    public int numberOfNodesToCrash;
+    public int numberOfNodesToStop;
 
     @Parameterized.Parameter(1)
     public int nodeCount;
+
+    @Parameterized.Parameter(2)
+    public NodeLeaveType nodeLeaveType;
 
     @Test
     public void testReplicaVersionsWhenNodesCrashSimultaneously() throws InterruptedException {
         List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
         List<HazelcastInstance> instancesCopy = new ArrayList<HazelcastInstance>(instances);
-        List<HazelcastInstance> terminatingInstances = instancesCopy.subList(0, numberOfNodesToCrash);
-        List<HazelcastInstance> survivingInstances = instancesCopy.subList(numberOfNodesToCrash, instances.size());
+        List<HazelcastInstance> terminatingInstances = instancesCopy.subList(0, numberOfNodesToStop);
+        List<HazelcastInstance> survivingInstances = instancesCopy.subList(numberOfNodesToStop, instances.size());
         populateMaps(survivingInstances.get(0));
 
         String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
@@ -81,10 +96,10 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
         Map<Integer, List<Address>> partitionReplicaAddresses = TestPartitionUtils.getAllReplicaAddresses(instances);
         Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId = getMinReplicaIndicesByPartitionId(survivingInstances);
 
-        terminateInstances(terminatingInstances);
+        stopInstances(terminatingInstances, nodeLeaveType);
         waitAllForSafeStateAndDumpPartitionServiceOnFailure(survivingInstances, 300);
 
-        validateReplicaVersions(log, numberOfNodesToCrash, survivingInstances, replicaVersionsByPartitionId,
+        validateReplicaVersions(log, numberOfNodesToStop, survivingInstances, replicaVersionsByPartitionId,
                 partitionReplicaAddresses, minSurvivingReplicaIndexByPartitionId);
     }
 

@@ -17,8 +17,10 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -37,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
@@ -98,26 +101,38 @@ public class PartitionStateManager {
         return count;
     }
 
+    private Collection<MemberGroup> createMemberGroups(final Set<Address> excludedAddresses) {
+        MemberSelector exclude = new MemberSelector() {
+            @Override
+            public boolean select(Member member) {
+                return !excludedAddresses.contains(member.getAddress());
+            }
+        };
+        final MemberSelector selector = MemberSelectors.and(DATA_MEMBER_SELECTOR, exclude);
+        final Collection<Member> members = node.getClusterService().getMembers(selector);
+        return memberGroupFactory.createMemberGroups(members);
+    }
+
     private Collection<MemberGroup> createMemberGroups() {
         final Collection<Member> members = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         return memberGroupFactory.createMemberGroups(members);
     }
 
-    boolean initializePartitionAssignments() {
+    boolean initializePartitionAssignments(Set<Address> excludedAddresses) {
         ClusterState clusterState = node.getClusterService().getClusterState();
         if (clusterState != ClusterState.ACTIVE) {
             logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
             return false;
         }
 
-        Collection<MemberGroup> memberGroups = createMemberGroups();
+        Collection<MemberGroup> memberGroups = createMemberGroups(excludedAddresses);
         if (memberGroups.isEmpty()) {
             logger.warning("No member group is available to assign partition ownership...");
             return false;
         }
 
         logger.info("Initializing cluster partition table arrangement...");
-        Address[][] newState = partitionStateGenerator.initialize(memberGroups, partitionCount);
+        Address[][] newState = partitionStateGenerator.arrange(memberGroups, partitions);
         if (newState.length != partitionCount) {
             throw new HazelcastException("Invalid partition count! "
                     + "Expected: " + partitionCount + ", Actual: " + newState.length);
@@ -237,7 +252,7 @@ public class PartitionStateManager {
         return partitions;
     }
 
-    InternalPartition[] getPartitionsCopy() {
+    public InternalPartition[] getPartitionsCopy() {
         NopPartitionListener listener = new NopPartitionListener();
         InternalPartition[] result = new InternalPartition[partitions.length];
         for (int i = 0; i < partitionCount; i++) {
@@ -250,12 +265,12 @@ public class PartitionStateManager {
         return partitions[partitionId];
     }
 
-    Address[][] repartition() {
+    Address[][] repartition(Set<Address> excludedAddresses) {
         if (!initialized) {
             return null;
         }
-        Collection<MemberGroup> memberGroups = createMemberGroups();
-        Address[][] newState = partitionStateGenerator.reArrange(memberGroups, partitions);
+        Collection<MemberGroup> memberGroups = createMemberGroups(excludedAddresses);
+        Address[][] newState = partitionStateGenerator.arrange(memberGroups, partitions);
 
         if (newState == null) {
             if (logger.isFinestEnabled()) {

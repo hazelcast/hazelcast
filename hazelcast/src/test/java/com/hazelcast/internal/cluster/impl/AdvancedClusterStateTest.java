@@ -686,7 +686,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             } catch (Throwable e) {
                 t = e;
             }
-            sleepMillis(100);
+            sleepMillis(500);
             long end = Clock.currentTimeMillis();
             timeout -= (end - start);
         }

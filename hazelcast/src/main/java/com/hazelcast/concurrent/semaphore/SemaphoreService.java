@@ -188,11 +188,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearSemaphoresHavingLesserBackupCountThan(partitionId, -1);
-    }
-
-    @Override
     public void clientDisconnected(String clientUuid) {
         onOwnerDisconnected(clientUuid);
     }

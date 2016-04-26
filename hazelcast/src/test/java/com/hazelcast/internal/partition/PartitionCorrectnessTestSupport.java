@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
-import com.hazelcast.internal.partition.service.TestPutOperation;
+import com.hazelcast.internal.partition.service.TestIncrementOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -72,24 +72,29 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     void fillData(HazelcastInstance hz) {
         NodeEngine nodeEngine = getNode(hz).nodeEngine;
         for (int i = 0; i < PARTITION_COUNT; i++) {
-            nodeEngine.getOperationService().invokeOnPartition(null, new TestPutOperation(), i);
+            nodeEngine.getOperationService().invokeOnPartition(null, new TestIncrementOperation(), i);
         }
     }
 
-    void startNodes(final Config config, int count) throws InterruptedException {
+    Collection<HazelcastInstance> startNodes(final Config config, int count) throws InterruptedException {
         if (count == 1) {
-            factory.newHazelcastInstance(config);
+            return Collections.singleton(factory.newHazelcastInstance(config));
         } else {
+            Collection<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(count);
+            final Collection<HazelcastInstance> syncInstances = Collections.synchronizedCollection(instances);
+
             final CountDownLatch latch = new CountDownLatch(count);
             for (int i = 0; i < count; i++) {
                 new Thread() {
                     public void run() {
-                        factory.newHazelcastInstance(config);
+                        HazelcastInstance instance = factory.newHazelcastInstance(config);
+                        syncInstances.add(instance);
                         latch.countDown();
                     }
                 }.start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
+            return instances;
         }
     }
 
@@ -141,78 +146,77 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         }
     }
 
-    void assertSizeAndData() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
-                final int actualBackupCount = Math.min(backupCount, instances.size() - 1);
-                final int expectedSize = PARTITION_COUNT * (actualBackupCount + 1);
+    void assertSizeAndDataEventually() {
+        assertTrueEventually(new AssertSizeAndDataTask());
+    }
 
-                int total = 0;
-                for (HazelcastInstance hz : instances) {
-                    TestMigrationAwareService service = getService(hz);
-                    total += service.size();
+    void assertSizeAndData() throws InterruptedException {
+        Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
+        final int actualBackupCount = Math.min(backupCount, instances.size() - 1);
+        final int expectedSize = PARTITION_COUNT * (actualBackupCount + 1);
 
-                    Node node = getNode(hz);
-                    InternalPartitionService partitionService = node.getPartitionService();
-                    InternalPartition[] partitions = partitionService.getInternalPartitions();
-                    Address thisAddress = node.getThisAddress();
+        int total = 0;
+        for (HazelcastInstance hz : instances) {
+            TestMigrationAwareService service = getService(hz);
+            total += service.size();
 
-                    // find leaks
-                    for (Integer p : service.keys()) {
-                        int replicaIndex = partitions[p].getReplicaIndex(thisAddress);
-                        assertThat("Partition: " + p + " is leaking on " + thisAddress,
-                                replicaIndex, allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(backupCount)));
-                    }
+            Node node = getNode(hz);
+            InternalPartitionService partitionService = node.getPartitionService();
+            InternalPartition[] partitions = partitionService.getInternalPartitions();
+            Address thisAddress = node.getThisAddress();
 
-                    // find missing
-                    for (InternalPartition partition : partitions) {
-                        int replicaIndex = partition.getReplicaIndex(thisAddress);
-                        if (replicaIndex >= 0 && replicaIndex <= backupCount) {
-                            assertTrue("Partition: " + partition.getPartitionId() + ", replica: " + replicaIndex
+            // find leaks
+            for (Integer p : service.keys()) {
+                int replicaIndex = partitions[p].getReplicaIndex(thisAddress);
+                assertThat("Partition: " + p + " is leaking on " + thisAddress,
+                        replicaIndex, allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(backupCount)));
+            }
+
+            // find missing
+            for (InternalPartition partition : partitions) {
+                int replicaIndex = partition.getReplicaIndex(thisAddress);
+                if (replicaIndex >= 0 && replicaIndex <= backupCount) {
+                    assertTrue("Partition: " + partition.getPartitionId() + ", replica: " + replicaIndex
                                     + " data is missing on " + thisAddress,
-                                    service.contains(partition.getPartitionId()));
-                        }
-                    }
+                            service.contains(partition.getPartitionId()));
+                }
+            }
 
-                    // check values
-                    for (InternalPartition partition : partitions) {
-                        if (partition.isLocal()) {
-                            int partitionId = partition.getPartitionId();
-                            long[] replicaVersions = getReplicaVersions(node, partitionId);
+            // check values
+            for (InternalPartition partition : partitions) {
+                if (partition.isLocal()) {
+                    int partitionId = partition.getPartitionId();
+                    long[] replicaVersions = getReplicaVersions(node, partitionId);
 
-                            for (int replica = 1; replica <= actualBackupCount; replica++) {
-                                Address address = partition.getReplicaAddress(replica);
-                                assertNotNull("Replica: " + replica + " is not found in " + partition, address);
+                    for (int replica = 1; replica <= actualBackupCount; replica++) {
+                        Address address = partition.getReplicaAddress(replica);
+                        assertNotNull("Replica: " + replica + " is not found in " + partition, address);
 
-                                HazelcastInstance backupInstance = factory.getInstance(address);
-                                assertNotNull("Instance for " + address + " is not found! -> " + partition, backupInstance);
+                        HazelcastInstance backupInstance = factory.getInstance(address);
+                        assertNotNull("Instance for " + address + " is not found! -> " + partition, backupInstance);
 
-                                Node backupNode = getNode(backupInstance);
-                                assertNotNull(backupNode);
+                        Node backupNode = getNode(backupInstance);
+                        assertNotNull(backupNode);
 
-                                long[] backupReplicaVersions = getReplicaVersions(backupNode, partitionId);
-                                assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId, backupReplicaVersions);
+                        long[] backupReplicaVersions = getReplicaVersions(backupNode, partitionId);
+                        assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId, backupReplicaVersions);
 
-                                for (int i = replica - 1; i < actualBackupCount; i++) {
-                                    assertEquals("Replica version mismatch! Owner: " + thisAddress + ", Backup: " + address
+                        for (int i = replica - 1; i < actualBackupCount; i++) {
+                            assertEquals("Replica version mismatch! Owner: " + thisAddress + ", Backup: " + address
                                             + ", Partition: " + partition + ", Replica: " + (i + 1) + " owner versions: "
                                             + Arrays.toString(replicaVersions) + " backup versions: " + Arrays.toString(backupReplicaVersions),
-                                            replicaVersions[i], backupReplicaVersions[i]);
-                                }
-
-                                TestMigrationAwareService backupService = getService(backupInstance);
-                                assertEquals("Wrong data! Partition: " + partitionId + ", replica: " + replica + " on "
-                                        + address + " has stale value! " + Arrays.toString(backupReplicaVersions),
-                                        service.get(partitionId), backupService.get(partitionId));
-                            }
+                                    replicaVersions[i], backupReplicaVersions[i]);
                         }
+
+                        TestMigrationAwareService backupService = getService(backupInstance);
+                        assertEquals("Wrong data! Partition: " + partitionId + ", replica: " + replica + " on "
+                                        + address + " has stale value! " + Arrays.toString(backupReplicaVersions),
+                                service.get(partitionId), backupService.get(partitionId));
                     }
                 }
-                assertEquals("Missing data!", expectedSize, total);
             }
-        });
+        }
+        assertEquals("Missing data!", expectedSize, total);
     }
 
     private TestMigrationAwareService getService(HazelcastInstance hz) {
@@ -220,7 +224,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         return node.nodeEngine.getService(TestMigrationAwareService.SERVICE_NAME);
     }
 
-    Config getConfig(int backupCount, boolean withService, boolean antiEntropyEnabled) {
+    Config getConfig(boolean withService, boolean antiEntropyEnabled) {
         Config config = new Config();
 
         if (withService) {
@@ -235,5 +239,12 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         int parallelReplications = antiEntropyEnabled ? PARALLEL_REPLICATIONS : 0;
         config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(parallelReplications));
         return config;
+    }
+
+    private class AssertSizeAndDataTask extends AssertTask {
+        @Override
+        public void run() throws Exception {
+            assertSizeAndData();
+        }
     }
 }

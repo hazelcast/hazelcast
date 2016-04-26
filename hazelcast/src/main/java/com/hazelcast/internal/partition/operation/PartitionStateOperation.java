@@ -17,13 +17,14 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public final class PartitionStateOperation extends AbstractOperation
 
     private PartitionRuntimeState partitionState;
     private boolean sync;
-    private boolean returnValue;
+    private boolean success;
 
     public PartitionStateOperation() {
     }
@@ -49,14 +50,15 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public void run() {
-        partitionState.setEndpoint(getCallerAddress());
+        Address callerAddress = getCallerAddress();
+        partitionState.setEndpoint(callerAddress);
         InternalPartitionServiceImpl partitionService = getService();
-        returnValue = partitionService.processPartitionRuntimeState(partitionState);
+        success = partitionService.processPartitionRuntimeState(partitionState);
 
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
-            logger.fine("Applied new partition state: " + returnValue + ". Version: " + partitionState.getVersion()
-                    + ", caller: " + getCallerAddress());
+            logger.fine("Applied new partition state: " + success + ". Version: " + partitionState.getVersion()
+                    + ", caller: " + callerAddress);
         }
     }
 
@@ -67,7 +69,7 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public Object getResponse() {
-        return returnValue;
+        return success;
     }
 
     @Override

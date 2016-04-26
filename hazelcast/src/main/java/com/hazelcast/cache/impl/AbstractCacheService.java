@@ -185,8 +185,7 @@ public abstract class AbstractCacheService
         segments[partitionId].init();
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
+    private void clearPartitionReplica(int partitionId) {
         segments[partitionId].clear();
     }
 

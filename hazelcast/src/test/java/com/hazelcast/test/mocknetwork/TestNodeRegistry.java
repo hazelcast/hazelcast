@@ -18,12 +18,13 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -69,19 +70,25 @@ public final class TestNodeRegistry {
     }
 
     public void shutdown() {
-        Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
-        nodes.clear();
-        for (NodeEngineImpl value : values) {
-            value.getHazelcastInstance().shutdown();
-        }
+        shutdown(false);
     }
 
     public void terminate() {
-        Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
-        nodes.clear();
-        for (NodeEngineImpl value : values) {
-            HazelcastInstance hz = value.getHazelcastInstance();
-            hz.getLifecycleService().terminate();
+        shutdown(true);
+    }
+
+    private void shutdown(boolean terminate) {
+        Iterator<NodeEngineImpl> iterator = nodes.values().iterator();
+        while (iterator.hasNext()) {
+            NodeEngineImpl nodeEngine = iterator.next();
+            HazelcastInstance hz = nodeEngine.getHazelcastInstance();
+            LifecycleService lifecycleService = hz.getLifecycleService();
+            if (terminate) {
+                lifecycleService.terminate();
+            } else {
+                lifecycleService.shutdown();
+            }
+            iterator.remove();
         }
     }
 

@@ -20,7 +20,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.operation.ReplicaSyncRequest;
-import com.hazelcast.internal.partition.operation.SyncReplicaVersion;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
@@ -43,7 +42,6 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.internal.partition.InternalPartitionService.DEFAULT_REPLICA_SYNC_DELAY;
 import static com.hazelcast.internal.partition.InternalPartitionService.REPLICA_SYNC_RETRY_DELAY;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
 /**
  *
@@ -313,10 +311,6 @@ public class PartitionReplicaManager {
         replicaSyncProcessLock.release();
     }
 
-    int onGoingReplicationProcesses() {
-        return maxParallelReplications - replicaSyncProcessLock.availablePermits();
-    }
-
     /**
      * @return copy of ongoing replica-sync operations
      */
@@ -393,20 +387,20 @@ public class PartitionReplicaManager {
     private class SyncReplicaVersionTask implements Runnable {
         @Override
         public void run() {
-            if (node.nodeEngine.isRunning() && partitionService.isReplicaSyncAllowed()) {
-                for (InternalPartition partition : partitionStateManager.getPartitions()) {
-                    if (partition.isLocal()) {
-                        for (int index = 1; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
-                            if (partition.getReplicaAddress(index) != null) {
-                                SyncReplicaVersion op = new SyncReplicaVersion(index, null);
-                                op.setService(partitionService);
-                                op.setNodeEngine(nodeEngine);
-                                op.setOperationResponseHandler(
-                                        createErrorLoggingResponseHandler(node.getLogger(SyncReplicaVersion.class)));
-                                op.setPartitionId(partition.getPartitionId());
-                                nodeEngine.getOperationService().executeOperation(op);
-                            }
-                        }
+            if (!node.nodeEngine.isRunning() || !partitionService.isReplicaSyncAllowed()) {
+                return;
+            }
+
+            for (InternalPartition partition : partitionStateManager.getPartitions()) {
+                if (!partition.isLocal()) {
+                    continue;
+                }
+
+                for (int index = 1; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
+                    if (partition.getReplicaAddress(index) != null) {
+                        CheckReplicaVersionTask task = new CheckReplicaVersionTask(nodeEngine, partitionService,
+                                partition.getPartitionId(), index, null);
+                        nodeEngine.getOperationService().execute(task);
                     }
                 }
             }

@@ -22,6 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -56,7 +57,7 @@ public class PartitionAssignmentsCorrectnessTest extends PartitionCorrectnessTes
 
     @Test(timeout = 6000 * 10 * 10)
     public void testPartitionAssignments_whenNodesStartedTerminated() throws InterruptedException {
-        Config config = getConfig(backupCount, false, false);
+        Config config = getConfig(false, false);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         warmUpPartitions(hz);
@@ -69,13 +70,13 @@ public class PartitionAssignmentsCorrectnessTest extends PartitionCorrectnessTes
             terminateNodes(backupCount);
             size -= backupCount;
 
-            assertPartitionAssignments();
+            assertPartitionAssignmentsEventually();
         }
     }
 
     @Test(timeout = 6000 * 10 * 10)
     public void testPartitionAssignments_whenNodesStartedTerminated_withRestart() throws InterruptedException {
-        Config config = getConfig(backupCount, false, false);
+        Config config = getConfig(false, false);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         warmUpPartitions(hz);
@@ -89,34 +90,42 @@ public class PartitionAssignmentsCorrectnessTest extends PartitionCorrectnessTes
             startNodes(config, startCount);
             size += (backupCount + 1);
 
-            assertPartitionAssignments();
+            assertPartitionAssignmentsEventually();
 
             addresses = terminateNodes(backupCount);
             size -= backupCount;
         }
     }
 
-    private void assertPartitionAssignments() {
+    private void assertPartitionAssignmentsEventually() {
+        assertPartitionAssignmentsEventually(factory);
+    }
+
+    static void assertPartitionAssignmentsEventually(final TestHazelcastInstanceFactory factory) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
-                final int actualBackupCount = Math.min(backupCount, instances.size() - 1);
-
-                for (HazelcastInstance hz : instances) {
-                    Node node = getNode(hz);
-                    InternalPartitionService partitionService = node.getPartitionService();
-                    InternalPartition[] partitions = partitionService.getInternalPartitions();
-
-                    for (InternalPartition partition : partitions) {
-                        for (int i = 0; i <= actualBackupCount; i++) {
-                            Address replicaAddress = partition.getReplicaAddress(i);
-                            assertNotNull("Replica " + i + " is not found in " + partition, replicaAddress);
-                            assertTrue("Not member: " + replicaAddress, node.getClusterService().getMember(replicaAddress) != null);
-                        }
-                    }
-                }
+                assertPartitionAssignments(factory);
             }
         });
+    }
+
+    static void assertPartitionAssignments(TestHazelcastInstanceFactory factory) {
+        Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
+        final int replicaCount = Math.min(instances.size(), InternalPartition.MAX_REPLICA_COUNT);
+
+        for (HazelcastInstance hz : instances) {
+            Node node = getNode(hz);
+            InternalPartitionService partitionService = node.getPartitionService();
+            InternalPartition[] partitions = partitionService.getInternalPartitions();
+
+            for (InternalPartition partition : partitions) {
+                for (int i = 0; i < replicaCount; i++) {
+                    Address replicaAddress = partition.getReplicaAddress(i);
+                    assertNotNull("Replica " + i + " is not found in " + partition, replicaAddress);
+                    assertTrue("Not member: " + replicaAddress, node.getClusterService().getMember(replicaAddress) != null);
+                }
+            }
+        }
     }
 }

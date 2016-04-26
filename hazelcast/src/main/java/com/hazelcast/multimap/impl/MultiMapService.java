@@ -309,11 +309,6 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearMapsHavingLesserBackupCountThan(partitionId, -1);
-    }
-
     public LocalMultiMapStats createStats(String name) {
         LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(name);
         long ownedEntryCount = 0;

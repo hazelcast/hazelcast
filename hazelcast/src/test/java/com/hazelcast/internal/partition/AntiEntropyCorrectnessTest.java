@@ -59,11 +59,9 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
     @Test
     public void testPartitionData() throws InterruptedException {
-        HazelcastInstance[] instances = factory.newInstances(getConfig(backupCount, true, true), nodeCount);
+        HazelcastInstance[] instances = factory.newInstances(getConfig(true, true), nodeCount);
         for (HazelcastInstance instance : instances) {
-            Node node = getNode(instance);
-            FirewallingMockConnectionManager cm = (FirewallingMockConnectionManager) node.getConnectionManager();
-            cm.setPacketFilter(new BackupPacketFilter(node.getSerializationService(), BACKUP_BLOCK_RATIO));
+            setBackupPacketDropFilter(instance, BACKUP_BLOCK_RATIO);
         }
         warmUpPartitions(instances);
 
@@ -71,14 +69,20 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
             fillData(instance);
         }
 
-        assertSizeAndData();
+        assertSizeAndDataEventually();
     }
 
-    private static class BackupPacketFilter implements PacketFilter {
+    static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
+        Node node = getNode(instance);
+        FirewallingMockConnectionManager cm = (FirewallingMockConnectionManager) node.getConnectionManager();
+        cm.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
+    }
+
+    private static class BackupPacketDropFilter implements PacketFilter {
         final InternalSerializationService serializationService;
         final float blockRatio;
 
-        BackupPacketFilter(InternalSerializationService serializationService, float blockRatio) {
+        BackupPacketDropFilter(InternalSerializationService serializationService, float blockRatio) {
             this.serializationService = serializationService;
             this.blockRatio = blockRatio;
         }

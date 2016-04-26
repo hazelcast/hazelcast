@@ -27,6 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
@@ -324,7 +325,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     public void execute(PartitionSpecificRunnable task) {
         checkNotNull(task, "task can't be null");
 
-        execute(task, task.getPartitionId(), false);
+        execute(task, task.getPartitionId(), task instanceof UrgentSystemOperation);
     }
 
     @Override

@@ -20,13 +20,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.TestPartitionUtils.getAllReplicaAddresses;
 import static com.hazelcast.test.TestPartitionUtils.getOngoingReplicaSyncRequests;
 import static com.hazelcast.test.TestPartitionUtils.getOwnedReplicaVersions;
 import static com.hazelcast.test.TestPartitionUtils.getScheduledReplicaSyncRequests;
+import static junit.framework.TestCase.assertNotNull;
 
 public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSupport {
+
+    public enum NodeLeaveType {
+        SHUTDOWN,
+        TERMINATE
+    }
 
     private TestHazelcastInstanceFactory hazelcastInstanceFactory;
 
@@ -50,10 +57,33 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         hazelcastInstanceFactory.terminateAll();
     }
 
-    final protected void terminateInstances(List<HazelcastInstance> terminatingInstances) {
-        for (HazelcastInstance instance : terminatingInstances) {
-            instance.getLifecycleService().terminate();
+    final protected void stopInstances(List<HazelcastInstance> terminatingInstances, final NodeLeaveType nodeLeaveType) {
+        assertNotNull(nodeLeaveType);
+
+        final List<Thread> threads = new ArrayList<Thread>();
+        final CountDownLatch latch = new CountDownLatch(terminatingInstances.size());
+        for (final HazelcastInstance instance : terminatingInstances) {
+            threads.add(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (nodeLeaveType == NodeLeaveType.SHUTDOWN) {
+                        instance.getLifecycleService().shutdown();
+                        latch.countDown();
+                    } else if (nodeLeaveType == NodeLeaveType.TERMINATE ){
+                        instance.getLifecycleService().terminate();
+                        latch.countDown();
+                    } else {
+                        System.err.println("Invalid node leave type: " + nodeLeaveType);
+                    }
+                }
+            }));
         }
+
+        for (Thread t : threads) {
+            t.start();
+        }
+
+        assertOpenEventually(latch);
     }
 
     final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp() {

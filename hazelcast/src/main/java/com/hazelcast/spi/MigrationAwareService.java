@@ -118,14 +118,4 @@ public interface MigrationAwareService {
      * @param event migration event
      */
     void rollbackMigration(PartitionMigrationEvent event);
-
-    /**
-     * Clears specific partition completely. This method is called when this member doesn't own
-     * any replica of the partition anymore.
-     * <p>
-     * This method is not expected to fail at this point, all exceptions will be suppressed and logged.
-     *
-     * @param partitionId id of the partition
-     */
-    void clearPartitionReplica(int partitionId);
 }

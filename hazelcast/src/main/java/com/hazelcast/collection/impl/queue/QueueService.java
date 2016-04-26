@@ -207,11 +207,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearQueuesHavingLesserBackupCountThan(partitionId, -1);
-    }
-
-    @Override
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
         final MemberImpl member = nodeEngine.getClusterService().getMember(event.caller);
         ItemEvent itemEvent = new DataAwareItemEvent(event.name, event.eventType, event.data,

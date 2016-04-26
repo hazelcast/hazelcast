@@ -168,11 +168,6 @@ public abstract class CollectionService implements ManagedService, RemoteService
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearCollectionsHavingLesserBackupCountThan(partitionId, -1);
-    }
-
     public void addContainer(String name, CollectionContainer container) {
         final Map map = getContainerMap();
         map.put(name, container);

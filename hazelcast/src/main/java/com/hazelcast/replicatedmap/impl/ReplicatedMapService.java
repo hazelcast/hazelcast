@@ -354,11 +354,6 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     @Override
-    public void clearPartitionReplica(int partitionId) {
-        // no-op
-    }
-
-    @Override
     public Runnable prepareMergeRunnable() {
         return replicatedMapSplitBrainHandlerService.prepareMergeRunnable();
     }

@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.MigrationCycleOperation;
+import com.hazelcast.internal.partition.ReplicaErrorLogger;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.ReplicaErrorLogger;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -42,7 +42,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-public final class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
+public final class ReplicaSyncRequest extends Operation
+        implements PartitionAwareOperation, MigrationCycleOperation {
 
     public ReplicaSyncRequest() {
     }

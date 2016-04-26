@@ -162,8 +162,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         return nodeEngine.getPartitionService().getPartitionId(partitionKey);
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
+    private void clearPartitionReplica(int partitionId) {
         final Iterator<String> iter = containers.keySet().iterator();
         while (iter.hasNext()) {
             String name = iter.next();

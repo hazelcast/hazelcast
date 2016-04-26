@@ -51,43 +51,43 @@ public class MigrationCorrectnessTest extends PartitionCorrectnessTestSupport {
 
     @Test
     public void testPartitionData_whenNodesStartedSequentially() throws InterruptedException {
-        Config config = getConfig(backupCount, true, false);
+        Config config = getConfig(true, false);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         fillData(hz);
-        assertSizeAndData();
+        assertSizeAndDataEventually();
 
         for (int i = 1; i <= nodeCount; i++) {
             startNodes(config, 1);
-            assertSizeAndData();
+            assertSizeAndDataEventually();
         }
     }
 
     @Test
     public void testPartitionData_whenNodesStartedParallel() throws InterruptedException {
-        Config config = getConfig(backupCount, true, false);
+        Config config = getConfig(true, false);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         fillData(hz);
-        assertSizeAndData();
+        assertSizeAndDataEventually();
 
         startNodes(config, nodeCount);
-        assertSizeAndData();
+        assertSizeAndDataEventually();
     }
 
     @Test
     public void testPartitionData_whenBackupNodesTerminated() throws InterruptedException {
-        Config config = getConfig(backupCount, true, false);
+        Config config = getConfig(true, false);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         startNodes(config, nodeCount);
         warmUpPartitions(factory.getAllHazelcastInstances());
 
         fillData(hz);
-        assertSizeAndData();
+        assertSizeAndDataEventually();
 
         terminateNodes(backupCount);
-        assertSizeAndData();
+        assertSizeAndDataEventually();
     }
 
     @Test(timeout = 6000 * 10 * 10)
@@ -102,35 +102,35 @@ public class MigrationCorrectnessTest extends PartitionCorrectnessTestSupport {
 
     public void testPartitionData_whenBackupNodesStartedTerminated(boolean checkAfterTerminate)
             throws InterruptedException {
-        Config config = getConfig(backupCount, true, false);
+        Config config = getConfig(true, false);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         fillData(hz);
-        assertSizeAndData();
+        assertSizeAndDataEventually();
 
         int size = 1;
         while (size < (nodeCount + 1)) {
             startNodes(config, backupCount + 1);
             size += (backupCount + 1);
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
 
             terminateNodes(backupCount);
             size -= backupCount;
 
             if (checkAfterTerminate) {
-                assertSizeAndData();
+                assertSizeAndDataEventually();
             }
         }
     }
 
     @Test(timeout = 6000 * 10 * 10)
     public void testPartitionData_whenBackupNodesStartedTerminated_withRestart() throws InterruptedException {
-        Config config = getConfig(backupCount, true, false);
+        Config config = getConfig(true, false);
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         fillData(hz);
-        assertSizeAndData();
+        assertSizeAndDataEventually();
 
         Collection<Address> addresses = Collections.emptySet();
 
@@ -141,7 +141,7 @@ public class MigrationCorrectnessTest extends PartitionCorrectnessTestSupport {
             startNodes(config, startCount);
             size += (backupCount + 1);
 
-            assertSizeAndData();
+            assertSizeAndDataEventually();
 
             addresses = terminateNodes(backupCount);
             size -= backupCount;
