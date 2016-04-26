@@ -30,7 +30,6 @@ import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -49,6 +48,7 @@ import java.util.List;
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
@@ -292,8 +292,15 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
         Extractors extractors = getExtractorsForMapName(mapNameOrNull);
         QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryableEntry entry = new CachedQueryEntry((InternalSerializationService) serializationService,
+        CachedQueryEntry entry = new CachedQueryEntry((InternalSerializationService) serializationService,
                 dataKey, testValue, extractors);
+        boolean result = queryEventFilter.eval(entry);
+        if (result || eventType != UPDATED) {
+            return result;
+        }
+
+        //another try: we  have to fire UPDATED event even when the oldValue is matching the predicate
+        entry.init((InternalSerializationService) serializationService, dataKey, dataOldValue, extractors);
         return queryEventFilter.eval(entry);
     }
 
