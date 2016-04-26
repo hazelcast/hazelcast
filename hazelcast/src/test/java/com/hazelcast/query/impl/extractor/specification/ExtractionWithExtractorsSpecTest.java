@@ -90,14 +90,14 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     public void extractorWithParam_nullCollection() {
         execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[0]", 1), mv),
-                Expected.of(NullPointerException.class, IllegalArgumentException.class));
+                Expected.of(QueryException.class, IllegalArgumentException.class));
     }
 
     @Test
     public void extractorWithParam_indexOutOfBound() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[2]", 1), mv),
-                Expected.of(IndexOutOfBoundsException.class, NullPointerException.class));
+                Expected.of(IndexOutOfBoundsException.class, QueryException.class));
     }
 
     @Test

@@ -65,11 +65,6 @@ public final class Extractors {
             try {
                 return getter.getValue(targetObject, attributeName);
             } catch (Exception ex) {
-                if (ex instanceof IllegalArgumentException) {
-                    throw new QueryException(ex);
-                } else if (ex instanceof RuntimeException) {
-                    throw (RuntimeException) ex;
-                }
                 throw new QueryException(ex);
             }
         }
