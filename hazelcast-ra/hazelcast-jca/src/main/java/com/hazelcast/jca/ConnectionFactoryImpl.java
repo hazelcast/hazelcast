@@ -86,7 +86,7 @@ public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
         if (LOGGER.isFinestEnabled()) {
             LOGGER.finest("getConnection spec: " + connSpec);
         }
-        return (HazelcastConnectionImpl) cm.allocateConnection(mcf, null);
+        return (HazelcastConnection) cm.allocateConnection(mcf, null);
     }
 
     /* (non-Javadoc)
