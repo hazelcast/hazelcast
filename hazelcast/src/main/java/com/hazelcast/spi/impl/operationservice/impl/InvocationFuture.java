@@ -162,11 +162,13 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
 
-                // this is no good; no logging while holding a lock
-                ILogger logger = invocation.logger;
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Future response is already set! Current response: "
-                            + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
+                if (response != offeredResponse) {
+                    // this is no good; no logging while holding a lock
+                    ILogger logger = invocation.logger;
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Future response is already set! Current response: "
+                                + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
+                    }
                 }
 
                 operationService.invocationsRegistry.deregister(invocation);
@@ -402,7 +404,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public boolean isDone() {
-         return responseAvailable(response);
+        return responseAvailable(response);
     }
 
     @Override
