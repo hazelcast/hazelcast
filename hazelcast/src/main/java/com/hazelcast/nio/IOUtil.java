@@ -36,7 +36,7 @@ import java.util.zip.Inflater;
 
 public final class IOUtil {
 
-    public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
+	public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
     public static final byte PRIMITIVE_TYPE_BYTE = 2;
     public static final byte PRIMITIVE_TYPE_SHORT = 3;
     public static final byte PRIMITIVE_TYPE_INTEGER = 4;
@@ -44,6 +44,7 @@ public final class IOUtil {
     public static final byte PRIMITIVE_TYPE_FLOAT = 6;
     public static final byte PRIMITIVE_TYPE_DOUBLE = 7;
     public static final byte PRIMITIVE_TYPE_UTF = 8;
+
 
     private IOUtil() {
     }
@@ -117,8 +118,15 @@ public final class IOUtil {
     }
 
     public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, InputStream in) throws IOException {
-        return new ObjectInputStream(in) {
+        return new FilteringObjectInputStream(in) {
             protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
+            	System.err.println( "Checking class " + desc.getName() );
+            	try { 
+            		// Check deserialization filters
+            		super.resolveClass( desc );
+            	} catch( IOException e ) {
+            		throw new ClassNotFoundException( "Class not resolvable", e );
+            	}
                 return ClassLoaderUtil.loadClass(classLoader, desc.getName());
             }
         };
