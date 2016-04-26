@@ -157,8 +157,9 @@ public final class IOUtil {
         }
     }
 
-    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, InputStream in) throws IOException {
-        return new ClassLoaderAwareObjectInputStream(classLoader, in);
+    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, ClassNameFilter classFilter,
+            InputStream in) throws IOException {
+        return new ClassLoaderAwareObjectInputStream(classLoader, classFilter, in);
     }
 
     public static OutputStream newOutputStream(final ByteBuffer dst) {
@@ -596,15 +597,22 @@ public final class IOUtil {
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
 
         private final ClassLoader classLoader;
+        private final ClassNameFilter classFilter;
 
-        private ClassLoaderAwareObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
+        private ClassLoaderAwareObjectInputStream(final ClassLoader classLoader, ClassNameFilter classFilter,
+                final InputStream in) throws IOException {
             super(in);
             this.classLoader = classLoader;
+            this.classFilter = classFilter;
         }
 
         @Override
         protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
-            return ClassLoaderUtil.loadClass(classLoader, desc.getName());
+            String name = desc.getName();
+            if (classFilter != null) {
+                classFilter.filter(name);
+            }
+            return ClassLoaderUtil.loadClass(classLoader, name);
         }
 
         @Override

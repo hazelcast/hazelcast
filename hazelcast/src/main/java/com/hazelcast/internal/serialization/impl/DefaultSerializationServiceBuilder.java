@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -29,6 +30,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.ClassNameFilter;
+import com.hazelcast.nio.SerializationClassNameFilter;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -36,6 +39,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.util.function.Supplier;
 
@@ -49,6 +53,7 @@ import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static java.nio.ByteOrder.nativeOrder;
 
+@SuppressWarnings({"checkstyle:methodcount"})
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
     // System property to override configured byte order for tests
@@ -86,6 +91,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected HazelcastInstance hazelcastInstance;
 
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
+
+    protected ClassNameFilter classNameFilter;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
@@ -215,6 +222,14 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         return this;
     }
 
+
+    @Override
+    public SerializationServiceBuilder setProperties(HazelcastProperties properties) {
+        JavaSerializationFilterConfig filterConfig = JavaSerializationFilterConfig.getInstance(properties);
+        classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        return this;
+    }
+
     @Override
     public InternalSerializationService build() {
         initVersions();
@@ -272,10 +287,22 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                                                                       Supplier<RuntimeException> notActiveExceptionSupplier) {
         switch (version) {
             case 1:
-                SerializationServiceV1 serializationServiceV1 = new SerializationServiceV1(inputOutputFactory, version,
-                        portableVersion, classLoader, dataSerializableFactories, portableFactories, managedContext,
-                        partitioningStrategy, initialOutputBufferSize, new BufferPoolFactoryImpl(), enableCompression,
-                        enableSharedObject, notActiveExceptionSupplier);
+                SerializationServiceV1 serializationServiceV1 = SerializationServiceV1.builder()
+                    .withInputOutputFactory(inputOutputFactory)
+                    .withVersion(version)
+                    .withPortableVersion(portableVersion)
+                    .withClassLoader(classLoader)
+                    .withDataSerializableFactories(dataSerializableFactories)
+                    .withPortableFactories(portableFactories)
+                    .withManagedContext(managedContext)
+                    .withGlobalPartitionStrategy(partitioningStrategy)
+                    .withInitialOutputBufferSize(initialOutputBufferSize)
+                    .withBufferPoolFactory(new BufferPoolFactoryImpl())
+                    .withEnableCompression(enableCompression)
+                    .withEnableSharedObject(enableSharedObject)
+                    .withNotActiveExceptionSupplier(notActiveExceptionSupplier)
+                    .withClassNameFilter(classNameFilter)
+                    .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions, checkClassDefErrors);
                 return serializationServiceV1;
 

@@ -929,6 +929,36 @@ public final class GroupProperty {
             BuildInfoProvider.getBuildInfo().getSerializationVersion());
 
     /**
+     * Enables Java deserialization protection - filtering based on blacklist and whitelist.
+     */
+    public static final HazelcastProperty SERIALIZATION_FILTER_ENABLED =
+            new HazelcastProperty("hazelcast.serialization.filter.enabled", false);
+
+    /**
+     * Holds comma separated list of blacklisted class names in Java deserialization protection feature.
+     */
+    public static final HazelcastProperty SERIALIZATION_FILTER_BLACKLIST_CLASSES =
+            new HazelcastProperty("hazelcast.serialization.filter.blacklist.classes", "");
+
+    /**
+     * Holds comma separated list of blacklisted package names in Java deserialization protection feature.
+     */
+    public static final HazelcastProperty SERIALIZATION_FILTER_BLACKLIST_PACKAGES =
+            new HazelcastProperty("hazelcast.serialization.filter.blacklist.packages", "");
+
+    /**
+     * Holds comma separated list of whitelisted class names in Java deserialization protection feature.
+     */
+    public static final HazelcastProperty SERIALIZATION_FILTER_WHITELIST_CLASSES =
+            new HazelcastProperty("hazelcast.serialization.filter.whitelist.classes", "");
+
+    /**
+     * Holds comma separated list of whitelisted package names in Java deserialization protection feature.
+     */
+    public static final HazelcastProperty SERIALIZATION_FILTER_WHITELIST_PACKAGES =
+            new HazelcastProperty("hazelcast.serialization.filter.whitelist.packages", "");
+
+    /**
      * Override cluster version to use while node is not yet member of a cluster. The cluster version assumed before joining
      * a cluster may affect the serialization format of cluster discovery & join operations and its compatibility with members
      * of a cluster running on different Hazelcast codebase versions. The default is to use the node's codebase version. You may
