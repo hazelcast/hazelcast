@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.eviction.policies.MapEvictionPolicy;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.operation.MapOperationProviderWrapper;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
@@ -88,6 +89,7 @@ public class MapContainer {
     protected Evictor evictor;
 
     protected volatile MapConfig mapConfig;
+    private MapOperationProviderWrapper mapOperationProviderImplementation;
 
 
     /**
@@ -292,6 +294,10 @@ public class MapContainer {
 
     public InterceptorRegistry getInterceptorRegistry() {
         return interceptorRegistry;
+    }
+
+    public MapOperationProviderWrapper getMapOperationProviderImplementation() {
+        return mapConfig.getMapOperationProviderImplementation();
     }
 }
 
