@@ -32,7 +32,18 @@ public interface MapLoaderLifecycleSupport {
      * HazelcastInstance. Implementation can
      * initialize required resources for the implementing
      * mapLoader, such as reading a config file and/or creating a
-     * database connection.
+     * database connection. References to maps, other than the one on which
+     * this {@code MapLoader} is configured, can be obtained from the
+     * {@code hazelcastInstance} in this method's implementation.
+     * <p>
+     * On members joining a cluster, this method is executed during finalization
+     * of the join operation; if the implementation executes operations which
+     * may wait on locks or otherwise block (e.g. waiting for network operations),
+     * this may result in a time-out and potentialy obstruct the new member from
+     * joining the cluster.
+     * If blocking operations are required for initialization of the {@code MapLoader},
+     * consider deferring them with a lazy initialization scheme.
+     * </p>
      *
      * @param hazelcastInstance HazelcastInstance of this mapLoader.
      * @param properties        Properties set for this mapStore. see MapStoreConfig
