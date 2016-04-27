@@ -160,6 +160,17 @@ public final class TypeConverters {
             if (value instanceof BigInteger) {
                 return value;
             }
+            if (value instanceof BigDecimal) {
+                BigDecimal decimal = (BigDecimal) value;
+                return decimal.toBigInteger();
+            }
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return BigInteger.valueOf(number.longValue());
+            }
+            if (value instanceof Boolean) {
+                return ((Boolean) value) ? BigInteger.ZERO : BigInteger.ONE;
+            }
             return new BigInteger(value.toString());
         }
     }
@@ -173,7 +184,22 @@ public final class TypeConverters {
             if (value instanceof BigInteger) {
                 return new BigDecimal((BigInteger) value);
             }
+            if (isNotFloatingPointNumber(value)) {
+                Number number = (Number) value;
+                return BigDecimal.valueOf(number.longValue());
+            }
+            if (value instanceof Double) {
+                Number number = (Number) value;
+                return BigDecimal.valueOf(number.doubleValue());
+            }
+            if (value instanceof Boolean) {
+                return ((Boolean) value) ? BigDecimal.ZERO : BigDecimal.ONE;
+            }
             return new BigDecimal(value.toString());
+        }
+
+        private boolean isNotFloatingPointNumber(Comparable value) {
+            return value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long;
         }
     }
 
