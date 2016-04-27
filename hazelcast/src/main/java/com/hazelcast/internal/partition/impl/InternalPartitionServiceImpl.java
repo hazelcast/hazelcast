@@ -395,21 +395,26 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    PartitionRuntimeState createMigrationCommitPartitionState(MigrationInfo migrationInfo) {
+    PartitionRuntimeState createMigrationCommitPartitionState(MigrationInfo... migrationInfos) {
         if (!partitionStateManager.isInitialized()) {
             return null;
         }
         lock.lock();
         try {
             MemberInfo[] members = partitionStateManager.getPartitionTableMembers();
-            List<MigrationInfo> completedMigrations = migrationManager.getCompletedMigrations();
+            List<MigrationInfo> completedMigrations = new ArrayList<MigrationInfo>(migrationManager.getCompletedMigrations());
             ILogger logger = node.getLogger(PartitionRuntimeState.class);
 
             InternalPartition[] partitions = partitionStateManager.getPartitionsCopy();
 
-            int partitionId = migrationInfo.getPartitionId();
-            InternalPartitionImpl partition = (InternalPartitionImpl) partitions[partitionId];
-            migrationManager.applyMigration(partition, migrationInfo);
+            for (MigrationInfo migrationInfo : migrationInfos) {
+                int partitionId = migrationInfo.getPartitionId();
+                InternalPartitionImpl partition = (InternalPartitionImpl) partitions[partitionId];
+                migrationManager.applyMigration(partition, migrationInfo);
+
+                migrationInfo.setStatus(MigrationStatus.SUCCESS);
+                completedMigrations.add(migrationInfo);
+            }
 
             int committedVersion = getPartitionStateVersion() + 1;
             return new PartitionRuntimeState(logger, members, partitions, completedMigrations, committedVersion);
