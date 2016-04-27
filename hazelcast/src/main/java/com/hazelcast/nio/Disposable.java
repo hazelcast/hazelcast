@@ -16,10 +16,13 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * A {@code Disposable} is a container of data and/or resources that can be disposed.
  * {@link #dispose()} method is called to dispose contained data and/or resources.
  */
+@PrivateApi
 public interface Disposable {
 
     /**

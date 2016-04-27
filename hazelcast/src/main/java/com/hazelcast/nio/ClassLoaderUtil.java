@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.EmptyStatement;
 
@@ -32,6 +33,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Utility class to deal with classloaders.
  */
+@PrivateApi
 public final class ClassLoaderUtil {
 
     public static final String HAZELCAST_BASE_PACKAGE = "com.hazelcast.";

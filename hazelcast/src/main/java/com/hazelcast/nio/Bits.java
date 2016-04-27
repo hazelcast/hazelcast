@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.internal.memory.impl.EndiannessUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -28,6 +29,7 @@ import static com.hazelcast.internal.memory.impl.EndiannessUtil.BYTE_ARRAY_ACCES
  * Access and manipulate bits, bytes, primitives ...
  */
 @SuppressWarnings({"checkstyle:magicnumber", "MagicNumber"})
+@PrivateApi
 public final class Bits {
 
     /**

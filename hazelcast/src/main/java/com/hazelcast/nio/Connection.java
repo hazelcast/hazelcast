@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -24,6 +26,7 @@ import java.net.InetSocketAddress;
  * Represents a 'connection' between two machines. The most important implementation is the
  * {@link com.hazelcast.nio.tcp.TcpIpConnection}.
  */
+@PrivateApi
 public interface Connection extends Closeable {
 
     /**
