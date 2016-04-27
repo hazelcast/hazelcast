@@ -51,6 +51,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MutexProvider;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -104,6 +105,8 @@ class MapServiceContextImpl implements MapServiceContext {
     protected EventService eventService;
     protected MapOperationProviders operationProviders;
 
+    private final MutexProvider mutexProvider = new MutexProvider();
+
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.partitionContainers = createPartitionContainers();
@@ -150,7 +153,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public MapContainer getMapContainer(String mapName) {
-        return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mapContainers, mapConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, mutexProvider, mapConstructor);
     }
 
 
