@@ -349,6 +349,17 @@ public interface RecordStore<R extends Record> {
     void startLoading();
 
     /**
+     * Informs this recordStore about the loading status of the recordStore that this store is migrated from.
+     * If the 'predecessor' has been loaded this record store should trigger the load again.
+     * Will be taken into account only if invoked before the startLoading method. Otherwise has no effect.
+     *
+     * This method should be deleted when the map's lifecycle has been cleaned-up. Currently it's impossible to
+     * pass additional state when the record store is created, thus this this state has to be passed in post-creation
+     * setters which is cumbersome and error-prone.
+     */
+    void setPreMigrationLoadedStatus(boolean loaded);
+
+    /**
      * Initialize the recordStore after creation
      */
     void init();

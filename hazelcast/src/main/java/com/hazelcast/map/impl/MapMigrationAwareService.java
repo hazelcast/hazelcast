@@ -21,13 +21,13 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
@@ -68,6 +68,12 @@ class MapMigrationAwareService implements MigrationAwareService {
         migrateIndex(event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
+        }
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
+        for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
+            // in case the record store has been created without loading during migration trigger again
+            // if loading has been already started this call will do nothing
+            recordStore.startLoading();
         }
         mapServiceContext.reloadOwnedPartitions();
     }

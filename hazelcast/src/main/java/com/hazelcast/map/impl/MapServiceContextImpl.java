@@ -300,6 +300,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public RecordStore getRecordStore(int partitionId, String mapName, boolean skipLoadingOnCreate) {
+        return getPartitionContainer(partitionId).getRecordStore(mapName, skipLoadingOnCreate);
+    }
+
+    @Override
     public RecordStore getExistingRecordStore(int partitionId, String mapName) {
         return getPartitionContainer(partitionId).getExistingRecordStore(mapName);
     }

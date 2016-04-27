@@ -106,6 +106,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     RecordStore getRecordStore(int partitionId, String mapName);
 
+    RecordStore getRecordStore(int partitionId, String mapName, boolean skipLoadingOnCreate);
+
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
     Collection<Integer> getOwnedPartitions();
