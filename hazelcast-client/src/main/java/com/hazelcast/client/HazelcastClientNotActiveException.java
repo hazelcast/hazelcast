@@ -24,4 +24,8 @@ public class HazelcastClientNotActiveException extends IllegalStateException {
     public HazelcastClientNotActiveException(String message) {
         super(message);
     }
+
+    public HazelcastClientNotActiveException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
