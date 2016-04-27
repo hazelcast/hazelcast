@@ -44,6 +44,25 @@ public class MyPortableElement implements Portable {
         date = reader.readLong("date");
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MyPortableElement that = (MyPortableElement) o;
+
+        if (id != that.id) return false;
+        return date != null ? date.equals(that.date) : that.date == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id;
+        result = 31 * result + (date != null ? date.hashCode() : 0);
+        return result;
+    }
+
     public static class Factory implements PortableFactory {
         @Override
         public Portable create(int classId) {

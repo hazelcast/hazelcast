@@ -38,7 +38,6 @@ public final class Extractors {
     private static final int MAX_CLASSES_IN_CACHE = 1000;
     private static final int MAX_GETTERS_PER_CLASS_IN_CACHE = 100;
     private static final float EVICTION_PERCENTAGE = 0.2f;
-    private static final Extractors EMPTY = new Extractors(Collections.<MapAttributeConfig>emptyList());
 
     private volatile PortableGetter genericPortableGetter;
 
@@ -131,7 +130,7 @@ public final class Extractors {
     }
 
     public static Extractors empty() {
-        return EMPTY;
+        return new Extractors(Collections.<MapAttributeConfig>emptyList());
     }
 
 }

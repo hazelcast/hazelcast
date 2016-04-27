@@ -48,7 +48,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     private boolean raw;
 
-
     DefaultPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
@@ -545,28 +544,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         return portables;
     }
 
-    public Object read(String path) throws IOException {
-        final int currentPos = in.position();
-        try {
-            PortablePosition position = findPositionOf(path);
-            if (position.isMultiPosition()) {
-                return readMultiPosition(position.asMultiPosition());
-            } else if (position.isNull()) {
-                return null;
-            } else if (position.isEmpty()) {
-                if (position.isLast() && position.getType() != null) {
-                    return readSinglePosition(position);
-                } else {
-                    return null;
-                }
-            } else {
-                return readSinglePosition(position);
-            }
-        } finally {
-            in.position(currentPos);
-        }
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public void read(String path, ValueCallback callback) {
@@ -603,13 +580,27 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         }
     }
 
-    private PortablePosition findPositionOf(String path) throws IOException {
-        if (raw) {
-            throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
+    public Object read(String path) throws IOException {
+        final int currentPos = in.position();
+        try {
+            PortablePosition position = findPositionOf(path);
+            if (position.isMultiPosition()) {
+                return readMultiPosition(position.asMultiPosition());
+            } else if (position.isNull()) {
+                return null;
+            } else if (position.isEmpty()) {
+                if (position.isLast() && position.getType() != null) {
+                    return readSinglePosition(position);
+                } else {
+                    return null;
+                }
+            } else {
+                return readSinglePosition(position);
+            }
+        } finally {
+            in.position(currentPos);
         }
-        return navigator.findPositionOf(path);
     }
-
 
     private <T> MultiResult<T> readMultiPosition(List<PortablePosition> positions) throws IOException {
         MultiResult<T> result = new MultiResult<T>();
@@ -623,12 +614,20 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         return result;
     }
 
+
     @SuppressWarnings("unchecked")
     private <T> T readSinglePosition(PortablePosition position) throws IOException {
         if (position.getIndex() >= 0) {
             return readSinglePositionFromArray(position);
         }
         return readSinglePositionFromNonArray(position);
+    }
+
+    private PortablePosition findPositionOf(String path) throws IOException {
+        if (raw) {
+            throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
+        }
+        return navigator.findPositionOf(path);
     }
 
     private <T> T readSinglePositionFromArray(PortablePosition position) throws IOException {

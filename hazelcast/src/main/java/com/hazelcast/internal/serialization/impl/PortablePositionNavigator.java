@@ -36,6 +36,8 @@ public class PortablePositionNavigator {
     private final int initPosition;
     private final ClassDefinition initCd;
     private final int initOffset;
+    private final int initFinalPosition;
+    private PortableSerializer initSerializer;
 
     private final Deque<NavigationFrame> multiPositions = new ArrayDeque<NavigationFrame>();
 
@@ -51,9 +53,13 @@ public class PortablePositionNavigator {
 
         initFieldCountAndOffset(in, cd);
 
-        this.initPosition = in.position();
         this.initCd = cd;
+        this.initSerializer = serializer;
+
+        this.initPosition = in.position();
+        this.initFinalPosition = finalPosition;
         this.initOffset = offset;
+
     }
 
     private void initFieldCountAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
@@ -71,12 +77,6 @@ public class PortablePositionNavigator {
         offset = in.position();
     }
 
-    private void reset() {
-        cd = initCd;
-        in.position(initPosition);
-        offset = initOffset;
-    }
-
     public PortablePosition findPositionOf(String path) throws IOException {
         try {
             PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path);
@@ -92,6 +92,15 @@ public class PortablePositionNavigator {
         } finally {
             reset();
         }
+    }
+
+    void reset() {
+        cd = initCd;
+        serializer = initSerializer;
+
+        in.position(initPosition);
+        finalPosition = initFinalPosition;
+        offset = initOffset;
     }
 
     void adjustPositionForReadAccess(PortableSinglePosition position, String path) throws IOException {
