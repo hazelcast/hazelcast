@@ -36,6 +36,7 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
     protected Comparable value;
     boolean equal;
     boolean less;
+    private transient volatile Comparable valueConverted;
 
     public GreaterLessPredicate() {
     }
@@ -57,8 +58,10 @@ public final class GreaterLessPredicate extends AbstractIndexAwarePredicate impl
         if (attributeValue == null) {
             return false;
         }
-        Comparable givenValue = convert(mapEntry, attributeValue, value);
-        int result = attributeValue.compareTo(givenValue);
+        if (valueConverted == null) {
+            valueConverted = convert(mapEntry, attributeValue, value);
+        }
+        int result = attributeValue.compareTo(valueConverted);
         return equal && result == 0 || (less ? (result < 0) : (result > 0));
     }
 

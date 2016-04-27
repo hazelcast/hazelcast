@@ -33,7 +33,7 @@ import java.util.Set;
 public class InPredicate extends AbstractIndexAwarePredicate {
 
     Comparable[] values;
-    private volatile Set<Comparable> convertedInValues;
+    private transient volatile Set<Comparable> convertedInValues;
 
     public InPredicate() {
     }

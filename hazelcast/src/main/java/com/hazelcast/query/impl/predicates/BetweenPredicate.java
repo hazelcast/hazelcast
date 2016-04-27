@@ -31,8 +31,10 @@ import java.util.Set;
  */
 public class BetweenPredicate extends AbstractIndexAwarePredicate {
 
-    Comparable to;
-    Comparable from;
+    protected Comparable from;
+    protected Comparable to;
+    private transient volatile Comparable fromConverted;
+    private transient volatile Comparable toConverted;
 
     public BetweenPredicate() {
     }
@@ -51,12 +53,16 @@ public class BetweenPredicate extends AbstractIndexAwarePredicate {
         if (attributeValue == null) {
             return false;
         }
-        Comparable fromConvertedValue = convert(entry, attributeValue, from);
-        Comparable toConvertedValue = convert(entry, attributeValue, to);
-        if (fromConvertedValue == null || toConvertedValue == null) {
+        if (fromConverted == null) {
+            fromConverted = convert(entry, attributeValue, from);
+        }
+        if (toConverted == null) {
+            toConverted = convert(entry, attributeValue, to);
+        }
+        if (fromConverted == null || toConverted == null) {
             return false;
         }
-        return attributeValue.compareTo(fromConvertedValue) >= 0 && attributeValue.compareTo(toConvertedValue) <= 0;
+        return attributeValue.compareTo(fromConverted) >= 0 && attributeValue.compareTo(toConverted) <= 0;
     }
 
     @Override

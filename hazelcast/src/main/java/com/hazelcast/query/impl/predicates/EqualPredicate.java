@@ -34,6 +34,7 @@ import java.util.Set;
 public class EqualPredicate extends AbstractIndexAwarePredicate implements NegatablePredicate {
 
     protected Comparable value;
+    private transient volatile Comparable valueConverted;
 
     public EqualPredicate() {
     }
@@ -57,8 +58,10 @@ public class EqualPredicate extends AbstractIndexAwarePredicate implements Negat
         if (attributeValue == null) {
             return value == null || value == IndexImpl.NULL;
         }
-        value = convert(mapEntry, attributeValue, value);
-        return attributeValue.equals(value);
+        if (valueConverted == null) {
+            valueConverted = convert(mapEntry, attributeValue, value);
+        }
+        return attributeValue.equals(valueConverted);
     }
 
     @Override
