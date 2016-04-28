@@ -169,7 +169,7 @@ public final class TypeConverters {
                 return BigInteger.valueOf(number.longValue());
             }
             if (value instanceof Boolean) {
-                return ((Boolean) value) ? BigInteger.ZERO : BigInteger.ONE;
+                return ((Boolean) value) ? BigInteger.ONE : BigInteger.ZERO;
             }
             return new BigInteger(value.toString());
         }
@@ -193,7 +193,7 @@ public final class TypeConverters {
                 return BigDecimal.valueOf(number.doubleValue());
             }
             if (value instanceof Boolean) {
-                return ((Boolean) value) ? BigDecimal.ZERO : BigDecimal.ONE;
+                return ((Boolean) value) ? BigDecimal.ONE : BigDecimal.ZERO;
             }
             return new BigDecimal(value.toString());
         }

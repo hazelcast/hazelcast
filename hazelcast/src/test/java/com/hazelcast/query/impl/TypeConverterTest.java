@@ -162,14 +162,13 @@ public class TypeConverterTest {
     @Test
     public void testBigIntegerConvert_whenPassedBooleanValue_thenConvertToBigInteger() throws Exception {
         Boolean value = Boolean.TRUE;
-        Comparable expectedBigIntValue = BigInteger.ZERO;   // Boolean TRUE means 0
-                                                            // Boolean FALSE means something non-zero, i.e. 1
+        Comparable trueAsNumber = BigInteger.ONE; // Boolean TRUE means non-zero value, i.e. 1, FALSE means 0
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
 
         assertThat(comparable, allOf(
                 is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
+                is(equalTo(trueAsNumber))
         ));
     }
 
@@ -277,14 +276,13 @@ public class TypeConverterTest {
     @Test
     public void testBigDecimalConvert_whenPassedBooleanValue_thenConvertToBigDecimal() throws Exception {
         Boolean value = Boolean.TRUE;
-        Comparable expectedDecimal = BigDecimal.ZERO;   // Boolean TRUE means 0
-                                                        // Boolean FALSE means something non-zero, i.e. 1
+        Comparable trueAsDecimal = BigDecimal.ONE; // Boolean TRUE means non-zero value, i.e. 1, FALSE means 0
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(value);
 
         assertThat(comparable, allOf(
                 is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal))
+                is(equalTo(trueAsDecimal))
         ));
     }
 
