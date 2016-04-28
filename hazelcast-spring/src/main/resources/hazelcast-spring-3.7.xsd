@@ -254,6 +254,14 @@
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="hot-restart" type="hot-restart" minOccurs="0" maxOccurs="1" />
+                                    <xs:element name="map-eviction-policy" type="map-eviction-policy" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Internal eviction algorithm finds most appropriate entry
+                                                to evict from this map by using this policy.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">
@@ -284,7 +292,7 @@
 
                                             When both optimize-query and cache-deserialized-values are used at the same time
                                             Hazelcast will do its best to detect possible conflicts. Conflict detection
-                                            is done on best-effort basis and you should not rely on it. 
+                                            is done on best-effort basis and you should not rely on it.
 
                                             This parameter is used to increase the speed of query processes in the map.
                                             It only works when `in-memory-format` is set as `BINARY` and performs
@@ -1519,6 +1527,11 @@
 
     <xs:complexType name="map-merge-policy">
         <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="class-name" type="xs:string" use="optional"/>
+        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="map-eviction-policy">
         <xs:attribute name="class-name" type="xs:string" use="optional"/>
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
     </xs:complexType>
