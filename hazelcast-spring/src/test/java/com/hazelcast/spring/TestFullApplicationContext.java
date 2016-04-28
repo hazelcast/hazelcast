@@ -235,7 +235,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(14, config.getMapConfigs().size());
+        assertEquals(17, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -808,5 +808,30 @@ public class TestFullApplicationContext {
         assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
     }
+
+    @Test
+    public void testMapEvictionPolicyClassName() {
+        MapConfig mapConfig = config.getMapConfig("mapWithMapEvictionPolicyClassName");
+        String expectedComparatorClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
+
+        assertEquals(expectedComparatorClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
+    }
+
+    @Test
+    public void testMapEvictionPolicyImpl() {
+        MapConfig mapConfig = config.getMapConfig("mapWithMapEvictionPolicyImpl");
+
+        assertEquals(DummyMapEvictionPolicy.class, mapConfig.getMapEvictionPolicy().getClass());
+    }
+
+    @Test
+    public void testWhenBothMapEvictionPolicyClassNameAndEvictionPolicySet() {
+        MapConfig mapConfig = config.getMapConfig("mapBothMapEvictionPolicyClassNameAndEvictionPolicy");
+        String expectedComparatorClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
+
+        assertEquals(expectedComparatorClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
+    }
+
+
 
 }

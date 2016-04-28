@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.eviction.policies;
+package com.hazelcast.map.eviction;
 
 import com.hazelcast.core.EntryView;
 
 /**
- * LRU {@link MapEvictionPolicy} implementation.
+ * LFU eviction policy for an {@link com.hazelcast.core.IMap IMap}
  */
-class LRUMapEvictionPolicy extends AbstractMapEvictionPolicy {
+public class LFUEvictionPolicy extends MapEvictionPolicy {
+
+    /**
+     * LFU eviction policy instance.
+     */
+    public static final LFUEvictionPolicy INSTANCE = new LFUEvictionPolicy();
 
     @Override
-    public boolean compare(EntryView selected, EntryView candidate) {
-        return candidate.getLastAccessTime() < selected.getLastAccessTime();
+    public int compare(EntryView entryView1, EntryView entryView2) {
+        long hits1 = entryView1.getHits();
+        long hits2 = entryView2.getHits();
+        return (hits1 < hits2) ? -1 : ((hits1 == hits2) ? 0 : 1);
     }
 }

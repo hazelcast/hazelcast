@@ -14,27 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.eviction.policies;
-
-import com.hazelcast.core.EntryView;
-
 /**
- * Used when there is no defined {@link MapEvictionPolicy}
+ * <p>This package contains eviction specific classes.<br/>
  */
-class NullMapEvictionPolicy implements MapEvictionPolicy {
-
-    @Override
-    public int getSampleCount() {
-        return 0;
-    }
-
-    @Override
-    public EntryView selectEvictableEntry(Iterable<EntryView> samples) {
-        return null;
-    }
-
-    @Override
-    public boolean compare(EntryView selected, EntryView candidate) {
-        return false;
-    }
-}
+package com.hazelcast.map.eviction;

@@ -260,12 +260,25 @@
             <hz:map name="mapWithValueCachingSetToNever" cache-deserialized-values="NEVER"/>
             <hz:map name="mapWithValueCachingSetToAlways" cache-deserialized-values="ALWAYS"/>
             <hz:map name="mapWithDefaultOptimizedQueries"/>
-            <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE" in-memory-format="NATIVE"/>
+            <hz:map name="map-with-native-max-size-policy" max-size-policy="USED_NATIVE_MEMORY_PERCENTAGE"
+                    in-memory-format="NATIVE" />
 
             <hz:map name="mapWithPartitionLostListener">
                 <hz:partition-lost-listeners>
                     <hz:partition-lost-listener class-name="DummyMapPartitionLostListenerImpl" />
                 </hz:partition-lost-listeners>
+            </hz:map>
+
+            <hz:map name="mapWithMapEvictionPolicyClassName">
+                <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
+            </hz:map>
+
+            <hz:map name="mapWithMapEvictionPolicyImpl">
+                <hz:map-eviction-policy implementation="dummyMapEvictionPolicy"/>
+            </hz:map>
+
+            <hz:map name="mapBothMapEvictionPolicyClassNameAndEvictionPolicy" eviction-policy="LRU">
+                <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">
@@ -407,6 +420,7 @@
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>
+    <bean id="dummyMapEvictionPolicy" class="com.hazelcast.spring.DummyMapEvictionPolicy"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>

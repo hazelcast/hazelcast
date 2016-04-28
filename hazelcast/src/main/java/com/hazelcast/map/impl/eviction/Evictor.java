@@ -18,13 +18,33 @@ package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.map.impl.recordstore.RecordStore;
 
+import static java.lang.Integer.getInteger;
+
 /**
  * Evicts a {@link RecordStore}.
- *
+ * <p>
  * When the {@link RecordStore} needs to be evicted according to {@link Evictor#checkEvictable},
  * {@link Evictor} removes records from {@link RecordStore}.
  */
 public interface Evictor {
+
+    Evictor NULL_EVICTOR = new Evictor() {
+        @Override
+        public void evict(RecordStore recordStore) {
+
+        }
+
+        @Override
+        public boolean checkEvictable(RecordStore recordStore) {
+            return false;
+        }
+    };
+
+    String SYSTEM_PROPERTY_SAMPLE_COUNT = "hazelcast.map.eviction.sample.count";
+
+    int DEFAULT_SAMPLE_COUNT = 15;
+
+    int SAMPLE_COUNT = getInteger(SYSTEM_PROPERTY_SAMPLE_COUNT, DEFAULT_SAMPLE_COUNT);
 
     /**
      * Evict supplied record-store.
@@ -40,4 +60,5 @@ public interface Evictor {
      * @return {@code true} if eviction is required, {@code false} otherwise.
      */
     boolean checkEvictable(RecordStore recordStore);
+
 }
