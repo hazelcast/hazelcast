@@ -54,15 +54,15 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.CALL_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.HEARTBEAT_TIMEOUT;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.INTERRUPTED;
-import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.VOID;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.NO_TIMEOUT__RESPONSE_AVAILABLE;
 import static com.hazelcast.spi.impl.operationservice.impl.Invocation.HeartbeatTimeout.TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.CALL_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.INTERRUPTED;
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationValue.VOID;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
@@ -75,9 +75,9 @@ import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
 /**
- * The Invocation evaluates a Operation invocation.
+ * Evaluates the invocation of an {@link Operation}.
  * <p/>
- * Using the InvocationFuture, one can wait for the completion of a Invocation.
+ * Using the {@link InvocationFuture}, one can wait for the completion of an invocation.
  */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class Invocation implements OperationResponseHandler, Runnable {
@@ -90,32 +90,54 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private static final long MIN_TIMEOUT = 10000;
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
-    //some constants for logging purposes
     private static final int LOG_MAX_INVOCATION_COUNT = 99;
     private static final int LOG_INVOCATION_COUNT_MOD = 10;
 
+    /**
+     * The {@link Operation} this invocation is evaluating.
+     */
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final Operation op;
 
-    // The first time this invocation got executed. This field is used to determine how long an invocation has actually
-    // been running.
+    /**
+     * The first time this invocation got executed.
+     * This field is used to determine how long an invocation has actually been running.
+     */
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
 
-    // The time in millis when the response of the primary has been received.
-    volatile long pendingResponseReceivedMillis = -1;
-    // contains the pending response from the primary. It is pending because it could be that backups need to complete.
+    /**
+     * Contains the pending response from the primary.
+     * It is pending because it could be that backups need to complete.
+     */
     volatile Object pendingResponse = VOID;
-    // number of expected backups. Is set correctly as soon as the pending response is set. See {@link NormalResponse}
+    /**
+     * The time in millis when the response of the primary has been received.
+     */
+    volatile long pendingResponseReceivedMillis = -1;
+
+    /**
+     * Number of expected backups.
+     * It is set correctly as soon as the pending response is set.
+     * See {@link NormalResponse}.
+     */
     volatile int backupsExpected;
-    // number of backups that have completed. See {@link BackupResponse}.
+    /**
+     * Number of backups that have completed.
+     * See {@link com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse}.
+     */
     volatile int backupsCompleted;
 
-    // todo: this should not be needed; it is taken care of by the future anyway
-    // A flag to prevent multiple responses to be send to the Invocation. Only needed for local operations.
+    /**
+     * A flag to prevent multiple responses to be send to the invocation (only needed for local operations).
+     */
+    // TODO: this should not be needed; it is taken care of by the future anyway
     volatile Boolean responseReceived = FALSE;
 
-    // The last time a heartbeat was received for the invocation. 0 indicates that no heartbeat was received at all
+    /**
+     * The last time a heartbeat was received for the invocation.
+     * The value 0 indicates that no heartbeat was received at all.
+     */
     volatile long lastHeartbeatMillis;
 
     final NodeEngineImpl nodeEngine;
@@ -225,7 +247,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         invokeCount++;
 
-        // register method assumes this method has run before it is being called so that remote is set correctly.
+        // register method assumes this method has run before it is being called so that remote is set correctly
         if (!initInvocationTarget()) {
             return;
         }
@@ -283,7 +305,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     /**
      * Initializes the invocation target.
      *
-     * @return true if the initialization was a success.
+     * @return {@code true} if the initialization was a success, {@code false} otherwise
      */
     boolean initInvocationTarget() {
         invTarget = getTarget();
@@ -335,7 +357,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             NormalResponse normalResponse = (NormalResponse) response;
             notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
         } else {
-            // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
+            // there are no backups or the number of expected backups has returned; so signal the future that the result is ready
             complete(response);
         }
     }
@@ -375,26 +397,26 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
 
         if (expectedBackups > backupsCompleted) {
-            // So the invocation has backups and since not all backups have completed, we need to wait.
-            // It could be that backups arrive earlier than the response.
+            // so the invocation has backups and since not all backups have completed, we need to wait
+            // (it could be that backups arrive earlier than the response)
 
             this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
 
             this.backupsExpected = expectedBackups;
 
-            // It is very important that the response is set after the backupsExpected is set. Else the system
-            // can assume the invocation is complete because there is a response and no backups need to respond.
+            // it is very important that the response is set after the backupsExpected is set, else the system
+            // can assume the invocation is complete because there is a response and no backups need to respond
             this.pendingResponse = value;
 
             if (backupsCompleted != expectedBackups) {
-                // We are done since not all backups have completed. Therefor we should not notify the future.
+                // we are done since not all backups have completed. Therefor we should not notify the future
                 return;
             }
         }
 
-        // We are going to notify the future that a response is available. This can happen when:
-        // - we had a regular operation (so no backups we need to wait for) that completed.
-        // - we had a backup-aware operation that has completed, but also all its backups have completed.
+        // we are going to notify the future that a response is available; this can happen when:
+        // - we had a regular operation (so no backups we need to wait for) that completed
+        // - we had a backup-aware operation that has completed, but also all its backups have completed
         complete(value);
     }
 
@@ -406,8 +428,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         if (!(op instanceof BlockingOperation)) {
-            // If the call is not a BLockingOperation, then in case of a call-timeout, we are not going to retry. Only
-            // blocking operations are going to be retried because they rely on a repeated execution mechanism.
+            // if the call is not a BLockingOperation, then in case of a call-timeout, we are not going to retry;
+            // only blocking operations are going to be retried, because they rely on a repeated execution mechanism
             complete(CALL_TIMEOUT);
             return;
         }
@@ -421,30 +443,30 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         handleRetry("invocation timeout");
     }
 
-    // This method can be called concurrently
+    // this method can be called concurrently
     void notifyBackupComplete() {
         int newBackupsCompleted = BACKUPS_COMPLETED.incrementAndGet(this);
 
         Object pendingResponse = this.pendingResponse;
         if (pendingResponse == VOID) {
-            // No pendingResponse has been set, so we are done since the invocation on the primary needs to complete first.
+            // no pendingResponse has been set, so we are done since the invocation on the primary needs to complete first
             return;
         }
 
-        // If a pendingResponse is set, then the backupsExpected has been set. So we can now safely read backupsExpected.
+        // if a pendingResponse is set, then the backupsExpected has been set (so we can now safely read backupsExpected)
         int backupsExpected = this.backupsExpected;
         if (backupsExpected < newBackupsCompleted) {
-            // the backups have not yet completed. So we are done.
+            // the backups have not yet completed, so we are done
             return;
         }
 
         if (backupsExpected != newBackupsCompleted) {
-            // We managed to complete one backup, but we were not the one completing the last backup. So we are done.
+            // we managed to complete one backup, but we were not the one completing the last backup, so we are done
             return;
         }
 
-        // We are the lucky ones since we just managed to complete the last backup for this invocation and since the
-        // pendingResponse is set, we can set it on the future.
+        // we are the lucky ones since we just managed to complete the last backup for this invocation and since the
+        // pendingResponse is set, we can set it on the future
         complete(pendingResponse);
     }
 
@@ -478,16 +500,14 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     /**
-     * Checks if this Invocation has received a heart-beat in time.
+     * Checks if this Invocation has received a heartbeat in time.
      *
-     * If the response is already set, or if a heart-beat has been received in time, then the false is returned.
+     * If the response is already set, or if a heartbeat has been received in time, then {@code false} is returned.
+     * If no heartbeat has been received, then the future.set is called with HEARTBEAT_TIMEOUT and {@code true} is returned.
      *
-     * If no heart-beat has been received, then the future.set is called with HEARTBEAT_TIMEOUT
-     * and true is returned.
+     * Gets called from the monitor-thread.
      *
-     * gets called from the monitor-thread
-     *
-     * @return true if there is a timeout detected, false otherwise.
+     * @return {@code true} if there is a timeout detected, {@code false} otherwise.
      */
     boolean detectAndHandleTimeout(long heartbeatTimeoutMillis) {
         HeartbeatTimeout heartbeatTimeout = detectTimeout(heartbeatTimeoutMillis);
@@ -502,7 +522,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     HeartbeatTimeout detectTimeout(long heartbeatTimeoutMillis) {
         if (pendingResponse != VOID) {
-            // if there is a response, then we won't timeout.
+            // if there is a response, then we won't timeout
             return NO_TIMEOUT__RESPONSE_AVAILABLE;
         }
 
@@ -511,15 +531,15 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return NO_TIMEOUT__CALL_TIMEOUT_DISABLED;
         }
 
-        // a call is always allowed to execute as long as its own call timeout.
+        // a call is always allowed to execute as long as its own call timeout
         long deadlineMillis = op.getInvocationTime() + callTimeoutMillis;
         if (deadlineMillis > nodeEngine.getClusterService().getClusterClock().getClusterTime()) {
             return NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED;
         }
 
-        // on top of its own call timeout, it is allowed to execute until there is a heart beat timeout.
-        // so if the callTimeout = 5m, and the heartbeatTimeout = 1m, then it allowed to execute for
-        // at least 6 minutes before it is timing out.
+        // on top of its own call timeout, it is allowed to execute until there is a heartbeat timeout;
+        // so if the callTimeout is five minutes, and the heartbeatTimeout is one minute, then the operation is allowed
+        // to execute for at least six minutes before it is timing out
         long lastHeartbeatMillis = this.lastHeartbeatMillis;
         long heartBeatExpirationTimeMillis = lastHeartbeatMillis == 0
                 ? op.getInvocationTime() + callTimeoutMillis + heartbeatTimeoutMillis
@@ -542,18 +562,17 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     // gets called from the monitor-thread
     boolean detectAndHandleBackupTimeout(long timeoutMillis) {
-        // If the backups have completed, we are done.
-        // This check also filters out all non backup-aware operations since they backupsExpected will always be equal to the
-        // backupsCompleted.
+        // if the backups have completed, we are done; this also filters out all non backup-aware operations
+        // since the backupsExpected will always be equal to the backupsCompleted
         boolean allBackupsComplete = backupsExpected == backupsCompleted;
         long responseReceivedMillis = pendingResponseReceivedMillis;
 
-        // If this has not yet expired (so has not been in the system for a too long period) we ignore it.
+        // if this has not yet expired (so has not been in the system for a too long period) we ignore it
         long expirationTime = responseReceivedMillis + timeoutMillis;
         boolean timeout = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
 
-        // If no response has yet been received, we we are done. We are only going to re-invoke an operation
-        // if the response of the primary has been received, but the backups have not replied.
+        // if no response has yet been received, we we are done; we are only going to re-invoke an operation
+        // if the response of the primary has been received, but the backups have not replied
         boolean responseReceived = pendingResponse != VOID;
 
         if (allBackupsComplete || !responseReceived || !timeout) {
@@ -562,17 +581,18 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
         boolean targetDead = nodeEngine.getClusterService().getMember(invTarget) == null;
         if (targetDead) {
-            // The target doesn't exist, we are going to re-invoke this invocation. The reason why this operation is being invoked
-            // is that otherwise it would be possible to loose data. In this particular case it could have happened that e.g.
-            // a map.put was done, the primary has returned the response but has not yet completed the backups and then the
-            // primary fails. The consequence is that the backups never will be made and the effects of the map.put, even though
-            // it returned a value, will never be visible. So if we would complete the future, a response is send even though
-            // its changes never made it into the system.
+            // the target doesn't exist, so we are going to re-invoke this invocation;
+            // the reason for the re-invocation is that otherwise it's possible to lose data,
+            // e.g. when a map.put() was done and the primary node has returned the response,
+            // but has not yet completed the backups and then the primary node fails;
+            // the consequence would be that the backups are never be made and the effects of the map.put() will never be visible,
+            // even though the future returned a value;
+            // so if we would complete the future, a response is sent even though its changes never made it into the system
             resetAndReInvoke();
             return false;
         }
 
-        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        // the backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set
         complete(pendingResponse);
         return true;
     }
