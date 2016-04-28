@@ -34,4 +34,8 @@ public class TargetDisconnectedException extends RetryableHazelcastException {
     public TargetDisconnectedException(String message) {
         super(message);
     }
+
+    public TargetDisconnectedException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

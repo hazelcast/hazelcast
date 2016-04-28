@@ -16,9 +16,12 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * First bytes to send a node that defines selected protocol
  */
+@PrivateApi
 public final class Protocols {
 
     /**

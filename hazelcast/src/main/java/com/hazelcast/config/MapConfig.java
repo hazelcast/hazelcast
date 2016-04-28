@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.eviction.MapEvictionPolicy;
+import com.hazelcast.map.eviction.LFUEvictionPolicy;
+import com.hazelcast.map.eviction.LRUEvictionPolicy;
+import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
 
@@ -25,6 +29,7 @@ import java.util.List;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -78,6 +83,7 @@ public class MapConfig {
      * Default policy for eviction
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
+
     /**
      * Default policy for merging
      */
@@ -109,6 +115,8 @@ public class MapConfig {
     private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
 
     private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+
+    private MapEvictionPolicy mapEvictionPolicy;
 
     private MapStoreConfig mapStoreConfig = new MapStoreConfig().setEnabled(false);
 
@@ -149,6 +157,7 @@ public class MapConfig {
     private boolean optimizeQueryExplicitlyInvoked;
     private boolean setCacheDeserializedValuesExplicitlyInvoked;
 
+
     public MapConfig(String name) {
         this.name = name;
     }
@@ -167,6 +176,7 @@ public class MapConfig {
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.maxSizeConfig = config.maxSizeConfig != null ? new MaxSizeConfig(config.maxSizeConfig) : null;
         this.evictionPolicy = config.evictionPolicy;
+        this.mapEvictionPolicy = config.mapEvictionPolicy;
         this.inMemoryFormat = config.inMemoryFormat;
         this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
         this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
@@ -300,7 +310,6 @@ public class MapConfig {
      * Returns the evictionPercentage: specified percentage of the map to be evicted
      *
      * @return the evictionPercentage: specified percentage of the map to be evicted
-     *
      * @deprecated As of version 3.7, eviction mechanism changed.
      * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
@@ -319,7 +328,6 @@ public class MapConfig {
      *
      * @param evictionPercentage the evictionPercentage to set: the specified percentage of the map to be evicted
      * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range.
-     *
      * @deprecated As of version 3.7, eviction mechanism changed.
      * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
@@ -341,7 +349,6 @@ public class MapConfig {
      *
      * @return number of milliseconds that should pass before asking for the next eviction.
      * @since 3.3
-     *
      * @deprecated As of version 3.7, eviction mechanism changed.
      * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
@@ -359,7 +366,6 @@ public class MapConfig {
      *
      * @param minEvictionCheckMillis time in milliseconds that should pass before asking for the next eviction
      * @since 3.3
-     *
      * @deprecated As of version 3.7, eviction mechanism changed.
      * It uses a probabilistic algorithm based on sampling. Please see documentation for further details.
      */
@@ -442,7 +448,46 @@ public class MapConfig {
      * @param evictionPolicy the evictionPolicy to set
      */
     public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        this.evictionPolicy = evictionPolicy;
+        this.evictionPolicy = checkNotNull(evictionPolicy, "evictionPolicy cannot be null");
+        this.mapEvictionPolicy = findMatchingMapEvictionPolicy(evictionPolicy);
+        return this;
+    }
+
+    private static MapEvictionPolicy findMatchingMapEvictionPolicy(EvictionPolicy evictionPolicy) {
+        switch (evictionPolicy) {
+            case LRU:
+                return LRUEvictionPolicy.INSTANCE;
+            case LFU:
+                return LFUEvictionPolicy.INSTANCE;
+            case RANDOM:
+                return RandomEvictionPolicy.INSTANCE;
+            case NONE:
+                return null;
+            default:
+                throw new IllegalArgumentException("Not known eviction policy : " + evictionPolicy);
+
+        }
+    }
+
+    /**
+     * Returns custom eviction policy if it is set otherwise returns null.
+     *
+     * @return custom eviction policy or null.
+     */
+    public MapEvictionPolicy getMapEvictionPolicy() {
+        return mapEvictionPolicy;
+    }
+
+    /**
+     * Sets custom eviction policy implementation for this map.
+     *
+     * Internal eviction algorithm finds most appropriate entry to evict from this map by using supplied policy.
+     *
+     * @param mapEvictionPolicy custom eviction policy implementation
+     * @return the updated map configuration
+     */
+    public MapConfig setMapEvictionPolicy(MapEvictionPolicy mapEvictionPolicy) {
+        this.mapEvictionPolicy = checkNotNull(mapEvictionPolicy, "mapEvictionPolicy cannot be null");
         return this;
     }
 
@@ -843,6 +888,10 @@ public class MapConfig {
                 .hashCode());
         result = prime
                 * result
+                + ((this.mapEvictionPolicy == null) ? 0 : this.mapEvictionPolicy
+                .hashCode());
+        result = prime
+                * result
                 + ((this.mapStoreConfig == null) ? 0 : this.mapStoreConfig
                 .hashCode());
         result = prime * result + this.maxIdleSeconds;
@@ -887,6 +936,8 @@ public class MapConfig {
                         : other.inMemoryFormat == null)
                         && (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
                         : other.evictionPolicy == null)
+                        && (this.mapEvictionPolicy != null ? this.mapEvictionPolicy.equals(other.mapEvictionPolicy)
+                        : other.mapEvictionPolicy == null)
                         && (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
                         : other.mapStoreConfig == null)
                         && (this.nearCacheConfig != null ? this.nearCacheConfig.equals(other.nearCacheConfig)
@@ -903,6 +954,7 @@ public class MapConfig {
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", maxIdleSeconds=" + maxIdleSeconds
                 + ", evictionPolicy='" + evictionPolicy + '\''
+                + ", mapEvictionPolicy='" + mapEvictionPolicy + '\''
                 + ", evictionPercentage=" + evictionPercentage
                 + ", minEvictionCheckMillis=" + minEvictionCheckMillis
                 + ", maxSizeConfig=" + maxSizeConfig
@@ -920,4 +972,5 @@ public class MapConfig {
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + '}';
     }
+
 }

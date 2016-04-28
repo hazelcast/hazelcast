@@ -65,9 +65,13 @@ public class ClientConnection implements Connection {
 
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
+    // the time in millis the last heartbeat was received. 0 indicates that no heartbeat has ever been received.
+    private volatile long lastHeartbeatMillis;
     private boolean isAuthenticatedAsOwner;
     @Probe(level = ProbeLevel.DEBUG)
     private volatile long closedTime;
+
+    private volatile Throwable closingFailure;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -231,6 +235,9 @@ public class ClientConnection implements Connection {
         if (!live.compareAndSet(true, false)) {
             return;
         }
+
+        closingFailure = t;
+
         closedTime = System.currentTimeMillis();
         String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
@@ -252,6 +259,10 @@ public class ClientConnection implements Connection {
         }
     }
 
+    public Throwable getCloseCause() {
+        return closingFailure;
+    }
+
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "incremented in single thread")
     void heartBeatingFailed() {
         heartBeating = false;
@@ -259,6 +270,11 @@ public class ClientConnection implements Connection {
 
     void heartBeatingSucceed() {
         heartBeating = true;
+        lastHeartbeatMillis = System.currentTimeMillis();
+    }
+
+    public long getLastHeartbeatMillis() {
+        return lastHeartbeatMillis;
     }
 
     public boolean isHeartBeating() {

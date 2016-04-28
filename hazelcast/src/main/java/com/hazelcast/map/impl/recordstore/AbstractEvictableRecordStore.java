@@ -41,6 +41,7 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getIdlenessStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 
 
 /**
@@ -49,7 +50,6 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     protected final long expiryDelayMillis;
-    protected final Evictor evictor;
     protected final EventService eventService;
     protected final MapEventPublisher mapEventPublisher;
     protected final Address thisAddress;
@@ -65,7 +65,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
         expiryDelayMillis = hazelcastProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
-        evictor = mapContainer.getEvictor();
         eventService = nodeEngine.getEventService();
         mapEventPublisher = mapServiceContext.getMapEventPublisher();
         thisAddress = nodeEngine.getThisAddress();
@@ -150,12 +149,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     public void evictEntries() {
         if (shouldEvict()) {
-            evictor.evict(this);
+            mapContainer.getEvictor().evict(this);
         }
     }
 
-    protected boolean shouldEvict() {
-        return evictor.checkEvictable(this);
+    @Override
+    public boolean shouldEvict() {
+        Evictor evictor = mapContainer.getEvictor();
+        return evictor != NULL_EVICTOR && evictor.checkEvictable(this);
     }
 
     protected void markRecordStoreExpirable(long ttl) {
@@ -344,5 +345,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             }
             nextRecord = null;
         }
+
     }
 }

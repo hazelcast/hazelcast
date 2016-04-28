@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Properties;
@@ -26,6 +28,7 @@ import java.util.Properties;
  * For members see {@link com.hazelcast.nio.MemberSocketInterceptor}
  * see {@link com.hazelcast.config.SocketInterceptorConfig}
  */
+@PrivateApi
 public interface SocketInterceptor {
 
     /**

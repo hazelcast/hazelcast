@@ -16,10 +16,13 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * A listener for the {@link com.hazelcast.nio.ConnectionManager} to listen to connections
  * being added or removed.
  */
+@PrivateApi
 public interface ConnectionListener {
 
     void connectionAdded(Connection connection);

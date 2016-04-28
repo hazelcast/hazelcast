@@ -167,7 +167,7 @@ public class ClientInvocation implements Runnable {
     public void notifyException(Throwable exception) {
 
         if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage()));
+            clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage(), exception));
             return;
         }
 

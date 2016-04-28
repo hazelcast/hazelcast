@@ -81,6 +81,7 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -104,6 +105,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -645,9 +647,36 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     mapConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("hot-restart".equals(nodeName)) {
                     handleHotRestartConfig(mapConfigBuilder, childNode);
+                } else if ("map-eviction-policy".equals(nodeName)) {
+                    handleMapEvictionPolicyConfig(mapConfigBuilder, childNode);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
+        }
+
+        private void handleMapEvictionPolicyConfig(BeanDefinitionBuilder mapConfigBuilder, Node childNode) {
+            NamedNodeMap attributes = childNode.getAttributes();
+            Node implementationNode = attributes.getNamedItem("implementation");
+            Node classNameNode = attributes.getNamedItem("class-name");
+
+            String implementation = implementationNode != null ? getTextContent(implementationNode) : null;
+            String className = classNameNode != null ? getTextContent(classNameNode) : null;
+
+            if (implementation != null) {
+                mapConfigBuilder.addPropertyReference("mapEvictionPolicy", implementation);
+            } else if (className != null) {
+                className = checkHasText(className, "map-eviction-policy `className` cannot be null or empty");
+                try {
+                    MapEvictionPolicy mapEvictionPolicy = ClassLoaderUtil.newInstance(getClass().getClassLoader(), className);
+                    mapConfigBuilder.addPropertyValue("mapEvictionPolicy", mapEvictionPolicy);
+
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            } else {
+                throw new IllegalArgumentException("One of `className` or `implementation`"
+                        + " attributes is required to create map-eviction-policy");
+            }
         }
 
         private void handleHotRestartConfig(BeanDefinitionBuilder configBuilder, Node node) {

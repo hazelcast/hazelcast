@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
+package com.hazelcast.map.eviction;
+
+import com.hazelcast.core.EntryView;
+
 /**
- * <p>Contains functionality for the TCP/IP Networking between cluster members<br/>
- *
- * This whole package is internal and no compatibility will be provided.
+ * Random eviction policy for an {@link com.hazelcast.core.IMap IMap}
  */
-package com.hazelcast.nio.tcp;
+public class RandomEvictionPolicy extends MapEvictionPolicy {
+
+    /**
+     * Random eviction policy instance.
+     */
+    public static final RandomEvictionPolicy INSTANCE = new RandomEvictionPolicy();
+
+    @Override
+    public int compare(EntryView entryView1, EntryView entryView2) {
+        return 0;
+    }
+}

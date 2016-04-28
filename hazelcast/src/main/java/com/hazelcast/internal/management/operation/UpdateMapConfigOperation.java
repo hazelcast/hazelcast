@@ -34,6 +34,7 @@ package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -75,7 +76,9 @@ public class UpdateMapConfigOperation extends Operation {
         newConfig.setBackupCount(mapConfig.getBackupCount());
         newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
-        service.getMapServiceContext().getMapContainer(mapName).setMapConfig(newConfig.getAsReadOnly());
+        MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
+        mapContainer.setMapConfig(newConfig.getAsReadOnly());
+        mapContainer.initEvictor();
     }
 
     @Override

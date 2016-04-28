@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Represents something that can be written to a {@link com.hazelcast.nio.Connection}.
  *
@@ -34,6 +36,7 @@ package com.hazelcast.nio;
  * @see com.hazelcast.nio.serialization.Data
  * @see Connection#write(OutboundFrame)
  */
+@PrivateApi
 public interface OutboundFrame {
 
     /**

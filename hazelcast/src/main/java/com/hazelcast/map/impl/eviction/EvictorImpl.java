@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.impl.eviction.policies.MapEvictionPolicy;
+import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.LazyEntryViewFromRecord;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -27,31 +27,63 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
- * Eviction helper methods.
+ * Evictor helper methods.
  */
 public class EvictorImpl implements Evictor {
 
     protected final EvictionChecker evictionChecker;
-    protected final MapEvictionPolicy evictionPolicy;
     protected final IPartitionService partitionService;
+    protected final MapEvictionPolicy mapEvictionPolicy;
 
-    public EvictorImpl(EvictionChecker evictionChecker, MapEvictionPolicy evictionPolicy, IPartitionService partitionService) {
-        this.evictionChecker = evictionChecker;
-        this.evictionPolicy = evictionPolicy;
-        this.partitionService = partitionService;
+    public EvictorImpl(MapEvictionPolicy mapEvictionPolicy,
+                       EvictionChecker evictionChecker, IPartitionService partitionService) {
+        this.evictionChecker = checkNotNull(evictionChecker);
+        this.partitionService = checkNotNull(partitionService);
+        this.mapEvictionPolicy = checkNotNull(mapEvictionPolicy);
     }
 
     @Override
     public void evict(RecordStore recordStore) {
-        Iterable<EntryView> samples = getSamples(recordStore);
-        EntryView selectedEntry = evictionPolicy.selectEvictableEntry(samples);
-
-        if (selectedEntry == null) {
+        EntryView evictableEntry = selectEvictableEntry(recordStore);
+        if (evictableEntry == null) {
             return;
         }
 
-        evictEntry(selectedEntry, recordStore);
+        evictEntry(evictableEntry, recordStore);
+    }
+
+    private EntryView selectEvictableEntry(RecordStore recordStore) {
+        Iterable<EntryView> samples = getSamples(recordStore);
+        EntryView selected = null;
+
+        for (EntryView candidate : samples) {
+            if (selected == null) {
+                selected = candidate;
+            } else if (mapEvictionPolicy.compare(candidate, selected) < 0) {
+                selected = candidate;
+            }
+        }
+
+        return selected;
+    }
+
+    private void evictEntry(EntryView selectedEntry, RecordStore recordStore) {
+        Record record = getRecordFromEntryView(selectedEntry);
+        Data key = record.getKey();
+
+        if (recordStore.isLocked(record.getKey())) {
+            return;
+        }
+
+        boolean backup = isBackup(recordStore);
+        recordStore.evict(key, backup);
+
+        if (!backup) {
+            recordStore.doPostEvictionOperations(record, backup);
+        }
     }
 
     @Override
@@ -59,27 +91,10 @@ public class EvictorImpl implements Evictor {
         return evictionChecker.checkEvictable(recordStore);
     }
 
-    private void evictEntry(EntryView selectedEntry, RecordStore recordStore) {
-        Record record = getRecordFromEntryView(selectedEntry);
-        Data key = record.getKey();
-
-        if (!recordStore.isLocked(key)) {
-
-            boolean backup = isBackup(recordStore);
-            recordStore.evict(key, backup);
-
-            if (!backup) {
-                recordStore.doPostEvictionOperations(record, backup);
-            }
-        }
-
-    }
-
     // this method is overridden in another context.
     protected Record getRecordFromEntryView(EntryView selectedEntry) {
         return ((LazyEntryViewFromRecord) selectedEntry).getRecord();
     }
-
 
     protected boolean isBackup(RecordStore recordStore) {
         int partitionId = recordStore.getPartitionId();
@@ -88,10 +103,8 @@ public class EvictorImpl implements Evictor {
     }
 
     protected Iterable<EntryView> getSamples(RecordStore recordStore) {
-        int sampleCount = evictionPolicy.getSampleCount();
         Storage storage = recordStore.getStorage();
-
-        return (Iterable<EntryView>) storage.getRandomSamples(sampleCount);
+        return (Iterable<EntryView>) storage.getRandomSamples(SAMPLE_COUNT);
     }
 
     protected static long getNow() {
