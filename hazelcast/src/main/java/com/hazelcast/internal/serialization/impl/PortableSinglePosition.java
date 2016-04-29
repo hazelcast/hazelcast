@@ -26,7 +26,7 @@ class PortableSinglePosition implements PortablePosition {
     // used for all positions
     FieldDefinition fd;
     //    AccessType accessType;
-    int position;
+    int streamPosition;
 
     // poison pills to indicate null-pointer or empty-array
     boolean nil;
@@ -44,7 +44,7 @@ class PortableSinglePosition implements PortablePosition {
 
     @Override
     public int getStreamPosition() {
-        return position;
+        return streamPosition;
     }
 
     @Override
@@ -112,12 +112,60 @@ class PortableSinglePosition implements PortablePosition {
 
     public void reset() {
         fd = null;
-        position = 0;
+        streamPosition = 0;
         nil = false;
         int index = -1;
         int len = -1;
         int factoryId = -1;
         int classId = -1;
         last = false;
+    }
+
+    public static PortableSinglePosition empty(boolean last) {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.len = 0;
+        position.last = last;
+        return position;
+    }
+
+    public static PortableSinglePosition empty(boolean last, int index) {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.len = 0;
+        position.last = last;
+        position.index = index;
+        potentiallyNullify(position);
+        return position;
+    }
+
+    public static PortableSinglePosition empty(boolean last, boolean any) {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.len = 0;
+        position.last = last;
+        position.any = any;
+        potentiallyNullify(position);
+        return position;
+    }
+
+    private static void potentiallyNullify(PortableSinglePosition position) {
+        if (position.isEmpty() && !position.isLast()) {
+            position.nil = true;
+        } else if (position.isEmpty() && position.getIndex() >= 0) {
+            position.nil = true;
+        }
+    }
+
+    public static PortableSinglePosition nil(boolean last) {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.nil = true;
+        position.last = last;
+        return position;
+    }
+
+    public static PortableSinglePosition nil(boolean last, boolean any) {
+        PortableSinglePosition position = new PortableSinglePosition();
+        position.nil = true;
+        position.last = last;
+        position.any = any;
+        return position;
     }
 }

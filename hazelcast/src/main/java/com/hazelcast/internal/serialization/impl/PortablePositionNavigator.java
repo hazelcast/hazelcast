@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.Bits;
@@ -16,37 +32,36 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractAttributeNameNameWithoutArguments;
+import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.checkFactoryAndClass;
 
-// =================================================
-// TODO -> MAJOR REFACTORING
-// =================================================
-public class PortablePositionNavigator {
+final class PortablePositionNavigator {
 
     private static final Pattern NESTED_PATH_SPLITTER = Pattern.compile("\\.");
 
-    private static final boolean SINGLE_CELL_ACCESS = true;
-    private static final boolean WHOLE_ARRAY_ACCESS = false;
+    // cache of commonly returned values to avoid extra allocations
+    private static final PortableSinglePosition NIL_NOT_LAST = PortableSinglePosition.nil(false);
+    private static final PortableSinglePosition NIL_LAST_ANY = PortableSinglePosition.nil(true, true);
+    private static final PortableSinglePosition NIL_NOT_LAST_ANY = PortableSinglePosition.nil(false, true);
+    private static final PortableSinglePosition EMPTY_LAST_ANY = PortableSinglePosition.empty(true, true);
+    private static final PortableSinglePosition EMPTY_NOT_LAST_ANY = PortableSinglePosition.empty(false, true);
 
+    // invariants
     private BufferObjectDataInput in;
     private int offset;
     private int finalPosition;
     private ClassDefinition cd;
     private PortableSerializer serializer;
 
+    // holds the initial state for reset
     private final int initPosition;
     private final ClassDefinition initCd;
     private final int initOffset;
     private final int initFinalPosition;
     private PortableSerializer initSerializer;
 
-    private final Deque<NavigationFrame> multiPositions = new ArrayDeque<NavigationFrame>();
+    private Deque<NavigationFrame> multiPositions;
 
-    /**
-     * @param in
-     * @param cd
-     * @param serializer
-     */
-    public PortablePositionNavigator(BufferObjectDataInput in, ClassDefinition cd, PortableSerializer serializer) {
+    PortablePositionNavigator(BufferObjectDataInput in, ClassDefinition cd, PortableSerializer serializer) {
         this.in = in;
         this.cd = cd;
         this.serializer = serializer;
@@ -59,7 +74,6 @@ public class PortablePositionNavigator {
         this.initPosition = in.position();
         this.initFinalPosition = finalPosition;
         this.initOffset = offset;
-
     }
 
     private void initFieldCountAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
@@ -77,214 +91,31 @@ public class PortablePositionNavigator {
         offset = in.position();
     }
 
-    public PortablePosition findPositionOf(String path) throws IOException {
+    int getFinalPosition() {
+        return finalPosition;
+    }
+
+    int getOffset() {
+        return offset;
+    }
+
+    PortablePosition findPositionOf(String path) throws IOException {
         try {
-            PortableSinglePosition position = (PortableSinglePosition) findFieldPosition(path);
-            if (position.isMultiPosition()) {
-                List<PortablePosition> positions = position.asMultiPosition();
-                for (PortablePosition pos : positions) {
-                    adjustPositionForReadAccess((PortableSinglePosition) pos, path);
-                }
-            } else {
-                adjustPositionForReadAccess(position, path);
-            }
-            return position;
+            return findFieldPosition(path);
         } finally {
             reset();
         }
     }
 
-    void reset() {
+    private void reset() {
         cd = initCd;
         serializer = initSerializer;
-
         in.position(initPosition);
         finalPosition = initFinalPosition;
         offset = initOffset;
-    }
-
-    void adjustPositionForReadAccess(PortableSinglePosition position, String path) throws IOException {
-        FieldType type = position.getType();
-        if (type == null) {
-            if (position.isEmpty() && !position.isLast()) {
-                position.nil = true;
-            } else if (position.isEmpty() && position.getIndex() >= 0) {
-                position.nil = true;
-            }
-            return;
+        if (multiPositions != null) {
+            multiPositions.clear();
         }
-        if (type.isArrayType()) {
-            if (type == FieldType.PORTABLE_ARRAY) {
-                if (position.getIndex() >= 0) {
-                    adjustForPortableArrayAccess(position, SINGLE_CELL_ACCESS, path);
-                } else {
-                    adjustForPortableArrayAccess(position, WHOLE_ARRAY_ACCESS, path);
-                }
-            } else {
-                adjustForNonPortableArrayAccess(path, type, position);
-            }
-        } else {
-            validateNonArrayPosition(position);
-            if (type == FieldType.PORTABLE) {
-                adjustForPortableObjectAccess(path, position);
-            } else {
-                adjustForNonPortableArrayAccess(path, type, position);
-            }
-        }
-    }
-
-    private void validateNonArrayPosition(PortableSinglePosition position) {
-        if (position.getIndex() >= 0) {
-            throw new IllegalArgumentException("Cannot read array cell from non-array");
-        }
-    }
-
-    // ----------------------------------------
-    // ----------------------------------------
-    // ----------------------------------------
-    private void adjustForNonPortableArrayAccess(String fieldName, FieldType type, PortableSinglePosition position) throws IOException {
-        if (position.isMultiPosition()) {
-            adjustPositionForMultiCellNonPortableArrayAccess(fieldName, type, position);
-        } else {
-            adjustPositionForSingleCellNonPortableArrayAccess(fieldName, type, position);
-        }
-    }
-
-    /**
-     * IMPORTANT:
-     * Multi-position given as method parameter may contain positions from multiple arrays.
-     * Due to array access optimisations This method expects that the positions among all positions of a
-     * single array are sorted by stream-offset.
-     */
-    private void adjustPositionForMultiCellNonPortableArrayAccess(String fieldName, FieldType type, PortablePosition position) throws IOException {
-        List<PortablePosition> positions = position.asMultiPosition();
-
-        int arrayPosition = -1;
-        int arrayIndex = 0;
-        int arrayLen = 0;
-        for (int i = 0; i < positions.size(); i++) {
-            PortableSinglePosition p = (PortableSinglePosition) positions.get(i);
-            if (p.index < 0) {
-                continue;
-            }
-
-            if (arrayPosition != p.getStreamPosition()) {
-                // advance to next array, begin from index 0
-                arrayPosition = p.getStreamPosition();
-
-                // validate the arrays length
-                in.position(p.getStreamPosition());
-                arrayLen = in.readInt();
-                arrayIndex = 0;
-            }
-            validatePositionIndexInBound(fieldName, arrayLen, p);
-
-            if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
-                while (p.index > arrayIndex) {
-                    int indexElementLen = in.readInt();
-                    in.position(in.position() + indexElementLen);
-                    arrayIndex++;
-                }
-                p.position = in.position();
-            } else {
-                p.position = in.position() + p.index * type.getSingleElementSize();
-            }
-        }
-    }
-
-    private void adjustPositionForSingleCellNonPortableArrayAccess(String fieldName, FieldType type, PortableSinglePosition position) throws IOException {
-        if (!position.isNullOrEmpty()) {
-            if (position.index >= 0) {
-                in.position(position.getStreamPosition());
-                int arrayLen = in.readInt();
-
-                //
-                if (arrayLen == Bits.NULL_ARRAY_LENGTH) {
-                    throw new IllegalArgumentException("The array is null in " + fieldName);
-                }
-                if (position.index > arrayLen - 1) {
-                    throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
-                }
-
-                if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
-                    int currentIndex = 0;
-                    while (position.index > currentIndex) {
-                        int indexElementLen = in.readInt();
-                        in.position(in.position() + indexElementLen);
-                        currentIndex++;
-                    }
-                    position.position = in.position();
-                } else {
-                    position.position = in.position() + position.index * type.getSingleElementSize();
-                }
-            }
-        }
-    }
-
-    private PortablePosition adjustForPortableObjectAccess(String fieldName, PortablePosition pos) throws IOException {
-        if (pos.getIndex() < 0) {
-            return adjustForPortableFieldAccess((PortableSinglePosition) pos);
-        } else {
-            return adjustForPortableArrayAccess((PortableSinglePosition) pos, SINGLE_CELL_ACCESS, fieldName);
-        }
-    }
-
-    private PortablePosition adjustForPortableFieldAccess(PortableSinglePosition pos) throws IOException {
-        in.position(pos.position);
-        if (!pos.isNull()) { // extraction returned null (poison pill)
-            pos.nil = in.readBoolean();
-            pos.factoryId = in.readInt();
-            pos.classId = in.readInt();
-            pos.position = in.position();
-            checkFactoryAndClass(pos.fd, pos.factoryId, pos.classId);
-        }
-        return pos;
-    }
-
-    private PortablePosition adjustForPortableArrayAccess(PortableSinglePosition pos, boolean singleCellAccess,
-                                                          String path) throws IOException {
-        if (!pos.isNullOrEmpty()) {
-            in.position(pos.getStreamPosition());
-
-            int len = in.readInt();
-            int factoryId = in.readInt();
-            int classId = in.readInt();
-
-            pos.len = len;
-            pos.factoryId = factoryId;
-            pos.classId = classId;
-            pos.position = in.position();
-
-            checkFactoryAndClass(pos.fd, factoryId, classId);
-            if (singleCellAccess) {
-                if (pos.getIndex() < len) {
-                    int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
-                    in.position(offset);
-                    pos.position = in.readInt(); // portable position
-                } else {
-                    pos.nil = true;
-                }
-            }
-        } else {
-            if (pos.isEmpty() && !pos.isLast()) {
-                pos.nil = true;
-            } else if (pos.isEmpty() && pos.getIndex() >= 0) {
-                pos.nil = true;
-            }
-        }
-
-        return pos;
-    }
-
-    // ----------------------------------------
-    // ----------------------------------------
-    // ----------------------------------------
-
-    private int readPositionFromMetadata(FieldDefinition fd) throws IOException {
-        int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
-        short len = in.readShort(pos);
-        // name + len + type
-        return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
     }
 
     private PortablePosition findFieldPosition(String nestedPath) throws IOException {
@@ -302,48 +133,50 @@ public class PortablePositionNavigator {
             throw unknownFieldException(nestedPath);
         }
 
-        if (multiPositions.isEmpty()) {
-            //        if (fd.getType() != type) {
-            //            throw new HazelcastSerializationException("Not a '" + type + "' field: " + fieldName);
-            //        }
-            if (!result.isNullOrEmpty()) {
-                // for consistency: [any] queries always return a multi-result, even if there's a single result only
-                // only if it's a single null result -> then it's returned as-is
-                if (nestedPath.contains("[any]")) {
-                    List<PortablePosition> positions = new LinkedList<PortablePosition>();
-                    positions.add(result);
-                    return new PortableMultiPosition(positions);
-                }
-            }
-            return result;
+        // we didn't touch any [any] quantifier
+        if (multiPositions == null || multiPositions.isEmpty()) {
+            return processFieldPositionNoMultiPositions(nestedPath, result);
+
         } else {
+            return processFieldPositionWithMultiPositions(nestedPath, pathTokens, result);
 
-            List<PortablePosition> positions = new LinkedList<PortablePosition>();
-            positions.add(result);
-
-            while (!multiPositions.isEmpty()) {
-                NavigationFrame frame = multiPositions.pollFirst();
-                setupForFrame(frame);
-                for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
-                    result = processPath(pathTokens, i, nestedPath, frame);
-                    if (result != null && result.isNullOrEmpty()) {
-                        break;
-                    }
-                    frame = null;
-                }
-                if (result == null) {
-                    throw unknownFieldException(nestedPath);
-                }
-                positions.add(result);
-            }
-            return new PortableMultiPosition(positions);
         }
     }
 
-    private void setupForFrame(NavigationFrame frame) {
-        in.position(frame.streamPosition); // changed in the evening on 24.03.2016
-        offset = frame.streamOffset;
-        cd = frame.cd;
+    private PortablePosition processFieldPositionNoMultiPositions(String nestedPath, PortablePosition result) {
+        // for consistency: [any] queries always return a multi-result, even if there's a single result only.
+        // The only case where it returns a PortableSingleResult is when the position is a a single null result.
+        if (!result.isNullOrEmpty()) {
+            if (isAnyPath(nestedPath)) {
+                List<PortablePosition> positions = new LinkedList<PortablePosition>();
+                positions.add(result);
+                return new PortableMultiPosition(positions);
+            }
+        }
+        return result;
+    }
+
+    private PortablePosition processFieldPositionWithMultiPositions(String nestedPath, String[] pathTokens,
+                                                                    PortablePosition result) throws IOException {
+        // we process the all the paths gathered due to [any] quantifiers
+        List<PortablePosition> positions = new LinkedList<PortablePosition>();
+        positions.add(result);
+        while (!multiPositions.isEmpty()) {
+            NavigationFrame frame = multiPositions.pollFirst();
+            setupNavigatorForFrame(frame);
+            for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
+                result = processPath(pathTokens, i, nestedPath, frame);
+                if (result != null && result.isNullOrEmpty()) {
+                    break;
+                }
+                frame = null;
+            }
+            if (result == null) {
+                throw unknownFieldException(nestedPath);
+            }
+            positions.add(result);
+        }
+        return new PortableMultiPosition(positions);
     }
 
     private PortablePosition processPath(String[] pathTokens, int pathTokenIndex, String nestedPath,
@@ -358,179 +191,151 @@ public class PortablePositionNavigator {
         }
 
         if (isPathTokenWithoutQuantifier(token)) {
-            //
-            // without quantifier
-            //
-            if (last) {
-                return readPositionOfCurrentElement(new PortableSinglePosition(), fd);
-            }
-            if (!advanceToNextTokenFromNonArrayElement(fd, token)) {
-                PortableSinglePosition nil = nilPosition();
-                nil.last = last;
-                return nil;
+            PortablePosition position = processPathTokenWithoutQuantifier(fd, last, nestedPath);
+            if (position != null) {
+                return position;
             }
         } else if (isPathTokenWithAnyQuantifier(token)) {
-            //
-            // with [any] quantifier
-            //
-            if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-                //
-                // PORTABLE array
-                //
-                if (frame == null) {
-                    int len = getCurrentArrayLength(fd);
-                    if (len == 0) {
-                        PortableSinglePosition empty = emptyPosition();
-                        empty.last = last;
-                        empty.any = true;
-                        return empty;
-                    } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                        PortableSinglePosition nil = nilPosition();
-                        nil.last = last;
-                        nil.any = true;
-                        return nil;
-                    } else {
-                        populatePendingNavigationFrames(pathTokenIndex, len);
-                        if (last) {
-                            return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
-                        }
-                        advanceToNextTokenFromPortableArrayElement(fd, 0, field);
-                    }
-                } else {
-                    if (last) {
-                        return readPositionOfCurrentElement(new PortableSinglePosition(), fd, frame.arrayIndex);
-                    }
-
-                    // check len
-                    advanceToNextTokenFromPortableArrayElement(fd, frame.arrayIndex, field);
-                }
-            } else {
-                //
-                // PRIMITIVE array
-                //
-                if (frame == null) {
-                    if (last) {
-                        int len = getCurrentArrayLength(fd);
-                        if (len == 0) {
-                            PortableSinglePosition empty = emptyPosition();
-                            empty.last = last;
-                            empty.any = true;
-                            return empty;
-                        } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                            PortableSinglePosition nil = nilPosition();
-                            nil.last = last;
-                            nil.any = true;
-                            return nil;
-                        } else {
-                            populatePendingNavigationFrames(pathTokenIndex, len);
-                            return readPositionOfCurrentElement(new PortableSinglePosition(), fd, 0);
-                        }
-                    }
-                    throw wrongUseOfAnyOperationException(nestedPath);
-                } else {
-                    if (last) {
-                        return readPositionOfCurrentElement(new PortableSinglePosition(), fd, frame.arrayIndex);
-                    }
-                    throw wrongUseOfAnyOperationException(nestedPath);
-                }
+            PortablePosition position = processPathTokenWithAnyQuantifier(pathTokenIndex, nestedPath, frame, fd, last);
+            if (position != null) {
+                return position;
             }
         } else {
-            //
-            // with [number] quantifier
-            //
-            int index = Integer.valueOf(extractArgumentsFromAttributeName(token));
-            if (index < 0) {
-                throw new IllegalArgumentException("Array index " + index + " cannot be negative in " + nestedPath);
+            PortablePosition position = processPathTokenWithNumberQuantifier(nestedPath, token, fd, last);
+            if (position != null) {
+                return position;
             }
-            int len = getCurrentArrayLength(fd);
 
-            if (last) {
-                if (len == 0) {
-                    PortableSinglePosition empty = emptyPosition();
-                    empty.index = index;
-                    empty.last = last;
-                    return empty;
-                } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    PortableSinglePosition nil = nilPosition();
-                    nil.last = last;
-                    return nil;
-                } else if (index >= len) {
-                    PortableSinglePosition nil = nilPosition();
-                    nil.last = last;
-                    return nil;
-                } else {
-                    return readPositionOfCurrentElement(new PortableSinglePosition(), fd, index);
-                }
-            }
-            if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-                if (len == 0) {
-                    PortableSinglePosition empty = emptyPosition();
-                    empty.index = index;
-                    empty.last = last;
-                    return empty;
-                } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    PortableSinglePosition nil = nilPosition();
-                    nil.last = last;
-                    return nil;
-                } else if (index >= len) {
-                    PortableSinglePosition nil = nilPosition();
-                    nil.last = last;
-                    return nil;
-                } else {
-                    advanceToNextTokenFromPortableArrayElement(fd, index, field);
-                }
-            }
         }
 
         return null;
     }
 
-    private void populatePendingNavigationFrames(int pathTokenIndex, int len) {
+    private PortablePosition processPathTokenWithoutQuantifier(FieldDefinition fd, boolean last, String nestedPath)
+            throws IOException {
+        //
+        // TOKEN without quantifier
+        //
+        if (last) {
+            return readPositionOfCurrentElement(fd, nestedPath);
+        } else {
+            if (!advanceNavigatorToNextPortableTokenFromNonArrayElement(fd)) {
+                return NIL_NOT_LAST;
+            }
+        }
+        return null;
+    }
+
+    private PortablePosition processPathTokenWithAnyQuantifier(int pathTokenIndex, String nestedPath,
+                                                               NavigationFrame frame, FieldDefinition fd,
+                                                               boolean last) throws IOException {
+        //
+        // TOKEN with [any] quantifier
+        //
+        validateArrayType(fd, nestedPath);
+        if (fd.getType() == FieldType.PORTABLE_ARRAY) {
+            // PORTABLE array
+            if (frame == null) {
+                int len = getCurrentArrayLength(fd);
+                if (len == 0) {
+                    return emptyPosition(last);
+                } else if (len == Bits.NULL_ARRAY_LENGTH) {
+                    return nilPosition(last);
+                }
+
+                populateAnyNavigationFrames(pathTokenIndex, len);
+                if (last) {
+                    return readPositionOfCurrentElement(fd, 0, nestedPath);
+                }
+                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, 0);
+
+            } else {
+                if (last) {
+                    return readPositionOfCurrentElement(fd, frame.arrayIndex, nestedPath);
+                }
+
+                // check len
+                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, frame.arrayIndex);
+            }
+        } else {
+            // PRIMITIVE array
+            if (frame == null) {
+                if (last) {
+                    int len = getCurrentArrayLength(fd);
+                    if (len == 0) {
+                        return emptyPosition(last);
+                    } else if (len == Bits.NULL_ARRAY_LENGTH) {
+                        return nilPosition(last);
+                    }
+                    populateAnyNavigationFrames(pathTokenIndex, len);
+                    return readPositionOfCurrentElement(fd, 0, nestedPath);
+                }
+                throw wrongUseOfAnyOperationException(nestedPath);
+            } else {
+                if (last) {
+                    return readPositionOfCurrentElement(fd, frame.arrayIndex, nestedPath);
+                }
+                throw wrongUseOfAnyOperationException(nestedPath);
+            }
+        }
+        return null;
+    }
+
+    private PortablePosition processPathTokenWithNumberQuantifier(String nestedPath, String token, FieldDefinition fd,
+                                                                  boolean last) throws IOException {
+        //
+        // TOKEN with [number] quantifier
+        //
+        validateArrayType(fd, nestedPath);
+        String quantifier = extractArgumentsFromAttributeName(token);
+        if (quantifier == null) {
+            throw new IllegalArgumentException("Malformed quantifier " + quantifier + " in " + nestedPath);
+        }
+        int index = Integer.valueOf(quantifier);
+        if (index < 0) {
+            throw new IllegalArgumentException("Array index " + index + " cannot be negative in " + nestedPath);
+        }
+
+        int len = getCurrentArrayLength(fd);
+        if (len == 0) {
+            return emptyPosition(last);
+        } else if (len == Bits.NULL_ARRAY_LENGTH) {
+            return nilPosition(last);
+        } else if (index >= len) {
+            return nilPosition(last);
+        } else {
+            if (last) {
+                return readPositionOfCurrentElement(fd, index, nestedPath);
+            } else if (fd.getType() == FieldType.PORTABLE_ARRAY) {
+                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, index);
+            }
+        }
+        return null;
+    }
+
+    private void populateAnyNavigationFrames(int pathTokenIndex, int len) {
         // populate "recursive" multi-positions
+        if (multiPositions == null) {
+            multiPositions = new ArrayDeque<NavigationFrame>();
+        }
         for (int k = len - 1; k > 0; k--) {
             multiPositions.addFirst(new NavigationFrame(cd, pathTokenIndex, k, in.position(), this.offset));
         }
     }
 
-    private int getCurrentArrayLength(FieldDefinition fd) throws IOException {
-        int originalPos = in.position();
-        try {
-            int pos = readPositionFromMetadata(fd);
-            in.position(pos);
-            return in.readInt();
-        } finally {
-            in.position(originalPos);
-        }
+    private void setupNavigatorForFrame(NavigationFrame frame) {
+        in.position(frame.streamPosition);
+        offset = frame.streamOffset;
+        cd = frame.cd;
     }
 
-    private boolean isPathTokenWithoutQuantifier(String pathToken) {
-        return !pathToken.endsWith("]");
-    }
-
-    private boolean isPathTokenWithAnyQuantifier(String pathToken) {
-        return pathToken.endsWith("[any]");
-    }
-
-    private PortablePosition readPositionOfCurrentElement(PortableSinglePosition result, FieldDefinition fd) throws IOException {
-        result.fd = fd;
-        result.position = readPositionFromMetadata(fd);
-        result.last = true;
-        return result;
-    }
-
-    private PortablePosition readPositionOfCurrentElement(PortableSinglePosition result, FieldDefinition fd, int index) throws IOException {
-        result.fd = fd;
-        result.position = readPositionFromMetadata(fd);
-        result.index = index;
-        result.last = true;
-        return result;
-    }
-
-    private void advanceToNextTokenFromPortableArrayElement(FieldDefinition fd, int index, String field) throws IOException {
-        int pos = readPositionFromMetadata(fd);
+    private void advanceNavigatorToNextPortableTokenFromPortableArrayCell(FieldDefinition fd, int index)
+            throws IOException {
+        int pos = calculateStreamPositionFromMetadata(fd);
         in.position(pos);
 
-        in.readInt(); // read length
+        // read array length and ignore
+        in.readInt();
         int factoryId = in.readInt();
         int classId = in.readInt();
 
@@ -542,17 +347,12 @@ public class PortablePositionNavigator {
         in.position(portablePosition);
         int versionId = in.readInt();
 
-        advance(factoryId, classId, versionId);
+        doAdvanceNavigatorToNextPortableToken(factoryId, classId, versionId);
     }
 
-    /**
-     * @param fd
-     * @param token
-     * @return true if managed to advance, false if advance failed due to null field
-     * @throws IOException
-     */
-    private boolean advanceToNextTokenFromNonArrayElement(FieldDefinition fd, String token) throws IOException {
-        int pos = readPositionFromMetadata(fd);
+    // returns true if managed to advance, false if advance failed due to null field
+    private boolean advanceNavigatorToNextPortableTokenFromNonArrayElement(FieldDefinition fd) throws IOException {
+        int pos = calculateStreamPositionFromMetadata(fd);
         in.position(pos);
         boolean isNull = in.readBoolean();
         if (isNull) {
@@ -562,31 +362,64 @@ public class PortablePositionNavigator {
         int factoryId = in.readInt();
         int classId = in.readInt();
         int version = in.readInt();
-        advance(factoryId, classId, version);
+        doAdvanceNavigatorToNextPortableToken(factoryId, classId, version);
         return true;
     }
 
-    private void advance(int factoryId, int classId, int version) throws IOException {
+    private void doAdvanceNavigatorToNextPortableToken(int factoryId, int classId, int version) throws IOException {
         cd = serializer.setupPositionAndDefinition(in, factoryId, classId, version);
         initFieldCountAndOffset(in, cd);
     }
 
-    private static PortableSinglePosition nilPosition() {
-        PortableSinglePosition position = new PortableSinglePosition();
-        position.nil = true;
-        return position;
+    private PortablePosition readPositionOfCurrentElement(FieldDefinition fd, String path)
+            throws IOException {
+        return PortablePositionFactory.createSinglePositionForReadAccess(fd, calculateStreamPositionFromMetadata(fd),
+                true, in, path);
     }
 
-    private static PortableSinglePosition emptyPosition() {
-        PortableSinglePosition position = new PortableSinglePosition();
-        position.len = 0;
-        return position;
+    private PortablePosition readPositionOfCurrentElement(FieldDefinition fd, int index, String path)
+            throws IOException {
+        return PortablePositionFactory.createSinglePositionForReadAccess(fd, calculateStreamPositionFromMetadata(fd),
+                true, index, in, path);
     }
 
-    private void validatePositionIndexInBound(String fieldName, int arrayLen, PortableSinglePosition position) throws IOException {
-        if (position.index > arrayLen - 1) {
-            throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
+
+    private int calculateStreamPositionFromMetadata(FieldDefinition fd) throws IOException {
+        int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
+        short len = in.readShort(pos);
+        // name + len + type
+        return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
+    }
+
+    private int getCurrentArrayLength(FieldDefinition fd) throws IOException {
+        int originalPos = in.position();
+        try {
+            int pos = calculateStreamPositionFromMetadata(fd);
+            in.position(pos);
+            return in.readInt();
+        } finally {
+            in.position(originalPos);
         }
+    }
+
+    private PortablePosition nilPosition(boolean last) {
+        return last ? NIL_LAST_ANY : NIL_NOT_LAST_ANY;
+    }
+
+    private PortablePosition emptyPosition(boolean last) {
+        return last ? EMPTY_LAST_ANY : EMPTY_NOT_LAST_ANY;
+    }
+
+    private boolean isPathTokenWithoutQuantifier(String pathToken) {
+        return !pathToken.endsWith("]");
+    }
+
+    private boolean isAnyPath(String path) {
+        return path.contains("[any]");
+    }
+
+    private boolean isPathTokenWithAnyQuantifier(String pathToken) {
+        return pathToken.endsWith("[any]");
     }
 
     static int getArrayCellPosition(PortablePosition arrayPosition, int index, BufferObjectDataInput in)
@@ -599,28 +432,16 @@ public class PortablePositionNavigator {
                 + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
     }
 
-    private HazelcastSerializationException wrongUseOfAnyOperationException(String fieldName) {
-        return new HazelcastSerializationException("Wrong use of any operator: '" + fieldName
+    private IllegalArgumentException wrongUseOfAnyOperationException(String fieldName) {
+        return new IllegalArgumentException("Wrong use of any operator: '" + fieldName
                 + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
     }
 
-    private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
-        if (factoryId != fd.getFactoryId()) {
-            throw new IllegalArgumentException("Invalid factoryId! Expected: "
-                    + fd.getFactoryId() + ", Current: " + factoryId);
+    private void validateArrayType(FieldDefinition fd, String fieldName) {
+        if (!fd.getType().isArrayType()) {
+            throw new IllegalArgumentException("Wrong use of array operator: '" + fieldName
+                    + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
         }
-        if (classId != fd.getClassId()) {
-            throw new IllegalArgumentException("Invalid classId! Expected: "
-                    + fd.getClassId() + ", Current: " + classId);
-        }
-    }
-
-    int getFinalPosition() {
-        return finalPosition;
-    }
-
-    int getOffset() {
-        return offset;
     }
 
     private static class NavigationFrame {
@@ -632,7 +453,8 @@ public class PortablePositionNavigator {
         final int streamPosition;
         final int streamOffset;
 
-        public NavigationFrame(ClassDefinition cd, int pathTokenIndex, int arrayIndex, int streamPosition, int streamOffset) {
+        NavigationFrame(ClassDefinition cd, int pathTokenIndex, int arrayIndex, int streamPosition,
+                        int streamOffset) {
             this.cd = cd;
             this.pathTokenIndex = pathTokenIndex;
             this.arrayIndex = arrayIndex;

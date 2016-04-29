@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.FieldType;
 
 import java.util.List;
 
-class PortableMultiPosition extends PortableSinglePosition {
+final class PortableMultiPosition extends PortableSinglePosition {
 
     private final List<PortablePosition> positions;
 

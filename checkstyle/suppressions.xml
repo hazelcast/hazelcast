@@ -348,7 +348,6 @@
 
     <!-- Portables -->
     <suppress checks="ReturnCount|Cyclomatic" files="com/hazelcast/internal/serialization/impl/DefaultPortableReader"/>
-    <!-- TODO Temporary disabled -->
-    <suppress checks="" files="com/hazelcast/internal/serialization/impl/PortablePositionNavigator"/>
+    <suppress checks="ReturnCount" files="com/hazelcast/internal/serialization/impl/PortablePositionNavigator"/>
 
 </suppressions>
