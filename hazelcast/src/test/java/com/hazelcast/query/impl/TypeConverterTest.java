@@ -197,7 +197,7 @@ public class TypeConverterTest {
     @Test
     public void testBigDecimalConvert_whenPassedDoubleValue_thenConvertToBigDecimal() throws Exception {
         Double doubleValue = 3.141593;
-        Comparable expectedDecimal = BigDecimal.valueOf(doubleValue);
+        Comparable expectedDecimal = new BigDecimal(doubleValue);
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(doubleValue);
 
@@ -210,7 +210,7 @@ public class TypeConverterTest {
     @Test
     public void testBigDecimalConvert_whenPassedFloatValue_thenConvertToBigDecimal() throws Exception {
         Float floatValue = 3.141593F;
-        Comparable expectedDecimal = new BigDecimal(floatValue.toString());
+        Comparable expectedDecimal = new BigDecimal(floatValue);
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(floatValue);
 
