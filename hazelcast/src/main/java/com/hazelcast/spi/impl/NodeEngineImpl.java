@@ -29,6 +29,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.monitors.BuildInfoPlugin;
 import com.hazelcast.internal.monitors.ConfigPropertiesPlugin;
+import com.hazelcast.internal.monitors.MemberHazelcastInstanceInfoPlugin;
 import com.hazelcast.internal.monitors.InvocationPlugin;
 import com.hazelcast.internal.monitors.MetricsPlugin;
 import com.hazelcast.internal.monitors.OverloadedConnectionsPlugin;
@@ -191,6 +192,7 @@ public class NodeEngineImpl implements NodeEngine {
         performanceMonitor.register(new MetricsPlugin(this));
         performanceMonitor.register(new SlowOperationPlugin(this));
         performanceMonitor.register(new InvocationPlugin(this));
+        performanceMonitor.register(new MemberHazelcastInstanceInfoPlugin(this));
     }
 
     public ServiceManager getServiceManager() {

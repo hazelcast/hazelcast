@@ -18,7 +18,6 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
@@ -27,10 +26,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 public class BuildInfoPlugin extends PerformanceMonitorPlugin {
 
     private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-    private final ILogger logger;
 
     public BuildInfoPlugin(NodeEngineImpl nodeEngine) {
-        this.logger = nodeEngine.getLogger(BuildInfoPlugin.class);
+        super(nodeEngine.getLogger(BuildInfoPlugin.class));
     }
 
     @Override

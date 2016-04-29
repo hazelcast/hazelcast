@@ -47,7 +47,6 @@ public class MetricsPlugin extends PerformanceMonitorPlugin {
 
     private final MetricsRegistry metricsRegistry;
     private final long periodMillis;
-    private final ILogger logger;
     private final ProbeRendererImpl probeRenderer = new ProbeRendererImpl();
 
     public MetricsPlugin(NodeEngineImpl nodeEngine) {
@@ -55,8 +54,8 @@ public class MetricsPlugin extends PerformanceMonitorPlugin {
     }
 
     public MetricsPlugin(ILogger logger, MetricsRegistry metricsRegistry, HazelcastProperties properties) {
+        super(logger);
         this.metricsRegistry = metricsRegistry;
-        this.logger = logger;
         this.periodMillis = properties.getMillis(PERIOD_SECONDS);
     }
 

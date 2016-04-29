@@ -33,7 +33,6 @@ public class SystemPropertiesPlugin extends PerformanceMonitorPlugin {
 
     private static final String JVM_ARGS = "java.vm.args";
 
-    private final ILogger logger;
     private final List keys = new ArrayList();
     private String inputArgs;
 
@@ -42,7 +41,7 @@ public class SystemPropertiesPlugin extends PerformanceMonitorPlugin {
     }
 
     public SystemPropertiesPlugin(ILogger logger) {
-        this.logger = logger;
+        super(logger);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.hazelcast.internal.monitors;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,27 +42,33 @@ public class SingleLinePerformanceLogWriterTest extends HazelcastTestSupport {
 
     @Test
     public void testWrite() {
-        writer.write(new PerformanceMonitorPlugin() {
-            @Override
-            public long getPeriodMillis() {
-                return 0;
-            }
-
-            @Override
-            public void onStart() {
-
-            }
-
-            @Override
-            public void run(PerformanceLogWriter writer) {
-                writer.startSection("somesection");
-                writer.endSection();
-            }
-        });
+        writer.write(new DummyPerformanceMonitorPlugin());
 
         String content = writer.sb.toString();
         String[] split = content.split(" ");
         assertEquals(2, split.length);
         assertEquals("somesection[]" + LINE_SEPARATOR, split[1]);
+    }
+
+    private static class DummyPerformanceMonitorPlugin extends PerformanceMonitorPlugin {
+        DummyPerformanceMonitorPlugin() {
+            super(Logger.getLogger(SingleLinePerformanceLogWriterTest.class));
+        }
+
+        @Override
+        public long getPeriodMillis() {
+            return 0;
+        }
+
+        @Override
+        public void onStart() {
+
+        }
+
+        @Override
+        public void run(PerformanceLogWriter writer) {
+            writer.startSection("somesection");
+            writer.endSection();
+        }
     }
 }
