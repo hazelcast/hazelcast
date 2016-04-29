@@ -17,10 +17,12 @@ import org.junit.runner.RunWith;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.impl.eviction.Evictor.SAMPLE_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static java.lang.String.format;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -43,20 +45,24 @@ public class MapEvictionPolicyTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, Integer> map = instance.getMap(mapName);
 
+        final CountDownLatch eventLatch = new CountDownLatch(1);
         final Queue<Integer> evictedKeys = new ConcurrentLinkedQueue<Integer>();
         map.addEntryListener(new EntryEvictedListener<Integer, Integer>() {
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
                 evictedKeys.add(event.getKey());
+                eventLatch.countDown();
             }
         }, false);
 
-        for (int i = 0; i < 2 * sampleCount; i++) {
+        for (int i = 0; i < sampleCount + 1; i++) {
             map.put(i, i);
         }
 
+        assertOpenEventually("No eviction occurred", eventLatch);
+
         for (Integer key : evictedKeys) {
-            assertTrue("Key cannot be an odd number :" + key, key % 2 != 0);
+            assertTrue(format("Evicted key should be an odd number, but found %d", key), key % 2 != 0);
         }
     }
 
