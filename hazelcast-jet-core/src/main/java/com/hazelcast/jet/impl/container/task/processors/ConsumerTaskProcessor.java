@@ -36,6 +36,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
     protected final ContainerContext containerContext;
     protected final DefaultObjectIOStream tupleInputStream;
     protected final DefaultObjectIOStream tupleOutputStream;
+    protected boolean producersWriteFinished;
     protected final ProcessorContext processorContext;
     protected final ConsumersProcessor consumersProcessor;
     protected boolean consumed;
@@ -88,6 +89,10 @@ public class ConsumerTaskProcessor implements TaskProcessor {
             return success;
         } else {
             if (!this.finalizationStarted) {
+                if (this.producersWriteFinished) {
+                    return true;
+                }
+
                 this.processor.process(
                         this.tupleInputStream,
                         this.tupleOutputStream,
@@ -103,6 +108,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
                 if (success) {
                     this.tupleOutputStream.reset();
+                    checkFinalization();
                 }
 
                 return success;
@@ -149,6 +155,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
         this.finalizationStarted = false;
         this.finalizationFinished = false;
+        this.producersWriteFinished = false;
         this.finalized = false;
     }
 
@@ -184,7 +191,7 @@ public class ConsumerTaskProcessor implements TaskProcessor {
 
     @Override
     public void onProducersWriteFinished() {
-
+        this.producersWriteFinished = true;
     }
 
     @Override

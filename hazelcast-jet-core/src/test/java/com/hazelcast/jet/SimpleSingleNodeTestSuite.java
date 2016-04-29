@@ -3,6 +3,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.api.application.Application;
@@ -10,12 +11,7 @@ import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.impl.dag.DAGImpl;
 import com.hazelcast.jet.impl.dag.EdgeImpl;
-import com.hazelcast.jet.processors.CounterProcessor;
-import com.hazelcast.jet.processors.DummyProcessor;
-import com.hazelcast.jet.processors.VerySlowProcessorOnlyForInterruptionTest;
-import com.hazelcast.jet.processors.WordCounterProcessor;
-import com.hazelcast.jet.processors.WordGeneratorProcessor;
-import com.hazelcast.jet.processors.WordSorterProcessor;
+import com.hazelcast.jet.processors.*;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
@@ -49,6 +45,51 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
     @BeforeClass
     public static void initCluster() throws Exception {
         JetBaseTest.initCluster(1);
+    }
+
+    @Test
+    public void testFinalization_whenEmptyProducer() throws Exception {
+        final Application application = createApplication("noInput");
+
+        DAG dag = createDAG();
+
+        IList<String> sourceList = SERVER.getList("sourceList");
+        int taskCount = 2;
+
+        Vertex root = createVertex("root", DummyEmittingProcessor.Factory.class, taskCount);
+        root.addSourceList(sourceList.getName());
+
+        dag.addVertex(root);
+
+        executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+        application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testFinalization_whenEmptyProducerWithConsumer() throws Exception {
+        final Application application = createApplication("noInput1");
+
+        DAG dag = createDAG();
+
+        IList<String> sourceList = SERVER.getList("sourceList");
+
+        IList<String> sinkList = SERVER.getList("sinkList");
+
+        int taskCount = 4;
+
+        Vertex root = createVertex("root", DummyEmittingProcessor.Factory.class, taskCount);
+        root.addSourceList(sourceList.getName());
+        Vertex consumer = createVertex("consumer", DummyProcessor.Factory.class, taskCount);
+        consumer.addSinkList(sinkList.getName());
+        addVertices(dag, root, consumer);
+        addEdges(dag, new EdgeImpl("", root, consumer));
+        executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+
+        try {
+            assertEquals(taskCount, sinkList.size());
+        } finally {
+            application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+        }
     }
 
     @Test

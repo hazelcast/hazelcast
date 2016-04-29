@@ -29,7 +29,7 @@ public class SimpleTaskProcessor implements TaskProcessor {
     private static final Object[] DUMMY_CHUNK = new Object[0];
 
     protected boolean finalizationStarted;
-
+    protected boolean producersWriteFinished;
     private final ContainerProcessor processor;
     private final ContainerContext containerContext;
     private final DefaultObjectIOStream tupleInputStream;
@@ -52,6 +52,10 @@ public class SimpleTaskProcessor implements TaskProcessor {
     @SuppressWarnings("unchecked")
     public boolean process() throws Exception {
         if (!this.finalizationStarted) {
+            if (this.producersWriteFinished) {
+                return true;
+            }
+
             this.processor.process(
                     this.tupleInputStream,
                     this.tupleOutputStream,
@@ -59,7 +63,6 @@ public class SimpleTaskProcessor implements TaskProcessor {
                     this.processorContext
             );
 
-            this.finalizationStarted = true;
             return true;
         } else {
             this.finalized = this.processor.finalizeProcessor(
@@ -82,6 +85,7 @@ public class SimpleTaskProcessor implements TaskProcessor {
         this.tupleInputStream.reset();
         this.tupleOutputStream.reset();
         this.finalizationStarted = false;
+        this.producersWriteFinished = false;
     }
 
     @Override
@@ -91,7 +95,7 @@ public class SimpleTaskProcessor implements TaskProcessor {
 
     @Override
     public void onProducersWriteFinished() {
-
+        this.producersWriteFinished = true;
     }
 
     @Override
