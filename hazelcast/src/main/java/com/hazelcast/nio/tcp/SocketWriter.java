@@ -54,11 +54,9 @@ public interface SocketWriter {
      *
      * No guarantees are made that the frame is going to be written or received by the other side.
      *
-     * todo: the name offer is misleading since it doesn't return a boolean.
-     *
      * @param frame the Frame to write.
      */
-    void offer(OutboundFrame frame);
+    void write(OutboundFrame frame);
 
     /**
      * Gets the {@link WriteHandler} that belongs to this SocketWriter.
@@ -81,20 +79,10 @@ public interface SocketWriter {
     void setProtocol(String protocol);
 
     /**
-     * Starts this SocketWriter.
+     * Closes this SocketWriter.
      *
-     * This method can be called from an arbitrary thread.
-     *
-     * @see #shutdown()
+     * This method can be called from an arbitrary thread, and should only be called once. This should be coordinated
+     * through the {@link TcpIpConnection#close()} method.
      */
-    void start();
-
-    /**
-     * Shuts down this SocketWriter.
-     *
-     * This method can be called from an arbitrary thread.
-     *
-     * @see #start()
-     */
-    void shutdown();
+    void close();
 }

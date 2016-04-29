@@ -93,7 +93,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     @Override
-    public void destroy() {
+    public void close() {
         metricRegistry.deregister(this);
     }
 

@@ -188,7 +188,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     }
 
     @Override
-    public void offer(OutboundFrame frame) {
+    public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
             urgentWriteQueue.offer(frame);
         } else {
@@ -414,24 +414,19 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     }
 
     @Override
-    public void shutdown() {
+    public void close() {
         metricsRegistry.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 
-        ShutdownTask shutdownTask = new ShutdownTask();
-        offer(new TaskFrame(shutdownTask));
-        shutdownTask.awaitCompletion();
-    }
-
-    @Override
-    public void start() {
-        //no-op
+        CloseTask closeTask = new CloseTask();
+        write(new TaskFrame(closeTask));
+        closeTask.awaitCompletion();
     }
 
     @Override
     public void requestMigration(NonBlockingIOThread newOwner) {
-        offer(new TaskFrame(new StartMigrationTask(newOwner)));
+        write(new TaskFrame(new StartMigrationTask(newOwner)));
     }
 
     @Override
@@ -487,7 +482,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         }
     }
 
-    private class ShutdownTask implements Runnable {
+    private class CloseTask implements Runnable {
         private final CountDownLatch latch = new CountDownLatch(1);
 
         @Override
