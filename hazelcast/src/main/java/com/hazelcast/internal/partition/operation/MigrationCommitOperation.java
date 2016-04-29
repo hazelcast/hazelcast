@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -41,23 +41,31 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
 
     private PartitionRuntimeState partitionState;
 
+    private String expectedMemberUuid;
+
+    private boolean success;
+
     public MigrationCommitOperation() {
     }
 
-    public MigrationCommitOperation(PartitionRuntimeState partitionState) {
+    public MigrationCommitOperation(PartitionRuntimeState partitionState, String expectedMemberUuid) {
         this.partitionState = partitionState;
+        this.expectedMemberUuid = expectedMemberUuid;
     }
 
     @Override
     public void run() {
         NodeEngine nodeEngine = getNodeEngine();
-        if (!nodeEngine.isRunning()) {
-            throw new HazelcastInstanceNotActiveException("This node is shutting down!");
+        final Member localMember = nodeEngine.getLocalMember();
+        if (!localMember.getUuid().equals(expectedMemberUuid)) {
+            throw new IllegalStateException("This " + localMember
+                    + " is migration commit destination but most probably it's restarted "
+                    + "and not the expected target.");
         }
 
         partitionState.setEndpoint(getCallerAddress());
         InternalPartitionServiceImpl partitionService = getService();
-        partitionService.processPartitionRuntimeState(partitionState);
+        success = partitionService.processPartitionRuntimeState(partitionState);
     }
 
     @Override
@@ -67,7 +75,7 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return success;
     }
 
     @Override
@@ -87,6 +95,7 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        expectedMemberUuid = in.readUTF();
         partitionState = new PartitionRuntimeState();
         partitionState.readData(in);
     }
@@ -94,6 +103,7 @@ public class MigrationCommitOperation extends AbstractOperation implements Migra
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeUTF(expectedMemberUuid);
         partitionState.writeData(out);
     }
 }

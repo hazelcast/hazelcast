@@ -196,6 +196,10 @@ public class PartitionStateManager {
         }
     }
 
+    String getMemberUuid(Address address) {
+        return address != null ? memberUuidMap.get(address) : null;
+    }
+
     boolean isKnownMemberUuid(Address address, String uuid) {
         String currentUuid = memberUuidMap.get(address);
         assert currentUuid != null : "Unknown Member! " + address + " - " + uuid;

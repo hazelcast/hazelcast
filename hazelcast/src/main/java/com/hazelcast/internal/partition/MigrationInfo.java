@@ -68,7 +68,9 @@ public class MigrationInfo implements DataSerializable {
     private int partitionId;
 
     private Address source;
+    private String sourceUuid;
     private Address destination;
+    private String destinationUuid;
     private Address master;
 
     private int sourceCurrentReplicaIndex;
@@ -82,12 +84,15 @@ public class MigrationInfo implements DataSerializable {
     public MigrationInfo() {
     }
 
-    public MigrationInfo(int partitionId, Address source, Address destination, int sourceCurrentReplicaIndex,
-                         int sourceNewReplicaIndex, int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
+    public MigrationInfo(int partitionId, Address source, String sourceUuid, Address destination, String destinationUuid,
+                         int sourceCurrentReplicaIndex, int sourceNewReplicaIndex,
+                         int destinationCurrentReplicaIndex, int destinationNewReplicaIndex) {
         this.uuid = UuidUtil.newUnsecureUuidString();
         this.partitionId = partitionId;
         this.source = source;
+        this.sourceUuid = sourceUuid;
         this.destination = destination;
+        this.destinationUuid = destinationUuid;
         this.sourceCurrentReplicaIndex = sourceCurrentReplicaIndex;
         this.sourceNewReplicaIndex = sourceNewReplicaIndex;
         this.destinationCurrentReplicaIndex = destinationCurrentReplicaIndex;
@@ -99,8 +104,16 @@ public class MigrationInfo implements DataSerializable {
         return source;
     }
 
+    public String getSourceUuid() {
+        return sourceUuid;
+    }
+
     public Address getDestination() {
         return destination;
+    }
+
+    public String getDestinationUuid() {
+        return destinationUuid;
     }
 
     public int getPartitionId() {
@@ -171,12 +184,14 @@ public class MigrationInfo implements DataSerializable {
         out.writeBoolean(hasSource);
         if (hasSource) {
             source.writeData(out);
+            out.writeUTF(sourceUuid);
         }
 
         boolean hasDestination = destination != null;
         out.writeBoolean(hasDestination);
         if (hasDestination) {
             destination.writeData(out);
+            out.writeUTF(destinationUuid);
         }
 
         master.writeData(out);
@@ -196,12 +211,14 @@ public class MigrationInfo implements DataSerializable {
         if (hasSource) {
             source = new Address();
             source.readData(in);
+            sourceUuid = in.readUTF();
         }
 
         boolean hasDestination = in.readBoolean();
         if (hasDestination) {
             destination = new Address();
             destination.readData(in);
+            destinationUuid = in.readUTF();
         }
 
         master = new Address();
@@ -234,9 +251,11 @@ public class MigrationInfo implements DataSerializable {
         sb.append("uuid=").append(uuid);
         sb.append(", partitionId=").append(partitionId);
         sb.append(", source=").append(source);
+        sb.append(", sourceUuid=").append(sourceUuid);
         sb.append(", sourceCurrentReplicaIndex=").append(sourceCurrentReplicaIndex);
         sb.append(", sourceNewReplicaIndex=").append(sourceNewReplicaIndex);
         sb.append(", destination=").append(destination);
+        sb.append(", destinationUuid=").append(destinationUuid);
         sb.append(", destinationCurrentReplicaIndex=").append(destinationCurrentReplicaIndex);
         sb.append(", destinationNewReplicaIndex=").append(destinationNewReplicaIndex);
         sb.append(", master=").append(master);

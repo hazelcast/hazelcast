@@ -301,26 +301,38 @@ public class MigrationCommitServiceTest
     private MigrationInfo createMoveMigration(final int partitionId, final int replicaIndex, final Address destination) {
         final InternalPartition partition = getPartition(instances[0], partitionId);
         final Address source = partition.getReplicaAddress(replicaIndex);
-        return new MigrationInfo(partitionId, source, destination, replicaIndex, -1, -1, replicaIndex);
+        final String sourceUuid = getMemberUuid(source);
+        final String destinationUuid = getMemberUuid(destination);
+
+        return new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid, replicaIndex, -1, -1, replicaIndex);
     }
 
     private MigrationInfo createShiftDownMigration(final int partitionId, final int oldReplicaIndex, final int newReplicaIndex,
                                                    final Address destination) {
         final InternalPartitionImpl partition = getPartition(instances[0], partitionId);
         final Address source = partition.getReplicaAddress(oldReplicaIndex);
-        return new MigrationInfo(partitionId, source, destination, oldReplicaIndex, newReplicaIndex, -1,
+        final String sourceUuid = getMemberUuid(source);
+        final String destinationUuid = getMemberUuid(destination);
+
+        return new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid, oldReplicaIndex, newReplicaIndex, -1,
                 oldReplicaIndex);
     }
 
     private MigrationInfo createCopyMigration(final int partitionId, final int copyReplicaIndex, final Address destination) {
-        return new MigrationInfo(partitionId, null, destination, -1, -1, -1, copyReplicaIndex);
+        return new MigrationInfo(partitionId, null, null, destination, getMemberUuid(destination), -1, -1, -1, copyReplicaIndex);
     }
 
     private MigrationInfo createShiftUpMigration(final int partitionId, final int oldReplicaIndex, final int newReplicaIndex) {
         final InternalPartitionImpl partition = getPartition(instances[0], partitionId);
         final Address source = partition.getReplicaAddress(newReplicaIndex);
+        final String sourceUuid = getMemberUuid(source);
         final Address destination = partition.getReplicaAddress(oldReplicaIndex);
-        return new MigrationInfo(partitionId, source, destination, newReplicaIndex, -1, oldReplicaIndex, newReplicaIndex);
+        final String destinationUuid = getMemberUuid(destination);
+        return new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid, newReplicaIndex, -1, oldReplicaIndex, newReplicaIndex);
+    }
+
+    private String getMemberUuid(Address address) {
+        return address != null ? getNodeEngineImpl(factory.getInstance(address)).getLocalMember().getUuid() : null;
     }
 
     private Address clearReplicaIndex(final int partitionId, final int replicaIndexToClear)
