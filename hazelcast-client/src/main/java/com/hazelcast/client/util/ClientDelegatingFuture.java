@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @param <V> Value type that user expecting
  */
-public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
+public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
 
     private final ClientInvocationFuture future;
     private final SerializationService serializationService;
@@ -148,6 +148,20 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
             throw new ExecutionException(error);
         }
         return getResult();
+    }
+
+    @Override
+    public V join() {
+        try {
+            return get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
+    public V getSafely() {
+        return join();
     }
 
     private V getResult() {

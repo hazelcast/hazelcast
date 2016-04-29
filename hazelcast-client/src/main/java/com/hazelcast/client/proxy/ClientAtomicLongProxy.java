@@ -32,8 +32,8 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.spi.InternalCompletableFuture;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -140,185 +140,146 @@ public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implemen
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
-        isNotNull(function, "function");
-        ClientMessage request = AtomicLongApplyCodec.encodeRequest(name, toData(function));
-        ClientMessage response = invokeOnPartition(request);
-        AtomicLongApplyCodec.ResponseParameters resultParameters = AtomicLongApplyCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        return applyAsync(function).join();
     }
 
     @Override
     public void alter(IFunction<Long, Long> function) {
-        isNotNull(function, "function");
-        ClientMessage request = AtomicLongAlterCodec.encodeRequest(name, toData(function));
-        invokeOnPartition(request);
+        alterAsync(function).join();
     }
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
-        isNotNull(function, "function");
-        ClientMessage request = AtomicLongAlterAndGetCodec.encodeRequest(name, toData(function));
-        AtomicLongAlterAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongAlterAndGetCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return alterAndGetAsync(function).join();
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
-        isNotNull(function, "function");
-        ClientMessage request = AtomicLongGetAndAlterCodec.encodeRequest(name, toData(function));
-        AtomicLongGetAndAlterCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndAlterCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return getAndAlterAsync(function).join();
     }
 
     @Override
     public long addAndGet(long delta) {
-        ClientMessage request = AtomicLongAddAndGetCodec.encodeRequest(name, delta);
-        AtomicLongAddAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongAddAndGetCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return addAndGetAsync(delta).join();
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        ClientMessage request = AtomicLongCompareAndSetCodec.encodeRequest(name, expect, update);
-        AtomicLongCompareAndSetCodec.ResponseParameters resultParameters
-                = AtomicLongCompareAndSetCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return compareAndSetAsync(expect, update).join();
     }
 
     @Override
     public long decrementAndGet() {
-        ClientMessage request = AtomicLongDecrementAndGetCodec.encodeRequest(name);
-        AtomicLongDecrementAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongDecrementAndGetCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return decrementAndGetAsync().join();
     }
 
     @Override
     public long get() {
-        ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
-        AtomicLongGetCodec.ResponseParameters resultParameters
-                = AtomicLongGetCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return getAsync().join();
     }
 
     @Override
     public long getAndAdd(long delta) {
-        ClientMessage request = AtomicLongGetAndAddCodec.encodeRequest(name, delta);
-        AtomicLongGetAndAddCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndAddCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return getAndAddAsync(delta).join();
     }
 
     @Override
     public long getAndSet(long newValue) {
-        ClientMessage request = AtomicLongGetAndSetCodec.encodeRequest(name, newValue);
-        AtomicLongGetAndSetCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndSetCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return getAndSetAsync(newValue).join();
     }
 
     @Override
     public long incrementAndGet() {
-        ClientMessage request = AtomicLongIncrementAndGetCodec.encodeRequest(name);
-        AtomicLongIncrementAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongIncrementAndGetCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return incrementAndGetAsync().join();
     }
 
     @Override
     public long getAndIncrement() {
-        ClientMessage request = AtomicLongGetAndIncrementCodec.encodeRequest(name);
-        AtomicLongGetAndIncrementCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndIncrementCodec.decodeResponse(invokeOnPartition(request));
-        return resultParameters.response;
+        return getAndIncrementAsync().join();
     }
 
     @Override
     public void set(long newValue) {
-        ClientMessage request = AtomicLongSetCodec.encodeRequest(name, newValue);
-        invokeOnPartition(request);
+        setAsync(newValue).join();
     }
 
     @Override
-    public ICompletableFuture<Long> addAndGetAsync(long delta) {
+    public InternalCompletableFuture<Long> addAndGetAsync(long delta) {
         ClientMessage request = AtomicLongAddAndGetCodec.encodeRequest(name, delta);
         return invokeOnPartitionAsync(request, ADD_AND_GET_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
+    public InternalCompletableFuture<Boolean> compareAndSetAsync(long expect, long update) {
         ClientMessage request = AtomicLongCompareAndSetCodec.encodeRequest(name, expect, update);
         return invokeOnPartitionAsync(request, COMPARE_AND_SET_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> decrementAndGetAsync() {
+    public InternalCompletableFuture<Long> decrementAndGetAsync() {
         ClientMessage request = AtomicLongDecrementAndGetCodec.encodeRequest(name);
         return invokeOnPartitionAsync(request, DECREMENT_AND_GET_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> getAsync() {
+    public InternalCompletableFuture<Long> getAsync() {
         ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
         return invokeOnPartitionAsync(request, GET_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> getAndAddAsync(long delta) {
+    public InternalCompletableFuture<Long> getAndAddAsync(long delta) {
         ClientMessage request = AtomicLongGetAndAddCodec.encodeRequest(name, delta);
         return invokeOnPartitionAsync(request, GET_AND_ADD_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> getAndSetAsync(long newValue) {
+    public InternalCompletableFuture<Long> getAndSetAsync(long newValue) {
         ClientMessage request = AtomicLongGetAndSetCodec.encodeRequest(name, newValue);
         return invokeOnPartitionAsync(request, GET_AND_SET_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> incrementAndGetAsync() {
+    public InternalCompletableFuture<Long> incrementAndGetAsync() {
         ClientMessage request = AtomicLongIncrementAndGetCodec.encodeRequest(name);
         return invokeOnPartitionAsync(request, INCREMENT_AND_GET_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> getAndIncrementAsync() {
+    public InternalCompletableFuture<Long> getAndIncrementAsync() {
         ClientMessage request = AtomicLongGetAndIncrementCodec.encodeRequest(name);
         return invokeOnPartitionAsync(request, GET_AND_INCREMENT_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Void> setAsync(long newValue) {
+    public InternalCompletableFuture<Void> setAsync(long newValue) {
         ClientMessage request = AtomicLongSetCodec.encodeRequest(name, newValue);
         return invokeOnPartitionAsync(request, SET_ASYNC_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Void> alterAsync(IFunction<Long, Long> function) {
+    public InternalCompletableFuture<Void> alterAsync(IFunction<Long, Long> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongAlterCodec.encodeRequest(name, toData(function));
         return invokeOnPartitionAsync(request, ALTER_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> alterAndGetAsync(IFunction<Long, Long> function) {
+    public InternalCompletableFuture<Long> alterAndGetAsync(IFunction<Long, Long> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongAlterAndGetCodec.encodeRequest(name, toData(function));
         return invokeOnPartitionAsync(request, ALTER_AND_GET_DECODER);
     }
 
     @Override
-    public ICompletableFuture<Long> getAndAlterAsync(IFunction<Long, Long> function) {
+    public InternalCompletableFuture<Long> getAndAlterAsync(IFunction<Long, Long> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongGetAndAlterCodec.encodeRequest(name, toData(function));
         return invokeOnPartitionAsync(request, GET_AND_ALTER_DECODER);
     }
 
     @Override
-    public <R> ICompletableFuture<R> applyAsync(IFunction<Long, R> function) {
+    public <R> InternalCompletableFuture<R> applyAsync(IFunction<Long, R> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongApplyCodec.encodeRequest(name, toData(function));
         return invokeOnPartitionAsync(request, APPLY_DECODER);
