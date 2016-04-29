@@ -86,6 +86,7 @@ import java.util.logging.Level;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -832,15 +833,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
-        final Collection<Member> dataMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        final int dataMembersSize = dataMembers.size();
+        Collection<Member> dataMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+        int dataMembersSize = dataMembers.size();
+        int partitionsPerMember = (int) ceil((float) partitionCount / dataMembersSize);
+
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(dataMembersSize);
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            final Address owner = getPartitionOwnerOrWait(partitionId);
+            Address owner = getPartitionOwnerOrWait(partitionId);
 
             List<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
-                ownedPartitions = new ArrayList<Integer>();
+                ownedPartitions = new ArrayList<Integer>(partitionsPerMember);
                 memberPartitions.put(owner, ownedPartitions);
             }
             ownedPartitions.add(partitionId);
