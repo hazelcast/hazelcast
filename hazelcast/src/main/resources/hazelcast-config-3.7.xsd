@@ -967,7 +967,7 @@
             <xs:element name="multi-threading-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        Default is `false`, meaning only one dedicated thread will handle topic messages. 
+                        Default is `false`, meaning only one dedicated thread will handle topic messages.
                         When multi-threading enabled (true) all threads from event thread pool can be used for message handling.
                     </xs:documentation>
                 </xs:annotation>
@@ -2754,6 +2754,16 @@
                 <xs:annotation>
                     <xs:documentation>
                         Base directory for all hot-restart data
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="store-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of hot-restart stores per Hazelcast instance. Each partition thread is assigned
+                        one hot-restart store and partition threads are evenly distributed among hot-restart
+                        stores. The default is one hot-restart store and the maximum is equal to the number of
+                        partition threads.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

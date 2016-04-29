@@ -60,10 +60,11 @@ public final class IOUtil {
 
     /**
      * This method has a direct dependency on how objects are serialized in
-     * {@link com.hazelcast.internal.serialization.impl.DataSerializer}! If the stream
-     * format is ever changed this extraction method needs to be changed too!
+     * {@link com.hazelcast.internal.serialization.impl.DataSerializableSerializer}. If the stream
+     * format is changed, this extraction method must be changed as well.
      */
-    public static long extractOperationCallId(Data data, InternalSerializationService serializationService) throws IOException {
+    public static long extractOperationCallId(Data data, InternalSerializationService serializationService)
+    throws IOException {
         ObjectDataInput input = serializationService.createObjectDataInput(data);
         boolean identified = input.readBoolean();
         if (identified) {
@@ -75,7 +76,6 @@ public final class IOUtil {
             // read classname
             input.readUTF();
         }
-
         // read callId
         return input.readLong();
     }
@@ -275,17 +275,17 @@ public final class IOUtil {
     }
 
     /**
-     * Closes the Closable quietly. So no exception will be thrown. Can also safely be called with a null value.
-     *
-     * @param closeable the Closeable to close.
+     * Quietly attempts to close a {@link Closeable} resource, swallowing any exception.
+     * @param closeable the resource to close. If {@code null}, no action is taken.
      */
     public static void closeResource(Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
-            }
+        if (closeable == null) {
+            return;
+        }
+        try {
+            closeable.close();
+        } catch (IOException e) {
+            Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
         }
     }
 

@@ -46,8 +46,14 @@ public class HotRestartPersistenceConfig {
      */
     public static final int DEFAULT_DATA_LOAD_TIMEOUT = 15 * 60;
 
+    /**
+     * Default number of HR stores per HZ instance
+     */
+    public static final int DEFAULT_STORE_COUNT = 1;
+
     private boolean enabled;
     private File baseDir = new File(HOT_RESTART_BASE_DIR_DEFAULT);
+    private int storeCount = DEFAULT_STORE_COUNT;
     private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
 
@@ -86,6 +92,21 @@ public class HotRestartPersistenceConfig {
     public HotRestartPersistenceConfig setBaseDir(File baseDir) {
         checkNotNull(baseDir, "Base directory cannot be null!");
         this.baseDir = baseDir;
+        return this;
+    }
+
+    /**
+     * Gets the configured number of Hot Restart store instance to create for one Hazelcast instance.
+     */
+    public int getStoreCount() {
+        return storeCount;
+    }
+
+    /**
+     * Sets the number of Hot Restart store instances to create for one Hazelcast instance.
+     */
+    public HotRestartPersistenceConfig setStoreCount(int storeCount) {
+        this.storeCount = storeCount;
         return this;
     }
 
