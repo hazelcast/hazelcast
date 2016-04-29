@@ -18,12 +18,14 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOperation;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -182,6 +184,11 @@ public class ClusterStateManager {
             }
 
             stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+
+            // if state remains ACTIVE after rollback, then remove all members which left during transaction.
+            if (state == ClusterState.ACTIVE) {
+                node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
+            }
             return true;
         } finally {
             clusterServiceLock.unlock();
@@ -208,6 +215,7 @@ public class ClusterStateManager {
             changeNodeState(newState);
             node.getNodeExtension().onClusterStateChange(newState, true);
 
+            // if state is changed to ACTIVE, then remove all members which left while not active.
             if (newState == ClusterState.ACTIVE) {
                 node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
             }
@@ -251,10 +259,23 @@ public class ClusterStateManager {
             checkMemberListChange(members);
 
             tx.prepare();
-            tx.commit();
 
         } catch (Throwable e) {
             tx.rollback();
+            throw ExceptionUtil.rethrow(e);
+        }
+
+        try {
+            tx.commit();
+        } catch (Throwable  e) {
+            if (e instanceof TargetNotMemberException || e instanceof MemberLeftException) {
+                // Member left while tx is being committed after prepare successful.
+                // We cannot rollback tx after this point. Cluster state change is done
+                // on other members.
+                // Left members will be added to the members-removed-in-not-active-state-list
+                // if new state is passive or frozen. They will be able to rejoin later.
+                return;
+            }
             throw ExceptionUtil.rethrow(e);
         }
     }
