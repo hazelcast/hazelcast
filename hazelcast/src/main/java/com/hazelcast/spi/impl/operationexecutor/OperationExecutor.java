@@ -154,11 +154,6 @@ public interface OperationExecutor extends PacketHandler {
     boolean isOperationThread();
 
     /**
-     * Interrupts the partition threads.
-     */
-    void interruptPartitionThreads();
-
-    /**
      * Starts this OperationExecutor
      */
     void start();
