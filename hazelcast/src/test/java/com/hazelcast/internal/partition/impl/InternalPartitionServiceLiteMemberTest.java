@@ -43,8 +43,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InternalPartitionServiceLiteMemberTest
-        extends HazelcastTestSupport {
+public class InternalPartitionServiceLiteMemberTest extends HazelcastTestSupport {
 
     private final Config liteMemberConfig = new Config().setLiteMember(true);
 
@@ -147,8 +146,7 @@ public class InternalPartitionServiceLiteMemberTest
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run()
-                        throws Exception {
+                public void run() throws Exception {
                     for (int i = 0; i < partitionService.getPartitionCount(); i++) {
                         assertEquals(getNode(master).getThisAddress(), partitionService.getPartition(i).getOwnerOrNull());
                     }
@@ -219,13 +217,13 @@ public class InternalPartitionServiceLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 try {
                     final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
                     partitionService.getPartitionOwnerOrWait(0);
                     fail();
                 } catch (NoDataMemberInClusterException expected) {
+                    ignore(expected);
                 }
             }
         });
@@ -245,13 +243,13 @@ public class InternalPartitionServiceLiteMemberTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 try {
                     final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(lite);
                     partitionService.getPartitionOwnerOrWait(0);
                     fail();
                 } catch (NoDataMemberInClusterException expected) {
+                    ignore(expected);
                 }
             }
         });
@@ -468,8 +466,7 @@ public class InternalPartitionServiceLiteMemberTest
     private void assertMemberGroupsSizeEventually(final HazelcastInstance instance, final int memberGroupSize) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
                 assertEquals(memberGroupSize, partitionService.getMemberGroupsSize());
             }
@@ -535,8 +532,7 @@ public class InternalPartitionServiceLiteMemberTest
     private void assertMaxBackupCountEventually(final HazelcastInstance instance, final int maxBackupCount) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 final InternalPartitionServiceImpl partitionService = getInternalPartitionServiceImpl(instance);
                 assertEquals(maxBackupCount, partitionService.getMaxAllowedBackupCount());
             }
@@ -546,5 +542,4 @@ public class InternalPartitionServiceLiteMemberTest
     private InternalPartitionServiceImpl getInternalPartitionServiceImpl(HazelcastInstance instance) {
         return (InternalPartitionServiceImpl) getNode(instance).getPartitionService();
     }
-
 }

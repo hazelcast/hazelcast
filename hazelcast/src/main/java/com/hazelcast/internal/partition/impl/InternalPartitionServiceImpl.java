@@ -53,11 +53,11 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -835,7 +835,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
         Collection<Member> dataMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         int dataMembersSize = dataMembers.size();
-        int partitionsPerMember = (int) ceil((float) partitionCount / dataMembersSize);
+        int partitionsPerMember = (dataMembersSize > 0 ? (int) ceil((float) partitionCount / dataMembersSize) : 0);
 
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(dataMembersSize);
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
