@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.atomicreference.operations;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 
-public class IsNullOperation extends AtomicReferenceBaseOperation {
+public class IsNullOperation extends AbstractAtomicReferenceOperation {
 
     private boolean returnValue;
 

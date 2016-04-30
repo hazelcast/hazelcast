@@ -21,7 +21,7 @@ import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 
-public class GetLockCountOperation extends BaseLockOperation {
+public class GetLockCountOperation extends AbstractLockOperation {
 
     public GetLockCountOperation() {
     }

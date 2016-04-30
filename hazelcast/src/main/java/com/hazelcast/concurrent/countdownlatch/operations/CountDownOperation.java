@@ -18,11 +18,10 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class CountDownOperation extends BackupAwareCountDownLatchOperation implements Notifier, IdentifiedDataSerializable {
+public class CountDownOperation extends BackupAwareCountDownLatchOperation implements Notifier {
 
     private boolean shouldNotify;
 
@@ -54,11 +53,6 @@ public class CountDownOperation extends BackupAwareCountDownLatchOperation imple
     @Override
     public WaitNotifyKey getNotifiedKey() {
         return waitNotifyKey();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
     }
 
     @Override

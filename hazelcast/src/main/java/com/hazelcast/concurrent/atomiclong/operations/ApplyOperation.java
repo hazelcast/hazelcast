@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class ApplyOperation<R> extends AtomicLongBaseOperation {
+public class ApplyOperation<R> extends AbstractAtomicLongOperation {
 
     private IFunction<Long, R> function;
     private R returnValue;

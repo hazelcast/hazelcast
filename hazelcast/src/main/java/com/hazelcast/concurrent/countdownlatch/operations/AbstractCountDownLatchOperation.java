@@ -16,19 +16,21 @@
 
 package com.hazelcast.concurrent.countdownlatch.operations;
 
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.LatchKey;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-abstract class BaseCountDownLatchOperation extends AbstractNamedOperation
-        implements PartitionAwareOperation {
+abstract class AbstractCountDownLatchOperation extends AbstractNamedOperation
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
-    protected BaseCountDownLatchOperation() {
+    AbstractCountDownLatchOperation() {
     }
 
-    protected BaseCountDownLatchOperation(String name) {
+    AbstractCountDownLatchOperation(String name) {
         super(name);
     }
 
@@ -37,7 +39,12 @@ abstract class BaseCountDownLatchOperation extends AbstractNamedOperation
         return CountDownLatchService.SERVICE_NAME;
     }
 
-    protected WaitNotifyKey waitNotifyKey() {
+    @Override
+    public final int getFactoryId() {
+        return CountDownLatchDataSerializerHook.F_ID;
+    }
+
+    WaitNotifyKey waitNotifyKey() {
         return new LatchKey(name);
     }
 }

@@ -22,7 +22,6 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -32,8 +31,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 
-public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
-        implements Notifier, IdentifiedDataSerializable {
+public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
     private String firstCaller;
 
@@ -80,11 +78,6 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
     @Override
     public WaitNotifyKey getNotifiedKey() {
         return new SemaphoreWaitNotifyKey(name, "acquire");
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override

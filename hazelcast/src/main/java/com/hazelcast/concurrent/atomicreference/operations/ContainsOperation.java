@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-public class ContainsOperation extends AtomicReferenceBaseOperation {
+public class ContainsOperation extends AbstractAtomicReferenceOperation {
 
     private boolean returnValue;
     private Data contains;

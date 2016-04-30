@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.atomiclong.operations;
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 
-public class GetOperation extends AtomicLongBaseOperation {
+public class GetOperation extends AbstractAtomicLongOperation {
 
     private long returnValue;
 

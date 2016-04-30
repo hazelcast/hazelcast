@@ -26,7 +26,7 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class LockBackupOperation extends BaseLockOperation implements BackupOperation {
+public class LockBackupOperation extends AbstractLockOperation implements BackupOperation {
 
     private String originalCallerUuid;
 

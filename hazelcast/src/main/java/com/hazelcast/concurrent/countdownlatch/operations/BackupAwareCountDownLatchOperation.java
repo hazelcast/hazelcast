@@ -21,7 +21,7 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
-abstract class BackupAwareCountDownLatchOperation extends BaseCountDownLatchOperation
+abstract class BackupAwareCountDownLatchOperation extends AbstractCountDownLatchOperation
         implements BackupAwareOperation {
 
     protected BackupAwareCountDownLatchOperation() {

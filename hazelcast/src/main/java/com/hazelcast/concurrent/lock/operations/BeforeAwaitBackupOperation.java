@@ -26,7 +26,7 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class BeforeAwaitBackupOperation extends BaseLockOperation implements BackupOperation {
+public class BeforeAwaitBackupOperation extends AbstractLockOperation implements BackupOperation {
 
     private String conditionId;
     private String originalCaller;

@@ -14,62 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomicreference.operations;
+package com.hazelcast.concurrent.atomiclong.operations;
 
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
+import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public abstract class AtomicReferenceBaseOperation extends Operation
+public abstract class AbstractAtomicLongOperation extends AbstractOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
-    public AtomicReferenceBaseOperation() {
+    public AbstractAtomicLongOperation() {
     }
 
-    public AtomicReferenceBaseOperation(String name) {
+    public AbstractAtomicLongOperation(String name) {
         this.name = name;
+    }
+
+    public AtomicLongContainer getLongContainer() {
+        AtomicLongService service = getService();
+        return service.getLongContainer(name);
     }
 
     @Override
     public String getServiceName() {
-        return AtomicReferenceService.SERVICE_NAME;
-    }
-
-    public AtomicReferenceContainer getReferenceContainer() {
-        AtomicReferenceService service = getService();
-        return service.getReferenceContainer(name);
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
+        return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
     public int getFactoryId() {
-        return AtomicReferenceDataSerializerHook.F_ID;
+        return AtomicLongDataSerializerHook.F_ID;
     }
 
     @Override

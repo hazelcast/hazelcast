@@ -25,7 +25,7 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-abstract class BaseSignalOperation extends BaseLockOperation {
+abstract class BaseSignalOperation extends AbstractLockOperation {
 
     protected boolean all;
     protected String conditionId;

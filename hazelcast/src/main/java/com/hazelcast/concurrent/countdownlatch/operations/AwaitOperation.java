@@ -18,11 +18,10 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class AwaitOperation extends BaseCountDownLatchOperation implements BlockingOperation, IdentifiedDataSerializable {
+public class AwaitOperation extends AbstractCountDownLatchOperation implements BlockingOperation {
 
     public AwaitOperation() {
     }
@@ -55,11 +54,6 @@ public class AwaitOperation extends BaseCountDownLatchOperation implements Block
     @Override
     public void onWaitExpire() {
         sendResponse(false);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
     }
 
     @Override
