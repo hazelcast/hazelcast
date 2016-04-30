@@ -22,6 +22,8 @@ import java.util.EventListener;
 
 /**
  * Contains the configuration for an Item Listener(Read-only).
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
 public class ItemListenerConfigReadOnly extends ItemListenerConfig {
 

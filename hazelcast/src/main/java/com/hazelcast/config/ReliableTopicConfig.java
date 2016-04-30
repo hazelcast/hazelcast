@@ -258,7 +258,7 @@ public class ReliableTopicConfig {
 
     static class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
 
-        public ReliableTopicConfigReadOnly(ReliableTopicConfig config) {
+        ReliableTopicConfigReadOnly(ReliableTopicConfig config) {
             super(config);
         }
 
