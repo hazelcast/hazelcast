@@ -206,10 +206,8 @@ public class ClientMapStandaloneTest {
         map.put(key, element);
         assertOpenEventually(eventLatch);
 
-
         Collection values = map.values(Predicates.lessThan("date", new Date().getTime()));
         assertEquals(values.iterator().next(), element);
-
     }
 
 }
