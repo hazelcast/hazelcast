@@ -188,11 +188,11 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void checkNodeState(Operation op) {
-        if (node.getState() == NodeState.ACTIVE) {
+        NodeState state = node.getState();
+        if (state == NodeState.ACTIVE) {
             return;
         }
 
-        final NodeState state = node.getState();
         if (state == NodeState.SHUT_DOWN) {
             throw new HazelcastInstanceNotActiveException("This node is shut down! Operation: " + op);
         }
