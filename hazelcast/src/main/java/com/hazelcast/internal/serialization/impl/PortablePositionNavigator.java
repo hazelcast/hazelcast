@@ -34,6 +34,13 @@ import static com.hazelcast.internal.serialization.impl.PortableHelper.extractAr
 import static com.hazelcast.internal.serialization.impl.PortableHelper.extractAttributeNameNameWithoutArguments;
 import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.checkFactoryAndClass;
 
+/**
+ * Enables navigation in the portable byte stream.
+ * The contract is very simple: you give a path to an element, like "person.body.iq" and it returns a
+ * {@link PortablePosition} that includes the type of the found element and its location in the stream.
+ * <p>
+ * The navigator is stateful thus it can't be used concurrently.
+ */
 final class PortablePositionNavigator {
 
     private static final Pattern NESTED_PATH_SPLITTER = Pattern.compile("\\.");
@@ -99,14 +106,37 @@ final class PortablePositionNavigator {
         return offset;
     }
 
+    /**
+     * Main method that enables navigating in the Portable byte stream to find the element specified in the path.
+     * The path may be:
+     * - simple -> which means that it includes a single attribute only, like "name"
+     * - nested -> which means that it includes more then a single attribute separated with a dot (.). like person.name
+     * <p>
+     * The path may also includes array cells
+     * - specific quantifier, like person.leg[1] -> returns the leg with index 0
+     * - wildcard quantifier, like person.leg[any] -> returns all legs
+     * <p>
+     * The wildcard quantifier may be used a couple of times, like person.leg[any].finger[any] which returns all fingers
+     * from all legs.
+     * <p>
+     * Returns a {@link PortablePosition} that includes the type of the found element and its location in the stream.
+     *
+     * @param path to the given element that's supposed to be read
+     * @return PortablePosition of the found element
+     * @throws IOException in case of any byte stream reading errors
+     */
     PortablePosition findPositionOf(String path) throws IOException {
         try {
             return findFieldPosition(path);
         } finally {
+            // The navigator is reset each time to enable its reuse in consecutive calls
             reset();
         }
     }
 
+    /**
+     * Resets the state to the initial state.
+     */
     private void reset() {
         cd = initCd;
         serializer = initSerializer;
@@ -119,11 +149,13 @@ final class PortablePositionNavigator {
     }
 
     private PortablePosition findFieldPosition(String nestedPath) throws IOException {
+//        this.nestedPath = nestedPath;
         String[] pathTokens = NESTED_PATH_SPLITTER.split(nestedPath);
 
         PortablePosition result = null;
         for (int i = 0; i < pathTokens.length; i++) {
-            result = processPath(pathTokens, i, nestedPath, null);
+            boolean lastToken = i == pathTokens.length - 1;
+            result = processPathToken(pathTokens[i], i, lastToken, nestedPath, null);
             if (result != null && result.isNullOrEmpty()) {
                 break;
             }
@@ -141,6 +173,36 @@ final class PortablePositionNavigator {
             return processFieldPositionWithMultiPositions(nestedPath, pathTokens, result);
 
         }
+    }
+
+    private PortablePosition processPathToken(String pathToken, int pathTokenIndex, boolean lastToken, String nestedPath,
+                                              NavigationFrame frame) throws IOException {
+        String field = extractAttributeNameNameWithoutArguments(pathToken);
+        FieldDefinition fd = cd.getField(field);
+
+        if (fd == null || pathToken == null) {
+            throw unknownFieldException(field + " in " + nestedPath);
+        }
+
+        if (isPathTokenWithoutQuantifier(pathToken)) {
+            PortablePosition position = processPathTokenWithoutQuantifier(fd, lastToken, nestedPath);
+            if (position != null) {
+                return position;
+            }
+        } else if (isPathTokenWithAnyQuantifier(pathToken)) {
+            PortablePosition position = processPathTokenWithAnyQuantifier(pathTokenIndex, nestedPath, frame, fd, lastToken);
+            if (position != null) {
+                return position;
+            }
+        } else {
+            PortablePosition position = processPathTokenWithNumberQuantifier(nestedPath, pathToken, fd, lastToken);
+            if (position != null) {
+                return position;
+            }
+
+        }
+
+        return null;
     }
 
     private PortablePosition processFieldPositionNoMultiPositions(String nestedPath, PortablePosition result) {
@@ -165,7 +227,8 @@ final class PortablePositionNavigator {
             NavigationFrame frame = multiPositions.pollFirst();
             setupNavigatorForFrame(frame);
             for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
-                result = processPath(pathTokens, i, nestedPath, frame);
+                boolean lastToken = i == pathTokens.length - 1;
+                result = processPathToken(pathTokens[i], i, lastToken, nestedPath, frame);
                 if (result != null && result.isNullOrEmpty()) {
                     break;
                 }
@@ -179,44 +242,12 @@ final class PortablePositionNavigator {
         return new PortableMultiPosition(positions);
     }
 
-    private PortablePosition processPath(String[] pathTokens, int pathTokenIndex, String nestedPath,
-                                         NavigationFrame frame) throws IOException {
-        String token = pathTokens[pathTokenIndex];
-        String field = extractAttributeNameNameWithoutArguments(token);
-        FieldDefinition fd = cd.getField(field);
-        boolean last = (pathTokenIndex == pathTokens.length - 1);
-
-        if (fd == null || token == null) {
-            throw unknownFieldException(field + " in " + nestedPath);
-        }
-
-        if (isPathTokenWithoutQuantifier(token)) {
-            PortablePosition position = processPathTokenWithoutQuantifier(fd, last, nestedPath);
-            if (position != null) {
-                return position;
-            }
-        } else if (isPathTokenWithAnyQuantifier(token)) {
-            PortablePosition position = processPathTokenWithAnyQuantifier(pathTokenIndex, nestedPath, frame, fd, last);
-            if (position != null) {
-                return position;
-            }
-        } else {
-            PortablePosition position = processPathTokenWithNumberQuantifier(nestedPath, token, fd, last);
-            if (position != null) {
-                return position;
-            }
-
-        }
-
-        return null;
-    }
-
-    private PortablePosition processPathTokenWithoutQuantifier(FieldDefinition fd, boolean last, String nestedPath)
+    private PortablePosition processPathTokenWithoutQuantifier(FieldDefinition fd, boolean lastToken, String nestedPath)
             throws IOException {
         //
-        // TOKEN without quantifier
+        // TOKEN without quantifier. It means it's just a simple field, not an array.
         //
-        if (last) {
+        if (lastToken) {
             return readPositionOfCurrentElement(fd, nestedPath);
         } else {
             if (!advanceNavigatorToNextPortableTokenFromNonArrayElement(fd)) {
@@ -228,7 +259,7 @@ final class PortablePositionNavigator {
 
     private PortablePosition processPathTokenWithAnyQuantifier(int pathTokenIndex, String nestedPath,
                                                                NavigationFrame frame, FieldDefinition fd,
-                                                               boolean last) throws IOException {
+                                                               boolean lastToken) throws IOException {
         //
         // TOKEN with [any] quantifier
         //
@@ -238,19 +269,19 @@ final class PortablePositionNavigator {
             if (frame == null) {
                 int len = getCurrentArrayLength(fd);
                 if (len == 0) {
-                    return emptyPosition(last);
+                    return emptyPosition(lastToken);
                 } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    return nilPosition(last);
+                    return nilPosition(lastToken);
                 }
 
                 populateAnyNavigationFrames(pathTokenIndex, len);
-                if (last) {
+                if (lastToken) {
                     return readPositionOfCurrentElement(fd, 0, nestedPath);
                 }
                 advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, 0);
 
             } else {
-                if (last) {
+                if (lastToken) {
                     return readPositionOfCurrentElement(fd, frame.arrayIndex, nestedPath);
                 }
 
@@ -260,19 +291,19 @@ final class PortablePositionNavigator {
         } else {
             // PRIMITIVE array
             if (frame == null) {
-                if (last) {
+                if (lastToken) {
                     int len = getCurrentArrayLength(fd);
                     if (len == 0) {
-                        return emptyPosition(last);
+                        return emptyPosition(lastToken);
                     } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                        return nilPosition(last);
+                        return nilPosition(lastToken);
                     }
                     populateAnyNavigationFrames(pathTokenIndex, len);
                     return readPositionOfCurrentElement(fd, 0, nestedPath);
                 }
                 throw wrongUseOfAnyOperationException(nestedPath);
             } else {
-                if (last) {
+                if (lastToken) {
                     return readPositionOfCurrentElement(fd, frame.arrayIndex, nestedPath);
                 }
                 throw wrongUseOfAnyOperationException(nestedPath);
@@ -282,11 +313,31 @@ final class PortablePositionNavigator {
     }
 
     private PortablePosition processPathTokenWithNumberQuantifier(String nestedPath, String token, FieldDefinition fd,
-                                                                  boolean last) throws IOException {
+                                                                  boolean lastToken) throws IOException {
         //
-        // TOKEN with [number] quantifier
+        // TOKEN with [number] quantifier. It means we are navigating in an array cell.
         //
         validateArrayType(fd, nestedPath);
+        int index = validateAndGetArrayQuantifier(nestedPath, token);
+
+        int len = getCurrentArrayLength(fd);
+        if (len == 0) {
+            return emptyPosition(lastToken);
+        } else if (len == Bits.NULL_ARRAY_LENGTH) {
+            return nilPosition(lastToken);
+        } else if (index >= len) {
+            return nilPosition(lastToken);
+        } else {
+            if (lastToken) {
+                return readPositionOfCurrentElement(fd, index, nestedPath);
+            } else if (fd.getType() == FieldType.PORTABLE_ARRAY) {
+                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, index);
+            }
+        }
+        return null;
+    }
+
+    private int validateAndGetArrayQuantifier(String nestedPath, String token) {
         String quantifier = extractArgumentsFromAttributeName(token);
         if (quantifier == null) {
             throw new IllegalArgumentException("Malformed quantifier " + quantifier + " in " + nestedPath);
@@ -295,22 +346,7 @@ final class PortablePositionNavigator {
         if (index < 0) {
             throw new IllegalArgumentException("Array index " + index + " cannot be negative in " + nestedPath);
         }
-
-        int len = getCurrentArrayLength(fd);
-        if (len == 0) {
-            return emptyPosition(last);
-        } else if (len == Bits.NULL_ARRAY_LENGTH) {
-            return nilPosition(last);
-        } else if (index >= len) {
-            return nilPosition(last);
-        } else {
-            if (last) {
-                return readPositionOfCurrentElement(fd, index, nestedPath);
-            } else if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, index);
-            }
-        }
-        return null;
+        return index;
     }
 
     private void populateAnyNavigationFrames(int pathTokenIndex, int len) {
@@ -444,7 +480,7 @@ final class PortablePositionNavigator {
         }
     }
 
-    private static class NavigationFrame {
+    static class NavigationFrame {
         final ClassDefinition cd;
 
         final int pathTokenIndex;
