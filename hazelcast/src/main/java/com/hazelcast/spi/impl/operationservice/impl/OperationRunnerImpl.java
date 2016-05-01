@@ -87,6 +87,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     @Probe(level = DEBUG)
     private final Counter count;
+    private final Address thisAddress;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
@@ -104,6 +105,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.operationService = operationService;
         this.logger = operationService.logger;
         this.node = operationService.node;
+        this.thisAddress = node.getThisAddress();
         this.nodeEngine = operationService.nodeEngine;
         this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
         this.executedOperationsCount = operationService.completedOperationsCount;
@@ -320,13 +322,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         }
 
         if (retryDuringMigration(op) && internalPartition.isMigrating()) {
-            throw new PartitionMigratingException(node.getThisAddress(), partitionId,
+            throw new PartitionMigratingException(thisAddress, partitionId,
                     op.getClass().getName(), op.getServiceName());
         }
 
         Address owner = internalPartition.getReplicaAddress(op.getReplicaIndex());
-        if (op.validatesTarget() && !node.getThisAddress().equals(owner)) {
-            throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
+        if (op.validatesTarget() && !thisAddress.equals(owner)) {
+            throw new WrongTargetException(thisAddress, owner, partitionId, op.getReplicaIndex(),
                     op.getClass().getName(), op.getServiceName());
         }
     }
@@ -429,8 +431,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             return true;
         }
 
-        Exception error = new CallerNotMemberException(node.getThisAddress(),
-                op.getCallerAddress(), op.getPartitionId(),
+        Exception error = new CallerNotMemberException(thisAddress, op.getCallerAddress(), op.getPartitionId(),
                 op.getClass().getName(), op.getServiceName());
         handleOperationError(op, error);
         return false;
