@@ -40,10 +40,8 @@ import com.hazelcast.internal.management.request.ConsoleRequest;
 import com.hazelcast.internal.management.request.ExecuteScriptRequest;
 import com.hazelcast.internal.management.request.ForceStartNodeRequest;
 import com.hazelcast.internal.management.request.GetClusterStateRequest;
-import com.hazelcast.internal.management.request.GetLogsRequest;
 import com.hazelcast.internal.management.request.GetMapEntryRequest;
 import com.hazelcast.internal.management.request.GetMemberSystemPropertiesRequest;
-import com.hazelcast.internal.management.request.GetSystemWarningsRequest;
 import com.hazelcast.internal.management.request.MapConfigRequest;
 import com.hazelcast.internal.management.request.MemberConfigRequest;
 import com.hazelcast.internal.management.request.RunGcRequest;
@@ -440,7 +438,6 @@ public class ManagementCenterService {
             register(new ChangeWanStateRequest());
             register(new MemberConfigRequest());
             register(new ClusterPropsRequest());
-            register(new GetLogsRequest());
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
@@ -448,7 +445,6 @@ public class ManagementCenterService {
             register(new GetClusterStateRequest());
             register(new ChangeClusterStateRequest());
             register(new ShutdownClusterRequest());
-            register(new GetSystemWarningsRequest());
             register(new ForceStartNodeRequest());
         }
 
