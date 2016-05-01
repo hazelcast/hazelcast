@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
@@ -82,7 +81,6 @@ public class OverloadedConnectionsPlugin extends PerformanceMonitorPlugin {
     private static final Queue<OutboundFrame> EMPTY_QUEUE = new LinkedList<OutboundFrame>();
 
     private final SerializationService serializationService;
-    private final ILogger logger;
     private final ItemCounter<String> occurrenceMap = new ItemCounter<String>();
     private final ArrayList<OutboundFrame> packets = new ArrayList<OutboundFrame>();
     private final Random random = new Random();
@@ -93,9 +91,9 @@ public class OverloadedConnectionsPlugin extends PerformanceMonitorPlugin {
     private final int samples;
 
     public OverloadedConnectionsPlugin(NodeEngineImpl nodeEngine) {
+        super(nodeEngine.getLogger(OverloadedConnectionsPlugin.class));
         this.nodeEngine = nodeEngine;
         this.serializationService = nodeEngine.getSerializationService();
-        this.logger = nodeEngine.getLogger(OverloadedConnectionsPlugin.class);
         this.defaultFormat.setMinimumFractionDigits(3);
 
         HazelcastProperties props = nodeEngine.getProperties();

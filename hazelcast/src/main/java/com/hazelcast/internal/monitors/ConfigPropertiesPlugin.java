@@ -32,7 +32,6 @@ import static java.util.Collections.sort;
 public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
 
     private final HazelcastProperties properties;
-    private final ILogger logger;
     private final List<String> keyList = new ArrayList<String>();
 
     public ConfigPropertiesPlugin(NodeEngineImpl nodeEngine) {
@@ -40,18 +39,18 @@ public class ConfigPropertiesPlugin extends PerformanceMonitorPlugin {
     }
 
     public ConfigPropertiesPlugin(ILogger logger, HazelcastProperties properties) {
-        this.logger = logger;
+        super(logger);
         this.properties = properties;
-    }
-
-    @Override
-    public long getPeriodMillis() {
-        return STATIC;
     }
 
     @Override
     public void onStart() {
         logger.info("Plugin:active");
+    }
+
+    @Override
+    public long getPeriodMillis() {
+        return STATIC;
     }
 
     @Override

@@ -19,7 +19,6 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -52,10 +51,9 @@ public class SlowOperationPlugin extends PerformanceMonitorPlugin {
 
     private final InternalOperationService operationService;
     private final long periodMillis;
-    private final ILogger logger;
 
     public SlowOperationPlugin(NodeEngineImpl nodeEngine) {
-        this.logger = nodeEngine.getLogger(SlowOperationPlugin.class);
+        super(nodeEngine.getLogger(SlowOperationPlugin.class));
         this.operationService = nodeEngine.getOperationService();
         this.periodMillis = getPeriodMillis(nodeEngine);
     }
