@@ -44,7 +44,7 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
     public void run() throws Exception {
         AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
         returnValue = atomicReferenceContainer.compareAndSet(expect, update);
-        shouldBackup = !returnValue;
+        shouldBackup = returnValue;
     }
 
     @Override
