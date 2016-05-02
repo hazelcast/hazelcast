@@ -78,7 +78,7 @@ public class MockConnectionManager implements ConnectionManager {
         MockConnection conn = mapConnections.get(address);
         if (live && (conn == null || !conn.isAlive())) {
             NodeEngineImpl nodeEngine = nodes.get(address);
-            if (nodeEngine != null && nodeEngine.isRunning()) {
+            if (nodeEngine != null && nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
                 MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.nodeEngine);
                 conn = new MockConnection(node.getThisAddress(), address, nodeEngine);
                 conn.localConnection = thisConnection;
