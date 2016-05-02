@@ -28,7 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -84,9 +84,9 @@ public final class ResponseHandler implements PacketHandler, MetricsProvider {
                 notifyNormalResponse(
                         normalResponse.getCallId(),
                         normalResponse.getValue(),
-                        normalResponse.getBackupCount(),
+                        normalResponse.getBackupAcks(),
                         sender);
-            } else if (response instanceof BackupResponse) {
+            } else if (response instanceof BackupAckResponse) {
                 notifyBackupComplete(response.getCallId());
             } else if (response instanceof CallTimeoutResponse) {
                 notifyCallTimeout(response.getCallId(), sender);

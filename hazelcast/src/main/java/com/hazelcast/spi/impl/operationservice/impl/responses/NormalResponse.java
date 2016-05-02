@@ -19,9 +19,10 @@ package com.hazelcast.spi.impl.operationservice.impl.responses;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 
 /**
  * A NormalResponse is send when an Operation needs to return a value. This response value can a 'normal' value,
@@ -41,16 +42,16 @@ public class NormalResponse extends Response {
 
     private Object value;
 
-    //the number of synchronous backups; 0 if no backups are needed.
-    private int backupCount;
+    //the number of backups acks; 0 if no acks are needed.
+    private int backupAcks;
 
     public NormalResponse() {
     }
 
-    public NormalResponse(Object value, long callId, int backupCount, boolean urgent) {
+    public NormalResponse(Object value, long callId, int backupAcks, boolean urgent) {
         super(callId, urgent);
         this.value = value;
-        this.backupCount = backupCount;
+        this.backupAcks = backupAcks;
     }
 
     /**
@@ -63,23 +64,24 @@ public class NormalResponse extends Response {
     }
 
     /**
-     * Returns the number of synchronous backups for the operation.
+     * Returns the number of backups that needs to acknowledge before the invocation completes.
      *
-     * @return The number of synchronous backups.
+     * @return The number of backup acknowledgements backups.
      */
-    public int getBackupCount() {
-        return backupCount;
+    public int getBackupAcks() {
+        return backupAcks;
     }
 
     @Override
     public int getId() {
-        return SpiDataSerializerHook.NORMAL_RESPONSE;
+        return NORMAL_RESPONSE;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeInt(backupCount);
+        // acks fit in a byte.
+        out.writeByte(backupAcks);
 
         final boolean isData = value instanceof Data;
         out.writeBoolean(isData);
@@ -93,7 +95,7 @@ public class NormalResponse extends Response {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        backupCount = in.readInt();
+        backupAcks = in.readByte();
 
         final boolean isData = in.readBoolean();
         if (isData) {
@@ -109,7 +111,7 @@ public class NormalResponse extends Response {
                 + "callId=" + callId
                 + ", urgent=" + urgent
                 + ", value=" + value
-                + ", backupCount=" + backupCount
+                + ", backupAcks=" + backupAcks
                 + '}';
     }
 }

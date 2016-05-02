@@ -18,9 +18,10 @@ package com.hazelcast.spi.impl.operationservice.impl.responses;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
+
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.ERROR_RESPONSE;
 
 public class ErrorResponse extends Response {
     private Throwable cause;
@@ -39,7 +40,7 @@ public class ErrorResponse extends Response {
 
     @Override
     public int getId() {
-        return SpiDataSerializerHook.ERROR_RESPONSE;
+        return ERROR_RESPONSE;
     }
 
     @Override

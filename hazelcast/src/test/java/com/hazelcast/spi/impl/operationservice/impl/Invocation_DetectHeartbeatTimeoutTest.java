@@ -63,7 +63,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         Invocation invocation = f.invocation;
         invocation.pendingResponse = "foo";
-        invocation.backupsExpected = 1;
+        invocation.backupsAcksExpected = 1;
 
         assertEquals(NO_TIMEOUT__RESPONSE_AVAILABLE, invocation.detectTimeout(SECONDS.toMillis(1)));
         assertFalse(f.isDone());

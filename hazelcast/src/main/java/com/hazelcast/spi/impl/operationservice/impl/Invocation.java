@@ -44,6 +44,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -93,8 +94,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
 
-    private static final AtomicIntegerFieldUpdater<Invocation> BACKUPS_COMPLETED =
-            AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsCompleted");
+    private static final AtomicIntegerFieldUpdater<Invocation> BACKUP_ACKS_RECEIVED =
+            AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsAcksReceived");
 
     private static final long MIN_TIMEOUT = 10000;
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
@@ -116,26 +117,24 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     final Context context;
 
     /**
-     * Contains the pending response from the primary.
-     * It is pending because it could be that backups need to complete.
+     * Contains the pending response from the primary. It is pending because it could be that backups need to complete.
      */
     volatile Object pendingResponse = VOID;
+
     /**
      * The time in millis when the response of the primary has been received.
      */
     volatile long pendingResponseReceivedMillis = -1;
 
     /**
-     * Number of expected backups.
-     * It is set correctly as soon as the pending response is set.
-     * See {@link NormalResponse}.
+     * Number of expected backups. It is set correctly as soon as the pending response is set. See {@link NormalResponse}.
      */
-    volatile int backupsExpected;
+    volatile int backupsAcksExpected;
+
     /**
-     * Number of backups that have completed.
-     * See {@link com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse}.
+     * Number of backups acks received. See {@link BackupAckResponse}.
      */
-    volatile int backupsCompleted;
+    volatile int backupsAcksReceived;
 
     /**
      * A flag to prevent multiple responses to be send to the invocation (only needed for local operations).
@@ -357,7 +356,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             notifyError(response);
         } else if (response instanceof NormalResponse) {
             NormalResponse normalResponse = (NormalResponse) response;
-            notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
+            notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupAcks());
         } else {
             // there are no backups or the number of expected backups has returned; so signal the future that the result is ready
             complete(response);
@@ -398,19 +397,19 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // if a regular response comes and there are backups, we need to wait for the backups
         // when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
 
-        if (expectedBackups > backupsCompleted) {
+        if (expectedBackups > backupsAcksReceived) {
             // so the invocation has backups and since not all backups have completed, we need to wait
             // (it could be that backups arrive earlier than the response)
 
             this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
 
-            this.backupsExpected = expectedBackups;
+            this.backupsAcksExpected = expectedBackups;
 
-            // it is very important that the response is set after the backupsExpected is set, else the system
+            // it is very important that the response is set after the backupsAcksExpected is set, else the system
             // can assume the invocation is complete because there is a response and no backups need to respond
             this.pendingResponse = value;
 
-            if (backupsCompleted != expectedBackups) {
+            if (backupsAcksReceived != expectedBackups) {
                 // we are done since not all backups have completed. Therefor we should not notify the future
                 return;
             }
@@ -447,7 +446,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
 
     // this method can be called concurrently
     void notifyBackupComplete() {
-        int newBackupsCompleted = BACKUPS_COMPLETED.incrementAndGet(this);
+        int newBackupAcksCompleted = BACKUP_ACKS_RECEIVED.incrementAndGet(this);
 
         Object pendingResponse = this.pendingResponse;
         if (pendingResponse == VOID) {
@@ -455,14 +454,14 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             return;
         }
 
-        // if a pendingResponse is set, then the backupsExpected has been set (so we can now safely read backupsExpected)
-        int backupsExpected = this.backupsExpected;
-        if (backupsExpected < newBackupsCompleted) {
+        // if a pendingResponse is set, then the backupsAcksExpected has been set (so we can now safely read backupsAcksExpected)
+        int backupAcksExpected = this.backupsAcksExpected;
+        if (backupAcksExpected < newBackupAcksCompleted) {
             // the backups have not yet completed, so we are done
             return;
         }
 
-        if (backupsExpected != newBackupsCompleted) {
+        if (backupAcksExpected != newBackupAcksCompleted) {
             // we managed to complete one backup, but we were not the one completing the last backup, so we are done
             return;
         }
@@ -565,8 +564,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     // gets called from the monitor-thread
     boolean detectAndHandleBackupTimeout(long timeoutMillis) {
         // if the backups have completed, we are done; this also filters out all non backup-aware operations
-        // since the backupsExpected will always be equal to the backupsCompleted
-        boolean allBackupsComplete = backupsExpected == backupsCompleted;
+        // since the backupsAcksExpected will always be equal to the backupsAcksReceived
+        boolean backupsCompleted = backupsAcksExpected == backupsAcksReceived;
         long responseReceivedMillis = pendingResponseReceivedMillis;
 
         // if this has not yet expired (so has not been in the system for a too long period) we ignore it
@@ -577,7 +576,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // if the response of the primary has been received, but the backups have not replied
         boolean responseReceived = pendingResponse != VOID;
 
-        if (allBackupsComplete || !responseReceived || !timeout) {
+        if (backupsCompleted || !responseReceived || !timeout) {
             return false;
         }
 
@@ -604,8 +603,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         invokeCount = 0;
         pendingResponse = VOID;
         pendingResponseReceivedMillis = -1;
-        backupsExpected = 0;
-        backupsCompleted = 0;
+        backupsAcksExpected = 0;
+        backupsAcksReceived = 0;
         lastHeartbeatMillis = 0;
         doInvoke(false);
     }
@@ -632,8 +631,8 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                 + ", lastHeartbeatTime='" + timeToString(lastHeartbeatMillis) + "'"
                 + ", target=" + invTarget
                 + ", pendingResponse={" + pendingResponse + "}"
-                + ", backupsExpected=" + backupsExpected
-                + ", backupsCompleted=" + backupsCompleted
+                + ", backupsAcksExpected=" + backupsAcksExpected
+                + ", backupsAcksReceived=" + backupsAcksReceived
                 + ", connection=" + connectionStr
                 + '}';
     }
