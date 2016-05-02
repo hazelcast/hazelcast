@@ -38,8 +38,6 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -69,7 +67,12 @@ import static java.util.logging.Level.INFO;
  * The {@link InvocationMonitor} sends Operation heartbeats to the other member informing them about if the operation is still
  * alive. Also if no operations are running, it will still send a period packet to each member. This is a different system than
  * the regular heartbeats, but it has similar characteristics. The reason the packet is always send is for debugging purposes.
+ *
+ * todo:
+ * - back pressure and clients. For partition specific calls, you don't want to block the partition-thread.
+ * - back pressure and nested calls: also no blocking of the thread
  */
+//todo:needs to get fixed.
 public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
@@ -238,17 +241,8 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
             int normalTimeouts = 0;
             int invocationCount = 0;
 
-            Set<Map.Entry<Long, Invocation>> invocations = invocationRegistry.entrySet();
-            Iterator<Map.Entry<Long, Invocation>> iterator = invocations.iterator();
-            while (iterator.hasNext()) {
+            for (Invocation inv : invocationRegistry) {
                 invocationCount++;
-                Map.Entry<Long, Invocation> entry = iterator.next();
-                Long callId = entry.getKey();
-                Invocation inv = entry.getValue();
-
-                if (duplicate(inv, callId, iterator)) {
-                    continue;
-                }
 
                 try {
                     if (inv.detectAndHandleTimeout(invocationTimeoutMillis)) {
@@ -265,38 +259,6 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
             backupTimeoutsCount.inc(backupTimeouts);
             normalTimeoutsCount.inc(normalTimeouts);
             log(invocationCount, backupTimeouts, normalTimeouts);
-        }
-
-        /**
-         * The reason for the following if check is a workaround for the problem explained below.
-         *
-         * Problematic scenario :
-         * If an invocation with callId 1 is retried twice for any reason,
-         * two new innovations created and registered to invocation registry with callId’s 2 and 3 respectively.
-         * Both new invocations are sharing the same operation
-         * When one of the new invocations, say the one with callId 2 finishes, it de-registers itself from the
-         * invocation registry.
-         * When doing the de-registration it sets the shared operation’s callId to 0.
-         * After that when the invocation with the callId 3 completes, it tries to de-register itself from
-         * invocation registry
-         * but fails to do so since the invocation callId and the callId on the operation is not matching anymore
-         * When InvocationMonitor thread kicks in, it sees that there is an invocation in the registry,
-         * and asks whether invocation is finished or not.
-         * Even if the remote node replies with invocation is timed out,
-         * It can’t be de-registered from the registry because of aforementioned non-matching callId scenario.
-         *
-         * Workaround:
-         * When InvocationMonitor kicks in, it will do a check for invocations that are completed
-         * but their callId's are not matching with their operations. If any invocation found for that type,
-         * it is removed from the invocation registry.
-         */
-        private boolean duplicate(Invocation inv, long callId, Iterator iterator) {
-            if (callId != inv.op.getCallId() && inv.future.isDone()) {
-                iterator.remove();
-                return true;
-            }
-
-            return false;
         }
 
         private void log(int invocationCount, int backupTimeouts, int invocationTimeouts) {
