@@ -8,6 +8,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Locale;
+
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
 
@@ -113,7 +115,7 @@ public class MultiLinePerformanceLogWriterTest extends HazelcastTestSupport {
         writer.clean();
         writer.writeLong(value);
 
-        String expected = String.format("%,d", value);
+        String expected = String.format(Locale.US, "%,d", value);
 
         assertEquals(expected, writer.sb.toString());
     }
