@@ -417,7 +417,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 completedMigrations.add(migrationInfo);
             }
 
-            int committedVersion = getPartitionStateVersion() + 1;
+            int committedVersion = getPartitionStateVersion() + migrationInfos.length;
             return new PartitionRuntimeState(logger, members, partitions, completedMigrations, committedVersion);
         } finally {
             lock.unlock();

@@ -1063,7 +1063,7 @@ public class MigrationManager {
             }
 
             if (!success) {
-                int delta = PARTITION_STATE_VERSION_INCREMENT_DELTA_ON_MIGRATION_FAILURE;
+                int delta = migrations.size() + 1;
                 partitionService.getPartitionStateManager().incrementVersion(delta);
             }
 
