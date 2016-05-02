@@ -39,6 +39,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,16 +49,24 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -498,6 +507,148 @@ public class SerializationTest
                 add(in.readObject());
             }
         }
+    }
+
+    @Test
+    public void testDynamicProxySerialization_withConfiguredClassLoader() {
+        ClassLoader current = getClass().getClassLoader();
+        DynamicProxyTestClassLoader cl = new DynamicProxyTestClassLoader(current);
+        SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl).build();
+        IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[] { IObjectA.class }, DummyInvocationHandler.INSTANCE);
+        Data data = ss.toData(oa);
+        Object o = ss.toObject(data);
+        Assert.assertSame("configured classloader is not used", cl, o.getClass().getClassLoader());
+        try {
+            IObjectA.class.cast(o);
+            Assert.fail("the serialized object should not be castable");
+        } catch(ClassCastException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testDynamicProxySerialization_withContextClassLoader() {
+        ClassLoader oldContextLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            ClassLoader current = getClass().getClassLoader();
+            DynamicProxyTestClassLoader cl = new DynamicProxyTestClassLoader(current);
+            Thread.currentThread().setContextClassLoader(cl);
+            SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl).build();
+            IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[] { IObjectA.class }, DummyInvocationHandler.INSTANCE);
+            Data data = ss.toData(oa);
+            Object o = ss.toObject(data);
+            Assert.assertSame("context classloader is not used", cl, o.getClass().getClassLoader());
+            try {
+                IObjectA.class.cast(o);
+                Assert.fail("the serialized object should not be castable");
+            } catch(ClassCastException e) {
+                // expected
+            }
+        } finally {
+            Thread.currentThread().setContextClassLoader(oldContextLoader);
+        }
+    }
+
+    @Test
+    public void testNonPublicDynamicProxySerialization_withClassLoaderMess() {
+        ClassLoader current = getClass().getClassLoader();
+        DynamicProxyTestClassLoader cl1 = new DynamicProxyTestClassLoader(current, IPrivateObjectC.class.getName());
+        DynamicProxyTestClassLoader cl2 = new DynamicProxyTestClassLoader(cl1, IPrivateObjectD.class.getName());
+        SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl2).build();
+        Object ocd = Proxy.newProxyInstance(current, new Class[] { IPrivateObjectC.class, IPrivateObjectD.class }, DummyInvocationHandler.INSTANCE);
+        Data data = ss.toData(ocd);
+        try {
+            ss.toObject(data);
+            Assert.fail("the object should not be deserializable");
+        } catch (IllegalAccessError e) {
+            // expected
+        }
+    }
+
+    private static final class DynamicProxyTestClassLoader extends ClassLoader {
+
+        private static final Set<String> WELL_KNOWN_TEST_CLASSES = new HashSet<String>(Arrays.asList(IObjectA.class.getName(), IObjectB.class.getName(), IPrivateObjectC.class.getName(), IPrivateObjectD.class.getName()));
+
+        private final Set<String> wellKnownClasses = new HashSet<String>();
+
+        private DynamicProxyTestClassLoader(ClassLoader parent, String... classesToLoad) {
+            super(parent);
+            if (classesToLoad.length == 0) {
+                wellKnownClasses.addAll(WELL_KNOWN_TEST_CLASSES);
+            } else {
+                wellKnownClasses.addAll(Arrays.asList(classesToLoad));
+            }
+        }
+
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            if (!WELL_KNOWN_TEST_CLASSES.contains(name)) {
+                return super.loadClass(name, resolve);
+            }
+            synchronized (getClassLoadingLock(name)) {
+                // First, check if the class has already been loaded
+                Class<?> c = findLoadedClass(name);
+                if (c == null) {
+                    c = findClass(name);
+                }
+                if (resolve) {
+                    resolveClass(c);
+                }
+                return c;
+            }
+        }
+
+        protected Class<?> findClass(String name) throws ClassNotFoundException {
+            if (!wellKnownClasses.contains(name)) {
+                return super.findClass(name);
+            }
+            String path = name.replace('.', '/') + ".class";
+            InputStream in = null;
+            try {
+                in = getParent().getResourceAsStream(path);
+                ByteArrayOutputStream bout = new ByteArrayOutputStream();
+                byte[] buf = new byte[1024];
+                int read = 0;
+                while ((read = in.read(buf)) != -1) {
+                    bout.write(buf, 0, read);
+                }
+                byte[] code = bout.toByteArray();
+                return defineClass(name, code, 0, code.length);
+            } catch (IOException e) {
+                return super.findClass(name);
+            } finally {
+                IOUtil.closeResource(in);
+            }
+        }
+
+    }
+
+    public static final class DummyInvocationHandler implements InvocationHandler, Serializable {
+
+        private static final long serialVersionUID = 3459316091095397098L;
+
+        private static final DummyInvocationHandler INSTANCE = new DummyInvocationHandler();
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            return null;
+        }
+
+    }
+
+    public static interface IObjectA {
+        void doA();
+    }
+
+    public static interface IObjectB {
+        void doB();
+    }
+
+    static interface IPrivateObjectC {
+        void doC();
+    }
+
+    static interface IPrivateObjectD {
+        void doD();
     }
 
 }
