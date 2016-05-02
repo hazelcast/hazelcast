@@ -52,20 +52,27 @@ class MockJoiner extends AbstractJoiner {
             while (node.isRunning() && !node.joined()
                     && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 try {
-                    lookupMasterAddress();
+                    if (masterAddress == null) {
+                        lookupMasterAddress();
+                    }
 
                     if (node.getThisAddress().equals(masterAddress)) {
+                        logger.fine("This node is found as master, no need to join.");
                         node.setJoined();
                         node.setAsMaster();
                         break;
                     }
 
                     if (masterAddress != null) {
+                        logger.fine("Sending join request to master " + masterAddress);
                         node.setMasterAddress(masterAddress);
-                        clusterJoinManager.sendJoinRequest(masterAddress, true);
+                        if (!clusterJoinManager.sendJoinRequest(masterAddress, true)) {
+                            logger.fine("Could not send join request to " + masterAddress);
+                            masterAddress = null;
+                        }
                     }
 
-                    Thread.sleep(50);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     break;
@@ -81,6 +88,7 @@ class MockJoiner extends AbstractJoiner {
     private void lookupMasterAddress() {
         NodeEngineImpl nodeEngine = findAliveNodeEngine();
         if (nodeEngine == null) {
+            logger.fine("Picking this node as master, no other running NodeEngine has been detected.");
             masterAddress = node.getThisAddress();
             return;
         }
@@ -93,22 +101,53 @@ class MockJoiner extends AbstractJoiner {
         }
 
         if (master == null) {
+            logger.fine("Picking this node as master, found NodeEngine has no master information.");
             masterAddress = node.getThisAddress();
             return;
         }
 
         NodeEngineImpl masterNodeEngine = nodes.get(master);
-        if (masterNodeEngine != null && masterNodeEngine.isRunning() && masterNodeEngine.getNode().joined()) {
-            masterAddress = master;
+        if (masterNodeEngine == null) {
+            logger.fine("NodeEngine for discovered master " + master + " is null.");
+            return;
         }
+
+        if (!masterNodeEngine.isRunning()) {
+            logger.fine("NodeEngine for discovered master " + master + " is not running. -> "
+                    + masterNodeEngine.getNode().getState());
+            return;
+        }
+
+        if (!masterNodeEngine.getNode().joined()) {
+            logger.fine("NodeEngine for discovered master " + master + " is not joined.");
+            return;
+        }
+
+        logger.fine("Found possible master. Will try to connect to " + master);
+        masterAddress = master;
     }
 
     private NodeEngineImpl findAliveNodeEngine() {
+        logger.fine("Searching possible addresses for master " + joinAddresses);
         for (Address address : joinAddresses) {
             NodeEngineImpl nodeEngine = nodes.get(address);
-            if (nodeEngine != null && nodeEngine.isRunning() && nodeEngine.getNode().joined()) {
-                return nodeEngine;
+            if (nodeEngine == null) {
+                logger.fine("NodeEngine for " + address + " is null.");
+                continue;
             }
+
+            if (!nodeEngine.isRunning()) {
+                logger.fine("NodeEngine for " + address + " is not running. -> " + nodeEngine.getNode().getState());
+                continue;
+            }
+
+            if (!nodeEngine.getNode().joined()) {
+                logger.fine("NodeEngine for " + address + " is not joined.");
+                continue;
+            }
+
+            logger.fine("Found an alive node. Will ask master of " + address);
+            return nodeEngine;
         }
         return null;
     }
