@@ -507,6 +507,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    protected boolean existKeyInternal(Data key) {
+        int partitionId = partitionService.getPartitionId(key);
+        MapOperation containsKeyOperation = operationProvider.createExistKeyOperation(name, key);
+        containsKeyOperation.setThreadId(ThreadUtil.getThreadId());
+        containsKeyOperation.setServiceName(SERVICE_NAME);
+        try {
+            Future f = operationService.invokeOnPartition(SERVICE_NAME, containsKeyOperation, partitionId);
+            return (Boolean) toObject(f.get());
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
     public void waitUntilLoaded() {
         try {
             int mapNamePartition = partitionService.getPartitionId(name);

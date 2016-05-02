@@ -215,6 +215,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public boolean existKey(Object k) {
+        checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
+
+        Data key = toData(k, partitionStrategy);
+        return existKeyInternal(key);
+    }
+
+    @Override
     public boolean containsValue(Object v) {
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 

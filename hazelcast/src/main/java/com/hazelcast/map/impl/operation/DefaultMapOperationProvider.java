@@ -124,6 +124,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createExistKeyOperation(String name, Data dataKey) {
+        return new ExistKeyOperation(name, dataKey);
+    }
+
+    @Override
     public OperationFactory createContainsValueOperationFactory(String name, Data testValue) {
         return new ContainsValueOperationFactory(name, testValue);
     }

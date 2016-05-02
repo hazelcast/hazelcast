@@ -680,11 +680,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public boolean containsKey(Data key) {
+        return containsOrExistKey(key, true);
+    }
+
+    private boolean containsOrExistKey(final Data key, final boolean load) {
         checkIfLoaded();
         final long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
+        if (load && record == null) {
             record = loadRecordOrNull(key, false);
         }
         boolean contains = record != null;
@@ -693,6 +697,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         return contains;
+    }
+
+    @Override
+    public boolean existKey(Data key) {
+        return containsOrExistKey(key, false);
     }
 
     @Override

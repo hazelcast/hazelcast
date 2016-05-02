@@ -100,6 +100,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * <p>                                                                                      ˆ
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in the <tt>key</tt>'s class.  The <tt>key</tt> will be searched for in memory.
+     * </p>
+     *
+     * @throws NullPointerException if the specified key is null.
+     */
+    boolean existKey(Object key);
+
+    /**
+     * {@inheritDoc}
      *
      * @throws NullPointerException if the specified value is null.
      */
