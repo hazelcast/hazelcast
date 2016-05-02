@@ -54,7 +54,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final boolean receiver;
     private final NodeEngine nodeEngine;
     private final DataWriter[] sendersArray;
-    private final boolean hasUnShuffledConsumers;
+    private final boolean hasLocalConsumers;
     private final ObjectConsumer[] shuffledConsumers;
     private final Address[] nonPartitionedAddresses;
     private final ObjectConsumer[] nonPartitionedWriters;
@@ -66,7 +66,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private final ContainerContext containerContext;
     private int lastConsumedSize;
     private boolean chunkInProgress;
-    private boolean unShufflersSuccess;
+    private boolean localSuccess;
 
     public ShuffledConsumerTaskProcessor(ObjectConsumer[] consumers,
                                          ContainerProcessor processor,
@@ -89,7 +89,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         initSenders(containerContext, taskID, receiver);
 
         this.sendersArray = this.senders.values().toArray(new DataWriter[this.senders.size()]);
-        this.hasUnShuffledConsumers = this.consumers.length > 0;
+        this.hasLocalConsumers = this.consumers.length > 0;
 
         this.shuffledConsumers = filterConsumers(consumers, true);
         this.markers = new ObjectConsumer[this.sendersArray.length + this.shuffledConsumers.length];
@@ -114,6 +114,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         this.nonPartitionedWriters = nonPartitionedConsumers.toArray(new ObjectConsumer[nonPartitionedConsumers.size()]);
         this.nonPartitionedAddresses = nonPartitionedAddresses.toArray(new Address[nonPartitionedAddresses.size()]);
         this.chunkSize = chunkSize(containerContext);
+
         resetState();
     }
 
@@ -157,10 +158,6 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                 this.senders.put(address, sender);
                 applicationMaster.registerShufflingSender(taskID, containerContext, address, sender);
             }
-        }
-
-        if (!this.hasUnShuffledConsumers) {
-            this.unShufflersSuccess = true;
         }
     }
 
@@ -333,7 +330,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     private void resetState() {
         this.lastConsumedSize = 0;
         this.chunkInProgress = false;
-        this.unShufflersSuccess = !this.hasUnShuffledConsumers;
+        this.localSuccess = this.receiver || !this.hasLocalConsumers;
     }
 
     @Override
@@ -342,8 +339,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
             boolean success = false;
             boolean consumed;
 
-            /// UnShufflers
-            consumed = processUnShufflers(chunk);
+            /// Local consumers
+            consumed = processLocalConsumers(chunk);
 
             // Shufflers
             boolean chunkPooled = this.lastConsumedSize >= chunk.size();
@@ -369,7 +366,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
                     &&
                     (chunkPooled)
                     &&
-                    (this.unShufflersSuccess)) {
+                    (this.localSuccess)) {
                 success = true;
                 consumed = true;
             }
@@ -386,12 +383,12 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         }
     }
 
-    private boolean processUnShufflers(ProducerInputStream<Object> chunk) throws Exception {
+    private boolean processLocalConsumers(ProducerInputStream<Object> chunk) throws Exception {
         boolean consumed = false;
 
         if (!this.receiver) {
-            if ((this.hasUnShuffledConsumers) && (!this.unShufflersSuccess)) {
-                this.unShufflersSuccess = super.onChunk(chunk);
+            if ((this.hasLocalConsumers) && (!this.localSuccess)) {
+                this.localSuccess = super.onChunk(chunk);
                 consumed = super.consumed();
             }
         }

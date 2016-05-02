@@ -35,6 +35,41 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
+    public void testMultipleSinks() throws Exception {
+        Application application = createApplication("testMultipleSinks");
+        final int COUNT = 10000;
+
+        IMap<Integer, Integer> sourceMap = SERVER.getMap("sourceMap");
+
+        for (int i = 0; i < COUNT; i++) {
+            sourceMap.put(i, i);
+        }
+
+        IList<Integer> sinkList = SERVER.getList("sinkList");
+        IMap<Integer, Integer> sinkMap = SERVER.getMap("sinkMap");
+
+        DAG dag = createDAG();
+
+        Vertex vertex1 = createVertex("vertex1", DummyProcessor.Factory.class);
+        Vertex vertex2 = createVertex("vertex2", DummyProcessor.Factory.class);
+
+        vertex1.addSourceMap(sourceMap.getName());
+        vertex1.addSinkList(sinkList.getName());
+        vertex2.addSinkMap(sinkMap.getName());
+
+        addVertices(dag, vertex1, vertex2);
+        addEdges(dag, new EdgeImpl("", vertex1, vertex2));
+
+        System.out.println("Application running");
+
+        executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+        application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+
+        assertEquals(COUNT, sinkList.size());
+        assertEquals(COUNT, sinkMap.size());
+    }
+
+    @Test
     @Repeat(500)
     public void simpleList2ListTest() throws Exception {
         Application application = createApplication("simpleList2ListTest");
@@ -85,7 +120,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
             for (int i = 0; i < CNT; i++) {
-                assertEquals(i, (int)targetList.get(i)[0]);
+                assertEquals(i, (int) targetList.get(i)[0]);
             }
         } finally {
             application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
