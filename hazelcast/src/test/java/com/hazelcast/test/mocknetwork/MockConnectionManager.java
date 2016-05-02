@@ -97,11 +97,13 @@ public class MockConnectionManager implements ConnectionManager {
 
     @Override
     public void start() {
+        logger.fine("Starting connection manager");
         live = true;
     }
 
     @Override
     public void stop() {
+        logger.fine("Stopping connection manager");
         live = false;
 
         for (Address address : nodes.keySet()) {
@@ -109,11 +111,16 @@ public class MockConnectionManager implements ConnectionManager {
                 continue;
             }
 
-            final NodeEngineImpl nodeEngine = nodes.get(address);
-            if (nodeEngine != null && nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
-                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+            final NodeEngineImpl otherNodeEngine = nodes.get(address);
+            if (otherNodeEngine != null && otherNodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
+                if (otherNodeEngine.getClusterService().getMember(node.getThisAddress()) == null) {
+                    continue;
+                }
+
+                logger.fine(otherNodeEngine.getThisAddress() + " is instructed to remove this node.");
+                otherNodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
-                        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+                        ClusterServiceImpl clusterService = (ClusterServiceImpl) otherNodeEngine.getClusterService();
                         clusterService.removeAddress(node.getThisAddress());
                     }
                 });
@@ -153,6 +160,7 @@ public class MockConnectionManager implements ConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
+    @Override
     public void destroyConnection(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
         final boolean removed = mapConnections.remove(endPoint, connection);

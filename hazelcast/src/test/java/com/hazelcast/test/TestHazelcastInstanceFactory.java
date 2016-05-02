@@ -62,7 +62,7 @@ public class TestHazelcastInstanceFactory {
 
     public TestHazelcastInstanceFactory() {
         this.count = 0;
-        this.registry = new TestNodeRegistry(addressMap.values());
+        this.registry = new TestNodeRegistry(Collections.unmodifiableCollection(addressMap.values()));
     }
 
     public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
@@ -93,7 +93,7 @@ public class TestHazelcastInstanceFactory {
         for (Address address : addresses) {
             addressMap.put(ix++, address);
         }
-        this.registry = new TestNodeRegistry(addressMap.values());
+        this.registry = new TestNodeRegistry(Collections.unmodifiableCollection(addressMap.values()));
     }
 
     /**
