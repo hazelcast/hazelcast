@@ -85,7 +85,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public void offer(OutboundFrame frame) {
+    public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
             urgentWriteQueue.add(frame);
         } else {
@@ -211,18 +211,13 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public void start() {
-        //no-op
-    }
-
-    @Override
-    public void shutdown() {
+    public void close() {
         metricsRegistry.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 
         ShutdownTask shutdownTask = new ShutdownTask();
-        offer(new TaskFrame(shutdownTask));
+        write(new TaskFrame(shutdownTask));
         shutdownTask.awaitCompletion();
     }
 

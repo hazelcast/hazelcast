@@ -16,10 +16,13 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
+@PrivateApi
 public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     int UTF_BUFFER_SIZE = 1024;

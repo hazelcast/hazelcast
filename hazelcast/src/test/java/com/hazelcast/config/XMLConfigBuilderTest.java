@@ -1244,4 +1244,36 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG + "<hazelcast/></hazelcast>";
         buildConfig(xml);
     }
+
+    @Test
+    public void testMapEvictionPolicyClassName() {
+        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
+        String xml =
+                HAZELCAST_START_TAG +
+                        "<map name=\"test\">" +
+                        "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> " +
+                        "</map>" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("test");
+
+        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
+    }
+
+    @Test
+    public void testMapEvictionPolicyIsSelected_whenEvictionPolicySet () {
+        String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
+        String xml =
+                HAZELCAST_START_TAG +
+                        "<map name=\"test\">" +
+                        "<map-eviction-policy-class-name>" + mapEvictionPolicyClassName + "</map-eviction-policy-class-name> " +
+                        "<eviction-policy>LFU</eviction-policy>" +
+                        "</map>" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("test");
+
+        assertEquals(mapEvictionPolicyClassName, mapConfig.getMapEvictionPolicy().getClass().getName());
+    }
+
 }

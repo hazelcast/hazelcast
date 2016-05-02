@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -51,11 +52,16 @@ public class TopicStressTest extends HazelcastTestSupport {
     private CountDownLatch startLatch;
     private PublishThread[] publishThreads;
     private Map<String, List<MessageListenerImpl>> listenerMap;
+    
+    @Parameterized.Parameter
+    public boolean multiThreadingEnabled;
+    
 
     @Before
     public void setUp() {
         TopicConfig topicConfig = new TopicConfig();
         topicConfig.setName("topic*");
+        topicConfig.setMultiThreadingEnabled(multiThreadingEnabled);
 
         Config config = new Config();
         config.addTopicConfig(topicConfig);

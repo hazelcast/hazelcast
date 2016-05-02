@@ -177,7 +177,7 @@ public abstract class TcpIpConnection_TransferStressBaseTest extends TcpIpConnec
                 } else {
                     normalPackets++;
                 }
-                writeHandler.offer(packet);
+                writeHandler.write(packet);
 
                 long now = System.currentTimeMillis();
                 if (now > prev + 2000) {

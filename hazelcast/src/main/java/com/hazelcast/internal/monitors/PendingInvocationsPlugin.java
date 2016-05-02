@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
@@ -57,12 +56,11 @@ public final class PendingInvocationsPlugin extends PerformanceMonitorPlugin {
     private final ItemCounter<Class> occurrenceMap = new ItemCounter<Class>();
     private final long periodMillis;
     private final int threshold;
-    private final ILogger logger;
 
     public PendingInvocationsPlugin(NodeEngineImpl nodeEngine) {
+        super(nodeEngine.getLogger(PendingInvocationsPlugin.class));
         InternalOperationService operationService = nodeEngine.getOperationService();
         this.invocationRegistry = ((OperationServiceImpl) operationService).getInvocationRegistry();
-        this.logger = nodeEngine.getLogger(PendingInvocationsPlugin.class);
         HazelcastProperties props = nodeEngine.getProperties();
         this.periodMillis = props.getMillis(PERIOD_SECONDS);
         this.threshold = props.getInteger(THRESHOLD);

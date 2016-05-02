@@ -22,10 +22,10 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
-import com.hazelcast.map.impl.eviction.policies.MapEvictionPolicy;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
@@ -42,7 +42,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
@@ -50,7 +49,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
-import static com.hazelcast.map.impl.eviction.policies.MapEvictionPolicies.getMapEvictionPolicy;
+import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
@@ -85,8 +84,8 @@ public class MapContainer {
 
     protected WanReplicationPublisher wanReplicationPublisher;
     protected MapMergePolicy wanMergePolicy;
-    protected Evictor evictor;
 
+    protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
 
 
@@ -109,21 +108,24 @@ public class MapContainer {
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
         this.indexes = new Indexes((InternalSerializationService) serializationService, extractors);
-        this.evictor = createEvictor(mapConfig, mapServiceContext);
         this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
+        initEvictor();
     }
 
     // this method is overridden.
-    Evictor createEvictor(MapConfig mapConfig, MapServiceContext mapServiceContext) {
-        MemoryInfoAccessor memoryInfoAccessor = new RuntimeMemoryInfoAccessor();
-        EvictionChecker evictionChecker = new EvictionChecker(memoryInfoAccessor, mapServiceContext);
-        MapEvictionPolicy evictionPolicy = getMapEvictionPolicy(mapConfig.getEvictionPolicy());
-        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
-
-        return new EvictorImpl(evictionChecker, evictionPolicy, partitionService);
+    public void initEvictor() {
+        MapEvictionPolicy mapEvictionPolicy = mapConfig.getMapEvictionPolicy();
+        if (mapEvictionPolicy == null) {
+            evictor = NULL_EVICTOR;
+        } else {
+            EvictionChecker evictionChecker = new EvictionChecker(new RuntimeMemoryInfoAccessor(), mapServiceContext);
+            IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+            evictor = new EvictorImpl(mapEvictionPolicy, evictionChecker, partitionService);
+        }
     }
+
 
     // overridden in different context.
     ConstructorFunction<Void, RecordFactory> createRecordFactoryConstructor(final SerializationService serializationService) {
@@ -138,11 +140,9 @@ public class MapContainer {
                     default:
                         throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getInMemoryFormat());
                 }
-
             }
         };
     }
-
 
     public void initWanReplication(NodeEngine nodeEngine) {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
@@ -261,7 +261,7 @@ public class MapContainer {
         return evictor;
     }
 
-    // only used for testing purposes.
+    // only used for testing purposes
     public void setEvictor(Evictor evictor) {
         this.evictor = evictor;
     }

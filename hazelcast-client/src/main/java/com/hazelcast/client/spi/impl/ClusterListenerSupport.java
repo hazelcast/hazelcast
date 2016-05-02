@@ -20,6 +20,7 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
@@ -33,7 +34,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -48,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
+import static com.hazelcast.util.StringUtil.timeToString;
+import static java.lang.String.format;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
@@ -75,8 +78,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
         ThreadGroup threadGroup = client.getThreadGroup();
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        PoolExecutorThreadFactory threadFactory =
-                new PoolExecutorThreadFactory(threadGroup, client.getName() + ".cluster-", classLoader);
+        SingleExecutorThreadFactory threadFactory =
+                new SingleExecutorThreadFactory(threadGroup, classLoader, client.getName() + ".cluster-");
         return Executors.newSingleThreadExecutor(threadFactory);
     }
 
@@ -245,7 +248,14 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     @Override
     public void heartBeatStopped(Connection connection) {
         if (connection.getEndPoint().equals(ownerConnectionAddress)) {
-            connectionManager.destroyConnection(connection, new TargetDisconnectedException("Heartbeat stopped"));
+            ClientConnection clientConnection = (ClientConnection) connection;
+
+            Exception ex = new TargetDisconnectedException(format(
+                    "Disconnecting from member %s due to heartbeat problems. Current time: %s. Last heartbeat: %s",
+                    clientConnection.getRemoteEndpoint(),
+                    timeToString(System.currentTimeMillis()),
+                    timeToString(clientConnection.getLastHeartbeatMillis())), clientConnection.getCloseCause());
+            connectionManager.destroyConnection(connection, ex);
         }
     }
 }

@@ -26,13 +26,17 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 
 public abstract class ClientListenerServiceImpl implements ClientListenerService {
@@ -41,6 +45,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     protected final ClientExecutionServiceImpl executionService;
     protected final SerializationService serializationService;
     protected final ClientInvocationService invocationService;
+    protected final ExecutorService registrationExecutor;
     protected final ILogger logger;
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap
             = new ConcurrentHashMap<Long, EventHandler>();
@@ -53,8 +58,14 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         invocationService = client.getInvocationService();
         serializationService = client.getSerializationService();
         logger = client.getLoggingService().getLogger(ClientListenerService.class);
-        eventExecutor = new StripedExecutor(logger, client.getName() + ".event",
-                client.getThreadGroup(), eventThreadCount, eventQueueCapacity);
+        ThreadGroup threadGroup = client.getThreadGroup();
+        String name = client.getName();
+        eventExecutor = new StripedExecutor(logger, name + ".event",
+                threadGroup, eventThreadCount, eventQueueCapacity);
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+
+        ThreadFactory threadFactory = new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".eventRegistration-");
+        registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
     }
 
     public void addEventHandler(long callId, EventHandler handler) {
@@ -79,6 +90,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     public void shutdown() {
         eventExecutor.shutdown();
+        ClientExecutionServiceImpl.shutdownExecutor("registrationExecutor", registrationExecutor, logger);
     }
 
     public StripedExecutor getEventExecutor() {

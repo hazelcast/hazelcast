@@ -79,7 +79,7 @@ final class PerformanceLog {
     public void render(PerformanceMonitorPlugin plugin) {
         try {
             if (file == null) {
-                file = new File(format(fileName, index));
+                file = new File(performanceMonitor.directory, format(fileName, index));
                 bufferedWriter = newWriter();
                 renderStaticPlugins();
             }

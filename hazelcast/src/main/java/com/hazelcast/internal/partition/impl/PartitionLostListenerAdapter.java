@@ -34,4 +34,5 @@ class PartitionLostListenerAdapter implements PartitionEventListener<PartitionLo
     public void onEvent(PartitionLostEvent event) {
         listener.partitionLost(event);
     }
+
 }

@@ -16,5 +16,7 @@
 
 /**
  * <p>Contains functionality for the TCP/IP Networking between cluster members<br/>
+ *
+ * This whole package is internal and no compatibility will be provided.
  */
 package com.hazelcast.nio.tcp;

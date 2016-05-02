@@ -23,7 +23,8 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
@@ -35,7 +36,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -119,7 +119,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
     public void beforeMigration(PartitionMigrationEvent event) {
     }
 
-    public Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
+    protected Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
         Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
         IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
@@ -136,32 +136,32 @@ public abstract class CollectionService implements ManagedService, RemoteService
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            clearMigrationData(event.getPartitionId());
+            clearCollectionsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId());
+            clearCollectionsHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
     }
 
-    @Override
-    public void clearPartitionReplica(int partitionId) {
-        clearMigrationData(partitionId);
-    }
-
-    private void clearMigrationData(int partitionId) {
-        final Set<? extends Map.Entry<String, ? extends CollectionContainer>> entrySet = getContainerMap().entrySet();
-        final Iterator<? extends Map.Entry<String, ? extends CollectionContainer>> iterator = entrySet.iterator();
+    private void clearCollectionsHavingLesserBackupCountThan(int partitionId, int thresholdReplicaIndex) {
+        Set<? extends Map.Entry<String, ? extends CollectionContainer>> entrySet = getContainerMap().entrySet();
+        Iterator<? extends Map.Entry<String, ? extends CollectionContainer>> iterator = entrySet.iterator();
         IPartitionService partitionService = nodeEngine.getPartitionService();
+
         while (iterator.hasNext()) {
-            final Map.Entry<String, ? extends CollectionContainer> entry = iterator.next();
-            final String name = entry.getKey();
-            final CollectionContainer container = entry.getValue();
+            Map.Entry<String, ? extends CollectionContainer> entry = iterator.next();
+            String name = entry.getKey();
+            CollectionContainer container = entry.getValue();
             int containerPartitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
-            if (containerPartitionId == partitionId) {
+            if (containerPartitionId != partitionId) {
+                continue;
+            }
+
+            if (thresholdReplicaIndex < 0 || thresholdReplicaIndex > container.getConfig().getTotalBackupCount()) {
                 container.destroy();
                 iterator.remove();
             }

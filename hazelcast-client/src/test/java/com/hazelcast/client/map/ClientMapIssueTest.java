@@ -232,8 +232,82 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         final PagingPredicate predicate = new PagingPredicate(pageSize);
         predicate.nextPage();
 
-        final Collection<Integer> values = map.values(predicate);
+        Collection<Integer> values = map.values(predicate);
         assertEquals(pageSize, values.size());
+
+        /**
+         * There may be cases when the server may return a list of entries larger than the requested page size , in this case
+         * the client should not put any anchor into the list that is on a page greater than the requested page. The case occurs
+         * when multiple members exist in the cluster. E.g.:
+         * pageSize:5
+         * page:2
+         * Map entries are: (0,0), (1, 1), ... (50, 50)
+         * server may return entries: 5, 6,7,8,9,10,13, 15, 16, 19 . We should not put (19, 19) as an anchor for page 2 but
+         * only (9, 9) for page 1. The below code tests this issue.
+         */
+        // get the entries for page 0
+        predicate.setPage(0);
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        int i = 0;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // get the entries for page 0, double check if calling second time works fine
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = 0;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // get page 1, predicate anchors should be updated accordingly
+        predicate.nextPage();
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = pageSize;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // Make sure that the anchor is the last entry of the first page. i.e. it is (9, 9)
+        Map.Entry anchor = predicate.getAnchor();
+        assertEquals((2 * pageSize) -1, anchor.getKey());
+        assertEquals((2 * pageSize) -1, anchor.getValue());
+
+        // jump to page 4
+        predicate.setPage(4);
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = 4 * pageSize;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // Make sure that the new predicate is page 4 and last entry is: (24, 24)
+        anchor = predicate.getAnchor();
+        assertEquals((5 * pageSize) - 1, anchor.getKey());
+        assertEquals((5 * pageSize) - 1, anchor.getValue());
+
+        // jump to page 9
+        predicate.setPage(9);
+        values = map.values(predicate);
+        assertEquals(pageSize, values.size());
+        i = 9 * pageSize;
+        for (Integer value : values) {
+            assertEquals(i, value.intValue());
+            ++i;
+        }
+
+        // make sure that the anchor is now (10 * 5) -1 = (49, 49)
+        anchor = predicate.getAnchor();
+        assertEquals((10 * pageSize) -1, anchor.getKey());
+        assertEquals((10 * pageSize) -1, anchor.getValue());
     }
 
     @Test

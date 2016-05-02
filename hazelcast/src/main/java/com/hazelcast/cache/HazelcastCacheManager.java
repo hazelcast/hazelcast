@@ -29,6 +29,11 @@ public interface HazelcastCacheManager
         extends CacheManager {
 
     /**
+     * Hazelcast's {@link javax.cache.CacheManager}'s prefix to be appended to the head of the cache name.
+     */
+    String CACHE_MANAGER_PREFIX = "/hz/";
+
+    /**
      * Gets cache name by adding manager prefix.
      *
      * @param name pure cache name with prefix

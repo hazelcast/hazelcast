@@ -29,9 +29,11 @@ import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 
+@PrivateApi
 public interface IOService {
 
     int KILO_BYTE = 1024;

@@ -424,7 +424,7 @@ public class ClusterJoinManager {
         nodeEngine.getOperationService().send(op, target);
     }
 
-    boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
+    private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, Connection connection) {
         MemberImpl member = clusterService.getMember(joinMessage.getAddress());
         if (member == null) {
             return false;
@@ -441,9 +441,11 @@ public class ClusterJoinManager {
                 Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
                 boolean isPostJoinOperation = postJoinOps != null && postJoinOps.length > 0;
                 PostJoinOperation postJoinOp = isPostJoinOperation ? new PostJoinOperation(postJoinOps) : null;
+                PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
+
                 Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()),
                         postJoinOp, clusterClock.getClusterTime(), clusterStateManager.getState(),
-                        node.partitionService.createPartitionState(), false);
+                        partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
             } else {
                 sendMasterAnswer(target);
@@ -494,7 +496,7 @@ public class ClusterJoinManager {
 
                 int count = members.size() - 1 + setJoins.size();
                 List<Future> calls = new ArrayList<Future>(count);
-                PartitionRuntimeState partitionState = node.partitionService.createPartitionState();
+                PartitionRuntimeState partitionState = node.getPartitionService().createPartitionState();
                 for (MemberInfo member : setJoins) {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,

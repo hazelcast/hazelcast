@@ -22,7 +22,7 @@ public class CachePermission extends InstancePermission {
     private static final int REMOVE = 8;
     private static final int READ = 16;
     private static final int LISTEN = 32;
-    private static final int ALL = PUT | REMOVE | READ | LISTEN;
+    private static final int ALL = CREATE | DESTROY | PUT | REMOVE | READ | LISTEN;
 
     public CachePermission(String name, String... actions) {
         super(name, actions);

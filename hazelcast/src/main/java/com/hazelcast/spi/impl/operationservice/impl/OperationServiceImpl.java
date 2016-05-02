@@ -125,16 +125,18 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final OperationBackupHandler operationBackupHandler;
     final BackpressureRegulator backpressureRegulator;
     final long defaultCallTimeoutMillis;
+    final InvocationMonitor invocationMonitor;
 
     private final SlowOperationDetector slowOperationDetector;
     private final AsyncResponseHandler asyncResponseHandler;
     private final InternalSerializationService serializationService;
-    private final InvocationMonitor invocationMonitor;
     private final ResponseHandler responseHandler;
+    private final Address thisAddress;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
+        this.thisAddress = node.getThisAddress();
         this.logger = node.getLogger(OperationService.class);
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
@@ -151,7 +153,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel);
 
         this.invocationMonitor = new InvocationMonitor(
-                nodeEngine, node.getThisAddress(), node.getHazelcastThreadGroup(), node.getProperties(),
+                nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(),
                 invocationRegistry, logger, (InternalSerializationService) nodeEngine.getSerializationService(),
                 nodeEngine.getServiceManager());
 
@@ -168,7 +170,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 responseHandler);
 
         this.operationExecutor = new OperationExecutorImpl(
-                hazelcastProperties, node.loggingService, node.getThisAddress(), new OperationRunnerFactoryImpl(this),
+                hazelcastProperties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
                 node.getHazelcastThreadGroup(), node.getNodeExtension());
 
         ExecutionService executionService = nodeEngine.getExecutionService();
@@ -386,7 +388,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public boolean send(Operation op, Address target) {
         checkNotNull(target, "Target is required!");
 
-        if (nodeEngine.getThisAddress().equals(target)) {
+        if (thisAddress.equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
 
@@ -407,7 +409,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public boolean send(Response response, Address target) {
         checkNotNull(target, "Target is required!");
 
-        if (nodeEngine.getThisAddress().equals(target)) {
+        if (thisAddress.equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
         }
 

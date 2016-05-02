@@ -224,7 +224,7 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
     }
 
     @Override
-    public void destroy() {
+    public void close() {
         //todo:
         // ioThread race, shutdown can end up on the old selector
         metricRegistry.deregister(this);

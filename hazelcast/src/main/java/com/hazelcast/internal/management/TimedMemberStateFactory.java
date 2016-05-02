@@ -17,7 +17,6 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.impl.CacheDistributedObject;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -329,7 +328,6 @@ public class TimedMemberStateFactory {
 
 
     private ICacheService getCacheService() {
-        CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-        return setupRef.getService();
+        return instance.node.nodeEngine.getService(ICacheService.SERVICE_NAME);
     }
 }

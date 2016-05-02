@@ -16,9 +16,12 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * Responsible for managing {@link com.hazelcast.nio.Connection} objects.
  */
+@PrivateApi
 public interface ConnectionManager {
 
 

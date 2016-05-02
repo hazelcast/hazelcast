@@ -26,6 +26,7 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
@@ -88,6 +89,7 @@ import static com.hazelcast.config.XmlElements.SET;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
+import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
@@ -1047,7 +1049,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value));
             } else if ("eviction-policy".equals(nodeName)) {
-                mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
+                if(mapConfig.getMapEvictionPolicy() == null) {
+                    mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
+                }
             } else if ("max-size".equals(nodeName)) {
                 MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
                 Node maxSizePolicy = node.getAttributes().getNamedItem("policy");
@@ -1103,6 +1107,14 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapConfig.setQuorumName(value);
             } else if ("query-caches".equals(nodeName)) {
                 mapQueryCacheHandler(node, mapConfig);
+            } else if ("map-eviction-policy-class-name".equals(nodeName)) {
+                String className = checkHasText(getTextContent(node), "map-eviction-policy-class-name cannot be null or empty");
+                try {
+                    MapEvictionPolicy mapEvictionPolicy = ClassLoaderUtil.newInstance(config.getClassLoader(), className);
+                    mapConfig.setMapEvictionPolicy(mapEvictionPolicy);
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
             }
         }
         this.config.addMapConfig(mapConfig);
@@ -1623,6 +1635,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 tConfig.setStatisticsEnabled(getBooleanValue(getTextContent(n)));
+            } else if ("multi-threading-enabled".equals(nodeName)) {
+                tConfig.setMultiThreadingEnabled(getBooleanValue(getTextContent(n)));
             }
         }
         config.addTopicConfig(tConfig);

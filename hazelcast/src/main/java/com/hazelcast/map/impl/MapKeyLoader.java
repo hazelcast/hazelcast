@@ -21,6 +21,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
@@ -72,6 +73,8 @@ public class MapKeyLoader {
 
     private static final long LOADING_TRIGGER_DELAY = SECONDS.toMillis(5);
     private static final long KEY_DISTRIBUTION_TIMEOUT_MINUTES = 15;
+
+    private ILogger logger;
 
     private String mapName;
     private OperationService opService;
@@ -132,6 +135,7 @@ public class MapKeyLoader {
         this.clusterService = clusterService;
         this.toData = serialize;
         this.execService = execService;
+        this.logger = getLogger(MapKeyLoader.class);
     }
 
     public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
@@ -142,6 +146,10 @@ public class MapKeyLoader {
 
         role.nextOrStay(newRole);
         state.next(State.LOADING);
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("startInitialLoad invoked " + getStateMessage());
+        }
 
         switch (newRole) {
             case SENDER:
@@ -274,6 +282,10 @@ public class MapKeyLoader {
     }
 
     private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) throws Exception {
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("sendKeysInBatches invoked " + getStateMessage());
+        }
 
         int clusterSize = partitionService.getMemberPartitionsMap().size();
         Iterator<Object> keys = null;
@@ -438,5 +450,16 @@ public class MapKeyLoader {
 
     public void onKeyLoad(ExecutionCallback<Boolean> callback) {
         loadFinished.andThen(callback, execService.getExecutor(MAP_LOAD_ALL_KEYS_EXECUTOR));
+    }
+
+    public void promoteToLoadedOnMigration() {
+        // The state machine cannot skip states so we need to promote to loaded step by step
+        state.next(State.LOADING);
+        state.next(State.LOADED);
+    }
+
+    private String getStateMessage() {
+        return "on partitionId=" + partitionId + " on " + clusterService.getThisAddress() + " role=" + role
+                + " state=" + state;
     }
 }

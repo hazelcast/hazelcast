@@ -48,6 +48,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
+import static com.hazelcast.util.StringUtil.timeToString;
+import static java.lang.String.format;
 
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService {
@@ -213,9 +215,14 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                     }
                 }
 
-
                 iter.remove();
-                invocation.notifyException(new TargetDisconnectedException(connection.getRemoteEndpoint()));
+
+                Exception ex = new TargetDisconnectedException(format(
+                        "Disconnecting from member %s due to heartbeat problems. Current time: %s. Last heartbeat: %s",
+                        connection.getRemoteEndpoint(),
+                        timeToString(System.currentTimeMillis()),
+                        timeToString(connection.getLastHeartbeatMillis())), connection.getCloseCause());
+                invocation.notifyException(ex);
             }
             if (expiredConnections != null) {
                 logExpiredConnections(expiredConnections);
@@ -230,7 +237,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                             + " packets which are not processed "
                             + " on " + expiredConnection.getRemoteEndpoint());
                 }
-
             }
         }
     }

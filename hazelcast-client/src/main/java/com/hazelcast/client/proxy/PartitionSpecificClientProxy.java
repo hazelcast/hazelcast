@@ -16,8 +16,14 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ExceptionUtil;
 
 /**
  * Base class for proxies of distributed objects that lives in on partition.
@@ -41,5 +47,17 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
 
     protected <T> T invokeOnPartitionInterruptibly(ClientMessage clientMessage) throws InterruptedException {
         return invokeOnPartitionInterruptibly(clientMessage, partitionId);
+    }
+
+    protected <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
+                                                                   ClientMessageDecoder clientMessageDecoder) {
+        SerializationService serializationService = getContext().getSerializationService();
+
+        try {
+            final ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
+            return new ClientDelegatingFuture<T>(future, serializationService, clientMessageDecoder);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 }

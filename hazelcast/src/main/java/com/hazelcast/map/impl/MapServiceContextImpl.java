@@ -55,6 +55,7 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -174,6 +175,21 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public void clearMapsHavingLesserBackupCountThan(int partitionId, int backupCount) {
+        PartitionContainer container = getPartitionContainer(partitionId);
+        if (container != null) {
+            Iterator<RecordStore> iter = container.getMaps().values().iterator();
+            while (iter.hasNext()) {
+                RecordStore recordStore = iter.next();
+                if (backupCount > recordStore.getMapContainer().getTotalBackupCount()) {
+                    recordStore.clearPartition(false);
+                    iter.remove();
+                }
+            }
+        }
+    }
+
+    @Override
     public void clearPartitionData(int partitionId) {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
@@ -281,6 +297,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public RecordStore getRecordStore(int partitionId, String mapName) {
         return getPartitionContainer(partitionId).getRecordStore(mapName);
+    }
+
+    @Override
+    public RecordStore getRecordStore(int partitionId, String mapName, boolean skipLoadingOnCreate) {
+        return getPartitionContainer(partitionId).getRecordStore(mapName, skipLoadingOnCreate);
     }
 
     @Override

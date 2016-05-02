@@ -22,7 +22,6 @@ public class ConfigPropertiesPluginTest extends AbstractPerformanceMonitorPlugin
 
     @Before
     public void setup() {
-        setLoggingLog4j();
         Config config = new Config();
         config.setProperty("property1", "value1");
         HazelcastInstance hz = createHazelcastInstance(config);

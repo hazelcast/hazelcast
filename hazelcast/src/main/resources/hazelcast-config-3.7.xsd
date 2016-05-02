@@ -170,6 +170,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="map-eviction-policy-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Internal eviction algorithm finds most appropriate entry
+                        to evict from this map by using this policy.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="max-size" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -955,6 +963,14 @@
                         <xs:element name="message-listener" type="listener-base" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                 </xs:complexType>
+            </xs:element>
+            <xs:element name="multi-threading-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Default is `false`, meaning only one dedicated thread will handle topic messages. 
+                        When multi-threading enabled (true) all threads from event thread pool can be used for message handling.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">

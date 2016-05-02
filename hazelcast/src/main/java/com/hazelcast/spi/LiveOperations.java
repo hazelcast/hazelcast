@@ -20,6 +20,7 @@ import com.hazelcast.nio.Address;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,5 +85,15 @@ public final class LiveOperations {
 
     public void clear() {
         callIdsByMember.clear();
+    }
+
+    /**
+     * Makes sure that a List of counters is made for a member. The reason this method exists, is that we want to make sure
+     * that a operation-heartbeat is always send even if there are no running operations.
+     *
+     * @param address the address of the member.
+     */
+    public void initMember(Address address) {
+        callIdsByMember.put(address, new LinkedList<Long>());
     }
 }

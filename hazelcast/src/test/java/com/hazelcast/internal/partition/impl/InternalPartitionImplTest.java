@@ -192,27 +192,31 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testOnDeadAddress_whenAddressExists() throws Exception {
+    public void testRemoveAddress_whenAddressExists() throws Exception {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             replicaAddresses[i] = newAddress(5000 + i);
         }
         partition.setInitialReplicaAddresses(replicaAddresses);
 
-        assertTrue(partition.onDeadAddress(thisAddress));
-        for (int i = 0; i < MAX_REPLICA_COUNT - 1; i++) {
-            assertEquals(replicaAddresses[i + 1], partition.getReplicaAddress(i));
+        int replicaIndex = partition.getReplicaIndex(thisAddress);
+        assertEquals(replicaIndex, partition.removeAddress(thisAddress));
+
+        assertNull(partition.getReplicaAddress(replicaIndex));
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            if (i != replicaIndex) {
+                assertEquals(replicaAddresses[i], partition.getReplicaAddress(i));
+            }
         }
-        assertNull(partition.getReplicaAddress(MAX_REPLICA_COUNT - 1));
     }
 
     @Test
-    public void testOnDeadAddress_whenAddressNOTExists() throws Exception {
+    public void testRemoveAddress_whenAddressNOTExists() throws Exception {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             replicaAddresses[i] = newAddress(5000 + i);
         }
         partition.setInitialReplicaAddresses(replicaAddresses);
 
-        assertFalse(partition.onDeadAddress(newAddress(6000)));
+        assertEquals(-1, partition.removeAddress(newAddress(6000)));
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             assertEquals(replicaAddresses[i], partition.getReplicaAddress(i));
         }

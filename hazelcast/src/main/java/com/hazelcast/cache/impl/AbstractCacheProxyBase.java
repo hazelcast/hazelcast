@@ -16,17 +16,16 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.PrefixedDistributedObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -58,7 +57,9 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
  * @param <V> the type of value.
  * @see com.hazelcast.cache.impl.CacheProxy
  */
-abstract class AbstractCacheProxyBase<K, V> {
+abstract class AbstractCacheProxyBase<K, V>
+        extends AbstractDistributedObject<ICacheService>
+        implements PrefixedDistributedObject {
 
     static final int TIMEOUT = 10;
 
@@ -78,6 +79,7 @@ abstract class AbstractCacheProxyBase<K, V> {
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
     protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
+        super(nodeEngine, cacheService);
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
@@ -88,6 +90,32 @@ abstract class AbstractCacheProxyBase<K, V> {
         this.serializationService = nodeEngine.getSerializationService();
         this.operationProvider =
                 cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
+    }
+
+    protected void injectDependencies(Object obj) {
+        if (obj instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) obj).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+        }
+    }
+
+    @Override
+    public String getServiceName() {
+        return ICacheService.SERVICE_NAME;
+    }
+
+    @Override
+    protected String getDistributedObjectName() {
+        return nameWithPrefix;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getPrefixedName() {
+        return nameWithPrefix;
     }
 
     protected void ensureOpen() {
@@ -119,22 +147,14 @@ abstract class AbstractCacheProxyBase<K, V> {
         }
     }
 
-    public void destroy() {
+    @Override
+    protected boolean preDestroy() {
         close();
         if (!isDestroyed.compareAndSet(false, true)) {
-            return;
+            return false;
         }
         isClosed.set(true);
-
-        Operation operation = new CacheDestroyOperation(cacheConfig.getNameWithPrefix());
-        int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
-        OperationService operationService = getNodeEngine().getOperationService();
-        InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
-        // TODO What happens in exception case? Cache doesn't get destroyed
-        f.join();
-
-        cacheService.deleteCache(getDistributedObjectName(), true, null, true);
-        f.join();
+        return true;
     }
 
     public boolean isClosed() {
@@ -156,27 +176,7 @@ abstract class AbstractCacheProxyBase<K, V> {
 
     protected abstract void closeListeners();
 
-    protected String getDistributedObjectName() {
-        return nameWithPrefix;
-    }
-
-    protected String getServiceName() {
-        return CacheService.SERVICE_NAME;
-    }
-
-    protected ICacheService getService() {
-        return cacheService;
-    }
-
-    protected NodeEngine getNodeEngine() {
-        if (nodeEngine == null || !nodeEngine.isRunning()) {
-            throw new HazelcastInstanceNotActiveException();
-        }
-        return nodeEngine;
-    }
-
     protected void submitLoadAllTask(LoadAllTask loadAllTask) {
-
         final ExecutionService executionService = nodeEngine.getExecutionService();
         final CompletableFutureTask<?> future =
                 (CompletableFutureTask<?>) executionService.submit("loadAll-" + nameWithPrefix, loadAllTask);
@@ -214,6 +214,8 @@ abstract class AbstractCacheProxyBase<K, V> {
         @Override
         public void run() {
             try {
+                injectDependencies(completionListener);
+
                 OperationService operationService = getNodeEngine().getOperationService();
                 OperationFactory operationFactory;
 
@@ -260,7 +262,33 @@ abstract class AbstractCacheProxyBase<K, V> {
             return ownerKeys;
         }
 
+    }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractCacheProxyBase that = (AbstractCacheProxyBase) o;
+        if (nameWithPrefix != null ? !nameWithPrefix.equals(that.nameWithPrefix) : that.nameWithPrefix != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return nameWithPrefix != null ? nameWithPrefix.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '{' + "name=" + name + ", nameWithPrefix=" + nameWithPrefix + '}';
     }
 
 }

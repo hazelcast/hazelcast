@@ -59,7 +59,7 @@ public final class HazelcastProperty {
         this(name, groupProperty.getDefaultValue(), groupProperty.timeUnit, groupProperty);
     }
 
-    protected HazelcastProperty(String name, String defaultValue) {
+    public HazelcastProperty(String name, String defaultValue) {
         this(name, defaultValue, null);
     }
 

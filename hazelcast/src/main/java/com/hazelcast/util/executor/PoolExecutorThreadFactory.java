@@ -37,7 +37,7 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
 
     public PoolExecutorThreadFactory(HazelcastThreadGroup threadGroup, String threadNamePrefix) {
         super(threadGroup.getInternalThreadGroup(), threadGroup.getClassLoader());
-        this.threadNamePrefix = threadNamePrefix;
+        this.threadNamePrefix = threadGroup.getThreadPoolNamePrefix(threadNamePrefix);
     }
 
     @Override

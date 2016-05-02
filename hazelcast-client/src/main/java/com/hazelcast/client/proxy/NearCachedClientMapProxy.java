@@ -44,7 +44,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
@@ -151,19 +150,19 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected Future<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
         invalidateNearCache(keyData);
         return super.putAsyncInternal(ttl, timeunit, keyData, valueData);
     }
 
     @Override
-    protected Future<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
+    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
         invalidateNearCache(keyData);
         return super.setAsyncInternal(ttl, timeunit, keyData, valueData);
     }
 
     @Override
-    protected Future<V> removeAsyncInternal(Data keyData) {
+    protected ICompletableFuture<V> removeAsyncInternal(Data keyData) {
         invalidateNearCache(keyData);
         return super.removeAsyncInternal(keyData);
     }
@@ -281,7 +280,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public Future submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+    public ICompletableFuture submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
         invalidateNearCache(keyData);
         return super.submitToKeyInternal(keyData, entryProcessor);
     }

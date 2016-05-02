@@ -303,6 +303,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
+                                        -ea
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>

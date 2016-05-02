@@ -184,7 +184,6 @@ public final class TcpIpConnection implements Connection {
      * Starting means that the connection is going to register itself to listen to incoming traffic.
      */
     public void start() {
-        socketWriter.start();
         socketReader.init();
     }
 
@@ -196,7 +195,7 @@ public final class TcpIpConnection implements Connection {
             }
             return false;
         }
-        socketWriter.offer(frame);
+        socketWriter.write(frame);
         return true;
     }
 
@@ -230,8 +229,8 @@ public final class TcpIpConnection implements Connection {
 
         try {
             if (socketChannel != null && socketChannel.isOpen()) {
-                socketReader.destroy();
-                socketWriter.shutdown();
+                socketReader.close();
+                socketWriter.close();
                 socketChannel.close();
             }
         } catch (Exception e) {

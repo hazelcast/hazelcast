@@ -29,6 +29,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.monitors.BuildInfoPlugin;
 import com.hazelcast.internal.monitors.ConfigPropertiesPlugin;
+import com.hazelcast.internal.monitors.MemberHazelcastInstanceInfoPlugin;
 import com.hazelcast.internal.monitors.InvocationPlugin;
 import com.hazelcast.internal.monitors.MetricsPlugin;
 import com.hazelcast.internal.monitors.OverloadedConnectionsPlugin;
@@ -49,6 +50,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
@@ -190,6 +192,7 @@ public class NodeEngineImpl implements NodeEngine {
         performanceMonitor.register(new MetricsPlugin(this));
         performanceMonitor.register(new SlowOperationPlugin(this));
         performanceMonitor.register(new InvocationPlugin(this));
+        performanceMonitor.register(new MemberHazelcastInstanceInfoPlugin(this));
     }
 
     public ServiceManager getServiceManager() {
@@ -324,7 +327,8 @@ public class NodeEngineImpl implements NodeEngine {
         T service = serviceManager.getService(serviceName);
         if (service == null) {
             if (isRunning()) {
-                throw new HazelcastException("Service with name '" + serviceName + "' not found!");
+                throw new HazelcastException("Service with name '" + serviceName + "' not found!",
+                        new ServiceNotFoundException("Service with name '" + serviceName + "' not found!"));
             } else {
                 throw new RetryableHazelcastException("HazelcastInstance[" + getThisAddress()
                         + "] is not active!");

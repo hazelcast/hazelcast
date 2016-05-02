@@ -43,6 +43,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.String.format;
+
 class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
         implements EventHandler<ClientMessage> {
 
@@ -161,11 +163,17 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         logger.info(membersString());
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
-            connectionManager.destroyConnection(connection, new TargetDisconnectedException("Member left the cluster"));
+            connectionManager.destroyConnection(connection, newTargetDisconnectException(member));
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
+    }
+
+    private Exception newTargetDisconnectException(Member member) {
+        return new TargetDisconnectedException(format("Closing connection to member %s. "
+                + " The client has closed the connection to this member, after receiving a member left event "
+                + " from the cluster.", member.getAddress()));
     }
 
     private void fireMembershipEvent(List<MembershipEvent> events) {
@@ -193,8 +201,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             if (clusterService.getMember(address) == null) {
                 Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
-                    connectionManager.destroyConnection(connection,
-                            new TargetDisconnectedException("Member left detected"));
+                    connectionManager.destroyConnection(connection, newTargetDisconnectException(member));
                 }
             }
         }

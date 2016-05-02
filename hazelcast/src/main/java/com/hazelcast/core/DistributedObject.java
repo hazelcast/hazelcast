@@ -46,6 +46,10 @@ public interface DistributedObject {
     /**
      * Returns the unique name for this DistributedObject. The returned value will never be null.
      *
+     * The suggested way for getting name is retrieving it through
+     * {@link com.hazelcast.core.DistributedObjectUtil#getName(DistributedObject)}
+     * because this might be also a {@link com.hazelcast.core.PrefixedDistributedObject}.
+     *
      * @return the unique name for this object.
      */
     String getName();

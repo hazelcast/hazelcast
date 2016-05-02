@@ -21,7 +21,6 @@ import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -33,16 +32,13 @@ import com.hazelcast.partition.membergroup.HostAwareMemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.SingleMemberGroupFactory;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,19 +53,14 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class PartitionStateGeneratorTest {
 
-    private static final boolean printState = false;
-
-    @BeforeClass
-    @AfterClass
-    public static void init() throws IOException {
-        Hazelcast.shutdownAll();
-    }
+    private static final boolean PRINT_STATE = false;
 
     @Test
     public void testRandomPartitionGenerator() throws Exception {
@@ -93,7 +84,7 @@ public class PartitionStateGeneratorTest {
                     g[i] = new DefaultMemberGroup();
                 }
                 for (Member member : members) {
-                    Address address = ((MemberImpl) member).getAddress();
+                    Address address = member.getAddress();
                     if (even(address.getHost().hashCode()) && even(address.getPort())) {
                         g[0].addMember(member);
                     } else if (even(address.getHost().hashCode()) && !even(address.getPort())) {
@@ -179,10 +170,7 @@ public class PartitionStateGeneratorTest {
             int memberCount = members[0];
             List<Member> memberList = createMembers(memberCount, maxSameHostCount);
             Collection<MemberGroup> groups = memberGroupFactory.createMemberGroups(memberList);
-            println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= "
-                    + members[0] + ", GROUP-COUNT= " + groups.size());
-            println();
-            Address[][] state = generator.initialize(memberGroupFactory.createMemberGroups(memberList), partitionCount);
+            Address[][] state = generator.arrange(groups, emptyPartitionArray(partitionCount));
             checkTestResult(state, groups, partitionCount);
             int previousMemberCount = memberCount;
             for (int j = 1; j < members.length; j++) {
@@ -198,13 +186,12 @@ public class PartitionStateGeneratorTest {
                         List<Member> extra = createMembers(last, (memberCount - previousMemberCount), maxSameHostCount);
                         memberList.addAll(extra);
                     } else {
+                        List<Member> removedMembers = memberList.subList(memberCount, memberList.size());
                         memberList = memberList.subList(0, memberCount);
-                        shift(state, memberList);
+                        remove(state, removedMembers);
                     }
                     groups = memberGroupFactory.createMemberGroups(memberList);
-                    println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= " + memberCount + ", GROUP-COUNT= " + groups.size());
-                    //todo
-                    state = generator.reArrange(memberGroupFactory.createMemberGroups(memberList), toPartitionView(state));
+                    state = generator.arrange(groups, toPartitionArray(state));
                     checkTestResult(state, groups, partitionCount);
                     previousMemberCount = memberCount;
                 }
@@ -212,16 +199,23 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private DummyInternalPartition[] toPartitionView(Address[][] state) {
-        DummyInternalPartition[] result = new DummyInternalPartition[state.length];
+    static InternalPartition[] toPartitionArray(Address[][] state) {
+        InternalPartition[] result = new InternalPartition[state.length];
         for (int partitionId = 0; partitionId < state.length; partitionId++) {
-            DummyInternalPartition partitionView = new DummyInternalPartition(state[partitionId]);
-            result[partitionId] = partitionView;
+            result[partitionId] = new DummyInternalPartition(state[partitionId]);
         }
         return result;
     }
 
-    private class DummyInternalPartition implements InternalPartition {
+    static InternalPartition[] emptyPartitionArray(int partitionCount) {
+        InternalPartition[] result = new InternalPartition[partitionCount];
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            result[partitionId] = new DummyInternalPartition(new Address[InternalPartition.MAX_REPLICA_COUNT]);
+        }
+        return result;
+    }
+
+    private static class DummyInternalPartition implements InternalPartition {
         private Address[] replicas;
 
         private DummyInternalPartition(Address[] replicas) {
@@ -264,36 +258,22 @@ public class PartitionStateGeneratorTest {
         }
     }
 
-    private static void shift(Address[][] state, List<Member> members) {
+    private static void remove(Address[][] state, List<Member> removedMembers) {
         Set<Address> addresses = new HashSet<Address>();
-        for (Member member : members) {
-            addresses.add(((MemberImpl) member).getAddress());
+        for (Member member : removedMembers) {
+            addresses.add(member.getAddress());
         }
-        for (int partitionId = 0; partitionId < state.length; partitionId++) {
-            Address[] replicas = state[partitionId];
+        for (Address[] replicas : state) {
             for (int i = 0; i < replicas.length; i++) {
                 if (replicas[i] != null && !addresses.contains(replicas[i])) {
-                    Address[] validAddresses = new Address[InternalPartition.MAX_REPLICA_COUNT - i];
-                    int k = 0;
-                    for (int a = i + 1; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
-                        Address address = replicas[a];
-                        if (address != null && addresses.contains(address)) {
-                            validAddresses[k++] = address;
-                        }
-                    }
-                    for (int a = 0; a < k; a++) {
-                        replicas[i + a] = validAddresses[a];
-                    }
-                    for (int a = i + k; a < InternalPartition.MAX_REPLICA_COUNT; a++) {
-                        replicas[a] = null;
-                    }
+                    replicas[i] = null;
                     break;
                 }
             }
         }
     }
 
-    private static List<Member> createMembers(int memberCount, int maxSameHostCount) throws Exception {
+    static List<Member> createMembers(int memberCount, int maxSameHostCount) throws Exception {
         return createMembers(null, memberCount, maxSameHostCount);
     }
 
@@ -334,22 +314,23 @@ public class PartitionStateGeneratorTest {
         return members;
     }
 
-    private void checkTestResult(final Address[][] state, final Collection<MemberGroup> groups, final int partitionCount) {
+    private void checkTestResult(Address[][] state, Collection<MemberGroup> groups, int partitionCount) {
         Iterator<MemberGroup> iter = groups.iterator();
         while (iter.hasNext()) {
             if (iter.next().size() == 0) {
                 iter.remove();
             }
         }
-        final int replicaCount = Math.min(groups.size(), InternalPartition.MAX_REPLICA_COUNT);
-        final Map<MemberGroup, GroupPartitionState> groupPartitionStates = new HashMap<MemberGroup, GroupPartitionState>();
-        final Set<Address> set = new HashSet<Address>();
-        final int avgPartitionPerGroup = partitionCount / groups.size();
+        int replicaCount = Math.min(groups.size(), InternalPartition.MAX_REPLICA_COUNT);
+        Map<MemberGroup, GroupPartitionState> groupPartitionStates = new HashMap<MemberGroup, GroupPartitionState>();
+        Set<Address> set = new HashSet<Address>();
+        int avgPartitionPerGroup = partitionCount / groups.size();
+
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address[] replicas = state[partitionId];
             for (int i = 0; i < replicaCount; i++) {
                 Address owner = replicas[i];
-                Assert.assertNotNull(owner);
+                assertNotNull(owner);
                 assertFalse("Duplicate owner of partition: " + partitionId,
                         set.contains(owner));
                 set.add(owner);
@@ -360,7 +341,7 @@ public class PartitionStateGeneratorTest {
                         break;
                     }
                 }
-                Assert.assertNotNull(group);
+                assertNotNull(group);
                 GroupPartitionState groupState = groupPartitionStates.get(group);
                 if (groupState == null) {
                     groupState = new GroupPartitionState();
@@ -372,58 +353,23 @@ public class PartitionStateGeneratorTest {
             }
             set.clear();
         }
-        print("Owner");
-        for (int i = 0; i < replicaCount; i++) {
-            if (i == 0) {
-                print("\t\t");
-            }
-            print("\tRep-" + i);
-        }
-        print("\tTotal");
-        println();
-        println("_______________________________________________________________________________________");
-        int k = 1;
         for (GroupPartitionState groupState : groupPartitionStates.values()) {
             for (Map.Entry<Address, Set<Integer>[]> entry : groupState.nodePartitionsMap.entrySet()) {
-                int total = 0;
-                print(entry.getKey().getHost() + ":" + entry.getKey().getPort());
                 Collection<Integer>[] partitions = entry.getValue();
                 for (int i = 0; i < replicaCount; i++) {
-                    final int avgPartitionPerNode = groupState.groupPartitions[i].size() / groupState.nodePartitionsMap.size();
-                    if (i == 0) {
-                        print("\t");
-                    }
-                    print('\t');
+                    int avgPartitionPerNode = groupState.groupPartitions[i].size() / groupState.nodePartitionsMap.size();
                     int count = partitions[i].size();
-                    print(count);
-                    total += partitions[i].size();
                     isInAllowedRange(count, avgPartitionPerNode, i, entry.getKey(), groups, partitionCount);
                 }
-                print('\t');
-                print(total);
-                println();
             }
-            println("----------------------------------------------------------------------------------------");
-            int total = 0;
-            print("Group" + (k++) + "[" + groupState.group.size() + "]");
             Collection<Integer>[] partitions = groupState.groupPartitions;
             for (int i = 0; i < replicaCount; i++) {
-                if (i == 0) {
-                    print("\t");
-                }
-                print('\t');
                 int count = partitions[i].size();
-                print(count);
-                total += partitions[i].size();
                 isInAllowedRange(count, avgPartitionPerGroup, i, groupState.group, groups, partitionCount);
             }
-            print('\t');
-            print(total);
-            println();
-            println();
         }
-        println();
-        println();
+
+        printTable(groupPartitionStates, replicaCount);
     }
 
     private static void isInAllowedRange(int count, int average, int replica,
@@ -441,20 +387,51 @@ public class PartitionStateGeneratorTest {
                 ", \nOwner: " + owner, count <= (float) (average) * r);
     }
 
-    private static void println(Object str) {
-        print(str);
-        println();
-    }
-
-    private static void println() {
-        print('\n');
-    }
-
-    private static void print(Object str) {
-        if (!printState) {
+    private static void printTable(Map<MemberGroup, GroupPartitionState> groupPartitionStates, int replicaCount) {
+        if (!PRINT_STATE) {
             return;
         }
-        System.out.print(str);
+
+        System.out.printf("%-20s", "Owner");
+        for (int i = 0; i < replicaCount; i++) {
+            System.out.printf("%-5s", "R-" + i);
+        }
+        System.out.printf("%5s%n", "Total");
+        System.out.println("_______________________________________________________________");
+        System.out.println();
+
+        int k = 1;
+        for (GroupPartitionState groupState : groupPartitionStates.values()) {
+            System.out.printf("%-20s%n", "MemberGroup[" + (k++) + "]");
+
+            for (Map.Entry<Address, Set<Integer>[]> entry : groupState.nodePartitionsMap.entrySet()) {
+                int total = 0;
+                System.out.printf("%-20s", entry.getKey().getHost() + ":" + entry.getKey().getPort());
+                Collection<Integer>[] partitions = entry.getValue();
+                for (int i = 0; i < replicaCount; i++) {
+                    int count = partitions[i].size();
+                    System.out.printf("%-5s", count);
+                    total += partitions[i].size();
+                }
+                System.out.printf("%-5s%n", total);
+            }
+
+            if (groupState.group.size() > 1) {
+                System.out.printf("%-20s", "Total");
+                int total = 0;
+                Collection<Integer>[] partitions = groupState.groupPartitions;
+                for (int i = 0; i < replicaCount; i++) {
+                    int count = partitions[i].size();
+                    System.out.printf("%-5s", count);
+                    total += partitions[i].size();
+                }
+                System.out.printf("%-5s%n", total);
+            }
+            System.out.println("---------------------------------------------------------------");
+            System.out.println();
+        }
+        System.out.println();
+        System.out.println();
     }
 
     private static class GroupPartitionState {

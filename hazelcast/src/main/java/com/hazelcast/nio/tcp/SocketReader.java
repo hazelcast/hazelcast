@@ -73,9 +73,10 @@ public interface SocketReader {
     void init();
 
     /**
-     * Destroys this SocketReader.
+     * Closes this SocketReader.
      *
-     * This method is called from an arbitrary thread and is only called once.
+     * This method can be called from an arbitrary thread, and should only be called once. This should be coordinated
+     * through the {@link TcpIpConnection#close()} method.
      */
-    void destroy();
+    void close();
 }

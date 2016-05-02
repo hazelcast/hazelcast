@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,7 +48,8 @@ public class MemberInfo implements DataSerializable {
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
         this.address = address;
         this.uuid = uuid;
-        this.attributes = new HashMap<String, Object>(attributes);
+        this.attributes = attributes == null || attributes.isEmpty()
+                ? Collections.<String, Object>emptyMap() : new HashMap<String, Object>(attributes);
         this.liteMember = liteMember;
     }
 

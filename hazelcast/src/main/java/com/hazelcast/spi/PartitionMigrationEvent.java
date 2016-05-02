@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.EventObject;
 
@@ -30,10 +30,17 @@ public class PartitionMigrationEvent extends EventObject {
 
     private final int partitionId;
 
-    public PartitionMigrationEvent(final MigrationEndpoint migrationEndpoint, final int partitionId) {
+    private final int currentReplicaIndex;
+
+    private final int newReplicaIndex;
+
+    public PartitionMigrationEvent(MigrationEndpoint migrationEndpoint, int partitionId,
+            int currentReplicaIndex, int newReplicaIndex) {
         super(partitionId);
         this.migrationEndpoint = migrationEndpoint;
         this.partitionId = partitionId;
+        this.currentReplicaIndex = currentReplicaIndex;
+        this.newReplicaIndex = newReplicaIndex;
     }
 
     /**
@@ -54,8 +61,33 @@ public class PartitionMigrationEvent extends EventObject {
         return partitionId;
     }
 
+    /**
+     * Gets the index of the partition replica that current member owns currently, before migration starts.
+     * This index will be in range of [0,6] if current member owns a replica of the partition. Otherwise it will be -1.
+     *
+     * @return index of the partition replica that current member owns currently
+     */
+    public int getCurrentReplicaIndex() {
+        return currentReplicaIndex;
+    }
+
+    /**
+     * Gets the index of the partition replica that current member will own after migration is committed.
+     * This index will be -1 if partition replica will be moved from current member completely.
+     *
+     * @return index of the partition replica that current member will own after migration is committed
+     */
+    public int getNewReplicaIndex() {
+        return newReplicaIndex;
+    }
+
     @Override
     public String toString() {
-        return "PartitionMigrationEvent{migrationEndpoint=" + migrationEndpoint + ", partitionId=" + partitionId + '}';
+        return "PartitionMigrationEvent{"
+                + "migrationEndpoint=" + migrationEndpoint
+                + ", partitionId=" + partitionId
+                + ", currentReplicaIndex=" + currentReplicaIndex
+                + ", newReplicaIndex=" + newReplicaIndex
+                + '}';
     }
 }

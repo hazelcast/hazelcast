@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.monitors;
 
+import com.hazelcast.logging.ILogger;
+
 /**
- * A Plugin for the {@link PerformanceMonitor}.
+ * Plugin for the {@link PerformanceMonitor}.
  *
  * The plugin will not be called concurrently, unless threads are introduced outside of the PerformanceMonitor.
  *
@@ -36,6 +38,12 @@ public abstract class PerformanceMonitorPlugin {
      * Indicates that the plugin is disabled.
      */
     static final long DISABLED = 0;
+
+    protected final ILogger logger;
+
+    public PerformanceMonitorPlugin(ILogger logger) {
+        this.logger = logger;
+    }
 
     /**
      * Returns the period of executing the monitor in millis.

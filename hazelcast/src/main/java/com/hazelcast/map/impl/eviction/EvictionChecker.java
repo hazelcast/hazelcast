@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.eviction;
 
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.map.impl.MapContainer;
@@ -34,7 +33,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.config.EvictionPolicy.NONE;
 
 /**
  * Checks whether a specific threshold is exceeded or not
@@ -57,17 +55,8 @@ public class EvictionChecker {
         this.mapServiceContext = mapServiceContext;
     }
 
-    public static boolean isEvictionEnabled(RecordStore recordStore) {
-        // this can be updated dynamically by UpdateMapConfigOperation.
-        // that is why this check was put in a method instead of a class final field.
-        MapContainer mapContainer = recordStore.getMapContainer();
-        MapConfig mapConfig = mapContainer.getMapConfig();
-        EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
-        return !NONE.equals(evictionPolicy);
-    }
-
     public boolean checkEvictable(RecordStore recordStore) {
-        if (recordStore.size() == 0 || !isEvictionEnabled(recordStore)) {
+        if (recordStore.size() == 0) {
             return false;
         }
 

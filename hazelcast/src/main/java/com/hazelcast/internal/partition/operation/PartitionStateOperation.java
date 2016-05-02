@@ -21,6 +21,8 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -32,6 +34,7 @@ public final class PartitionStateOperation extends AbstractOperation
 
     private PartitionRuntimeState partitionState;
     private boolean sync;
+    private boolean success;
 
     public PartitionStateOperation() {
     }
@@ -47,9 +50,16 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public void run() {
-        partitionState.setEndpoint(getCallerAddress());
+        Address callerAddress = getCallerAddress();
+        partitionState.setEndpoint(callerAddress);
         InternalPartitionServiceImpl partitionService = getService();
-        partitionService.processPartitionRuntimeState(partitionState);
+        success = partitionService.processPartitionRuntimeState(partitionState);
+
+        ILogger logger = getLogger();
+        if (logger.isFineEnabled()) {
+            logger.fine("Applied new partition state: " + success + ". Version: " + partitionState.getVersion()
+                    + ", caller: " + callerAddress);
+        }
     }
 
     @Override
@@ -59,7 +69,7 @@ public final class PartitionStateOperation extends AbstractOperation
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return success;
     }
 
     @Override

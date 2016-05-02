@@ -129,18 +129,19 @@ public interface PartitionService {
     boolean removePartitionLostListener(String registrationId);
 
     /**
-     * Checks whether the cluster is in a safe state. When in a safe state,
-     * it is permissible to shut down a server instance.
+     * Checks whether the cluster is in a safe state.
+     * Safe state means; there are no partitions being migrated and all backups are in sync
+     * when this method is called.
      *
-     * @return true if there are no partitions being migrated, and there are sufficient backups
-     * for each partition per the configuration; false otherwise.
+     * @return true if there are no partitions being migrated and all backups are in sync.
+     *
      * @since 3.3
      */
     boolean isClusterSafe();
 
     /**
-     * Check if the given member is safe to shutdown, meaning check if at least one backup of the partitions
-     * owned by the given member are in sync with primary.
+     * Checks whether the given member is in safe state.
+     * Safe state means; all backups of partitions currently owned by the member are in sync when this method is called.
      *
      * @param member the cluster member to query.
      * @return true if the member is in a safe state, false otherwise.
@@ -149,8 +150,8 @@ public interface PartitionService {
     boolean isMemberSafe(Member member);
 
     /**
-     * Check if the local member is safe to shutdown, meaning check if at least one backup of the partitions
-     * owned by the local member are in sync with primary.
+     * Checks whether local member is in safe state.
+     * Safe state means; all backups of partitions currently owned by local member are in sync when this method is called.
      *
      * @since 3.3
      */

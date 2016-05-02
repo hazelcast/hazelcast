@@ -31,8 +31,16 @@ import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
 
-public interface ICacheService extends ManagedService, RemoteService, MigrationAwareService,
-            EventPublishingService<Object, CacheEventListener> {
+public interface ICacheService
+        extends ManagedService,
+                RemoteService,
+                MigrationAwareService,
+                EventPublishingService<Object, CacheEventListener> {
+
+    String CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE =
+            "There is no valid JCache API library at classpath. "
+            + "Please be sure that there is a JCache API library in your classpath "
+            + "and it is newer than `0.x` and `1.0.0-PFD` versions!";
 
     String SERVICE_NAME = "hz:impl:cacheService";
 
@@ -56,7 +64,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     CacheContext getOrCreateCacheContext(String name);
 
-    void deleteCache(String objectName, boolean isLocal, String callerUuid, boolean destroy);
+    void deleteCache(String name, String callerUuid, boolean destroy);
 
     void deleteCacheStat(String name);
 

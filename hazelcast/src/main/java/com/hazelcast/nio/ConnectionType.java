@@ -16,11 +16,12 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 /**
  * An enumeration of all possible Connection types.
- *
-* @author mdogan 7/3/13
-*/
+ */
+@PrivateApi
 public enum ConnectionType {
 
     NONE(false, false),

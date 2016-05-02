@@ -23,21 +23,12 @@ import java.util.Arrays;
 import static java.lang.System.arraycopy;
 
 final class PartitionReplicaVersions {
-
-    private final int partitionId;
+    final int partitionId;
     // read and updated only by operation/partition threads
-    private final long[] versions = new long[InternalPartition.MAX_BACKUP_COUNT];
+    final long[] versions = new long[InternalPartition.MAX_BACKUP_COUNT];
 
-    private PartitionReplicaVersions(int partitionId) {
+    PartitionReplicaVersions(int partitionId) {
         this.partitionId = partitionId;
-    }
-
-    static PartitionReplicaVersions[] createArray(int partitionCount) {
-        PartitionReplicaVersions[] replicaVersions = new PartitionReplicaVersions[partitionCount];
-        for (int i = 0; i < partitionCount; i++) {
-            replicaVersions[i] = new PartitionReplicaVersions(i);
-        }
-        return replicaVersions;
     }
 
     long[] incrementAndGet(int backupCount) {

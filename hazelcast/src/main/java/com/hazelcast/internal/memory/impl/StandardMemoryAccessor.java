@@ -28,7 +28,7 @@ import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
  * that directly uses {@link sun.misc.Unsafe} for accessing to memory.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
+public final class StandardMemoryAccessor extends UnsafeBasedMemoryAccessor {
 
     public static final StandardMemoryAccessor INSTANCE = UNSAFE_AVAILABLE ? new StandardMemoryAccessor() : null;
 

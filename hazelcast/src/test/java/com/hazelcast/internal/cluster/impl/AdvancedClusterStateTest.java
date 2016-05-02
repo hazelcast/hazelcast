@@ -30,6 +30,7 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -251,6 +252,81 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                 assertClusterState(ClusterState.ACTIVE, instances[0], instances[1]);
             }
         });
+    }
+
+    @Test(timeout = 120000)
+    public void changeClusterState_shouldNotFail_whenNonInitiatorMemberDies_duringCommit() throws Exception {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        final HazelcastInstance[] instances = factory.newInstances();
+
+        final HazelcastInstance hz = instances[2];
+        TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
+
+        final Address address = getAddress(instances[0]);
+
+        TransactionOptions options = TransactionOptions.getDefault().setDurability(0);
+        when(transactionManagerService.newAllowedDuringPassiveStateTransaction(options)).thenAnswer(new TransactionAnswer() {
+            @Override
+            protected void afterPrepare() {
+                terminateInstance(instances[0]);
+            }
+        });
+
+        hz.getCluster().changeClusterState(ClusterState.FROZEN, options);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertClusterState(ClusterState.FROZEN, instances[2], instances[1]);
+            }
+        });
+
+        instances[0] = factory.newHazelcastInstance(address);
+
+        assertClusterSizeEventually(3, instances[0]);
+        assertClusterSizeEventually(3, instances[1]);
+        assertClusterSizeEventually(3, instances[2]);
+        assertClusterState(ClusterState.FROZEN, instances);
+    }
+
+    @Test(timeout = 120000)
+    public void changeClusterState_shouldFail_whenNonInitiatorMemberDies_beforePrepare() throws Exception {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        final HazelcastInstance[] instances = factory.newInstances();
+
+        final HazelcastInstance hz = instances[2];
+        TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
+
+        final Address address = getAddress(instances[0]);
+
+        TransactionOptions options = TransactionOptions.getDefault().setDurability(0);
+        when(transactionManagerService.newAllowedDuringPassiveStateTransaction(options)).thenAnswer(new TransactionAnswer() {
+            @Override
+            protected void beforePrepare() {
+                terminateInstance(instances[0]);
+            }
+        });
+
+        try {
+            hz.getCluster().changeClusterState(ClusterState.FROZEN, options);
+            fail("A member is terminated. Cannot commit the transaction!");
+        } catch (TargetNotMemberException ignored) {
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertClusterState(ClusterState.ACTIVE, instances[2], instances[1]);
+            }
+        });
+
+        instances[0] = factory.newHazelcastInstance(address);
+
+        assertClusterSizeEventually(3, instances[0]);
+        assertClusterSizeEventually(3, instances[1]);
+        assertClusterSizeEventually(3, instances[2]);
+        assertClusterState(ClusterState.ACTIVE, instances);
     }
 
     @Test
@@ -686,7 +762,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             } catch (Throwable e) {
                 t = e;
             }
-            sleepMillis(100);
+            sleepMillis(500);
             long end = Clock.currentTimeMillis();
             timeout -= (end - start);
         }

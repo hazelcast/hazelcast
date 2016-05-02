@@ -130,11 +130,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
-    public void clearPartitionReplica(int partitionId) {
-        migrationAwareService.clearPartitionReplica(partitionId);
-    }
-
-    @Override
     public Operation getPostJoinOperation() {
         return postJoinAwareService.getPostJoinOperation();
     }
