@@ -30,6 +30,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -81,7 +82,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
     private static final boolean simulateSecondNode = true;
 
 
-    @Test
+    @Test(timeout = 600000)
     public void testNoDeadLockDuringJoin() throws Exception {
         // create shared hazelcast config
         final Config config = new XmlConfigBuilder().build();
@@ -165,7 +166,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
     }
 
 
-    @Test
+    @Test(timeout = 600000)
     public void testDataLoadedCorrectly() throws Exception {
 
         // create shared hazelcast config
