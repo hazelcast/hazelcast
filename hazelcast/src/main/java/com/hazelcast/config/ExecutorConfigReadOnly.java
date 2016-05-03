@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 /**
  * Configuration for Executor(Read Only)
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
 public class ExecutorConfigReadOnly extends ExecutorConfig {
 

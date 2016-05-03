@@ -18,8 +18,11 @@ package com.hazelcast.config;
 
 import java.util.Collections;
 import java.util.Map;
+
 /**
  * Contains configuration for attribute of member (Read-Only).
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
 public class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
 

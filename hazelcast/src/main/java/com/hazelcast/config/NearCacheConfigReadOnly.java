@@ -15,8 +15,11 @@
  */
 
 package com.hazelcast.config;
+
 /**
  * Contains configuration for an NearCache(Read-Only).
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
 public class NearCacheConfigReadOnly extends NearCacheConfig {
 

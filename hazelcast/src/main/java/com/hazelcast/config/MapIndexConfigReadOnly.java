@@ -15,8 +15,11 @@
  */
 
 package com.hazelcast.config;
+
 /**
  * Contains the configuration for a index of Map.
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
 public class MapIndexConfigReadOnly extends MapIndexConfig {
 

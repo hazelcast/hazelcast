@@ -19,10 +19,12 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 /**
  * Configuration for topic(Read only)
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
-
 public class TopicConfigReadOnly extends TopicConfig {
 
     public TopicConfigReadOnly(TopicConfig config) {

@@ -15,10 +15,12 @@
  */
 
 package com.hazelcast.config;
+
 /**
  * Contains configuration for Semaphore(read only)
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
-
 public class SemaphoreConfigReadOnly extends SemaphoreConfig {
 
     public SemaphoreConfigReadOnly(SemaphoreConfig config) {

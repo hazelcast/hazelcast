@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 /**
  * Read only version of {@link com.hazelcast.config.EvictionConfig}.
+ *
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
 public class EvictionConfigReadOnly
         extends EvictionConfig {

@@ -19,6 +19,9 @@ package com.hazelcast.config;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
+/**
+ * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ */
 class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
 
     public ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
