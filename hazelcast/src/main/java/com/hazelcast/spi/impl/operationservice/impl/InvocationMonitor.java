@@ -70,7 +70,7 @@ import static java.util.logging.Level.INFO;
  * alive. Also if no operations are running, it will still send a period packet to each member. This is a different system than
  * the regular heartbeats, but it has similar characteristics. The reason the packet is always send is for debugging purposes.
  */
-public class InvocationMonitor implements PacketHandler, MetricsProvider {
+class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
@@ -102,14 +102,14 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
 
     //todo: we need to get rid of the nodeEngine dependency
-    public InvocationMonitor(NodeEngineImpl nodeEngine,
-                             Address thisAddress,
-                             HazelcastThreadGroup threadGroup,
-                             HazelcastProperties hazelcastProperties,
-                             InvocationRegistry invocationRegistry,
-                             ILogger logger,
-                             InternalSerializationService serializationService,
-                             ServiceManager serviceManager) {
+    InvocationMonitor(NodeEngineImpl nodeEngine,
+                      Address thisAddress,
+                      HazelcastThreadGroup threadGroup,
+                      HazelcastProperties hazelcastProperties,
+                      InvocationRegistry invocationRegistry,
+                      ILogger logger,
+                      InternalSerializationService serializationService,
+                      ServiceManager serviceManager) {
         this.nodeEngine = nodeEngine;
         this.thisAddress = thisAddress;
         this.serializationService = serializationService;
@@ -129,7 +129,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private ScheduledExecutorService newScheduler(final HazelcastThreadGroup threadGroup) {
         // the scheduler is configured with a single thread; so prevent concurrency problems.
-        ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        return new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new InvocationMonitorThread(r, threadGroup);
@@ -142,7 +142,6 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
                 return thread;
             }
         });
-        return scheduler;
     }
 
     private long invocationTimeoutMillis(HazelcastProperties properties) {
@@ -181,7 +180,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         return periodMs;
     }
 
-    public void onMemberLeft(MemberImpl member) {
+    void onMemberLeft(MemberImpl member) {
         // postpone notifying invocations since real response may arrive in the mean time.
         scheduler.schedule(new OnMemberLeftTask(member), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
     }
@@ -204,7 +203,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         scheduler.awaitTermination(timeoutMillis, MILLISECONDS);
     }
 
-    public long getLastMemberHeartbeatMillis(Address memberAddress) {
+    long getLastMemberHeartbeatMillis(Address memberAddress) {
         if (memberAddress == null) {
             return 0;
         }
@@ -407,7 +406,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
             liveOperations.clear();
 
             ClusterService clusterService = nodeEngine.getClusterService();
-            liveOperations.initMember(nodeEngine.getThisAddress());
+            liveOperations.initMember(thisAddress);
             for (Member member : clusterService.getMembers()) {
                 liveOperations.initMember(member.getAddress());
             }
