@@ -19,13 +19,21 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.internal.cluster.ClusterClock;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -34,10 +42,13 @@ import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -102,7 +113,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
      */
     @SuppressWarnings("checkstyle:visibilitymodifier")
     public final long firstInvocationTimeMillis = Clock.currentTimeMillis();
-    final InvocationContext context;
+    final Context context;
 
     /**
      * Contains the pending response from the primary.
@@ -150,7 +161,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
-    Invocation(InvocationContext context, Operation op, int tryCount, long tryPauseMillis,
+    Invocation(Context context, Operation op, int tryCount, long tryPauseMillis,
                long callTimeoutMillis, boolean deserialize) {
         this.context = context;
         this.op = op;
@@ -625,5 +636,81 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                 + ", backupsCompleted=" + backupsCompleted
                 + ", connection=" + connectionStr
                 + '}';
+    }
+
+    /**
+     * The {@link Context} contains all 'static' dependencies for an Invocation; dependencies that don't change between
+     * invocations. All invocation specific dependencies/settings are passed in through the constructor of the invocation.
+     *
+     * This object should have no functionality apart from providing dependencies. So no methods should be added to this class.
+     *
+     * The goals of the Context are:
+     * <ol>
+     * <li>reduce the need on having a cluster running when testing Invocations. This is one of the primary drivers behind this
+     * context</li>
+     * <li>prevent a.b.c.d call in the invocation by pulling all dependencies in the InvocationContext</li>
+     * <lI>removed dependence on NodeEngineImpl. Only NodeEngine is needed to set on Operation</lI>
+     * <li>reduce coupling to Node. All dependencies on Node, apart from Node.getState, have been removed. This will make it
+     * easier to get rid of Node dependency in the near future completely.</li>
+     * </ol>
+     */
+    static class Context {
+        final ManagedExecutorService asyncExecutor;
+        final ClusterClock clusterClock;
+        final ClusterService clusterService;
+        final ConnectionManager connectionManager;
+        final InternalExecutionService executionService;
+        final long defaultCallTimeoutMillis;
+        final InvocationRegistry invocationRegistry;
+        final InvocationMonitor invocationMonitor;
+        final String localMemberUuid;
+        final ILogger logger;
+        final Node node;
+        final NodeEngine nodeEngine;
+        final InternalPartitionService partitionService;
+        final OperationServiceImpl operationService;
+        final OperationExecutor operationExecutor;
+        final MwCounter retryCount;
+        final InternalSerializationService serializationService;
+        final Address thisAddress;
+
+        @SuppressWarnings("checkstyle:parameternumber")
+        Context(ManagedExecutorService asyncExecutor,
+                       ClusterClock clusterClock,
+                       ClusterService clusterService,
+                       ConnectionManager connectionManager,
+                       InternalExecutionService executionService,
+                       long defaultCallTimeoutMillis,
+                       InvocationRegistry invocationRegistry,
+                       InvocationMonitor invocationMonitor,
+                       String localMemberUuid,
+                       ILogger logger,
+                       Node node,
+                       NodeEngine nodeEngine,
+                       InternalPartitionService partitionService,
+                       OperationServiceImpl operationService,
+                       OperationExecutor operationExecutor,
+                       MwCounter retryCount,
+                       InternalSerializationService serializationService,
+                       Address thisAddress) {
+            this.asyncExecutor = asyncExecutor;
+            this.clusterClock = clusterClock;
+            this.clusterService = clusterService;
+            this.connectionManager = connectionManager;
+            this.executionService = executionService;
+            this.defaultCallTimeoutMillis = defaultCallTimeoutMillis;
+            this.invocationRegistry = invocationRegistry;
+            this.invocationMonitor = invocationMonitor;
+            this.localMemberUuid = localMemberUuid;
+            this.logger = logger;
+            this.node = node;
+            this.nodeEngine = nodeEngine;
+            this.partitionService = partitionService;
+            this.operationService = operationService;
+            this.operationExecutor = operationExecutor;
+            this.retryCount = retryCount;
+            this.serializationService = serializationService;
+            this.thisAddress = thisAddress;
+        }
     }
 }

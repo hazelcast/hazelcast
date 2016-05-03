@@ -5,7 +5,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -47,7 +46,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        InvocationContext context = operationService.invocationContext;
+        Invocation.Context context = operationService.invocationContext;
         return new PartitionInvocation(context, op, 0, 0, 0, false);
     }
 

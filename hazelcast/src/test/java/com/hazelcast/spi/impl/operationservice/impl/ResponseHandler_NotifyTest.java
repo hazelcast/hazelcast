@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -52,7 +51,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        InvocationContext context = operationService.invocationContext;
+        Invocation.Context context = operationService.invocationContext;
         Invocation invocation = new PartitionInvocation(context, op , 0, 0, 0, false);
         invocation.invTarget = getAddress(local);
         return invocation;
