@@ -25,6 +25,7 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -116,7 +117,12 @@ public abstract class AbstractHandler implements MigratableHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
-        Level level = ioService.isActive() ? Level.WARNING : Level.FINEST;
+        Level level;
+        if (ioService.isActive()) {
+            level = e instanceof EOFException ? Level.INFO : Level.WARNING;
+        } else {
+            level = Level.FINEST;
+        }
         if (e instanceof IOException) {
             logger.log(level, sb.toString());
         } else {
