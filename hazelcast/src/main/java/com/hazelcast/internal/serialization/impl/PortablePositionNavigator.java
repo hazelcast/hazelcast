@@ -18,32 +18,29 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Pattern;
 
-import static com.hazelcast.internal.serialization.impl.PortableHelper.extractArgumentsFromAttributeName;
-import static com.hazelcast.internal.serialization.impl.PortableHelper.extractAttributeNameNameWithoutArguments;
+import static com.hazelcast.internal.serialization.impl.PortableNavigatorContext.NavigationFrame;
 import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.checkFactoryAndClass;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.isCurrentPathTokenWithAnyQuantifier;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.isCurrentPathTokenWithoutQuantifier;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.unknownFieldException;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.validateAndGetArrayQuantifierFromCurrentToken;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.validateArrayType;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.wrongUseOfAnyOperationException;
 
 /**
  * Enables navigation in the portable byte stream.
  * The contract is very simple: you give a path to an element, like "person.body.iq" and it returns a
  * {@link PortablePosition} that includes the type of the found element and its location in the stream.
  * <p>
- * The navigator is stateful thus it can't be used concurrently.
+ * The navigator is not stateful - everything is static.
  */
 final class PortablePositionNavigator {
-
-    private static final Pattern NESTED_PATH_SPLITTER = Pattern.compile("\\.");
 
     // cache of commonly returned values to avoid extra allocations
     private static final PortableSinglePosition NIL_NOT_LAST = PortableSinglePosition.nil(false);
@@ -52,58 +49,7 @@ final class PortablePositionNavigator {
     private static final PortableSinglePosition EMPTY_LAST_ANY = PortableSinglePosition.empty(true, true);
     private static final PortableSinglePosition EMPTY_NOT_LAST_ANY = PortableSinglePosition.empty(false, true);
 
-    // invariants
-    private BufferObjectDataInput in;
-    private int offset;
-    private int finalPosition;
-    private ClassDefinition cd;
-    private PortableSerializer serializer;
-
-    // holds the initial state for reset
-    private final int initPosition;
-    private final ClassDefinition initCd;
-    private final int initOffset;
-    private final int initFinalPosition;
-    private PortableSerializer initSerializer;
-
-    private Deque<NavigationFrame> multiPositions;
-
-    PortablePositionNavigator(BufferObjectDataInput in, ClassDefinition cd, PortableSerializer serializer) {
-        this.in = in;
-        this.cd = cd;
-        this.serializer = serializer;
-
-        initFieldCountAndOffset(in, cd);
-
-        this.initCd = cd;
-        this.initSerializer = serializer;
-
-        this.initPosition = in.position();
-        this.initFinalPosition = finalPosition;
-        this.initOffset = offset;
-    }
-
-    private void initFieldCountAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
-        int fieldCount;
-        try {
-            // final position after portable is read
-            finalPosition = in.readInt();
-            fieldCount = in.readInt();
-        } catch (IOException e) {
-            throw new HazelcastSerializationException(e);
-        }
-        if (fieldCount != cd.getFieldCount()) {
-            throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);
-        }
-        offset = in.position();
-    }
-
-    int getFinalPosition() {
-        return finalPosition;
-    }
-
-    int getOffset() {
-        return offset;
+    private PortablePositionNavigator() {
     }
 
     /**
@@ -121,382 +67,360 @@ final class PortablePositionNavigator {
      * <p>
      * Returns a {@link PortablePosition} that includes the type of the found element and its location in the stream.
      *
-     * @param path to the given element that's supposed to be read
-     * @return PortablePosition of the found element
-     * @throws IOException in case of any byte stream reading errors
+     * @param ctx  context of the navigation that encompasses inputStream, classDefinition and all other required fields
+     * @param path pathCursor that's required to navigate down the path to the leaf token
+     * @return PortablePosition of the found element. It may be a PortableSinglePosition or a PortableMultiPosition
+     * @throws IOException in case of any stream reading errors
      */
-    PortablePosition findPositionOf(String path) throws IOException {
-        try {
-            return findFieldPosition(path);
-        } finally {
-            // The navigator is reset each time to enable its reuse in consecutive calls
-            reset();
+    static PortablePosition findPositionForReading(
+            PortableNavigatorContext ctx, PortablePathCursor path) throws IOException {
+        PortablePosition result = navigateThroughAllTokensAndReturnPositionForReading(ctx, path, null);
+        if (ctx.areThereMultiPositions()) {
+            // If [any] operator is used the path may contains multi-positions.
+            // A read with [any] operator may result in returning multiple values, so know we have to iterate over all
+            // positions where the path has diverged to get the additional positions where the reader should read the
+            // values.
+            return processPendingMultiPositionsAndReturnMultiResult(ctx, path, result);
+        } else {
+            // In this case, there are no multi-position so we can just return the single result.
+            return returnSingleResultWhenNoMultiPositions(path, result);
         }
     }
 
-    /**
-     * Resets the state to the initial state.
-     */
-    private void reset() {
-        cd = initCd;
-        serializer = initSerializer;
-        in.position(initPosition);
-        finalPosition = initFinalPosition;
-        offset = initOffset;
-        if (multiPositions != null) {
-            multiPositions.clear();
-        }
-    }
-
-    private PortablePosition findFieldPosition(String nestedPath) throws IOException {
-//        this.nestedPath = nestedPath;
-        String[] pathTokens = NESTED_PATH_SPLITTER.split(nestedPath);
-
-        PortablePosition result = null;
-        for (int i = 0; i < pathTokens.length; i++) {
-            boolean lastToken = i == pathTokens.length - 1;
-            result = processPathToken(pathTokens[i], i, lastToken, nestedPath, null);
+    private static PortablePosition navigateThroughAllTokensAndReturnPositionForReading(
+            PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) throws IOException {
+        // Iterates over path tokens and processes them, ex. car.wheel[0].pressure
+        // The navigateToPathToken invocation of a non-last token moves the cursor forward.
+        // If null or empty position reached on the way it is returned to finish the iteration earlier, since there's no
+        // non-null element to continue the iteration from.
+        // The navigateToPathToken invocation of the last token returns the position where the reader should read the
+        // attribute's value.
+        PortablePosition result;
+        do {
+            result = navigateToPathToken(ctx, path, frame);
             if (result != null && result.isNullOrEmpty()) {
                 break;
             }
-        }
+            frame = null;
+        } while (path.advanceToNextToken());
 
+        // All path tokens have been read but no result hast been returned. It means that the element is unknown.
+        // Otherwise some non-null, null or empty result would have been returned.
         if (result == null) {
-            throw unknownFieldException(nestedPath);
-        }
-
-        // we didn't touch any [any] quantifier
-        if (multiPositions == null || multiPositions.isEmpty()) {
-            return processFieldPositionNoMultiPositions(nestedPath, result);
-
-        } else {
-            return processFieldPositionWithMultiPositions(nestedPath, pathTokens, result);
-
-        }
-    }
-
-    private PortablePosition processPathToken(String pathToken, int pathTokenIndex, boolean lastToken, String nestedPath,
-                                              NavigationFrame frame) throws IOException {
-        String field = extractAttributeNameNameWithoutArguments(pathToken);
-        FieldDefinition fd = cd.getField(field);
-
-        if (fd == null || pathToken == null) {
-            throw unknownFieldException(field + " in " + nestedPath);
-        }
-
-        if (isPathTokenWithoutQuantifier(pathToken)) {
-            PortablePosition position = processPathTokenWithoutQuantifier(fd, lastToken, nestedPath);
-            if (position != null) {
-                return position;
-            }
-        } else if (isPathTokenWithAnyQuantifier(pathToken)) {
-            PortablePosition position = processPathTokenWithAnyQuantifier(pathTokenIndex, nestedPath, frame, fd, lastToken);
-            if (position != null) {
-                return position;
-            }
-        } else {
-            PortablePosition position = processPathTokenWithNumberQuantifier(nestedPath, pathToken, fd, lastToken);
-            if (position != null) {
-                return position;
-            }
-
-        }
-
-        return null;
-    }
-
-    private PortablePosition processFieldPositionNoMultiPositions(String nestedPath, PortablePosition result) {
-        // for consistency: [any] queries always return a multi-result, even if there's a single result only.
-        // The only case where it returns a PortableSingleResult is when the position is a a single null result.
-        if (!result.isNullOrEmpty()) {
-            if (isAnyPath(nestedPath)) {
-                List<PortablePosition> positions = new LinkedList<PortablePosition>();
-                positions.add(result);
-                return new PortableMultiPosition(positions);
-            }
+            throw unknownFieldException(ctx, path);
         }
         return result;
     }
 
-    private PortablePosition processFieldPositionWithMultiPositions(String nestedPath, String[] pathTokens,
-                                                                    PortablePosition result) throws IOException {
-        // we process the all the paths gathered due to [any] quantifiers
-        List<PortablePosition> positions = new LinkedList<PortablePosition>();
-        positions.add(result);
-        while (!multiPositions.isEmpty()) {
-            NavigationFrame frame = multiPositions.pollFirst();
-            setupNavigatorForFrame(frame);
-            for (int i = frame.pathTokenIndex; i < pathTokens.length; i++) {
-                boolean lastToken = i == pathTokens.length - 1;
-                result = processPathToken(pathTokens[i], i, lastToken, nestedPath, frame);
-                if (result != null && result.isNullOrEmpty()) {
-                    break;
-                }
-                frame = null;
+    private static PortablePosition navigateToPathToken(
+            PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) throws IOException {
+        // first, setup the context for the current path token
+        ctx.setupForCurrentPathToken(path);
+
+        if (isCurrentPathTokenWithoutQuantifier(path)) {
+            // ex: attribute
+            PortablePosition result = navigateToPathTokenWithoutQuantifier(ctx, path);
+            if (result != null) {
+                return result;
             }
-            if (result == null) {
-                throw unknownFieldException(nestedPath);
+        } else if (isCurrentPathTokenWithAnyQuantifier(path)) {
+            // ex: attribute[any]
+            PortablePosition result = navigateToPathTokenWithAnyQuantifier(ctx, path, frame);
+            if (result != null) {
+                return result;
             }
-            positions.add(result);
+        } else {
+            // ex: attribute[2]
+            PortablePosition result = navigateToPathTokenWithNumberQuantifier(ctx, path);
+            if (result != null) {
+                return result;
+            }
         }
-        return new PortableMultiPosition(positions);
+        return null;
     }
 
-    private PortablePosition processPathTokenWithoutQuantifier(FieldDefinition fd, boolean lastToken, String nestedPath)
-            throws IOException {
-        //
-        // TOKEN without quantifier. It means it's just a simple field, not an array.
-        //
-        if (lastToken) {
-            return readPositionOfCurrentElement(fd, nestedPath);
+    /**
+     * Token without quantifier. It means it's just a simple field, not an array.
+     */
+    private static PortablePosition navigateToPathTokenWithoutQuantifier(
+            PortableNavigatorContext ctx, PortablePathCursor path) throws IOException {
+        if (path.isLastToken()) {
+            // if it's a token that's on the last position we calculate its direct access position and return it for
+            // reading in the value reader.
+            return returnPositionOfCurrentToken(ctx, path);
         } else {
-            if (!advanceNavigatorToNextPortableTokenFromNonArrayElement(fd)) {
+            // if it's not a token that's on the last position in the path we advance the position to the next token
+            // we also adjust the context, since advancing means that we are in the context of other
+            // (and possibly different) portable type.
+            if (!navigateContextToNextPortableTokenFromPortableField(ctx)) {
+                // we return null if we didn't manage to advance from the current token to the next one.
+                // For example: it may happen if the current token points to a null object.
                 return NIL_NOT_LAST;
             }
         }
         return null;
     }
 
-    private PortablePosition processPathTokenWithAnyQuantifier(int pathTokenIndex, String nestedPath,
-                                                               NavigationFrame frame, FieldDefinition fd,
-                                                               boolean lastToken) throws IOException {
-        //
-        // TOKEN with [any] quantifier
-        //
-        validateArrayType(fd, nestedPath);
-        if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-            // PORTABLE array
-            if (frame == null) {
-                int len = getCurrentArrayLength(fd);
-                if (len == 0) {
-                    return emptyPosition(lastToken);
-                } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                    return nilPosition(lastToken);
-                }
+    private static PortablePosition returnSingleResultWhenNoMultiPositions(
+            PortablePathCursor path, PortablePosition result) {
+        // if the position is null or empty we don't need to do any processing, we just return it as-is.
+        if (!result.isNullOrEmpty()) {
+            // for consistency: [any] queries always return a multi-result, even if there's a single result only.
+            // The only case where it returns a PortableSingleResult is when the position is a a single null result.
+            // otherwise we always allocate a MultiResult to indicate to the reader that it's a multi-position.
+            if (path.isAnyPath()) {
+                return new PortableMultiPosition(result);
+            }
+        }
+        return result;
+    }
 
-                populateAnyNavigationFrames(pathTokenIndex, len);
-                if (lastToken) {
-                    return readPositionOfCurrentElement(fd, 0, nestedPath);
-                }
-                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, 0);
+    private static PortablePosition processPendingMultiPositionsAndReturnMultiResult(
+            PortableNavigatorContext ctx, PortablePathCursor path, PortablePosition result) throws IOException {
+        // we process the all the paths gathered due to [any] quantifiers
+        List<PortablePosition> positions = new LinkedList<PortablePosition>();
+        // first add the single position to the result gathered in single path naviation
+        positions.add(result);
 
-            } else {
-                if (lastToken) {
-                    return readPositionOfCurrentElement(fd, frame.arrayIndex, nestedPath);
-                }
+        // then process all multi-positions and gather the results
+        while (ctx.areThereMultiPositions()) {
+            // setup navigation context and path for the given navigation frame
+            NavigationFrame frame = ctx.pollFirstMultiPosition();
+            setupContextAndPathWithFrameState(ctx, path, frame);
+            // navigate to the last token and gather the result
+            result = navigateThroughAllTokensAndReturnPositionForReading(ctx, path, frame);
+            positions.add(result);
+        }
+        return new PortableMultiPosition(positions);
+    }
 
-                // check len
-                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, frame.arrayIndex);
+    private static void setupContextAndPathWithFrameState(
+            PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) {
+        ctx.setupForFrame(frame);
+        path.index(frame.pathTokenIndex);
+    }
+
+    // token with [any] quantifier
+    private static PortablePosition navigateToPathTokenWithAnyQuantifier(
+            PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) throws IOException {
+        // check if the underlying field is of array type
+        validateArrayType(ctx, path);
+
+        if (ctx.isFieldOfType(FieldType.PORTABLE_ARRAY)) {
+            // the result will be returned if it was the last token of the path, otherwise it has just moved further.
+            PortablePosition result = navigateToPathTokenWithAnyQuantifierInPortableArray(ctx, path, frame);
+            if (result != null) {
+                return result;
             }
         } else {
-            // PRIMITIVE array
-            if (frame == null) {
-                if (lastToken) {
-                    int len = getCurrentArrayLength(fd);
-                    if (len == 0) {
-                        return emptyPosition(lastToken);
-                    } else if (len == Bits.NULL_ARRAY_LENGTH) {
-                        return nilPosition(lastToken);
-                    }
-                    populateAnyNavigationFrames(pathTokenIndex, len);
-                    return readPositionOfCurrentElement(fd, 0, nestedPath);
-                }
-                throw wrongUseOfAnyOperationException(nestedPath);
-            } else {
-                if (lastToken) {
-                    return readPositionOfCurrentElement(fd, frame.arrayIndex, nestedPath);
-                }
-                throw wrongUseOfAnyOperationException(nestedPath);
+            // there will always be a result since it's impossible to navigate further from a primitive field.
+            return navigateToPathTokenWithAnyQuantifierInPrimitiveArray(ctx, path, frame);
+        }
+        return null;
+    }
+
+    // navigation in PORTABLE array
+    private static PortablePosition navigateToPathTokenWithAnyQuantifierInPortableArray(
+            PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) throws IOException {
+        // if no frame, we're pursuing the cell[0] case and populating the frames for cell[1 to length-1]
+        if (frame == null) {
+            // first we check if array null or empty
+            int len = getArrayLengthOfTheField(ctx);
+            PortablePosition result = doValidateArrayLengthForAnyQuantifier(len, path.isLastToken());
+            if (result != null) {
+                return result;
+            }
+
+            // then we populate frames for cell[1 to length-1]
+            ctx.populateAnyNavigationFrames(path.index(), len);
+
+            // pursue navigation to index 0, return result if last token
+            int cellIndex = 0;
+            result = doNavigateToPortableArrayCell(ctx, path, cellIndex);
+            if (result != null) {
+                return result;
+            }
+        } else {
+            // pursue navigation to index given by the frame, return result if last token
+            // no validation since it index in-bound has been validated while the navigation frames have been populated
+            PortablePosition result = doNavigateToPortableArrayCell(ctx, path, frame.arrayIndex);
+            if (result != null) {
+                return result;
             }
         }
         return null;
     }
 
-    private PortablePosition processPathTokenWithNumberQuantifier(String nestedPath, String token, FieldDefinition fd,
-                                                                  boolean lastToken) throws IOException {
-        //
-        // TOKEN with [number] quantifier. It means we are navigating in an array cell.
-        //
-        validateArrayType(fd, nestedPath);
-        int index = validateAndGetArrayQuantifier(nestedPath, token);
-
-        int len = getCurrentArrayLength(fd);
+    private static PortablePosition doValidateArrayLengthForAnyQuantifier(int len, boolean lastToken) {
         if (len == 0) {
             return emptyPosition(lastToken);
         } else if (len == Bits.NULL_ARRAY_LENGTH) {
             return nilPosition(lastToken);
-        } else if (index >= len) {
-            return nilPosition(lastToken);
+        }
+        return null;
+    }
+
+    private static PortablePosition doNavigateToPortableArrayCell(
+            PortableNavigatorContext ctx, PortablePathCursor path, int index) throws IOException {
+        if (path.isLastToken()) {
+            // if last token of the path we return the position for reading
+            return returnPositionOfCurrentElementFromArrayCell(ctx, path, index);
         } else {
-            if (lastToken) {
-                return readPositionOfCurrentElement(fd, index, nestedPath);
-            } else if (fd.getType() == FieldType.PORTABLE_ARRAY) {
-                advanceNavigatorToNextPortableTokenFromPortableArrayCell(fd, index);
+            // otherwise we navigate further down the path
+            navigateContextToNextPortableTokenFromPortableArrayCell(ctx, index);
+        }
+        return null;
+    }
+
+    // navigation in PRIMITIVE array
+    private static PortablePosition navigateToPathTokenWithAnyQuantifierInPrimitiveArray(
+            PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) throws IOException {
+        // if no frame, we're pursuing the cell[0] case and populating the frames for cell[1 to length-1]
+        if (frame == null) {
+            if (path.isLastToken()) {
+                // first we check if array null or empty
+                int len = getArrayLengthOfTheField(ctx);
+                PortablePosition result = doValidateArrayLengthForAnyQuantifier(len, path.isLastToken());
+                if (result != null) {
+                    return result;
+                }
+
+                // then we populate frames for cell[1 to length-1]
+                ctx.populateAnyNavigationFrames(path.index(), len);
+
+                // finally, we return the cell's position for reading -> cell[0]
+                return returnPositionOfCurrentElementFromArrayCell(ctx, path, 0);
+            }
+            // primitive array cell has to be a last token, there's no furhter navigation from there.
+            throw wrongUseOfAnyOperationException(ctx, path);
+        } else {
+            if (path.isLastToken()) {
+                return returnPositionOfCurrentElementFromArrayCell(ctx, path, frame.arrayIndex);
+            }
+            throw wrongUseOfAnyOperationException(ctx, path);
+        }
+    }
+
+    /**
+     * Token with [number] quantifier. It means we are navigating in an array cell.
+     */
+    private static PortablePosition navigateToPathTokenWithNumberQuantifier(
+            PortableNavigatorContext ctx, PortablePathCursor path) throws IOException {
+        // makes sure that the field type is an array and parses the qantifier
+        validateArrayType(ctx, path);
+        int index = validateAndGetArrayQuantifierFromCurrentToken(path);
+
+        // reads the array length and checks if the index is in-bound
+        int len = getArrayLengthOfTheField(ctx);
+        if (len == 0) {
+            return emptyPosition(path.isLastToken());
+        } else if (len == Bits.NULL_ARRAY_LENGTH) {
+            return nilPosition(path.isLastToken());
+        } else if (index >= len) {
+            return nilPosition(path.isLastToken());
+        } else {
+            // when index in-bound
+            if (path.isLastToken()) {
+                // if it's a token that's on the last position we calculate its direct access position and return it for
+                // reading in the value reader.
+                return returnPositionOfCurrentElementFromArrayCell(ctx, path, index);
+            } else if (ctx.isFieldOfType(FieldType.PORTABLE_ARRAY)) {
+                // otherwise we advance only if the type is a portable_array. We cannot navigate further in a primitive
+                // type and the portable arrays may store portable or primitive types only.
+                navigateContextToNextPortableTokenFromPortableArrayCell(ctx, index);
             }
         }
         return null;
     }
 
-    private int validateAndGetArrayQuantifier(String nestedPath, String token) {
-        String quantifier = extractArgumentsFromAttributeName(token);
-        if (quantifier == null) {
-            throw new IllegalArgumentException("Malformed quantifier " + quantifier + " in " + nestedPath);
-        }
-        int index = Integer.valueOf(quantifier);
-        if (index < 0) {
-            throw new IllegalArgumentException("Array index " + index + " cannot be negative in " + nestedPath);
-        }
-        return index;
-    }
-
-    private void populateAnyNavigationFrames(int pathTokenIndex, int len) {
-        // populate "recursive" multi-positions
-        if (multiPositions == null) {
-            multiPositions = new ArrayDeque<NavigationFrame>();
-        }
-        for (int k = len - 1; k > 0; k--) {
-            multiPositions.addFirst(new NavigationFrame(cd, pathTokenIndex, k, in.position(), this.offset));
-        }
-    }
-
-    private void setupNavigatorForFrame(NavigationFrame frame) {
-        in.position(frame.streamPosition);
-        offset = frame.streamOffset;
-        cd = frame.cd;
-    }
-
-    private void advanceNavigatorToNextPortableTokenFromPortableArrayCell(FieldDefinition fd, int index)
-            throws IOException {
-        int pos = calculateStreamPositionFromMetadata(fd);
-        in.position(pos);
-
-        // read array length and ignore
-        in.readInt();
-        int factoryId = in.readInt();
-        int classId = in.readInt();
-
-        checkFactoryAndClass(fd, factoryId, classId);
-
-        final int coffset = in.position() + index * Bits.INT_SIZE_IN_BYTES;
-        in.position(coffset);
-        int portablePosition = in.readInt();
-        in.position(portablePosition);
-        int versionId = in.readInt();
-
-        doAdvanceNavigatorToNextPortableToken(factoryId, classId, versionId);
-    }
-
     // returns true if managed to advance, false if advance failed due to null field
-    private boolean advanceNavigatorToNextPortableTokenFromNonArrayElement(FieldDefinition fd) throws IOException {
-        int pos = calculateStreamPositionFromMetadata(fd);
+    private static boolean navigateContextToNextPortableTokenFromPortableField(PortableNavigatorContext ctx)
+            throws IOException {
+        BufferObjectDataInput in = ctx.getIn();
+
+        // find the field position that's stored in the fieldDefinition int the context and navigate to it
+        int pos = getStreamPositionOfTheField(ctx);
         in.position(pos);
+
+        // check if it's null, if so return false indicating that the navigation has failed
         boolean isNull = in.readBoolean();
         if (isNull) {
             return false;
         }
 
+        // read factory and class Id and validate if it's the same as expected in the fieldDefinition
         int factoryId = in.readInt();
         int classId = in.readInt();
-        int version = in.readInt();
-        doAdvanceNavigatorToNextPortableToken(factoryId, classId, version);
+        int versionId = in.readInt();
+
+        // initialise context with the given portable field for further navigation
+        ctx.advanceToNextPortableToken(factoryId, classId, versionId);
         return true;
     }
 
-    private void doAdvanceNavigatorToNextPortableToken(int factoryId, int classId, int version) throws IOException {
-        cd = serializer.setupPositionAndDefinition(in, factoryId, classId, version);
-        initFieldCountAndOffset(in, cd);
+    // this navigation always succeeds since the caller validates if the index is inbound
+    private static void navigateContextToNextPortableTokenFromPortableArrayCell(
+            PortableNavigatorContext ctx, int index) throws IOException {
+        BufferObjectDataInput in = ctx.getIn();
+
+        // find the array field position that's stored in the fieldDefinition int the context and navigate to it
+        int pos = getStreamPositionOfTheField(ctx);
+        in.position(pos);
+
+        // read array length and ignore
+        in.readInt();
+
+        // read factory and class Id and validate if it's the same as expected in the fieldDefinition
+        int factoryId = in.readInt();
+        int classId = in.readInt();
+        checkFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId);
+
+        // calculate the offset of the cell given by the index
+        final int cellOffset = in.position() + index * Bits.INT_SIZE_IN_BYTES;
+        in.position(cellOffset);
+
+        // read the position of the portable addressed in this array cell (array contains portable position only)
+        int portablePosition = in.readInt();
+
+        // navigate to portable position and read it's version
+        in.position(portablePosition);
+        int versionId = in.readInt();
+
+        // initialise context with the given portable field for further navigation
+        ctx.advanceToNextPortableToken(factoryId, classId, versionId);
     }
 
-    private PortablePosition readPositionOfCurrentElement(FieldDefinition fd, String path)
+    private static PortablePosition returnPositionOfCurrentToken(PortableNavigatorContext ctx, PortablePathCursor path)
             throws IOException {
-        return PortablePositionFactory.createSinglePositionForReadAccess(fd, calculateStreamPositionFromMetadata(fd),
-                true, in, path);
+        int streamPositionOfThePathToken = getStreamPositionOfTheField(ctx);
+        return PortablePositionFactory.createSinglePositionForReadAccess(ctx, path, streamPositionOfThePathToken);
     }
 
-    private PortablePosition readPositionOfCurrentElement(FieldDefinition fd, int index, String path)
-            throws IOException {
-        return PortablePositionFactory.createSinglePositionForReadAccess(fd, calculateStreamPositionFromMetadata(fd),
-                true, index, in, path);
+    private static PortablePosition returnPositionOfCurrentElementFromArrayCell(
+            PortableNavigatorContext ctx, PortablePathCursor path, int index) throws IOException {
+        int streamPosition = getStreamPositionOfTheField(ctx);
+        return PortablePositionFactory.createSinglePositionForReadAccess(ctx, path, streamPosition, index);
     }
 
-
-    private int calculateStreamPositionFromMetadata(FieldDefinition fd) throws IOException {
-        int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
-        short len = in.readShort(pos);
-        // name + len + type
-        return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
+    // convenience methods:
+    private static int getStreamPositionOfTheField(PortableNavigatorContext ctx) throws IOException {
+        return PortableUtils.getStreamPositionOfTheField(ctx.getCurrentFieldDefinition(), ctx.getIn(),
+                ctx.getCurrentOffset());
     }
 
-    private int getCurrentArrayLength(FieldDefinition fd) throws IOException {
-        int originalPos = in.position();
-        try {
-            int pos = calculateStreamPositionFromMetadata(fd);
-            in.position(pos);
-            return in.readInt();
-        } finally {
-            in.position(originalPos);
-        }
+    private static int getArrayLengthOfTheField(PortableNavigatorContext ctx) throws IOException {
+        return PortableUtils.getArrayLengthOfTheField(ctx.getCurrentFieldDefinition(), ctx.getIn(),
+                ctx.getCurrentOffset());
     }
 
-    private PortablePosition nilPosition(boolean last) {
+    // convenience for reusing nil positions without extra allocation:
+    private static PortablePosition nilPosition(boolean last) {
         return last ? NIL_LAST_ANY : NIL_NOT_LAST_ANY;
     }
 
-    private PortablePosition emptyPosition(boolean last) {
+    private static PortablePosition emptyPosition(boolean last) {
         return last ? EMPTY_LAST_ANY : EMPTY_NOT_LAST_ANY;
     }
 
-    private boolean isPathTokenWithoutQuantifier(String pathToken) {
-        return !pathToken.endsWith("]");
-    }
-
-    private boolean isAnyPath(String path) {
-        return path.contains("[any]");
-    }
-
-    private boolean isPathTokenWithAnyQuantifier(String pathToken) {
-        return pathToken.endsWith("[any]");
-    }
-
-    static int getArrayCellPosition(PortablePosition arrayPosition, int index, BufferObjectDataInput in)
-            throws IOException {
-        return in.readInt(arrayPosition.getStreamPosition() + index * Bits.INT_SIZE_IN_BYTES);
-    }
-
-    private HazelcastSerializationException unknownFieldException(String fieldName) {
-        return new HazelcastSerializationException("Unknown field name: '" + fieldName
-                + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
-    }
-
-    private IllegalArgumentException wrongUseOfAnyOperationException(String fieldName) {
-        return new IllegalArgumentException("Wrong use of any operator: '" + fieldName
-                + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
-    }
-
-    private void validateArrayType(FieldDefinition fd, String fieldName) {
-        if (!fd.getType().isArrayType()) {
-            throw new IllegalArgumentException("Wrong use of array operator: '" + fieldName
-                    + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
-        }
-    }
-
-    static class NavigationFrame {
-        final ClassDefinition cd;
-
-        final int pathTokenIndex;
-        final int arrayIndex;
-
-        final int streamPosition;
-        final int streamOffset;
-
-        NavigationFrame(ClassDefinition cd, int pathTokenIndex, int arrayIndex, int streamPosition,
-                        int streamOffset) {
-            this.cd = cd;
-            this.pathTokenIndex = pathTokenIndex;
-            this.arrayIndex = arrayIndex;
-            this.streamPosition = streamPosition;
-            this.streamOffset = streamOffset;
-        }
-    }
 
 }

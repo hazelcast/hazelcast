@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.query.impl.getters.ExtractorHelper;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -184,7 +185,7 @@ final class PortableContextImpl implements PortableContext {
             if (fieldNames.length > 1) {
                 ClassDefinition currentClassDef = classDef;
                 for (int i = 0; i < fieldNames.length; i++) {
-                    name = PortableHelper.extractAttributeNameNameWithoutArguments(fieldNames[i]);
+                    name = ExtractorHelper.extractAttributeNameNameWithoutArguments(fieldNames[i]);
                     fd = currentClassDef.getField(name);
                     // This is not enough to fully implement issue: https://github.com/hazelcast/hazelcast/issues/3927
                     if (i == fieldNames.length - 1) {
@@ -201,7 +202,7 @@ final class PortableContextImpl implements PortableContext {
                 }
             }
         } else {
-            name = PortableHelper.extractAttributeNameNameWithoutArguments(name);
+            name = ExtractorHelper.extractAttributeNameNameWithoutArguments(name);
             fd = classDef.getField(name);
         }
         return fd;

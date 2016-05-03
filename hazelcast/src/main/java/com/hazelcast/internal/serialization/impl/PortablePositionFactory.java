@@ -31,23 +31,24 @@ final class PortablePositionFactory {
     private PortablePositionFactory() {
     }
 
-    static PortableSinglePosition createSinglePositionForReadAccess(FieldDefinition fd, int streamPosition,
-                                                              boolean last, BufferObjectDataInput in,
-                                                              String path) throws IOException {
-        return createSinglePositionForReadAccess(fd, streamPosition, last, -1, in, path);
+    static PortableSinglePosition createSinglePositionForReadAccess(PortableNavigatorContext ctx,
+                                                                    PortablePathCursor path,
+                                                                    int streamPosition) throws IOException {
+        return createSinglePositionForReadAccess(ctx, path, streamPosition, -1);
     }
 
-    static PortableSinglePosition createSinglePositionForReadAccess(FieldDefinition fd, int streamPosition,
-                                                              boolean last, int index, BufferObjectDataInput in,
-                                                              String path) throws IOException {
+    static PortableSinglePosition createSinglePositionForReadAccess(PortableNavigatorContext ctx,
+                                                                    PortablePathCursor path, int streamPosition,
+                                                                    int index)
+            throws IOException {
         PortableSinglePosition result = new PortableSinglePosition();
-        result.fd = fd;
+        result.fd = ctx.getCurrentFieldDefinition();
         result.streamPosition = streamPosition;
         result.index = index;
-        result.last = last;
+        result.last = path.isLastToken();
 
         if (!result.isNullOrEmpty()) {
-            adjustPositionForReadAccess(in, result, path);
+            adjustPositionForReadAccess(ctx.getIn(), result, path.path());
         }
         return result;
     }
@@ -58,9 +59,9 @@ final class PortablePositionFactory {
         if (type.isArrayType()) {
             if (type == FieldType.PORTABLE_ARRAY) {
                 if (position.getIndex() >= 0) {
-                    adjustForPortableArrayAccess(in, position, SINGLE_CELL_ACCESS, path);
+                    adjustForPortableArrayAccess(in, position, SINGLE_CELL_ACCESS);
                 } else {
-                    adjustForPortableArrayAccess(in, position, WHOLE_ARRAY_ACCESS, path);
+                    adjustForPortableArrayAccess(in, position, WHOLE_ARRAY_ACCESS);
                 }
             } else {
                 adjustForNonPortableArrayAccess(in, path, type, position);
@@ -123,7 +124,7 @@ final class PortablePositionFactory {
         if (pos.getIndex() < 0) {
             return adjustForPortableFieldAccess(in, (PortableSinglePosition) pos);
         } else {
-            return adjustForPortableArrayAccess(in, (PortableSinglePosition) pos, SINGLE_CELL_ACCESS, fieldName);
+            return adjustForPortableArrayAccess(in, (PortableSinglePosition) pos, SINGLE_CELL_ACCESS);
         }
     }
 
@@ -139,7 +140,7 @@ final class PortablePositionFactory {
     }
 
     private static PortablePosition adjustForPortableArrayAccess(BufferObjectDataInput in, PortableSinglePosition pos,
-                                                                 boolean singleCellAccess, String path)
+                                                                 boolean singleCellAccess)
             throws IOException {
         in.position(pos.getStreamPosition());
 

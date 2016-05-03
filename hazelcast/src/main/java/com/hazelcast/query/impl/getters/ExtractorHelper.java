@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-final class ExtractorHelper {
+public final class ExtractorHelper {
 
     private static final String NO_SQUARE_BRACKETS_EXP = "[^\\Q[]\\E]";
     private static final String SQUARE_BRACKETS_EXP = "\\[([^\\Q[]\\E])*\\]";
@@ -70,7 +70,7 @@ final class ExtractorHelper {
     }
 
     @Nullable
-    static String extractArgumentsFromAttributeName(String attributeNameWithArguments) {
+    public static String extractArgumentsFromAttributeName(String attributeNameWithArguments) {
         int start = attributeNameWithArguments.lastIndexOf('[');
         int end = attributeNameWithArguments.lastIndexOf(']');
         if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
@@ -81,7 +81,7 @@ final class ExtractorHelper {
         throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
     }
 
-    static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
+    public static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
         if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
             int start = attributeNameWithArguments.lastIndexOf('[');
             return attributeNameWithArguments.substring(0, start);
