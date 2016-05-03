@@ -50,6 +50,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -120,7 +121,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     final ILogger logger;
     final OperationBackupHandler operationBackupHandler;
     final BackpressureRegulator backpressureRegulator;
-    volatile InvocationContext invocationContext;
+    volatile Invocation.Context invocationContext;
 
     private final InvocationMonitor invocationMonitor;
     private final SlowOperationDetector slowOperationDetector;
@@ -421,29 +422,29 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public void start() {
         logger.finest("Starting OperationService");
 
-        InvocationContext invocationContext = new InvocationContext();
-        invocationContext.asyncExecutor = nodeEngine.getExecutionService().register(
+        ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
                 ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
-        invocationContext.clusterService = nodeEngine.getClusterService();
-        invocationContext.clusterClock = nodeEngine.getClusterService().getClusterClock();
-        invocationContext.defaultCallTimeoutMillis = nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS);
-        invocationContext.connectionManager = node.connectionManager;
-        invocationContext.executionService = node.nodeEngine.getExecutionService();
-        invocationContext.invocationRegistry = invocationRegistry;
-        invocationContext.invocationMonitor = invocationMonitor;
-        invocationContext.localMemberUuid = nodeEngine.getLocalMember().getUuid();
-        invocationContext.logger = nodeEngine.getLogger(Invocation.class);
-        invocationContext.node = node;
-        invocationContext.nodeEngine = nodeEngine;
-        invocationContext.operationService = this;
-        invocationContext.operationExecutor = operationExecutor;
-        invocationContext.retryCount = retryCount;
-        invocationContext.partitionService = nodeEngine.getPartitionService();
-        invocationContext.serializationService = serializationService;
-        invocationContext.thisAddress = nodeEngine.getThisAddress();
-        // provide a happens before relation between setting the fields on the invocationContext, and using the fields.
-        this.invocationContext = invocationContext;
+
+        this.invocationContext = new Invocation.Context(
+                asyncExecutor,
+                nodeEngine.getClusterService().getClusterClock(),
+                nodeEngine.getClusterService(),
+                node.connectionManager,
+                node.nodeEngine.getExecutionService(),
+                nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS),
+                invocationRegistry,
+                invocationMonitor,
+                nodeEngine.getLocalMember().getUuid(),
+                nodeEngine.getLogger(Invocation.class),
+                node,
+                nodeEngine,
+                nodeEngine.getPartitionService(),
+                this,
+                operationExecutor,
+                retryCount,
+                serializationService,
+                nodeEngine.getThisAddress());
 
         invocationMonitor.start();
         operationExecutor.start();

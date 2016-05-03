@@ -29,7 +29,7 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  */
 public final class PartitionInvocation extends Invocation {
 
-    public PartitionInvocation(InvocationContext context, Operation op, int tryCount, long tryPauseMillis,
+    public PartitionInvocation(Context context, Operation op, int tryCount, long tryPauseMillis,
                                long callTimeoutMillis, boolean deserialize) {
         super(context, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
     }

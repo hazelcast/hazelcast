@@ -26,17 +26,17 @@ import com.hazelcast.spi.Operation;
  */
 public class InvocationBuilderImpl extends InvocationBuilder {
 
-    private final InvocationContext context;
+    private final Invocation.Context context;
 
-    public InvocationBuilderImpl(InvocationContext context, String serviceName, Operation op, int partitionId) {
+    public InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, int partitionId) {
         this(context, serviceName, op, partitionId, null);
     }
 
-    public InvocationBuilderImpl(InvocationContext context, String serviceName, Operation op, Address target) {
+    public InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, Address target) {
         this(context, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
     }
 
-    private InvocationBuilderImpl(InvocationContext context, String serviceName, Operation op,
+    private InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op,
                                   int partitionId, Address target) {
         super(serviceName, op, partitionId, target);
         this.context = context;
