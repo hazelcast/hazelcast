@@ -96,8 +96,10 @@ class MockJoiner extends AbstractJoiner {
         Address master;
         if (nodeEngine.getNode().isMaster()) {
             master = nodeEngine.getThisAddress();
+            logger.fine("Found node itself is master: " + master);
         } else {
             master = nodeEngine.getMasterAddress();
+            logger.fine("Found node " + nodeEngine.getThisAddress() + " knows master as: " + master);
         }
 
         if (master == null) {
