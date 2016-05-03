@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -188,7 +188,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         }
     }
 
-    private static class SampleBackupOperation extends AbstractOperation implements BackupOperation {
+    private static class SampleBackupOperation extends AbstractOperation implements Banana {
 
         final CountDownLatch latch = new CountDownLatch(1);
 

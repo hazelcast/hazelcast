@@ -23,13 +23,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 
-public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
+public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements Banana {
 
     public PartitionWideEntryBackupOperation() {
     }

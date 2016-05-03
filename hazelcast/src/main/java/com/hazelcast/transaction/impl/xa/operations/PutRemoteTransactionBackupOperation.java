@@ -18,7 +18,7 @@ package com.hazelcast.transaction.impl.xa.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-public class PutRemoteTransactionBackupOperation extends BaseXAOperation implements BackupOperation {
+public class PutRemoteTransactionBackupOperation extends BaseXAOperation implements Banana {
 
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
 

@@ -22,14 +22,14 @@ import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 
 /**
  * Provides backup operation during transactional offer operation.
  */
-public class TxnOfferBackupOperation extends QueueOperation implements BackupOperation {
+public class TxnOfferBackupOperation extends QueueOperation implements Banana {
 
     private long itemId;
     private Data data;

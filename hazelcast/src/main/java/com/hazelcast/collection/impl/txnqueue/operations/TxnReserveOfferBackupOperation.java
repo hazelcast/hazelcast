@@ -21,14 +21,14 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 
 /**
 * Reserve offer backup operation for the transactional queue.
 */
-public class TxnReserveOfferBackupOperation extends QueueOperation implements BackupOperation {
+public class TxnReserveOfferBackupOperation extends QueueOperation implements Banana {
 
     private long itemId;
 

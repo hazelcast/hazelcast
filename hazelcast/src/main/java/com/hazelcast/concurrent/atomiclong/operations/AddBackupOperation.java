@@ -20,11 +20,11 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 
-public class AddBackupOperation extends AtomicLongBaseOperation implements BackupOperation {
+public class AddBackupOperation extends AtomicLongBaseOperation implements Banana {
 
     private long delta;
 

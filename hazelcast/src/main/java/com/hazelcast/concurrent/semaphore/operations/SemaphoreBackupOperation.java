@@ -18,11 +18,11 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 
-public abstract class SemaphoreBackupOperation extends SemaphoreOperation implements BackupOperation {
+public abstract class SemaphoreBackupOperation extends SemaphoreOperation implements Banana {
 
     protected String firstCaller;
 

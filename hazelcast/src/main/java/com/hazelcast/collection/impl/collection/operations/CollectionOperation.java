@@ -29,7 +29,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
@@ -67,7 +67,7 @@ public abstract class CollectionOperation extends Operation
         if (container == null) {
             ListService service = getService();
             try {
-                container = service.getOrCreateContainer(name, this instanceof BackupOperation);
+                container = service.getOrCreateContainer(name, this instanceof Banana);
             } catch (Exception e) {
                 throw new RetryableHazelcastException(e);
             }
@@ -79,7 +79,7 @@ public abstract class CollectionOperation extends Operation
         if (container == null) {
             CollectionService service = getService();
             try {
-                container = service.getOrCreateContainer(name, this instanceof BackupOperation);
+                container = service.getOrCreateContainer(name, this instanceof Banana);
             } catch (Exception e) {
                 throw new RetryableHazelcastException(e);
             }

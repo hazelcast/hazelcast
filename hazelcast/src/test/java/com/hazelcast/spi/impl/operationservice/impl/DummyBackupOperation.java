@@ -3,12 +3,12 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 
-class DummyBackupOperation extends AbstractOperation implements BackupOperation {
+class DummyBackupOperation extends AbstractOperation implements Banana {
 
     private String backupKey;
 

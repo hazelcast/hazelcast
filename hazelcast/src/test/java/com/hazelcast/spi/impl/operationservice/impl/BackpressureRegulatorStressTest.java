@@ -7,7 +7,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
@@ -376,7 +376,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         }
     }
 
-    public static class DummyBackupOperation extends AbstractOperation implements BackupOperation {
+    public static class DummyBackupOperation extends AbstractOperation implements Banana {
         private int runDelayMs;
 
         @Override

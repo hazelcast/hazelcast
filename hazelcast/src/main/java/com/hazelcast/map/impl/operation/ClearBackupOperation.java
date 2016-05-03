@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ClearBackupOperation extends MapOperation implements BackupOperation, MutatingOperation, DataSerializable {
+public class ClearBackupOperation extends MapOperation implements Banana, MutatingOperation, DataSerializable {
 
     public ClearBackupOperation() {
         this(null);

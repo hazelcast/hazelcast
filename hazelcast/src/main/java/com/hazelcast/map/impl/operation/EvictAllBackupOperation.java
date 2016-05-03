@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllBackupOperation extends MapOperation implements BackupOperation, MutatingOperation,
+public class EvictAllBackupOperation extends MapOperation implements Banana, MutatingOperation,
         DataSerializable {
 
     public EvictAllBackupOperation() {

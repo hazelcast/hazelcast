@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  * Provides backup operation during transactional prepare operation.
  */
-public class TxnPrepareBackupOperation extends QueueOperation implements BackupOperation {
+public class TxnPrepareBackupOperation extends QueueOperation implements Banana {
 
     private long[] itemIds;
     private String transactionId;
