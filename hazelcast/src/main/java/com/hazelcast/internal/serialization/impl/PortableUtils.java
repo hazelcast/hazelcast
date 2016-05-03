@@ -30,6 +30,9 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsF
  */
 final class PortableUtils {
 
+    private PortableUtils() {
+    }
+
     /**
      * Extracts and validates the quantifier from the given path token
      *
