@@ -130,7 +130,6 @@ public class CacheEventDataImpl
         }
 
         CacheEventDataImpl that = (CacheEventDataImpl) o;
-
         if (isOldValueAvailable != that.isOldValueAvailable) {
             return false;
         }
@@ -147,7 +146,6 @@ public class CacheEventDataImpl
             return false;
         }
         return dataOldValue != null ? dataOldValue.equals(that.dataOldValue) : that.dataOldValue == null;
-
     }
 
     @Override
