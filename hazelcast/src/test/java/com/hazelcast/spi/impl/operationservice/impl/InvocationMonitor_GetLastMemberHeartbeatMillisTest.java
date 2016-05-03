@@ -38,7 +38,7 @@ public class InvocationMonitor_GetLastMemberHeartbeatMillisTest extends Hazelcas
         localAddress = getAddress(local);
         remote = cluster[1];
         remoteAddress = getAddress(remote);
-        invocationMonitor = getOperationServiceImpl(local).invocationMonitor;
+        invocationMonitor = getOperationServiceImpl(local).getInvocationMonitor();
     }
 
     @Test

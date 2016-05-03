@@ -29,14 +29,14 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  */
 public final class PartitionInvocation extends Invocation {
 
-    public PartitionInvocation(OperationServiceImpl operationService, Operation op, int tryCount, long tryPauseMillis,
+    public PartitionInvocation(InvocationContext context, Operation op, int tryCount, long tryPauseMillis,
                                long callTimeoutMillis, boolean deserialize) {
-        super(operationService, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+        super(context, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
     }
 
     @Override
     public Address getTarget() {
-        IPartition partition = nodeEngine.getPartitionService().getPartition(op.getPartitionId());
+        IPartition partition = context.partitionService.getPartition(op.getPartitionId());
         return partition.getReplicaAddress(op.getReplicaIndex());
     }
 
