@@ -27,11 +27,11 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
  * {@link OperationServiceImpl}.
  */
-public final class TargetInvocation extends Invocation {
+final class TargetInvocation extends Invocation {
 
     private final Address target;
 
-    public TargetInvocation(Context context, Operation op, Address target,
+    TargetInvocation(Context context, Operation op, Address target,
                             int tryCount, long tryPauseMillis, long callTimeoutMillis, boolean deserialize) {
         super(context, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
         this.target = target;

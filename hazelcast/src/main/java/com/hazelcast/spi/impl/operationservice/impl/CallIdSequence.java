@@ -80,7 +80,7 @@ public abstract class CallIdSequence {
      * @param invocation
      * @return true if registration is required, false otherwise.
      */
-    protected boolean skipRegistration(Invocation invocation) {
+    boolean skipRegistration(Invocation invocation) {
         if (invocation.remote) {
             return false;
         }
@@ -92,7 +92,7 @@ public abstract class CallIdSequence {
         return true;
     }
 
-    public static final class CallIdSequenceWithoutBackpressure extends CallIdSequence {
+    static final class CallIdSequenceWithoutBackpressure extends CallIdSequence {
 
         private static final AtomicLongFieldUpdater<CallIdSequenceWithoutBackpressure> HEAD
                 = AtomicLongFieldUpdater.newUpdater(CallIdSequenceWithoutBackpressure.class, "head");
@@ -138,7 +138,7 @@ public abstract class CallIdSequence {
      * there are a few threads that at the same time see that the there is space and do a next. But any following
      * invocation needs to wait till there is is capacity.
      */
-    public static final class CallIdSequenceWithBackpressure extends CallIdSequence {
+    static final class CallIdSequenceWithBackpressure extends CallIdSequence {
         static final int MAX_DELAY_MS = 500;
         private static final int INDEX_HEAD = 7;
         private static final int INDEX_TAIL = 15;
@@ -149,7 +149,7 @@ public abstract class CallIdSequence {
         private final int maxConcurrentInvocations;
         private final long backoffTimeoutMs;
 
-        public CallIdSequenceWithBackpressure(int maxConcurrentInvocations, long backoffTimeoutMs) {
+        CallIdSequenceWithBackpressure(int maxConcurrentInvocations, long backoffTimeoutMs) {
             this.maxConcurrentInvocations = maxConcurrentInvocations;
             this.backoffTimeoutMs = backoffTimeoutMs;
         }

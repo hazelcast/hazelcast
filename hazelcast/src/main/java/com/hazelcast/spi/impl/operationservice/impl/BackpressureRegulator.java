@@ -58,7 +58,7 @@ import static java.lang.Math.round;
  * </li>
  * </ol>
  */
-public class BackpressureRegulator {
+class BackpressureRegulator {
 
     /**
      * The percentage above and below a certain sync-window we should randomize.
@@ -80,7 +80,7 @@ public class BackpressureRegulator {
     private final int maxConcurrentInvocations;
     private final int backoffTimeoutMs;
 
-    public BackpressureRegulator(HazelcastProperties properties, ILogger logger) {
+    BackpressureRegulator(HazelcastProperties properties, ILogger logger) {
         this.enabled = properties.getBoolean(GroupProperty.BACKPRESSURE_ENABLED);
         this.disabled = !enabled;
         this.partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
@@ -151,7 +151,7 @@ public class BackpressureRegulator {
         }
     }
 
-    public CallIdSequence newCallIdSequence() {
+    CallIdSequence newCallIdSequence() {
         if (enabled) {
             return new CallIdSequence.CallIdSequenceWithBackpressure(maxConcurrentInvocations, backoffTimeoutMs);
         } else {
@@ -170,7 +170,7 @@ public class BackpressureRegulator {
      * @param backupAwareOp The BackupAwareOperation to check.
      * @return true if a sync needs to be forced, false otherwise.
      */
-    public boolean isSyncForced(BackupAwareOperation backupAwareOp) {
+    boolean isSyncForced(BackupAwareOperation backupAwareOp) {
         if (disabled) {
             return false;
         }

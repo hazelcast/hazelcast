@@ -222,7 +222,6 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
      * In the future additional checks can be added here like checking if a retry is needed etc.
      */
     private final class MonitorInvocationsTask implements Runnable {
-
         @Override
         public void run() {
             if (logger.isFinestEnabled()) {

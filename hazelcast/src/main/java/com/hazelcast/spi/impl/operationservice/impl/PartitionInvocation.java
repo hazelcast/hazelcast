@@ -27,9 +27,9 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
  * {@link OperationServiceImpl}.
  */
-public final class PartitionInvocation extends Invocation {
+final class PartitionInvocation extends Invocation {
 
-    public PartitionInvocation(Context context, Operation op, int tryCount, long tryPauseMillis,
+    PartitionInvocation(Context context, Operation op, int tryCount, long tryPauseMillis,
                                long callTimeoutMillis, boolean deserialize) {
         super(context, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
     }

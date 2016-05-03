@@ -40,7 +40,7 @@ final class OperationBackupHandler {
     private final NodeEngineImpl nodeEngine;
     private final BackpressureRegulator backpressureRegulator;
 
-    public OperationBackupHandler(OperationServiceImpl operationService) {
+    OperationBackupHandler(OperationServiceImpl operationService) {
         this.operationService = operationService;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;

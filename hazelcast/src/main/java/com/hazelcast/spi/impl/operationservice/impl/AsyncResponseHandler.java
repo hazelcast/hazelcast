@@ -47,12 +47,12 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive currently.
  */
-public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
+class AsyncResponseHandler implements PacketHandler, MetricsProvider {
 
     private final ResponseThread responseThread;
     private final ILogger logger;
 
-    public AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler) {
+    AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler);
     }
@@ -94,8 +94,8 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
         private final PacketHandler responsePacketHandler;
         private volatile boolean shutdown;
 
-        public ResponseThread(HazelcastThreadGroup threadGroup,
-                              PacketHandler responsePacketHandler) {
+        ResponseThread(HazelcastThreadGroup threadGroup,
+                       PacketHandler responsePacketHandler) {
             super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("response"));
             setContextClassLoader(threadGroup.getClassLoader());
             this.responsePacketHandler = responsePacketHandler;

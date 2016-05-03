@@ -29,10 +29,10 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
  * sends an Operation to the receiving member, the receiving member attaches this RemoteInvocationResponseHandler
  * to that operation.
  */
-public final class RemoteInvocationResponseHandler implements OperationResponseHandler {
+final class RemoteInvocationResponseHandler implements OperationResponseHandler {
     private final OperationServiceImpl operationService;
 
-    public RemoteInvocationResponseHandler(OperationServiceImpl operationService) {
+    RemoteInvocationResponseHandler(OperationServiceImpl operationService) {
         this.operationService = operationService;
     }
 
