@@ -733,7 +733,7 @@ public class ConfigXmlGenerator {
         }
         xml.append("<hot-restart-persistence enabled=\"").append(hrCfg.isEnabled()).append("\">");
         xml.append("<base-dir>").append(hrCfg.getBaseDir().getAbsolutePath()).append("</base-dir>");
-        xml.append("<store-count>").append(hrCfg.getStoreCount()).append("</store-count>");
+        xml.append("<parallelism>").append(hrCfg.getParallelism()).append("</parallelism>");
         xml.append("<validation-timeout-seconds>")
                 .append(hrCfg.getValidationTimeoutSeconds())
                 .append("</validation-timeout-seconds>");
