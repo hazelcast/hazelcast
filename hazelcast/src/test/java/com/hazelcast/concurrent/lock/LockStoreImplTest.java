@@ -291,6 +291,12 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetLockedEntryCount() {
+        lock();
+        assertEquals(1, lockStore.getLockedEntryCount());
+    }
+
+    @Test
     public void testGetLockCount_whenLockDoesNotExist_thenReturnZero() {
         int lockCount = lockStore.getLockCount(key);
         assertThat(lockCount, is(0));

@@ -78,6 +78,15 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
+    public int getLockedEntryCount() {
+        LockStore lockStore = getLockStoreOrNull();
+        if (lockStore == null) {
+            return 0;
+        }
+        return lockStore.getLockedEntryCount();
+    }
+
+    @Override
     public long getRemainingLeaseTime(Data key) {
         LockStore lockStore = getLockStoreOrNull();
         if (lockStore == null) {

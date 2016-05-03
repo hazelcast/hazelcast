@@ -65,6 +65,10 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected Storage<Data, Record> storage;
 
+    private long hits;
+    private long lastAccess;
+    private long lastUpdate;
+
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.mapContainer = mapContainer;
         this.partitionId = partitionId;
@@ -96,6 +100,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
         final long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
         setExpirationTime(record, maxIdleMillis);
+        updateStatsOnPut(true, now);
         return record;
     }
 
@@ -124,6 +129,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     protected void updateRecord(Data key, Record record, Object value, long now) {
+        updateStatsOnPut(false, now);
         record.onUpdate(now);
         storage.updateRecordValue(key, record, value);
     }
@@ -187,6 +193,10 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
+    public int getLockedEntryCount() {
+        return lockStore.getLockedEntryCount();
+    }
+
     protected RecordStoreLoader createRecordStoreLoader(MapStoreContext mapStoreContext) {
         return mapStoreContext.getMapStoreWrapper() == null
                 ? RecordStoreLoader.EMPTY_LOADER : new BasicRecordStoreLoader(this);
@@ -207,5 +217,73 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     public Storage<Data, ? extends Record> getStorage() {
         return storage;
+    }
+
+    @Override
+    public long getHits() {
+        return hits;
+    }
+
+    @Override
+    public long getLastAccessTime() {
+        return lastAccess;
+    }
+
+    @Override
+    public long getLastUpdateTime() {
+        return lastUpdate;
+    }
+
+    @Override
+    public void increaseHits() {
+        this.hits++;
+    }
+
+    @Override
+    public void increaseHits(long hits) {
+        this.hits += hits;
+    }
+
+    @Override
+    public void decreaseHits(long hits) {
+        this.hits -= hits;
+    }
+
+    @Override
+    public void setLastAccessTime(long time) {
+        this.lastAccess = Math.max(this.lastAccess, time);
+    }
+
+    @Override
+    public void setLastUpdateTime(long time) {
+        this.lastUpdate = Math.max(this.lastUpdate, time);
+    }
+
+
+    protected void updateStatsOnPut(boolean newRecord, long now) {
+        setLastUpdateTime(now);
+
+        if (!newRecord) {
+            updateStatsOnGet(now);
+        }
+    }
+
+    protected void updateStatsOnPut(long hits) {
+        increaseHits(hits);
+    }
+
+    protected void updateStatsOnGet(long now) {
+        setLastAccessTime(now);
+        increaseHits();
+    }
+
+    protected void updateStatsOnRemove(long hits) {
+        decreaseHits(hits);
+    }
+
+    protected void resetStats() {
+        this.hits = 0;
+        this.lastAccess = 0;
+        this.lastUpdate = 0;
     }
 }

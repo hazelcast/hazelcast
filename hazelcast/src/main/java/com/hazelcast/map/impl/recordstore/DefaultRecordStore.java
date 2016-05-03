@@ -222,6 +222,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void putRecord(Data key, Record record) {
         markRecordStoreExpirable(record.getTtl());
         storage.put(key, record);
+        updateStatsOnPut(record.getHits());
     }
 
     @Override
@@ -441,6 +442,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         while (iterator.hasNext()) {
             Record record = iterator.next();
             storage.removeRecord(record);
+            updateStatsOnRemove(record.getHits());
             iterator.remove();
         }
         return removalSize;
@@ -474,6 +476,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void reset() {
         mapDataStore.reset();
         storage.clear();
+        resetStats();
     }
 
     @Override
@@ -485,6 +488,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mapDataStore.flush(key, value, backup);
             removeIndex(record);
             storage.removeRecord(record);
+            updateStatsOnRemove(record.getHits());
             if (!backup) {
                 mapServiceContext.interceptRemove(name, value);
             }
@@ -511,6 +515,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return;
         }
         storage.removeRecord(record);
+        updateStatsOnRemove(record.getHits());
         mapDataStore.removeBackup(key, now);
     }
 
@@ -554,6 +559,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mapDataStore.remove(key, now);
             onStore(record);
             storage.removeRecord(record);
+            updateStatsOnRemove(record.getHits());
             removed = true;
         }
         return removed;
@@ -755,6 +761,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 mapDataStore.remove(key, now);
                 onStore(record);
                 storage.removeRecord(record);
+                updateStatsOnRemove(record.getHits());
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
@@ -946,6 +953,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             onStore(record);
         }
         storage.removeRecord(record);
+        updateStatsOnRemove(record.getHits());
         return oldValue;
     }
 

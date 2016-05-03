@@ -254,7 +254,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     protected void accessRecord(Record record, long now) {
         record.onAccess(now);
-
+        updateStatsOnGet(now);
         long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         setExpirationTime(record, maxIdleMillis);
     }

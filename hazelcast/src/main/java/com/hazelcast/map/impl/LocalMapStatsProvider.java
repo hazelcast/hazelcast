@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -33,7 +32,6 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -124,31 +122,16 @@ public class LocalMapStatsProvider {
         if (!hasRecords(recordStore)) {
             return;
         }
-        int lockedEntryCount = 0;
-        long lastAccessTime = 0;
-        long lastUpdateTime = 0;
-        long hits = 0;
 
-        Iterator<Record> iterator = recordStore.iterator();
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Data key = record.getKey();
-
-            hits += record.getHits();
-            lockedEntryCount += isLocked(key, recordStore);
-            lastAccessTime = Math.max(lastAccessTime, record.getLastAccessTime());
-            lastUpdateTime = Math.max(lastUpdateTime, record.getLastUpdateTime());
-        }
-
-        onDemandStats.incrementLockedEntryCount(lockedEntryCount);
-        onDemandStats.incrementHits(hits);
+        onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
+        onDemandStats.incrementHits(recordStore.getHits());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getHeapCost());
         onDemandStats.incrementHeapCost(recordStore.getHeapCost());
         onDemandStats.incrementOwnedEntryCount(recordStore.size());
 
-        stats.setLastAccessTime(lastAccessTime);
-        stats.setLastUpdateTime(lastUpdateTime);
+        stats.setLastAccessTime(recordStore.getLastAccessTime());
+        stats.setLastUpdateTime(recordStore.getLastUpdateTime());
     }
 
     /**
