@@ -20,7 +20,7 @@ import com.hazelcast.executor.impl.ExecutorDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class CallableTaskOperation extends BaseCallableTaskOperation
+public final class CallableTaskOperation extends AbstractCallableTaskOperation
         implements IdentifiedDataSerializable {
 
     public CallableTaskOperation() {
