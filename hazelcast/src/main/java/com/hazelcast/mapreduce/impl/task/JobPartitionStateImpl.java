@@ -66,4 +66,29 @@ public class JobPartitionStateImpl
         address = in.readObject();
         state = JobPartitionState.State.byOrdinal(in.readInt());
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        JobPartitionStateImpl that = (JobPartitionStateImpl) o;
+
+        if (address != null ? !address.equals(that.address) : that.address != null) {
+            return false;
+        }
+        return state == that.state;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + (state != null ? state.hashCode() : 0);
+        return result;
+    }
 }
