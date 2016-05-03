@@ -36,7 +36,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
@@ -126,6 +125,7 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     }
 
     private static class TestPartitionListener implements PartitionListener {
+
         private int eventCount;
 
         @Override
