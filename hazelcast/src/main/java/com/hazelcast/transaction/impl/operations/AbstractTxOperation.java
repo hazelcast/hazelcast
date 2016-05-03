@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa.operations;
+package com.hazelcast.transaction.impl.operations;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.transaction.impl.xa.XAService;
 
-public abstract class BaseXAOperation extends AbstractOperation {
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.F_ID;
+import static com.hazelcast.transaction.impl.TransactionManagerServiceImpl.SERVICE_NAME;
+
+public abstract class AbstractTxOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     @Override
     public String getServiceName() {
-        return XAService.SERVICE_NAME;
+        return SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return F_ID;
     }
 }

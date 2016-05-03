@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-public class PutRemoteTransactionBackupOperation extends BaseXAOperation implements BackupOperation {
+public class PutRemoteTransactionBackupOperation extends AbstractXAOperation implements BackupOperation {
 
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
 

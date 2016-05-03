@@ -25,7 +25,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.io.IOException;
 
-public class ClearRemoteTransactionBackupOperation extends BaseXAOperation implements BackupOperation {
+public class ClearRemoteTransactionBackupOperation extends AbstractXAOperation implements BackupOperation {
 
     private Data xidData;
 

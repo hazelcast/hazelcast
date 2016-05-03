@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class CollectRemoteTransactionsOperation extends BaseXAOperation {
+public class CollectRemoteTransactionsOperation extends AbstractXAOperation {
 
     private transient SerializableList xidSet;
 
