@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 
 import java.util.HashMap;
@@ -70,7 +71,7 @@ final class InvokeOnPartitions {
     }
 
     private void ensureNotCallingFromOperationThread() {
-        if (operationService.operationExecutor.isOperationThread()) {
+        if (Thread.currentThread() instanceof PartitionOperationThread) {
             throw new IllegalThreadStateException(Thread.currentThread() + " cannot make invocation on multiple partitions!");
         }
     }
