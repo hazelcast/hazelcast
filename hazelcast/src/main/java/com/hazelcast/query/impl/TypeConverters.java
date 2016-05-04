@@ -160,6 +160,17 @@ public final class TypeConverters {
             if (value instanceof BigInteger) {
                 return value;
             }
+            if (value instanceof BigDecimal) {
+                BigDecimal decimal = (BigDecimal) value;
+                return decimal.toBigInteger();
+            }
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return BigInteger.valueOf(number.longValue());
+            }
+            if (value instanceof Boolean) {
+                return ((Boolean) value) ? BigInteger.ONE : BigInteger.ZERO;
+            }
             return new BigInteger(value.toString());
         }
     }
@@ -173,7 +184,26 @@ public final class TypeConverters {
             if (value instanceof BigInteger) {
                 return new BigDecimal((BigInteger) value);
             }
+            if (isIntegralDataType(value)) {
+                Number number = (Number) value;
+                return BigDecimal.valueOf(number.longValue());
+            }
+            if (isFloatingPointDataType(value)) {
+                Number number = (Number) value;
+                return new BigDecimal(number.doubleValue());
+            }
+            if (value instanceof Boolean) {
+                return ((Boolean) value) ? BigDecimal.ONE : BigDecimal.ZERO;
+            }
             return new BigDecimal(value.toString());
+        }
+
+        private boolean isFloatingPointDataType(Comparable value) {
+            return value instanceof Double || value instanceof Float;
+        }
+
+        private boolean isIntegralDataType(Comparable value) {
+            return value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long;
         }
     }
 
