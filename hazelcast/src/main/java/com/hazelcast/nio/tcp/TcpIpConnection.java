@@ -258,7 +258,11 @@ public final class TcpIpConnection implements Connection {
         Socket socket = socketChannel.socket();
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return "Connection [" + localSocketAddress + " -> " + remoteSocketAddress
-                + "], endpoint=" + endPoint + ", alive=" + alive + ", type=" + type;
+        return "Connection[id=" + connectionId
+                + ", " + localSocketAddress + "->" + remoteSocketAddress
+                + ", endpoint=" + endPoint
+                + ", alive=" + alive
+                + ", type=" + type
+                + "]";
     }
 }
