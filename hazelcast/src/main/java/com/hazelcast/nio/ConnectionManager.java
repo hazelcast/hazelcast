@@ -22,8 +22,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * Responsible for managing {@link com.hazelcast.nio.Connection} objects.
  */
 @PrivateApi
-public interface ConnectionManager {
-
+public interface ConnectionManager extends ConnectionListenable {
 
     /**
      * Gets the number of client connections.
@@ -78,7 +77,7 @@ public interface ConnectionManager {
      * {@link #getConnection(Address)}.
      *
      * @param address the address to connect to.
-     * @param silent if logging should be done on debug level (silent=true) or on info level (silent=false).
+     * @param silent  if logging should be done on debug level (silent=true) or on info level (silent=false).
      * @return the existing connection.
      */
     Connection getOrConnect(Address address, boolean silent);
@@ -97,21 +96,11 @@ public interface ConnectionManager {
     void destroyConnection(Connection connection);
 
     /**
-     * Registers a ConnectionListener.
-     *
-     * If the same listener is registered multiple times, it will be notified multiple times.
-     *
-     * @param listener the ConnectionListener to add.
-     * @throws NullPointerException if listener is null.
-     */
-    void addConnectionListener(ConnectionListener listener);
-
-    /**
      * Transmits a packet to a certain connection.
      *
      * If this method is called with a null connection, the call returns false
      *
-     * @param packet The Packet to transmit.
+     * @param packet     The Packet to transmit.
      * @param connection The connection to where the Packet should be transmitted.
      * @return true if the transmit was a success, false if a failure. There is no guarantee that the packet is actually going
      * to be received since the Packet perhaps is stuck in some buffer. It just means that it is buffered somewhere.
@@ -128,8 +117,8 @@ public interface ConnectionManager {
      * @param packet The Packet to transmit.
      * @param target The address of the target machine where the Packet should be transmitted.
      * @return true if the transmit was a success, false if a failure.
-     * @see #transmit(com.hazelcast.nio.Packet, com.hazelcast.nio.Connection)
      * @throws NullPointerException if packet or target is null.
+     * @see #transmit(com.hazelcast.nio.Packet, com.hazelcast.nio.Connection)
      */
     boolean transmit(Packet packet, Address target);
 
