@@ -225,7 +225,7 @@ public class TestFullApplicationContext {
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
-        assertEquals(1,wanRef.getFilters().size());
+        assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
         assertFalse(wanRef.isRepublishingEnabled());
     }
@@ -380,6 +380,8 @@ public class TestFullApplicationContext {
         MultiMapConfig testMultiMapConfig = config.getMultiMapConfig("testMultimap");
         assertEquals(MultiMapConfig.ValueCollectionType.LIST, testMultiMapConfig.getValueCollectionType());
         assertEquals(2, testMultiMapConfig.getEntryListenerConfigs().size());
+        assertFalse(testMultiMapConfig.isBinary());
+        assertFalse(testMultiMapConfig.isStatisticsEnabled());
         for (EntryListenerConfig listener : testMultiMapConfig.getEntryListenerConfigs()) {
             if (listener.getClassName() != null) {
                 assertNull(listener.getImplementation());

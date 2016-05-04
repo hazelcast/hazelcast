@@ -133,6 +133,16 @@ public class InvalidConfigurationTest {
     }
 
     @Test
+    public void testWhenValid_MultiMapStats() {
+        buildConfig("multimap-statistics-enabled", "false");
+    }
+
+    @Test
+    public void testWhenValid_MultiMapBinary() {
+        buildConfig("multimap-binary", "false");
+    }
+
+    @Test
     public void testWhenValid_MultiMapBackupCount() {
         buildConfig("multimap-backup-count", getValidBackupCount());
     }
@@ -389,6 +399,8 @@ public class InvalidConfigurationTest {
 
         properties.setProperty("multimap-backup-count", "0");
         properties.setProperty("multimap-value-collection-type", "SET");
+        properties.setProperty("multimap-statistics-enabled", "false");
+        properties.setProperty("multimap-binary", "false");
 
         properties.setProperty("list-backup-count", "0");
 
@@ -463,6 +475,8 @@ public class InvalidConfigurationTest {
                 "<multimap name=\"default\">\n" +
                 "<backup-count>${multimap-backup-count}</backup-count>\n" +
                 "<value-collection-type>${multimap-value-collection-type}</value-collection-type>\n" +
+                "<statistics-enabled>${multimap-statistics-enabled}</statistics-enabled>\n" +
+                "<binary>${multimap-binary}</binary>\n" +
                 "</multimap>\n" +
 
                 "<list name=\"default\">\n" +

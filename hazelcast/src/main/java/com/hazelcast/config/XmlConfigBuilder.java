@@ -1003,6 +1003,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 multiMapConfig.setStatisticsEnabled(getBooleanValue(value));
+            }  else if ("binary".equals(nodeName)) {
+                multiMapConfig.setBinary(getBooleanValue(value));
             }
         }
         this.config.addMultiMapConfig(multiMapConfig);
