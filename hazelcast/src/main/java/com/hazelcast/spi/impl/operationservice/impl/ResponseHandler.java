@@ -59,10 +59,10 @@ public final class ResponseHandler implements PacketHandler, MetricsProvider {
     @Probe(name = "responses[missing]", level = MANDATORY)
     private final MwCounter responsesMissing = newMwCounter();
 
-    public ResponseHandler(ILogger logger,
-                           InternalSerializationService serializationService,
-                           InvocationRegistry invocationRegistry,
-                           NodeEngineImpl nodeEngine) {
+    ResponseHandler(ILogger logger,
+                    InternalSerializationService serializationService,
+                    InvocationRegistry invocationRegistry,
+                    NodeEngineImpl nodeEngine) {
         this.logger = logger;
         this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;

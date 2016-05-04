@@ -100,7 +100,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // when partitionId = -2, it is ad hoc
     // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
     // and therefor the {@link OperationRunner#currentTask()} always returns null
-    public OperationRunnerImpl(OperationServiceImpl operationService, int partitionId) {
+    OperationRunnerImpl(OperationServiceImpl operationService, int partitionId) {
         super(partitionId);
         this.operationService = operationService;
         this.logger = operationService.logger;
@@ -242,9 +242,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             return false;
         }
 
-        CallTimeoutResponse callTimeoutResponse = new CallTimeoutResponse(op.getCallId(), op.isUrgent());
-        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-        responseHandler.sendResponse(op, callTimeoutResponse);
+        op.sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
         return true;
     }
 
@@ -273,17 +271,12 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void sendResponse(Operation op, int syncBackupCount) {
-        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-        if (responseHandler == null) {
-            throw new IllegalStateException("ResponseHandler should not be null! " + op);
-        }
-
         try {
             Object response = op.getResponse();
             if (syncBackupCount > 0) {
                 response = new NormalResponse(response, op.getCallId(), syncBackupCount, op.isUrgent());
             }
-            responseHandler.sendResponse(op, response);
+            op.sendResponse(response);
         } catch (ResponseAlreadySentException e) {
             logOperationError(op, e);
         }
@@ -306,7 +299,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         }
     }
 
-    protected void ensureNoPartitionProblems(Operation op) {
+    private void ensureNoPartitionProblems(Operation op) {
         int partitionId = op.getPartitionId();
 
         if (partitionId < 0) {
@@ -448,7 +441,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         }
     }
 
-    public void logOperationDeserializationException(Throwable t, long callId) {
+    private void logOperationDeserializationException(Throwable t, long callId) {
         boolean returnsResponse = callId != 0;
 
         if (t instanceof RetryableException) {

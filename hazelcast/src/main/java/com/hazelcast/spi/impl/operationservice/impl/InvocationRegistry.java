@@ -81,7 +81,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     }
 
     @Probe(name = "invocations.lastCallId")
-    public long getLastCallId() {
+    long getLastCallId() {
         return callIdSequence.getLastCallId();
     }
 

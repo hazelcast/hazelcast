@@ -33,8 +33,8 @@ import java.util.concurrent.Future;
  */
 final class InvokeOnPartitions {
 
-    public static final int TRY_COUNT = 10;
-    public static final int TRY_PAUSE_MILLIS = 300;
+    private static final int TRY_COUNT = 10;
+    private static final int TRY_PAUSE_MILLIS = 300;
 
     private OperationServiceImpl operationService;
     private final String serviceName;

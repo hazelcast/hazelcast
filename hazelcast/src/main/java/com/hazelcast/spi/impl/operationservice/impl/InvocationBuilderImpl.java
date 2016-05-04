@@ -24,15 +24,15 @@ import com.hazelcast.spi.Operation;
 /**
  * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
  */
-public class InvocationBuilderImpl extends InvocationBuilder {
+class InvocationBuilderImpl extends InvocationBuilder {
 
     private final Invocation.Context context;
 
-    public InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, int partitionId) {
+    InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, int partitionId) {
         this(context, serviceName, op, partitionId, null);
     }
 
-    public InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, Address target) {
+    InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, Address target) {
         this(context, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
     }
 

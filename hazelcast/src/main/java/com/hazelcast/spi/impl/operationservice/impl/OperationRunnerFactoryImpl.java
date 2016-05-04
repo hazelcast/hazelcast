@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 class OperationRunnerFactoryImpl implements OperationRunnerFactory {
     private OperationServiceImpl operationService;
 
-    public OperationRunnerFactoryImpl(OperationServiceImpl operationService) {
+    OperationRunnerFactoryImpl(OperationServiceImpl operationService) {
         this.operationService = operationService;
     }
 
