@@ -508,10 +508,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     "multicastConfig", joinConfigBuilder, "trusted-interfaces", "interface");
             final ManagedList<String> interfaces = new ManagedList<String>();
             for (Node n : childElements(node)) {
-                String name = xmlToJavaName(cleanNodeName(n));
+                String name = cleanNodeName(n);
                 if ("trusted-interfaces".equals(name)) {
                     for (Node i: childElements(n)) {
-                        name = xmlToJavaName(cleanNodeName(i));
+                        name = cleanNodeName(i);
                         if ("interface".equals(name)) {
                             String value = getTextContent(i);
                             interfaces.add(value);
@@ -519,7 +519,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                 }
             }
-            builder.addPropertyValue("trusted-interfaces", interfaces);
+            builder.addPropertyValue("trustedInterfaces", interfaces);
         }
 
         public void handleTcpIp(Node node, BeanDefinitionBuilder joinConfigBuilder) {
@@ -530,7 +530,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             "interface", "member", "members");
             final ManagedList members = new ManagedList();
             for (Node n : childElements(node)) {
-                String name = xmlToJavaName(cleanNodeName(n));
+                String name = cleanNodeName(n);
                 if ("member".equals(name) || "members".equals(name) || "interface".equals(name)) {
                     String value = getTextContent(n);
                     members.add(value);

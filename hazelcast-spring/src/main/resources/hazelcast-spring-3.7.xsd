@@ -1886,8 +1886,7 @@
                     <xs:sequence>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
-                    <xs:attribute name="class-name" type="non-space-string" use="optional"/>
-                    <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+                    <xs:attributeGroup ref="class-or-bean-name"/>
                 </xs:complexType>
             </xs:element>
             <xs:element name="member-login-modules" type="login-modules" minOccurs="0" maxOccurs="1"/>
@@ -1944,7 +1943,7 @@
     </xs:complexType>
 
     <xs:complexType name="interceptor">
-                    <xs:attributeGroup ref="class-or-bean-name"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
     <xs:complexType name="login-modules">

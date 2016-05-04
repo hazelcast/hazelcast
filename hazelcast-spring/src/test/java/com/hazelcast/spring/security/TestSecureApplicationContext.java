@@ -90,11 +90,13 @@ public class TestSecureApplicationContext {
     @Test
     public void testMemberLoginConfigs() {
         List<LoginModuleConfig> list = securityConfig.getMemberLoginModuleConfigs();
-        assertTrue(list.size() == 1);
+        assertTrue(list.size() == 2);
         LoginModuleConfig lm = list.get(0);
         assertEquals("com.hazelcast.examples.MyRequiredLoginModule", lm.getClassName());
         assertFalse(lm.getProperties().isEmpty());
         assertEquals(LoginModuleUsage.REQUIRED, lm.getUsage());
+        LoginModuleConfig lm2 = list.get(1);
+        assertNotNull(lm2.getImplementation());
     }
 
     @Test

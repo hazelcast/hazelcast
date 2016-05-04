@@ -235,7 +235,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(17, config.getMapConfigs().size());
+        assertEquals(18, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -359,6 +359,9 @@ public class TestFullApplicationContext {
         List<MapPartitionLostListenerConfig> partitionLostListenerConfigs = testMapWithPartitionLostListenerConfig.getPartitionLostListenerConfigs();
         assertEquals(1, partitionLostListenerConfigs.size());
         assertEquals("DummyMapPartitionLostListenerImpl", partitionLostListenerConfigs.get(0).getClassName());
+        
+        MapConfig testMapWithPartitionStrategyConfig = config.getMapConfig("mapWithPartitionStrategy");
+        assertEquals("com.hazelcast.spring.DummyPartitionStrategy", testMapWithPartitionStrategyConfig.getPartitioningStrategyConfig().getPartitioningStrategyClass());
     }
 
     @Test
@@ -421,6 +424,9 @@ public class TestFullApplicationContext {
         assertEquals("prop1", configObject.stringProp);
         assertEquals(123, configObject.intProp);
         assertTrue(configObject.boolProp);
+        Object impl = serviceConfig.getImplementation();
+        assertNotNull(impl);
+        assertTrue("expected service of class com.hazelcast.spring.MyService but it is " + impl.getClass().getName(), impl instanceof MyService);
     }
 
     @Test
@@ -459,6 +465,9 @@ public class TestFullApplicationContext {
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
+        Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
+        assertEquals(1, tis.size());
+        assertEquals("10.10.10.*", tis.iterator().next());
         assertFalse(networkConfig.getInterfaces().isEnabled());
         assertEquals(1, networkConfig.getInterfaces().getInterfaces().size());
         assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());

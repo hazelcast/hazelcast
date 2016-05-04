@@ -82,7 +82,11 @@
                 </hz:outbound-ports>
                 <hz:join>
                     <hz:multicast enabled="${boolean.false}" multicast-group="224.2.2.3" multicast-port="54327"
-                                  multicast-time-to-live="16" multicast-timeout-seconds="8"/>
+                                  multicast-time-to-live="16" multicast-timeout-seconds="8">
+                        <hz:trusted-interfaces>
+                            <hz:interface>10.10.10.*</hz:interface>
+                        </hz:trusted-interfaces>
+                    </hz:multicast>
                     <hz:tcp-ip enabled="${boolean.true}">
                         <hz:required-member>127.0.0.1:5700</hz:required-member>
                         <!--                         <hz:members>${cluster.members}</hz:members> -->
@@ -269,6 +273,10 @@
                 </hz:partition-lost-listeners>
             </hz:map>
 
+            <hz:map name="mapWithPartitionStrategy">
+                <hz:partition-strategy>com.hazelcast.spring.DummyPartitionStrategy</hz:partition-strategy>
+            </hz:map>
+
             <hz:map name="mapWithMapEvictionPolicyClassName">
                 <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
             </hz:map>
@@ -365,7 +373,7 @@
             </hz:member-attributes>
 
             <hz:services>
-                <hz:service>
+                <hz:service implementation="dummyService">
                     <hz:name>my-service</hz:name>
                     <hz:class-name>com.hazelcast.spring.MyService</hz:class-name>
                     <hz:properties>
@@ -430,5 +438,6 @@
     <bean id="dummyNodeFilter" class="com.hazelcast.spring.DummyNodeFilter"/>
     <bean id="dummyDiscoveryStrategyFactory" class="com.hazelcast.spring.DummyDiscoveryStrategyFactory"/>
     <bean id="dummyDiscoveryServiceProvider" class="com.hazelcast.spring.DummyDiscoveryServiceProvider"/>
+    <bean id="dummyService" class="com.hazelcast.spring.MyService"/>
 
 </beans>
