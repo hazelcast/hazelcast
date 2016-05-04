@@ -385,6 +385,8 @@ public class TestFullApplicationContext {
         MultiMapConfig testMultiMapConfig = config.getMultiMapConfig("testMultimap");
         assertEquals(MultiMapConfig.ValueCollectionType.LIST, testMultiMapConfig.getValueCollectionType());
         assertEquals(2, testMultiMapConfig.getEntryListenerConfigs().size());
+        assertFalse(testMultiMapConfig.isBinary());
+        assertFalse(testMultiMapConfig.isStatisticsEnabled());
         for (EntryListenerConfig listener : testMultiMapConfig.getEntryListenerConfigs()) {
             if (listener.getClassName() != null) {
                 assertNull(listener.getImplementation());

@@ -757,11 +757,24 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
-                                              use="optional" default="true">
+                                <xs:attribute name="statistics-enabled" use="optional" type="parameterized-boolean"
+                                              default="true">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Enable/disable statistics
+                                            You can retrieve some statistics like owned entry count, backup entry count,
+                                            last update time, locked entry count by setting this parameter's value
+                                            as "true". The method for retrieving the statistics is `getLocalMultiMapStats()`.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="binary" use="optional" type="parameterized-boolean"
+                                              default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            By default, BINARY in-memory format is used, meaning that the object is stored
+                                            in a serialized form. You can set it to false, then, the OBJECT in-memory format
+                                            is used, which is useful when the OBJECT in-memory format has a smaller memory
+                                            footprint than BINARY.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>

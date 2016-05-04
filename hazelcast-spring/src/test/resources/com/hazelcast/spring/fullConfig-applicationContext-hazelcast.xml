@@ -299,7 +299,7 @@
             </hz:cache>
 
             <hz:multimap name="testMultimap"
-                         value-collection-type="LIST">
+                         value-collection-type="LIST" binary="false" statistics-enabled="false">
 
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
