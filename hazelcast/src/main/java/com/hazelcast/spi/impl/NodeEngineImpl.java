@@ -27,16 +27,16 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.monitors.BuildInfoPlugin;
-import com.hazelcast.internal.monitors.ConfigPropertiesPlugin;
-import com.hazelcast.internal.monitors.MemberHazelcastInstanceInfoPlugin;
-import com.hazelcast.internal.monitors.InvocationPlugin;
-import com.hazelcast.internal.monitors.MetricsPlugin;
-import com.hazelcast.internal.monitors.OverloadedConnectionsPlugin;
-import com.hazelcast.internal.monitors.PendingInvocationsPlugin;
-import com.hazelcast.internal.monitors.PerformanceMonitor;
-import com.hazelcast.internal.monitors.SlowOperationPlugin;
-import com.hazelcast.internal.monitors.SystemPropertiesPlugin;
+import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
+import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
+import com.hazelcast.internal.diagnostics.MemberHazelcastInstanceInfoPlugin;
+import com.hazelcast.internal.diagnostics.InvocationPlugin;
+import com.hazelcast.internal.diagnostics.MetricsPlugin;
+import com.hazelcast.internal.diagnostics.OverloadedConnectionsPlugin;
+import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
+import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
@@ -105,7 +105,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final MetricsRegistryImpl metricsRegistry;
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
-    private final PerformanceMonitor performanceMonitor;
+    private final Diagnostics diagnostics;
 
     public NodeEngineImpl(final Node node) {
         this.node = node;
@@ -129,7 +129,7 @@ public class NodeEngineImpl implements NodeEngine {
                 eventService,
                 new ConnectionManagerPacketHandler());
         this.quorumService = new QuorumServiceImpl(this);
-        this.performanceMonitor = newPerformanceMonitor();
+        this.diagnostics = newDiagnostics();
 
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
         serviceManager.registerService(WaitNotifyService.SERVICE_NAME, waitNotifyService);
@@ -140,15 +140,15 @@ public class NodeEngineImpl implements NodeEngine {
         return new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
     }
 
-    private PerformanceMonitor newPerformanceMonitor() {
+    private Diagnostics newDiagnostics() {
         Member localMember = node.getLocalMember();
         Address address = localMember.getAddress();
         String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
-        String name = "performance-" + addressString + "-" + currentTimeMillis();
+        String name = "diagnostics-" + addressString + "-" + currentTimeMillis();
 
-        return new PerformanceMonitor(
+        return new Diagnostics(
                 name,
-                loggingService.getLogger(PerformanceMonitor.class),
+                loggingService.getLogger(Diagnostics.class),
                 node.getHazelcastThreadGroup(),
                 node.getProperties());
     }
@@ -179,20 +179,20 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
         operationService.start();
         quorumService.start();
-        performanceMonitor.start();
+        diagnostics.start();
 
         // static loggers at beginning of file
-        performanceMonitor.register(new BuildInfoPlugin(this));
-        performanceMonitor.register(new SystemPropertiesPlugin(this));
-        performanceMonitor.register(new ConfigPropertiesPlugin(this));
+        diagnostics.register(new BuildInfoPlugin(this));
+        diagnostics.register(new SystemPropertiesPlugin(this));
+        diagnostics.register(new ConfigPropertiesPlugin(this));
 
         // periodic loggers
-        performanceMonitor.register(new OverloadedConnectionsPlugin(this));
-        performanceMonitor.register(new PendingInvocationsPlugin(this));
-        performanceMonitor.register(new MetricsPlugin(this));
-        performanceMonitor.register(new SlowOperationPlugin(this));
-        performanceMonitor.register(new InvocationPlugin(this));
-        performanceMonitor.register(new MemberHazelcastInstanceInfoPlugin(this));
+        diagnostics.register(new OverloadedConnectionsPlugin(this));
+        diagnostics.register(new PendingInvocationsPlugin(this));
+        diagnostics.register(new MetricsPlugin(this));
+        diagnostics.register(new SlowOperationPlugin(this));
+        diagnostics.register(new InvocationPlugin(this));
+        diagnostics.register(new MemberHazelcastInstanceInfoPlugin(this));
     }
 
     public ServiceManager getServiceManager() {
@@ -418,6 +418,6 @@ public class NodeEngineImpl implements NodeEngine {
         wanReplicationService.shutdown();
         executionService.shutdown();
         metricsRegistry.shutdown();
-        performanceMonitor.shutdown();
+        diagnostics.shutdown();
     }
 }
