@@ -20,10 +20,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.security.Permission;
 
-public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> {
+public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters>
+        implements UrgentSystemOperation {
 
     public PingMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
