@@ -20,14 +20,14 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.nio.ConnectionListenable;
 
 import java.io.IOException;
 
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
  */
-public interface ClientConnectionManager {
+public interface ClientConnectionManager extends ConnectionListenable {
 
     /**
      * Shutdown clientConnectionManager
@@ -88,8 +88,5 @@ public interface ClientConnectionManager {
      */
     void handleClientMessage(ClientMessage message, Connection connection);
 
-    void addConnectionListener(ConnectionListener connectionListener);
-
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
-
 }
