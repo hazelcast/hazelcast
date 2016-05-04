@@ -25,12 +25,15 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.PortableNavigatorContext.NavigationFrame;
-import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.checkFactoryAndClass;
+import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.emptyAnyPosition;
+import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.nilAnyPosition;
+import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.nilNotLeafPosition;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.isCurrentPathTokenWithAnyQuantifier;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.isCurrentPathTokenWithoutQuantifier;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.unknownFieldException;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.validateAndGetArrayQuantifierFromCurrentToken;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.validateArrayType;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.validateFactoryAndClass;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.wrongUseOfAnyOperationException;
 
 /**
@@ -43,11 +46,6 @@ import static com.hazelcast.internal.serialization.impl.PortableUtils.wrongUseOf
 final class PortablePositionNavigator {
 
     // cache of commonly returned values to avoid extra allocations
-    private static final PortableSinglePosition NIL_NOT_LAST = PortableSinglePosition.nil(false);
-    private static final PortableSinglePosition NIL_LAST_ANY = PortableSinglePosition.nil(true, true);
-    private static final PortableSinglePosition NIL_NOT_LAST_ANY = PortableSinglePosition.nil(false, true);
-    private static final PortableSinglePosition EMPTY_LAST_ANY = PortableSinglePosition.empty(true, true);
-    private static final PortableSinglePosition EMPTY_NOT_LAST_ANY = PortableSinglePosition.empty(false, true);
 
     private PortablePositionNavigator() {
     }
@@ -58,7 +56,7 @@ final class PortablePositionNavigator {
      * - simple -> which means that it includes a single attribute only, like "name"
      * - nested -> which means that it includes more then a single attribute separated with a dot (.). like person.name
      * <p>
-     * The path may also includes array cells
+     * The path may also includes array cells:
      * - specific quantifier, like person.leg[1] -> returns the leg with index 0
      * - wildcard quantifier, like person.leg[any] -> returns all legs
      * <p>
@@ -66,6 +64,7 @@ final class PortablePositionNavigator {
      * from all legs.
      * <p>
      * Returns a {@link PortablePosition} that includes the type of the found element and its location in the stream.
+     * E.g. car.wheels[0].pressure -> the position will point to the pressure object
      *
      * @param ctx  context of the navigation that encompasses inputStream, classDefinition and all other required fields
      * @param path pathCursor that's required to navigate down the path to the leaf token
@@ -115,7 +114,7 @@ final class PortablePositionNavigator {
     private static PortablePosition navigateToPathToken(
             PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) throws IOException {
         // first, setup the context for the current path token
-        ctx.setupForCurrentPathToken(path);
+        ctx.setupContextForGivenPathToken(path);
 
         if (isCurrentPathTokenWithoutQuantifier(path)) {
             // ex: attribute
@@ -155,7 +154,7 @@ final class PortablePositionNavigator {
             if (!navigateContextToNextPortableTokenFromPortableField(ctx)) {
                 // we return null if we didn't manage to advance from the current token to the next one.
                 // For example: it may happen if the current token points to a null object.
-                return NIL_NOT_LAST;
+                return nilNotLeafPosition();
             }
         }
         return null;
@@ -169,7 +168,7 @@ final class PortablePositionNavigator {
             // The only case where it returns a PortableSingleResult is when the position is a a single null result.
             // otherwise we always allocate a MultiResult to indicate to the reader that it's a multi-position.
             if (path.isAnyPath()) {
-                return new PortableMultiPosition(result);
+                return PortablePositionFactory.createMultiPosition(result);
             }
         }
         return result;
@@ -191,12 +190,12 @@ final class PortablePositionNavigator {
             result = navigateThroughAllTokensAndReturnPositionForReading(ctx, path, frame);
             positions.add(result);
         }
-        return new PortableMultiPosition(positions);
+        return PortablePositionFactory.createMultiPosition(positions);
     }
 
     private static void setupContextAndPathWithFrameState(
             PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) {
-        ctx.setupForFrame(frame);
+        ctx.advanceContextToGivenFrame(frame);
         path.index(frame.pathTokenIndex);
     }
 
@@ -206,7 +205,7 @@ final class PortablePositionNavigator {
         // check if the underlying field is of array type
         validateArrayType(ctx, path);
 
-        if (ctx.isFieldOfType(FieldType.PORTABLE_ARRAY)) {
+        if (ctx.isCurrentFieldOfType(FieldType.PORTABLE_ARRAY)) {
             // the result will be returned if it was the last token of the path, otherwise it has just moved further.
             PortablePosition result = navigateToPathTokenWithAnyQuantifierInPortableArray(ctx, path, frame);
             if (result != null) {
@@ -253,9 +252,9 @@ final class PortablePositionNavigator {
 
     private static PortablePosition doValidateArrayLengthForAnyQuantifier(int len, boolean lastToken) {
         if (len == 0) {
-            return emptyPosition(lastToken);
+            return emptyAnyPosition(lastToken);
         } else if (len == Bits.NULL_ARRAY_LENGTH) {
-            return nilPosition(lastToken);
+            return nilAnyPosition(lastToken);
         }
         return null;
     }
@@ -313,18 +312,18 @@ final class PortablePositionNavigator {
         // reads the array length and checks if the index is in-bound
         int len = getArrayLengthOfTheField(ctx);
         if (len == 0) {
-            return emptyPosition(path.isLastToken());
+            return emptyAnyPosition(path.isLastToken());
         } else if (len == Bits.NULL_ARRAY_LENGTH) {
-            return nilPosition(path.isLastToken());
+            return nilAnyPosition(path.isLastToken());
         } else if (index >= len) {
-            return nilPosition(path.isLastToken());
+            return nilAnyPosition(path.isLastToken());
         } else {
             // when index in-bound
             if (path.isLastToken()) {
                 // if it's a token that's on the last position we calculate its direct access position and return it for
                 // reading in the value reader.
                 return returnPositionOfCurrentElementFromArrayCell(ctx, path, index);
-            } else if (ctx.isFieldOfType(FieldType.PORTABLE_ARRAY)) {
+            } else if (ctx.isCurrentFieldOfType(FieldType.PORTABLE_ARRAY)) {
                 // otherwise we advance only if the type is a portable_array. We cannot navigate further in a primitive
                 // type and the portable arrays may store portable or primitive types only.
                 navigateContextToNextPortableTokenFromPortableArrayCell(ctx, index);
@@ -354,7 +353,7 @@ final class PortablePositionNavigator {
         int versionId = in.readInt();
 
         // initialise context with the given portable field for further navigation
-        ctx.advanceToNextPortableToken(factoryId, classId, versionId);
+        ctx.advanceContextToNextPortableToken(factoryId, classId, versionId);
         return true;
     }
 
@@ -373,7 +372,7 @@ final class PortablePositionNavigator {
         // read factory and class Id and validate if it's the same as expected in the fieldDefinition
         int factoryId = in.readInt();
         int classId = in.readInt();
-        checkFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId);
+        validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId);
 
         // calculate the offset of the cell given by the index
         final int cellOffset = in.position() + index * Bits.INT_SIZE_IN_BYTES;
@@ -387,7 +386,7 @@ final class PortablePositionNavigator {
         int versionId = in.readInt();
 
         // initialise context with the given portable field for further navigation
-        ctx.advanceToNextPortableToken(factoryId, classId, versionId);
+        ctx.advanceContextToNextPortableToken(factoryId, classId, versionId);
     }
 
     private static PortablePosition returnPositionOfCurrentToken(PortableNavigatorContext ctx, PortablePathCursor path)
@@ -411,15 +410,6 @@ final class PortablePositionNavigator {
     private static int getArrayLengthOfTheField(PortableNavigatorContext ctx) throws IOException {
         return PortableUtils.getArrayLengthOfTheField(ctx.getCurrentFieldDefinition(), ctx.getIn(),
                 ctx.getCurrentOffset());
-    }
-
-    // convenience for reusing nil positions without extra allocation:
-    private static PortablePosition nilPosition(boolean last) {
-        return last ? NIL_LAST_ANY : NIL_NOT_LAST_ANY;
-    }
-
-    private static PortablePosition emptyPosition(boolean last) {
-        return last ? EMPTY_LAST_ANY : EMPTY_NOT_LAST_ANY;
     }
 
 

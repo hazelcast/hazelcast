@@ -60,7 +60,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         this.ctx = new PortableNavigatorContext(in, cd, serializer);
         this.pathCursor = new PortablePathCursor();
 
-        this.finalPosition = ctx.getFinalPosition();
+        this.finalPosition = ctx.getCurrentFinalPosition();
         this.offset = ctx.getCurrentOffset();
     }
 
@@ -595,7 +595,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
             } else if (position.isNull()) {
                 return null;
             } else if (position.isEmpty()) {
-                if (position.isLast() && position.getType() != null) {
+                if (position.isLeaf() && position.getType() != null) {
                     return readSinglePosition(position);
                 } else {
                     return null;
@@ -620,7 +620,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         return result;
     }
 
-
     @SuppressWarnings("unchecked")
     private <T> T readSinglePosition(PortablePosition position) throws IOException {
         if (position.getIndex() >= 0) {
@@ -643,6 +642,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         }
     }
 
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
     private <T> T readSinglePositionFromArray(PortablePosition position) throws IOException {
         switch (position.getType()) {
             case BYTE:
@@ -682,6 +682,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         }
     }
 
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
     private <T> T readSinglePositionFromNonArray(PortablePosition position) throws IOException {
         switch (position.getType()) {
             case BYTE:

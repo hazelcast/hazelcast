@@ -20,34 +20,95 @@ import com.hazelcast.nio.serialization.FieldType;
 
 import java.util.List;
 
+/**
+ * Position of an object in the portable byte stream.
+ * <p>
+ * Can be used by a reader to read the object at a specified stream position under a specified path.
+ * <p>
+ * E.g. car.wheels[0].pressure -> the position will point to the pressure object
+ */
 interface PortablePosition {
-    // used for all field types
+
+    /**
+     * @return stream position of the object in the byte stream
+     */
     int getStreamPosition();
 
+    /**
+     * @return the array index of the object in the byte stream, should the path point to an array at the leaf.
+     * e.g. car.wheel[1] - in this case index would be 1. If no quantifier specified the index is -1.
+     */
     int getIndex();
 
-    // used for portables only
+    /**
+     * @return true if the index >= 0
+     */
+    boolean isArrayCellAccess();
+
+    /**
+     * @return true if the object under the given path is null, false otherwise.
+     */
     boolean isNull();
 
-    int getLen();
-
-    int getFactoryId();
-
-    int getClassId();
-
-    // determines type of position
-    boolean isMultiPosition();
-
+    /**
+     * @return true should the path point to an array and the array is empty, false otherwise.
+     */
     boolean isEmpty();
 
-    // convenience
+    /**
+     * @return length of the array should the path point to an array, -1 otherwise.
+     */
+    int getLen();
+
+    /**
+     * @return portable factoryId should the path point to a portable, -1 otherwise
+     */
+    int getFactoryId();
+
+    /**
+     * @return portable classId should the path point to a portable, -1 otherwise
+     */
+    int getClassId();
+
+    /**
+     * Determines type of position. There's a {@link PortableSinglePosition} and {@link PortableMultiPosition}
+     * A PortableMultiPosition is just a grouping object for PortableSinglePosition. It has a common ancestor,
+     * thus we can return a single result or multiple results from a method returning a PortablePosition.
+     * In this way we avoid extra allocation of a list if there's only a single result.
+     *
+     * @return true, if the current position is a multiposition, false otherwise
+     */
+    boolean isMultiPosition();
+
+    /**
+     * Convenience to check if null or empty.
+     *
+     * @return true if the {@link this.isNull()} or {@link this.isEmpty() } call return true.
+     */
     boolean isNullOrEmpty();
 
-    boolean isLast();
+    /**
+     * It may sometimes happen that navigating to the leaf is impossible since an attribute in between is null.
+     * E.g. car.wheels[0].pressure -> wheels array is null, in this case isLeaf() will return false since it didn't
+     * manage to reach the leaf of the path.
+     *
+     * @return true if the portable position points to the leaf of the expression, false otherwise.
+     */
+    boolean isLeaf();
 
+    /**
+     * @return true if the given path contained [any] operator
+     */
     boolean isAny();
 
+    /**
+     * @return the type of the field under the leaf of the given path
+     */
+    FieldType getType();
+
+    /**
+     * @return list of PortablePositions if the given object is a MultiPosition, exception is thrown otherwise
+     */
     List<PortablePosition> asMultiPosition();
 
-    FieldType getType();
 }

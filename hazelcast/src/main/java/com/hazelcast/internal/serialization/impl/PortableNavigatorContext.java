@@ -29,8 +29,11 @@ import java.util.Deque;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.unknownFieldException;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
-
-public class PortableNavigatorContext {
+/**
+ * Mutable navigator context that holds the state of the navigation in the portable byte stream.
+ * Tightly coupled with the {@link PortablePositionNavigator}
+ */
+class PortableNavigatorContext {
 
     // mutable fields that hold the mutable state
     private BufferObjectDataInput in;
@@ -89,17 +92,16 @@ public class PortableNavigatorContext {
         offset = initOffset;
     }
 
-    int getFinalPosition() {
-        return finalPosition;
-    }
-
-
     BufferObjectDataInput getIn() {
         return in;
     }
 
     int getCurrentOffset() {
         return offset;
+    }
+
+    int getCurrentFinalPosition() {
+        return finalPosition;
     }
 
     FieldDefinition getCurrentFieldDefinition() {
@@ -110,12 +112,23 @@ public class PortableNavigatorContext {
         return cd;
     }
 
-    void advanceToNextPortableToken(int factoryId, int classId, int version) throws IOException {
-        cd = serializer.setupPositionAndDefinition(in, factoryId, classId, version);
-        initFieldCountAndOffset(in, cd);
+    FieldType getCurrentFieldType() {
+        return fd.getType();
     }
 
-    void setupForCurrentPathToken(PortablePathCursor path) {
+    boolean isCurrentFieldOfType(FieldType type) {
+        return fd.getType() == type;
+    }
+
+    boolean areThereMultiPositions() {
+        return multiPositions != null && !multiPositions.isEmpty();
+    }
+
+    NavigationFrame pollFirstMultiPosition() {
+        return multiPositions.pollFirst();
+    }
+
+    void setupContextForGivenPathToken(PortablePathCursor path) {
         String pathToken = path.token();
         String fieldName = extractAttributeNameNameWithoutArguments(pathToken);
         this.fd = cd.getField(fieldName);
@@ -124,18 +137,15 @@ public class PortableNavigatorContext {
         }
     }
 
-    void setupForFrame(NavigationFrame frame) {
+    void advanceContextToNextPortableToken(int factoryId, int classId, int version) throws IOException {
+        cd = serializer.setupPositionAndDefinition(in, factoryId, classId, version);
+        initFieldCountAndOffset(in, cd);
+    }
+
+    void advanceContextToGivenFrame(NavigationFrame frame) {
         in.position(frame.streamPosition);
         offset = frame.streamOffset;
         cd = frame.cd;
-    }
-
-    boolean areThereMultiPositions() {
-        return multiPositions != null && !multiPositions.isEmpty();
-    }
-
-    boolean isFieldOfType(FieldType type) {
-        return fd.getType() == type;
     }
 
     /**
@@ -152,10 +162,6 @@ public class PortableNavigatorContext {
         for (int cellIndex = len - 1; cellIndex > 0; cellIndex--) {
             multiPositions.addFirst(new NavigationFrame(cd, pathTokenIndex, cellIndex, in.position(), offset));
         }
-    }
-
-    NavigationFrame pollFirstMultiPosition() {
-        return multiPositions.pollFirst();
     }
 
     /**

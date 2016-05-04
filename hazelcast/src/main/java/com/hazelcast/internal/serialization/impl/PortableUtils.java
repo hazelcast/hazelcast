@@ -26,7 +26,7 @@ import java.io.IOException;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 
 /**
- * Used in portable extraction mainly
+ * Utils used in portable extraction mainly
  */
 final class PortableUtils {
 
@@ -150,6 +150,23 @@ final class PortableUtils {
             throw new IllegalArgumentException("Wrong use of array operator: '" + path.path()
                     + "' for ClassDefinition {id: " + ctx.getCurrentClassDefinition().getClassId() + ", version: "
                     + ctx.getCurrentClassDefinition().getVersion() + "}");
+        }
+    }
+
+    /**
+     * Validates if the given factoryId and classId match the ones from the fieldDefinition
+     * @param fd given fieldDefinition to validate against
+     * @param factoryId given factoryId to validate
+     * @param classId given factoryId to validate
+     */
+    static void validateFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
+        if (factoryId != fd.getFactoryId()) {
+            throw new IllegalArgumentException("Invalid factoryId! Expected: "
+                    + fd.getFactoryId() + ", Current: " + factoryId);
+        }
+        if (classId != fd.getClassId()) {
+            throw new IllegalArgumentException("Invalid classId! Expected: "
+                    + fd.getClassId() + ", Current: " + classId);
         }
     }
 

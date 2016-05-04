@@ -346,8 +346,4 @@
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>
 
-    <!-- Portables -->
-    <suppress checks="ReturnCount|Cyclomatic" files="com/hazelcast/internal/serialization/impl/DefaultPortableReader"/>
-    <suppress checks="ReturnCount" files="com/hazelcast/internal/serialization/impl/PortablePositionNavigator"/>
-
 </suppressions>

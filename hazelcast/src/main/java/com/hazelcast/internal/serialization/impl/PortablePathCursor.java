@@ -57,19 +57,19 @@ final class PortablePathCursor {
         return index == pathTokens.length - 1;
     }
 
-    public String token() {
+    String token() {
         return pathTokens[index];
     }
 
-    public int length() {
+    int length() {
         return pathTokens.length;
     }
 
-    public String path() {
+    String path() {
         return path;
     }
 
-    public boolean advanceToNextToken() {
+    boolean advanceToNextToken() {
         return ++index <= pathTokens.length - 1;
     }
 
@@ -79,15 +79,15 @@ final class PortablePathCursor {
      *
      * @param index value to set the cursor's index to.
      */
-    public void index(int index) {
+    void index(int index) {
         this.index = index;
     }
 
-    public int index() {
+    int index() {
         return index;
     }
 
-    public boolean isAnyPath() {
+    boolean isAnyPath() {
         return path.contains("[any]");
     }
 }
