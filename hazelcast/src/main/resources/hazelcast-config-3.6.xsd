@@ -802,6 +802,16 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="binary" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        By default, BINARY in-memory format is used, meaning that the object is stored
+                        in a serialized form. You can set it to false, then, the OBJECT in-memory format
+                        is used, which is useful when the OBJECT in-memory format has a smaller memory
+                        footprint than BINARY.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="value-collection-type" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
