@@ -30,7 +30,6 @@ import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -43,7 +42,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.String.format;
+import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByMemberLeftEvent;
 
 class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
         implements EventHandler<ClientMessage> {
@@ -163,17 +162,11 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         logger.info(membersString());
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
-            connectionManager.destroyConnection(connection, newTargetDisconnectException(member));
+            connectionManager.destroyConnection(connection, newTargetDisconnectedExceptionCausedByMemberLeftEvent(member));
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
-    }
-
-    private Exception newTargetDisconnectException(Member member) {
-        return new TargetDisconnectedException(format("Closing connection to member %s. "
-                + " The client has closed the connection to this member, after receiving a member left event "
-                + " from the cluster.", member.getAddress()));
     }
 
     private void fireMembershipEvent(List<MembershipEvent> events) {
@@ -201,7 +194,8 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             if (clusterService.getMember(address) == null) {
                 Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
-                    connectionManager.destroyConnection(connection, newTargetDisconnectException(member));
+                    connectionManager.destroyConnection(connection,
+                            newTargetDisconnectedExceptionCausedByMemberLeftEvent(member));
                 }
             }
         }
