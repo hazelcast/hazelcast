@@ -21,12 +21,12 @@ import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class LockBackupOperation extends BaseLockOperation implements BackupOperation {
+public class LockBackupOperation extends BaseLockOperation implements Banana {
 
     private String originalCallerUuid;
 

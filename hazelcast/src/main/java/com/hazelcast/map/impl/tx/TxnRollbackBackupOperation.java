@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * An operation to rollback transaction by unlocking the key on key backup owner.
  */
-public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements Banana {
 
     private String lockOwner;
     private long lockThreadId;

@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -142,7 +142,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
         }
     }
 
-    private static class FailingBackupOperation extends AbstractOperation implements BackupOperation {
+    private static class FailingBackupOperation extends AbstractOperation implements Banana {
         @Override
         public void run() throws Exception {
             throw new ExpectedRuntimeException();

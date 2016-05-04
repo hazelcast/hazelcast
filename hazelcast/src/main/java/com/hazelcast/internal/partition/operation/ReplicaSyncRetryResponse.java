@@ -26,14 +26,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 public class ReplicaSyncRetryResponse extends Operation
-        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation {
+        implements PartitionAwareOperation, Banana, MigrationCycleOperation {
 
     public ReplicaSyncRetryResponse() {
     }

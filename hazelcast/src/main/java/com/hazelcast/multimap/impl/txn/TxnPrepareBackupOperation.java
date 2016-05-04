@@ -22,12 +22,12 @@ import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
-public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation implements Banana {
 
     private static final long LOCK_EXTENSION_TIME_IN_MILLIS = 10000L;
     String caller;

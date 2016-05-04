@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
@@ -37,7 +37,7 @@ import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 
-public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation {
+public class EntryBackupOperation extends KeyBasedMapOperation implements Banana, MutatingOperation {
 
     protected transient Object oldValue;
     private EntryBackupProcessor entryProcessor;

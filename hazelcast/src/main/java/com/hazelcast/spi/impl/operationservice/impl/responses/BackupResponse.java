@@ -16,10 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl.responses;
 
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 /**
- * The {Response} for a {@link com.hazelcast.spi.BackupOperation}. So when a operation like
+ * The {Response} for a {@link Banana}. So when a operation like
  * Map.put is done, backup operations are send to the backup partitions. For the initial
  * Map.put to complete, the {@link com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse} needs to return,
  * but also the {@link BackupResponse} to make sure that the change

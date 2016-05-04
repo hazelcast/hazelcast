@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * Provides backup functionality for {@link AddAllOperation}
  */
-public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
+public class AddAllBackupOperation extends QueueOperation implements Banana {
 
     private Map<Long, Data> dataMap;
 

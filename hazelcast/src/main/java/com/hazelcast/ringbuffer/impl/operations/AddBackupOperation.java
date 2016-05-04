@@ -20,13 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.ADD_BACKUP_OPERATION;
 
-public class AddBackupOperation extends AbstractRingBufferOperation implements BackupOperation {
+public class AddBackupOperation extends AbstractRingBufferOperation implements Banana {
 
     private Data item;
 

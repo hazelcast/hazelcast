@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * a wrapper for running all commit backup operations at once
  */
-public class CollectionCommitBackupOperation extends CollectionOperation implements BackupOperation {
+public class CollectionCommitBackupOperation extends CollectionOperation implements Banana {
 
     private List<Operation> backupList;
 

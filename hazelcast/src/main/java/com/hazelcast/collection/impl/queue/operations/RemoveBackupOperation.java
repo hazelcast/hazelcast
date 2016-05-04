@@ -20,7 +20,7 @@ import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 
@@ -28,7 +28,7 @@ import java.io.IOException;
  * Remove backup of the Queue item.
  */
 
-public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
+public class RemoveBackupOperation extends QueueOperation implements Banana {
 
     private long itemId;
 

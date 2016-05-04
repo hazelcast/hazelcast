@@ -19,13 +19,13 @@ package com.hazelcast.transaction.impl.xa.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.io.IOException;
 
-public class FinalizeRemoteTransactionBackupOperation extends BaseXAOperation implements BackupOperation {
+public class FinalizeRemoteTransactionBackupOperation extends BaseXAOperation implements Banana {
 
     private Data xidData;
     private transient SerializableXID xid;

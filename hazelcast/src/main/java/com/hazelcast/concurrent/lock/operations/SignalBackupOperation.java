@@ -18,10 +18,10 @@ package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.ObjectNamespace;
 
-public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
+public class SignalBackupOperation extends BaseSignalOperation implements Banana {
 
     public SignalBackupOperation() {
     }

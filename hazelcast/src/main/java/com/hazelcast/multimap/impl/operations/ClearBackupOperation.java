@@ -18,9 +18,9 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
-public class ClearBackupOperation extends MultiMapOperation implements BackupOperation {
+public class ClearBackupOperation extends MultiMapOperation implements Banana {
 
     public ClearBackupOperation() {
     }

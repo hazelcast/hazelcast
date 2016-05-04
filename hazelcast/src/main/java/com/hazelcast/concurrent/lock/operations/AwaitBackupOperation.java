@@ -22,13 +22,13 @@ import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
 public class AwaitBackupOperation extends BaseLockOperation
-        implements BackupOperation {
+        implements Banana {
 
     private String originalCaller;
     private String conditionId;

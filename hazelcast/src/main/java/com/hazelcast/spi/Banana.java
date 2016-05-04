@@ -23,6 +23,6 @@ package com.hazelcast.spi;
  *
  * @author mdogan 12/3/12
  */
-public interface BackupOperation extends PartitionAwareOperation {
+public interface Banana extends PartitionAwareOperation {
 
 }

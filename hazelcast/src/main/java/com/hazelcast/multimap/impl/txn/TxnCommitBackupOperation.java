@@ -21,14 +21,14 @@ import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implements Banana {
 
     List<Operation> opList;
     String caller;

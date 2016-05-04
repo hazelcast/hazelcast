@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
@@ -40,7 +40,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  */
 public class CacheBackupEntryProcessorOperation
         extends AbstractCacheOperation
-        implements BackupOperation, IdentifiedDataSerializable {
+        implements Banana, IdentifiedDataSerializable {
 
     private EntryProcessor entryProcessor;
     private Object[] arguments;

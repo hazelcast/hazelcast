@@ -20,14 +20,14 @@ import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 
 /**
  * An operation to unlock key on the backup owner.
  */
-public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Banana {
 
     private String ownerUuid;
 

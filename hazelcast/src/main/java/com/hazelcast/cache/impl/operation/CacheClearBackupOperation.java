@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
@@ -29,7 +29,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
  * <p>It simply clears the records.</p>
  */
 public class CacheClearBackupOperation extends AbstractNamedOperation
-        implements BackupOperation, IdentifiedDataSerializable, MutatingOperation {
+        implements Banana, IdentifiedDataSerializable, MutatingOperation {
 
     private transient ICacheRecordStore cache;
 

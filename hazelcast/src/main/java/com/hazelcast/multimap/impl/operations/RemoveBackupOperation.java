@@ -22,13 +22,13 @@ import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Banana;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements Banana {
 
     long recordId;
 
