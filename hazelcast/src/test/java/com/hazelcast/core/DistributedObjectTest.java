@@ -145,7 +145,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     public void testCustomObject() {
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setServiceImpl(new TestInitializingObjectService())
+                new ServiceConfig().setImplementation(new TestInitializingObjectService())
                         .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -160,7 +160,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setServiceImpl(new TestInitializingObjectService())
+                new ServiceConfig().setImplementation(new TestInitializingObjectService())
                         .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
 
@@ -182,7 +182,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setServiceImpl(new TestInitializingObjectService())
+                new ServiceConfig().setImplementation(new TestInitializingObjectService())
                         .setEnabled(true).setName(TestInitializingObjectService.NAME)
         );
 
@@ -268,7 +268,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setServiceImpl(new FailingInitializingObjectService())
+                new ServiceConfig().setImplementation(new FailingInitializingObjectService())
                         .setEnabled(true).setName(FailingInitializingObjectService.NAME)
         );
 
@@ -284,7 +284,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
-                new ServiceConfig().setServiceImpl(new FailingInitializingObjectService())
+                new ServiceConfig().setImplementation(new FailingInitializingObjectService())
                         .setEnabled(true).setName(FailingInitializingObjectService.NAME)
         );
 
