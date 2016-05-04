@@ -33,9 +33,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class PerformanceLogTest extends HazelcastTestSupport {
+public class PerformanceLogFileTest extends HazelcastTestSupport {
 
-    private PerformanceLog performanceLog;
+    private PerformanceLogFile performanceLog;
     private MetricsRegistry metricsRegistry;
 
     @Before
@@ -50,7 +50,7 @@ public class PerformanceLogTest extends HazelcastTestSupport {
 
         PerformanceMonitor performanceMonitor = getPerformanceMonitor(hz);
 
-        performanceLog = performanceMonitor.performanceLog;
+        performanceLog = (PerformanceLogFile)performanceMonitor.performanceLog;
         metricsRegistry = getMetricsRegistry(hz);
     }
 

@@ -179,7 +179,6 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.init();
         operationService.start();
         quorumService.start();
-        performanceMonitor.start();
 
         // static loggers at beginning of file
         performanceMonitor.register(new BuildInfoPlugin(this));
