@@ -46,6 +46,7 @@ import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.QueryEventFilter;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -133,6 +134,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final LocalMapStatsImpl localMapStats;
     protected final LockProxySupport lockSupport;
     protected final PartitioningStrategy partitionStrategy;
+    private final boolean nearCacheEnabled;
 
     protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
@@ -140,6 +142,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         partitionStrategy = service.getMapServiceContext().getMapContainer(name).getPartitioningStrategy();
         localMapStats = service.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        nearCacheEnabled = nodeEngine.getConfig().findMapConfig(name).isNearCacheEnabled();
     }
 
     @Override
@@ -218,16 +221,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 return fromBackup;
             }
         }
+
+        boolean marked = getKeyStateMarker().tryMark(key);
+
         final GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         final Data value = (Data) invokeOperation(key, operation);
 
-        if (nearCacheEnabled) {
-            if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
-                return putNearCache(key, value);
-            }
+        if (nearCacheEnabled && marked) {
+            tryToPutNearCache(key, value);
         }
+
         return value;
+    }
+
+    protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
+        PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
+        Data previousValue = (Data) invokeOperation(key, operation);
+        invalidateNearCache(key);
+        return previousValue;
     }
 
     private boolean notOwnerPartitionForKey(Data key) {
@@ -248,6 +260,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         return nearCacheProvider.putNearCache(name, key, value);
+    }
+
+    // used for testing purposes.
+    public NearCache getNearCache() {
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        return nearCacheProvider.getNearCache(name);
     }
 
 
@@ -329,6 +349,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
             }
         }
+        final boolean marked = nearCacheEnabled ? getKeyStateMarker().tryMark(key) : false;
 
         GetOperation operation = new GetOperation(name, key);
         try {
@@ -340,12 +361,21 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             future.andThen(new ExecutionCallback<Data>() {
                 @Override
                 public void onResponse(Data response) {
-                    if (nearCacheEnabled) {
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                                .equals(nodeEngine.getClusterService().getThisAddress())
-                                || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response);
+                    if (nearCacheEnabled && marked) {
+                        KeyStateMarker keyStateMarker = getKeyStateMarker();
+                        try {
+                            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+                            if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
+                                    .equals(nodeEngine.getClusterService().getThisAddress())
+                                    || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
+
+                                mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response);
+                            }
+                        } finally {
+                            if (!keyStateMarker.tryUnmark(key)) {
+                                invalidateNearCache(key);
+                                keyStateMarker.resetState(key);
+                            }
                         }
                     }
                 }
@@ -360,12 +390,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
-        PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        Data previousValue = (Data) invokeOperation(key, operation);
-        invalidateNearCache(key);
-        return previousValue;
-    }
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
         TryPutOperation operation = new TryPutOperation(name, key, value, getTimeInMillis(timeout, timeunit));
@@ -665,6 +689,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    //CHECKSTYLE:OFF
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
@@ -679,6 +704,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (keys.isEmpty()) {
             return result;
         }
+
+
+        KeyStateMarker keyStateMarker = getKeyStateMarker();
+        Map<Data, Boolean> keyStates = new HashMap<Data, Boolean>(keys.size());
+        for (Data key : keys) {
+            keyStates.put(key, keyStateMarker.tryMark(key));
+        }
+
         Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses;
         try {
@@ -690,11 +723,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 for (Entry<Data, Data> entry : entries) {
                     result.put(mapService.getMapServiceContext().toObject(entry.getKey()),
                             mapService.getMapServiceContext().toObject(entry.getValue()));
-                    if (nearCacheEnabled) {
-                        if (notOwnerPartitionForKey(entry.getKey())
-                                || cacheKeyAnyway()) {
-                            putNearCache(entry.getKey(), entry.getValue());
-                        }
+
+                    Data key = entry.getKey();
+                    if (nearCacheEnabled && keyStates.get(key)) {
+                        tryToPutNearCache(key, entry.getValue());
                     }
                 }
             }
@@ -703,6 +735,21 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
 
         return result;
+    }
+    //CHECKSTYLE:ON
+
+    private void tryToPutNearCache(Data key, Data value) {
+        KeyStateMarker keyStateMarker = getKeyStateMarker();
+        try {
+            if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
+                putNearCache(key, value);
+            }
+        } finally {
+            if (!keyStateMarker.tryUnmark(key)) {
+                invalidateNearCache(key);
+                keyStateMarker.resetState(key);
+            }
+        }
     }
 
     private Collection<Integer> getPartitionsForKeys(Set<Data> keys) {
@@ -817,6 +864,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     public void clearInternal() {
+        clearNearCache();
+
         final String mapName = name;
         final NodeEngine nodeEngine = getNodeEngine();
         try {
@@ -1094,6 +1143,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (key == null) {
             return;
         }
+
         getService().getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, key);
     }
 
@@ -1101,12 +1151,21 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (keys == null || keys.isEmpty()) {
             return;
         }
+
         getService().getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, keys);
     }
 
     private void clearNearCache() {
         getService().getMapServiceContext().getNearCacheProvider().clearNearCache(name);
     }
+
+    private KeyStateMarker getKeyStateMarker() {
+        if (!nearCacheEnabled) {
+            return KeyStateMarker.EMPTY_MARKER;
+        }
+        return getService().getMapServiceContext().getNearCacheProvider().getNearCache(name).getKeyStateMarker();
+    }
+
 
     private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
         final MapService mapService = getService();

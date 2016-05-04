@@ -312,7 +312,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     protected void invalidateNearCache(Data key) {
         if (nearCache != null) {
-            nearCache.remove(key);
+            nearCache.invalidate(key);
         }
     }
     //endregion internal base operations
