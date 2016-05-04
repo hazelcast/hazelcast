@@ -867,6 +867,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public void reset() {
         lock.lock();
         try {
+            shouldFetchPartitionTables = false;
             replicaManager.reset();
             partitionStateManager.reset();
             migrationManager.reset();
