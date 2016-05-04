@@ -28,6 +28,7 @@ import com.hazelcast.client.impl.operations.PostJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -47,6 +48,7 @@ import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
@@ -59,8 +61,10 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -71,6 +75,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -89,9 +94,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
     private static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
+    private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
+    private static final int THREADS_PER_CORE = 20;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
+    private final Executor txExecutor;
 
     private final SerializationService serializationService;
     // client uuid -> member uuid
@@ -110,6 +118,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
+        this.txExecutor = newExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(this.nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
 
@@ -123,6 +132,19 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return new ClientExceptionFactory(jcacheAvailable);
     }
 
+    private Executor newExecutor() {
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        int coreSize = Runtime.getRuntime().availableProcessors();
+
+        int threadCount = node.getProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
+        if (threadCount <= 0) {
+            threadCount = coreSize * THREADS_PER_CORE;
+        }
+
+        return executionService.register(ExecutionService.CLIENT_EXECUTOR,
+                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
+                ExecutorType.CONCRETE);
+    }
 
     //needed for testing purposes
     public ConnectionListener getConnectionListener() {
@@ -142,7 +164,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();
-        operationService.execute(messageTask);
+
+        if (messageTask.getPartitionId() >= 0) {
+            operationService.execute(messageTask);
+        } else if (messageTask instanceof AbstractTransactionalMessageTask) {
+            txExecutor.execute(messageTask);
+        } else {
+            operationService.execute(messageTask);
+        }
     }
 
     @Override
