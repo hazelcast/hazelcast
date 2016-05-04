@@ -16,7 +16,11 @@
 
 package com.hazelcast.spi.exception;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
+
+import static com.hazelcast.util.StringUtil.timeToString;
+import static java.lang.String.format;
 
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates that an operation is about to
@@ -37,5 +41,21 @@ public class TargetDisconnectedException extends RetryableHazelcastException {
 
     public TargetDisconnectedException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    public static Exception newTargetDisconnectedExceptionCausedByHeartBeat(Address memberAddress, long lastHeartbeatMillis,
+                                                                            Throwable cause) {
+        return new TargetDisconnectedException(format(
+                "Disconnecting from member %s due to heartbeat problems. Current time: %s. Last heartbeat: %s",
+                memberAddress,
+                timeToString(System.currentTimeMillis()),
+                (lastHeartbeatMillis == 0) ? "never" : timeToString(lastHeartbeatMillis)
+        ), cause);
+    }
+
+    public static Exception newTargetDisconnectedExceptionCausedByMemberLeftEvent(Member member) {
+        return new TargetDisconnectedException(format("Closing connection to member %s."
+                + " The client has closed the connection to this member, after receiving a member left event from the cluster.",
+                member.getAddress()));
     }
 }

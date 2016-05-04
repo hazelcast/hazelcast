@@ -32,7 +32,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
@@ -49,8 +48,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
-import static com.hazelcast.util.StringUtil.timeToString;
-import static java.lang.String.format;
+import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartBeat;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
@@ -249,12 +247,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     public void heartBeatStopped(Connection connection) {
         if (connection.getEndPoint().equals(ownerConnectionAddress)) {
             ClientConnection clientConnection = (ClientConnection) connection;
-
-            Exception ex = new TargetDisconnectedException(format(
-                    "Disconnecting from member %s due to heartbeat problems. Current time: %s. Last heartbeat: %s",
-                    clientConnection.getRemoteEndpoint(),
-                    timeToString(System.currentTimeMillis()),
-                    timeToString(clientConnection.getLastHeartbeatMillis())), clientConnection.getCloseCause());
+            Exception ex = newTargetDisconnectedExceptionCausedByHeartBeat(clientConnection.getRemoteEndpoint(),
+                    clientConnection.getLastHeartbeatMillis(), clientConnection.getCloseCause());
             connectionManager.destroyConnection(connection, ex);
         }
     }

@@ -33,7 +33,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -48,8 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
-import static com.hazelcast.util.StringUtil.timeToString;
-import static java.lang.String.format;
+import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartBeat;
 
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService {
@@ -216,12 +214,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 }
 
                 iter.remove();
-
-                Exception ex = new TargetDisconnectedException(format(
-                        "Disconnecting from member %s due to heartbeat problems. Current time: %s. Last heartbeat: %s",
-                        connection.getRemoteEndpoint(),
-                        timeToString(System.currentTimeMillis()),
-                        timeToString(connection.getLastHeartbeatMillis())), connection.getCloseCause());
+                Exception ex = newTargetDisconnectedExceptionCausedByHeartBeat(connection.getRemoteEndpoint(),
+                        connection.getLastHeartbeatMillis(), connection.getCloseCause());
                 invocation.notifyException(ex);
             }
             if (expiredConnections != null) {
