@@ -81,6 +81,9 @@ The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
 
 The following are the fixed issues for 3.6.3 release.
 
+- Unnecessary deserialization step during the execution of put operations should be removed. [8018]
+- A URL text with spaces should not be transformed into a URI. [8016]
+- Unnecessary deserialization step in the replicated map data structure should be removed. [8014]
 - When using `InstanceOfPredicate`, the method `toObject` at the server side causes `NullPointerException`, since the class loader is not set and it is null. Default class loader should be used if it is not set by the configuration to avoid the exception. [7977]
 - There may be cases when the server may return a list of entries larger than the requested page size. In this case the client should not put any anchor into the list that is on a page greater than the requested page. [7976]
 - When a remote invocation waits indefinitely on the internal executor, a deadlock may occur since its response would use the same executor and since the invocation monitor runs on the same executor. [7944]
