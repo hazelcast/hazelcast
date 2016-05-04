@@ -199,7 +199,7 @@ public class NodeStateTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
                 new ServiceConfig().setEnabled(true)
-                        .setName("bs").setServiceImpl(new BlockingService(latch)));
+                        .setName("bs").setImplementation(new BlockingService(latch)));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final HazelcastInstance hz = factory.newHazelcastInstance(config);

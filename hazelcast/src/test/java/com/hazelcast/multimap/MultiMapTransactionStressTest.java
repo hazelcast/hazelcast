@@ -200,7 +200,7 @@ public class MultiMapTransactionStressTest extends HazelcastTestSupport {
         Config config = new Config();
         ServicesConfig servicesConfig = config.getServicesConfig();
         servicesConfig.addServiceConfig(new ServiceConfig().setName(DUMMY_TX_SERVICE)
-                .setEnabled(true).setServiceImpl(new MapTransactionStressTest.DummyTransactionalService(DUMMY_TX_SERVICE)));
+                .setEnabled(true).setImplementation(new MapTransactionStressTest.DummyTransactionalService(DUMMY_TX_SERVICE)));
         return config;
     }
 

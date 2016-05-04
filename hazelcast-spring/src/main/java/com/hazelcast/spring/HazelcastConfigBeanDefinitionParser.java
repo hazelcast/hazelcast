@@ -56,6 +56,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
@@ -312,12 +313,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder serviceConfigBuilder = createBeanBuilder(ServiceConfig.class);
             final AbstractBeanDefinition beanDefinition = serviceConfigBuilder.getBeanDefinition();
             fillAttributeValues(node, serviceConfigBuilder);
+            boolean classNameSet = false;
             for (Node child : childElements(node)) {
                 final String nodeName = cleanNodeName(child);
                 if ("name".equals(nodeName)) {
                     serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                 } else if ("class-name".equals(nodeName)) {
+                    // log message about element deprecation..?
                     serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
+                    classNameSet = true;
                 } else if ("properties".equals(nodeName)) {
                     handleProperties(child, serviceConfigBuilder);
                 } else if ("configuration".equals(nodeName)) {
@@ -333,6 +337,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                 }
             }
+
+            final NamedNodeMap attrs = node.getAttributes();
+            Node classNameNode = attrs.getNamedItem("class-name");
+            if (classNameNode != null) { 
+            	serviceConfigBuilder.addPropertyValue("className", getTextContent(classNameNode));
+            }
+            Node implNode = attrs.getNamedItem("implementation");
+            if (implNode != null) { 
+                serviceConfigBuilder.addPropertyReference("implementation", getTextContent(implNode));
+            }
+            Assert.isTrue(classNameSet || classNameNode != null || implNode != null, "One of 'class-name' or 'implementation' "
+                    + "attributes is required to create ServiceConfig!");
             return beanDefinition;
         }
 
@@ -488,7 +504,22 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {
-            createAndFillBeanBuilder(node, MulticastConfig.class, "multicastConfig", joinConfigBuilder);
+            final BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, MulticastConfig.class, 
+                    "multicastConfig", joinConfigBuilder, "trusted-interfaces", "interface");
+            final ManagedList<String> interfaces = new ManagedList<String>();
+            for (Node n : childElements(node)) {
+                String name = xmlToJavaName(cleanNodeName(n));
+                if ("trusted-interfaces".equals(name)) {
+                    for (Node i: childElements(n)) {
+                        name = xmlToJavaName(cleanNodeName(i));
+                        if ("interface".equals(name)) {
+                            String value = getTextContent(i);
+                            interfaces.add(value);
+                        }
+                    }
+                }
+            }
+            builder.addPropertyValue("trusted-interfaces", interfaces);
         }
 
         public void handleTcpIp(Node node, BeanDefinitionBuilder joinConfigBuilder) {
@@ -636,7 +667,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
-                    mapConfigBuilder.addPropertyValue("quorumName", getTextContent(node));
+                    mapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 } else if ("query-caches".equals(nodeName)) {
                     ManagedList queryCaches = getQueryCaches(childNode);
                     mapConfigBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
@@ -647,6 +678,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleHotRestartConfig(mapConfigBuilder, childNode);
                 } else if ("map-eviction-policy".equals(nodeName)) {
                     handleMapEvictionPolicyConfig(mapConfigBuilder, childNode);
+                } else if ("partition-strategy".equals(nodeName)) {
+                    PartitioningStrategyConfig psConfig = new PartitioningStrategyConfig(getTextContent(childNode));
+                    mapConfigBuilder.addPropertyValue("partitioningStrategyConfig", psConfig);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
@@ -1182,7 +1216,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleLoginModule(final Node node, List list) {
             final BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(LoginModuleConfig.class);
             final AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
-            fillAttributeValues(node, lmConfigBuilder);
+            fillAttributeValues(node, lmConfigBuilder, "class-name", "implementation");
+            final NamedNodeMap attrs = node.getAttributes();
+            Node classNameNode = attrs.getNamedItem("class-name");
+            String className = classNameNode != null ? getTextContent(classNameNode) : null;
+            Node implNode = attrs.getNamedItem("implementation");
+            String implementation = implNode != null ? getTextContent(implNode) : null;
+            lmConfigBuilder.addPropertyValue("className", className);
+            if (implementation != null) {
+                lmConfigBuilder.addPropertyReference("implementation", implementation);
+            }
+            Assert.isTrue(className != null || implementation != null, "One of 'class-name' or 'implementation' "
+                    + "attributes is required to create LoginModule!");
             for (Node child : childElements(node)) {
                 final String nodeName = cleanNodeName(child);
                 if ("properties".equals(nodeName)) {

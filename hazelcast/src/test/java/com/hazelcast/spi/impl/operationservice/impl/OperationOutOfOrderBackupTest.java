@@ -66,7 +66,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
     public void setup() {
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(new ServiceConfig()
-            .setServiceImpl(service).setName(ValueHolderService.NAME).setEnabled(true));
+            .setImplementation(service).setName(ValueHolderService.NAME).setEnabled(true));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);

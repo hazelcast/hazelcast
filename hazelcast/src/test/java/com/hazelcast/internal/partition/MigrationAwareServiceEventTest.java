@@ -56,7 +56,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         final MigrationEventCounterService counter = new MigrationEventCounterService();
         ServiceConfig serviceConfig = new ServiceConfig()
                 .setEnabled(true).setName("event-counter")
-                .setServiceImpl(counter);
+                .setImplementation(counter);
         config.getServicesConfig().addServiceConfig(serviceConfig);
 
         final HazelcastInstance hz = factory.newHazelcastInstance(config);
