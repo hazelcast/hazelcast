@@ -155,18 +155,19 @@ final class PortableUtils {
 
     /**
      * Validates if the given factoryId and classId match the ones from the fieldDefinition
-     * @param fd given fieldDefinition to validate against
+     *
+     * @param fd        given fieldDefinition to validate against
      * @param factoryId given factoryId to validate
-     * @param classId given factoryId to validate
+     * @param classId   given factoryId to validate
      */
-    static void validateFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
+    static void validateFactoryAndClass(FieldDefinition fd, int factoryId, int classId, PortablePathCursor path) {
         if (factoryId != fd.getFactoryId()) {
             throw new IllegalArgumentException("Invalid factoryId! Expected: "
-                    + fd.getFactoryId() + ", Current: " + factoryId);
+                    + fd.getFactoryId() + ", Current: " + factoryId + " in path " + path.path());
         }
         if (classId != fd.getClassId()) {
             throw new IllegalArgumentException("Invalid classId! Expected: "
-                    + fd.getClassId() + ", Current: " + classId);
+                    + fd.getClassId() + ", Current: " + classId + " in path " + path.path());
         }
     }
 

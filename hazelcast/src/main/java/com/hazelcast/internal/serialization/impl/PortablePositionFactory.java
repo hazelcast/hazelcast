@@ -16,21 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 
-import java.io.IOException;
 import java.util.List;
 
-import static com.hazelcast.internal.serialization.impl.PortableUtils.validateFactoryAndClass;
 import static java.util.Arrays.asList;
 
 final class PortablePositionFactory {
-
-    private static final boolean SINGLE_CELL_ACCESS = true;
-    private static final boolean WHOLE_ARRAY_ACCESS = false;
 
     private static final PortableSinglePosition NIL_NOT_LEAF = nil(false);
     private static final PortableSinglePosition NIL_LEAF_ANY = nil(true, true);
@@ -55,124 +48,35 @@ final class PortablePositionFactory {
         return NIL_NOT_LEAF;
     }
 
+    static PortableSinglePosition createSinglePosition(
+            FieldDefinition fd, int streamPosition, int index, boolean leaf) {
+        return new PortableSinglePosition(fd, streamPosition, index, leaf);
+    }
+
+    static PortableSinglePosition createSinglePosition(
+            FieldDefinition fd, int streamPosition, int factoryId, int classId, boolean nil, boolean leaf) {
+        PortableSinglePosition position = new PortableSinglePosition(fd, streamPosition, -1, leaf);
+        position.factoryId = factoryId;
+        position.classId = classId;
+        position.nil = nil;
+        return position;
+    }
+
+    static PortableSinglePosition createSinglePosition(
+            FieldDefinition fd, int streamPosition, int factoryId, int classId, int index, int len, boolean leaf) {
+        PortableSinglePosition position = new PortableSinglePosition(fd, streamPosition, index, leaf);
+        position.factoryId = factoryId;
+        position.classId = classId;
+        position.len = len;
+        return position;
+    }
+
     static PortableMultiPosition createMultiPosition(PortablePosition position) {
         return new PortableMultiPosition(position);
     }
 
     static PortableMultiPosition createMultiPosition(List<PortablePosition> positions) {
         return new PortableMultiPosition(positions);
-    }
-
-    static PortableSinglePosition createSinglePositionForReadAccess(
-            PortableNavigatorContext ctx, PortablePathCursor path, int streamPosition) throws IOException {
-        return createSinglePositionForReadAccess(ctx, path, streamPosition, -1);
-    }
-
-    static PortableSinglePosition createSinglePositionForReadAccess(
-            PortableNavigatorContext ctx, PortablePathCursor path, int streamPosition, int index) throws IOException {
-        PortableSinglePosition result = new PortableSinglePosition(ctx.getCurrentFieldDefinition(),
-                streamPosition, index, path.isLastToken());
-        if (!result.isNullOrEmpty()) {
-            adjustPositionForReadAccess(ctx.getIn(), result, path.path());
-        }
-        return result;
-    }
-
-    private static void adjustPositionForReadAccess(BufferObjectDataInput in, PortableSinglePosition position, String path)
-            throws IOException {
-        FieldType type = position.getType();
-        if (type.isArrayType()) {
-            if (type == FieldType.PORTABLE_ARRAY) {
-                if (position.isArrayCellAccess()) {
-                    adjustForPortableArrayAccess(in, position, SINGLE_CELL_ACCESS);
-                } else {
-                    adjustForPortableArrayAccess(in, position, WHOLE_ARRAY_ACCESS);
-                }
-            } else {
-                if (position.isArrayCellAccess()) {
-                    adjustForSingleCellPrimitiveArrayAccess(in, path, type, position);
-                }
-                // we don't need to adjust anything otherwise - a primitive array can be read without any adjustments
-            }
-        } else {
-            validateNonArrayPosition(position);
-            if (type == FieldType.PORTABLE) {
-                adjustForPortableFieldAccess(in, position);
-            }
-            // we don't need to adjust anything otherwise - a primitive field can be read without any adjustments
-        }
-    }
-
-    private static void validateNonArrayPosition(PortableSinglePosition position) {
-        if (position.getIndex() >= 0) {
-            throw new IllegalArgumentException("Cannot read array cell from non-array");
-        }
-    }
-
-    private static void adjustForSingleCellPrimitiveArrayAccess(
-            BufferObjectDataInput in, String fieldName, FieldType type, PortableSinglePosition position) throws IOException {
-        // assumes position.getIndex() >= 0
-        in.position(position.getStreamPosition());
-        int arrayLen = in.readInt();
-
-        if (arrayLen == Bits.NULL_ARRAY_LENGTH) {
-            throw new IllegalArgumentException("The array is null in " + fieldName);
-        }
-        if (position.index > arrayLen - 1) {
-            throw new IllegalArgumentException("Index " + position.index + " out of bound in " + fieldName);
-        }
-
-        if (type == FieldType.UTF || type == FieldType.UTF_ARRAY) {
-            int currentIndex = 0;
-            while (position.index > currentIndex) {
-                int indexElementLen = in.readInt();
-                in.position(in.position() + indexElementLen);
-                currentIndex++;
-            }
-            position.streamPosition = in.position();
-        } else {
-            position.streamPosition = in.position() + position.index * type.getSingleElementSize();
-        }
-
-    }
-
-    private static PortablePosition adjustForPortableFieldAccess(BufferObjectDataInput in, PortableSinglePosition pos)
-            throws IOException {
-        in.position(pos.streamPosition);
-        pos.nil = in.readBoolean();
-        pos.factoryId = in.readInt();
-        pos.classId = in.readInt();
-        validateFactoryAndClass(pos.fd, pos.factoryId, pos.classId);
-        pos.streamPosition = in.position();
-        return pos;
-    }
-
-    private static PortablePosition adjustForPortableArrayAccess(
-            BufferObjectDataInput in, PortableSinglePosition pos, boolean singleCellAccess) throws IOException {
-        in.position(pos.getStreamPosition());
-
-        int len = in.readInt();
-        int factoryId = in.readInt();
-        int classId = in.readInt();
-
-        pos.len = len;
-        pos.factoryId = factoryId;
-        pos.classId = classId;
-        validateFactoryAndClass(pos.fd, pos.factoryId, pos.classId);
-        pos.streamPosition = in.position();
-
-        validateFactoryAndClass(pos.fd, factoryId, classId);
-        if (singleCellAccess) {
-            if (pos.getIndex() < len) {
-                int offset = in.position() + pos.getIndex() * Bits.INT_SIZE_IN_BYTES;
-                in.position(offset);
-                pos.streamPosition = in.readInt();
-            } else {
-                pos.nil = true;
-            }
-        }
-
-        return pos;
     }
 
     static PortableSinglePosition empty(boolean leaf, boolean any) {
@@ -209,16 +113,6 @@ final class PortablePositionFactory {
 
     private static class PortableSinglePosition implements PortablePosition {
 
-        public PortableSinglePosition() {
-        }
-
-        public PortableSinglePosition(FieldDefinition fd, int streamPosition, int index, boolean leaf) {
-            this.fd = fd;
-            this.streamPosition = streamPosition;
-            this.index = index;
-            this.leaf = leaf;
-        }
-
         private FieldDefinition fd;
         private int streamPosition;
 
@@ -234,6 +128,16 @@ final class PortablePositionFactory {
 
         private boolean leaf;
         private boolean any;
+
+        public PortableSinglePosition() {
+        }
+
+        public PortableSinglePosition(FieldDefinition fd, int streamPosition, int index, boolean leaf) {
+            this.fd = fd;
+            this.streamPosition = streamPosition;
+            this.index = index;
+            this.leaf = leaf;
+        }
 
         @Override
         public int getStreamPosition() {
