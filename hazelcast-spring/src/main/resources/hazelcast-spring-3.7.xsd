@@ -1593,8 +1593,7 @@
     </xs:complexType>
 
     <xs:complexType name="map-eviction-policy">
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
     <xs:complexType name="outbound-ports">
