@@ -186,7 +186,7 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "Address[" + getHost() + "]:" + port;
+        return '[' + host + "]:" + port;
     }
 
     private static InetAddress resolve(InetSocketAddress inetSocketAddress) {

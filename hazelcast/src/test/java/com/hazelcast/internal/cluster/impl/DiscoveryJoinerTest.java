@@ -58,7 +58,7 @@ public class DiscoveryJoinerTest {
         DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, true);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[Address[127.0.0.1]:50001, Address[127.0.0.1]:50002]", addresses.toString());
+        assertEquals("[[127.0.0.1]:50001, [127.0.0.1]:50002]", addresses.toString());
     }
 
     @Test
@@ -66,6 +66,6 @@ public class DiscoveryJoinerTest {
         DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
-        assertEquals("[Address[127.0.0.2]:50001, Address[127.0.0.2]:50002]", addresses.toString());
+        assertEquals("[[127.0.0.2]:50001, [127.0.0.2]:50002]", addresses.toString());
     }
 }
