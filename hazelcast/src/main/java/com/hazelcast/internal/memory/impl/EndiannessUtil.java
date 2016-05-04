@@ -29,7 +29,7 @@ import java.io.UTFDataFormatException;
  * explicitly specified endianness. The low-level strategy of reading and writing individual bytes is
  * supplied by an instance of {@link ByteAccessStrategy}.
  */
-@SuppressWarnings({"checkstyle:magicnumber", "MagicNumber", "checkstyle:methodcount"})
+@SuppressWarnings({"checkstyle:magicnumber", "MagicNumber", "checkstyle:methodcount", "checkstyle:booleanexpressioncomplexity"})
 public final class EndiannessUtil {
 
     /** Accesses bytes in a Java byte array */
@@ -51,13 +51,13 @@ public final class EndiannessUtil {
     public static <R> char readCharB(ByteAccessStrategy<R> strategy, R resource, long offset) {
         int byte1 = strategy.getByte(resource, offset) & 0xFF;
         int byte0 = strategy.getByte(resource, offset + 1) & 0xFF;
-        return (char) ((byte1 << 8) + byte0);
+        return (char) ((byte1 << 8) | byte0);
     }
 
     public static <R> char readCharL(ByteAccessStrategy<R> strategy, R resource, long offset) {
         int byte1 = strategy.getByte(resource, offset) & 0xFF;
         int byte0 = strategy.getByte(resource, offset + 1) & 0xFF;
-        return (char) ((byte0 << 8) + byte1);
+        return (char) ((byte0 << 8) | byte1);
     }
 
     public static <R> void writeChar(
@@ -88,13 +88,13 @@ public final class EndiannessUtil {
     public static <R> short readShortB(ByteAccessStrategy<R> strategy, R resource, long offset) {
         int byte1 = strategy.getByte(resource, offset) & 0xFF;
         int byte0 = strategy.getByte(resource, offset + 1) & 0xFF;
-        return (short) ((byte1 << 8) + byte0);
+        return (short) ((byte1 << 8) | byte0);
     }
 
     public static <R> short readShortL(ByteAccessStrategy<R> strategy, R resource, long offset) {
         int byte1 = strategy.getByte(resource, offset) & 0xFF;
         int byte0 = strategy.getByte(resource, offset + 1) & 0xFF;
-        return (short) ((byte0 << 8) + byte1);
+        return (short) ((byte0 << 8) | byte1);
     }
 
     public static <R> void writeShort(
@@ -129,7 +129,7 @@ public final class EndiannessUtil {
         int byte2 = (strategy.getByte(resource, offset + 1) & 0xFF) << 16;
         int byte1 = (strategy.getByte(resource, offset + 2) & 0xFF) << 8;
         int byte0 = strategy.getByte(resource, offset + 3) & 0xFF;
-        return byte3 + byte2 + byte1 + byte0;
+        return byte3 | byte2 | byte1 | byte0;
     }
 
     public static <R> int readIntL(ByteAccessStrategy<R> strategy, R resource, long offset) {
@@ -137,7 +137,7 @@ public final class EndiannessUtil {
         int byte2 = (strategy.getByte(resource, offset + 1) & 0xFF) << 8;
         int byte1 = (strategy.getByte(resource, offset + 2) & 0xFF) << 16;
         int byte0 = (strategy.getByte(resource, offset + 3) & 0xFF) << 24;
-        return byte3 + byte2 + byte1 + byte0;
+        return byte3 | byte2 | byte1 | byte0;
     }
 
     public static <R> void writeInt(
@@ -210,7 +210,7 @@ public final class EndiannessUtil {
         long byte2 = (long) (strategy.getByte(resource, offset + 5) & 0xFF) << 16;
         long byte1 = (long) (strategy.getByte(resource, offset + 6) & 0xFF) << 8;
         long byte0 = (long) (strategy.getByte(resource, offset + 7) & 0xFF);
-        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+        return byte7 | byte6 | byte5 | byte4 | byte3 | byte2 | byte1 | byte0;
     }
 
     public static <R> long readLongL(ByteAccessStrategy<R> strategy, R resource, long offset) {
@@ -222,7 +222,7 @@ public final class EndiannessUtil {
         long byte2 = (long) (strategy.getByte(resource, offset + 5) & 0xFF) << 40;
         long byte1 = (long) (strategy.getByte(resource, offset + 6) & 0xFF) << 48;
         long byte0 = (long) (strategy.getByte(resource, offset + 7) & 0xFF) << 56;
-        return byte7 + byte6 + byte5 + byte4 + byte3 + byte2 + byte1 + byte0;
+        return byte7 | byte6 | byte5 | byte4 | byte3 | byte2 | byte1 | byte0;
     }
 
     public static <R> void writeLong(

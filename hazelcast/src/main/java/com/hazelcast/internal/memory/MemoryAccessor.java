@@ -22,6 +22,16 @@ package com.hazelcast.internal.memory;
 public interface MemoryAccessor {
 
     /**
+     * Tells whether this memory accessor is big- or little-endian. This applies to all the
+     * multibyte-width methods of integral type ({@code get/putChar}, {@code get/putShort},
+     * {@code get/putInt}, {@code get/putLong} declared in this interface and others declared
+     * in subinterfaces).
+     *
+     * @return {@code true} if the accessor is big-endian; {@code false} otherwise
+     */
+    boolean isBigEndian();
+
+    /**
      * Reads the boolean value from given address.
      *
      * @param address the address where the boolean value will be read from

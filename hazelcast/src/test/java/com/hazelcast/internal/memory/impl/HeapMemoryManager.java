@@ -220,6 +220,11 @@ public class HeapMemoryManager implements MemoryManager {
         }
 
         @Override
+        public boolean isBigEndian() {
+            return false;
+        }
+
+        @Override
         public boolean getBoolean(long address) {
             throw new UnsupportedOperationException();
         }

@@ -37,8 +37,7 @@ package com.hazelcast.internal.memory;
  */
 @SuppressWarnings("checkstyle:interfaceistype")
 public interface GlobalMemoryAccessor
-        extends ConcurrentMemoryAccessor, ConcurrentHeapMemoryAccessor,
-                EndianMemoryAccessor, ByteAccessStrategy<Object> {
+        extends ConcurrentMemoryAccessor, ConcurrentHeapMemoryAccessor, ByteAccessStrategy<Object> {
 
     /**
      * Maximum size of a block of memory to copy in a single low-level memory-copying

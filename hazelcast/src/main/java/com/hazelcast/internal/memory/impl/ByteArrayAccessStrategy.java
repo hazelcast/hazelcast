@@ -28,20 +28,14 @@ public final class ByteArrayAccessStrategy implements ByteAccessStrategy<byte[]>
 
     @Override
     public byte getByte(byte[] array, long offset) {
-        assertNotNull(array);
         assertFitsInt(offset);
         return array[(int) offset];
     }
 
     @Override
     public void putByte(byte[] array, long offset, byte x) {
-        assertNotNull(array);
         assertFitsInt(offset);
         array[(int) offset] = x;
-    }
-
-    private static void assertNotNull(byte[] array) {
-        assert array != null : "null byte array";
     }
 
     private static void assertFitsInt(long arg) {
