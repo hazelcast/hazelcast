@@ -531,6 +531,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public MapOperationProvider getMapOperationProvider(MapConfig mapConfig) {
+        return operationProviders.getOperationProvider(mapConfig);
+    }
+
+    @Override
     public Extractors getExtractors(String mapName) {
         MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.getExtractors();

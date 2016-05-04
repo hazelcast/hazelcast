@@ -32,7 +32,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.PartitioningStrategy;
@@ -41,7 +40,6 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -67,6 +65,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.PartitioningStrategyFactory;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.Predicate;
@@ -128,30 +127,31 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final MapServiceContext mapServiceContext;
     protected final InternalPartitionService partitionService;
     protected final Address thisAddress;
-    protected final MapContainer mapContainer;
     protected final OperationService operationService;
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
+    protected final MapConfig mapConfig;
 
     // not final for testing purposes.
     protected MapOperationProvider operationProvider;
 
-    protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine) {
+    protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(nodeEngine, service);
         this.name = name;
 
         this.mapServiceContext = service.getMapServiceContext();
-        this.mapContainer = mapServiceContext.getMapContainer(name);
-        this.partitionStrategy = mapServiceContext.getMapContainer(name).getPartitioningStrategy();
+        this.mapConfig = mapConfig;
+        this.partitionStrategy = PartitioningStrategyFactory.getPartitioningStrategy(nodeEngine,
+                mapConfig.getPartitioningStrategyConfig());
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
                 LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties()));
-        this.operationProvider = mapServiceContext.getMapOperationProvider(name);
+        this.operationProvider = mapServiceContext.getMapOperationProvider(mapConfig);
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
-        this.statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
+        this.statisticsEnabled = mapConfig.isStatisticsEnabled();
     }
 
     @Override
@@ -981,12 +981,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return mapServiceContext.getMapQueryEngine(name);
     }
 
-    protected MapStore getMapStore() {
-        return mapContainer.getMapStoreContext().getMapStoreWrapper();
+    protected boolean isMapStoreEnabled() {
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        return mapStoreConfig != null && mapStoreConfig.isEnabled();
     }
 
     protected MapConfig getMapConfig() {
-        return mapContainer.getMapConfig();
+        return mapConfig;
     }
 
     @Override

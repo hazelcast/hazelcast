@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 
@@ -45,5 +46,21 @@ public class MapOperationProviders {
     public MapOperationProvider getOperationProvider(String name) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         return mapContainer.isWanReplicationEnabled() ? wanAwareProvider : defaultProvider;
+    }
+
+    /**
+     * Returns a {@link MapOperationProvider} instance, depending on whether the provided {@code MapConfig} has a
+     * WAN replication policy configured or not.
+     *
+     * @param mapConfig the map configuration to query whether WAN replication is configured
+     * @return {@link DefaultMapOperationProvider} or {@link WANAwareOperationProvider} depending on the WAN replication
+     * config of the map configuration provided as parameter.
+     */
+    public MapOperationProvider getOperationProvider(MapConfig mapConfig) {
+        if (mapConfig.getWanReplicationRef() == null) {
+            return defaultProvider;
+        } else {
+            return wanAwareProvider;
+        }
     }
 }
