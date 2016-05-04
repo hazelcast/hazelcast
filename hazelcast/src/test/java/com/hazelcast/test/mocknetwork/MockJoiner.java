@@ -21,55 +21,47 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import org.junit.Assert;
 
 import java.util.Collection;
-import java.util.concurrent.ConcurrentMap;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 class MockJoiner extends AbstractJoiner {
 
-    private final Collection<Address> joinAddresses;
-    private final ConcurrentMap<Address, NodeEngineImpl> nodes;
-    private final Object joinerLock;
+    private final TestNodeRegistry registry;
 
-    private Address masterAddress;
-
-    MockJoiner(Node node, Collection<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Object joinerLock) {
+    MockJoiner(Node node, TestNodeRegistry registry) {
         super(node);
-        this.joinAddresses = addresses;
-        this.nodes = nodes;
-        this.joinerLock = joinerLock;
+        this.registry = registry;
     }
 
     public void doJoin() {
-        synchronized (joinerLock) {
+        synchronized (registry) {
+            registry.registerNode(node);
 
             ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
-            long joinStartTime = Clock.currentTimeMillis();
-            long maxJoinMillis = getMaxJoinMillis();
+            final long joinStartTime = Clock.currentTimeMillis();
+            final long maxJoinMillis = getMaxJoinMillis();
 
-            while (node.isRunning() && !node.joined()
-                    && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            while (node.isRunning() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
                 try {
-                    if (masterAddress == null) {
-                        lookupMasterAddress();
-                    }
+                    Address joinAddress = getJoinAddress();
+                    assertNotNull(joinAddress);
 
-                    if (node.getThisAddress().equals(masterAddress)) {
+                    if (node.getThisAddress().equals(joinAddress)) {
                         logger.fine("This node is found as master, no need to join.");
                         node.setJoined();
                         node.setAsMaster();
                         break;
                     }
 
-                    if (masterAddress != null) {
-                        logger.fine("Sending join request to master " + masterAddress);
-                        node.setMasterAddress(masterAddress);
-                        if (!clusterJoinManager.sendJoinRequest(masterAddress, true)) {
-                            logger.fine("Could not send join request to " + masterAddress);
-                            masterAddress = null;
-                        }
+                    logger.fine("Sending join request to " + joinAddress);
+                    if (!clusterJoinManager.sendJoinRequest(joinAddress, true)) {
+                        logger.fine("Could not send join request to " + joinAddress);
+                        node.setMasterAddress(null);
                     }
 
                     Thread.sleep(500);
@@ -78,78 +70,59 @@ class MockJoiner extends AbstractJoiner {
                     break;
                 }
             }
-            if (!node.joined()) {
-                logger.severe("Node[" + node.getThisAddress() + "] should have been joined to " + node.getMasterAddress());
-                node.shutdown(true);
-            }
         }
+
+        final boolean joined = node.joined();
+        if (!joined) {
+            node.shutdown(true);
+        }
+        assertTrue(node.getThisAddress() + " should have been joined to " + node.getMasterAddress(), joined);
     }
 
-    private void lookupMasterAddress() {
-        NodeEngineImpl nodeEngine = findAliveNodeEngine();
-        if (nodeEngine == null) {
-            logger.fine("Picking this node as master, no other running NodeEngine has been detected.");
-            masterAddress = node.getThisAddress();
-            return;
+    private Address getJoinAddress() {
+        Address joinAddress = node.getMasterAddress();
+        logger.fine("Known master address is: " + joinAddress);
+        if (joinAddress == null) {
+            joinAddress = lookupJoinAddress();
         }
-
-        Address master;
-        if (nodeEngine.getNode().isMaster()) {
-            master = nodeEngine.getThisAddress();
-            logger.fine("Found node itself is master: " + master);
-        } else {
-            master = nodeEngine.getMasterAddress();
-            logger.fine("Found node " + nodeEngine.getThisAddress() + " knows master as: " + master);
-        }
-
-        if (master == null) {
-            logger.fine("Picking this node as master, found NodeEngine has no master information.");
-            masterAddress = node.getThisAddress();
-            return;
-        }
-
-        NodeEngineImpl masterNodeEngine = nodes.get(master);
-        if (masterNodeEngine == null) {
-            logger.fine("NodeEngine for discovered master " + master + " is null.");
-            return;
-        }
-
-        if (!masterNodeEngine.isRunning()) {
-            logger.fine("NodeEngine for discovered master " + master + " is not running. -> "
-                    + masterNodeEngine.getNode().getState());
-            return;
-        }
-
-        if (!masterNodeEngine.getNode().joined()) {
-            logger.fine("NodeEngine for discovered master " + master + " is not joined.");
-            return;
-        }
-
-        logger.fine("Found possible master. Will try to connect to " + master);
-        masterAddress = master;
+        return joinAddress;
     }
 
-    private NodeEngineImpl findAliveNodeEngine() {
+    private Address lookupJoinAddress() {
+        Node foundNode = findAliveNode();
+        if (foundNode == null) {
+            logger.fine("Picking this node as master, no other running node has been detected.");
+            return node.getThisAddress();
+        }
+
+        logger.fine("Found alive node. Will try to connect to " + foundNode.getThisAddress());
+        return foundNode.getThisAddress();
+    }
+
+    private Node findAliveNode() {
+        Collection<Address> joinAddresses = registry.getJoinAddresses();
         logger.fine("Searching possible addresses for master " + joinAddresses);
         for (Address address : joinAddresses) {
-            NodeEngineImpl nodeEngine = nodes.get(address);
-            if (nodeEngine == null) {
-                logger.fine("NodeEngine for " + address + " is null.");
+            Node foundNode = registry.getNode(address);
+            if (foundNode == null) {
+                logger.fine("Node for " + address + " is null.");
                 continue;
             }
 
-            if (!nodeEngine.isRunning()) {
-                logger.fine("NodeEngine for " + address + " is not running. -> " + nodeEngine.getNode().getState());
+            Assert.assertEquals(address, foundNode.getThisAddress());
+
+            if (!foundNode.isRunning()) {
+                logger.fine("Node for " + address + " is not running. -> " + foundNode.getState());
                 continue;
             }
 
-            if (!nodeEngine.getNode().joined()) {
-                logger.fine("NodeEngine for " + address + " is not joined.");
+            if (!foundNode.joined()) {
+                logger.fine("Node for " + address + " is not joined yet.");
                 continue;
             }
 
             logger.fine("Found an alive node. Will ask master of " + address);
-            return nodeEngine;
+            return foundNode;
         }
         return null;
     }

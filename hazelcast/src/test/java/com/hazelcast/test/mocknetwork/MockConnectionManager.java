@@ -28,7 +28,6 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -46,9 +45,8 @@ public class MockConnectionManager implements ConnectionManager {
     private static final int DELAY_FACTOR = 100;
 
     private final ConcurrentMap<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
-    private final ConcurrentMap<Address, NodeEngineImpl> nodes;
+    private final TestNodeRegistry registry;
     private final Node node;
-    private final Object joinerLock;
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
     private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
@@ -57,15 +55,11 @@ public class MockConnectionManager implements ConnectionManager {
 
     private volatile boolean live;
 
-    public MockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes, Node node, Object joinerLock) {
+    public MockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry) {
         this.ioService = ioService;
-        this.nodes = nodes;
+        this.registry = registry;
         this.node = node;
-        this.joinerLock = joinerLock;
         this.logger = ioService.getLogger(MockConnectionManager.class.getName());
-        synchronized (this.joinerLock) {
-            this.nodes.put(node.getThisAddress(), node.nodeEngine);
-        }
     }
 
     @Override
@@ -77,10 +71,10 @@ public class MockConnectionManager implements ConnectionManager {
     public Connection getOrConnect(Address address) {
         MockConnection conn = mapConnections.get(address);
         if (live && (conn == null || !conn.isAlive())) {
-            NodeEngineImpl nodeEngine = nodes.get(address);
-            if (nodeEngine != null && nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
-                MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.nodeEngine);
-                conn = new MockConnection(node.getThisAddress(), address, nodeEngine);
+            Node otherNode = registry.getNode(address);
+            if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
+                MockConnection thisConnection = new MockConnection(address, node.getThisAddress(), node.getNodeEngine());
+                conn = new MockConnection(node.getThisAddress(), address, otherNode.getNodeEngine());
                 conn.localConnection = thisConnection;
                 thisConnection.localConnection = conn;
                 mapConnections.put(address, conn);
@@ -106,21 +100,21 @@ public class MockConnectionManager implements ConnectionManager {
         logger.fine("Stopping connection manager");
         live = false;
 
-        for (Address address : nodes.keySet()) {
+        for (Address address : registry.getAddresses()) {
             if (address.equals(node.getThisAddress())) {
                 continue;
             }
 
-            final NodeEngineImpl otherNodeEngine = nodes.get(address);
-            if (otherNodeEngine != null && otherNodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
-                if (otherNodeEngine.getClusterService().getMember(node.getThisAddress()) == null) {
+            final Node otherNode = registry.getNode(address);
+            if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
+                if (otherNode.getClusterService().getMember(node.getThisAddress()) == null) {
                     continue;
                 }
 
-                logger.fine(otherNodeEngine.getThisAddress() + " is instructed to remove this node.");
-                otherNodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                logger.fine(otherNode.getThisAddress() + " is instructed to remove this node.");
+                otherNode.getNodeEngine().getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
-                        ClusterServiceImpl clusterService = (ClusterServiceImpl) otherNodeEngine.getClusterService();
+                        ClusterServiceImpl clusterService = (ClusterServiceImpl) otherNode.getClusterService();
                         clusterService.removeAddress(node.getThisAddress());
                     }
                 });

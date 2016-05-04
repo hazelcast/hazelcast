@@ -27,25 +27,17 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.nio.channels.ServerSocketChannel;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentMap;
 
 class MockNodeContext implements NodeContext {
 
-    private final Collection<Address> joinAddresses;
-    private final ConcurrentMap<Address, NodeEngineImpl> nodes;
+    private final TestNodeRegistry registry;
     private final Address thisAddress;
-    private final Object joinerLock;
 
-    public MockNodeContext(Collection<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes,
-            Address thisAddress, Object joinerLock) {
-        this.joinAddresses = addresses;
-        this.nodes = nodes;
+    MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
+        this.registry = registry;
         this.thisAddress = thisAddress;
-        this.joinerLock = joinerLock;
     }
 
     @Override
@@ -58,11 +50,11 @@ class MockNodeContext implements NodeContext {
     }
 
     public Joiner createJoiner(Node node) {
-        return new MockJoiner(node, joinAddresses, nodes, joinerLock);
+        return new MockJoiner(node, registry);
     }
 
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        return new FirewallingMockConnectionManager(ioService, nodes, node, joinerLock);
+        return new FirewallingMockConnectionManager(ioService, node, registry);
     }
 }

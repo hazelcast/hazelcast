@@ -19,20 +19,24 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static org.junit.Assert.assertEquals;
+
 public final class TestNodeRegistry {
 
-    private final ConcurrentMap<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
-    private final Object joinerLock = new Object();
+    private final ConcurrentMap<Address, Node> nodes = new ConcurrentHashMap<Address, Node>(10);
     private final Collection<Address> joinAddresses;
 
     public TestNodeRegistry(Collection<Address> addresses) {
@@ -40,19 +44,17 @@ public final class TestNodeRegistry {
     }
 
     public NodeContext createNodeContext(Address address) {
-        NodeEngineImpl nodeEngine;
-        if ((nodeEngine = nodes.get(address)) != null) {
-            if (nodeEngine.isRunning()) {
-                throw new IllegalArgumentException("This address already in registry! " + address);
-            }
-            nodes.remove(address);
+        Node node;
+        if ((node = nodes.get(address)) != null) {
+            assertEquals("This address is already in registry! " + address, NodeState.SHUT_DOWN, node.getState());
+            nodes.remove(address, node);
         }
-        return new MockNodeContext(joinAddresses, nodes, address, joinerLock);
+        return new MockNodeContext(this, address);
     }
 
     public HazelcastInstance getInstance(Address address) {
-        NodeEngineImpl nodeEngine = nodes.get(address);
-        return nodeEngine != null && nodeEngine.isRunning() ? nodeEngine.getHazelcastInstance() : null;
+        Node node = nodes.get(address);
+        return node != null && node.isRunning() ? node.hazelcastInstance : null;
     }
 
     public boolean removeInstance(Address address) {
@@ -61,9 +63,9 @@ public final class TestNodeRegistry {
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
         Collection<HazelcastInstance> all = new LinkedList<HazelcastInstance>();
-        for (NodeEngineImpl nodeEngine : nodes.values()) {
-            if (nodeEngine.isRunning()) {
-                all.add(nodeEngine.getHazelcastInstance());
+        for (Node node : nodes.values()) {
+            if (node.isRunning()) {
+                all.add(node.hazelcastInstance);
             }
         }
         return all;
@@ -78,10 +80,10 @@ public final class TestNodeRegistry {
     }
 
     private void shutdown(boolean terminate) {
-        Iterator<NodeEngineImpl> iterator = nodes.values().iterator();
+        Iterator<Node> iterator = nodes.values().iterator();
         while (iterator.hasNext()) {
-            NodeEngineImpl nodeEngine = iterator.next();
-            HazelcastInstance hz = nodeEngine.getHazelcastInstance();
+            Node node = iterator.next();
+            HazelcastInstance hz = node.hazelcastInstance;
             LifecycleService lifecycleService = hz.getLifecycleService();
             if (terminate) {
                 lifecycleService.terminate();
@@ -92,8 +94,27 @@ public final class TestNodeRegistry {
         }
     }
 
-    ConcurrentMap<Address, NodeEngineImpl> getNodes() {
-        return nodes;
+    Map<Address, Node> getNodes() {
+        return Collections.unmodifiableMap(nodes);
     }
 
+    Node getNode(Address address) {
+        return nodes.get(address);
+    }
+
+    Collection<Address> getJoinAddresses() {
+        return Collections.unmodifiableCollection(joinAddresses);
+    }
+
+    void registerNode(Node node) {
+        Address address = node.getThisAddress();
+        Node currentNode = nodes.putIfAbsent(address, node);
+        if (currentNode != null) {
+            assertEquals("This address is already in registry! " + address, currentNode, node);
+        }
+    }
+
+    Collection<Address> getAddresses() {
+        return Collections.unmodifiableCollection(nodes.keySet());
+    }
 }

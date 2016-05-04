@@ -21,13 +21,12 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnectionManager;
+import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class FirewallingMockConnectionManager extends MockConnectionManager {
 
@@ -35,8 +34,8 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
 
     private volatile PacketFilter packetFilter;
 
-    public FirewallingMockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes, Node node, Object joinerLock) {
-        super(ioService, nodes, node, joinerLock);
+    public FirewallingMockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry) {
+        super(ioService, node, registry);
     }
 
     @Override

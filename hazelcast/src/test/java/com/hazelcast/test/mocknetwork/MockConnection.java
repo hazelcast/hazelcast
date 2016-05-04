@@ -36,7 +36,7 @@ public class MockConnection implements Connection {
     protected final Address localEndpoint;
     protected final NodeEngineImpl nodeEngine;
 
-    final Address remoteEndpoint;
+    private final Address remoteEndpoint;
 
     volatile Connection localConnection;
 
