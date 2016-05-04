@@ -111,7 +111,7 @@ public class TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastInstance(Config config) {
         String instanceName = config != null ? config.getInstanceName() : null;
         if (mockNetwork) {
-            init(config);
+            config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(pickAddress());
             return HazelcastInstanceManager.newHazelcastInstance(config, instanceName, nodeContext);
         }
@@ -136,7 +136,7 @@ public class TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastInstance(Address address, Config config) {
         final String instanceName = config != null ? config.getInstanceName() : null;
         if (mockNetwork) {
-            init(config);
+            config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
             return HazelcastInstanceManager.newHazelcastInstance(config, instanceName, nodeContext);
         }
@@ -256,7 +256,7 @@ public class TestHazelcastInstanceFactory {
         }
     }
 
-    private static Config init(Config config) {
+    private static Config initOrCreateConfig(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }
