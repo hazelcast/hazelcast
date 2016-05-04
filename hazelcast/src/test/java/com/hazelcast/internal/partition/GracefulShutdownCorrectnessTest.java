@@ -169,8 +169,6 @@ public class GracefulShutdownCorrectnessTest extends PartitionCorrectnessTestSup
             Integer actual = (Integer) operationService.invokeOnPartition(null, new TestGetOperation(), p).join();
             assertEquals(value, actual.intValue());
         }
-
-        assertSizeAndData();
     }
 
     private Collection<Address> shutdownNodes(int count) throws InterruptedException {
