@@ -45,12 +45,12 @@ public abstract class AbstractAtomicLongOperation extends AbstractOperation
     }
 
     @Override
-    public String getServiceName() {
+    public final String getServiceName() {
         return AtomicLongService.SERVICE_NAME;
     }
 
     @Override
-    public int getFactoryId() {
+    public final int getFactoryId() {
         return AtomicLongDataSerializerHook.F_ID;
     }
 
