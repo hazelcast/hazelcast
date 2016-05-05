@@ -1,1 +1,2 @@
 com.hazelcast.spi.discovery.DiscoverySpiTest$TestDiscoveryStrategyFactory
+com.hazelcast.spi.discovery.DiscoverySpiTest$MetadataProvidingDiscoveryStrategyFactory

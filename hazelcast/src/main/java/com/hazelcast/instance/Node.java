@@ -217,8 +217,8 @@ public class Node {
                 .setConfigClassLoader(configClassLoader)
                 .setLogger(logger)
                 .setDiscoveryMode(DiscoveryMode.Member)
-                .setDiscoveryConfig(discoveryConfig)
-                .setDiscoveryNode(new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
+                .setDiscoveryConfig(discoveryConfig).setDiscoveryNode(
+                        new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
 
         return factory.newDiscoveryService(settings);
     }
@@ -345,6 +345,9 @@ public class Node {
         }
         if (properties.getBoolean(DISCOVERY_SPI_ENABLED)) {
             discoveryService.start();
+
+            // Discover local metadata from environment and merge into member attributes
+            mergeEnvironmentProvidedMemberMetadata();
         }
 
         if (properties.getBoolean(SHUTDOWNHOOK_ENABLED)) {
@@ -455,6 +458,30 @@ public class Node {
 
         hazelcastThreadGroup.destroy();
         nodeExtension.shutdown();
+    }
+
+    private void mergeEnvironmentProvidedMemberMetadata() {
+        Map<String, Object> metadata = discoveryService.discoverLocalMetadata();
+        for (Map.Entry<String, Object> entry : metadata.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Byte) {
+                localMember.setByteAttribute(entry.getKey(), (Byte) value);
+            } else if (value instanceof Short) {
+                localMember.setShortAttribute(entry.getKey(), (Short) value);
+            } else if (value instanceof Integer) {
+                localMember.setIntAttribute(entry.getKey(), (Integer) value);
+            } else if (value instanceof Long) {
+                localMember.setLongAttribute(entry.getKey(), (Long) value);
+            } else if (value instanceof Float) {
+                localMember.setFloatAttribute(entry.getKey(), (Float) value);
+            } else if (value instanceof Double) {
+                localMember.setDoubleAttribute(entry.getKey(), (Double) value);
+            } else if (value instanceof Boolean) {
+                localMember.setBooleanAttribute(entry.getKey(), (Boolean) value);
+            } else {
+                localMember.setStringAttribute(entry.getKey(), value.toString());
+            }
+        }
     }
 
     private boolean setShuttingDown() {

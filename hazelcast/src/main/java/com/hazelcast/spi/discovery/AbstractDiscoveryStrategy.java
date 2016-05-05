@@ -19,8 +19,10 @@ package com.hazelcast.spi.discovery;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.util.StringUtil;
 
+import java.util.Collections;
 import java.util.Map;
 
 import static java.util.Collections.unmodifiableMap;
@@ -49,6 +51,16 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
 
     @Override
     public void start() {
+    }
+
+    @Override
+    public PartitionGroupStrategy getPartitionGroupStrategy() {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> discoverLocalMetadata() {
+        return Collections.emptyMap();
     }
 
     /**

@@ -17,6 +17,9 @@
 package com.hazelcast.spi.discovery;
 
 import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
+
+import java.util.Map;
 
 /**
  * The <tt>DiscoveryStrategy</tt> itself is the actual implementation to discover
@@ -31,6 +34,10 @@ import com.hazelcast.spi.annotation.Beta;
  * Using the simple lifecycle management strategies like multicast discovery is able to
  * register and destroy sockets based on Hazelcast’s lifecycle. Deactivated services will
  * also never be started.
+ * <p/>
+ * <b>Attention:</b> Instead of implementing this interface directly, implementors should consider
+ * using the abstract class {@link AbstractDiscoveryStrategy} instead for easier upgradeability
+ * while this interface evolves.
  *
  * @since 3.6
  */
@@ -57,4 +64,34 @@ public interface DiscoveryStrategy {
      * kind of internal state.
      */
     void destroy();
+
+    /**
+     * Returns a custom implementation of a {@link PartitionGroupStrategy} to override
+     * default behavior of zone aware backup strategies {@link com.hazelcast.spi.partitiongroup.PartitionGroupMetaData}
+     * or to provide a specific behavior in case the discovery environment does not provide
+     * information about the infrastructure to be used for automatic configuration.
+     *
+     * @return a custom implementation of a <tt>PartitionGroupStrategy</tt> otherwise <tt>null</tt>
+     * in case of the default implementation is to be used
+     * @since 3.7
+     */
+    PartitionGroupStrategy getPartitionGroupStrategy();
+
+    /**
+     * Returns a map with discovered metadata provided by the runtime environment. Those information
+     * may include, but are not limited, to location information like datacenter, rack, host or additional
+     * tags to be used for custom purpose.
+     * <p/>
+     * Information discovered from this method are shaded into the {@link com.hazelcast.core.Member}s
+     * attributes. Existing attributes will not be overridden, that way local attribute configuration
+     * overrides provided metadata.
+     * <p/>
+     * The default implementation provides an empty map with no further metadata configured. Returning
+     * <tt>null</tt> is not permitted and will most probably result in an {@link NullPointerException}
+     * inside the cluster system.
+     *
+     * @return a map of discovered metadata as provided by the runtime environment
+     * @since 3.7
+     */
+    Map<String, Object> discoverLocalMetadata();
 }

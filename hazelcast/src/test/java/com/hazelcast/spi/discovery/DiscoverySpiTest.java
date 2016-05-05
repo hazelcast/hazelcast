@@ -30,6 +30,7 @@ import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -39,9 +40,11 @@ import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
+import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -76,6 +79,33 @@ public class DiscoverySpiTest
         extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(DiscoverySpiTest.class);
+
+    @Test
+    public void test_metadata_discovery_on_node_startup() throws Exception {
+        String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
+        InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Config config = new XmlConfigBuilder(xmlResource).build();
+
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(1);
+        try {
+            final HazelcastInstance hazelcastInstance1 = instanceFactory.newHazelcastInstance(config);
+
+            assertNotNull(hazelcastInstance1);
+
+            Member localMember = hazelcastInstance1.getCluster().getLocalMember();
+            assertEquals(Byte.MAX_VALUE, (byte) localMember.getByteAttribute("test-byte"));
+            assertEquals(Short.MAX_VALUE, (short) localMember.getShortAttribute("test-short"));
+            assertEquals(Integer.MAX_VALUE, (int) localMember.getIntAttribute("test-int"));
+            assertEquals(Long.MAX_VALUE, (long) localMember.getLongAttribute("test-long"));
+            assertEquals(Float.MAX_VALUE, localMember.getFloatAttribute("test-float"), 0);
+            assertEquals(Double.MAX_VALUE, localMember.getDoubleAttribute("test-double"), 0);
+            assertTrue(localMember.getBooleanAttribute("test-boolean"));
+            assertEquals("TEST", localMember.getStringAttribute("test-string"));
+
+        } finally {
+            instanceFactory.shutdownAll();
+        }
+    }
 
     @Test
     public void testSchema() throws Exception {
@@ -320,6 +350,16 @@ public class DiscoverySpiTest
         @Override
         public void destroy() {
         }
+
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return null;
+        }
+
+        @Override
+        public Map<String, Object> discoverLocalMetadata() {
+            return Collections.emptyMap();
+        }
     }
 
     public static class TestDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
@@ -422,4 +462,55 @@ public class DiscoverySpiTest
             return nodes;
         }
     }
+
+    public static class MetadataProvidingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return MetadataProvidingDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
+
+            return new MetadataProvidingDiscoveryStrategy(discoveryNode, logger, properties);
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return Collections.emptyList();
+        }
+    }
+
+    private static class MetadataProvidingDiscoveryStrategy extends AbstractDiscoveryStrategy {
+
+        private final DiscoveryNode discoveryNode;
+
+        public MetadataProvidingDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                  Map<String, Comparable> properties) {
+            super(logger, properties);
+            this.discoveryNode = discoveryNode;
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return Collections.singleton(discoveryNode);
+        }
+
+        @Override
+        public Map<String, Object> discoverLocalMetadata() {
+            Map<String, Object> metadata = new HashMap<String, Object>();
+            metadata.put("test-byte", Byte.MAX_VALUE);
+            metadata.put("test-short", Short.MAX_VALUE);
+            metadata.put("test-int", Integer.MAX_VALUE);
+            metadata.put("test-long", Long.MAX_VALUE);
+            metadata.put("test-float", Float.MAX_VALUE);
+            metadata.put("test-double", Double.MAX_VALUE);
+            metadata.put("test-boolean", Boolean.TRUE);
+            metadata.put("test-string", "TEST");
+            return metadata;
+        }
+    }
+
 }
