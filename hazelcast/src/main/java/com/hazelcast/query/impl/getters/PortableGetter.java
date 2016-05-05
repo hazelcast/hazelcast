@@ -22,8 +22,8 @@ import com.hazelcast.internal.serialization.impl.DefaultPortableReader;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 final class PortableGetter extends Getter {
 
@@ -43,7 +43,6 @@ final class PortableGetter extends Getter {
         FieldDefinition fieldDefinition = context.getFieldDefinition(classDefinition, fieldPath);
 
         if (fieldDefinition != null) {
-            // TODO fix this ugly down-cast
             return ((DefaultPortableReader) reader).read(fieldPath);
         } else {
             return null;
@@ -57,8 +56,7 @@ final class PortableGetter extends Getter {
 
     @Override
     Class getReturnType() {
-        // TODO Is it always correct? The reader may return a primitive object...
-        return Portable.class;
+        throw new RuntimeException("Non applicable for PortableGetter");
     }
 
     @Override
