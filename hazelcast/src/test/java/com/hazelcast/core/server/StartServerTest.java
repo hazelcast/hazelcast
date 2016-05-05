@@ -11,6 +11,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,7 +31,7 @@ public class StartServerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMain() throws FileNotFoundException {
+    public void testMain() throws FileNotFoundException, UnsupportedEncodingException {
         StartServer.main(new String[]{});
 
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
