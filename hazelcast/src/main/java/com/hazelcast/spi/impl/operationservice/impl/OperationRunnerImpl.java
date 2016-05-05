@@ -248,13 +248,13 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
     private void handleResponse(Operation op) throws Exception {
         boolean returnsResponse = op.returnsResponse();
-        int syncBackupCount = sendBackup(op);
+        int backupAcks = sendBackup(op);
 
         if (!returnsResponse) {
             return;
         }
 
-        sendResponse(op, syncBackupCount);
+        sendResponse(op, backupAcks);
     }
 
     private int sendBackup(Operation op) throws Exception {
@@ -262,19 +262,19 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             return 0;
         }
 
-        int syncBackupCount = 0;
+        int backupAcks = 0;
         BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
         if (backupAwareOp.shouldBackup()) {
-            syncBackupCount = operationService.operationBackupHandler.backup(backupAwareOp);
+            backupAcks = operationService.operationBackupHandler.backup(backupAwareOp);
         }
-        return syncBackupCount;
+        return backupAcks;
     }
 
-    private void sendResponse(Operation op, int syncBackupCount) {
+   private void sendResponse(Operation op, int backupAcks) {
         try {
             Object response = op.getResponse();
-            if (syncBackupCount > 0) {
-                response = new NormalResponse(response, op.getCallId(), syncBackupCount, op.isUrgent());
+            if (backupAcks > 0) {
+                response = new NormalResponse(response, op.getCallId(), backupAcks, op.isUrgent());
             }
             op.sendResponse(response);
         } catch (ResponseAlreadySentException e) {

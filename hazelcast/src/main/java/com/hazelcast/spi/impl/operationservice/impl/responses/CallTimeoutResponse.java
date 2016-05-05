@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl.operationservice.impl.responses;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
+
 /**
  * An response that indicates that the execution of a single call ran into a timeout.
  */
@@ -38,7 +40,7 @@ public class CallTimeoutResponse extends Response implements IdentifiedDataSeria
 
     @Override
     public int getId() {
-        return SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
+        return CALL_TIMEOUT_RESPONSE;
     }
 
     @Override
