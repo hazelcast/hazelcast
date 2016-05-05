@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.eviction.MapEvictionPolicy;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -152,6 +154,11 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
+        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+    }
+
+    @Override
+    public MapConfig setMapEvictionPolicy(MapEvictionPolicy mapEvictionPolicy) {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }
 
