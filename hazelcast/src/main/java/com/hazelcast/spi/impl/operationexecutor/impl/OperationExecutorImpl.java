@@ -352,13 +352,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void interruptPartitionThreads() {
-        for (PartitionOperationThread partitionThread : partitionThreads) {
-            partitionThread.interrupt();
-        }
-    }
-
-    @Override
     public void run(Operation operation) {
         checkNotNull(operation, "operation can't be null");
 

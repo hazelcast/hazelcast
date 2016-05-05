@@ -1205,9 +1205,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String dir = "/mnt/hot-restart-root/";
         int validationTimeout = 13131;
         int dataLoadTimeout = 45454;
+        final int parallelism = 3;
         String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "<hot-restart-persistence enabled=\"true\">"
                 + "<base-dir>" + dir + "</base-dir>"
+                + "<parallelism>" + parallelism + "</parallelism>"
                 + "<validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
                 + "<data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
                 + "</hot-restart-persistence>\n" +
@@ -1217,6 +1219,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
         assertTrue(hotRestartPersistenceConfig.isEnabled());
         assertEquals(new File(dir).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(parallelism, hotRestartPersistenceConfig.getParallelism());
         assertEquals(validationTimeout, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
     }

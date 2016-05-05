@@ -355,6 +355,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         hrConfig.setEnabled(enabled);
 
+        final String parallelismName = "parallelism";
         final String validationTimeoutName = "validation-timeout-seconds";
         final String dataLoadTimeoutName = "data-load-timeout-seconds";
 
@@ -362,6 +363,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             String name = cleanNodeName(n);
             if ("base-dir".equals(name)) {
                 hrConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if (parallelismName.equals(name)) {
+                hrConfig.setParallelism(getIntegerValue(parallelismName, getTextContent(n)));
             } else if (validationTimeoutName.equals(name)) {
                 hrConfig.setValidationTimeoutSeconds(getIntegerValue(validationTimeoutName, getTextContent(n)));
             } else if (dataLoadTimeoutName.equals(name)) {

@@ -122,57 +122,6 @@ public class OperationExecutorImpl_BasicTest extends OperationExecutorImpl_Abstr
         awaitBarrier(barrier);
     }
 
-    @Test
-    public void test_interruptAllPartitionThreads() throws Exception {
-        initExecutor();
-
-        int threadCount = executor.getPartitionThreadCount();
-        final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
-
-        executor.executeOnPartitionThreads(new Runnable() {
-            @Override
-            public void run() {
-                // current thread must be a PartitionOperationThread
-                if (Thread.currentThread() instanceof PartitionOperationThread) {
-                    try {
-                        Thread.sleep(Long.MAX_VALUE);
-                    } catch (InterruptedException ignored) {
-                    } finally {
-                        try {
-                            awaitBarrier(barrier);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                }
-            }
-        });
-
-        executor.interruptPartitionThreads();
-        awaitBarrier(barrier);
-    }
-
-    @Test
-    public void genericPriorityTaskIsPickedUpEvenWhenAllGenericThreadsBusy() {
-        initExecutor();
-
-        // lets keep the regular generic threads busy
-        for (int k = 0; k < executor.getGenericThreadCount() * 10; k++) {
-            executor.execute(new DummyOperation(GENERIC_PARTITION_ID).durationMs(20000000));
-        }
-
-        final CountDownLatch open = new CountDownLatch(1);
-        // then we schedule a priority task
-        executor.execute(new UrgentDummyOperation(GENERIC_PARTITION_ID) {
-            public void run() {
-                open.countDown();
-            }
-        });
-
-        // and verify it completes.
-        assertOpenEventually(open);
-    }
-
     private static void awaitBarrier(CyclicBarrier barrier) throws Exception {
         barrier.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
     }
