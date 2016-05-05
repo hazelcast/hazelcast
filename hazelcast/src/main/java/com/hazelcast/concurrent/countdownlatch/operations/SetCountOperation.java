@@ -20,11 +20,10 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class SetCountOperation extends BackupAwareCountDownLatchOperation implements IdentifiedDataSerializable {
+public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
     private int count;
     private boolean response;
@@ -51,11 +50,6 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation implem
     @Override
     public boolean shouldBackup() {
         return response;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
     }
 
     @Override

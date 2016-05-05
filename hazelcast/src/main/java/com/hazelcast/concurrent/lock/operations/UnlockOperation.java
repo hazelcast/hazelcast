@@ -32,7 +32,9 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class UnlockOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
+import static java.lang.Boolean.TRUE;
+
+public class UnlockOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation {
 
     private boolean force;
     private boolean shouldNotify;
@@ -101,7 +103,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return TRUE.equals(response);
     }
 
     @Override

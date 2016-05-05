@@ -30,7 +30,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class BeforeAwaitOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
+public class BeforeAwaitOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation {
 
     private String conditionId;
 

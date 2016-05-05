@@ -29,7 +29,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public abstract class BaseLockOperation extends AbstractOperation
+public abstract class AbstractLockOperation extends AbstractOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     public static final int ANY_THREAD = 0;
@@ -42,23 +42,23 @@ public abstract class BaseLockOperation extends AbstractOperation
     private transient boolean asyncBackup;
     private long referenceCallId;
 
-    public BaseLockOperation() {
+    public AbstractLockOperation() {
     }
 
-    protected BaseLockOperation(ObjectNamespace namespace, Data key, long threadId) {
+    protected AbstractLockOperation(ObjectNamespace namespace, Data key, long threadId) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
     }
 
-    protected BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long timeout) {
+    protected AbstractLockOperation(ObjectNamespace namespace, Data key, long threadId, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
         setWaitTimeout(timeout);
     }
 
-    public BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout) {
+    public AbstractLockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
@@ -122,7 +122,7 @@ public abstract class BaseLockOperation extends AbstractOperation
     }
 
     @Override
-    public int getFactoryId() {
+    public final int getFactoryId() {
         return LockDataSerializerHook.F_ID;
     }
 

@@ -17,16 +17,18 @@
 package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
+import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
 public abstract class SemaphoreOperation extends AbstractNamedOperation
-        implements PartitionAwareOperation {
+        implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected int permitCount;
     protected transient Object response;
@@ -52,6 +54,11 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation
     public SemaphoreContainer getSemaphoreContainer() {
         SemaphoreService service = getService();
         return service.getSemaphoreContainer(name);
+    }
+
+    @Override
+    public final int getFactoryId() {
+        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override

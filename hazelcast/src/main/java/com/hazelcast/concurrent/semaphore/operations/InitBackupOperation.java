@@ -18,9 +18,8 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class InitBackupOperation extends SemaphoreBackupOperation implements IdentifiedDataSerializable {
+public class InitBackupOperation extends SemaphoreBackupOperation {
 
     public InitBackupOperation() {
     }
@@ -34,11 +33,6 @@ public class InitBackupOperation extends SemaphoreBackupOperation implements Ide
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
         semaphoreContainer.init(permitCount);
         response = true;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override

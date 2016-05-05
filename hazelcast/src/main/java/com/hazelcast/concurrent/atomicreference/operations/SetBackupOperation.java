@@ -25,7 +25,7 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-public class SetBackupOperation extends AtomicReferenceBaseOperation implements BackupOperation {
+public class SetBackupOperation extends AbstractAtomicReferenceOperation implements BackupOperation {
 
     private Data newValue;
 

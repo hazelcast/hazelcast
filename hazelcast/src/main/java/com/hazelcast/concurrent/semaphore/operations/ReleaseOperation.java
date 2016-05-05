@@ -19,12 +19,11 @@ package com.hazelcast.concurrent.semaphore.operations;
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class ReleaseOperation extends SemaphoreBackupAwareOperation implements Notifier, IdentifiedDataSerializable {
+public class ReleaseOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
     public ReleaseOperation() {
     }
@@ -58,11 +57,6 @@ public class ReleaseOperation extends SemaphoreBackupAwareOperation implements N
     @Override
     public Operation getBackupOperation() {
         return new ReleaseBackupOperation(name, permitCount, getCallerUuid());
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override

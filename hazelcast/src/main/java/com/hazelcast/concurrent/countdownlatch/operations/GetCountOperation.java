@@ -18,9 +18,8 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class GetCountOperation extends BaseCountDownLatchOperation implements IdentifiedDataSerializable {
+public class GetCountOperation extends AbstractCountDownLatchOperation {
 
     private int count;
 
@@ -40,11 +39,6 @@ public class GetCountOperation extends BaseCountDownLatchOperation implements Id
     @Override
     public Object getResponse() {
         return count;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
     }
 
     @Override

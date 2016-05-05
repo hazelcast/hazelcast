@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.spi.BackupAwareOperation;
 
-public abstract class AtomicLongBackupAwareOperation extends AtomicLongBaseOperation
+public abstract class AtomicLongBackupAwareOperation extends AbstractAtomicLongOperation
         implements BackupAwareOperation {
 
     protected boolean shouldBackup = true;

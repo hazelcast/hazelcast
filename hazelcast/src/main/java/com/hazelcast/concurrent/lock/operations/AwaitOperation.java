@@ -29,7 +29,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class AwaitOperation extends BaseLockOperation
+public class AwaitOperation extends AbstractLockOperation
         implements BlockingOperation, BackupAwareOperation {
 
     private String conditionId;

@@ -18,10 +18,11 @@ package com.hazelcast.concurrent.semaphore.operations;
 
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
-public class InitOperation extends SemaphoreBackupAwareOperation implements IdentifiedDataSerializable {
+import static java.lang.Boolean.TRUE;
+
+public class InitOperation extends SemaphoreBackupAwareOperation {
 
     public InitOperation() {
     }
@@ -38,17 +39,12 @@ public class InitOperation extends SemaphoreBackupAwareOperation implements Iden
 
     @Override
     public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        return TRUE.equals(response);
     }
 
     @Override
     public Operation getBackupOperation() {
         return new InitBackupOperation(name, permitCount);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SemaphoreDataSerializerHook.F_ID;
     }
 
     @Override

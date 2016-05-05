@@ -24,7 +24,7 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-public class AddBackupOperation extends AtomicLongBaseOperation implements BackupOperation {
+public class AddBackupOperation extends AbstractAtomicLongOperation implements BackupOperation {
 
     private long delta;
 
