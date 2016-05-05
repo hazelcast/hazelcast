@@ -718,10 +718,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         long awaitStep = Math.min(SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS, timeoutMillis);
         try {
             do {
-                if (node.isMaster()) {
+                Address masterAddress = nodeEngine.getMasterAddress();
+                if (masterAddress == null) {
+                    logger.warning("Safe shutdown failed, master member is not known!");
+                    return false;
+                }
+
+                if (node.getThisAddress().equals(masterAddress)) {
                     onShutdownRequest(node.getThisAddress());
                 } else {
-                    operationService.send(new ShutdownRequestOperation(), nodeEngine.getMasterAddress());
+                    operationService.send(new ShutdownRequestOperation(), masterAddress);
                 }
                 if (latch.await(awaitStep, TimeUnit.MILLISECONDS)) {
                     return true;

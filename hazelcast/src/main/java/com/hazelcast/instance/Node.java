@@ -479,13 +479,16 @@ public class Node {
             return;
         }
         logger.info("Node is already shutting down... Waiting for shutdown process to complete...");
-        while (state != NodeState.SHUT_DOWN) {
+        while (state != NodeState.SHUT_DOWN && shuttingDown.get()) {
             try {
                 Thread.sleep(THREAD_SLEEP_DURATION_MS);
             } catch (InterruptedException e) {
                 logger.warning("Interrupted while waiting for shutdown!");
                 return;
             }
+        }
+        if (state != NodeState.SHUT_DOWN) {
+            throw new IllegalStateException("Node failed to shutdown!");
         }
     }
 
