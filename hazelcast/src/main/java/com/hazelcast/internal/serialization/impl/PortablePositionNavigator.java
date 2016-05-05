@@ -480,7 +480,7 @@ final class PortablePositionNavigator {
             streamPosition = in.position();
         } else {
             // in primitive non-utf arrays we can dead-reckon about a cell's position
-            streamPosition = in.position() + index * ctx.getCurrentFieldType().getSingleElementSize();
+            streamPosition = in.position() + index * ctx.getCurrentFieldType().getSingleType().getTypeSize();
         }
 
         return PortablePositionFactory.createSinglePosition(ctx.getCurrentFieldDefinition(), streamPosition, index,

@@ -24,11 +24,12 @@ import static com.hazelcast.nio.Bits.FLOAT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static java.lang.Integer.MAX_VALUE;
 
 public enum FieldType {
 
     // SINGLE-VALUE TYPES
-    PORTABLE(0, Integer.MAX_VALUE),
+    PORTABLE(0, MAX_VALUE),
     BYTE(1, BYTE_SIZE_IN_BYTES),
     BOOLEAN(2, BOOLEAN_SIZE_IN_BYTES),
     CHAR(3, CHAR_SIZE_IN_BYTES),
@@ -37,23 +38,21 @@ public enum FieldType {
     LONG(6, LONG_SIZE_IN_BYTES),
     FLOAT(7, FLOAT_SIZE_IN_BYTES),
     DOUBLE(8, DOUBLE_SIZE_IN_BYTES),
-    UTF(9, Integer.MAX_VALUE),
+    UTF(9, MAX_VALUE),
 
     // ARRAY TYPES
-    PORTABLE_ARRAY(10, Integer.MAX_VALUE),
-    BYTE_ARRAY(11, Integer.MAX_VALUE),
-    BOOLEAN_ARRAY(12, Integer.MAX_VALUE),
-    CHAR_ARRAY(13, Integer.MAX_VALUE),
-    SHORT_ARRAY(14, Integer.MAX_VALUE),
-    INT_ARRAY(15, Integer.MAX_VALUE),
-    LONG_ARRAY(16, Integer.MAX_VALUE),
-    FLOAT_ARRAY(17, Integer.MAX_VALUE),
-    DOUBLE_ARRAY(18, Integer.MAX_VALUE),
-    UTF_ARRAY(19, Integer.MAX_VALUE);
+    PORTABLE_ARRAY(10, MAX_VALUE),
+    BYTE_ARRAY(11, MAX_VALUE),
+    BOOLEAN_ARRAY(12, MAX_VALUE),
+    CHAR_ARRAY(13, MAX_VALUE),
+    SHORT_ARRAY(14, MAX_VALUE),
+    INT_ARRAY(15, MAX_VALUE),
+    LONG_ARRAY(16, MAX_VALUE),
+    FLOAT_ARRAY(17, MAX_VALUE),
+    DOUBLE_ARRAY(18, MAX_VALUE),
+    UTF_ARRAY(19, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
-    private static final int UNKNOWN_SIZE = Integer.MAX_VALUE;
-    // GOTCHA: Wont' work if you add more types!!!
     private static final int TYPES_COUNT = 10;
 
     private final byte type;
@@ -78,21 +77,23 @@ public enum FieldType {
 
     public FieldType getSingleType() {
         if (isArrayType()) {
+            // GOTCHA: Wont' work if you add more types!!!
             return get((byte) (getId() % TYPES_COUNT));
         }
         return this;
     }
 
-    public FieldType getArrayType() {
-        if (isArrayType()) {
-            return this;
-        }
-        return get((byte) (getId() + TYPES_COUNT));
+    public boolean hasDefiniteSize() {
+        return elementSize != MAX_VALUE;
     }
 
-    public int getSingleElementSize() {
-        int elementSize = getSingleType().elementSize;
-        if (elementSize == UNKNOWN_SIZE) {
+    /**
+     * @return size of an element of the type represented by this object
+     * @throws IllegalArgumentException if type does not have a definite type. Invoke hasDefiniteSize() to check before.
+     */
+    public int getTypeSize() throws IllegalArgumentException {
+        if (elementSize == MAX_VALUE) {
+            // unknown size case
             throw new IllegalArgumentException("Unsupported type - the size is variable or unknown!");
         }
         return elementSize;
