@@ -31,7 +31,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-abstract class BaseCallableTaskOperation extends Operation  {
+abstract class AbstractCallableTaskOperation extends Operation  {
 
     protected String name;
     protected String uuid;
@@ -39,17 +39,17 @@ abstract class BaseCallableTaskOperation extends Operation  {
     private Data callableData;
 
     // transient.
-    // We are cheating a bit here. The idea is the following. A BaseCallableTaskOperation is always going to be send to a
+    // We are cheating a bit here. The idea is the following. An AbstractCallableTaskOperation is always going to be send to a
     // partition, but the operation doesn't send a response directly and therefor when a WrongTargetException is thronw (e.g.
     // partition has moved) the operation is not retried. To prevent this from happening, we say that we return a response until
     // the before-run method is called. Then we know we are going to be offloaded to a different thread and we are not returning
     // a response immediately. So then we switch to 'returnsResponse = false'.
     private boolean returnsResponse = true;
 
-    public BaseCallableTaskOperation() {
+    public AbstractCallableTaskOperation() {
     }
 
-    public BaseCallableTaskOperation(String name, String uuid, Data callableData) {
+    public AbstractCallableTaskOperation(String name, String uuid, Data callableData) {
         this.name = name;
         this.uuid = uuid;
         this.callableData = callableData;
