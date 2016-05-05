@@ -195,7 +195,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
         alive = false;
         for (ClientConnection connection : connections.values()) {
-            connection.close();
+            connection.close("Hazelcast client is shutting down", null);
         }
         shutdownSelectors();
         connectionListeners.clear();
@@ -361,19 +361,19 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public void destroyConnection(final Connection connection, final Throwable e) {
+    public void destroyConnection(final Connection connection, final String reason, final Throwable cause) {
         Address endpoint = connection.getEndPoint();
         if (endpoint != null) {
             final ClientConnection conn = connections.remove(endpoint);
             if (conn == null) {
                 return;
             }
-            conn.close(e);
+            conn.close(reason, cause);
             for (ConnectionListener connectionListener : connectionListeners) {
                 connectionListener.connectionRemoved(conn);
             }
         } else {
-            ((ClientConnection) connection).close(e);
+            connection.close(reason, cause);
         }
     }
 
@@ -540,7 +540,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 authenticate(target, connection, asOwner, callback);
             } catch (Exception e) {
                 callback.onFailure(e);
-                destroyConnection(connection, e);
+                destroyConnection(connection, "Failed to authenticate connection", e);
                 connectionsInProgress.remove(target);
             }
         }
@@ -555,9 +555,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionsInProgress.remove(target);
     }
 
-    private void failed(Address target, ClientConnection connection, Throwable throwable) {
-        logger.finest(throwable);
-        destroyConnection(connection, throwable);
+    private void failed(Address target, ClientConnection connection, Throwable cause) {
+        logger.finest(cause);
+        destroyConnection(connection, null, cause);
         connectionsInProgress.remove(target);
     }
 

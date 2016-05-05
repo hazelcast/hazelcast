@@ -313,7 +313,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             try {
                 final Connection conn = endpoint.getConnection();
                 if (conn.isAlive()) {
-                    conn.close();
+                    conn.close("Shutdown of ClientEngine", null);
                 }
             } catch (Exception e) {
                 logger.finest(e);

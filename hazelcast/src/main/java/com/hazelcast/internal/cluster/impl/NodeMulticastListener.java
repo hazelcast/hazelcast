@@ -75,9 +75,10 @@ public class NodeMulticastListener implements MulticastListener {
                     node.getThisAddress(), node.localMember.getUuid(), node.isLiteMember(), node.createConfigCheck());
             node.multicastService.send(response);
         } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
-            logger.warning("New join request has been received from current master. "
-                    + "Removing " + node.getMasterAddress());
-            node.getClusterService().removeAddress(node.getMasterAddress());
+            String message = "New join request has been received from current master. "
+                    + "Removing " + node.getMasterAddress();
+            logger.warning(message);
+            node.getClusterService().removeAddress(node.getMasterAddress(), message);
         }
     }
 

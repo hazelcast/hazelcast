@@ -458,13 +458,16 @@ public class ClusterJoinManager {
         // - if requesting address is equal to master node's address, that means the master node somehow disconnected
         //   and wants to join back, so drop old member and process join request if this node becomes master
         if (node.isMaster() || target.equals(node.getMasterAddress())) {
-            logger.warning(format("New join request has been received from an existing endpoint %s."
-                    + " Removing old member and processing join request...", member));
+            String msg = format("New join request has been received from an existing endpoint %s."
+                    + " Removing old member and processing join request...", member);
+            logger.warning(msg);
 
-            clusterService.doRemoveAddress(target, false);
+            clusterService.doRemoveAddress(target, msg, false);
             Connection existing = node.connectionManager.getConnection(target);
             if (existing != connection) {
-                node.connectionManager.destroyConnection(existing);
+                if (existing != null) {
+                    existing.close(msg, null);
+                }
                 node.connectionManager.registerConnection(target, connection);
             }
             return false;

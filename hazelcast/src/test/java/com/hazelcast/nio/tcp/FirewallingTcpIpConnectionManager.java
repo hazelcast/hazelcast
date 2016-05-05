@@ -63,7 +63,7 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
         blockedAddresses.remove(address);
         Connection connection = getConnection(address);
         if (connection instanceof DroppingConnection) {
-            destroyConnection(connection);
+            connection.close(null, null);
         }
     }
 

@@ -85,6 +85,7 @@ import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
+import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -361,6 +362,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
         diagnostics.register(
                 new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
+        diagnostics.register(
+                new SystemLogPlugin(properties, connectionManager, this, loggingService.getLogger(SystemLogPlugin.class)));
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {

@@ -133,8 +133,8 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
         final Connection connectionToServer = connectionManager.getConnection(serverAddress);
 
-        connectionManager.destroyConnection(connectionToServer, null);
-        connectionManager.destroyConnection(connectionToServer, null);
+        connectionManager.destroyConnection(connectionToServer, null, null);
+        connectionManager.destroyConnection(connectionToServer, null, null);
 
         assertEquals("connection removed should be called only once", 1, listener.count.get());
     }

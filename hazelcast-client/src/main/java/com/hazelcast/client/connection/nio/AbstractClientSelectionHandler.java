@@ -77,7 +77,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
         if (sk != null) {
             sk.cancel();
         }
-        connectionManager.destroyConnection(connection, e);
+        connectionManager.destroyConnection(connection, null, e);
     }
 
     final void registerOp(final int operation) {

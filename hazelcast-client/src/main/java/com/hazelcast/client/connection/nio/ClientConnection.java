@@ -71,7 +71,8 @@ public class ClientConnection implements Connection {
     @Probe(level = ProbeLevel.DEBUG)
     private volatile long closedTime;
 
-    private volatile Throwable closingFailure;
+    private volatile Throwable closeCause;
+    private volatile String closeReason;
 
     public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
@@ -160,11 +161,6 @@ public class ClientConnection implements Connection {
     }
 
     @Override
-    public void close() {
-        close(null);
-    }
-
-    @Override
     public void setType(ConnectionType type) {
         //NO OP
     }
@@ -218,30 +214,19 @@ public class ClientConnection implements Connection {
         return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
     }
 
-    protected void innerClose() throws IOException {
-        if (socketChannelWrapper.isOpen()) {
-            socketChannelWrapper.close();
-        }
-        readHandler.shutdown();
-        writeHandler.shutdown();
-
-        MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
-        metricsRegistry.deregister(this);
-        metricsRegistry.deregister(writeHandler);
-        metricsRegistry.deregister(readHandler);
-    }
-
-    public void close(Throwable t) {
+    @Override
+    public void close(String reason, Throwable cause) {
         if (!live.compareAndSet(true, false)) {
             return;
         }
 
-        closingFailure = t;
+        closeCause = cause;
+        closeReason = reason;
 
         closedTime = System.currentTimeMillis();
         String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
-        if (t != null) {
-            message += t.getClass().getName() + '[' + t.getMessage() + ']';
+        if (cause != null) {
+            message += cause.getClass().getName() + '[' + cause.getMessage() + ']';
         } else {
             message += "Socket explicitly closed";
         }
@@ -259,8 +244,27 @@ public class ClientConnection implements Connection {
         }
     }
 
+    protected void innerClose() throws IOException {
+        if (socketChannelWrapper.isOpen()) {
+            socketChannelWrapper.close();
+        }
+        readHandler.shutdown();
+        writeHandler.shutdown();
+
+        MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
+        metricsRegistry.deregister(this);
+        metricsRegistry.deregister(writeHandler);
+        metricsRegistry.deregister(readHandler);
+    }
+
+    @Override
     public Throwable getCloseCause() {
-        return closingFailure;
+        return closeCause;
+    }
+
+    @Override
+    public String getCloseReason() {
+        return closeReason;
     }
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "incremented in single thread")

@@ -27,14 +27,25 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
 
     @Override
     public void startSection(String name) {
+        if (sectionLevel == -1) {
+            appendDateTime();
+            sb.append(' ');
+        }
+
         appendComma();
         sb.append(name).append('[');
         firstEntry = true;
+        sectionLevel++;
     }
 
     @Override
     public void endSection() {
         sb.append(']');
+        sectionLevel--;
+
+        if (sectionLevel == -1) {
+            sb.append(LINE_SEPARATOR);
+        }
     }
 
     @Override
@@ -79,15 +90,5 @@ class SingleLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
     protected void clean() {
         firstEntry = true;
         super.clean();
-    }
-
-    @Override
-    void write(DiagnosticsPlugin plugin) {
-        clean();
-
-        sb.append(System.currentTimeMillis());
-        sb.append(' ');
-        plugin.run(this);
-        sb.append(LINE_SEPARATOR);
     }
 }

@@ -87,10 +87,6 @@ public abstract class AbstractOutOfMemoryHandlerTest extends HazelcastTestSuppor
         }
 
         @Override
-        public void destroyConnection(Connection connection) {
-        }
-
-        @Override
         public void addConnectionListener(ConnectionListener listener) {
         }
 

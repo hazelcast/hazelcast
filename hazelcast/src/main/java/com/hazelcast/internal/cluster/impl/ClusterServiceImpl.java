@@ -214,11 +214,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         nodeEngine.getOperationService().send(op, target);
     }
 
-    public void removeAddress(Address deadAddress) {
-        doRemoveAddress(deadAddress, true);
+    public void removeAddress(Address deadAddress, String reason) {
+        doRemoveAddress(deadAddress, reason, true);
     }
 
-    void doRemoveAddress(Address deadAddress, boolean destroyConnection) {
+    void doRemoveAddress(Address deadAddress, String reason, boolean destroyConnection) {
         if (!ensureMemberIsRemovable(deadAddress)) {
             return;
         }
@@ -233,7 +233,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
             Connection conn = node.connectionManager.getConnection(deadAddress);
             if (destroyConnection && conn != null) {
-                node.connectionManager.destroyConnection(conn);
+                conn.close(reason, null);
             }
             MemberImpl deadMember = getMember(deadAddress);
             if (deadMember != null) {

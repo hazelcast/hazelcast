@@ -172,13 +172,13 @@ public class TextReadHandler implements ReadHandler {
                 boolean isClusterManagementRequest = ((HttpCommand) command).getURI().
                         startsWith(HttpCommandProcessor.URI_CLUSTER_MANAGEMENT_BASE_URL);
                 if (!restEnabled && (!isMancenterRequest && !isClusterManagementRequest)) {
-                    connection.close();
+                    connection.close("REST not enabled", null);
                     return;
                 }
                 connection.setType(ConnectionType.REST_CLIENT);
             } else {
                 if (!memcacheEnabled) {
-                    connection.close();
+                    connection.close("Memcached not enabled", null);
                     return;
                 }
                 connection.setType(ConnectionType.MEMCACHE_CLIENT);
@@ -211,6 +211,6 @@ public class TextReadHandler implements ReadHandler {
     }
 
     public void closeConnection() {
-        connection.close();
+        connection.close(null, null);
     }
 }

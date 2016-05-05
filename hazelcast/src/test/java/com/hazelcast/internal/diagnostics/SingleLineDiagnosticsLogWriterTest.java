@@ -9,12 +9,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static aQute.bnd.maven.Pom.Scope.test;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SingleLineDiagnosticsLogFileWriterTest extends HazelcastTestSupport {
+public class SingleLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
 
     private SingleLineDiagnosticsLogWriter writer;
 
@@ -26,33 +28,37 @@ public class SingleLineDiagnosticsLogFileWriterTest extends HazelcastTestSupport
     @Test
     public void test() {
         writer.startSection("SomeSection");
+
         writer.writeKeyValueEntry("boolean", true);
         writer.writeKeyValueEntry("long", 10l);
+
         writer.startSection("SubSection");
         writer.writeKeyValueEntry("integer", 10);
         writer.endSection();
+
         writer.writeKeyValueEntry("string", "foo");
         writer.writeKeyValueEntry("double", 11d);
         writer.writeEntry("foobar");
+
         writer.endSection();
 
-        assertEquals("SomeSection[boolean=true,long=10,SubSection[integer=10],string=foo,double=11.0,foobar]",
-                writer.sb.toString());
+        assertTrue(writer.sb.toString().contains("SomeSection[boolean=true,long=10,SubSection[integer=10],string=foo,double=11.0,foobar]"));
     }
 
     @Test
     public void testWrite() {
-        writer.write(new DummyDiagnosticsPlugin());
+        DummyDiagnosticsPlugin plugin = new DummyDiagnosticsPlugin();
+        plugin.run(writer);
 
         String content = writer.sb.toString();
         String[] split = content.split(" ");
-        assertEquals(2, split.length);
-        assertEquals("somesection[]" + LINE_SEPARATOR, split[1]);
+        assertEquals(3, split.length);
+        assertEquals("somesection[]" + LINE_SEPARATOR, split[2]);
     }
 
     private static class DummyDiagnosticsPlugin extends DiagnosticsPlugin {
         DummyDiagnosticsPlugin() {
-            super(Logger.getLogger(SingleLineDiagnosticsLogFileWriterTest.class));
+            super(Logger.getLogger(SingleLineDiagnosticsLogWriterTest.class));
         }
 
         @Override

@@ -60,7 +60,7 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
         blockedAddresses.remove(address);
         Connection connection = getConnection(address);
         if (connection instanceof DroppingConnection) {
-            destroyConnection(connection);
+            connection.close(null, null);
         }
     }
 

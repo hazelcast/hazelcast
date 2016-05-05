@@ -122,7 +122,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         final Connection connection = endpoint.getConnection();
         if (closeImmediately) {
             try {
-                connection.close();
+                connection.close(null, null);
             } catch (Throwable e) {
                 logger.warning("While closing client connection: " + connection, e);
             }
@@ -131,7 +131,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                 public void run() {
                     if (connection.isAlive()) {
                         try {
-                            connection.close();
+                            connection.close(null, null);
                         } catch (Throwable e) {
                             logger.warning("While closing client connection: " + e.toString());
                         }

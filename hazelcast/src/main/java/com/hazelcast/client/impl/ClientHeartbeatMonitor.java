@@ -27,8 +27,10 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+
+import static com.hazelcast.util.StringUtil.timeToString;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Monitors client heartbeats.. As soon as a client has not used its connection for a certain amount of time,
@@ -66,7 +68,7 @@ public class ClientHeartbeatMonitor implements Runnable {
 
     public void start() {
         executionService.scheduleWithRepetition(this, HEART_BEAT_CHECK_INTERVAL_SECONDS,
-                HEART_BEAT_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
+                HEART_BEAT_CHECK_INTERVAL_SECONDS, SECONDS);
     }
 
     @Override
@@ -85,12 +87,15 @@ public class ClientHeartbeatMonitor implements Runnable {
 
         final Connection connection = clientEndpoint.getConnection();
         final long lastTimePackageReceived = connection.lastReadTimeMillis();
-        final long timeoutInMillis = TimeUnit.SECONDS.toMillis(heartbeatTimeoutSeconds);
-        final long currentTimeInMillis = Clock.currentTimeMillis();
-        if (lastTimePackageReceived + timeoutInMillis < currentTimeInMillis) {
+        final long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);
+        final long currentTimeMillis = Clock.currentTimeMillis();
+        if (lastTimePackageReceived + timeoutInMillis < currentTimeMillis) {
             if (memberUuid.equals(clientEndpoint.getPrincipal().getOwnerUuid())) {
-                logger.log(Level.WARNING, "Client heartbeat is timed out , closing connection to " + connection);
-                connection.close();
+                String message = "Client heartbeat is timed out, closing connection to " + connection
+                        + ". Now: " + timeToString(lastTimePackageReceived)
+                        + ". LastTimePacketReceived: " + timeToString(lastTimePackageReceived);
+                logger.log(Level.WARNING, message);
+                connection.close(message, null);
             }
         }
     }

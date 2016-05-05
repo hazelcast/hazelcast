@@ -245,9 +245,10 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
         final Address thisAddress = ioService.getThisAddress();
         if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
-            logger.warning("Wrong bind request from " + remoteEndPoint
-                    + "! This node is not requested endpoint: " + localEndpoint);
-            connection.close();
+            String msg = "Wrong bind request from " + remoteEndPoint
+                    + "! This node is not requested endpoint: " + localEndpoint;
+            logger.warning(msg);
+            connection.close(msg, null);
             return false;
         }
         connection.setEndPoint(remoteEndPoint);
@@ -394,14 +395,12 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return monitor;
     }
 
-    @Override
-    public void destroyConnection(final Connection connection) {
-        if (connection == null) {
-            return;
-        }
-        if (logger.isFinestEnabled()) {
-            logger.finest("Destroying " + connection);
-        }
+    /**
+     * Deals with cleaning up a closed connection. This method should only be called once by the
+     * {@link TcpIpConnection#close(String, Throwable)} method where it is protected against multiple closes.
+     */
+    void onClose(Connection connection) {
+        closedCount.inc();
 
         if (activeConnections.remove(connection)) {
             // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
@@ -409,15 +408,12 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 ioThreadingModel.onConnectionRemoved((TcpIpConnection) connection);
             }
         }
-        final Address endPoint = connection.getEndPoint();
+
+        Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);
             connectionsMap.remove(endPoint, connection);
             fireConnectionRemovedEvent(connection, endPoint);
-        }
-        if (connection.isAlive()) {
-            connection.close();
-            closedCount.inc();
         }
     }
 
@@ -498,10 +494,10 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             closeResource(socketChannel);
         }
         for (Connection conn : connectionsMap.values()) {
-            destroySilently(conn);
+            destroySilently(conn, "TcpIpConnectionManager is stopping");
         }
         for (TcpIpConnection conn : activeConnections) {
-            destroySilently(conn);
+            destroySilently(conn, "TcpIpConnectionManager is stopping");
         }
         ioThreadingModel.shutdown();
         acceptedSockets.clear();
@@ -511,9 +507,13 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         activeConnections.clear();
     }
 
-    private void destroySilently(Connection conn) {
+    private void destroySilently(Connection conn, String reason) {
+        if (conn == null) {
+            return;
+        }
+
         try {
-            destroyConnection(conn);
+            conn.close(reason, null);
         } catch (Throwable ignore) {
             logger.finest(ignore);
         }

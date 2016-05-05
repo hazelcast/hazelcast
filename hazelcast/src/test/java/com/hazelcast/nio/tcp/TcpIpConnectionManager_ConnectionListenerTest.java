@@ -47,7 +47,7 @@ public class TcpIpConnectionManager_ConnectionListenerTest extends TcpIpConnecti
         connManagerA.addConnectionListener(listener);
 
         final Connection c = connect(connManagerA, addressB);
-        connManagerA.destroyConnection(c);
+        c.close(null, null);
 
         assertTrueEventually(new AssertTask() {
             @Override

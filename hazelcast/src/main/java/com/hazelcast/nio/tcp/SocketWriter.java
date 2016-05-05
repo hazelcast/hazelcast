@@ -82,7 +82,7 @@ public interface SocketWriter {
      * Closes this SocketWriter.
      *
      * This method can be called from an arbitrary thread, and should only be called once. This should be coordinated
-     * through the {@link TcpIpConnection#close()} method.
+     * through the {@link TcpIpConnection#close(String, Throwable)} method.
      */
     void close();
 }

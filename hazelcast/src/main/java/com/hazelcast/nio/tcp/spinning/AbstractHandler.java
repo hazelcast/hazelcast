@@ -44,7 +44,8 @@ public abstract class AbstractHandler {
             connectionManager.getIoService().onOutOfMemory((OutOfMemoryError) e);
         }
 
-        connection.close(e);
+        connection.close("Closing connection due to exception in " + getClass().getSimpleName(), e);
+
         ConnectionType connectionType = connection.getType();
         if (connectionType.isClient() && !connectionType.isBinary()) {
             return;

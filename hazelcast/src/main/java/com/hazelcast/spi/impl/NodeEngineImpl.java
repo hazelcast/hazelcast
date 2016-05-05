@@ -37,6 +37,7 @@ import com.hazelcast.internal.diagnostics.PendingInvocationsPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
+import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
@@ -193,6 +194,7 @@ public class NodeEngineImpl implements NodeEngine {
         diagnostics.register(new SlowOperationPlugin(this));
         diagnostics.register(new InvocationPlugin(this));
         diagnostics.register(new MemberHazelcastInstanceInfoPlugin(this));
+        diagnostics.register(new SystemLogPlugin(this));
     }
 
     public ServiceManager getServiceManager() {

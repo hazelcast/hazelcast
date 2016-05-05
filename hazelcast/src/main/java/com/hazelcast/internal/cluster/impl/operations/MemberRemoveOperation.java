@@ -41,12 +41,12 @@ public class MemberRemoveOperation extends AbstractClusterOperation implements A
         final ClusterServiceImpl clusterService = getService();
         final Address caller = getCallerAddress();
         ILogger logger = getLogger();
-        if (caller != null
-                && (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
+        if (caller != null && (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
+            String msg = "Removing dead member " + deadAddress + ", called from " + caller;
             if (logger.isFinestEnabled()) {
-                logger.finest("Removing " + deadAddress + ", called from " + caller);
+                logger.finest(msg);
             }
-            clusterService.removeAddress(deadAddress);
+            clusterService.removeAddress(deadAddress, msg);
         } else {
             if (logger.isFinestEnabled()) {
                 logger.finest("Ignoring removal request of " + deadAddress + ", because sender is neither dead-member "
