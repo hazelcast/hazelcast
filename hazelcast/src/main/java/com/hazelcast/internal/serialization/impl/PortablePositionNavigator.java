@@ -48,8 +48,6 @@ final class PortablePositionNavigator {
     private static final boolean SINGLE_CELL_ACCESS = true;
     private static final boolean WHOLE_ARRAY_ACCESS = false;
 
-    // cache of commonly returned values to avoid extra allocations
-
     private PortablePositionNavigator() {
     }
 
@@ -181,7 +179,7 @@ final class PortablePositionNavigator {
             PortableNavigatorContext ctx, PortablePathCursor path, PortablePosition result) throws IOException {
         // we process the all the paths gathered due to [any] quantifiers
         List<PortablePosition> positions = new LinkedList<PortablePosition>();
-        // first add the single position to the result gathered in single path naviation
+        // first add the single position to the result gathered in single path navigation
         positions.add(result);
 
         // then process all multi-positions and gather the results

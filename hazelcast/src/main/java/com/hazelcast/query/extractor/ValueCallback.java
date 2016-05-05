@@ -17,17 +17,16 @@
 package com.hazelcast.query.extractor;
 
 /**
- * TODO
+ * Enables notifying about values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
  *
- * @param <T>
+ * @param <T> type of the extracted value
  */
 public abstract class ValueCallback<T> {
 
     /**
-     * TODO
+     * Notifies about a value passed as an argument
      *
-     * @param value
-     * @return
+     * @param value value to be notified about
      */
     public abstract void onResult(T value);
 

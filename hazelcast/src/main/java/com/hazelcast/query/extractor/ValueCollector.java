@@ -17,16 +17,14 @@
 package com.hazelcast.query.extractor;
 
 /**
- * Enables collecting values extracted by a {@see com.hazelcast.query.extractor.ValueExtractor}
- * @param <T>
+ * Enables collecting values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
+ *
+ * @param <T> type of the collected value
  */
 public abstract class ValueCollector<T> {
 
     /**
-     * Collects a value extracted by a ValueExtractor.
-     * <p/>
-     * More than one value may be collected in a single extraction, for more details see
-     * {@link com.hazelcast.query.extractor.ValueExtractor}
+     * Collects a value passed as an argument
      *
      * @param value value to be collected
      */

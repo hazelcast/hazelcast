@@ -28,6 +28,7 @@ import static java.util.Arrays.asList;
  */
 final class PortablePositionFactory {
 
+    // cache of commonly returned values to avoid extra allocations
     private static final PortableSinglePosition NIL_NOT_LEAF = nil(false);
     private static final PortableSinglePosition NIL_LEAF_ANY = nil(true, true);
     private static final PortableSinglePosition NIL_NOT_LEAF_ANY = nil(false, true);
@@ -37,16 +38,17 @@ final class PortablePositionFactory {
     private PortablePositionFactory() {
     }
 
-    // convenience for reusing practically immutable nil positions without extra allocation:
+    // convenience for reusing practically immutable nil or positions without extra allocation
     static PortablePosition nilAnyPosition(boolean lastToken) {
         return lastToken ? NIL_LEAF_ANY : NIL_NOT_LEAF_ANY;
     }
 
-    // convenience for reusing practically immutable nil positions without extra allocation:
+    // convenience for reusing practically immutable nil or positions without extra allocation
     static PortablePosition emptyAnyPosition(boolean lastToken) {
         return lastToken ? EMPTY_LEAF_ANY : EMPTY_NOT_LEAF_ANY;
     }
 
+    // convenience for reusing practically immutable nil or positions without extra allocation
     static PortablePosition nilNotLeafPosition() {
         return NIL_NOT_LEAF;
     }

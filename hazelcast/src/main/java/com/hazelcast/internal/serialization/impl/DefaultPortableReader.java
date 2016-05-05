@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueReader;
+import com.hazelcast.query.extractor.ValueReadingException;
 import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
@@ -564,7 +565,9 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
                 callback.onResult(result);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new ValueReadingException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            throw new ValueReadingException(e.getMessage(), e);
         }
     }
 
@@ -582,7 +585,9 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
                 collector.addObject(result);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new ValueReadingException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            throw new ValueReadingException(e.getMessage(), e);
         }
     }
 
