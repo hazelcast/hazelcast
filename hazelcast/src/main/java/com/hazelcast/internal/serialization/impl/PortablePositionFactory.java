@@ -23,6 +23,9 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
+/**
+ * Factory for creating private implementations of the {@link PortablePosition} interface
+ */
 final class PortablePositionFactory {
 
     private static final PortableSinglePosition NIL_NOT_LEAF = nil(false);
@@ -34,12 +37,12 @@ final class PortablePositionFactory {
     private PortablePositionFactory() {
     }
 
-    // convenience for reusing nil positions without extra allocation:
+    // convenience for reusing practically immutable nil positions without extra allocation:
     static PortablePosition nilAnyPosition(boolean lastToken) {
         return lastToken ? NIL_LEAF_ANY : NIL_NOT_LEAF_ANY;
     }
 
-    // convenience for reusing nil positions without extra allocation:
+    // convenience for reusing practically immutable nil positions without extra allocation:
     static PortablePosition emptyAnyPosition(boolean lastToken) {
         return lastToken ? EMPTY_LEAF_ANY : EMPTY_NOT_LEAF_ANY;
     }

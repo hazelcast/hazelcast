@@ -57,7 +57,7 @@ class PortableNavigatorContext {
         this.cd = cd;
         this.serializer = serializer;
 
-        initFieldCountAndOffset(in, cd);
+        initFinalPositionAndOffset(in, cd);
 
         this.initCd = cd;
         this.initSerializer = serializer;
@@ -66,7 +66,10 @@ class PortableNavigatorContext {
         this.initOffset = offset;
     }
 
-    private void initFieldCountAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
+    /**
+     * Initialises the finalPosition and offset and validates the fieldCount against the given class definition
+     */
+    private void initFinalPositionAndOffset(BufferObjectDataInput in, ClassDefinition cd) {
         int fieldCount;
         try {
             // final position after portable is read
@@ -82,7 +85,7 @@ class PortableNavigatorContext {
     }
 
     /**
-     * Resets the state to the initial state.
+     * Resets the state to the initial state for future reuse.
      */
     void reset() {
         cd = initCd;
@@ -128,6 +131,24 @@ class PortableNavigatorContext {
         return multiPositions.pollFirst();
     }
 
+    /**
+     * When we advance in the token navigation we need to re-initialise the class definition with the coordinates
+     * of the new portable object in the context of which we will be navigating further.
+     */
+    void advanceContextToNextPortableToken(int factoryId, int classId, int version) throws IOException {
+        cd = serializer.setupPositionAndDefinition(in, factoryId, classId, version);
+        initFinalPositionAndOffset(in, cd);
+    }
+
+    /**
+     * Sets up the stream for the given frame which contains all info required to change to context for a given field.
+     */
+    void advanceContextToGivenFrame(NavigationFrame frame) {
+        in.position(frame.streamPosition);
+        offset = frame.streamOffset;
+        cd = frame.cd;
+    }
+
     void setupContextForGivenPathToken(PortablePathCursor path) {
         String pathToken = path.token();
         String fieldName = extractAttributeNameNameWithoutArguments(pathToken);
@@ -135,17 +156,6 @@ class PortableNavigatorContext {
         if (fd == null || pathToken == null) {
             throw unknownFieldException(this, path);
         }
-    }
-
-    void advanceContextToNextPortableToken(int factoryId, int classId, int version) throws IOException {
-        cd = serializer.setupPositionAndDefinition(in, factoryId, classId, version);
-        initFieldCountAndOffset(in, cd);
-    }
-
-    void advanceContextToGivenFrame(NavigationFrame frame) {
-        in.position(frame.streamPosition);
-        offset = frame.streamOffset;
-        cd = frame.cd;
     }
 
     /**

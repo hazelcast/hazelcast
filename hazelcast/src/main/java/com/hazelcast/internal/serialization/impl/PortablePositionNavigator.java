@@ -392,47 +392,76 @@ final class PortablePositionNavigator {
         ctx.advanceContextToNextPortableToken(factoryId, classId, versionId);
     }
 
+    /**
+     * Create an instance of the {@PortablePosition} for direct reading in the reader class.
+     * The cursor and the path point to the leaf field, but there's still some adjustments to be made in certain cases.
+     * <p>
+     * - If it's a primitive array cell that is being accessed with the [number] quantifier the stream has to be
+     * adjusted to point to the cell specified by the index.
+     * <p>
+     * - If it's a portable attribute that is being accessed the factoryId and classId have to be read and validated.
+     * They are required for the portable read operation.
+     * <p>
+     * - If it's a portable array cell that is being accessed with the [number] quantifier the stream has to be
+     * adjusted to point to the cell specified by the index. Also the factoryId and classId have to be read and
+     * validated. They are required for the portable read operation.
+     * <p>
+     * If it's a whole portable array that is being accessed factoryId and classId have to be read and
+     * validated. The length have to be read.
+     * <p>
+     * If it's a whole primitive array or a primitive field that is being accessed there's nothing to be adjusted.
+     */
     private static PortablePosition createPositionForReadAccess(
-            PortableNavigatorContext ctx, PortablePathCursor path) throws IOException {
-        return createPositionForReadAccess(ctx, path, -1);
-    }
-
-    private static PortablePosition createPositionForReadAccess(
-            PortableNavigatorContext ctx, PortablePathCursor path, int index)
-            throws IOException {
+            PortableNavigatorContext ctx, PortablePathCursor path, int index) throws IOException {
         FieldType type = ctx.getCurrentFieldType();
         if (type.isArrayType()) {
             if (type == FieldType.PORTABLE_ARRAY) {
                 if (index >= 0) {
+                    // accessing a single cell of a portable array
                     return createPositionForPortableArrayAccess(ctx, path, index, SINGLE_CELL_ACCESS);
                 } else {
+                    // accessing a whole portable array
                     return createPositionForPortableArrayAccess(ctx, path, index, WHOLE_ARRAY_ACCESS);
                 }
             } else {
                 if (index >= 0) {
+                    // accessing single cell of a primitive array
                     return createPositionForSingleCellPrimitiveArrayAccess(ctx, path, index);
                 }
+                // accessing a whole primitive array
                 // we don't need to adjust anything otherwise - a primitive array can be read without any adjustments
+                return createPositionForPrimitiveFieldAccess(ctx, path, index);
             }
         } else {
-            validateNonArrayPosition(index);
+            validateNonArrayPosition(path, index);
             if (type == FieldType.PORTABLE) {
+                // accessing a portable field
                 return createPositionForPortableFieldAccess(ctx, path);
             }
+            // accessing a primitive field
             // we don't need to adjust anything otherwise - a primitive field can be read without any adjustments
+            return createPositionForPrimitiveFieldAccess(ctx, path, index);
         }
-        return createPositionForPrimitiveFieldAccess(ctx, path, index);
     }
 
-    private static void validateNonArrayPosition(int index) {
+    /**
+     * Special case of the position creation, where there's no quantifier, so the index does not count.
+     */
+    private static PortablePosition createPositionForReadAccess(
+            PortableNavigatorContext ctx, PortablePathCursor path) throws IOException {
+        int notArrayCellAccessIndex = -1;
+        return createPositionForReadAccess(ctx, path, notArrayCellAccessIndex);
+    }
+
+    private static void validateNonArrayPosition(PortablePathCursor path, int index) {
         if (index >= 0) {
-            throw new IllegalArgumentException("Cannot read array cell from non-array");
+            throw new IllegalArgumentException(
+                    "Non array position expected, but the cell index is " + index + " in path" + path.path());
         }
     }
 
     private static PortablePosition createPositionForSingleCellPrimitiveArrayAccess(
-            PortableNavigatorContext ctx, PortablePathCursor path, int index)
-            throws IOException {
+            PortableNavigatorContext ctx, PortablePathCursor path, int index) throws IOException {
         // assumes position.getIndex() >= 0
         BufferObjectDataInput in = ctx.getIn();
         in.position(getStreamPositionOfTheField(ctx));
@@ -465,6 +494,7 @@ final class PortablePositionNavigator {
         BufferObjectDataInput in = ctx.getIn();
         in.position(getStreamPositionOfTheField(ctx));
 
+        // read and validate portable properties
         boolean nil = in.readBoolean();
         int factoryId = in.readInt();
         int classId = in.readInt();
@@ -481,18 +511,21 @@ final class PortablePositionNavigator {
         BufferObjectDataInput in = ctx.getIn();
         in.position(getStreamPositionOfTheField(ctx));
 
+        // read and validate portable properties
         int len = in.readInt();
         int factoryId = in.readInt();
         int classId = in.readInt();
         int streamPosition = in.position();
         validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path);
 
+        // if single-cell access, dead-reckon cell's position that's specified by the index
         if (singleCellAccess) {
             if (index < len) {
                 int offset = in.position() + index * Bits.INT_SIZE_IN_BYTES;
                 in.position(offset);
                 streamPosition = in.readInt();
             } else {
+                // return null if index out-of-bound
                 return PortablePositionFactory.nil(path.isLastToken());
             }
         }
@@ -503,12 +536,13 @@ final class PortablePositionNavigator {
 
     private static PortablePosition createPositionForPrimitiveFieldAccess(
             PortableNavigatorContext ctx, PortablePathCursor path, int index) throws IOException {
+        // for primitive field access there's no adjustment needed, so a position is populated from the current ctx
         ctx.getIn().position(getStreamPositionOfTheField(ctx));
         return PortablePositionFactory.createSinglePosition(ctx.getCurrentFieldDefinition(), ctx.getIn().position(),
                 index, path.isLastToken());
     }
 
-    // convenience methods:
+    // convenience
     private static int getStreamPositionOfTheField(PortableNavigatorContext ctx) throws IOException {
         return PortableUtils.getStreamPositionOfTheField(ctx.getCurrentFieldDefinition(), ctx.getIn(),
                 ctx.getCurrentOffset());
