@@ -29,8 +29,6 @@ public interface ClientNearCache<K, V> {
 
     void put(K key, V object);
 
-    void remove(K key);
-
     void invalidate(K key);
 
     void clear();

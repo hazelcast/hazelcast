@@ -622,8 +622,14 @@ public class NearCacheTest extends HazelcastTestSupport {
         populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
         pullEntriesToNearCache(map, mapSize);
 
+        int nearCacheSizeBeforeExpiration = ((MapProxyImpl) map).getNearCache().size();
         waitUntilEvictionEventsReceived(latch);
-        assertNearCacheSize(mapSize, mapName, map);
+        // wait some extra time for possible events.
+        sleepSeconds(2);
+
+        int nearCacheSizeAfterExpiration = ((MapProxyImpl) map).getNearCache().size();
+
+        assertEquals(nearCacheSizeBeforeExpiration, nearCacheSizeAfterExpiration);
     }
 
     private void waitUntilEvictionEventsReceived(CountDownLatch latch) {

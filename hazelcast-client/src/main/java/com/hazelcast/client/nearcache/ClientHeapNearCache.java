@@ -21,6 +21,8 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.map.impl.nearcache.KeyStateMarker;
+import com.hazelcast.map.impl.nearcache.KeyStateMarkerImpl;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -63,6 +65,7 @@ public class ClientHeapNearCache<K>
     final ConcurrentMap<K, CacheRecord<K>> cache;
     final NearCacheStatsImpl stats;
     private final Comparator<CacheRecord<K>> selectedComparator;
+    private final KeyStateMarker keyStateMarker = new KeyStateMarkerImpl(271);
 
     private volatile long lastCleanup;
     private volatile String id;
@@ -240,11 +243,8 @@ public class ClientHeapNearCache<K>
         }
     }
 
-    public void remove(K key) {
-        cache.remove(key);
-    }
-
     public void invalidate(K key) {
+        keyStateMarker.tryRemove(key);
         cache.remove(key);
     }
 
@@ -261,11 +261,12 @@ public class ClientHeapNearCache<K>
     }
 
     public void clear() {
+        keyStateMarker.reset();
         cache.clear();
     }
 
     public void destroy() {
-        cache.clear();
+        clear();
     }
 
     @Override
@@ -321,6 +322,9 @@ public class ClientHeapNearCache<K>
             return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis)
                     || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
         }
+    }
 
+    public KeyStateMarker getKeyStateMarker() {
+        return keyStateMarker;
     }
 }

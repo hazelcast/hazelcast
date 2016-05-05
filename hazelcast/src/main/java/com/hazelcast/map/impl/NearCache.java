@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.map.impl.nearcache.KeyStateMarker;
+import com.hazelcast.map.impl.nearcache.KeyStateMarkerImpl;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -30,7 +32,6 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.QuickMath;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeSet;
@@ -66,6 +67,7 @@ public class NearCache {
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
     private final Comparator<CacheRecord> selectedComparator;
+    private final KeyStateMarker keyStateMarker = new KeyStateMarkerImpl(271);
 
     private final Comparator<CacheRecord> lruComparator = new Comparator<CacheRecord>() {
         public int compare(CacheRecord o1, CacheRecord o2) {
@@ -261,6 +263,7 @@ public class NearCache {
     }
 
     public void invalidate(Data key) {
+        getKeyStateMarker().tryRemove(key);
         final CacheRecord record = cache.remove(key);
         // if a mapping exists for the key.
         if (record != null) {
@@ -282,12 +285,9 @@ public class NearCache {
     }
 
     public void clear() {
+        keyStateMarker.reset();
         cache.clear();
         resetSizeEstimator();
-    }
-
-    public Map<Data, CacheRecord> getReadonlyMap() {
-        return Collections.unmodifiableMap(cache);
     }
 
     /**
@@ -373,5 +373,9 @@ public class NearCache {
 
     public void setNearCacheSizeEstimator(SizeEstimator nearCacheSizeEstimator) {
         this.nearCacheSizeEstimator = nearCacheSizeEstimator;
+    }
+
+    public KeyStateMarker getKeyStateMarker() {
+        return keyStateMarker;
     }
 }
