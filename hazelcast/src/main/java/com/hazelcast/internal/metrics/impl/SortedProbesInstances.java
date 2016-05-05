@@ -27,7 +27,7 @@ import java.util.Comparator;
  * It also contains the modCount so that the system can determine when the SortedProbeInstance needs to be refreshed.
  *
  * It can be that the SortedProbeInstance contains ProbeInstance that are created after the modCount is increased
- * (so the modCount) could be to old. When this happens a subsequent call to render will get the SortedProbeInstances
+ * (so the modCount) could be to old. When this happens a subsequent call to write will get the SortedProbeInstances
  * refreshed; now with a newer modcount (and potentially the same probes).
  *
  * This structure is effectively immutable. After it is created, it won't change.

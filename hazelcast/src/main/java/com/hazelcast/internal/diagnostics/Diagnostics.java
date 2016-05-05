@@ -1,0 +1,239 @@
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.diagnostics;
+
+import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
+
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.internal.diagnostics.DiagnosticsPlugin.DISABLED;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.System.arraycopy;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+/**
+ * The {@link Diagnostics} is a debugging tool that provides insight in all kinds of potential performance and stability issues.
+ * The actual logic to provide such insights, is placed in the {@link DiagnosticsPlugin}.
+ */
+public class Diagnostics {
+
+    public  static final String PREFIX = "hazelcast.performance.monitor";
+
+    /**
+     * Use the {@link Diagnostics} to see internal performance metrics and cluster related information.
+     * <p/>
+     * The performance monitor logs all metrics into the log file.
+     * <p/>
+     * For more detailed information, please check the PERFORMANCE_METRICS_LEVEL.
+     * <p/>
+     * The default is false.
+     */
+    public static final HazelcastProperty ENABLED
+            = new HazelcastProperty(PREFIX + ".enabled", false);
+
+    /**
+     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
+     * <p/>
+     * This property sets the maximum size in MB for a single file.
+     * <p/>
+     * Every HazelcastInstance will get its own history of log files.
+     * <p/>
+     * The default is 10.
+     */
+    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
+            = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 10);
+
+    /**
+     * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
+     * <p/>
+     * This property sets the maximum number of rolling files to keep on disk.
+     * <p/>
+     * The default is 10.
+     */
+    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT
+            = new HazelcastProperty(PREFIX + ".max.rolled.file.count", 10);
+
+    /**
+     * Determines if a human friendly, but more difficult to parse, output format is selected for dumping the metrics.
+     * <p/>
+     * The default is true.
+     */
+    public static final HazelcastProperty HUMAN_FRIENDLY_FORMAT
+            = new HazelcastProperty(PREFIX + ".human.friendly.format", true);
+
+    /**
+     * Configures the output directory of the performance log files.
+     *
+     * Defaults to the 'user.dir'.
+     */
+    public static final HazelcastProperty DIRECTORY
+            = new HazelcastProperty(PREFIX + ".directory", "" + System.getProperty("user.dir"));
+
+    final boolean singleLine;
+    final HazelcastProperties properties;
+    final String directory;
+    DiagnosticsLogFile diagnosticsLogFile;
+    final AtomicReference<DiagnosticsPlugin[]> staticTasks = new AtomicReference<DiagnosticsPlugin[]>(
+            new DiagnosticsPlugin[0]
+    );
+
+    final ILogger logger;
+    final String fileName;
+
+    private final boolean enabled;
+    private ScheduledExecutorService scheduler;
+    private final HazelcastThreadGroup hzThreadGroup;
+
+    public Diagnostics(String fileName, ILogger logger, HazelcastThreadGroup hzThreadGroup, HazelcastProperties properties) {
+        this.fileName = fileName;
+        this.hzThreadGroup = hzThreadGroup;
+        this.logger = logger;
+        this.properties = properties;
+        this.enabled = isEnabled(properties);
+        this.directory = properties.getString(DIRECTORY);
+
+        if (enabled) {
+            logger.info("Diagnostics is enabled");
+        }
+        this.singleLine = !properties.getBoolean(HUMAN_FRIENDLY_FORMAT);
+    }
+
+    private boolean isEnabled(HazelcastProperties properties) {
+        String s = properties.getString(ENABLED);
+        if (s != null) {
+            return properties.getBoolean(ENABLED);
+        }
+
+        // check for the old property name
+        s = properties.get("hazelcast.performance.monitoring.enabled");
+        if (s != null) {
+            logger.warning("Don't use deprecated 'hazelcast.performance.monitoring.enabled' "
+                    + "but use '" + ENABLED.getName() + "' instead. "
+                    + "The former name will be removed in Hazelcast 3.8.");
+        }
+        return Boolean.parseBoolean(s);
+    }
+
+    /**
+     * Registers a {@link DiagnosticsPlugin}.
+     *
+     * This method is threadsafe.
+     *
+     * There is no checking for duplicate registration.
+     *
+     * If the {@link Diagnostics} is disabled, the call is ignored.
+     *
+     * @param plugin the plugin to register
+     * @throws NullPointerException if plugin is null.
+     */
+    public void register(DiagnosticsPlugin plugin) {
+        checkNotNull(plugin, "plugin can't be null");
+
+        if (!enabled) {
+            return;
+        }
+
+        long periodMillis = plugin.getPeriodMillis();
+        if (periodMillis < -1) {
+            throw new IllegalArgumentException(plugin + " can't return a periodMillis smaller than -1");
+        }
+
+        logger.finest(plugin.getClass().toString() + " is " + (periodMillis == DISABLED ? "disabled" : "enabled"));
+
+        if (periodMillis == DISABLED) {
+            return;
+        }
+
+        plugin.onStart();
+
+        if (periodMillis > 0) {
+            // it is a periodic task
+            scheduler.scheduleAtFixedRate(new WritePluginTask(plugin), 0, periodMillis, MILLISECONDS);
+        } else {
+            addStaticPlugin(plugin);
+        }
+    }
+
+    private void addStaticPlugin(DiagnosticsPlugin plugin) {
+        for (; ; ) {
+            DiagnosticsPlugin[] oldPlugins = staticTasks.get();
+            DiagnosticsPlugin[] newPlugins = new DiagnosticsPlugin[oldPlugins.length + 1];
+            arraycopy(oldPlugins, 0, newPlugins, 0, oldPlugins.length);
+            newPlugins[oldPlugins.length] = plugin;
+            if (staticTasks.compareAndSet(oldPlugins, newPlugins)) {
+                break;
+            }
+        }
+    }
+
+    public void start() {
+        if (!enabled) {
+            return;
+        }
+
+        this.diagnosticsLogFile = new DiagnosticsLogFile(this);
+        this.scheduler = new ScheduledThreadPoolExecutor(1, new DiagnosticSchedulerThreadFactory());
+
+        logger.info("Diagnostics started");
+    }
+
+    public void shutdown() {
+        if (!enabled) {
+            return;
+        }
+
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+        }
+    }
+
+    private class WritePluginTask implements Runnable {
+
+        private final DiagnosticsPlugin plugin;
+
+        WritePluginTask(DiagnosticsPlugin plugin) {
+            this.plugin = plugin;
+        }
+
+        @Override
+        public void run() {
+            try {
+                diagnosticsLogFile.write(plugin);
+            } catch (Throwable t) {
+                // we need to catch any exception; otherwise the task is going to be removed by the scheduler.
+                logger.severe(t);
+            }
+        }
+    }
+
+    private class DiagnosticSchedulerThreadFactory implements ThreadFactory {
+
+        @Override
+        public Thread newThread(Runnable target) {
+            return new Thread(
+                    hzThreadGroup.getInternalThreadGroup(),
+                    target,
+                    hzThreadGroup.getThreadNamePrefix("DiagnosticsSchedulerThread"));
+        }
+    }
+}

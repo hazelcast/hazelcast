@@ -81,10 +81,10 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.monitors.ConfigPropertiesPlugin;
-import com.hazelcast.internal.monitors.MetricsPlugin;
-import com.hazelcast.internal.monitors.PerformanceMonitor;
-import com.hazelcast.internal.monitors.SystemPropertiesPlugin;
+import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
+import com.hazelcast.internal.diagnostics.MetricsPlugin;
+import com.hazelcast.internal.diagnostics.Diagnostics;
+import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -159,7 +159,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final DiscoveryService discoveryService;
     private final LoggingService loggingService;
     private final MetricsRegistryImpl metricsRegistry;
-    private final PerformanceMonitor performanceMonitor;
+    private final Diagnostics diagnostics;
     private final SerializationService serializationService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
@@ -200,16 +200,16 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         userContext = new ConcurrentHashMap<String, Object>();
         nearCacheManager = clientExtension.createNearCacheManager();
 
-        performanceMonitor = initPerformanceMonitor(config);
+        diagnostics = initDiagnostics(config);
 
         proxyManager.init(config);
     }
 
-    private PerformanceMonitor initPerformanceMonitor(ClientConfig config) {
-        String name = "performance-client-" + id + "-" + currentTimeMillis();
-        ILogger logger = loggingService.getLogger(PerformanceMonitor.class);
+    private Diagnostics initDiagnostics(ClientConfig config) {
+        String name = "diagnostics-client-" + id + "-" + currentTimeMillis();
+        ILogger logger = loggingService.getLogger(Diagnostics.class);
         HazelcastThreadGroup hzThreadGroup = new HazelcastThreadGroup(getName(), logger, config.getClassLoader());
-        return new PerformanceMonitor(name, logger, hzThreadGroup, properties);
+        return new Diagnostics(name, logger, hzThreadGroup, properties);
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
@@ -354,12 +354,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService.start();
         clientExtension.afterStart(this);
 
-        performanceMonitor.start();
-        performanceMonitor.register(
+        diagnostics.start();
+        diagnostics.register(
                 new ConfigPropertiesPlugin(loggingService.getLogger(ConfigPropertiesPlugin.class), properties));
-        performanceMonitor.register(
+        diagnostics.register(
                 new SystemPropertiesPlugin(loggingService.getLogger(SystemPropertiesPlugin.class)));
-        performanceMonitor.register(
+        diagnostics.register(
                 new MetricsPlugin(loggingService.getLogger(MetricsPlugin.class), metricsRegistry, properties));
     }
 
@@ -670,7 +670,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             discoveryService.destroy();
         }
         metricsRegistry.shutdown();
-        performanceMonitor.shutdown();
+        diagnostics.shutdown();
     }
 
 }
