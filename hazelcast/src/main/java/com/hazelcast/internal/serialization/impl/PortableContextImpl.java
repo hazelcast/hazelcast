@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.query.impl.getters.ExtractorHelper;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -39,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.nio.Bits.combineToLong;
+import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
 final class PortableContextImpl implements PortableContext {
 
@@ -180,30 +180,33 @@ final class PortableContextImpl implements PortableContext {
     @Override
     public FieldDefinition getFieldDefinition(ClassDefinition classDef, String name) {
         FieldDefinition fd = classDef.getField(name);
-        if (fd == null && name.contains(".")) {
-            String[] fieldNames = NESTED_FIELD_PATTERN.split(name);
-            if (fieldNames.length > 1) {
-                ClassDefinition currentClassDef = classDef;
-                for (int i = 0; i < fieldNames.length; i++) {
-                    name = ExtractorHelper.extractAttributeNameNameWithoutArguments(fieldNames[i]);
-                    fd = currentClassDef.getField(name);
-                    // This is not enough to fully implement issue: https://github.com/hazelcast/hazelcast/issues/3927
-                    if (i == fieldNames.length - 1) {
-                        break;
-                    }
-                    if (fd == null) {
-                        throw new IllegalArgumentException("Unknown field: " + name);
-                    }
-                    currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
-                            currentClassDef.getVersion());
-                    if (currentClassDef == null) {
-                        throw new IllegalArgumentException("Not a registered Portable field: " + fd);
+        if (fd == null) {
+            if (name.contains(".")) {
+                String[] fieldNames = NESTED_FIELD_PATTERN.split(name);
+                if (fieldNames.length > 1) {
+                    ClassDefinition currentClassDef = classDef;
+                    for (int i = 0; i < fieldNames.length; i++) {
+                        fd = currentClassDef.getField(fieldNames[i]);
+                        if (fd == null) {
+                            fd = currentClassDef.getField(extractAttributeNameNameWithoutArguments(fieldNames[i]));
+                        }
+                        // This is not enough to fully implement issue: https://github.com/hazelcast/hazelcast/issues/3927
+                        if (i == fieldNames.length - 1) {
+                            break;
+                        }
+                        if (fd == null) {
+                            throw new IllegalArgumentException("Unknown field: " + name);
+                        }
+                        currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
+                                currentClassDef.getVersion());
+                        if (currentClassDef == null) {
+                            throw new IllegalArgumentException("Not a registered Portable field: " + fd);
+                        }
                     }
                 }
+            } else {
+                fd = classDef.getField(extractAttributeNameNameWithoutArguments(name));
             }
-        } else {
-            name = ExtractorHelper.extractAttributeNameNameWithoutArguments(name);
-            fd = classDef.getField(name);
         }
         return fd;
     }

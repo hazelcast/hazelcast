@@ -146,7 +146,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
             throws IOException {
 
         int effectiveVersion = version;
-        if (version < 0) {
+        if (effectiveVersion < 0) {
             effectiveVersion = context.getVersion();
         }
 
