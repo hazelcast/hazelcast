@@ -207,7 +207,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
         assertEquals(stackTrace1.length, stackTrace2.length);
         for (int i = 0; i < stackTrace1.length; i++) {
             StackTraceElement stackTraceElement1 = stackTrace1[i];
-            StackTraceElement stackTraceElement2 = stackTrace1[i];
+            StackTraceElement stackTraceElement2 = stackTrace2[i];
             //Not using stackTraceElement.equals
             //because in IBM JDK stacktraceElements with null method name are not equal
             assertEquals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName());
