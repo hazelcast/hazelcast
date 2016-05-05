@@ -17,6 +17,7 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -37,19 +38,29 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class Diagnostics {
 
-    public  static final String PREFIX = "hazelcast.performance.monitor";
+    public static final String PREFIX = "hazelcast.diagnostics";
+
+    /**
+     * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
+     * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
+     * <p/>
+     * By default only mandatory probes are being tracked
+     */
+    public static final HazelcastProperty METRICS_LEVEL =
+            new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
+                    .setDeprecatedName("hazelcast.performance.metric.level");
 
     /**
      * Use the {@link Diagnostics} to see internal performance metrics and cluster related information.
      * <p/>
      * The performance monitor logs all metrics into the log file.
      * <p/>
-     * For more detailed information, please check the PERFORMANCE_METRICS_LEVEL.
+     * For more detailed information, please check the METRICS_LEVEL.
      * <p/>
      * The default is false.
      */
-    public static final HazelcastProperty ENABLED
-            = new HazelcastProperty(PREFIX + ".enabled", false);
+    public static final HazelcastProperty ENABLED = new HazelcastProperty(PREFIX + ".enabled", false)
+            .setDeprecatedName("hazelcast.performance.monitoring.enabled");
 
     /**
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
@@ -60,8 +71,9 @@ public class Diagnostics {
      * <p/>
      * The default is 10.
      */
-    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB
-            = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 10);
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static final HazelcastProperty MAX_ROLLED_FILE_SIZE_MB = new HazelcastProperty(PREFIX + ".max.rolled.file.size.mb", 10)
+            .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.size.mb");
 
     /**
      * The {@link DiagnosticsLogFile} uses a rolling file approach to prevent eating too much disk space.
@@ -70,16 +82,17 @@ public class Diagnostics {
      * <p/>
      * The default is 10.
      */
-    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT
-            = new HazelcastProperty(PREFIX + ".max.rolled.file.count", 10);
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static final HazelcastProperty MAX_ROLLED_FILE_COUNT = new HazelcastProperty(PREFIX + ".max.rolled.file.count", 10)
+            .setDeprecatedName("hazelcast.performance.monitor.max.rolled.file.count");
 
     /**
      * Determines if a human friendly, but more difficult to parse, output format is selected for dumping the metrics.
      * <p/>
      * The default is true.
      */
-    public static final HazelcastProperty HUMAN_FRIENDLY_FORMAT
-            = new HazelcastProperty(PREFIX + ".human.friendly.format", true);
+    public static final HazelcastProperty HUMAN_FRIENDLY_FORMAT = new HazelcastProperty(PREFIX + ".human.friendly.format", true)
+            .setDeprecatedName("hazelcast.performance.monitor.human.friendly.format");
 
     /**
      * Configures the output directory of the performance log files.
@@ -109,29 +122,9 @@ public class Diagnostics {
         this.hzThreadGroup = hzThreadGroup;
         this.logger = logger;
         this.properties = properties;
-        this.enabled = isEnabled(properties);
+        this.enabled = properties.getBoolean(ENABLED);
         this.directory = properties.getString(DIRECTORY);
-
-        if (enabled) {
-            logger.info("Diagnostics is enabled");
-        }
         this.singleLine = !properties.getBoolean(HUMAN_FRIENDLY_FORMAT);
-    }
-
-    private boolean isEnabled(HazelcastProperties properties) {
-        String s = properties.getString(ENABLED);
-        if (s != null) {
-            return properties.getBoolean(ENABLED);
-        }
-
-        // check for the old property name
-        s = properties.get("hazelcast.performance.monitoring.enabled");
-        if (s != null) {
-            logger.warning("Don't use deprecated 'hazelcast.performance.monitoring.enabled' "
-                    + "but use '" + ENABLED.getName() + "' instead. "
-                    + "The former name will be removed in Hazelcast 3.8.");
-        }
-        return Boolean.parseBoolean(s);
     }
 
     /**
@@ -188,6 +181,7 @@ public class Diagnostics {
 
     public void start() {
         if (!enabled) {
+            logger.finest("Diagnostics is enabled");
             return;
         }
 

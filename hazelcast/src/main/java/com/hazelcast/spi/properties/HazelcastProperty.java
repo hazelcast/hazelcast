@@ -30,6 +30,7 @@ public final class HazelcastProperty {
     private final String defaultValue;
     private final TimeUnit timeUnit;
     private final HazelcastProperty parent;
+    private volatile String deprecatedName;
 
     public HazelcastProperty(String name) {
         this(name, (String) null);
@@ -76,6 +77,28 @@ public final class HazelcastProperty {
     }
 
     /**
+     * Sets the deprecated name of ths property. Useful if compatibility needs to be provided on property names.
+     *
+     * This method is thread-safe, but is expected to be called immediately after the HazelcastProperty is constructed.
+     *
+     * <code>
+     *     HazelcastProperty property = new HazelcastProperty("newname").setDeprecatedName("oldname");
+     * </code>
+     *
+     * @param deprecatedName the deprecated name of the property
+     * @return the updated {@link HazelcastProperty}
+     * @throws IllegalArgumentException if the deprecatedName is null or an empty string.
+     */
+    public HazelcastProperty setDeprecatedName(String deprecatedName) {
+        this.deprecatedName = checkHasText(deprecatedName, "a valid string should be provided");
+        return this;
+    }
+
+    public String getDeprecatedName() {
+        return deprecatedName;
+    }
+
+    /**
      * Returns the property name.
      *
      * @return the property name
@@ -116,7 +139,6 @@ public final class HazelcastProperty {
         return parent;
     }
 
-
     /**
      * Sets the environmental value of the property.
      *
@@ -131,16 +153,8 @@ public final class HazelcastProperty {
      *
      * @return the value of the property
      */
-
     public String getSystemProperty() {
         return System.getProperty(name);
-    }
-
-    /**
-     * Clears the environmental value of the property.
-     */
-    public String clearSystemProperty() {
-        return System.clearProperty(name);
     }
 
     @Override

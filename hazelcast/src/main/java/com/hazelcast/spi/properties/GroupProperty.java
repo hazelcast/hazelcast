@@ -19,7 +19,6 @@ package com.hazelcast.spi.properties;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
@@ -115,15 +114,6 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.health.monitoring.threshold.memory.percentage", 70);
     public static final HazelcastProperty HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE
             = new HazelcastProperty("hazelcast.health.monitoring.threshold.cpu.percentage", 70);
-
-    /**
-     * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
-     * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
-     * <p/>
-     * By default only mandatory probes are being tracked
-     */
-    public static final HazelcastProperty PERFORMANCE_METRICS_LEVEL
-            = new HazelcastProperty("hazelcast.performance.metric.level", ProbeLevel.MANDATORY.name());
 
     /**
      * The number of threads doing socket input and the number of threads doing socket output.

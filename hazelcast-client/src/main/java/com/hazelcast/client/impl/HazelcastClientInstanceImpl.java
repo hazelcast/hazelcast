@@ -213,7 +213,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private MetricsRegistryImpl initMetricsRegistry() {
-        ProbeLevel probeLevel = properties.getEnum(GroupProperty.PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
         return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), probeLevel);
     }
 

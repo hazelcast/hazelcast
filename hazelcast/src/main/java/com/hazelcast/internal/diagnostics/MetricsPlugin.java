@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -36,7 +35,7 @@ public class MetricsPlugin extends DiagnosticsPlugin {
      * The period in seconds the {@link MetricsPlugin} runs.
      *
      * The MetricsPlugin periodically writing the content of the MetricsRegistry to the logfile. For debugging purposes
-     * make sure the {@link GroupProperty#PERFORMANCE_METRICS_LEVEL} is set to debug.
+     * make sure the {@link Diagnostics#METRICS_LEVEL} is set to debug.
      *
      * This plugin is very cheap to use.
      *

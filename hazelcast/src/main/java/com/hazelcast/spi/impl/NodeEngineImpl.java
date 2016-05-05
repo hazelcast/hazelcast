@@ -75,7 +75,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import static com.hazelcast.spi.properties.GroupProperty.PERFORMANCE_METRICS_LEVEL;
+import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -136,7 +136,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
-        ProbeLevel probeLevel = node.getProperties().getEnum(PERFORMANCE_METRICS_LEVEL, ProbeLevel.class);
+        ProbeLevel probeLevel = node.getProperties().getEnum(METRICS_LEVEL, ProbeLevel.class);
         return new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
     }
 
