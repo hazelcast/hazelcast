@@ -18,6 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -57,6 +58,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 return;
             } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
                 handleForceStart(command);
+            } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
+                handleListNodes(command);
+            } else if (uri.startsWith(URI_KILLNODE_CLUSTER_URL)) {
+                handleKillNode(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
             }
@@ -171,6 +176,57 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 textCommandService.sendResponse(command);
                 clusterService.shutdown();
                 return;
+            }
+        } catch (Throwable throwable) {
+            res = res.replace("${STATUS}", "fail");
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+        textCommandService.sendResponse(command);
+    }
+
+    private void handleListNodes(HttpPostCommand command) throws UnsupportedEncodingException {
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String groupName = URLDecoder.decode(strList[0], "UTF-8");
+        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
+        String res = "{\"status\":\"${STATUS}\" \"response\":\"${RESPONSE}\"}";
+        try {
+            Node node = textCommandService.getNode();
+            ClusterService clusterService = node.getClusterService();
+            GroupConfig groupConfig = node.getConfig().getGroupConfig();
+            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+                res = res.replace("${STATUS}", "forbidden");
+                res = res.replace("${RESPONSE}", "null");
+            } else {
+                res = res.replace("${STATUS}", "success");
+                res = res.replace("${RESPONSE}", clusterService.getMembers().toString() + "\n"
+                        + BuildInfoProvider.getBuildInfo().getVersion() + "\n"
+                        + System.getProperty("java.version"));
+                command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+                textCommandService.sendResponse(command);
+                return;
+            }
+        } catch (Throwable throwable) {
+            res = res.replace("${STATUS}", "fail");
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+        textCommandService.sendResponse(command);
+    }
+
+    private void handleKillNode(HttpPostCommand command) throws UnsupportedEncodingException {
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String groupName = URLDecoder.decode(strList[0], "UTF-8");
+        String groupPass = URLDecoder.decode(strList[1], "UTF-8");
+        String res = "{\"status\":\"${STATUS}\"}";
+        try {
+            Node node = textCommandService.getNode();
+            GroupConfig groupConfig = node.getConfig().getGroupConfig();
+            if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
+                res = res.replace("${STATUS}", "forbidden");
+            } else {
+                res = res.replace("${STATUS}", "success");
+                node.shutdown(false);
             }
         } catch (Throwable throwable) {
             res = res.replace("${STATUS}", "fail");

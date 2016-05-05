@@ -10,6 +10,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -28,7 +30,7 @@ public class StartServerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMain() {
+    public void testMain() throws FileNotFoundException {
         StartServer.main(new String[]{});
 
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
