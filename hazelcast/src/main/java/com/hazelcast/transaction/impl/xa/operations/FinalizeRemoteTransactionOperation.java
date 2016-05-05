@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FinalizeRemoteTransactionOperation extends BaseXAOperation implements BackupAwareOperation {
+public class FinalizeRemoteTransactionOperation extends AbstractXAOperation implements BackupAwareOperation {
 
     private Data xidData;
     private boolean isCommit;

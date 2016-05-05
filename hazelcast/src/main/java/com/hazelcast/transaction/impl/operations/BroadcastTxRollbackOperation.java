@@ -29,7 +29,7 @@ import java.util.Collection;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.BROADCAST_TX_ROLLBACK;
 
-public final class BroadcastTxRollbackOperation extends TxBaseOperation {
+public final class BroadcastTxRollbackOperation extends AbstractTxOperation {
 
     private String txnId;
 
