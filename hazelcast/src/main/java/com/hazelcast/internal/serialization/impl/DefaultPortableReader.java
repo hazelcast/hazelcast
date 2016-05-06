@@ -770,8 +770,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
             returnedType = expectedType.getSingleType();
         }
         if (expectedType != returnedType) {
-            throw new IllegalArgumentException("Wrong actual type read! Actual:" + returnedType.name() + " Expected: "
-                    + expectedType.name());
+            throw new IllegalArgumentException("Wrong type read! Actual:" + returnedType.name() + " Expected: "
+                    + expectedType.name() + ". Did you you a correct read method? E.g. readInt() for int.");
         }
         return position;
     }

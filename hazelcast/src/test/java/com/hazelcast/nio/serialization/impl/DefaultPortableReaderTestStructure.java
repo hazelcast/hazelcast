@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderTestStructure.PrimitivePortable.Init.FULL;
+import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderTestStructure.PrimitivePortable.Init.NULL;
 import static java.util.Arrays.asList;
 
 public class DefaultPortableReaderTestStructure {
@@ -228,9 +230,9 @@ public class DefaultPortableReaderTestStructure {
         @Override
         public String toString() {
             String init;
-            if(bytes == null) {
+            if (bytes == null) {
                 init = "NULL";
-            } else if(bytes.length == 0) {
+            } else if (bytes.length == 0) {
                 init = "EMPTY";
             } else {
                 init = "FULL";
@@ -483,6 +485,46 @@ public class DefaultPortableReaderTestStructure {
                 return new NestedGroupPortable();
             return null;
         }
+    }
+
+    static GroupPortable group(PrimitivePortable.Init init) {
+        PrimitivePortable[] portables;
+        if (init == FULL) {
+            int count = 3;
+            portables = new PrimitivePortable[count];
+            for (int i = 0; i < count; i++) {
+                portables[i] = new PrimitivePortable(i, FULL);
+            }
+        } else if (init == NULL) {
+            portables = null;
+        } else {
+            portables = new PrimitivePortable[0];
+        }
+        return new GroupPortable(portables);
+    }
+
+    static GroupPortable group(PrimitivePortable portable) {
+        return new GroupPortable(portable);
+    }
+
+    static NestedGroupPortable nested(GroupPortable portable) {
+        return new NestedGroupPortable(portable);
+    }
+
+    static NestedGroupPortable nested(Portable[] portables) {
+        return new NestedGroupPortable(portables);
+    }
+
+    static GroupPortable group(PrimitivePortable... portables) {
+        return new GroupPortable(portables);
+    }
+
+    static PrimitivePortable prim(PrimitivePortable.Init init) {
+        return new PrimitivePortable(1, init);
+    }
+
+    static PrimitivePortable prim(int seed, PrimitivePortable.Init init) {
+        return new PrimitivePortable(seed, init);
     }
 
 }
