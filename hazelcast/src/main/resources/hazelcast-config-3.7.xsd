@@ -977,7 +977,7 @@
             <xs:element name="multi-threading-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        Default is `false`, meaning only one dedicated thread will handle topic messages.
+                        Default is `false`, meaning only one dedicated thread will handle topic messages. 
                         When multi-threading enabled (true) all threads from event thread pool can be used for message handling.
                     </xs:documentation>
                 </xs:annotation>
@@ -2767,29 +2767,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="parallelism" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
-                        each writing in parallel to its own files. During the Hot Restart procedure, this many
-                        IO threads will be reading the files and this many Rebuilder threads will be rebuilding
-                        the HR metadata.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="validation-timeout-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Validation timeout for the Hot Restart procedure. Includes the time to validate
-                        cluster members expected to join and partition table of the whole cluster.
+                        Validation timeout for hot-restart process, includes validating
+                        cluster members expected to join and partition table on all cluster.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="data-load-timeout-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Data load timeout for Hot Restart procedure. All members in the cluster should
-                        complete restoring their local data before this timeout.
+                        Data load timeout for hot-restart process,
+                        all members in the cluster should complete restoring their local data
+                        before this timeout.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2797,7 +2788,7 @@
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    True to enable Hot Restart Persistence, false otherwise.
+                    True to enable hot-restart, false otherwise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2808,8 +2799,8 @@
             <xs:element name="fsync" type="xs:boolean" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        If set to true, when each update operation on this structure completes,
-                        it is guaranteed that it has already been persisted.
+                        True if disk write should be followed by an fsync() system call,
+                        false otherwise.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2818,7 +2809,8 @@
         <xs:attribute name="enabled" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
-                    True if Hot Restart Persistence is enabled, false otherwise. Only available on Hazelcast Enterprise.
+                    True if hot-restart is enabled, false otherwise
+                    Only available on Hazelcast Enterprise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

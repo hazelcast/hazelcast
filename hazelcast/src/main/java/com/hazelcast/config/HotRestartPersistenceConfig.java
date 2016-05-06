@@ -46,16 +46,8 @@ public class HotRestartPersistenceConfig {
      */
     public static final int DEFAULT_DATA_LOAD_TIMEOUT = 15 * 60;
 
-    /**
-     * Default level of parallelism in Hot Restart Persistence. Controls the number
-     * of Hot Restart Store instances, each operating with a single IO thread and a
-     * single GC thread.
-     */
-    public static final int DEFAULT_PARALLELISM = 1;
-
     private boolean enabled;
     private File baseDir = new File(HOT_RESTART_BASE_DIR_DEFAULT);
-    private int parallelism = DEFAULT_PARALLELISM;
     private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
 
@@ -94,22 +86,6 @@ public class HotRestartPersistenceConfig {
     public HotRestartPersistenceConfig setBaseDir(File baseDir) {
         checkNotNull(baseDir, "Base directory cannot be null!");
         this.baseDir = baseDir;
-        return this;
-    }
-
-    /**
-     * Gets the configured number of Hot Restart store instance to create for one Hazelcast instance.
-     */
-    public int getParallelism() {
-        return parallelism;
-    }
-
-    /**
-     * Sets the number of Hot Restart store instances to create for one Hazelcast instance.
-     */
-    public HotRestartPersistenceConfig setParallelism(int parallelism) {
-        checkPositive(parallelism, "Palallelism must be a positive integer");
-        this.parallelism = parallelism;
         return this;
     }
 
