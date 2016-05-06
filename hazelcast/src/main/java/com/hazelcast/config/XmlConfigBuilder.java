@@ -24,6 +24,7 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
@@ -1211,9 +1212,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
                 EvictionConfig evictionConfig = getEvictionConfig(n);
-                EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
-                if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
-                    throw new InvalidConfigurationException("Eviction policy of cache cannot be null or \"NONE\"");
+                try {
+                    EvictionConfigHelper.checkEvictionConfig(evictionConfig);
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidConfigurationException(e.getMessage());
                 }
                 cacheConfig.setEvictionConfig(evictionConfig);
             } else if ("quorum-ref".equals(nodeName)) {
@@ -1294,6 +1296,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         Node size = node.getAttributes().getNamedItem("size");
         Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
         Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+        Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
         if (size != null) {
             evictionConfig.setSize(parseInt(getTextContent(size)));
         }
@@ -1308,6 +1311,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                     EvictionPolicy.valueOf(
                             upperCaseInternal(getTextContent(evictionPolicy)))
             );
+        }
+        if (comparatorClassName != null) {
+            evictionConfig.setComparatorClassName(getTextContent(comparatorClassName));
         }
         return evictionConfig;
     }

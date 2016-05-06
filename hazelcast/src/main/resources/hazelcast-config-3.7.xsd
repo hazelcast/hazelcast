@@ -2638,6 +2638,7 @@
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
         <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
+        <xs:attribute name="comparator-class-name" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">

@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -37,7 +39,26 @@ public class CacheEvictionConfig
     }
 
     public CacheEvictionConfig(int size, CacheMaxSizePolicy cacheMaxSizePolicy, EvictionPolicy evictionPolicy) {
-        super(size, cacheMaxSizePolicy != null ? cacheMaxSizePolicy.toMaxSizePolicy() : null, evictionPolicy);
+        super(size, checkNotNull(cacheMaxSizePolicy,
+                "Cache max-size policy cannot be null!").toMaxSizePolicy(), evictionPolicy);
+    }
+
+    public CacheEvictionConfig(int size, MaxSizePolicy maxSizePolicy, String comparatorClassName) {
+        super(size, maxSizePolicy, comparatorClassName);
+    }
+
+    public CacheEvictionConfig(int size, CacheMaxSizePolicy cacheMaxSizePolicy, String comparatorClassName) {
+        super(size, checkNotNull(cacheMaxSizePolicy,
+                "Cache max-size policy cannot be null!").toMaxSizePolicy(), comparatorClassName);
+    }
+
+    public CacheEvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicyComparator comparator) {
+        super(size, maxSizePolicy, comparator);
+    }
+
+    public CacheEvictionConfig(int size, CacheMaxSizePolicy cacheMaxSizePolicy, EvictionPolicyComparator comparator) {
+        super(size, checkNotNull(cacheMaxSizePolicy,
+                "Cache max-size policy cannot be null!").toMaxSizePolicy(), comparator);
     }
 
     public CacheEvictionConfig(EvictionConfig config) {
@@ -148,14 +169,26 @@ public class CacheEvictionConfig
     }
 
     @Override
+    public CacheEvictionConfig setSize(int size) {
+        super.setSize(size);
+        return this;
+    }
+
+    @Override
     public CacheEvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         super.setEvictionPolicy(evictionPolicy);
         return this;
     }
 
     @Override
-    public CacheEvictionConfig setSize(int size) {
-        super.setSize(size);
+    public CacheEvictionConfig setComparatorClassName(String comparatorClassName) {
+        super.setComparatorClassName(comparatorClassName);
+        return this;
+    }
+
+    @Override
+    public CacheEvictionConfig setComparator(EvictionPolicyComparator comparator) {
+        super.setComparator(comparator);
         return this;
     }
 
@@ -165,6 +198,8 @@ public class CacheEvictionConfig
                 + "size=" + size
                 + ", maxSizePolicy=" + maxSizePolicy
                 + ", evictionPolicy=" + evictionPolicy
+                + ", comparatorClassName=" + comparatorClassName
+                + ", comparator=" + comparator
                 + ", readOnly=" + readOnly
                 + '}';
     }

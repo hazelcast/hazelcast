@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+
 /**
  * Read only version of {@link CacheEvictionConfig}.
  *
@@ -44,6 +46,16 @@ public class CacheEvictionConfigReadOnly
 
     @Override
     public CacheEvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public CacheEvictionConfig setComparatorClassName(String comparatorClassName) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public CacheEvictionConfig setComparator(EvictionPolicyComparator comparator) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

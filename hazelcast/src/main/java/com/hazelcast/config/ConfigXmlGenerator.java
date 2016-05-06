@@ -626,8 +626,11 @@ public class ConfigXmlGenerator {
             xml.append("<eviction")
                     .append(" size=\"").append(e.getSize()).append("\"")
                     .append(" max-size-policy=\"").append(e.getMaximumSizePolicy()).append("\"")
-                    .append(" eviction-policy=\"").append(e.getEvictionPolicy()).append("\"")
-                    .append("/>");
+                    .append(" eviction-policy=\"").append(e.getEvictionPolicy()).append("\"");
+            if (!StringUtil.isNullOrEmpty(e.getComparatorClassName())) {
+                xml.append(" comparator-class-name=\"").append(e.getComparatorClassName()).append("\"");
+            }
+            xml.append("/>");
         }
     }
 

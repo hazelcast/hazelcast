@@ -17,8 +17,10 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.eviction.EvictionConfiguration;
+import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
+import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -42,13 +44,20 @@ public class EvictionConfig
     public static final int DEFAULT_MAX_ENTRY_COUNT = 10000;
 
     /**
+     * Default Max-Size Policy.
+     */
+    public static final MaxSizePolicy DEFAULT_MAX_SIZE_POLICY = MaxSizePolicy.ENTRY_COUNT;
+
+    /**
      * Default Eviction Policy.
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
 
     protected int size = DEFAULT_MAX_ENTRY_COUNT;
-    protected MaxSizePolicy maxSizePolicy = MaxSizePolicy.ENTRY_COUNT;
+    protected MaxSizePolicy maxSizePolicy = DEFAULT_MAX_SIZE_POLICY;
     protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+    protected String comparatorClassName;
+    protected EvictionPolicyComparator comparator;
 
     protected EvictionConfig readOnly;
 
@@ -64,17 +73,43 @@ public class EvictionConfig
          */
 
         // Size cannot be non-positive number
-        if (size > 0) {
-            this.size = size;
-        }
+        this.size = checkPositive(size, "Size must be positive number!");
         // Max-Size policy cannot be null
-        if (maxSizePolicy != null) {
-            this.maxSizePolicy = maxSizePolicy;
-        }
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
         // Eviction policy cannot be null
-        if (evictionPolicy != null) {
-            this.evictionPolicy = evictionPolicy;
-        }
+        this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null!");
+    }
+
+    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, String comparatorClassName) {
+        /**
+         * ===== NOTE =====
+         *
+         * Do not use setters, because they are overridden in the readonly version of this config and
+         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
+         */
+
+        // Size cannot be non-positive number
+        this.size = checkPositive(size, "Size must be positive number!");
+        // Max-Size policy cannot be null
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
+        // Eviction policy comparator class name cannot be null
+        this.comparatorClassName = checkNotNull(comparatorClassName, "Comparator classname cannot be null!");
+    }
+
+    public EvictionConfig(int size, MaxSizePolicy maxSizePolicy, EvictionPolicyComparator comparator) {
+        /**
+         * ===== NOTE =====
+         *
+         * Do not use setters, because they are overridden in the readonly version of this config and
+         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
+         */
+
+        // Size cannot be non-positive number
+        this.size = checkPositive(size, "Size must be positive number!");
+        // Max-Size policy cannot be null
+        this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null!");
+        // Eviction policy comparator cannot be null
+        this.comparator = checkNotNull(comparator, "Comparator cannot be null!");
     }
 
     public EvictionConfig(EvictionConfig config) {
@@ -86,17 +121,22 @@ public class EvictionConfig
          */
 
         // Size cannot be non-positive number
-        if (config.size > 0) {
-            this.size = config.size;
-        }
+        this.size = checkPositive(config.size, "Size must be positive number!");
         // Max-Size policy cannot be null
-        if (config.maxSizePolicy != null) {
-            this.maxSizePolicy = config.maxSizePolicy;
-        }
+        this.maxSizePolicy = checkNotNull(config.maxSizePolicy, "Max-Size policy cannot be null!");
         // Eviction policy cannot be null
         if (config.evictionPolicy != null) {
             this.evictionPolicy = config.evictionPolicy;
         }
+        // Eviction policy comparator class name cannot be null
+        if (config.comparatorClassName != null) {
+            this.comparatorClassName = config.comparatorClassName;
+        }
+        // Eviction policy comparator cannot be null
+        if (config.comparator != null) {
+            this.comparator = config.comparator;
+        }
+        EvictionConfigHelper.checkEvictionConfig(evictionPolicy, comparatorClassName, comparator);
     }
 
     /**
@@ -164,6 +204,30 @@ public class EvictionConfig
     }
 
     @Override
+    public String getComparatorClassName() {
+        return comparatorClassName;
+    }
+
+    public EvictionConfig setComparatorClassName(String comparatorClassName) {
+        checkNotNull(comparatorClassName, "Eviction policy comparator class name cannot be null !");
+
+        this.comparatorClassName = comparatorClassName;
+        return this;
+    }
+
+    @Override
+    public EvictionPolicyComparator getComparator() {
+        return comparator;
+    }
+
+    public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
+        checkNotNull(comparator, "Eviction policy comparator cannot be null !");
+
+        this.comparator = comparator;
+        return this;
+    }
+
+    @Override
     public EvictionStrategyType getEvictionStrategyType() {
         // TODO Add support for other/custom eviction strategies
         return EvictionStrategyType.DEFAULT_EVICTION_STRATEGY;
@@ -186,6 +250,8 @@ public class EvictionConfig
         out.writeInt(size);
         out.writeUTF(maxSizePolicy.toString());
         out.writeUTF(evictionPolicy.toString());
+        out.writeUTF(comparatorClassName);
+        out.writeObject(comparator);
     }
 
     @Override
@@ -194,6 +260,8 @@ public class EvictionConfig
         size = in.readInt();
         maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
         evictionPolicy = EvictionPolicy.valueOf(in.readUTF());
+        comparatorClassName = in.readUTF();
+        comparator = in.readObject();
     }
 
     @Override
@@ -202,6 +270,8 @@ public class EvictionConfig
                 + "size=" + size
                 + ", maxSizePolicy=" + maxSizePolicy
                 + ", evictionPolicy=" + evictionPolicy
+                + ", comparatorClassName=" + comparatorClassName
+                + ", comparator=" + comparator
                 + ", readOnly=" + readOnly
                 + '}';
     }

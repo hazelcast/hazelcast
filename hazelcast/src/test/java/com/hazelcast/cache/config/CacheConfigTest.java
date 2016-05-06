@@ -107,10 +107,11 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertTrue(cacheConfig1.isStatisticsEnabled());
         assertTrue(cacheConfig1.isManagementEnabled());
 
-        assertNotNull(cacheConfig1.getEvictionConfig());
-        assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
-                cacheConfig1.getEvictionConfig().getMaximumSizePolicy());
+        EvictionConfig evictionConfig = cacheConfig1.getEvictionConfig();
+        assertNotNull(evictionConfig);
+        assertEquals(EvictionPolicy.LFU, evictionConfig.getEvictionPolicy());
+        assertEquals(50, evictionConfig.getSize());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
 
         List<CacheSimpleEntryListenerConfig> cacheEntryListeners = cacheConfig1.getCacheEntryListeners();
         assertEquals(2, cacheEntryListeners.size());
@@ -141,6 +142,20 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertFalse(wanRefDisabledRepublishingTestCache.isRepublishingEnabled());
 
         assertTrue(cacheConfig1.isDisablePerEntryInvalidationEvents());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_CustomEvictionPolicyComparator() throws IOException {
+        Config config = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheConfig = config.getCacheConfig("cacheWithCustomEvictionPolicyComparator");
+        assertNotNull(cacheConfig);
+
+        EvictionConfig evictionConfig = cacheConfig.getEvictionConfig();
+        assertNotNull(evictionConfig);
+        assertEquals(50, evictionConfig.getSize());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, evictionConfig.getMaximumSizePolicy());
+        assertEquals("my-custom-eviction-policy-comparator", evictionConfig.getComparatorClassName());
     }
 
     @Test
