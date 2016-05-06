@@ -25,6 +25,7 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -116,7 +117,9 @@ public abstract class AbstractHandler implements MigratableHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
-        Level level = ioService.isActive() ? Level.WARNING : Level.FINEST;
+
+        Level level = getLevel(e, connectionType);
+
         if (e instanceof IOException) {
             logger.log(level, sb.toString());
         } else {
@@ -124,6 +127,18 @@ public abstract class AbstractHandler implements MigratableHandler {
         }
     }
 
+    private Level getLevel(Throwable e, ConnectionType connectionType) {
+        if (ioService.isActive()) {
+            if (connectionType.isClient()) {
+                // in case of a client disconnecting, we don't want to pollute the log with warnings.
+                return e instanceof EOFException ? Level.INFO : Level.WARNING;
+            } else {
+                return Level.WARNING;
+            }
+        } else {
+            return Level.FINEST;
+        }
+    }
 
     // This method run on the oldOwner NonBlockingIOThread
     void startMigration(final NonBlockingIOThread newOwner) throws IOException {
