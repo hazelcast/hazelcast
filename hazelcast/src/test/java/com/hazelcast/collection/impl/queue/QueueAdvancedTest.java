@@ -28,6 +28,7 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
@@ -41,7 +42,6 @@ import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -612,27 +612,22 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         final IQueue<Thread> queue = instance.getQueue(randomName());
-        final AtomicBoolean interrupted = new AtomicBoolean();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Thread thread = new Thread() {
+        final CountDownLatch takeLatch = new CountDownLatch(1);
+        TestThread thread = new TestThread() {
             @Override
-            public void run() {
-                try {
-                    latch.countDown();
-                    queue.take();
-                } catch (InterruptedException e) {
-                    interrupted.set(true);
-                }
+            public void doRun() throws Throwable {
+                takeLatch.countDown();
+                queue.take();
             }
         };
         thread.start();
 
-        latch.await(10, SECONDS);
-        thread.interrupt();
-        thread.join(5000);
+        assertOpenEventually(takeLatch);
 
-        assertTrue("Expected queue.take() to be interrupted, but interrupted state is: " + interrupted, interrupted.get());
+        thread.interrupt();
+
+        thread.assertFailsEventually(InterruptedException.class);
     }
 
     @Test
@@ -643,29 +638,24 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         final IQueue<String> queue = instance.getQueue(randomName());
-        final AtomicBoolean interrupted = new AtomicBoolean();
 
         assertTrue("Expected queue.offer() to succeed", queue.offer("item"));
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        Thread thread = new Thread() {
+        final CountDownLatch putLatch = new CountDownLatch(1);
+        TestThread thread = new TestThread() {
             @Override
-            public void run() {
-                try {
-                    latch.countDown();
-                    queue.put("item");
-                } catch (InterruptedException e) {
-                    interrupted.set(true);
-                }
+            public void doRun() throws Throwable {
+                putLatch.countDown();
+                queue.put("item");
             }
         };
         thread.start();
 
-        latch.await(10, SECONDS);
-        thread.interrupt();
-        thread.join(5000);
+        assertOpenEventually(putLatch);
 
-        assertTrue("Expected queue.put() to be interrupted, but interrupted state is: " + interrupted, interrupted.get());
+        thread.interrupt();
+
+        thread.assertFailsEventually(InterruptedException.class);
     }
 
     private HazelcastInstance[] createHazelcastInstances() {
