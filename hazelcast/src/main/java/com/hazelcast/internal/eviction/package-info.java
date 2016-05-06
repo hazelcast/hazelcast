@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     Eviction policy implementations for cache.
+ *     Eviction policy implementations.
  * </p>
  */
 package com.hazelcast.internal.eviction;

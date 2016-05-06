@@ -35,12 +35,18 @@ public interface EvictionConfiguration {
      */
     EvictionPolicyType getEvictionPolicyType();
 
-    // TODO Maybe eviction policy evaluator factory (a string property for full name of implementation class)
-    // can be added for user defined custom implementations.
-    // For example "String getEvictionPolicyImpl()".
+    /**
+     * Gets the class name of the configured {@link EvictionPolicyComparator} implementation.
+     *
+     * @return class name of the configured {@link EvictionPolicyComparator} implementation
+     */
+    String getComparatorClassName();
 
-    // TODO Maybe eviction strategy factory (a string property for full name of implementation class)
-    // can be added for user defined custom implementations.
-    // For example "String getEvictionStrategyImpl()".
+    /**
+     * Gets instance of the configured {@link EvictionPolicyComparator} implementation.
+     *
+     * @return instance of the configured {@link EvictionPolicyComparator} implementation.
+     */
+    EvictionPolicyComparator getComparator();
 
 }

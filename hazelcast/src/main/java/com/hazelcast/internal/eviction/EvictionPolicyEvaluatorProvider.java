@@ -16,58 +16,77 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.internal.eviction.impl.evaluator.LFUEvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.impl.evaluator.LRUEvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator;
+import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
+import com.hazelcast.internal.eviction.impl.evaluator.DefaultEvictionPolicyEvaluator;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Provider to get any kind ({@link EvictionPolicyType}) of {@link EvictionPolicyEvaluator}.
  */
 public final class EvictionPolicyEvaluatorProvider {
 
-    private static final Map<EvictionPolicyType, EvictionPolicyEvaluator> EVICTION_POLICY_EVALUATOR_MAP =
-            new HashMap<EvictionPolicyType, EvictionPolicyEvaluator>();
-
-    static {
-        init();
-    }
+    private static final ConcurrentMap<EvictionPolicyType, EvictionPolicyEvaluator> EVICTION_POLICY_COMPARATOR_MAP =
+            new ConcurrentHashMap<EvictionPolicyType, EvictionPolicyEvaluator>();
 
     private EvictionPolicyEvaluatorProvider() {
     }
 
-    private static void init() {
-        EVICTION_POLICY_EVALUATOR_MAP.put(EvictionPolicyType.LRU, new LRUEvictionPolicyEvaluator());
-        EVICTION_POLICY_EVALUATOR_MAP.put(EvictionPolicyType.LFU, new LFUEvictionPolicyEvaluator());
+    private static EvictionPolicyComparator createEvictionPolicyComparator(EvictionPolicyType evictionPolicyType) {
+        switch (evictionPolicyType) {
+            case LRU:
+                return new LRUEvictionPolicyComparator();
+            case LFU:
+                return new LFUEvictionPolicyComparator();
+            default:
+                throw new IllegalArgumentException("Unsupported eviction policy type: " + evictionPolicyType);
+        }
     }
 
     /**
      * Gets the {@link EvictionPolicyEvaluator} implementation specified with <code>evictionPolicy</code>.
      *
      * @param evictionConfig {@link EvictionConfiguration} for requested {@link EvictionPolicyEvaluator} implementation
+     * @param classLoader the {@link java.lang.ClassLoader} to be used
+     *                    while creating custom {@link EvictionPolicyComparator} if it is specified in the config
      *
      * @return the requested {@link EvictionPolicyEvaluator} implementation
      */
-    public static EvictionPolicyEvaluator getEvictionPolicyEvaluator(EvictionConfiguration evictionConfig) {
+    public static EvictionPolicyEvaluator getEvictionPolicyEvaluator(EvictionConfiguration evictionConfig,
+                                                                     ClassLoader classLoader) {
         if (evictionConfig == null) {
             return null;
         }
-        final EvictionPolicyType evictionPolicyType = evictionConfig.getEvictionPolicyType();
-        if (evictionPolicyType == null) {
-            return null;
-        }
-        final EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EVICTION_POLICY_EVALUATOR_MAP.get(evictionPolicyType);
-        if (evictionPolicyEvaluator != null) {
-            return evictionPolicyEvaluator;
+
+        EvictionPolicyComparator evictionPolicyComparator = null;
+
+        String evictionPolicyComparatorClassName = evictionConfig.getComparatorClassName();
+        if (!StringUtil.isNullOrEmpty(evictionPolicyComparatorClassName)) {
+            try {
+                evictionPolicyComparator =
+                        ClassLoaderUtil.newInstance(classLoader, evictionPolicyComparatorClassName);
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
         } else {
-            throw new IllegalArgumentException("Unsupported eviction policy type: " + evictionPolicyType);
+            EvictionPolicyComparator comparator = evictionConfig.getComparator();
+            if (comparator != null) {
+                evictionPolicyComparator = comparator;
+            } else {
+                EvictionPolicyType evictionPolicyType = evictionConfig.getEvictionPolicyType();
+                if (evictionPolicyType == null) {
+                    return null;
+                }
+                evictionPolicyComparator = createEvictionPolicyComparator(evictionPolicyType);
+            }
         }
 
-        // TODO "evictionPolicyEvaluatorFactory" can be handled here from a single point
-        // for user defined custom implementations.
-        // So "EvictionPolicyEvaluator" implementation can be taken from user defined factory.
+        return new DefaultEvictionPolicyEvaluator(evictionPolicyComparator);
     }
 
 }

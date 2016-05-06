@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     {@link com.hazelcast.internal.eviction.EvictionStrategy} implementations for cache.
+ *     {@link com.hazelcast.internal.eviction.EvictionStrategy} implementations.
  * </p>
  */
 package com.hazelcast.internal.eviction.impl.strategy;

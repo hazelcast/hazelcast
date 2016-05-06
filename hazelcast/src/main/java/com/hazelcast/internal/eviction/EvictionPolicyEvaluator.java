@@ -26,6 +26,13 @@ package com.hazelcast.internal.eviction;
 public interface EvictionPolicyEvaluator<A, E extends Evictable> {
 
     /**
+     * Gets the underlying {@link EvictionPolicyComparator}.
+     *
+     * @return the underlying {@link EvictionPolicyComparator}
+     */
+    EvictionPolicyComparator getEvictionPolicyComparator();
+
+    /**
      * The evaluate method implements the actual policy rules and is called on every eviction to select one or
      * more candidates to be evicted from the given input set of candidates.
      * The selection algorithm should execute in a constant time to deliver a predictable timing results of

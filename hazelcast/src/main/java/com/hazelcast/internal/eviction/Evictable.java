@@ -19,7 +19,7 @@ package com.hazelcast.internal.eviction;
 /**
  * Interface for entries, records or whatever that can be evicted.
  */
-public interface Evictable {
+public interface Evictable<V> {
 
     /**
      * Gets the creation time of this {@link Evictable} in milliseconds.
@@ -33,7 +33,7 @@ public interface Evictable {
      *
      * @return the latest access time of this {@link Evictable} in milliseconds
      */
-    long getAccessTime();
+    long getLastAccessTime();
 
     /**
      * Gets the access hit count of this {@link Evictable}.
@@ -41,5 +41,12 @@ public interface Evictable {
      * @return the access hit count of this {@link Evictable}
      */
     int getAccessHit();
+
+    /**
+     * Gets the value of this {@link Evictable}.
+     *
+     * @return the value of this {@link Evictable}
+     */
+    V getValue();
 
 }
