@@ -32,6 +32,7 @@ import static java.util.Arrays.asList;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in single-value attributes.
+ * It's a detailed test especially for portables, since the extraction is much more complex there.
  * <p/>
  * Extraction mechanism: IN-BUILT REFLECTION EXTRACTION
  * <p/>
@@ -81,39 +82,69 @@ public class ExtractionInPortableSpecTest extends AbstractExtractionTest {
     }
 
     @Test
-    public void wrong_attribute_name() {
+    public void wrong_attribute_name_atLeaf() {
         execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
                 Query.of(Predicates.equal("name12312", "Bond"), mv),
                 Expected.empty());
     }
 
     @Test
-    public void nested_wrong_attribute_name() {
+    public void wrong_attribute_name_atLeaf_comparedToNull() {
+        execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
+                Query.of(Predicates.equal("name12312", null), mv),
+                Expected.of(BOND, KRUEGER, HUNT_WITH_NULLS));
+    }
+
+    @Test
+    public void nested_wrong_attribute_name_atLeaf() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("firstLimb.name12312", "left-hand"), mv),
                 Expected.empty());
     }
 
     @Test
-    @Ignore("Does not work for now - portables issue - see github issue #3927")
-    public void nested_wrong_attribute_notAtLeaf_name() {
+    public void nested_wrong_attribute_name_atLeaf_comparedToNull() {
         execute(Input.of(BOND, KRUEGER),
-                Query.of(Predicates.equal("firstLimb.newPortable.asdfasdf", "left-hand"), mv),
+                Query.of(Predicates.equal("firstLimb.name12312", null), mv),
+                Expected.of(BOND, KRUEGER));
+    }
+
+    @Test
+    @Ignore("Does not work for now - portables issue - see github issue #3927")
+    public void nested_wrong_attribute_notAtLeaf() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("firstLimb.notExisting.notExistingToo", "left-hand"), mv),
                 Expected.empty());
+    }
+
+    @Test
+    @Ignore("Does not work for now - portables issue - see github issue #3927")
+    public void nested_wrong_attribute_notAtLeaf_comparedToNull() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("firstLimb.notExisting.notExistingToo", null), mv),
+                Expected.of(BOND, KRUEGER));
+    }
+
+    @Test
+    @Ignore("Does not work for now - portables issue - see github issue #3927")
+    public void indexOutOfBoundFirst_notExistingProperty_notAtLeaf() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[100].notExisting.notExistingToo", "knife"), mv),
+                Expected.empty());
+    }
+
+    @Test
+    @Ignore("Does not work for now - portables issue - see github issue #3927")
+    public void indexOutOfBoundFirst_notExistingProperty_notAtLeaf_comparedToNull() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[100].notExisting.notExistingToo", null), mv),
+                Expected.of(BOND, KRUEGER));
     }
 
     @Test
     public void indexOutOfBound_notExistingProperty() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(equal("limbs_[100].sdafasdf", "knife"), mv),
-                Expected.empty());
-    }
-
-    @Test
-    @Ignore("Does not work for now - portables issue - see github issue #3927")
-    public void indexOutOfBound_notExistingProperty_notAtLeaf() {
-        execute(Input.of(BOND, KRUEGER),
-                Query.of(equal("limbs_[100].sdafasdf.zxcvzxcv", "knife"), mv),
                 Expected.empty());
     }
 
@@ -159,6 +190,111 @@ public class ExtractionInPortableSpecTest extends AbstractExtractionTest {
                 Expected.of(HUNT_WITH_NULLS));
     }
 
+    @Test
+    public void correct_attribute_name() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("name", "Bond"), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_nestedAttribute_name() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("firstLimb.name", "left-hand"), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_portableAttribute() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("firstLimb", BOND.firstLimb.getPortable()), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_portableArrayInTheMiddle_matching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("limbs_[0].name", "left-hand"), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_portableArrayInTheMiddle_notMatching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("limbs_[0].name", "dasdfasdfasdf"), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void correct_portableInTheMiddle_portableAtTheEnd_matching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("firstLimb.fingers_[0]", (BOND.firstLimb.fingers_array[0]).getPortable()), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_portableInTheMiddle_portableAtTheEnd_notMatching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("firstLimb.fingers_[0]", (BOND.firstLimb.fingers_array[1]).getPortable()), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void correct_portableInTheMiddle_portableArrayAtTheEnd_primitiveAttribute_notMatching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("firstLimb.fingers_[0].name", "thumb123"), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void correct_portableArrayInTheMiddle_portableAtTheEnd_notMatching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("limbs_[0].fingers_[0]", (BOND.firstLimb.fingers_array[1]).getPortable()), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void correct_portableArrayInTheMiddle_portableArrayAtTheEnd_primitiveAttribute_notMatching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("limbs_[0].fingers_[0].name", "thumb123"), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void correct_portableArrayInTheMiddle_portableArrayAtTheEnd_primitiveAttribute_matching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("firstLimb.fingers_[0].name", "thumb"), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_portableArrayAtTheEnd_matching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("limbs_[0]", BOND.limbs_array[0].getPortable()), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_portableArrayAtTheEnd_notMatching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("limbs_[1]", BOND.limbs_array[0].getPortable()), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void correct_primitiveArrayAtTheEnd_matching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("secondLimb.tattoos_[0]", "knife"), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void correct_primitiveArrayAtTheEnd_notMatching() {
+        execute(Input.of(BOND),
+                Query.of(Predicates.equal("secondLimb.tattoos_[0]", "knife123"), mv),
+                Expected.empty());
+    }
+
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> parametrisationData() {
         return axes(
@@ -167,195 +303,5 @@ public class ExtractionInPortableSpecTest extends AbstractExtractionTest {
                 asList(PORTABLE)
         );
     }
-
-
-//    @Test
-//    public void correct_attribute_name() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("name", "Porsche"), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_nestedAttribute_name() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("engine.power", 300), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableAttribute() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("engine", PORSCHE.engine), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableNestedAttribute() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("engine.chip", PORSCHE.engine.chip), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_matching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].name", "front"), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_notMatching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[1].name", "front"), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_portableAtTheEnd_matching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].chip", ((PortableDataStructure.WheelPortable) PORSCHE.wheels[0]).chip), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_portableAtTheEnd_notMatching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].chip", new PortableDataStructure.ChipPortable(123)), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_portableArrayAtTheEnd_matching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].chips[1]", (PortableDataStructure.ChipPortable) (((PortableDataStructure.WheelPortable) PORSCHE.wheels[0]).chips)[1]), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_portableArrayAtTheEnd_primitiveAttribute_notMatching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].chips[0].power", 15), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_portableArrayAtTheEnd_primitiveAttribute_matching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].chips[0].power", 20), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_portableArrayAtTheEnd_notMatching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].chips[0]", (PortableDataStructure.ChipPortable) (((PortableDataStructure.WheelPortable) PORSCHE.wheels[0]).chips)[1]), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_primitiveArrayAtTheEnd_matching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].serial[1]", 12), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableArrayInTheMiddle_primitiveArrayAtTheEnd_notMatching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0].serial[1]", 123), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void correct_portableArrayAtTheEnd_matching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[0]", (PortableDataStructure.WheelPortable) PORSCHE.wheels[0]), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_portableArrayAtTheEnd_notMatching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("wheels[1]", (PortableDataStructure.WheelPortable) PORSCHE.wheels[0]), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void correct_primitiveArrayAtTheEnd_matching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("model[0]", "911"), mv),
-//                Expected.of(PORSCHE));
-//    }
-//
-//    @Test
-//    public void correct_primitiveArrayAtTheEnd_notMatching() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("model[0]", "956"), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void correct_primitiveArrayAtTheEnd_matchingX() {
-//        PortableDataStructure.XPortable x = new PortableDataStructure.XPortable();
-//
-//        execute(Input.of(x),
-//                Query.of(Predicates.equal("chips[0].serial[0]", 41), mv),
-//                Expected.of(x));
-//    }
-//
-//    @Test
-//    public void correct_primitiveArrayAtTheEnd_notMatchingX() {
-//        PortableDataStructure.XPortable x = new PortableDataStructure.XPortable();
-//
-//        execute(Input.of(x),
-//                Query.of(Predicates.equal("chips[0].serial[0]", 10), mv),
-//                Expected.empty());
-//    }
-
-    // TODO no object on the server classpath -> ClientMapStandaloneTest
-
-//    @Test
-//    @Ignore("Does not throw exception for now - inconsistent with other query mechanisms")
-//    public void wrong_attribute_name() {
-//        execute(Input.of(PORSCHE),
-//                Query.of(Predicates.equal("name12312", "Porsche"), mv),
-//                Expected.of(QueryException.class));
-//    }
-
-//    @Test
-//    public void wrong_attribute_name_compared_to_null() {
-//        execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
-//                Query.of(Predicates.equal("name12312", null), mv),
-//                Expected.of(QueryException.class));
-//    }
-//
-//    @Test
-//    public void primitiveNull_comparedToNull_matching() {
-//        execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
-//                Query.of(Predicates.equal("name", null), mv),
-//                Expected.of(HUNT_WITH_NULLS));
-//    }
-//
-//    @Test
-//    public void primitiveNull_comparedToNotNull_notMatching() {
-//        execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
-//                Query.of(Predicates.equal("name", "Non-null-value"), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void nestedAttribute_firstIsNull_comparedToNotNull() {
-//        execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
-//                Query.of(Predicates.equal("secondLimb.name", "Non-null-value"), mv),
-//                Expected.empty());
-//    }
-//
-//    @Test
-//    public void nestedAttribute_firstIsNull_comparedToNull() {
-//        execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
-//                Query.of(Predicates.equal("secondLimb.name", null), mv),
-//                Expected.of(HUNT_WITH_NULLS));
-//    }
 
 }

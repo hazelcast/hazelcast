@@ -60,12 +60,12 @@ public class ComplexDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof PersonPortable)) return false;
             final PersonPortable other = (PersonPortable) o;
-            return ObjectTestUtils.equals(this.name, other.name);// && ObjectTestUtils.equals(this.limbs_portable, other.limbs_portable);
+            return ObjectTestUtils.equals(this.name, other.name);
         }
 
         @Override
         public int hashCode() {
-            return ObjectTestUtils.hash(name, limbs_portable);
+            return ObjectTestUtils.hash(name);
         }
 
         @Override
@@ -95,7 +95,7 @@ public class ComplexDataStructure {
         }
     }
 
-    public static class Limb implements Serializable, PortableAware {
+    public static class Limb implements Serializable, PortableAware, Comparable<Limb> {
         String name;
         List<Finger> fingers_list = new ArrayList<Finger>();
         Finger[] fingers_array;
@@ -120,9 +120,14 @@ public class ComplexDataStructure {
         public LimbPortable getPortable() {
             return portable;
         }
+
+        @Override
+        public int compareTo(Limb other) {
+            return this.name.compareTo(other.name);
+        }
     }
 
-    public static class LimbPortable implements Serializable, Portable {
+    public static class LimbPortable implements Serializable, Portable, Comparable<LimbPortable> {
         final static int FACTORY_ID = 1;
         final static int ID = 11;
 
@@ -134,13 +139,12 @@ public class ComplexDataStructure {
         public boolean equals(Object o) {
             if (!(o instanceof LimbPortable)) return false;
             final LimbPortable other = (LimbPortable) o;
-            return ObjectTestUtils.equals(this.name, other.name);// && ObjectTestUtils.equals(this.fingers_portable, other.fingers_portable)
-                    //&& ObjectTestUtils.equals(this.tattoos_portable, other.tattoos_portable);
+            return ObjectTestUtils.equals(this.name, other.name);
         }
 
         @Override
         public int hashCode() {
-            return ObjectTestUtils.hash(name, fingers_portable, tattoos_portable);
+            return ObjectTestUtils.hash(name);
         }
 
         @Override
@@ -165,6 +169,11 @@ public class ComplexDataStructure {
             name = reader.readUTF("name");
             fingers_portable = reader.readPortableArray("fingers_portable");
             tattoos_portable = reader.readUTFArray("tattoos_portable");
+        }
+
+        @Override
+        public int compareTo(LimbPortable other) {
+            return this.name.compareTo(other.name);
         }
     }
 

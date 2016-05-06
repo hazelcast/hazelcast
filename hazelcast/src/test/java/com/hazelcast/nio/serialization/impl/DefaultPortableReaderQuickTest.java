@@ -540,5 +540,4 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         }
     }
 
-
 }
