@@ -207,6 +207,7 @@ public class TransactionImpl implements Transaction {
             setThreadFlag(TRUE);
         }
         state = ACTIVE;
+        transactionManagerService.startCount.inc();
     }
 
     private void setThreadFlag(Boolean flag) {
@@ -285,6 +286,7 @@ public class TransactionImpl implements Transaction {
                 List<Future> futures = transactionLog.commit(nodeEngine);
                 waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, RETHROW_TRANSACTION_EXCEPTION);
                 state = COMMITTED;
+                transactionManagerService.commitCount.inc();
             } catch (Throwable e) {
                 state = COMMIT_FAILED;
                 throw rethrow(e, TransactionException.class);
@@ -320,6 +322,7 @@ public class TransactionImpl implements Transaction {
                 throw rethrow(e);
             } finally {
                 state = ROLLED_BACK;
+                transactionManagerService.rollbackCount.inc();
             }
         } finally {
             setThreadFlag(null);

@@ -20,6 +20,10 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ClientAwareService;
@@ -71,6 +75,14 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     final ConcurrentMap<String, TxBackupLog> txBackupLogs = new ConcurrentHashMap<String, TxBackupLog>();
 
+    // Due to mocking; the probes can't be made final.
+    @Probe(level = ProbeLevel.MANDATORY)
+    Counter startCount = MwCounter.newMwCounter();
+    @Probe(level = ProbeLevel.MANDATORY)
+    Counter rollbackCount = MwCounter.newMwCounter();
+    @Probe(level = ProbeLevel.MANDATORY)
+    Counter commitCount = MwCounter.newMwCounter();
+
     private final ExceptionHandler finalizeExceptionHandler;
 
     private final NodeEngineImpl nodeEngine;
@@ -81,6 +93,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TransactionManagerService.class);
         this.finalizeExceptionHandler = logAllExceptions(logger, "Error while rolling-back tx!", Level.WARNING);
+
+        nodeEngine.getMetricsRegistry().scanAndRegister(this, "transactions");
     }
 
     public String getGroupName() {
