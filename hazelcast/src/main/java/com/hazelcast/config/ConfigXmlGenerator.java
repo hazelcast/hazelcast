@@ -726,19 +726,18 @@ public class ConfigXmlGenerator {
     }
 
     private void hotRestartXmlGenerator(StringBuilder xml, Config config) {
-        HotRestartPersistenceConfig hrCfg = config.getHotRestartPersistenceConfig();
-        if (hrCfg == null) {
+        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        if (hotRestartPersistenceConfig == null) {
             xml.append("<hot-restart-persistence enabled=\"false\" />");
             return;
         }
-        xml.append("<hot-restart-persistence enabled=\"").append(hrCfg.isEnabled()).append("\">");
-        xml.append("<base-dir>").append(hrCfg.getBaseDir().getAbsolutePath()).append("</base-dir>");
-        xml.append("<parallelism>").append(hrCfg.getParallelism()).append("</parallelism>");
+        xml.append("<hot-restart-persistence enabled=\"").append(hotRestartPersistenceConfig.isEnabled()).append("\">");
+        xml.append("<base-dir>").append(hotRestartPersistenceConfig.getBaseDir().getAbsolutePath()).append("</base-dir>");
         xml.append("<validation-timeout-seconds>")
-                .append(hrCfg.getValidationTimeoutSeconds())
+                .append(hotRestartPersistenceConfig.getValidationTimeoutSeconds())
                 .append("</validation-timeout-seconds>");
         xml.append("<data-load-timeout-seconds>")
-                .append(hrCfg.getDataLoadTimeoutSeconds())
+                .append(hotRestartPersistenceConfig.getDataLoadTimeoutSeconds())
                 .append("</data-load-timeout-seconds>");
         xml.append("</hot-restart-persistence>");
     }
