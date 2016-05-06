@@ -183,25 +183,26 @@ final class PortableContextImpl implements PortableContext {
         if (fd == null) {
             if (name.contains(".")) {
                 String[] fieldNames = NESTED_FIELD_PATTERN.split(name);
-                if (fieldNames.length > 1) {
-                    ClassDefinition currentClassDef = classDef;
-                    for (int i = 0; i < fieldNames.length; i++) {
-                        fd = currentClassDef.getField(fieldNames[i]);
-                        if (fd == null) {
-                            fd = currentClassDef.getField(extractAttributeNameNameWithoutArguments(fieldNames[i]));
-                        }
-                        // This is not enough to fully implement issue: https://github.com/hazelcast/hazelcast/issues/3927
-                        if (i == fieldNames.length - 1) {
-                            break;
-                        }
-                        if (fd == null) {
-                            throw new IllegalArgumentException("Unknown field: " + name);
-                        }
-                        currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
-                                currentClassDef.getVersion());
-                        if (currentClassDef == null) {
-                            throw new IllegalArgumentException("Not a registered Portable field: " + fd);
-                        }
+                if (fieldNames.length <= 1) {
+                    return fd;
+                }
+                ClassDefinition currentClassDef = classDef;
+                for (int i = 0; i < fieldNames.length; i++) {
+                    fd = currentClassDef.getField(fieldNames[i]);
+                    if (fd == null) {
+                        fd = currentClassDef.getField(extractAttributeNameNameWithoutArguments(fieldNames[i]));
+                    }
+                    // This is not enough to fully implement issue: https://github.com/hazelcast/hazelcast/issues/3927
+                    if (i == fieldNames.length - 1) {
+                        break;
+                    }
+                    if (fd == null) {
+                        throw new IllegalArgumentException("Unknown field: " + name);
+                    }
+                    currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
+                            currentClassDef.getVersion());
+                    if (currentClassDef == null) {
+                        throw new IllegalArgumentException("Not a registered Portable field: " + fd);
                     }
                 }
             } else {

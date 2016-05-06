@@ -156,7 +156,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
     private void reduceArrayInto(MultiResult collector, Object[] currentObject) {
         Object[] array = currentObject;
-        if(array.length == 0) {
+        if (array.length == 0) {
             collector.add(null);
         } else {
             for (int i = 0; i < array.length; i++) {
@@ -167,7 +167,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
     protected void reduceCollectionInto(MultiResult collector, Collection currentObject) {
         Collection collection = currentObject;
-        if(collection.isEmpty()) {
+        if (collection.isEmpty()) {
             collector.add(null);
         } else {
             for (Object o : collection) {
