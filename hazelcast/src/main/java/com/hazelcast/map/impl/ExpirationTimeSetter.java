@@ -139,7 +139,7 @@ public final class ExpirationTimeSetter {
 
         // Preserve previously set TTL, if TTL < 0.
         if (ttl < 0) {
-            return;
+            ttl = record.getTtl();
         }
         // If TTL == 0, convert it to Long.MAX_VALUE.
         ttl = checkedTime(ttl);
@@ -167,6 +167,4 @@ public final class ExpirationTimeSetter {
         }
         return timeInMillis;
     }
-
-
 }
