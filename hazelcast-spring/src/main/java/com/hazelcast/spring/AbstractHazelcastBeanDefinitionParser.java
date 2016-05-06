@@ -22,10 +22,13 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.spring.context.SpringManagedContext;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -356,27 +359,61 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
-        protected EvictionConfig getEvictionConfig(final Node node) {
-            final EvictionConfig evictionConfig = new EvictionConfig();
-            final Node size = node.getAttributes().getNamedItem("size");
-            final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
-            final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+        @SuppressWarnings("checkstyle:npathcomplexity")
+        protected BeanDefinition getEvictionConfig(final Node node) {
+            Node size = node.getAttributes().getNamedItem("size");
+            Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
+            Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+            Node comparatorClassName = node.getAttributes().getNamedItem("comparator-class-name");
+            Node comparatorBean = node.getAttributes().getNamedItem("comparator-bean");
+            if (comparatorClassName != null && comparatorBean != null) {
+                throw new InvalidConfigurationException("Only one of the `comparator-class-name` and `comparator-bean`"
+                    + " attributes can be configured inside eviction configuration!");
+            }
+
+            BeanDefinitionBuilder evictionConfigBuilder = createBeanBuilder(EvictionConfig.class);
+
+            Integer sizeValue = EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
+            EvictionConfig.MaxSizePolicy maxSizePolicyValue = EvictionConfig.DEFAULT_MAX_SIZE_POLICY;
+            EvictionPolicy evictionPolicyValue = EvictionConfig.DEFAULT_EVICTION_POLICY;
+            String comparatorClassNameValue = null;
+            String comparatorBeanValue = null;
+
             if (size != null) {
-                evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+                sizeValue = Integer.parseInt(getTextContent(size));
             }
             if (maxSizePolicy != null) {
-                evictionConfig.setMaximumSizePolicy(
-                        EvictionConfig.MaxSizePolicy.valueOf(
-                                upperCaseInternal(getTextContent(maxSizePolicy)))
-                );
+                maxSizePolicyValue =  EvictionConfig.MaxSizePolicy.valueOf(
+                        upperCaseInternal(getTextContent(maxSizePolicy)));
             }
             if (evictionPolicy != null) {
-                evictionConfig.setEvictionPolicy(
-                        EvictionPolicy.valueOf(
-                                upperCaseInternal(getTextContent(evictionPolicy)))
-                );
+                evictionPolicyValue = EvictionPolicy.valueOf(
+                        upperCaseInternal(getTextContent(evictionPolicy)));
             }
-            return evictionConfig;
+            if (comparatorClassName != null) {
+                comparatorClassNameValue = getTextContent(comparatorClassName);
+            }
+            if (comparatorBean != null) {
+                comparatorBeanValue = getTextContent(comparatorBean);
+            }
+
+            try {
+                EvictionConfigHelper.checkEvictionConfig(evictionPolicyValue, comparatorClassNameValue, comparatorBean);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidConfigurationException(e.getMessage());
+            }
+
+            evictionConfigBuilder.addPropertyValue("size", sizeValue);
+            evictionConfigBuilder.addPropertyValue("maximumSizePolicy", maxSizePolicyValue);
+            evictionConfigBuilder.addPropertyValue("evictionPolicy", evictionPolicyValue);
+            if (comparatorClassNameValue != null) {
+                evictionConfigBuilder.addPropertyValue("comparatorClassName", comparatorClassNameValue);
+            }
+            if (comparatorBean != null) {
+                evictionConfigBuilder.addPropertyReference("comparator", comparatorBeanValue);
+            }
+
+            return evictionConfigBuilder.getBeanDefinition();
         }
 
         protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {

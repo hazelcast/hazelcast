@@ -32,6 +32,7 @@ public class DefaultCacheEntryView
 
     private Data key;
     private Data value;
+    private long creationTime;
     private long expirationTime;
     private long lastAccessTime;
     private long accessHit;
@@ -39,9 +40,11 @@ public class DefaultCacheEntryView
     public DefaultCacheEntryView() {
     }
 
-    public DefaultCacheEntryView(Data key, Data value, long expirationTime, long lastAccessTime, long accessHit) {
+    public DefaultCacheEntryView(Data key, Data value, long creationTime,
+                                 long expirationTime, long lastAccessTime, long accessHit) {
         this.key = key;
         this.value = value;
+        this.creationTime = creationTime;
         this.expirationTime = expirationTime;
         this.lastAccessTime = lastAccessTime;
         this.accessHit = accessHit;
@@ -55,6 +58,11 @@ public class DefaultCacheEntryView
     @Override
     public Data getValue() {
         return value;
+    }
+
+    @Override
+    public long getCreationTime() {
+        return creationTime;
     }
 
     @Override
@@ -74,6 +82,7 @@ public class DefaultCacheEntryView
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(creationTime);
         out.writeLong(expirationTime);
         out.writeLong(lastAccessTime);
         out.writeLong(accessHit);
@@ -83,6 +92,7 @@ public class DefaultCacheEntryView
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        creationTime = in.readLong();
         expirationTime = in.readLong();
         lastAccessTime = in.readLong();
         accessHit = in.readLong();

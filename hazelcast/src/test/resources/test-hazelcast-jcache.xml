@@ -52,6 +52,11 @@
         <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>
     </cache>
 
+    <cache name="cacheWithCustomEvictionPolicyComparator">
+        <eviction size="50" max-size-policy="ENTRY_COUNT"
+                  comparator-class-name="my-custom-eviction-policy-comparator"/>
+    </cache>
+
     <cache name="cacheWithTimedCreatedExpiryPolicyFactory">
         <expiry-policy-factory>
                <timed-expiry-policy-factory expiry-policy-type="CREATED"

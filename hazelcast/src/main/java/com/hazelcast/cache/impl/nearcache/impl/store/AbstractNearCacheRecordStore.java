@@ -62,6 +62,7 @@ public abstract class AbstractNearCacheRecordStore<
 
     protected final NearCacheConfig nearCacheConfig;
     protected final SerializationService serializationService;
+    protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
     protected NCRM records;
 
@@ -80,6 +81,7 @@ public abstract class AbstractNearCacheRecordStore<
         this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.serializationService = nearCacheContext.getSerializationService();
+        this.classLoader = nearCacheContext.getClassLoader();
         this.nearCacheStats = nearCacheStats;
         this.records = createNearCacheRecordMap(nearCacheConfig, nearCacheContext);
 
@@ -127,7 +129,7 @@ public abstract class AbstractNearCacheRecordStore<
         if (evictionPolicyType == null) {
             throw new IllegalArgumentException("Eviction policy cannot be null");
         }
-        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig);
+        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, classLoader);
     }
 
     protected EvictionChecker createEvictionChecker(NearCacheConfig nearCacheConfig) {

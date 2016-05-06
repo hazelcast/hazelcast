@@ -30,16 +30,9 @@ import com.hazelcast.internal.eviction.Expirable;
  *
  * @param <V> the type of the value stored by this {@link NearCacheRecord}
  */
-public interface NearCacheRecord<V> extends Expirable, Evictable {
+public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
     int TIME_NOT_SET = -1;
-
-    /**
-     * Gets the value of this {@link NearCacheRecord}.
-     *
-     * @return the value of this {@link NearCacheRecord}
-     */
-    V getValue();
 
     /**
      * Sets the value of this {@link NearCacheRecord}.

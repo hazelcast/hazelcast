@@ -27,19 +27,12 @@ import com.hazelcast.internal.eviction.Expirable;
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V> extends Expirable, Evictable {
+public interface CacheRecord<V> extends Expirable, Evictable<V> {
 
     /**
      * Represents invalid (not set) time for creation time, expiration time, access time, etc ...
      */
     long TIME_NOT_AVAILABLE = -1;
-
-    /**
-     * Gets the value of this {@link CacheRecord}.
-     *
-     * @return the value of this {@link CacheRecord}
-     */
-    V getValue();
 
     /**
      * Sets the value of this {@link CacheRecord}.

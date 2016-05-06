@@ -20,7 +20,6 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
@@ -77,8 +76,8 @@ class EvictableGetterCache {
     private void evictMap(SampleableConcurrentHashMap<?, ?> map, int triggeringEvictionSize, int afterEvictionSize) {
         int mapSize = map.size();
         if (mapSize - triggeringEvictionSize >= 0) {
-            for (Map.Entry entry : map.getRandomSamples(mapSize - afterEvictionSize)) {
-                map.remove(entry.getKey());
+            for (SampleableConcurrentHashMap.SamplingEntry entry : map.getRandomSamples(mapSize - afterEvictionSize)) {
+                map.remove(entry.getEntryKey());
             }
         }
     }

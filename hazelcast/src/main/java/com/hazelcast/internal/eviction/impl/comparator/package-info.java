@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     Eviction implementations.
+ *     {@link com.hazelcast.internal.eviction.EvictionPolicyComparator} implementations.
  * </p>
  */
-package com.hazelcast.internal.eviction.impl;
+package com.hazelcast.internal.eviction.impl.comparator;

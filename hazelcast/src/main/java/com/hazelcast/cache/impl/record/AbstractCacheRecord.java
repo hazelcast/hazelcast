@@ -65,7 +65,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     }
 
     @Override
-    public long getAccessTime() {
+    public long getLastAccessTime() {
         return accessTime;
     }
 

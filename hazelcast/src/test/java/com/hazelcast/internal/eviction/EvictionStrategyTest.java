@@ -55,6 +55,31 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
             return value;
         }
 
+        @Override
+        public Object getKey() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Object getValue() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getCreationTime() {
+            return getEvictable().getCreationTime();
+        }
+
+        @Override
+        public long getLastAccessTime() {
+            return getEvictable().getLastAccessTime();
+        }
+
+        @Override
+        public long getAccessHit() {
+            return getEvictable().getAccessHit();
+        }
+
     }
 
     @Test
@@ -79,10 +104,20 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
             public EvictionPolicyType getEvictionPolicyType() {
                 return null;
             }
+
+            @Override
+            public String getComparatorClassName() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicyComparator getComparator() {
+                return null;
+            }
         };
         EvictionStrategy evictionStrategy =
                 EvictionStrategyProvider.getEvictionStrategy(evictionConfig);
-        CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(1000, cacheContext);
+        CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(serializationService, 1000, cacheContext);
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
 
@@ -108,6 +143,11 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
                     @Override
                     public Iterable<SimpleEvictionCandidate> evaluate(Iterable evictionCandidates) {
                         return Collections.singleton(evictionCandidate);
+                    }
+
+                    @Override
+                    public EvictionPolicyComparator getEvictionPolicyComparator() {
+                        return null;
                     }
                 };
 

@@ -260,4 +260,32 @@ public class TestJCache {
         assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
     }
 
+    @Test
+    public void cacheConfigXmlTest_ComparatorClassName() throws IOException {
+        assertNotNull(instance1);
+
+        CacheSimpleConfig cacheConfigWithComparatorClassName =
+                instance1.getConfig().getCacheConfig("cacheWithComparatorClassName");
+        assertNotNull(cacheConfigWithComparatorClassName);
+
+        EvictionConfig evictionConfig = cacheConfigWithComparatorClassName.getEvictionConfig();
+        assertNotNull(evictionConfig);
+
+        assertEquals("com.mycompany.MyEvictionPolicyComparator", evictionConfig.getComparatorClassName());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_ComparatorBean() throws IOException {
+        assertNotNull(instance1);
+
+        CacheSimpleConfig cacheConfigWithComparatorClassName =
+                instance1.getConfig().getCacheConfig("cacheWithComparatorBean");
+        assertNotNull(cacheConfigWithComparatorClassName);
+
+        EvictionConfig evictionConfig = cacheConfigWithComparatorClassName.getEvictionConfig();
+        assertNotNull(evictionConfig);
+
+        assertEquals(MyEvictionPolicyComparator.class, evictionConfig.getComparator().getClass());
+    }
+
 }

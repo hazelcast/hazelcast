@@ -14,9 +14,27 @@
  * limitations under the License.
  */
 
+package com.hazelcast.cache;
+
+import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+
 /**
- * <p>
- *     Eviction implementations.
- * </p>
+ * Cache specific {@link EvictionPolicyComparator} for comparing
+ * {@link CacheEntryView}s to be evicted.
+ *
+ * @param <K> type of the key
+ * @param <V> type of the value
+ *
+ * @see EvictionPolicyComparator
+ * @see CacheEntryView
  */
-package com.hazelcast.internal.eviction.impl;
+public abstract class CacheEvictionPolicyComparator<K, V>
+        extends EvictionPolicyComparator<K, V, CacheEntryView<K, V>> {
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public abstract int compare(CacheEntryView<K, V> e1, CacheEntryView<K, V> e2);
+
+}

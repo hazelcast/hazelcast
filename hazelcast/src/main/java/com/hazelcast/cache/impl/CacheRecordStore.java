@@ -89,7 +89,7 @@ public class CacheRecordStore
 
     @Override
     protected CacheRecordHashMap createRecordCacheMap() {
-        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY, cacheContext);
+        return new CacheRecordHashMap(nodeEngine.getSerializationService(), DEFAULT_INITIAL_CAPACITY, cacheContext);
     }
 
     @Override
@@ -166,7 +166,8 @@ public class CacheRecordStore
         }
     }
 
-    private CacheEntryView createCacheEntryView(Object key, Object value, long expirationTime, long lastAccessTime,
+    private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime,
+                                                long expirationTime, long lastAccessTime,
                                                 long accessHit, CacheMergePolicy mergePolicy) {
         SerializationService ss =
                 mergePolicy instanceof StorageTypeAwareCacheMergePolicy
@@ -174,7 +175,7 @@ public class CacheRecordStore
                         ? null
                         //  Non-null serialization service means that convertion is required
                         : serializationService;
-        return new LazyCacheEntryView(key, value, expirationTime, lastAccessTime, accessHit, ss);
+        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, ss);
     }
 
     public CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy) {
@@ -194,6 +195,7 @@ public class CacheRecordStore
                                       createCacheEntryView(
                                             key,
                                             value,
+                                            cacheEntryView.getCreationTime(),
                                             cacheEntryView.getExpirationTime(),
                                             cacheEntryView.getLastAccessTime(),
                                             cacheEntryView.getAccessHit(),
@@ -210,6 +212,7 @@ public class CacheRecordStore
                                       createCacheEntryView(
                                             key,
                                             value,
+                                            cacheEntryView.getCreationTime(),
                                             cacheEntryView.getExpirationTime(),
                                             cacheEntryView.getLastAccessTime(),
                                             cacheEntryView.getAccessHit(),
@@ -217,8 +220,9 @@ public class CacheRecordStore
                                       createCacheEntryView(
                                             key,
                                             existingValue,
+                                            cacheEntryView.getCreationTime(),
                                             record.getExpirationTime(),
-                                            record.getAccessTime(),
+                                            record.getLastAccessTime(),
                                             record.getAccessHit(),
                                             mergePolicy));
             if (existingValue != newValue) {

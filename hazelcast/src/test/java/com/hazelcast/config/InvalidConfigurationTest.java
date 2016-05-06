@@ -26,6 +26,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 
@@ -34,6 +36,7 @@ import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class InvalidConfigurationTest {
+
     @Rule
     public ExpectedException rule = ExpectedException.none();
 
@@ -322,8 +325,18 @@ public class InvalidConfigurationTest {
 
     @Test
     public void testWhenInvalid_CacheEvictionPolicy() {
-        expectInvalid("Eviction policy of cache cannot be null or \"NONE\"");
+        expectInvalid();
         buildConfig("cache-eviction-policy", "NONE");
+    }
+
+    @Test
+    public void testWhenInvalid_BothOfEvictionPolicyAndComparatorClassNameConfigured() {
+        expectInvalid();
+        Map<String, String> props = new HashMap<String, String>() {{
+            put("cache-eviction-policy", "LFU");
+            put("cache-eviction-policy-comparator-class-name", "my-comparator");
+        }};
+        buildConfig(props);
     }
 
     private static Config buildConfig(String xml) {
@@ -337,12 +350,25 @@ public class InvalidConfigurationTest {
         return buildConfig(xml, properties);
     }
 
+    private static Config buildConfig(Map<String, String> props) {
+        String xml = getDraftXml();
+        Properties properties = getDraftProperties();
+        for (Map.Entry<String, String> prop : props.entrySet()) {
+            properties.setProperty(prop.getKey(), prop.getValue());
+        }
+        return buildConfig(xml, properties);
+    }
+
     private void expectInvalidBackupCount() {
         expectInvalid("is not facet-valid with respect to maxInclusive '6' for type 'backup-count'");
     }
 
     private void expectInvalid(String message) {
         expectInvalid(rule, message);
+    }
+
+    private void expectInvalid() {
+        expectInvalid(rule, null);
     }
 
     private static Config buildConfig(String xml, Properties properties) {
@@ -354,7 +380,9 @@ public class InvalidConfigurationTest {
 
     static void expectInvalid(ExpectedException rule, String message) {
         rule.expect(InvalidConfigurationException.class);
-        rule.expectMessage(message);
+        if (message != null) {
+            rule.expectMessage(message);
+        }
     }
 
     private static String getValidBackupCount() {
@@ -393,6 +421,7 @@ public class InvalidConfigurationTest {
         properties.setProperty("cache-eviction-size", "100");
         properties.setProperty("cache-eviction-max-size-policy", "ENTRY_COUNT");
         properties.setProperty("cache-eviction-policy", "LRU");
+        properties.setProperty("cache-eviction-policy-comparator-class-name", "");
         properties.setProperty("cache-expiry-policy-type", "CREATED");
         properties.setProperty("cache-expiry-policy-duration-amount", "1");
         properties.setProperty("cache-expiry-policy-time-unit", "DAYS");
@@ -460,7 +489,8 @@ public class InvalidConfigurationTest {
                 "<expiry-policy-factory class-name=\"${expiry-policy-factory-class-name}\"/>\n" +
                 "<eviction size=\"${cache-eviction-size}\"" +
                 " max-size-policy=\"${cache-eviction-max-size-policy}\"" +
-                " eviction-policy=\"${cache-eviction-policy}\"/>\n" +
+                " eviction-policy=\"${cache-eviction-policy}\"" +
+                " comparator-class-name=\"${cache-eviction-policy-comparator-class-name}\"/>\n" +
                 "</cache>\n" +
 
                 "<cache name=\"cacheWithTimedExpiryPolicyFactory\">\n" +

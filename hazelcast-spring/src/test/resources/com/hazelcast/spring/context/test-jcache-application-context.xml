@@ -34,6 +34,8 @@
     <context:annotation-config/>
     <context:component-scan base-package="com.hazelcast.spring.context"/>
 
+    <bean id="myEvictionPolicyComparator" class="com.hazelcast.spring.context.MyEvictionPolicyComparator"/>
+
     <hz:hazelcast id="instance1">
         <hz:config>
             <hz:group name="dev" password="dev-pass"/>
@@ -113,6 +115,12 @@
             <hz:cache name="cacheWithDefaultMergePolicy"/>
             <hz:cache name="cacheWithCustomMergePolicy">
                 <hz:merge-policy>MyDummyMergePolicy</hz:merge-policy>
+            </hz:cache>
+            <hz:cache name="cacheWithComparatorClassName">
+                <hz:eviction size="50" max-size-policy="ENTRY_COUNT" comparator-class-name="com.mycompany.MyEvictionPolicyComparator"/>
+            </hz:cache>
+            <hz:cache name="cacheWithComparatorBean">
+                <hz:eviction size="50" max-size-policy="ENTRY_COUNT" comparator-bean="myEvictionPolicyComparator"/>
             </hz:cache>
         </hz:config>
     </hz:hazelcast>
