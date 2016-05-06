@@ -195,6 +195,9 @@ public class ComplexDataStructure {
 
         @Override
         public int compareTo(Finger o) {
+            if(o == null || this.name == null || o.name == null) {
+                return -1;
+            }
             return this.name.compareTo(o.name);
         }
 
@@ -223,6 +226,9 @@ public class ComplexDataStructure {
 
         @Override
         public int compareTo(FingerPortable o) {
+            if(o == null || this.name == null || o.name == null) {
+                return -1;
+            }
             return this.name.compareTo(o.name);
         }
 

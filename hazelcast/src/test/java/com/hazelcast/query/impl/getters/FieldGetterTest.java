@@ -115,7 +115,7 @@ public class FieldGetterTest {
 
         MultiResult result = (MultiResult) nailGetter.getValue(body);
 
-        assertContainsInAnyOrder(result, whiteNail, blackNail, redNail, greenNail);
+        assertContainsInAnyOrder(result, whiteNail, blackNail, redNail, greenNail, null);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class FieldGetterTest {
 
         MultiResult result = (MultiResult) nailGetter.getValue(body);
 
-        assertContainsInAnyOrder(result, whiteNail, blackNail, redNail, greenNail);
+        assertContainsInAnyOrder(result, whiteNail, blackNail, redNail, greenNail, null);
     }
 
     @Test

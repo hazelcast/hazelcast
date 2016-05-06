@@ -273,26 +273,39 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     }
 
     @Test
-    public void comparable_primitive_reduced_atLeaf_comparedToNull_matching() {
+    public void comparable_primitive_reduced_comparedToNull_matching() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(equal("limbs_[any].fingers_[1].name", null), mv),
                 Expected.of(BOND));
     }
 
-////    @Test
-////    public void comparable_primitive_reduced_atLeaf_comparedToNull_matching2() {
-////        execute(Input.of(BOND, KRUEGER),
-////                Query.of(equal("limbs_[any].fingers_", null), mv),
-////                Expected.of(BOND));
-////    }
-////
+    @Test
+    public void comparable_primitive_reduced_attribute_comparedToNull_matching2() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[any].fingers_[any].name", null), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void comparable_primitive_reduced_comparedToNull_matching2() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[any].fingers_[any]", null), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void comparable_primitive_reduced_atLeaf_comparedToNull_matching() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[any].tattoos_[any]", null), mv),
+                Expected.of(BOND, KRUEGER));
+    }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> parametrisationData() {
         return axes(
                 asList(BINARY, OBJECT),
                 asList(NO_INDEX, UNORDERED, ORDERED),
-                asList(LIST, ARRAY, PORTABLE)
+                asList(ARRAY, LIST, PORTABLE)
         );
     }
 
