@@ -463,20 +463,26 @@ public class MigrationCommitServiceTest
 
     private void assertMigrationDestinationCommit(final MigrationInfo migration)
             throws InterruptedException {
-        final TestMigrationAwareService service = getService(migration.getDestination());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                final TestMigrationAwareService service = getService(migration.getDestination());
 
-        final String msg = getAssertMessage(migration, service);
+                final String msg = getAssertMessage(migration, service);
 
-        final PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
-        final PartitionMigrationEvent commitEvent = service.getCommitEvents().get(0);
+                final PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
+                final PartitionMigrationEvent commitEvent = service.getCommitEvents().get(0);
 
-        assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
-        assertDestinationPartitionMigrationEvent(msg, commitEvent, migration);
+                assertDestinationPartitionMigrationEvent(msg, beforeEvent, migration);
+                assertDestinationPartitionMigrationEvent(msg, commitEvent, migration);
 
-        assertTrue(msg, service.contains(migration.getPartitionId()));
+                assertTrue(msg, service.contains(migration.getPartitionId()));
 
-        assertReplicaVersionsAndServiceData(msg, migration.getDestination(), migration.getPartitionId(),
-                migration.getDestinationNewReplicaIndex());
+                assertReplicaVersionsAndServiceData(msg, migration.getDestination(), migration.getPartitionId(),
+                        migration.getDestinationNewReplicaIndex());
+            }
+        });
     }
 
     private void assertMigrationDestinationRollback(final MigrationInfo migration)
