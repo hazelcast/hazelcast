@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
@@ -10,6 +11,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -42,7 +44,7 @@ public class AsyncResponseHandlerTest extends HazelcastTestSupport {
         ILogger logger = Logger.getLogger(getClass());
         HazelcastThreadGroup threadGroup = new HazelcastThreadGroup("test", logger, getClass().getClassLoader());
         responsePacketHandler = mock(PacketHandler.class);
-        asyncHandler = new AsyncResponseHandler(threadGroup, logger, responsePacketHandler);
+        asyncHandler = new AsyncResponseHandler(threadGroup, logger, responsePacketHandler, new HazelcastProperties(new Config()));
         asyncHandler.start();
         serializationService = new DefaultSerializationServiceBuilder().build();
     }

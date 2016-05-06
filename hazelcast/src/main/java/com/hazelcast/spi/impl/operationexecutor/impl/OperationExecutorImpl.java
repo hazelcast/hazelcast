@@ -21,6 +21,7 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.collection.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -37,6 +38,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -72,7 +74,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @SuppressWarnings("checkstyle:methodcount")
 public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
 
-    public static final int TERMINATION_TIMEOUT_SECONDS = 3;
+    private static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
     private final ILogger logger;
 
@@ -127,7 +129,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
             threadCount = Math.max(2, coreSize / 2);
         }
 
-
         OperationRunner[] operationRunners = new OperationRunner[threadCount + priorityThreadCount];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = runnerFactory.createGenericRunner();
@@ -149,12 +150,15 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
-            OperationQueue operationQueue = new DefaultOperationQueue();
+            // the normalQueue will be a blocking queue. We don't want to idle, because there are many operation threads.
+            MPSCQueue<Object> normalQueue = new MPSCQueue<Object>(null);
+            OperationQueue operationQueue = new DefaultOperationQueue(normalQueue, new ConcurrentLinkedQueue<Object>());
 
             PartitionOperationThread partitionThread = new PartitionOperationThread(threadName, threadId, operationQueue, logger,
                     threadGroup, nodeExtension, partitionOperationRunners);
 
             threads[threadId] = partitionThread;
+            normalQueue.setConsumerThread(partitionThread);
         }
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own

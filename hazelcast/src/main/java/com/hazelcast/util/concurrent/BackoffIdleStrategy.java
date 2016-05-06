@@ -78,8 +78,8 @@ public class BackoffIdleStrategy implements IdleStrategy {
         final long proposedShift = n - parkThreshold;
         final long allowedShift = min(maxShift, proposedShift);
         return proposedShift > maxShift ? maxParkPeriodNs
-             : proposedShift < maxShift ? minParkPeriodNs << allowedShift
-             : min(minParkPeriodNs << allowedShift, maxParkPeriodNs);
+                : proposedShift < maxShift ? minParkPeriodNs << allowedShift
+                : min(minParkPeriodNs << allowedShift, maxParkPeriodNs);
     }
 }
 
