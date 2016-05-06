@@ -25,22 +25,24 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DescribeInstancesTest {
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_whenAwsConfigIsNull() {
+    public void test_whenAwsConfigIsNull() throws IOException {
         new DescribeInstances(null,"endpoint");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_whenAccessKeyNull() {
+    public void test_whenAccessKeyNull() throws IOException {
         new DescribeInstances(new AwsConfig(),"endpoint");
     }
     
     @Test
-    public void test_whenProperConfig() {
+    public void test_whenProperConfig() throws IOException {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setAccessKey("accesskey");
         awsConfig.setSecretKey("secretkey");
