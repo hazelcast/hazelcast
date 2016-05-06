@@ -29,6 +29,7 @@ public class CacheEventContext {
     private Data dataValue;
     private Data dataOldValue;
     private boolean isOldValueAvailable;
+    private long creationTime;
     private long expirationTime;
     private long lastAccessTime;
     private long accessHit;
@@ -89,6 +90,15 @@ public class CacheEventContext {
 
     public CacheEventContext setIsOldValueAvailable(boolean isOldValueAvailable) {
         this.isOldValueAvailable = isOldValueAvailable;
+        return this;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    public CacheEventContext setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
         return this;
     }
 

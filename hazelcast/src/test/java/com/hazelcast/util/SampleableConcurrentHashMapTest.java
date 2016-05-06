@@ -39,7 +39,7 @@ public class SampleableConcurrentHashMapTest extends HazelcastTestSupport {
         int sampleCount = 0;
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
         for (SampleableConcurrentHashMap.SamplingEntry<Integer, Integer> sample : samples) {
-            map.put(sample.getKey(), sample.getValue());
+            map.put(sample.getEntryKey(), sample.getEntryValue());
             sampleCount++;
         }
         // Sure that there is enough sample as we expected

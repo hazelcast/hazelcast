@@ -43,10 +43,8 @@ public final class CacheEventContextUtil {
         return cacheEventContext;
     }
 
-    public static CacheEventContext createCacheCompleteEvent(Data dataKey,
-                                                             long expirationTime,
-                                                             String origin,
-                                                             int completionId) {
+    public static CacheEventContext createCacheCompleteEvent(Data dataKey, long expirationTime,
+                                                             String origin, int completionId) {
         CacheEventContext cacheEventContext = new CacheEventContext();
         cacheEventContext.setEventType(CacheEventType.COMPLETED);
         cacheEventContext.setDataKey(dataKey);
@@ -57,8 +55,7 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheExpiredEvent(Data dataKey, Data dataValue,
-                                                            long expirationTime, String origin,
-                                                            int completionId) {
+                                                            long expirationTime, String origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.EXPIRED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
@@ -66,36 +63,39 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheCreatedEvent(Data dataKey, Data dataValue,
-                                                            long expirationTime, String origin,
-                                                            int completionId) {
+                                                            long expirationTime, String origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.CREATED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
         return cacheEventContext;
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public static CacheEventContext createCacheUpdatedEvent(Data dataKey, Data dataValue, Data dataOldValue,
-                                                            long expirationTime, long lastAccessTime, long accessHit,
+                                                            long creationTime, long expirationTime,
+                                                            long lastAccessTime, long accessHit,
                                                             String origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.UPDATED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
         cacheEventContext.setDataOldValue(dataOldValue);
         cacheEventContext.setIsOldValueAvailable(true);
+        cacheEventContext.setCreationTime(creationTime);
         cacheEventContext.setLastAccessTime(lastAccessTime);
         cacheEventContext.setAccessHit(accessHit);
         return cacheEventContext;
     }
 
     public static CacheEventContext createCacheUpdatedEvent(Data dataKey, Data dataValue, Data dataOldValue,
-                                                            long expirationTime, long lastAccessTime, long accessHit) {
-        return createCacheUpdatedEvent(dataKey, dataValue, dataOldValue, expirationTime, lastAccessTime, accessHit,
-                null, MutableOperation.IGNORE_COMPLETION);
+                                                            long creationTime, long expirationTime,
+                                                            long lastAccessTime, long accessHit) {
+        return createCacheUpdatedEvent(dataKey, dataValue, dataOldValue,
+                                       creationTime, expirationTime, lastAccessTime, accessHit,
+                                       null, MutableOperation.IGNORE_COMPLETION);
     }
 
     public static CacheEventContext createCacheRemovedEvent(Data dataKey, Data dataValue,
-                                                            long expirationTime, String origin,
-                                                            int completionId) {
+                                                            long expirationTime, String origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.REMOVED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
@@ -103,13 +103,12 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheRemovedEvent(Data dataKey) {
-        return createCacheRemovedEvent(dataKey, null, CacheRecord.TIME_NOT_AVAILABLE, null,
-                                       MutableOperation.IGNORE_COMPLETION);
+        return createCacheRemovedEvent(dataKey, null, CacheRecord.TIME_NOT_AVAILABLE,
+                                       null, MutableOperation.IGNORE_COMPLETION);
     }
 
-    public static CacheEventContext createBaseEventContext(CacheEventType eventType, Data dataKey,
-                                                           Data dataValue, long expirationTime, String origin,
-                                                           int completionId) {
+    public static CacheEventContext createBaseEventContext(CacheEventType eventType, Data dataKey, Data dataValue,
+                                                           long expirationTime, String origin, int completionId) {
         CacheEventContext cacheEventContext = new CacheEventContext();
         cacheEventContext.setEventType(eventType);
         cacheEventContext.setDataKey(dataKey);

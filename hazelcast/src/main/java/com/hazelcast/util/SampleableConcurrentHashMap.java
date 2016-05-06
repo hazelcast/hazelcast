@@ -104,32 +104,46 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     /**
      * Entry to define keys and values for sampling.
      */
-    public static class SamplingEntry<K, V> extends SimpleEntry<K, V> {
+    public static class SamplingEntry<K, V> {
+
+        protected final K key;
+        protected final V value;
 
         public SamplingEntry(K key, V value) {
-            super(key, value);
+            this.key = key;
+            this.value = value;
         }
 
-        public final V setValue(V value) {
-            throw new UnsupportedOperationException("Setting value is not supported");
+        public K getEntryKey() {
+            return key;
+        }
+
+        public V getEntryValue() {
+            return value;
         }
 
         @Override
         public boolean equals(Object o) {
-            // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
-            // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
-            // for more details.
-            if (SamplingEntry.class.isInstance(o)) {
-                return super.equals(o);
-            } else {
+            if (!(o instanceof SamplingEntry)) {
                 return false;
             }
+            @SuppressWarnings("unchecked")
+            SamplingEntry e = (SamplingEntry) o;
+            return eq(key, e.key) && eq(value, e.value);
+        }
+
+        private static boolean eq(Object o1, Object o2) {
+            return o1 == null ? o2 == null : o1.equals(o2);
         }
 
         @Override
         public int hashCode() {
             return (key == null ? 0 : key.hashCode())
                     ^ (value == null ? 0 : value.hashCode());
+        }
+
+        public String toString() {
+            return key + "=" + value;
         }
 
     }

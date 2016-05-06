@@ -38,7 +38,8 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         return new NearCacheContext(
                 null, // No need to near-cache manager
                 new DefaultSerializationServiceBuilder().build(),
-                createNearCacheExecutor());
+                createNearCacheExecutor(),
+                null);
     }
 
     protected NearCacheExecutor createNearCacheExecutor() {

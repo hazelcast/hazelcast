@@ -1,4 +1,4 @@
-package com.hazelcast.cache.eviction;
+package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.maxsize.impl.CompositeMaxSizeChecker;

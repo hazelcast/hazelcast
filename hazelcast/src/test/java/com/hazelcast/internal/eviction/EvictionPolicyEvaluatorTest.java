@@ -41,6 +41,31 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             return value;
         }
 
+        @Override
+        public Object getKey() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Object getValue() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getCreationTime() {
+            return getEvictable().getCreationTime();
+        }
+
+        @Override
+        public long getLastAccessTime() {
+            return getEvictable().getLastAccessTime();
+        }
+
+        @Override
+        public long getAccessHit() {
+            return getEvictable().getAccessHit();
+        }
+
     }
 
     @Test
@@ -58,9 +83,19 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             public EvictionPolicyType getEvictionPolicyType() {
                 return EvictionPolicyType.LRU;
             }
+
+            @Override
+            public String getComparatorClassName() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicyComparator getComparator() {
+                return null;
+            }
         };
         EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig);
+                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, null);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records =
                 new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
@@ -111,9 +146,19 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             public EvictionPolicyType getEvictionPolicyType() {
                 return EvictionPolicyType.LFU;
             }
+
+            @Override
+            public String getComparatorClassName() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicyComparator getComparator() {
+                return null;
+            }
         };
         EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig);
+                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, null);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records =
                 new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 

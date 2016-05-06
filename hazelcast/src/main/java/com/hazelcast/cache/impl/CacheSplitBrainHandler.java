@@ -146,8 +146,9 @@ class CacheSplitBrainHandler {
                             new DefaultCacheEntryView(
                                     key,
                                     serializationService.toData(record.getValue()),
+                                    record.getCreationTime(),
                                     record.getExpirationTime(),
-                                    record.getAccessTime(),
+                                    record.getLastAccessTime(),
                                     record.getAccessHit());
                     CacheMergeOperation operation =
                             new CacheMergeOperation(

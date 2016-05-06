@@ -16,12 +16,14 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
 import java.util.ArrayList;
@@ -33,11 +35,14 @@ public class CacheRecordHashMap
 
     private static final long serialVersionUID = 1L;
 
+    private final transient SerializationService serializationService;
     private final transient CacheContext cacheContext;
     private boolean entryCountingEnable;
 
-    public CacheRecordHashMap(int initialCapacity, CacheContext cacheContext) {
+    public CacheRecordHashMap(SerializationService serializationService,
+                              int initialCapacity, CacheContext cacheContext) {
         super(initialCapacity);
+        this.serializationService = serializationService;
         this.cacheContext = cacheContext;
     }
 
@@ -109,27 +114,59 @@ public class CacheRecordHashMap
         }
     }
 
-    public class EvictableSamplingEntry extends SamplingEntry implements EvictionCandidate {
+    private class CacheEvictableSamplingEntry
+            extends SamplingEntry<Data, CacheRecord>
+            implements EvictionCandidate, CacheEntryView {
 
-        public EvictableSamplingEntry(Data key, CacheRecord value) {
+        public CacheEvictableSamplingEntry(Data key, CacheRecord value) {
             super(key, value);
         }
 
         @Override
         public Object getAccessor() {
-            return getKey();
+            return key;
         }
 
         @Override
         public Evictable getEvictable() {
-            return (Evictable) getValue();
+            return value;
+        }
+
+        @Override
+        public Object getKey() {
+            return serializationService.toObject(key);
+        }
+
+        @Override
+        public Object getValue() {
+            return serializationService.toObject(value.getValue());
+        }
+
+        @Override
+        public long getCreationTime() {
+            return value.getCreationTime();
+        }
+
+        @Override
+        public long getExpirationTime() {
+            return value.getExpirationTime();
+        }
+
+        @Override
+        public long getLastAccessTime() {
+            return value.getLastAccessTime();
+        }
+
+        @Override
+        public long getAccessHit() {
+            return value.getAccessHit();
         }
 
     }
 
     @Override
-    protected EvictableSamplingEntry createSamplingEntry(Data key, CacheRecord value) {
-        return new EvictableSamplingEntry(key, value);
+    protected CacheEvictableSamplingEntry createSamplingEntry(Data key, CacheRecord value) {
+        return new CacheEvictableSamplingEntry(key, value);
     }
 
     @Override
@@ -158,7 +195,7 @@ public class CacheRecordHashMap
     }
 
     @Override
-    public Iterable<EvictableSamplingEntry> sample(int sampleCount) {
+    public Iterable<CacheEvictableSamplingEntry> sample(int sampleCount) {
         return super.getRandomSamples(sampleCount);
     }
 }

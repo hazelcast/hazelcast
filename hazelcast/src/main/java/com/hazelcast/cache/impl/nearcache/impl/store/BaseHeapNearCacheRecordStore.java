@@ -52,7 +52,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     @Override
     protected HeapNearCacheRecordMap<K, R> createNearCacheRecordMap(NearCacheConfig nearCacheConfig,
                                                                     NearCacheContext nearCacheContext) {
-        return new HeapNearCacheRecordMap(DEFAULT_INITIAL_CAPACITY);
+        return new HeapNearCacheRecordMap(nearCacheContext.getSerializationService(), DEFAULT_INITIAL_CAPACITY);
     }
 
     @Override

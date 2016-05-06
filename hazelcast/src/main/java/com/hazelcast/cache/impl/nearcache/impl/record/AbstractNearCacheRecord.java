@@ -74,7 +74,7 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     }
 
     @Override
-    public long getAccessTime() {
+    public long getLastAccessTime() {
         return accessTime;
     }
 

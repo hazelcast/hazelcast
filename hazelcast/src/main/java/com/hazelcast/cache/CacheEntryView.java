@@ -16,13 +16,16 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.internal.eviction.EvictableEntryView;
+
 /**
  * Entry info for cache record.
  *
  * @param <K> the type of the key
  * @param <V> the type of the value
  */
-public interface CacheEntryView<K, V> {
+public interface CacheEntryView<K, V>
+        extends EvictableEntryView<K, V> {
 
     /**
      * Gets the key of the cache entry.

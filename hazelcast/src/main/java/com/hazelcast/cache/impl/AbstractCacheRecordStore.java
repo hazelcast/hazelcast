@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.eviction.EvictionChecker;
@@ -32,6 +31,7 @@ import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.EvictionStrategyProvider;
+import com.hazelcast.internal.eviction.impl.EvictionConfigHelper;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -152,6 +152,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         evictionChecker = createEvictionChecker(evictionConfig);
         evictionStrategy = createEvictionStrategy(evictionConfig);
 
+        injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
+
         registerResourceIfItIsClosable(cacheWriter);
         registerResourceIfItIsClosable(cacheLoader);
         registerResourceIfItIsClosable(defaultExpiryPolicy);
@@ -217,12 +219,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return null;
     }
 
-    protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig cacheEvictionConfig) {
-        EvictionPolicy evictionPolicy = cacheEvictionConfig.getEvictionPolicy();
-        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE || evictionPolicy == EvictionPolicy.RANDOM) {
-            throw new IllegalArgumentException("Eviction policy cannot be `null`, `NONE` or `RANDOM`");
-        }
-        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(cacheEvictionConfig);
+    protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
+        EvictionConfigHelper.checkEvictionConfig(evictionConfig);
+        return EvictionPolicyEvaluatorProvider
+                .getEvictionPolicyEvaluator(evictionConfig, nodeEngine.getConfigClassLoader());
     }
 
     protected EvictionChecker createEvictionChecker(EvictionConfig cacheEvictionConfig) {
@@ -628,8 +628,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
                 if (isEventsEnabled()) {
                     publishEvent(createCacheUpdatedEvent(eventDataKey, eventDataValue, eventDataOldValue,
-                                                         record.getExpirationTime(), record.getAccessTime(),
-                                                         record.getAccessHit(), origin, completionId));
+                                                         record.getCreationTime(), record.getExpirationTime(),
+                                                         record.getLastAccessTime(), record.getAccessHit(),
+                                                         origin, completionId));
                 }
             }
         } catch (Throwable error) {

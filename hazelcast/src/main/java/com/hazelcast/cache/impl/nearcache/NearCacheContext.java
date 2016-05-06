@@ -25,24 +25,24 @@ import com.hazelcast.spi.serialization.SerializationService;
 public class NearCacheContext {
 
     private NearCacheManager nearCacheManager;
-    private SerializationService serializationService;
-    private NearCacheExecutor nearCacheExecutor;
-
-    public NearCacheContext() {
-
-    }
+    private final SerializationService serializationService;
+    private final NearCacheExecutor nearCacheExecutor;
+    private final ClassLoader classLoader;
 
     public NearCacheContext(SerializationService serializationService,
-                            NearCacheExecutor nearCacheExecutor) {
-        this(null, serializationService, nearCacheExecutor);
+                            NearCacheExecutor nearCacheExecutor,
+                            ClassLoader classLoader) {
+        this(null, serializationService, nearCacheExecutor, classLoader);
     }
 
     public NearCacheContext(NearCacheManager nearCacheManager,
                             SerializationService serializationService,
-                            NearCacheExecutor nearCacheExecutor) {
+                            NearCacheExecutor nearCacheExecutor,
+                            ClassLoader classLoader) {
         this.nearCacheManager = nearCacheManager;
         this.serializationService = serializationService;
         this.nearCacheExecutor = nearCacheExecutor;
+        this.classLoader = classLoader;
     }
 
     public NearCacheManager getNearCacheManager() {
@@ -57,16 +57,12 @@ public class NearCacheContext {
         return serializationService;
     }
 
-    public void setSerializationService(SerializationService serializationService) {
-        this.serializationService = serializationService;
-    }
-
     public NearCacheExecutor getNearCacheExecutor() {
         return nearCacheExecutor;
     }
 
-    public void setNearCacheExecutor(NearCacheExecutor nearCacheExecutor) {
-        this.nearCacheExecutor = nearCacheExecutor;
+    public ClassLoader getClassLoader() {
+        return classLoader;
     }
 
 }

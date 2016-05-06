@@ -58,8 +58,9 @@ public final class CacheEntryViews {
      */
     public static CacheEntryView<Data, Data> createDefaultEntryView(Data key, Data value, CacheRecord record) {
         CacheEntryView entryView = new DefaultCacheEntryView(key, value,
+                                                             record.getCreationTime(),
                                                              record.getExpirationTime(),
-                                                             record.getAccessTime(),
+                                                             record.getLastAccessTime(),
                                                              record.getAccessHit());
         return entryView;
     }
@@ -75,8 +76,9 @@ public final class CacheEntryViews {
      */
     public static CacheEntryView<Data, Data> createLazyEntryView(Data key, Data value, CacheRecord record) {
         CacheEntryView entryView = new LazyCacheEntryView(key, value,
+                                                          record.getCreationTime(),
                                                           record.getExpirationTime(),
-                                                          record.getAccessTime(),
+                                                          record.getLastAccessTime(),
                                                           record.getAccessHit());
         return entryView;
     }
