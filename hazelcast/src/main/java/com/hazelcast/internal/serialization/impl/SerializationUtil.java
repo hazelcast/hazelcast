@@ -61,6 +61,18 @@ public final class SerializationUtil {
         throw new HazelcastSerializationException(e);
     }
 
+    static RuntimeException handleSerializeException(Object rootObject, Throwable e) {
+        if (e instanceof OutOfMemoryError) {
+            OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
+            throw (Error) e;
+        }
+        if (e instanceof Error) {
+            throw (Error) e;
+        }
+        String clazz = rootObject == null ? "null" : rootObject.getClass().getName();
+        throw new HazelcastSerializationException("Failed to serialize '" + clazz + '\'', e);
+    }
+
     static SerializerAdapter createSerializerAdapter(Serializer serializer, InternalSerializationService serializationService) {
         final SerializerAdapter s;
         if (serializer instanceof StreamSerializer) {
