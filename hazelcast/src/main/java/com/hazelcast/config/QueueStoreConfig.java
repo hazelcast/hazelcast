@@ -24,7 +24,7 @@ import java.util.Properties;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * @author ali 12/14/12
+ * Configuration for the {@link QueueStore}.
  */
 public class QueueStoreConfig {
 

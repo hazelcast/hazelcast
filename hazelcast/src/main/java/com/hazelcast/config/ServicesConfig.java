@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author mdogan 9/18/12
+ * Configuration for the Services.
  */
 public class ServicesConfig {
 

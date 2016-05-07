@@ -19,9 +19,8 @@ package com.hazelcast.config;
 import java.util.Properties;
 
 /**
- * @author mdogan 9/18/12
+ * Configuration for a single service.
  */
-
 public class ServiceConfig {
 
     private boolean enabled;
