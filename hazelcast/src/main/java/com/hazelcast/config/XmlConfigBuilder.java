@@ -193,9 +193,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     @Override
     public Config build() {
-        Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        return build(config);
+        return build(new Config());
     }
 
     Config build(Config config) {

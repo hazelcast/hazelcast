@@ -271,6 +271,7 @@ public class XmlConfigImportVariableReplacementTest {
         final String networkConfig =
                 "    <network>\n" +
                         "        <join>\n" +
+                        "            <multicast enabled=\"false\"/>\n" +
                         "            <tcp-ip enabled=\"true\"/>\n" +
                         "        </join>\n" +
                         "    </network>\n";
