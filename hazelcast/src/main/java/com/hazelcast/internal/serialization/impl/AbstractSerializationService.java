@@ -51,6 +51,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.getInterfaces;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.handleException;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.handleSerializeException;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.indexForDefaultType;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.isNullData;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -139,7 +140,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             serializer.write(out, obj);
             return out.toByteArray();
         } catch (Throwable e) {
-            throw handleException(e);
+            throw handleSerializeException(obj, e);
         } finally {
             pool.returnOutputBuffer(out);
         }
@@ -197,7 +198,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             out.writeInt(serializer.getTypeId());
             serializer.write(out, obj);
         } catch (Throwable e) {
-            throw handleException(e);
+            throw handleSerializeException(obj, e);
         }
     }
 
