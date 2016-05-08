@@ -48,6 +48,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
@@ -69,6 +70,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.emptyMap;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.IMap} interface.
@@ -84,26 +86,45 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public V get(Object k) {
+        return getAsync0(k).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<V> getAsync(K k) {
+        return getAsync0(k);
+    }
+
+    // this extra method is needed due to mismatch between key generic type of get/getAsync.
+    private InternalCompletableFuture<V> getAsync0(Object k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
         Data key = toData(k, partitionStrategy);
-        return toObject(getInternal(key));
+        return getAsyncInternal(key);
     }
 
     @Override
     public V put(K k, V v) {
-        return put(k, v, -1, TimeUnit.MILLISECONDS);
+        return putAsync(k,v).join();
+    }
+
+    @Override
+    public InternalCompletableFuture<V> putAsync(K key, V value) {
+        return putAsync(key, value, -1, MILLISECONDS);
     }
 
     @Override
     public V put(K k, V v, long ttl, TimeUnit timeunit) {
-        checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
+        return putAsync(k,v,ttl, timeunit).join();
+    }
 
-        Data key = toData(k, partitionStrategy);
-        Data value = toData(v);
-        Data result = putInternal(key, value, ttl, timeunit);
-        return toObject(result);
+    @Override
+    public InternalCompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data dataKey = toData(key, partitionStrategy);
+        Data dataValue = toData(value);
+        return putAsyncInternal(dataKey, dataValue, ttl, timeunit);
     }
 
     @Override
@@ -118,7 +139,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public V putIfAbsent(K k, V v) {
-        return putIfAbsent(k, v, -1, TimeUnit.MILLISECONDS);
+        return putIfAbsent(k, v, -1, MILLISECONDS);
     }
 
     @Override
@@ -166,26 +187,44 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void set(K key, V value) {
-        set(key, value, -1, TimeUnit.MILLISECONDS);
+        setAsync(key, value).join();
     }
 
     @Override
     public void set(K k, V v, long ttl, TimeUnit timeunit) {
-        checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
+        setAsync(k, v, ttl, timeunit).join();
+    }
 
-        Data key = toData(k, partitionStrategy);
-        Data value = toData(v);
-        setInternal(key, value, ttl, timeunit);
+    @Override
+    public InternalCompletableFuture<Void> setAsync(K key, V value) {
+        return setAsync(key, value, -1, MILLISECONDS);
+    }
+
+    @Override
+    public InternalCompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
+        Data dataKey = toData(key, partitionStrategy);
+        Data dataValue = toData(value);
+        return setAsyncInternal(dataKey, dataValue, ttl, timeunit);
     }
 
     @Override
     public V remove(Object k) {
-        checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
+        return removeAsync0(k).join();
+    }
 
-        Data key = toData(k, partitionStrategy);
-        Data result = removeInternal(key);
-        return toObject(result);
+    @Override
+    public ICompletableFuture<V> removeAsync(K key) {
+       return removeAsync0(key);
+    }
+
+    public InternalCompletableFuture<V> removeAsync0(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        Data dataKey = toData(key, partitionStrategy);
+        return removeAsyncInternal(dataKey);
     }
 
     @Override
@@ -257,14 +296,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return tryRemoveInternal(dataKey, timeout, timeunit);
     }
 
-    @Override
-    public ICompletableFuture<V> getAsync(K k) {
-        checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
-
-        Data key = toData(k, partitionStrategy);
-        NodeEngine nodeEngine = getNodeEngine();
-        return new DelegatingFuture<V>(getAsyncInternal(key), nodeEngine.getSerializationService());
-    }
 
     @Override
     public boolean isLocked(K k) {
@@ -273,46 +304,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Data key = toData(k, partitionStrategy);
         NodeEngine nodeEngine = getNodeEngine();
         return lockSupport.isLocked(nodeEngine, key);
-    }
-
-    @Override
-    public ICompletableFuture<V> putAsync(K key, V value) {
-        return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-
-        Data dataKey = toData(key, partitionStrategy);
-        Data dataValue = toData(value);
-        return new DelegatingFuture<V>(putAsyncInternal(dataKey, dataValue, ttl, timeunit),
-                getNodeEngine().getSerializationService());
-    }
-
-    @Override
-    public ICompletableFuture<Void> setAsync(K key, V value) {
-        return setAsync(key, value, -1, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-
-        Data dataKey = toData(key, partitionStrategy);
-        Data dataValue = toData(value);
-        return new DelegatingFuture<Void>(setAsyncInternal(dataKey, dataValue, ttl, timeunit),
-                getNodeEngine().getSerializationService());
-    }
-
-    @Override
-    public ICompletableFuture<V> removeAsync(K key) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-
-        Data dataKey = toData(key, partitionStrategy);
-        return new DelegatingFuture<V>(removeAsyncInternal(dataKey), getNodeEngine().getSerializationService());
     }
 
     @Override
@@ -699,20 +690,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-
-        Data keyData = toData(key, partitionStrategy);
-        executeOnKeyInternal(keyData, entryProcessor, callback);
+        submitToKey(key, entryProcessor).andThen(callback);
     }
 
     @Override
-    public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
+    public InternalCompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        MapService service = getService();
         Data keyData = toData(key, partitionStrategy);
-        ICompletableFuture f = executeOnKeyInternal(keyData, entryProcessor, null);
-        return new DelegatingFuture(f, service.getMapServiceContext().getNodeEngine().getSerializationService());
+        return executeOnKeyInternal(keyData, entryProcessor, null);
     }
 
     @Override

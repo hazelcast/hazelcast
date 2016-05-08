@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.CompletedFuture;
 
@@ -90,32 +91,33 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
-        Object value = nearCache.get(key);
-        if (value != null) {
-            if (isCachedNull(value)) {
-                value = null;
-            }
-            return new CompletedFuture<Data>(
-                    getNodeEngine().getSerializationService(),
-                    value,
-                    getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
-        }
-
-        ICompletableFuture<Data> future = super.getAsyncInternal(key);
-        future.andThen(new ExecutionCallback<Data>() {
-            @Override
-            public void onResponse(Data response) {
-                if (!isOwn(key) || cacheLocalEntries) {
-                    nearCache.put(key, response);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-            }
-        });
-        return future;
+    protected InternalCompletableFuture<Data> getAsyncInternal(final Data key) {
+//        Object value = nearCache.get(key);
+//        if (value != null) {
+//            if (isCachedNull(value)) {
+//                value = null;
+//            }
+//            return new CompletedFuture<V>(
+//                    getNodeEngine().getSerializationService(),
+//                    value,
+//                    getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
+//        }
+//
+//        ICompletableFuture<Data> future = super.getAsyncInternal(key);
+//        future.andThen(new ExecutionCallback<Data>() {
+//            @Override
+//            public void onResponse(Data response) {
+//                if (!isOwn(key) || cacheLocalEntries) {
+//                    nearCache.put(key, response);
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Throwable t) {
+//            }
+//        });
+//        return future;
+        return null;
     }
 
     protected boolean isCachedNull(Object value) {
@@ -147,13 +149,13 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected InternalCompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         invalidateCache(key);
         return super.putAsyncInternal(key, value, ttl, timeunit);
     }
 
     @Override
-    protected ICompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected InternalCompletableFuture<Void> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         invalidateCache(key);
         return super.setAsyncInternal(key, value, ttl, timeunit);
     }
@@ -227,7 +229,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected ICompletableFuture<Data> removeAsyncInternal(Data key) {
+    protected InternalCompletableFuture removeAsyncInternal(Data key) {
         invalidateCache(key);
         return super.removeAsyncInternal(key);
     }
@@ -282,7 +284,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public ICompletableFuture executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
+    public InternalCompletableFuture<Object> executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
         invalidateCache(key);
         return super.executeOnKeyInternal(key, entryProcessor, callback);
     }
