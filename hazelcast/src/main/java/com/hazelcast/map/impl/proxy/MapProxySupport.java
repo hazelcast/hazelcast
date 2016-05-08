@@ -29,7 +29,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
@@ -111,7 +110,6 @@ import static java.lang.Math.min;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
-import static javafx.scene.input.KeyCode.V;
 
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
@@ -913,7 +911,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             InternalCompletableFuture f = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            if(callback!=null){
+            if (callback != null) {
                 f.andThen(callback);
             }
 

@@ -54,7 +54,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
-import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,7 +103,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public V put(K k, V v) {
-        return putAsync(k,v).join();
+        return putAsync(k, v).join();
     }
 
     @Override
@@ -114,7 +113,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public V put(K k, V v, long ttl, TimeUnit timeunit) {
-        return putAsync(k,v,ttl, timeunit).join();
+        return putAsync(k, v, ttl, timeunit).join();
     }
 
     @Override
@@ -217,7 +216,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public ICompletableFuture<V> removeAsync(K key) {
-       return removeAsync0(key);
+        return removeAsync0(key);
     }
 
     public InternalCompletableFuture<V> removeAsync0(Object key) {

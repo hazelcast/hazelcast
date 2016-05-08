@@ -18,17 +18,14 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -284,7 +281,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    public InternalCompletableFuture<Object> executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
+    public InternalCompletableFuture<Object> executeOnKeyInternal(Data key, EntryProcessor entryProcessor,
+                                                                  ExecutionCallback<Object> callback) {
         invalidateCache(key);
         return super.executeOnKeyInternal(key, entryProcessor, callback);
     }

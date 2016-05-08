@@ -41,7 +41,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     private volatile boolean cancelled;
 
     CancellableDelegatingFuture(ICompletableFuture future, NodeEngine nodeEngine, String uuid, int partitionId) {
-        super(future, nodeEngine.getSerializationService());
+        super(future, nodeEngine.getSerializationService(), null);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.partitionId = partitionId;
@@ -49,7 +49,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     }
 
     CancellableDelegatingFuture(ICompletableFuture future, NodeEngine nodeEngine, String uuid, Address target) {
-        super(future, nodeEngine.getSerializationService());
+        super(future, nodeEngine.getSerializationService(), null);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.target = target;
