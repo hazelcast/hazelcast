@@ -41,11 +41,6 @@ interface PortablePosition {
     int getIndex();
 
     /**
-     * @return true if the index >= 0
-     */
-    boolean isArrayCellAccess();
-
-    /**
      * @return true if the object under the given path is null, false otherwise.
      */
     boolean isNull();
@@ -71,7 +66,7 @@ interface PortablePosition {
     int getClassId();
 
     /**
-     * Determines type of position. There's a {@link PortableSinglePosition} and {@link PortableMultiPosition}
+     * Determines type of position. There's a PortableSinglePosition and PortableSinglePosition (although both private)
      * A PortableMultiPosition is just a grouping object for PortableSinglePosition. It has a common ancestor,
      * thus we can return a single result or multiple results from a method returning a PortablePosition.
      * In this way we avoid extra allocation of a list if there's only a single result.

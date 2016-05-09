@@ -483,7 +483,7 @@ final class PortablePositionNavigator {
             streamPosition = in.position() + index * ctx.getCurrentFieldType().getSingleType().getTypeSize();
         }
 
-        return PortablePositionFactory.createSinglePosition(ctx.getCurrentFieldDefinition(), streamPosition, index,
+        return PortablePositionFactory.createSinglePrimitivePosition(ctx.getCurrentFieldDefinition(), streamPosition, index,
                 path.isLastToken());
     }
 
@@ -499,7 +499,7 @@ final class PortablePositionNavigator {
         int streamPosition = in.position();
         validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path);
 
-        return PortablePositionFactory.createSinglePosition(ctx.getCurrentFieldDefinition(), streamPosition, factoryId,
+        return PortablePositionFactory.createSinglePortablePosition(ctx.getCurrentFieldDefinition(), streamPosition, factoryId,
                 classId, nil, path.isLastToken());
     }
 
@@ -528,7 +528,7 @@ final class PortablePositionNavigator {
             }
         }
 
-        return PortablePositionFactory.createSinglePosition(ctx.getCurrentFieldDefinition(), streamPosition, factoryId,
+        return PortablePositionFactory.createSinglePortablePosition(ctx.getCurrentFieldDefinition(), streamPosition, factoryId,
                 classId, index, len, path.isLastToken());
     }
 
@@ -536,7 +536,7 @@ final class PortablePositionNavigator {
             PortableNavigatorContext ctx, PortablePathCursor path, int index) throws IOException {
         // for primitive field access there's no adjustment needed, so a position is populated from the current ctx
         ctx.getIn().position(getStreamPositionOfTheField(ctx));
-        return PortablePositionFactory.createSinglePosition(ctx.getCurrentFieldDefinition(), ctx.getIn().position(),
+        return PortablePositionFactory.createSinglePrimitivePosition(ctx.getCurrentFieldDefinition(), ctx.getIn().position(),
                 index, path.isLastToken());
     }
 

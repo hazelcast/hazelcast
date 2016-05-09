@@ -53,12 +53,12 @@ final class PortablePositionFactory {
         return NIL_NOT_LEAF;
     }
 
-    static PortableSinglePosition createSinglePosition(
+    static PortableSinglePosition createSinglePrimitivePosition(
             FieldDefinition fd, int streamPosition, int index, boolean leaf) {
         return new PortableSinglePosition(fd, streamPosition, index, leaf);
     }
 
-    static PortableSinglePosition createSinglePosition(
+    static PortableSinglePosition createSinglePortablePosition(
             FieldDefinition fd, int streamPosition, int factoryId, int classId, boolean nil, boolean leaf) {
         PortableSinglePosition position = new PortableSinglePosition(fd, streamPosition, -1, leaf);
         position.factoryId = factoryId;
@@ -67,12 +67,13 @@ final class PortablePositionFactory {
         return position;
     }
 
-    static PortableSinglePosition createSinglePosition(
+    static PortableSinglePosition createSinglePortablePosition(
             FieldDefinition fd, int streamPosition, int factoryId, int classId, int index, int len, boolean leaf) {
         PortableSinglePosition position = new PortableSinglePosition(fd, streamPosition, index, leaf);
         position.factoryId = factoryId;
         position.classId = classId;
         position.len = len;
+        potentiallyNullify(position);
         return position;
     }
 
@@ -152,11 +153,6 @@ final class PortablePositionFactory {
         @Override
         public int getIndex() {
             return index;
-        }
-
-        @Override
-        public boolean isArrayCellAccess() {
-            return index >= 0;
         }
 
         @Override
