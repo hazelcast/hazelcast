@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -54,7 +55,9 @@ public class MapLoaderLifecycleTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        hz.getMap("map");
+        IMap map = hz.getMap("map");
+        // MapStore creation is deferred, so trigger map store creation by putting some data in the map
+        map.put("a", "b");
 
         verify(loader).init(eq(hz), eq(new Properties()), eq("map"));
     }
@@ -64,7 +67,9 @@ public class MapLoaderLifecycleTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        hz.getMap("map");
+        IMap map = hz.getMap("map");
+        // MapStore creation is deferred, so trigger map store creation by putting some data in the map
+        map.put("a", "b");
         hz.shutdown();
 
         verify(loader).destroy();

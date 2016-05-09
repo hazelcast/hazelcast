@@ -1,6 +1,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
@@ -42,7 +43,10 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         HazelcastInstance instance = instances.get(0);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
+        IMap map = instance.getMap(getIthMapName(0));
+        map.addPartitionLostListener(listener);
+        // add some dummy data for the MapContainer to be initialized
+        map.put("foo", "bar");
 
         final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 0, null);
 
@@ -68,8 +72,10 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         HazelcastInstance instance = instances.get(0);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
-        instance.getMap(getIthMapName(0)).addEntryListener(mock(EntryAddedListener.class), true);
+        IMap map = instance.getMap(getIthMapName(0));
+        map.addPartitionLostListener(listener);
+        map.addEntryListener(mock(EntryAddedListener.class), true);
+        map.put("a", "b");
 
         final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 0, null);
 
@@ -97,7 +103,9 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         HazelcastInstance terminatingInstance = instances.get(1);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        survivingInstance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
+        IMap map = survivingInstance.getMap(getIthMapName(0));
+        map.addPartitionLostListener(listener);
+        map.put("a", "b");
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
         Node survivingNode = getNode(survivingInstance);
