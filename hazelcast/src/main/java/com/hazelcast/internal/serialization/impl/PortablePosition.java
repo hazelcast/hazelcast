@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.serialization.FieldType;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -67,11 +68,11 @@ interface PortablePosition {
 
     /**
      * Determines type of position. There's a PortableSinglePosition and PortableSinglePosition (although both private)
-     * A PortableMultiPosition is just a grouping object for PortableSinglePosition. It has a common ancestor,
-     * thus we can return a single result or multiple results from a method returning a PortablePosition.
-     * In this way we avoid extra allocation of a list if there's only a single result.
+     * A PortableMultiPosition is just a grouping object for PortableSinglePosition that implements the PortablePosition
+     * interface. It has a common ancestor, thus we can return a single result or multiple results from a method
+     * returning a PortablePosition. In this way we avoid extra allocation of a list if there's only a single result.
      *
-     * @return true, if the current position is a multiposition, false otherwise
+     * @return true, if the current position is a multi-position, false otherwise.
      */
     boolean isMultiPosition();
 
@@ -99,6 +100,7 @@ interface PortablePosition {
     /**
      * @return the type of the field under the leaf of the given path
      */
+    @Nullable
     FieldType getType();
 
     /**

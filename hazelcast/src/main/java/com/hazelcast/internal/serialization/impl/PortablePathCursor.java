@@ -33,7 +33,6 @@ final class PortablePathCursor {
     private int offset;
     private int nextSplit;
 
-
     PortablePathCursor() {
     }
 
