@@ -446,6 +446,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
+    // see: https://github.com/hazelcast/hazelcast/issues/3927
     public void testUnknownPortableField_notCausesQueryException_withoutIndex() {
         String mapName = randomMapName();
         Config config = getConfig();
@@ -466,6 +467,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
+    // see: https://github.com/hazelcast/hazelcast/issues/3927
     public void testUnknownPortableField_notCausesQueryException_withIndex() {
         String mapName = "default";
         Config config = getConfig();

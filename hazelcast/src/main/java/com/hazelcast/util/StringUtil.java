@@ -130,4 +130,60 @@ public final class StringUtil {
     public static String getLineSeperator() {
         return System.getProperty("line.separator");
     }
+
+    /**
+     * Like a String.indexOf but without MIN_SUPPLEMENTARY_CODE_POINT handling
+     *
+     * @param input  to check the indexOf on
+     * @param ch     character to find the index of
+     * @param offset offset to start the reading from
+     * @return index of the character, or -1 if not found
+     */
+    public static int indexOf(String input, char ch, int offset) {
+        for (int i = offset; i < input.length(); i++) {
+            if (input.charAt(i) == ch) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Like a String.indexOf but without MIN_SUPPLEMENTARY_CODE_POINT handling
+     *
+     * @param input to check the indexOf on
+     * @param ch    character to find the index of
+     * @return index of the character, or -1 if not found
+     */
+    public static int indexOf(String input, char ch) {
+        return indexOf(input, ch, 0);
+    }
+
+    /**
+     * Like a String.lastIndexOf but without MIN_SUPPLEMENTARY_CODE_POINT handling
+     *
+     * @param input  to check the indexOf on
+     * @param ch     character to find the index of
+     * @param offset offset to start the reading from the end
+     * @return index of the character, or -1 if not found
+     */
+    public static int lastIndexOf(String input, char ch, int offset) {
+        for (int i = input.length() - 1 - offset; i >= 0; i--) {
+            if (input.charAt(i) == ch) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Like a String.lastIndexOf but without MIN_SUPPLEMENTARY_CODE_POINT handling
+     *
+     * @param input to check the indexOf on
+     * @param ch    character to find the index of
+     * @return index of the character, or -1 if not found
+     */
+    public static int lastIndexOf(String input, char ch) {
+        return lastIndexOf(input, ch, 0);
+    }
 }

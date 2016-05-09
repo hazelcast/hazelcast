@@ -24,12 +24,17 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
     }
 
     /**
-     * Parametrisation axis for storage type: single-value, list, array
+     * Parametrisation axis for storage type: single-value, list, array, portable-array
      */
     public enum Multivalue {
-        SINGLE_VALUE,
+        SINGLE,
         ARRAY,
-        LIST
+        LIST,
+        PORTABLE
+    }
+
+    public interface PortableAware {
+        <T> T getPortable();
     }
 
     /**
@@ -67,7 +72,7 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
      */
     protected static class Expected {
         Object[] objects;
-        Class<? extends Throwable> throwable;
+        Class<? extends Throwable>[] throwables;
 
         public static Expected of(Object... objects) {
             Expected expected = new Expected();
@@ -77,7 +82,13 @@ public class AbstractExtractionSpecification extends HazelcastTestSupport {
 
         public static Expected of(Class<? extends Throwable> throwable) {
             Expected expected = new Expected();
-            expected.throwable = throwable;
+            expected.throwables = new Class[]{throwable};
+            return expected;
+        }
+
+        public static Expected of(Class<? extends Throwable>... throwables) {
+            Expected expected = new Expected();
+            expected.throwables = throwables;
             return expected;
         }
 

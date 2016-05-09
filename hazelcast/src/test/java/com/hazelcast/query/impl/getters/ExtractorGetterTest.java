@@ -1,5 +1,6 @@
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -21,10 +22,12 @@ public class ExtractorGetterTest {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
+    public SerializationService UNUSED = null;
+
     @Test
     public void isCacheable() {
         // GIVEN
-        ExtractorGetter getter = new ExtractorGetter(mock(ValueExtractor.class), "argument");
+        ExtractorGetter getter = new ExtractorGetter(UNUSED, mock(ValueExtractor.class), "argument");
 
         // THEN
         assertThat(getter.isCacheable(), is(true));
@@ -33,7 +36,7 @@ public class ExtractorGetterTest {
     @Test
     public void getReturnType() {
         // GIVEN
-        ExtractorGetter getter = new ExtractorGetter(mock(ValueExtractor.class), "argument");
+        ExtractorGetter getter = new ExtractorGetter(UNUSED, mock(ValueExtractor.class), "argument");
 
         // EXPECT
         expected.expect(UnsupportedOperationException.class);

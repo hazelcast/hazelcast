@@ -1,5 +1,6 @@
 package com.hazelcast.query.impl.extractor.specification;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
@@ -19,7 +20,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.SINGLE_VALUE;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.SINGLE;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Finger;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
@@ -55,6 +56,15 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
             limb(null, new ArrayList<String>(), new Finger[]{})
     );
 
+    protected Configurator getInstanceConfigurator() {
+        return new Configurator() {
+            @Override
+            public void doWithConfig(Config config, Multivalue mv) {
+                config.getSerializationConfig().addPortableFactory(ComplexDataStructure.PersonPortableFactory.ID, new ComplexDataStructure.PersonPortableFactory());
+            }
+        };
+    }
+
     public ExtractionInSingleValueSpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
     }
@@ -63,6 +73,13 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
     public void wrong_attribute_name() {
         execute(Input.of(BOND, KRUEGER, HUNT_WITH_NULLS),
                 Query.of(Predicates.equal("name12312", "Bond"), mv),
+                Expected.of(QueryException.class));
+    }
+
+    @Test
+    public void nested_wrong_attribute_name() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("firstLimb.name12312", "left-hand"), mv),
                 Expected.of(QueryException.class));
     }
 
@@ -106,7 +123,7 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
         return axes(
                 asList(BINARY, OBJECT),
                 asList(NO_INDEX, UNORDERED, ORDERED),
-                asList(SINGLE_VALUE)
+                asList(SINGLE)
         );
     }
 

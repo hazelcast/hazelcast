@@ -1,6 +1,7 @@
 package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -25,14 +26,16 @@ public class ExtractorsTest {
 
     private Bond bond = new Bond();
 
+    private SerializationService UNUSED = null;
+
     @Test
     public void getGetter_reflection_cachingWorks() {
         // GIVEN
         Extractors extractors = extractors();
 
         // WHEN
-        Getter getterFirstInvocation = extractors.getGetter(bond, "car.power");
-        Getter getterSecondInvocation = extractors.getGetter(bond, "car.power");
+        Getter getterFirstInvocation = extractors.getGetter(UNUSED, bond, "car.power");
+        Getter getterSecondInvocation = extractors.getGetter(UNUSED, bond, "car.power");
 
         // THEN
         assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));
@@ -42,7 +45,7 @@ public class ExtractorsTest {
     @Test
     public void extract_reflection_correctValue() {
         // WHEN
-        Object power = extractors().extract(bond, "car.power");
+        Object power = extractors().extract(UNUSED, bond, "car.power");
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -55,8 +58,8 @@ public class ExtractorsTest {
         Extractors extractors = new Extractors(asList(config));
 
         // WHEN
-        Getter getterFirstInvocation = extractors.getGetter(bond, "gimmePower");
-        Getter getterSecondInvocation = extractors.getGetter(bond, "gimmePower");
+        Getter getterFirstInvocation = extractors.getGetter(UNUSED, bond, "gimmePower");
+        Getter getterSecondInvocation = extractors.getGetter(UNUSED, bond, "gimmePower");
 
         // THEN
         assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));
@@ -70,7 +73,7 @@ public class ExtractorsTest {
         Extractors extractors = new Extractors(asList(config));
 
         // WHEN
-        Object power = extractors.extract(bond, "gimmePower");
+        Object power = extractors.extract(UNUSED, bond, "gimmePower");
 
         // THEN
         assertThat((Integer) power, equalTo(550));
@@ -79,7 +82,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullTarget() {
         // WHEN
-        Object power = extractors().extract(null, "gimmePower");
+        Object power = extractors().extract(UNUSED, null, "gimmePower");
 
         // THEN
         assertNull(power);
@@ -88,7 +91,7 @@ public class ExtractorsTest {
     @Test
     public void extract_nullAll() {
         // WHEN
-        Object power = extractors().extract(null, null);
+        Object power = extractors().extract(UNUSED, null, null);
 
         // THEN
         assertNull(power);
@@ -96,7 +99,7 @@ public class ExtractorsTest {
 
     @Test(expected = NullPointerException.class)
     public void extract_nullAttribute() {
-        extractors().extract(bond, null);
+        extractors().extract(UNUSED, bond, null);
     }
 
     private static class Bond {

@@ -85,7 +85,11 @@ public enum AttributeType {
     /**
      * UUID
      */
-    UUID(TypeConverters.UUID_CONVERTER);
+    UUID(TypeConverters.UUID_CONVERTER),
+    /**
+     * Portable
+     */
+    PORTABLE(TypeConverters.PORTABLE_CONVERTER);
 
     private final TypeConverter converter;
 
