@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.EmptyStatement;
 
 /**
@@ -26,6 +27,7 @@ import com.hazelcast.util.EmptyStatement;
  * @see com.hazelcast.core.OutOfMemoryHandler
  * @see com.hazelcast.instance.DefaultOutOfMemoryHandler
 */
+@PrivateApi
 public final class OutOfMemoryHandlerHelper {
 
     private OutOfMemoryHandlerHelper() {

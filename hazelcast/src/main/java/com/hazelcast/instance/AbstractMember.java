@@ -23,6 +23,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@PrivateApi
 public abstract class AbstractMember implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();

@@ -19,7 +19,9 @@ package com.hazelcast.instance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.spi.NodeAware;
+import com.hazelcast.spi.annotation.PrivateApi;
 
+@PrivateApi
 public final class HazelcastManagedContext implements ManagedContext {
 
     private final HazelcastInstanceImpl instance;

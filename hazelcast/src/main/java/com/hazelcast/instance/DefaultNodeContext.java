@@ -23,9 +23,11 @@ import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.nio.channels.ServerSocketChannel;
 
+@PrivateApi
 public class DefaultNodeContext implements NodeContext {
 
     @Override

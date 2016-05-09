@@ -18,12 +18,14 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /***
  * This is interface which provides capability for Hazelcast factories customization;
  * DefaultHazelcastInstanceFactory is used by default, but external service can have;
  * custom implementation which should be specified in META-INF services;
  */
+@PrivateApi
 public interface HazelcastInstanceFactory {
     HazelcastInstance newHazelcastInstance(Config config, String instanceName,
                                            NodeContext nodeContext) throws Exception;

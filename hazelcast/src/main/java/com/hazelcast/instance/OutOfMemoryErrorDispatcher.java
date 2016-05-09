@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.System.arraycopy;
 
+@PrivateApi
 public final class OutOfMemoryErrorDispatcher {
 
     private static final int MAX_REGISTERED_INSTANCES = 50;

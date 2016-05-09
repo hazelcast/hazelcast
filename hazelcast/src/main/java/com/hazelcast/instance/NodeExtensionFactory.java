@@ -16,12 +16,14 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.lang.reflect.Constructor;
 import java.util.Iterator;
 
+@PrivateApi
 public final class NodeExtensionFactory {
 
     private static final String FACTORY_ID = "com.hazelcast.instance.NodeExtension";

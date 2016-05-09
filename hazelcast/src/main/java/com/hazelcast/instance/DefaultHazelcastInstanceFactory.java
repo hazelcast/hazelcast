@@ -19,10 +19,12 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /***
  * Default implementation for Hazelcast instance factory;
  */
+@PrivateApi
 public class DefaultHazelcastInstanceFactory implements HazelcastInstanceFactory {
     protected Config wrapConfig(Config config) {
         if (config == null) {
