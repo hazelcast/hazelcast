@@ -532,7 +532,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         validateType(position, FieldType.PORTABLE_ARRAY);
         final Portable[] portables = new Portable[position.getLen()];
         for (int index = 0; index < position.getLen(); index++) {
-            in.position(getPortableArrayCellPosition(position.getStreamPosition(), index, in));
+            in.position(getPortableArrayCellPosition(in, position.getStreamPosition(), index));
             portables[index] = serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
         }
         return portables;

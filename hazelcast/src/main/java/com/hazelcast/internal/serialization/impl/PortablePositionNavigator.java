@@ -28,13 +28,13 @@ import static com.hazelcast.internal.serialization.impl.PortableNavigatorContext
 import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.emptyAnyPosition;
 import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.nilAnyPosition;
 import static com.hazelcast.internal.serialization.impl.PortablePositionFactory.nilNotLeafPosition;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.createUnknownFieldException;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.createWrongUseOfAnyOperationException;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.isCurrentPathTokenWithAnyQuantifier;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.isCurrentPathTokenWithoutQuantifier;
-import static com.hazelcast.internal.serialization.impl.PortableUtils.unknownFieldException;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.validateAndGetArrayQuantifierFromCurrentToken;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.validateArrayType;
 import static com.hazelcast.internal.serialization.impl.PortableUtils.validateFactoryAndClass;
-import static com.hazelcast.internal.serialization.impl.PortableUtils.wrongUseOfAnyOperationException;
 
 /**
  * Enables navigation in the portable byte stream.
@@ -107,7 +107,7 @@ final class PortablePositionNavigator {
         // All path tokens have been read but no result hast been returned. It means that the element is unknown.
         // Otherwise some non-null, null or empty result would have been returned.
         if (result == null) {
-            throw unknownFieldException(ctx, path);
+            throw createUnknownFieldException(ctx, path.path());
         }
         return result;
     }
@@ -117,13 +117,13 @@ final class PortablePositionNavigator {
         // first, setup the context for the current path token
         ctx.setupContextForGivenPathToken(path);
 
-        if (isCurrentPathTokenWithoutQuantifier(path)) {
+        if (isCurrentPathTokenWithoutQuantifier(path.token())) {
             // ex: attribute
             PortablePosition result = navigateToPathTokenWithoutQuantifier(ctx, path);
             if (result != null) {
                 return result;
             }
-        } else if (isCurrentPathTokenWithAnyQuantifier(path)) {
+        } else if (isCurrentPathTokenWithAnyQuantifier(path.token())) {
             // ex: attribute[any]
             PortablePosition result = navigateToPathTokenWithAnyQuantifier(ctx, path, frame);
             if (result != null) {
@@ -204,7 +204,7 @@ final class PortablePositionNavigator {
     private static PortablePosition navigateToPathTokenWithAnyQuantifier(
             PortableNavigatorContext ctx, PortablePathCursor path, NavigationFrame frame) throws IOException {
         // check if the underlying field is of array type
-        validateArrayType(ctx, path);
+        validateArrayType(ctx.getCurrentClassDefinition(), ctx.getCurrentFieldDefinition(), path.path());
 
         if (ctx.isCurrentFieldOfType(FieldType.PORTABLE_ARRAY)) {
             // the result will be returned if it was the last token of the path, otherwise it has just moved further.
@@ -292,12 +292,12 @@ final class PortablePositionNavigator {
                 return createPositionForReadAccess(ctx, path, 0);
             }
             // primitive array cell has to be a last token, there's no furhter navigation from there.
-            throw wrongUseOfAnyOperationException(ctx, path);
+            throw createWrongUseOfAnyOperationException(ctx, path.path());
         } else {
             if (path.isLastToken()) {
                 return createPositionForReadAccess(ctx, path, frame.arrayIndex);
             }
-            throw wrongUseOfAnyOperationException(ctx, path);
+            throw createWrongUseOfAnyOperationException(ctx, path.path());
         }
     }
 
@@ -307,8 +307,8 @@ final class PortablePositionNavigator {
     private static PortablePosition navigateToPathTokenWithNumberQuantifier(
             PortableNavigatorContext ctx, PortablePathCursor path) throws IOException {
         // makes sure that the field type is an array and parses the qantifier
-        validateArrayType(ctx, path);
-        int index = validateAndGetArrayQuantifierFromCurrentToken(path);
+        validateArrayType(ctx.getCurrentClassDefinition(), ctx.getCurrentFieldDefinition(), path.path());
+        int index = validateAndGetArrayQuantifierFromCurrentToken(path.token(), path.path());
 
         // reads the array length and checks if the index is in-bound
         int len = getArrayLengthOfTheField(ctx);
@@ -373,7 +373,7 @@ final class PortablePositionNavigator {
         // read factory and class Id and validate if it's the same as expected in the fieldDefinition
         int factoryId = in.readInt();
         int classId = in.readInt();
-        validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path);
+        validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path.path());
 
         // calculate the offset of the cell given by the index
         final int cellOffset = in.position() + index * Bits.INT_SIZE_IN_BYTES;
@@ -497,7 +497,7 @@ final class PortablePositionNavigator {
         int factoryId = in.readInt();
         int classId = in.readInt();
         int streamPosition = in.position();
-        validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path);
+        validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path.path());
 
         return PortablePositionFactory.createSinglePortablePosition(ctx.getCurrentFieldDefinition(), streamPosition, factoryId,
                 classId, nil, path.isLastToken());
@@ -514,7 +514,7 @@ final class PortablePositionNavigator {
         int factoryId = in.readInt();
         int classId = in.readInt();
         int streamPosition = in.position();
-        validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path);
+        validateFactoryAndClass(ctx.getCurrentFieldDefinition(), factoryId, classId, path.path());
 
         // if single-cell access, dead-reckon cell's position that's specified by the index
         if (singleCellAccess) {

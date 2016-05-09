@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import static com.hazelcast.internal.serialization.impl.PortableUtils.unknownFieldException;
+import static com.hazelcast.internal.serialization.impl.PortableUtils.createUnknownFieldException;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
 /**
@@ -154,7 +154,7 @@ class PortableNavigatorContext {
         String fieldName = extractAttributeNameNameWithoutArguments(pathToken);
         this.fd = cd.getField(fieldName);
         if (fd == null || pathToken == null) {
-            throw unknownFieldException(this, path);
+            throw createUnknownFieldException(this, path.path());
         }
     }
 

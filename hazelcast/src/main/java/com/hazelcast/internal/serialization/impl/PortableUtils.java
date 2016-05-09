@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
@@ -36,17 +37,18 @@ final class PortableUtils {
     /**
      * Extracts and validates the quantifier from the given path token
      *
-     * @param path path cursor from which the given path token is retrieved
+     * @param token    token from which the quantifier is retrieved
+     * @param fullPath fullPath to which the token belongs - just for output
      * @return validated quantifier
      */
-    static int validateAndGetArrayQuantifierFromCurrentToken(PortablePathCursor path) {
-        String quantifier = extractArgumentsFromAttributeName(path.token());
+    static int validateAndGetArrayQuantifierFromCurrentToken(String token, String fullPath) {
+        String quantifier = extractArgumentsFromAttributeName(token);
         if (quantifier == null) {
-            throw new IllegalArgumentException("Malformed quantifier " + quantifier + " in " + path.path());
+            throw new IllegalArgumentException("Malformed quantifier " + quantifier + " in " + fullPath);
         }
         int index = Integer.valueOf(quantifier);
         if (index < 0) {
-            throw new IllegalArgumentException("Array index " + index + " cannot be negative in " + path.path());
+            throw new IllegalArgumentException("Array index " + index + " cannot be negative in " + fullPath);
         }
         return index;
     }
@@ -54,15 +56,15 @@ final class PortableUtils {
     /**
      * Calculates and reads the position of the Portable object stored in a Portable array under the given index.
      *
-     * @param arrayStreamPosition position of the portable array in the stream
-     * @param index               index of the cell
-     * @param in                  data input stream
+     * @param in             data input stream
+     * @param streamPosition streamPosition to begin the reading from
+     * @param cellIndex      index of the cell
      * @return the position of the given portable object in the stream
      * @throws IOException on any stream errors
      */
-    static int getPortableArrayCellPosition(int arrayStreamPosition, int index, BufferObjectDataInput in)
+    static int getPortableArrayCellPosition(BufferObjectDataInput in, int streamPosition, int cellIndex)
             throws IOException {
-        return in.readInt(arrayStreamPosition + index * Bits.INT_SIZE_IN_BYTES);
+        return in.readInt(streamPosition + cellIndex * Bits.INT_SIZE_IN_BYTES);
     }
 
     /**
@@ -103,53 +105,55 @@ final class PortableUtils {
     }
 
     /**
-     * @param path given path cursor
+     * It doesn't validate the quantifier.
+     *
+     * @param token given path's token
      * @return true if the current path does not contain a quantifier
      */
-    static boolean isCurrentPathTokenWithoutQuantifier(PortablePathCursor path) {
-        return !path.token().endsWith("]");
+    static boolean isCurrentPathTokenWithoutQuantifier(String token) {
+        return !token.endsWith("]");
     }
 
     /**
-     * @param path given path cursor
+     * @param token given path's token
      * @return true if the current path token contains a "any" quantifier
      */
-    static boolean isCurrentPathTokenWithAnyQuantifier(PortablePathCursor path) {
-        return path.token().endsWith("[any]");
+    static boolean isCurrentPathTokenWithAnyQuantifier(String token) {
+        return token.endsWith("[any]");
     }
 
     /**
-     * @param ctx  portable navigation context
-     * @param path given path cursor
+     * @param ctx      portable navigation context
+     * @param fullPath full path - just for output
      * @return initialised HazelcastSerializationException with an unknown field at the current path token
      */
-    static HazelcastSerializationException unknownFieldException(PortableNavigatorContext ctx, PortablePathCursor path) {
-        return new HazelcastSerializationException("Unknown field name: '" + path
+    static HazelcastSerializationException createUnknownFieldException(PortableNavigatorContext ctx, String fullPath) {
+        return new HazelcastSerializationException("Unknown field name: '" + fullPath
                 + "' for ClassDefinition {id: " + ctx.getCurrentClassDefinition().getClassId()
                 + ", version: " + ctx.getCurrentClassDefinition().getVersion() + "}");
     }
 
     /**
-     * @param ctx  portable navigation context
-     * @param path given path cursor
+     * @param ctx      portable navigation context
+     * @param fullPath full path - just for output
      * @return initialised IllegalArgumentException with a wrong use of any operator at the current path token
      */
-    static IllegalArgumentException wrongUseOfAnyOperationException(PortableNavigatorContext ctx, PortablePathCursor path) {
-        return new IllegalArgumentException("Wrong use of any operator: '" + path.path()
+    static IllegalArgumentException createWrongUseOfAnyOperationException(PortableNavigatorContext ctx, String fullPath) {
+        return new IllegalArgumentException("Wrong use of any operator: '" + fullPath
                 + "' for ClassDefinition {id: " + ctx.getCurrentClassDefinition().getClassId() + ", version: "
                 + ctx.getCurrentClassDefinition().getVersion() + "}");
     }
 
     /**
-     * @param ctx  portable navigation context
-     * @param path given path cursor
+     * @param cd       given classDefinition to validate against
+     * @param fd       given fieldDefinition to validate against
+     * @param fullPath full path - just for output
      * @throws IllegalArgumentException if the current field definition is not of an array type
      */
-    static void validateArrayType(PortableNavigatorContext ctx, PortablePathCursor path) {
-        if (!ctx.getCurrentFieldDefinition().getType().isArrayType()) {
-            throw new IllegalArgumentException("Wrong use of array operator: '" + path.path()
-                    + "' for ClassDefinition {id: " + ctx.getCurrentClassDefinition().getClassId() + ", version: "
-                    + ctx.getCurrentClassDefinition().getVersion() + "}");
+    static void validateArrayType(ClassDefinition cd, FieldDefinition fd, String fullPath) {
+        if (!fd.getType().isArrayType()) {
+            throw new IllegalArgumentException("Wrong use of array operator: '" + fullPath
+                    + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
         }
     }
 
@@ -159,15 +163,16 @@ final class PortableUtils {
      * @param fd        given fieldDefinition to validate against
      * @param factoryId given factoryId to validate
      * @param classId   given factoryId to validate
+     * @param fullPath  full path - just for output
      */
-    static void validateFactoryAndClass(FieldDefinition fd, int factoryId, int classId, PortablePathCursor path) {
+    static void validateFactoryAndClass(FieldDefinition fd, int factoryId, int classId, String fullPath) {
         if (factoryId != fd.getFactoryId()) {
             throw new IllegalArgumentException("Invalid factoryId! Expected: "
-                    + fd.getFactoryId() + ", Current: " + factoryId + " in path " + path.path());
+                    + fd.getFactoryId() + ", Current: " + factoryId + " in path " + fullPath);
         }
         if (classId != fd.getClassId()) {
             throw new IllegalArgumentException("Invalid classId! Expected: "
-                    + fd.getClassId() + ", Current: " + classId + " in path " + path.path());
+                    + fd.getClassId() + ", Current: " + classId + " in path " + fullPath);
         }
     }
 
