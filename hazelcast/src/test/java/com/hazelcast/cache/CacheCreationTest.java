@@ -43,13 +43,14 @@ import java.util.concurrent.Executors;
 @Category(SlowTest.class)
 public class CacheCreationTest {
 
-    static Config hzConfig;
     private static final int THREAD_COUNT = 4;
+
+    private static Config hzConfig;
 
     @BeforeClass
     public static void init() throws Exception {
-        final URL configUrl1 = CacheCreationTest.class.getClassLoader().getResource("test-hazelcast-real-jcache.xml");
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(configUrl1.getFile());
+        final URL configUrl = CacheCreationTest.class.getClassLoader().getResource("test-hazelcast-real-jcache.xml");
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(configUrl.getFile());
         hzConfig = configBuilder.build();
     }
 
@@ -92,12 +93,12 @@ public class CacheCreationTest {
 
         final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
-            final int finalI = i;
+            final String cacheName = "xmlCache" + i;
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
                     HazelcastServerCachingProvider cachingProvider = createCachingProvider(hzConfig);
-                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache" + finalI);
+                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
                     cache.get(1);
                     latch.countDown();
                 }
@@ -109,8 +110,6 @@ public class CacheCreationTest {
 
     private HazelcastServerCachingProvider createCachingProvider(Config hzConfig) {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
-        HazelcastServerCachingProvider cachingProvider =
-                HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
-        return cachingProvider;
+        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
     }
 }
