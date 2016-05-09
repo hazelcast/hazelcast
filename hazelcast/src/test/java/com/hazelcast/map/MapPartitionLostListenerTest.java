@@ -101,11 +101,14 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
 
         HazelcastInstance survivingInstance = instances.get(0);
         HazelcastInstance terminatingInstance = instances.get(1);
+        warmUpPartitions(instances);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        IMap map = survivingInstance.getMap(getIthMapName(0));
+        IMap<String, String> map = survivingInstance.getMap(getIthMapName(0));
         map.addPartitionLostListener(listener);
-        map.put("a", "b");
+        // ensure map containers are created on both nodes by putting values in surviving & terminating instances
+        map.put(generateKeyOwnedBy(survivingInstance), randomString());
+        map.put(generateKeyOwnedBy(terminatingInstance), randomString());
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
         Node survivingNode = getNode(survivingInstance);

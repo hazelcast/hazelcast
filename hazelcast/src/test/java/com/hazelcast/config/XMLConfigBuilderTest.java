@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -687,7 +688,9 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
         Config config = buildConfig(xml);
         HazelcastInstance hz = createHazelcastInstance(config);
-        hz.getMap(mapName);
+        IMap map = hz.getMap(mapName);
+        // MapStore is not instantiated until the MapContainer is created lazily
+        map.put("sample", "data");
 
         MapConfig mapConfig = hz.getConfig().getMapConfig(mapName);
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
