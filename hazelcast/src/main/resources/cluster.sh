@@ -172,7 +172,7 @@ if [ "$OPERATION" = "shutdown" ]; then
     echo "You are shutting down the cluster. Please make sure you provide valid user/pass."
     echo "Shutting down from member on ip ${ADDRESS} on port ${PORT}"
 
-    request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/shutdown"
+    request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/clusterShutdown"
     response=$(curl --data "${GROUPNAME}&${PASSWORD}" --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 
