@@ -142,11 +142,11 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         return createReader(in, factoryId, classId, version, portableVersion);
     }
 
-    private DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
-            int portableVersion) throws IOException {
+    public ClassDefinition setupPositionAndDefinition(BufferObjectDataInput in, int factoryId, int classId, int version)
+            throws IOException {
 
         int effectiveVersion = version;
-        if (version < 0) {
+        if (effectiveVersion < 0) {
             effectiveVersion = context.getVersion();
         }
 
@@ -157,8 +157,15 @@ final class PortableSerializer implements StreamSerializer<Portable> {
             in.position(begin);
         }
 
+        return cd;
+    }
+
+    public DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
+                                              int portableVersion) throws IOException {
+
+        ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         DefaultPortableReader reader;
-        if (portableVersion == effectiveVersion) {
+        if (portableVersion == cd.getVersion()) {
             reader = new DefaultPortableReader(this, in, cd);
         } else {
             reader = new MorphingPortableReader(this, in, cd);

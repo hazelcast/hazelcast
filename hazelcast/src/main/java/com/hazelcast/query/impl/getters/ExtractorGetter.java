@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultValueCollector;
 
@@ -23,19 +25,25 @@ final class ExtractorGetter extends Getter {
 
     private final ValueExtractor extractor;
     private final Object arguments;
+    private final InternalSerializationService serializationService;
 
-    ExtractorGetter(ValueExtractor extractor, Object arguments) {
+    ExtractorGetter(InternalSerializationService serializationService, ValueExtractor extractor, Object arguments) {
         super(null);
         this.extractor = extractor;
         this.arguments = arguments;
+        this.serializationService = serializationService;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     Object getValue(Object target) throws Exception {
+        Object extractionTarget = target;
         // This part will be improved in 3.7 to avoid extra allocation
         DefaultValueCollector collector = new DefaultValueCollector();
-        extractor.extract(target, arguments, collector);
+        if (target instanceof Data) {
+            extractionTarget = serializationService.createPortableReader((Data) target);
+        }
+        extractor.extract(extractionTarget, arguments, collector);
         return collector.getResult();
     }
 

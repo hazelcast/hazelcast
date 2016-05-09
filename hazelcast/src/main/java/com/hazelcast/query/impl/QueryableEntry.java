@@ -141,30 +141,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     private static Object extractAttributeValueFromTargetObject(Extractors extractors,
                                                                 InternalSerializationService serializationService,
                                                                 String attributeName, Object target) {
-        if (target instanceof Portable || target instanceof Data) {
-            Data targetData = serializationService.toData(target);
-            if (targetData.isPortable()) {
-                return extractViaPortable(serializationService, attributeName, targetData);
-            }
-        }
-
-        Object targetObject = target;
-        if (target instanceof Data) {
-            targetObject = serializationService.toObject(target);
-        }
-
-        return extractors.extract(targetObject, attributeName);
-    }
-
-    private static Comparable extractViaPortable(InternalSerializationService serializationService,
-                                                 String attributeName, Data data) {
-        try {
-            return PortableExtractor.extractValue(serializationService, data, attributeName);
-        } catch (QueryException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new QueryException(e);
-        }
+        return extractors.extract(serializationService, target, attributeName);
     }
 
     private AttributeType extractAttributeType(String attributeName) {
@@ -209,7 +186,11 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         if (extractedSingleResult == null) {
             return null;
         }
+        if (extractedSingleResult instanceof Portable) {
+            return AttributeType.PORTABLE;
+        }
         return ReflectionHelper.getAttributeType(extractedSingleResult.getClass());
+
     }
 
     private AttributeType extractAttributeTypeFromMultiResult(MultiResult extractedMultiResult) {

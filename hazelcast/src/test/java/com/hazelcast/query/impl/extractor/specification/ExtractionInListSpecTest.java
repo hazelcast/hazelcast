@@ -2,6 +2,7 @@ package com.hazelcast.query.impl.extractor.specification;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -129,6 +130,26 @@ public class ExtractionInListSpecTest extends AbstractExtractionTest {
                 Expected.of(HUNT_NULL_TATTOOS));
     }
 
+    @Test
+    public void indexOutOfBound_notExistingProperty() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[100].sdafasdf", "knife"), mv),
+                Expected.of(QueryException.class));
+    }
+
+    @Test
+    public void indexOutOfBound_notExistingProperty_notAtLeaf() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[100].sdafasdf.zxcvzxcv", "knife"), mv),
+                Expected.of(QueryException.class));
+    }
+
+    @Test
+    public void indexOutOfBound_atLeaf_notExistingProperty() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[0].fingers_[100].asdfas", "knife"), mv),
+                Expected.of(QueryException.class));
+    }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> data() {
