@@ -16,14 +16,13 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class MPSCQueueStressTest extends HazelcastTestSupport {
 
-    private static final long DURATION_SECONDS = MINUTES.toSeconds(2);
+    private static final long DURATION_SECONDS = 30;//SE.toSeconds(2);
 
     private final AtomicBoolean stop = new AtomicBoolean();
 
@@ -76,7 +75,6 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
             producer.assertSucceedsEventually();
             totalProduced += producer.itemCount;
         }
-
         consumers.assertSucceedsEventually();
         assertEquals(totalProduced, consumers.itemCount);
     }
@@ -109,6 +107,10 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
                 itemCount++;
                 queue.offer(new Item(id, itemCount));
 
+                while (queue.size() < 100000) {
+                    sleepMillis(random.nextInt(100));
+                }
+
                 if (random.nextInt(1000) == 0) {
                     sleepMillis(random.nextInt(100));
                 }
@@ -129,7 +131,7 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
         private final MPSCQueue<Item> queue;
         private final int producerCount;
         private long itemCount;
-        private int completedProducers = 0;
+        private volatile int completedProducers = 0;
 
         ConsumerThread(MPSCQueue<Item> queue, int producerCount) {
             super("Consumer");
@@ -143,6 +145,7 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
             Random random = new Random();
             for (; ; ) {
                 Item item = queue.take();
+
                 if (item.value == -1) {
                     completedProducers++;
                     if (completedProducers == producerCount) {
