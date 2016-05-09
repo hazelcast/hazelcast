@@ -35,8 +35,7 @@ import static com.hazelcast.util.QuickMath.normalize;
 public final class UnsafeUtil {
 
     /**
-     * If this constant is {@code true}, then {@link Unsafe} refers to a usable {@code Unsafe}
-     * instance.
+     * If this constant is {@code true}, then {@link Unsafe} refers to a usable {@code Unsafe} instance.
      */
     static final boolean UNSAFE_AVAILABLE;
 
@@ -51,7 +50,7 @@ public final class UnsafeUtil {
         Unsafe unsafe;
         try {
             unsafe = findUnsafe();
-            // Test if unsafe has required methods...
+            // test if unsafe has required methods...
             if (unsafe != null) {
                 long arrayBaseOffset = unsafe.arrayBaseOffset(byte[].class);
                 byte[] buffer = new byte[(int) arrayBaseOffset + (2 * Bits.LONG_SIZE_IN_BYTES)];
@@ -107,5 +106,4 @@ public final class UnsafeUtil {
             });
         }
     }
-
 }
