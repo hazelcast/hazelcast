@@ -266,7 +266,7 @@ public class RestTest extends HazelcastTestSupport {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
 
-        assertEquals("OK", communicator.killMember("dev", "dev-pass"));
+        assertEquals("{\"status\":\"success\"}", communicator.killMember("dev", "dev-pass"));
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
