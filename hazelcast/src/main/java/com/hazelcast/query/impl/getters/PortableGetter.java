@@ -55,7 +55,7 @@ final class PortableGetter extends Getter {
 
     @Override
     Class getReturnType() {
-        throw new RuntimeException("Non applicable for PortableGetter");
+        throw new IllegalArgumentException("Non applicable for PortableGetter");
     }
 
     @Override
