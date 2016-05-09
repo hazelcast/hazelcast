@@ -24,6 +24,8 @@ import java.util.Set;
 /**
  * Provides a mean of reading portable fields from a binary in form of java primitives
  * arrays of java primitives , nested portable fields and array of portable fields.
+ * <p/>
+ * fieldName used in most of the methods may contain nested fields, like body.brain.iq
  */
 public interface PortableReader {
 

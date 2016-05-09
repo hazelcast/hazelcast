@@ -198,7 +198,7 @@ public class IndexTest {
 
         public Portable create(int classId) {
             switch (classId) {
-                case 1:
+                case MainPortable.CLASS_ID:
                     return new MainPortable();
             }
             return null;
@@ -240,6 +240,8 @@ public class IndexTest {
 
     private static class MainPortable implements Portable {
 
+        public static final int CLASS_ID = 1;
+
         byte b;
         boolean bool;
         char c;
@@ -272,7 +274,7 @@ public class IndexTest {
         }
 
         public int getClassId() {
-            return 1;
+            return CLASS_ID;
         }
 
         public void writePortable(PortableWriter writer) throws IOException {

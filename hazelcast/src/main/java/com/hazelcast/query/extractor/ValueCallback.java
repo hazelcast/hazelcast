@@ -17,17 +17,17 @@
 package com.hazelcast.query.extractor;
 
 /**
- * Enables collecting values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
+ * Enables notifying about values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
  *
- * @param <T> type of the collected value
+ * @param <T> type of the extracted value
  */
-public abstract class ValueCollector<T> {
+public abstract class ValueCallback<T> {
 
     /**
-     * Collects a value passed as an argument
+     * Notifies about a value passed as an argument
      *
-     * @param value value to be collected
+     * @param value value to be notified about
      */
-    public abstract void addObject(T value);
+    public abstract void onResult(T value);
 
 }

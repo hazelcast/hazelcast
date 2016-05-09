@@ -19,7 +19,6 @@ package com.hazelcast.query.impl.getters;
 /**
  * Base class for extraction of values from object instances.
  * Each sub-class encapsulates extraction strategy.
- *
  */
 abstract class Getter {
     protected final Getter parent;
@@ -29,6 +28,13 @@ abstract class Getter {
     }
 
     abstract Object getValue(Object obj) throws Exception;
+
+    /**
+     * Method for reusable generic getters
+     */
+    Object getValue(Object obj, String attributePath) throws Exception {
+        return getValue(obj);
+    }
 
     abstract Class getReturnType();
 

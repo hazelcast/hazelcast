@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.nio.Bits.combineToLong;
+import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
 final class PortableContextImpl implements PortableContext {
 
@@ -180,12 +181,18 @@ final class PortableContextImpl implements PortableContext {
     public FieldDefinition getFieldDefinition(ClassDefinition classDef, String name) {
         FieldDefinition fd = classDef.getField(name);
         if (fd == null) {
-            String[] fieldNames = NESTED_FIELD_PATTERN.split(name);
-            if (fieldNames.length > 1) {
+            if (name.contains(".")) {
+                String[] fieldNames = NESTED_FIELD_PATTERN.split(name);
+                if (fieldNames.length <= 1) {
+                    return fd;
+                }
                 ClassDefinition currentClassDef = classDef;
                 for (int i = 0; i < fieldNames.length; i++) {
-                    name = fieldNames[i];
-                    fd = currentClassDef.getField(name);
+                    fd = currentClassDef.getField(fieldNames[i]);
+                    if (fd == null) {
+                        fd = currentClassDef.getField(extractAttributeNameNameWithoutArguments(fieldNames[i]));
+                    }
+                    // This is not enough to fully implement issue: https://github.com/hazelcast/hazelcast/issues/3927
                     if (i == fieldNames.length - 1) {
                         break;
                     }
@@ -198,6 +205,8 @@ final class PortableContextImpl implements PortableContext {
                         throw new IllegalArgumentException("Not a registered Portable field: " + fd);
                     }
                 }
+            } else {
+                fd = classDef.getField(extractAttributeNameNameWithoutArguments(name));
             }
         }
         return fd;

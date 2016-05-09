@@ -17,7 +17,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
-import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.SINGLE_VALUE;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.SINGLE;
 import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.predicates.SingleValueDataStructure.person;
 import static java.util.Arrays.asList;
@@ -112,7 +112,7 @@ public class SingleValueAllPredicatesReflectionTest extends AbstractExtractionTe
         return axes(
                 asList(BINARY, OBJECT),
                 asList(NO_INDEX, UNORDERED, ORDERED),
-                singletonList(SINGLE_VALUE)
+                singletonList(SINGLE)
         );
     }
 }
