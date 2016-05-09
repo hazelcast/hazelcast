@@ -95,18 +95,17 @@ final class PortablePathCursor {
      * Sets the index to the given index without validating. If the index is out of bound the consecutive token() call
      * will throw a runtime exception.
      *
-     * @param index value to set the cursor's index to.
+     * @param indexToNavigateTo value to set the cursor's index to.
      */
-    void index(int index) {
+    void index(int indexToNavigateTo) {
         this.index = 0;
         this.offset = 0;
         this.nextSplit = ExtractorHelper.indexOf(pathChars, '.', 0);
 
-        for (int i = 1; i <= index; i++) {
+        for (int i = 1; i <= indexToNavigateTo; i++) {
             if (!advanceToNextToken()) {
-                throw new IndexOutOfBoundsException("Index out of bound " + index + " in " + path);
+                throw new IndexOutOfBoundsException("Index out of bound " + indexToNavigateTo + " in " + path);
             }
-            this.index++;
         }
     }
 

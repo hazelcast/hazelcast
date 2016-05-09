@@ -109,16 +109,22 @@ public class PortablePathCursorTest {
         cursor.index(2);
         assertEquals("nozzle", cursor.token());
         assertTrue(cursor.isLastToken());
+        assertEquals(2, cursor.index());
+        assertFalse(cursor.advanceToNextToken());
 
         // THEN - 1st token
         cursor.index(0);
         assertEquals("engine", cursor.token());
         assertFalse(cursor.isLastToken());
+        assertEquals(0, cursor.index());
+        assertTrue(cursor.advanceToNextToken());
 
         // THEN - 3rd token
         cursor.index(1);
         assertEquals("turbocharger", cursor.token());
         assertFalse(cursor.isLastToken());
+        assertEquals(1, cursor.index());
+        assertTrue(cursor.advanceToNextToken());
     }
 
     @Test
@@ -238,6 +244,5 @@ public class PortablePathCursorTest {
         }
 
     }
-
 
 }
