@@ -21,6 +21,8 @@ import com.hazelcast.monitor.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.util.ConcurrencyUtil.setMax;
+
 /**
  * {@link CacheStatistics} implementation for {@link com.hazelcast.cache.ICache}.
  *
@@ -238,15 +240,7 @@ public class CacheStatisticsImpl
      * @param time time to set the cache last access time
      */
     public void setLastAccessTime(long time) {
-        for (;;) {
-            if (time > lastAccessTime) {
-                if (LAST_ACCESS_TIME.compareAndSet(this, lastAccessTime, time)) {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
+        setMax(this, LAST_ACCESS_TIME, time);
     }
 
     /**
@@ -255,15 +249,7 @@ public class CacheStatisticsImpl
      * @param time time to set the cache last update time
      */
     public void setLastUpdateTime(long time) {
-        for (;;) {
-            if (time > lastUpdateTime) {
-                if (LAST_UPDATE_TIME.compareAndSet(this, lastUpdateTime, time)) {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
+        setMax(this, LAST_UPDATE_TIME, time);
     }
 
     /**

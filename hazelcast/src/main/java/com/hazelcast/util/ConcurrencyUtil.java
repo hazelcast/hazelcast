@@ -17,6 +17,7 @@
 package com.hazelcast.util;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
  * Utility methods to getOrPutSynchronized and getOrPutIfAbsent in a thread safe way
@@ -25,6 +26,23 @@ import java.util.concurrent.ConcurrentMap;
 public final class ConcurrencyUtil {
 
     private ConcurrencyUtil() {
+    }
+
+    /**
+     * Atomically sets the max value. If the current value is larger than the provided value, the call is ignored. So it
+     * will not happen that a smaller value will overwrite a larger value.
+     */
+    public static <E> void setMax(E obj, AtomicLongFieldUpdater<E> updater, long value) {
+        for (; ; ) {
+            long current = updater.get(obj);
+            if (current >= value) {
+                return;
+            }
+
+            if (updater.compareAndSet(obj, current, value)) {
+                return;
+            }
+        }
     }
 
     public static <K, V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key,
