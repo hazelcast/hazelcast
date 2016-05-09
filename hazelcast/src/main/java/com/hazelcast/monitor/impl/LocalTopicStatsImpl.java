@@ -76,8 +76,8 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
     @Override
     public void fromJson(JsonObject json) {
         creationTime = getLong(json, "creationTime", -1L);
-        TOTAL_PUBLISHES.set(this, getLong(json, "totalPublishes", -1L));
-        TOTAL_RECEIVED_MESSAGES.set(this, getLong(json, "totalReceivedMessages", -1L));
+        totalPublishes = getLong(json, "totalPublishes", -1L);
+        totalReceivedMessages = getLong(json, "totalReceivedMessages", -1L);
     }
 
     @Override

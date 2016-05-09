@@ -22,6 +22,7 @@ import com.hazelcast.util.Clock;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -144,8 +145,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void setLastAccessTime(long lastAccessTime) {
-        long max = Math.max(this.lastAccessTime, lastAccessTime);
-        LAST_ACCESS_TIME.set(this, max);
+        setMax(this, LAST_ACCESS_TIME, lastAccessTime);
     }
 
     @Override
@@ -154,8 +154,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     public void setLastUpdateTime(long lastUpdateTime) {
-        long max = Math.max(this.lastUpdateTime, lastUpdateTime);
-        LAST_UPDATE_TIME.set(this, max);
+        setMax(this, LAST_UPDATE_TIME, lastUpdateTime);
     }
 
     @Override
@@ -198,7 +197,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void incrementPuts(long latency) {
         PUT_COUNT.incrementAndGet(this);
         TOTAL_PUT_LATENCIES.addAndGet(this, latency);
-        MAX_PUT_LATENCY.set(this, Math.max(maxPutLatency, latency));
+        setMax(this, MAX_PUT_LATENCY, latency);
     }
 
     @Override
@@ -209,7 +208,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void incrementGets(long latency) {
         GET_COUNT.incrementAndGet(this);
         TOTAL_GET_LATENCIES.addAndGet(this, latency);
-        MAX_GET_LATENCY.set(this, Math.max(maxGetLatency, latency));
+        setMax(this, MAX_GET_LATENCY, latency);
     }
 
     @Override
@@ -220,7 +219,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     public void incrementRemoves(long latency) {
         REMOVE_COUNT.incrementAndGet(this);
         TOTAL_REMOVE_LATENCIES.addAndGet(this, latency);
-        MAX_REMOVE_LATENCY.set(this, Math.max(maxRemoveLatency, latency));
+        setMax(this, MAX_REMOVE_LATENCY, latency);
     }
 
     @Override
