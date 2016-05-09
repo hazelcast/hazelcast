@@ -194,13 +194,17 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
     }
 
     private AttributeType extractAttributeTypeFromMultiResult(MultiResult extractedMultiResult) {
-        if (extractedMultiResult.isEmpty()) {
+        Object firstNonNullResult = null;
+        for (Object result : extractedMultiResult.getResults()) {
+            if (result != null) {
+                firstNonNullResult = result;
+                break;
+            }
+        }
+        if (firstNonNullResult == null) {
             return null;
         }
-        Object firstResult = extractedMultiResult.getResults().get(0);
-        if (firstResult == null) {
-            return null;
-        }
-        return ReflectionHelper.getAttributeType(firstResult.getClass());
+        return ReflectionHelper.getAttributeType(firstNonNullResult.getClass());
     }
+
 }

@@ -300,6 +300,22 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
                 Expected.of(BOND, KRUEGER));
     }
 
+    @Test
+    public void github8134_firstNonNull_string() {
+        Person carlos = person("Carlos", limb("l", null), limb(null, null));
+        execute(Input.of(carlos),
+                Query.of(equal("limbs_[any].name", 'l'), mv),
+                Expected.of(carlos));
+    }
+
+    @Test
+    public void github8134_firstNull_string() {
+        Person carlos = person("Carlos", limb(null, null), limb("l", null));
+        execute(Input.of(carlos),
+                Query.of(equal("limbs_[any].name", 'l'), mv),
+                Expected.of(carlos));
+    }
+
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> parametrisationData() {
         return axes(
