@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import java.util.regex.Pattern;
+import com.hazelcast.query.impl.getters.ExtractorHelper;
+
+import static com.hazelcast.util.Preconditions.checkHasText;
 
 /**
  * Mutable cursor that allows iterating over path tokens split by a dot (.)
@@ -24,11 +26,13 @@ import java.util.regex.Pattern;
  */
 final class PortablePathCursor {
 
-    private static final Pattern NESTED_PATH_SPLITTER = Pattern.compile("\\.");
-
-    private String[] pathTokens;
+    private char[] pathChars;
     private String path;
     private int index;
+
+    private int offset;
+    private int nextSplit;
+
 
     PortablePathCursor() {
     }
@@ -39,9 +43,14 @@ final class PortablePathCursor {
      * @param path path to initialise the cursor with
      */
     void init(String path) {
-        this.path = path;
-        this.pathTokens = NESTED_PATH_SPLITTER.split(path);
+        this.path = checkHasText(path, "path cannot be null or empty");
+        this.pathChars = path.toCharArray();
         this.index = 0;
+        this.offset = 0;
+        this.nextSplit = ExtractorHelper.indexOf(pathChars, '.', 0);
+        if (nextSplit == 0) {
+            throw new IllegalArgumentException("The path cannot begin with a dot: " + path);
+        }
     }
 
     /**
@@ -49,20 +58,22 @@ final class PortablePathCursor {
      */
     void reset() {
         this.path = null;
-        this.pathTokens = null;
+        this.pathChars = null;
         this.index = -1;
+        this.offset = 0;
     }
 
     boolean isLastToken() {
-        return index == pathTokens.length - 1;
+        return nextSplit == -1;
     }
 
     String token() {
-        return pathTokens[index];
-    }
-
-    int length() {
-        return pathTokens.length;
+        int length = (nextSplit < 0 ? pathChars.length : nextSplit) - offset;
+        if (length < 1) {
+            throw new IllegalArgumentException("The token's length cannot be zero: " + path);
+        }
+        String token = new String(pathChars, offset, (nextSplit < 0 ? pathChars.length : nextSplit) - offset);
+        return checkHasText(token, "Token cannot be null or empty in path: " + path);
     }
 
     String path() {
@@ -70,7 +81,14 @@ final class PortablePathCursor {
     }
 
     boolean advanceToNextToken() {
-        return ++index <= pathTokens.length - 1;
+        if (nextSplit == -1) {
+            return false;
+        }
+        int oldNextSplit = nextSplit;
+        nextSplit = ExtractorHelper.indexOf(pathChars, '.', oldNextSplit + 1);
+        offset = oldNextSplit + 1;
+        index++;
+        return true;
     }
 
     /**
@@ -80,7 +98,16 @@ final class PortablePathCursor {
      * @param index value to set the cursor's index to.
      */
     void index(int index) {
-        this.index = index;
+        this.index = 0;
+        this.offset = 0;
+        this.nextSplit = ExtractorHelper.indexOf(pathChars, '.', 0);
+
+        for (int i = 1; i <= index; i++) {
+            if (!advanceToNextToken()) {
+                throw new IndexOutOfBoundsException("Index out of bound " + index + " in " + path);
+            }
+            this.index++;
+        }
     }
 
     int index() {

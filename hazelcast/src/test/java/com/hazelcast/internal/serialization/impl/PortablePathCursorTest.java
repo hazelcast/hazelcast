@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -50,12 +51,13 @@ public class PortablePathCursorTest {
         cursor.init("engine");
 
         // THEN
-        assertEquals(1, cursor.length());
         assertEquals("engine", cursor.token());
         assertEquals("engine", cursor.path());
         assertTrue(cursor.isLastToken());
         assertFalse(cursor.isAnyPath());
         assertFalse(cursor.advanceToNextToken());
+        assertFalse(cursor.advanceToNextToken());
+        assertEquals("engine", cursor.token());
     }
 
     @Test
@@ -65,7 +67,6 @@ public class PortablePathCursorTest {
         cursor.init("engine.turbocharger.nozzle");
 
         // THEN - generic options
-        assertEquals(3, cursor.length());
         assertFalse(cursor.isAnyPath());
         assertEquals("engine.turbocharger.nozzle", cursor.path());
 
@@ -85,6 +86,7 @@ public class PortablePathCursorTest {
 
         // THEN - no other token
         assertFalse(cursor.advanceToNextToken());
+        assertEquals("nozzle", cursor.token());
     }
 
     @Test
@@ -103,17 +105,17 @@ public class PortablePathCursorTest {
         PortablePathCursor cursor = new PortablePathCursor();
         cursor.init("engine.turbocharger.nozzle");
 
-        // THEN - second token
+        // THEN - 2nd token
         cursor.index(2);
         assertEquals("nozzle", cursor.token());
         assertTrue(cursor.isLastToken());
 
-        // THEN - first token
+        // THEN - 1st token
         cursor.index(0);
         assertEquals("engine", cursor.token());
         assertFalse(cursor.isLastToken());
 
-        // THEN - third token
+        // THEN - 3rd token
         cursor.index(1);
         assertEquals("turbocharger", cursor.token());
         assertFalse(cursor.isLastToken());
@@ -126,10 +128,11 @@ public class PortablePathCursorTest {
         cursor.init("engine.turbocharger.nozzle");
 
         // WHEN
+        expected.expect(IndexOutOfBoundsException.class);
         cursor.index(3);
 
         // THEN
-        expected.expect(ArrayIndexOutOfBoundsException.class);
+
         cursor.token();
     }
 
@@ -140,14 +143,101 @@ public class PortablePathCursorTest {
 
         // THEN
         cursor.init("engine.turbocharger.nozzle");
-        assertEquals(3, cursor.length());
         assertFalse(cursor.isAnyPath());
         assertEquals("engine", cursor.token());
 
         cursor.init("person.brain[any]");
-        assertEquals(2, cursor.length());
         assertTrue(cursor.isAnyPath());
         assertEquals("person", cursor.token());
     }
+
+    @Test
+    public void emptyPath() {
+        PortablePathCursor cursor = new PortablePathCursor();
+
+        expected.expect(IllegalArgumentException.class);
+        cursor.init("");
+    }
+
+    @Test
+    public void nullPath() {
+        PortablePathCursor cursor = new PortablePathCursor();
+
+        expected.expect(IllegalArgumentException.class);
+        cursor.init(null);
+    }
+
+    @Test
+    public void wrongPath_dotOnly() {
+        // GIVEN
+        PortablePathCursor cursor = new PortablePathCursor();
+
+        expected.expect(IllegalArgumentException.class);
+        cursor.init(".");
+
+        // THEN
+        assertEquals("", cursor.token());
+        assertEquals("", cursor.path());
+        assertTrue(cursor.isLastToken());
+        assertFalse(cursor.isAnyPath());
+        assertFalse(cursor.advanceToNextToken());
+    }
+
+    @Test
+    public void wrongPath_moreDots() {
+        // GIVEN
+        PortablePathCursor cursor = new PortablePathCursor();
+
+        expected.expect(IllegalArgumentException.class);
+        cursor.init("...");
+    }
+
+    @Test
+    public void wrongPath_emptyTokens() {
+        // GIVEN
+        PortablePathCursor cursor = new PortablePathCursor();
+        cursor.init("a..");
+
+        // THEN - 1st token
+        assertEquals("a", cursor.token());
+        assertTrue(cursor.advanceToNextToken());
+
+        // THEN - 2nd token
+        assertTokenThrowsException(cursor);
+        assertTrue(cursor.advanceToNextToken());
+
+        // THEN - 3rd token
+        assertTokenThrowsException(cursor);
+        assertFalse(cursor.advanceToNextToken());
+    }
+
+    @Test
+    public void wrongPath_pathEndingWithDot() {
+        // GIVEN
+        PortablePathCursor cursor = new PortablePathCursor();
+        cursor.init("a.b.");
+
+        // THEN - 1st token
+        assertEquals("a", cursor.token());
+        assertTrue(cursor.advanceToNextToken());
+
+        // THEN - 2nd token
+        assertEquals("b", cursor.token());
+        assertTrue(cursor.advanceToNextToken());
+
+        // THEN - 3rd token
+        assertTokenThrowsException(cursor);
+        assertFalse(cursor.advanceToNextToken());
+    }
+
+    private static void assertTokenThrowsException(PortablePathCursor cursor) {
+        try {
+            assertEquals("", cursor.token());
+            fail();
+        } catch (IllegalArgumentException ex) {
+        }
+
+    }
+
 
 }

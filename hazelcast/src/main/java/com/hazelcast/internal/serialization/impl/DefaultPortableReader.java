@@ -767,7 +767,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private PortablePosition validateType(PortablePosition position, FieldType expectedType) {
         FieldType returnedType = position.getType();
         if (position.getIndex() >= 0) {
-            returnedType = expectedType.getSingleType();
+            returnedType = returnedType.getSingleType();
         }
         if (expectedType != returnedType) {
             throw new IllegalArgumentException("Wrong type read! Actual:" + returnedType.name() + " Expected: "
