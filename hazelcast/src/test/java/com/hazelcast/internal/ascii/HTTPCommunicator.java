@@ -138,7 +138,7 @@ public class HTTPCommunicator {
 
     public int shutdownCluster(String groupName, String groupPassword) throws IOException {
 
-        String url = address + "management/cluster/shutdown";
+        String url = address + "management/cluster/clusterShutdown";
         /** set up the http connection parameters */
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("POST");
@@ -161,7 +161,7 @@ public class HTTPCommunicator {
 
     public String killMember(String groupName, String groupPassword) throws IOException {
 
-        String url = address + "management/cluster/shutdownMember";
+        String url = address + "management/cluster/memberShutdown";
         return doPost(url, groupName, groupPassword);
     }
 
