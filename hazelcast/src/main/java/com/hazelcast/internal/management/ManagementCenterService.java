@@ -46,7 +46,6 @@ import com.hazelcast.internal.management.request.MapConfigRequest;
 import com.hazelcast.internal.management.request.MemberConfigRequest;
 import com.hazelcast.internal.management.request.RunGcRequest;
 import com.hazelcast.internal.management.request.ShutdownClusterRequest;
-import com.hazelcast.internal.management.request.ShutdownMemberRequest;
 import com.hazelcast.internal.management.request.ThreadDumpRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
@@ -441,7 +440,6 @@ public class ManagementCenterService {
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
-            register(new ShutdownMemberRequest());
             register(new GetClusterStateRequest());
             register(new ChangeClusterStateRequest());
             register(new ShutdownClusterRequest());
