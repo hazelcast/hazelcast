@@ -30,14 +30,14 @@ public final class CacheUtil {
      * Gets the prefix of cache name without Hazelcast's {@link javax.cache.CacheManager}
      * specific prefix {@link com.hazelcast.cache.HazelcastCacheManager#CACHE_MANAGER_PREFIX}.
      *
-     * @param uri           an implementation specific URI for the
-     *                      Hazelcast's {@link javax.cache.CacheManager} (null means use
-     *                      Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultURI()})
-     * @param classLoader   the {@link ClassLoader}  to use for the
-     *                      Hazelcast's {@link javax.cache.CacheManager} (null means use
-     *                      Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultClassLoader()})
-     * @return  the prefix of cache name without Hazelcast's {@link javax.cache.CacheManager}
-     *          specific prefix {@link com.hazelcast.cache.HazelcastCacheManager#CACHE_MANAGER_PREFIX}
+     * @param uri         an implementation specific URI for the
+     *                    Hazelcast's {@link javax.cache.CacheManager} (null means use
+     *                    Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultURI()})
+     * @param classLoader the {@link ClassLoader}  to use for the
+     *                    Hazelcast's {@link javax.cache.CacheManager} (null means use
+     *                    Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultClassLoader()})
+     * @return the prefix of cache name without Hazelcast's {@link javax.cache.CacheManager}
+     * specific prefix {@link com.hazelcast.cache.HazelcastCacheManager#CACHE_MANAGER_PREFIX}
      */
     public static String getPrefix(URI uri, ClassLoader classLoader) {
         if (uri == null && classLoader == null) {
@@ -58,15 +58,15 @@ public final class CacheUtil {
      * Gets the cache name with prefix but without Hazelcast's {@link javax.cache.CacheManager}
      * specific prefix {@link com.hazelcast.cache.HazelcastCacheManager#CACHE_MANAGER_PREFIX}.
      *
-     * @param name          the simple name of the cache without any prefix
-     * @param uri           an implementation specific URI for the
-     *                      Hazelcast's {@link javax.cache.CacheManager} (null means use
-     *                      Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultURI()})
-     * @param classLoader   the {@link ClassLoader}  to use for the
-     *                      Hazelcast's {@link javax.cache.CacheManager} (null means use
-     *                      Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultClassLoader()})
-     * @return  the cache name with prefix but without Hazelcast's {@link javax.cache.CacheManager}
-     *          specific prefix {@link com.hazelcast.cache.HazelcastCacheManager#CACHE_MANAGER_PREFIX}.
+     * @param name        the simple name of the cache without any prefix
+     * @param uri         an implementation specific URI for the
+     *                    Hazelcast's {@link javax.cache.CacheManager} (null means use
+     *                    Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultURI()})
+     * @param classLoader the {@link ClassLoader}  to use for the
+     *                    Hazelcast's {@link javax.cache.CacheManager} (null means use
+     *                    Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultClassLoader()})
+     * @return the cache name with prefix but without Hazelcast's {@link javax.cache.CacheManager}
+     * specific prefix {@link com.hazelcast.cache.HazelcastCacheManager#CACHE_MANAGER_PREFIX}.
      */
     public static String getPrefixedCacheName(String name, URI uri, ClassLoader classLoader) {
         String cacheNamePrefix = getPrefix(uri, classLoader);
@@ -76,5 +76,4 @@ public final class CacheUtil {
             return name;
         }
     }
-
 }
