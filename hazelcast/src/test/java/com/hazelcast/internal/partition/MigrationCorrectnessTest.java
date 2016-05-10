@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -146,5 +147,27 @@ public class MigrationCorrectnessTest extends PartitionCorrectnessTestSupport {
             addresses = terminateNodes(backupCount);
             size -= backupCount;
         }
+    }
+
+    @Test(timeout = 6000 * 10 * 10)
+    public void testPartitionData_whenSameNodesRestarted_afterPartitionsSafe() throws InterruptedException {
+        Config config = getConfig(true, false);
+
+        HazelcastInstance[] instances = factory.newInstances(config, nodeCount);
+        fillData(instances[instances.length - 1]);
+        assertSizeAndDataEventually();
+
+        Address[] restartingAddresses = new Address[backupCount];
+        for (int i = 0; i < backupCount; i++) {
+            restartingAddresses[i] = getAddress(instances[i]);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            for (Address address : restartingAddresses) {
+                TestUtil.terminateInstance(factory.getInstance(address));
+            }
+            startNodes(config, Arrays.asList(restartingAddresses));
+        }
+        assertSizeAndDataEventually();
     }
 }
