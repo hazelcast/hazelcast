@@ -119,4 +119,45 @@ public class CacheEventDataImpl
                 + ", eventType=" + eventType
                 + '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        CacheEventDataImpl that = (CacheEventDataImpl) o;
+
+        if (isOldValueAvailable != that.isOldValueAvailable) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (eventType != that.eventType) {
+            return false;
+        }
+        if (dataKey != null ? !dataKey.equals(that.dataKey) : that.dataKey != null) {
+            return false;
+        }
+        if (dataNewValue != null ? !dataNewValue.equals(that.dataNewValue) : that.dataNewValue != null) {
+            return false;
+        }
+        return dataOldValue != null ? dataOldValue.equals(that.dataOldValue) : that.dataOldValue == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (eventType != null ? eventType.hashCode() : 0);
+        result = 31 * result + (dataKey != null ? dataKey.hashCode() : 0);
+        result = 31 * result + (dataNewValue != null ? dataNewValue.hashCode() : 0);
+        result = 31 * result + (dataOldValue != null ? dataOldValue.hashCode() : 0);
+        result = 31 * result + (isOldValueAvailable ? 1 : 0);
+        return result;
+    }
 }
