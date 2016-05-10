@@ -1,17 +1,31 @@
 package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.util.HashUtil.MurmurHash3_x86_32;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class HashUtilTest {
+public class HashUtilTest extends HazelcastTestSupport {
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(HashUtil.class);
+    }
+
+    @Test(expected = AssertionError.class)
+    @RequireAssertEnabled
+    public void testMurmurHash3_x86_32_withIntOverflow() {
+        MurmurHash3_x86_32(null, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
 
     @Test
     public void hashToIndex_whenHashPositive() {

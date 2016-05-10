@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.lang.Math.abs;
 
 /**
- * Utility methods related to hashtables.
+ * Utility methods related to hash tables.
  */
 @SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
 @SuppressWarnings({
@@ -60,12 +60,18 @@ public final class HashUtil {
     private HashUtil() {
     }
 
-    /** Returns the MurmurHash3_x86_32 hash of a block inside a byte array. */
+    /**
+     * Returns the MurmurHash3_x86_32 hash of a block inside a byte array.
+     */
     public static int MurmurHash3_x86_32(byte[] data, int offset, int len) {
         final long endIndex = (long) offset + len - 1;
         assert endIndex >= Integer.MIN_VALUE && endIndex <= Integer.MAX_VALUE
                 : String.format("offset %,d len %,d would cause int overflow", offset, len);
         return MurmurHash3_x86_32(BYTE_ARRAY_LOADER, data, offset, len, DEFAULT_MURMUR_SEED);
+    }
+
+    public static int MurmurHash3_x86_32_direct(long base, int offset, int len) {
+        return MurmurHash3_x86_32_direct(MEM, base, offset, len);
     }
 
     /**
@@ -77,10 +83,6 @@ public final class HashUtil {
     public static int MurmurHash3_x86_32_direct(MemoryAccessor mem, long base, int offset, int len) {
         return MurmurHash3_x86_32(mem.isBigEndian() ? NARROW_DIRECT_LOADER : WIDE_DIRECT_LOADER,
                 mem, base + offset, len, DEFAULT_MURMUR_SEED);
-    }
-
-    public static int MurmurHash3_x86_32_direct(long base, int offset, int len) {
-        return MurmurHash3_x86_32_direct(MEM, base, offset, len);
     }
 
     private static <R> int MurmurHash3_x86_32(LoadStrategy<R> loader, R resource, long offset, int len, int seed) {
@@ -132,10 +134,15 @@ public final class HashUtil {
         return h1;
     }
 
-
-    /** Returns the MurmurHash3_x86_32 hash of a block inside a byte array. */
+    /**
+     * Returns the MurmurHash3_x86_32 hash of a block inside a byte array.
+     */
     public static long MurmurHash3_x64_64(byte[] data, int offset, int len) {
         return MurmurHash3_x64_64(BYTE_ARRAY_LOADER, data, offset, len, DEFAULT_MURMUR_SEED);
+    }
+
+    public static long MurmurHash3_x64_64_direct(long base, int offset, int len) {
+        return MurmurHash3_x64_64_direct(MEM, base, offset, len);
     }
 
     /**
@@ -147,10 +154,6 @@ public final class HashUtil {
     public static long MurmurHash3_x64_64_direct(MemoryAccessor mem, long base, int offset, int len) {
         return MurmurHash3_x64_64(mem.isBigEndian() ? NARROW_DIRECT_LOADER : WIDE_DIRECT_LOADER,
                 mem, base + offset, len, DEFAULT_MURMUR_SEED);
-    }
-
-    public static long MurmurHash3_x64_64_direct(long base, int offset, int len) {
-        return MurmurHash3_x64_64_direct(MEM, base, offset, len);
     }
 
     private static <R> long MurmurHash3_x64_64(LoadStrategy<R> loader, R resource, long offset, int len, final int seed) {
@@ -259,8 +262,6 @@ public final class HashUtil {
         return h1 + h2;
     }
 
-
-
     public static int MurmurHash3_fmix(int k) {
         k ^= k >>> 16;
         k *= 0x85ebca6b;
@@ -294,14 +295,12 @@ public final class HashUtil {
         return h ^ (h >>> 16);
     }
 
-
     /**
      * Hash code for multiple objects using {@link Arrays#hashCode(Object[])}.
      */
     public static int hashCode(Object... objects) {
         return Arrays.hashCode(objects);
     }
-
 
     /**
      * A function that calculates the index (e.g. to be used in an array/list) for a given hash. The returned value will always
@@ -343,20 +342,18 @@ public final class HashUtil {
         return PERTURBATIONS[Integer.numberOfLeadingZeros(capacity)];
     }
 
-
     private abstract static class LoadStrategy<R> implements ByteAccessStrategy<R> {
+
         abstract int getInt(R resource, long offset);
+
         abstract long getLong(R resource, long offset);
 
         @Override
-        public final void putByte(R resource, long offset, byte value) { }
+        public final void putByte(R resource, long offset, byte value) {
+        }
     }
 
     private static final class ByteArrayLoadStrategy extends LoadStrategy<byte[]> {
-        @Override
-        public byte getByte(byte[] buf, long offset) {
-            return buf[(int) offset];
-        }
 
         @Override
         public int getInt(byte[] buf, long offset) {
@@ -367,13 +364,14 @@ public final class HashUtil {
         public long getLong(byte[] buf, long offset) {
             return EndiannessUtil.readLongL(this, buf, offset);
         }
+
+        @Override
+        public byte getByte(byte[] buf, long offset) {
+            return buf[(int) offset];
+        }
     }
 
     private static final class WideDirectLoadStrategy extends LoadStrategy<MemoryAccessor> {
-        @Override
-        public byte getByte(MemoryAccessor mem, long offset) {
-            return mem.getByte(offset);
-        }
 
         @Override
         public int getInt(MemoryAccessor mem, long offset) {
@@ -384,13 +382,14 @@ public final class HashUtil {
         public long getLong(MemoryAccessor mem, long offset) {
             return mem.getLong(offset);
         }
-    }
 
-    private static final class NarrowDirectLoadStrategy extends LoadStrategy<MemoryAccessor> {
         @Override
         public byte getByte(MemoryAccessor mem, long offset) {
             return mem.getByte(offset);
         }
+    }
+
+    private static final class NarrowDirectLoadStrategy extends LoadStrategy<MemoryAccessor> {
 
         @Override
         public int getInt(MemoryAccessor mem, long offset) {
@@ -400,6 +399,11 @@ public final class HashUtil {
         @Override
         public long getLong(MemoryAccessor mem, long offset) {
             return EndiannessUtil.readLongL(this, mem, offset);
+        }
+
+        @Override
+        public byte getByte(MemoryAccessor mem, long offset) {
+            return mem.getByte(offset);
         }
     }
 }
