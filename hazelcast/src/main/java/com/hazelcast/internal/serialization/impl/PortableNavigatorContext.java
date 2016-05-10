@@ -150,10 +150,13 @@ class PortableNavigatorContext {
     }
 
     void setupContextForGivenPathToken(PortablePathCursor path) {
-        String pathToken = path.token();
-        String fieldName = extractAttributeNameNameWithoutArguments(pathToken);
-        this.fd = cd.getField(fieldName);
-        if (fd == null || pathToken == null) {
+        String fieldName = path.token();
+        fd = cd.getField(fieldName);
+        if (fd == null) {
+            fieldName = extractAttributeNameNameWithoutArguments(path.token());
+            fd = cd.getField(fieldName);
+        }
+        if (fd == null || fieldName == null) {
             throw createUnknownFieldException(this, path.path());
         }
     }

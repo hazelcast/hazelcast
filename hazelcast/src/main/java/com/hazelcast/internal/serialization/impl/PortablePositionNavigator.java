@@ -432,13 +432,13 @@ final class PortablePositionNavigator {
             }
         } else {
             validateNonArrayPosition(path, index);
-            if (type == FieldType.PORTABLE) {
-                // accessing a portable field
-                return createPositionForPortableFieldAccess(ctx, path);
+            if (type != FieldType.PORTABLE) {
+                // accessing a primitive field
+                // we don't need to adjust anything otherwise - a primitive field can be read without any adjustments
+                return createPositionForPrimitiveFieldAccess(ctx, path, index);
             }
-            // accessing a primitive field
-            // we don't need to adjust anything otherwise - a primitive field can be read without any adjustments
-            return createPositionForPrimitiveFieldAccess(ctx, path, index);
+            // accessing a portable field
+            return createPositionForPortableFieldAccess(ctx, path);
         }
     }
 

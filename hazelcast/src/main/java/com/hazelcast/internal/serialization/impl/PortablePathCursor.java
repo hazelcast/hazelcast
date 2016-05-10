@@ -26,12 +26,12 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  */
 final class PortablePathCursor {
 
-    private char[] pathChars;
     private String path;
     private int index;
 
     private int offset;
     private int nextSplit;
+    private String token;
 
     PortablePathCursor() {
     }
@@ -43,10 +43,10 @@ final class PortablePathCursor {
      */
     void init(String path) {
         this.path = checkHasText(path, "path cannot be null or empty");
-        this.pathChars = path.toCharArray();
         this.index = 0;
         this.offset = 0;
-        this.nextSplit = ExtractorHelper.indexOf(pathChars, '.', 0);
+        this.nextSplit = ExtractorHelper.indexOf(path, '.', 0);
+        this.token = null;
         if (nextSplit == 0) {
             throw new IllegalArgumentException("The path cannot begin with a dot: " + path);
         }
@@ -57,9 +57,9 @@ final class PortablePathCursor {
      */
     void reset() {
         this.path = null;
-        this.pathChars = null;
         this.index = -1;
         this.offset = 0;
+        this.token = null;
     }
 
     boolean isLastToken() {
@@ -67,12 +67,15 @@ final class PortablePathCursor {
     }
 
     String token() {
-        int length = (nextSplit < 0 ? pathChars.length : nextSplit) - offset;
-        if (length < 1) {
+        if (token != null) {
+            return token;
+        }
+        int endIndex = (nextSplit < 0 ? path.length() : nextSplit);
+        if (endIndex <= offset) {
             throw new IllegalArgumentException("The token's length cannot be zero: " + path);
         }
-        String token = new String(pathChars, offset, (nextSplit < 0 ? pathChars.length : nextSplit) - offset);
-        return checkHasText(token, "Token cannot be null or empty in path: " + path);
+        token = checkHasText(path.substring(offset, endIndex), "Token cannot be null or empty");
+        return token;
     }
 
     String path() {
@@ -83,8 +86,9 @@ final class PortablePathCursor {
         if (nextSplit == -1) {
             return false;
         }
+        token = null;
         int oldNextSplit = nextSplit;
-        nextSplit = ExtractorHelper.indexOf(pathChars, '.', oldNextSplit + 1);
+        nextSplit = ExtractorHelper.indexOf(path, '.', oldNextSplit + 1);
         offset = oldNextSplit + 1;
         index++;
         return true;
@@ -99,7 +103,8 @@ final class PortablePathCursor {
     void index(int indexToNavigateTo) {
         this.index = 0;
         this.offset = 0;
-        this.nextSplit = ExtractorHelper.indexOf(pathChars, '.', 0);
+        this.nextSplit = ExtractorHelper.indexOf(path, '.', 0);
+        this.token = null;
 
         for (int i = 1; i <= indexToNavigateTo; i++) {
             if (!advanceToNextToken()) {

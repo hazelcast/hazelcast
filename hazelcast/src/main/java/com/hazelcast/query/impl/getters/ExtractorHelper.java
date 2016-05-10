@@ -92,12 +92,9 @@ public final class ExtractorHelper {
         }
     }
 
-    public static int indexOf(char[] input, char splitter, int offset) {
-        if (offset >= input.length) {
-            return -1;
-        }
-        for (int i = offset; i < input.length; i++) {
-            if (input[i] == splitter) {
+    public static int indexOf(String input, char splitter, int offset) {
+        for (int i = offset; i < input.length(); i++) {
+            if (input.charAt(i) == splitter) {
                 return i;
             }
         }
