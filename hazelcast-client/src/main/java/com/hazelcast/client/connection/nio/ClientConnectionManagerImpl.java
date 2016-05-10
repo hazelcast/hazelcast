@@ -78,9 +78,16 @@ import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_INTERVAL;
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
 
+/**
+ * Implementation of {@link ClientConnectionManager}.
+ */
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-    private final NonBlockingIOThreadOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new NonBlockingIOThreadOutOfMemoryHandler() {
+    protected final AtomicInteger connectionIdGen = new AtomicInteger();
+
+    protected volatile boolean alive;
+
+    private final NonBlockingIOThreadOutOfMemoryHandler outOfMemoryHandler = new NonBlockingIOThreadOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             logger.severe(error);
@@ -91,7 +98,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final long heartBeatInterval;
     private final long heartBeatTimeout;
 
-    protected final AtomicInteger connectionIdGen = new AtomicInteger();
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
@@ -111,8 +117,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
     private final LoggingService loggingService;
     private final Credentials credentials;
-
-    protected volatile boolean alive;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
@@ -148,14 +152,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 client.getThreadGroup(),
                 client.getName() + ".thread-in",
                 loggingService.getLogger(NonBlockingIOThread.class),
-                OUT_OF_MEMORY_HANDLER);
+                outOfMemoryHandler);
         client.getMetricsRegistry().scanAndRegister(inputThread, "tcp." + inputThread.getName());
 
         outputThread = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
                 client.getName() + ".thread-out",
                 loggingService.getLogger(ClientNonBlockingOutputThread.class),
-                OUT_OF_MEMORY_HANDLER);
+                outOfMemoryHandler);
         client.getMetricsRegistry().scanAndRegister(outputThread, "tcp." + outputThread.getName());
     }
 
