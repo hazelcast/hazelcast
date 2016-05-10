@@ -1176,11 +1176,11 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     }
 
     //
-    // Main goal is to steal a "real" serialised Data oClientMapStandaloneTestf a PortableObject to be as close as possible to real use-case
+    // Main goal is to steal a "real" serialised Data of a PortableObject to be as close as possible to real use-case
     //
     public static class EntryStealingProcessor extends AbstractEntryProcessor {
-        private final Object key;
-        private Data stolenEntryData;
+        protected final Object key;
+        protected Data stolenEntryData;
 
         public EntryStealingProcessor(String key) {
             super(false);

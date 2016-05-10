@@ -38,10 +38,10 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    private static final CarPortable NON_EMPTY_PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
+    protected static final CarPortable NON_EMPTY_PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
             w("front", true), w("rear", true));
 
-    private static final CarPortable PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
+    protected static final CarPortable PORSCHE = new CarPortable("Porsche", new EnginePortable(300),
             w("front", false), w("rear", false));
 
 
