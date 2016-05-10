@@ -20,12 +20,12 @@ import java.nio.ByteOrder;
 
 @SuppressWarnings("checkstyle:magicnumber")
 public final class AlignmentUtil {
+
     public static final int OBJECT_REFERENCE_ALIGN = UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class);
     public static final int OBJECT_REFERENCE_MASK = OBJECT_REFERENCE_ALIGN - 1;
     public static final boolean IS_PLATFORM_BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     private AlignmentUtil() {
-
     }
 
     public static boolean is2BytesAligned(long address) {
@@ -53,22 +53,19 @@ public final class AlignmentUtil {
 
     public static void check2BytesAligned(long address) {
         if (!is2BytesAligned(address)) {
-            throw new IllegalArgumentException(
-                    "Atomic memory access must be aligned, but the address used was " + address);
+            throw new IllegalArgumentException("Atomic memory access must be aligned, but the address used was " + address);
         }
     }
 
     public static void check4BytesAligned(long address) {
         if (!is4BytesAligned(address)) {
-            throw new IllegalArgumentException(
-                    "Atomic memory access must be aligned, but the address used was " + address);
+            throw new IllegalArgumentException("Atomic memory access must be aligned, but the address used was " + address);
         }
     }
 
     public static void check8BytesAligned(long address) {
         if (!is8BytesAligned(address)) {
-            throw new IllegalArgumentException(
-                    "Atomic memory access must be aligned, but the address used was " + address);
+            throw new IllegalArgumentException("Atomic memory access must be aligned, but the address used was " + address);
         }
     }
 
