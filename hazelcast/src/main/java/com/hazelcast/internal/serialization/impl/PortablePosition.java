@@ -67,7 +67,7 @@ interface PortablePosition {
     int getClassId();
 
     /**
-     * Determines type of position. There's a PortableSinglePosition and PortableSinglePosition (although both private)
+     * Determines type of position. There's a PortableSinglePosition and PortableMultiPosition (although both private)
      * A PortableMultiPosition is just a grouping object for PortableSinglePosition that implements the PortablePosition
      * interface. It has a common ancestor, thus we can return a single result or multiple results from a method
      * returning a PortablePosition. In this way we avoid extra allocation of a list if there's only a single result.
@@ -98,7 +98,8 @@ interface PortablePosition {
     boolean isAny();
 
     /**
-     * @return the type of the field under the leaf of the given path
+     * @return the type of the field under the leaf of the given path. May be null in a couple of scenarios:
+     * the call to {@link this.isNull()} == true, positions points to an unknown field or it's a multi-position.
      */
     @Nullable
     FieldType getType();

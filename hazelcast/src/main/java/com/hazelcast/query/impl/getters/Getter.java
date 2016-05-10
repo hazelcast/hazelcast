@@ -27,10 +27,14 @@ abstract class Getter {
         this.parent = parent;
     }
 
+    /**
+     * Method for attribute-specific getters that can extract from one path only
+     */
     abstract Object getValue(Object obj) throws Exception;
 
     /**
-     * Method for reusable generic getters
+     * Method for generic getters that are not bound to a specific path only, but can get any attributePath
+     * and extract from it.
      */
     Object getValue(Object obj, String attributePath) throws Exception {
         return getValue(obj);
