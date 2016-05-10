@@ -24,14 +24,15 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MPSCQueueTest extends HazelcastTestSupport {
 
-    private MPSCQueue queue;
+    private MPSCQueue<String> queue;
 
     @Before
     public void setup() {
-        this.queue = new MPSCQueue(new BusySpinIdleStrategy());
+        this.queue = new MPSCQueue<String>(new BusySpinIdleStrategy());
     }
 
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     public void setOwningThread_whenNull() {
         MPSCQueue queue = new MPSCQueue(new BusySpinIdleStrategy());
         queue.setConsumerThread(null);
@@ -118,11 +119,11 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
         int count = MPSCQueue.INITIAL_ARRAY_SIZE * 10;
         for (int k = 0; k < count; k++) {
-            queue.add(k);
+            queue.add("item" + k);
         }
 
         for (int k = 0; k < count; k++) {
-            assertEquals(new Integer(k), queue.take());
+            assertEquals("item" + k, queue.take());
         }
 
         assertEquals(0, queue.size());
@@ -253,13 +254,13 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void drain() {
-        queue.drainTo(new LinkedList());
+        queue.drainTo(new LinkedList<String>());
     }
 
 
     @Test(expected = UnsupportedOperationException.class)
     public void drainMaxItems() {
-        queue.drainTo(new LinkedList(), 10);
+        queue.drainTo(new LinkedList<String>(), 10);
     }
 
     // ============= clear ====================================
@@ -310,7 +311,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
         queue.clear();
 
-        // since 1 item was taken, 2 items are remaining.
+        // since 1 item was taken, 2 items are remaining
         assertEquals(2, queue.size());
         assertSame(MPSCQueue.BLOCKED, queue.putStack.get());
     }
@@ -330,7 +331,7 @@ public class MPSCQueueTest extends HazelcastTestSupport {
 
         queue.clear();
 
-        // since 1 item was taken, 2 items are remaining.
+        // since 1 item was taken, 2 items are remaining
         assertEquals(2, queue.size());
         assertSame(MPSCQueue.BLOCKED, queue.putStack.get());
     }

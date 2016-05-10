@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class MPSCQueueStressTest extends HazelcastTestSupport {
 
-    private static final long DURATION_SECONDS = 30;//SE.toSeconds(2);
+    private static final long DURATION_SECONDS = 30;
 
     private final AtomicBoolean stop = new AtomicBoolean();
 
@@ -80,8 +80,9 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
     }
 
     static class Item {
-        final long value;
-        final int producerId;
+
+        private final long value;
+        private final int producerId;
 
         Item(int producerId, long value) {
             this.value = value;
@@ -90,9 +91,10 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
     }
 
     class ProducerThread extends TestThread {
+
         private final MPSCQueue<Item> queue;
-        private long itemCount;
         private final int id;
+        private long itemCount;
 
         ProducerThread(MPSCQueue<Item> queue, int id) {
             super("Producer-" + id);
@@ -127,9 +129,10 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
     }
 
     class ConsumerThread extends TestThread {
-        private long[] producerSequence;
+
         private final MPSCQueue<Item> queue;
         private final int producerCount;
+        private final long[] producerSequence;
         private long itemCount;
         private volatile int completedProducers = 0;
 
