@@ -205,7 +205,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
         predicate.nextPage();
 
         final Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
@@ -229,7 +229,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
         predicate.nextPage();
 
         Collection<Integer> values = map.values(predicate);
@@ -327,7 +327,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
             map.put(size - i, i);
         }
 
-        final PagingPredicate predicate = new PagingPredicate(pageSize);
+        final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
         predicate.nextPage();
 
         final Set<Integer> values = map.keySet(predicate);
