@@ -107,7 +107,7 @@ public class MPSCQueueStressTest extends HazelcastTestSupport {
                 itemCount++;
                 queue.offer(new Item(id, itemCount));
 
-                while (queue.size() < 100000) {
+                while (queue.size() > 100000) {
                     sleepMillis(random.nextInt(100));
                 }
 
