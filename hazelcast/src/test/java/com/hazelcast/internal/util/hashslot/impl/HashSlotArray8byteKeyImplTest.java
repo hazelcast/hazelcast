@@ -18,6 +18,7 @@ package com.hazelcast.internal.util.hashslot.impl;
 
 import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.impl.HeapMemoryManager;
+import com.hazelcast.internal.util.collection.HsaHeapMemoryManager;
 import com.hazelcast.internal.util.hashslot.HashSlotArray8byteKey;
 import com.hazelcast.internal.util.hashslot.HashSlotCursor8byteKey;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -45,13 +46,13 @@ public class HashSlotArray8byteKeyImplTest {
     private static final int VALUE_LENGTH = 32;
 
     private final Random random = new Random();
-    private HeapMemoryManager memMgr;
+    private HsaHeapMemoryManager memMgr;
     private MemoryAccessor mem;
     private HashSlotArray8byteKey hsa;
 
     @Before
     public void setUp() throws Exception {
-        memMgr = new HeapMemoryManager(32 << 20);
+        memMgr = new HsaHeapMemoryManager();
         mem = memMgr.getAccessor();
         hsa = new HashSlotArray8byteKeyImpl(0L, memMgr, VALUE_LENGTH);
         hsa.gotoNew();
@@ -125,7 +126,7 @@ public class HashSlotArray8byteKeyImplTest {
             long key = (long) i;
             long valueAddress = hsa.get(key);
 
-            assertEquals(key, mem.getLong(valueAddress));
+            verifyValue(key, valueAddress);
         }
     }
 
@@ -311,7 +312,7 @@ public class HashSlotArray8byteKeyImplTest {
     }
 
     private void verifyValue(long key, long valueAddress) {
-        assertNotEquals(NULL_ADDRESS, valueAddress);
+        assertNotEquals("NULL value at key " + key, NULL_ADDRESS, valueAddress);
         assertEquals(key, mem.getLong(valueAddress));
     }
 }

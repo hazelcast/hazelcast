@@ -45,7 +45,7 @@ public class LongSetHsaTest {
 
     @Before
     public void setUp() {
-        memMgr = new HeapMemoryManager(32 * 1000 * 1000);
+        memMgr = new HsaHeapMemoryManager();
         set = new LongSetHsa(0L, memMgr);
     }
 
@@ -63,18 +63,35 @@ public class LongSetHsaTest {
     }
 
     @Test
-    public void testAddMany() {
-        for (int i = 1; i <= 1000; i++) {
-            assertTrue(set.add(i));
-        }
-    }
-
-    @Test
     public void testRemove() {
         long key = random.nextLong();
         assertFalse(set.remove(key));
         set.add(key);
         assertTrue(set.remove(key));
+    }
+
+    @Test
+    public void testAddRemoveMany() {
+        int upperBound = 10000;
+        for (int i = 1; i < upperBound; i++) {
+            assertTrue(set.add(i));
+        }
+        for (int i = 1; i < upperBound; i++) {
+            assertTrue(set.contains(i));
+        }
+        for (int i = upperBound; i < 2 * upperBound; i++) {
+            assertFalse(set.contains(i));
+        }
+        for (int i = 1; i < upperBound; i += 3) {
+            assertTrue(set.remove(i));
+        }
+        for (int i = 1; i < upperBound; i++) {
+            if ((i - 1) % 3 == 0) {
+                assertFalse(set.contains(i));
+            } else {
+                assertTrue(set.contains(i));
+            }
+        }
     }
 
     @Test
