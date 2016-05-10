@@ -60,6 +60,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private Object response;
     private transient Object dataValue;
 
+    // Determines whether we should generate a backup operation, by default we should generate a backup operation
+    private transient boolean shouldBackupOperation = true;
+
     public EntryOperation() {
     }
 
@@ -88,6 +91,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
         // first call noOp, other if checks below depends on it.
         if (noOp(entry)) {
+            shouldBackupOperation = false;
             return;
         }
         if (entryRemoved(entry, now)) {
@@ -125,13 +129,17 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public Operation getBackupOperation() {
+
+        // If the EntryProcessor was a noop, then don't generate a backup operation
+        if (!shouldBackupOperation) return null;
+
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
-        return entryProcessor.getBackupProcessor() != null;
+        return shouldBackupOperation && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override
