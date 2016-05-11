@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -27,9 +28,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -262,6 +268,107 @@ public class MigrationPlannerTest {
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, 1, new Address("localhost", 5703), 2, 0);
+    }
+
+    @Test
+    public void testSingleMigrationPrioritization()
+            throws UnknownHostException {
+        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        final MigrationInfo migration1 = new MigrationInfo(0, null, null, new Address("localhost", 5701), "5701", -1, -1, -1, 0);
+        migrations.add(migration1);
+
+        migrationPlanner.prioritizeCopiesAndShiftUps(migrations);
+
+        assertEquals(singletonList(migration1), migrations);
+    }
+
+    @Test
+    public void testNoCopyPrioritizationAgainstCopy()
+            throws UnknownHostException {
+        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        final MigrationInfo migration1 = new MigrationInfo(0, null, null, new Address("localhost", 5701), "5701", -1, -1, -1, 0);
+        final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5702), "5702", -1, -1, -1, 1);
+        final MigrationInfo migration3 = new MigrationInfo(0, null, null, new Address("localhost", 5703), "5702", -1, -1, -1, 2);
+        final MigrationInfo migration4 = new MigrationInfo(0, null, null, new Address("localhost", 5704), "5702", -1, -1, -1, 3);
+        migrations.add(migration1);
+        migrations.add(migration2);
+        migrations.add(migration3);
+        migrations.add(migration4);
+
+        migrationPlanner.prioritizeCopiesAndShiftUps(migrations);
+
+        assertEquals(asList(migration1, migration2, migration3, migration4), migrations);
+    }
+
+    @Test
+    public void testCopyPrioritizationAgainstMove()
+            throws UnknownHostException {
+        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        final MigrationInfo migration1 = new MigrationInfo(0, null, null, new Address("localhost", 5701), "5701", -1, -1, -1, 0);
+        final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5702), "5702", -1, -1, -1, 1);
+        final MigrationInfo migration3 = new MigrationInfo(0, new Address("localhost", 5703), "5703",
+                new Address("localhost", 5704), "5704", 2, -1, -1, 2);
+        final MigrationInfo migration4 = new MigrationInfo(0, new Address("localhost", 5705), "5705",
+                new Address("localhost", 5706), "5706", 2, -1, -1, 3);
+        final MigrationInfo migration5 = new MigrationInfo(0, null, null, new Address("localhost", 5707), "5707", -1, -1, -1, 4);
+        migrations.add(migration1);
+        migrations.add(migration2);
+        migrations.add(migration3);
+        migrations.add(migration4);
+        migrations.add(migration5);
+
+        migrationPlanner.prioritizeCopiesAndShiftUps(migrations);
+
+        assertEquals(asList(migration1, migration2, migration5, migration3, migration4), migrations);
+    }
+
+    @Test
+    public void testShiftUpPrioritizationAgainstMove()
+            throws UnknownHostException {
+        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        final MigrationInfo migration1 = new MigrationInfo(0, null, null, new Address("localhost", 5701), "5701", -1, -1, -1, 0);
+        final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5702), "5702", -1, -1, -1, 1);
+        final MigrationInfo migration3 = new MigrationInfo(0, new Address("localhost", 5705), "5705",
+                new Address("localhost", 5706), "5706", 2, -1, -1, 3);
+        final MigrationInfo migration4 = new MigrationInfo(0, null, null, new Address("localhost", 5707), "5707", -1, -1, 4, 2);
+        migrations.add(migration1);
+        migrations.add(migration2);
+        migrations.add(migration3);
+        migrations.add(migration4);
+
+        migrationPlanner.prioritizeCopiesAndShiftUps(migrations);
+
+        assertEquals(asList(migration1, migration2, migration4, migration3), migrations);
+    }
+
+    @Test
+    public void testCopyPrioritizationAgainstShiftDownToColderIndex()
+            throws UnknownHostException {
+        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 2, -1, 0);
+        final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5703), "5703", -1, -1, -1, 1);
+
+        migrations.add(migration1);
+        migrations.add(migration2);
+
+        migrationPlanner.prioritizeCopiesAndShiftUps(migrations);
+
+        assertEquals(asList(migration2, migration1), migrations);
+    }
+
+    @Test
+    public void testNoCopyPrioritizationAgainstShiftDownToHotterIndex()
+            throws UnknownHostException {
+        List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 1, -1, 0);
+        final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5703), "5703", -1, -1, -1, 2);
+
+        migrations.add(migration1);
+        migrations.add(migration2);
+
+        migrationPlanner.prioritizeCopiesAndShiftUps(migrations);
+
+        assertEquals(asList(migration1, migration2), migrations);
     }
 
     @Test

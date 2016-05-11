@@ -17,12 +17,14 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.internal.partition.impl.InternalPartitionImpl.getReplicaIndex;
@@ -207,6 +209,67 @@ class MigrationPlanner {
         assert Arrays.equals(state, newAddresses)
                 : "Migration decisions failed! INITIAL: " + Arrays.toString(oldAddresses)
                 + " CURRENT: " + Arrays.toString(state) + ", FINAL: " + Arrays.toString(newAddresses);
+    }
+
+    /**
+     * Prioritizes a COPY / SHIFT UP migration against
+     * - a non-conflicting MOVE migration on a hotter index,
+     * - a non-conflicting SHIFT DOWN migration to a colder index.
+     * Non-conflicting migrations have no common participant. Otherwise, order of the migrations should not be changed.
+     * This method is called for migrations per partition.
+     * <p>
+     * The main motivation of the prioritization is COPY / SHIFT UP migrations increase
+     * the available replica count of a migration while a MOVE migration doesn't have an effect on it.
+     *
+     * @param migrations migrations to perform prioritization
+     */
+    public void prioritizeCopiesAndShiftUps(List<MigrationInfo> migrations) {
+        for (int i = 0; i < migrations.size(); i++) {
+            prioritize(migrations, i);
+        }
+
+        log("Migration order after prioritization: ");
+        for (MigrationInfo migration : migrations) {
+            log(migration.toString());
+        }
+    }
+
+    private void prioritize(List<MigrationInfo> migrations, int i) {
+        MigrationInfo migration = migrations.get(i);
+
+        log("Trying to prioritize migration: %s", migration);
+
+        if (migration.getSourceCurrentReplicaIndex() != -1) {
+            log("Skipping non-copy migration: %s", migration);
+            return;
+        }
+
+        int k = i - 1;
+        for (; k >= 0; k--) {
+            MigrationInfo other = migrations.get(k);
+            if (other.getSourceCurrentReplicaIndex() == -1) {
+                log("Cannot prioritize against a copy / shift up. other: %s", other);
+                break;
+            }
+
+            if (migration.getDestination().equals(other.getSource())
+                    || migration.getDestination().equals(other.getDestination())) {
+                log("Cannot prioritize against a conflicting migration. other: %s", other);
+                break;
+            }
+
+            if (other.getSourceNewReplicaIndex() != -1
+                    && other.getSourceNewReplicaIndex() < migration.getDestinationNewReplicaIndex()) {
+                log("Cannot prioritize against a hotter shift down. other: %s", other);
+                break;
+            }
+        }
+
+        if ((k + 1) != i) {
+            log("Prioritizing migration to: %d", (k + 1));
+            migrations.remove(i);
+            migrations.add(k + 1, migration);
+        }
     }
 
     private void initState(Address[] oldAddresses) {
