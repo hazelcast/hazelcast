@@ -156,15 +156,10 @@
     <suppress checks="ReturnCount" files="com/hazelcast/spi/impl/SpiPortableHook"/>
     <!-- since this class needs to manage services, it knows about them, so it is fine to have lots of dependencies on these classes -->
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/spi/impl/servicemanager/impl/ServiceManager"/>
-    <suppress checks="MethodCount|ExecutableStatementCount|ClassFanOutComplexity|ClassDataAbstractionCoupling"
+    <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com/hazelcast/spi/impl/operationservice/impl/OperationServiceImpl"/>
-    <!-- the invocation just has many parameters because there are a lot of things to tune/ -->
-    <suppress checks="ParameterNumber" files="com/hazelcast/spi/impl/operationservice/impl/InvocationImpl"/>
-    <!-- the partition-invocation just has many parameters because there are a lot of things to tune/ -->
-    <suppress checks="ParameterNumber" files="com/hazelcast/spi/impl/operationservice/impl/PartitionInvocation"/>
     <suppress checks="ClassDataAbstractionCoupling|MethodCount"
               files="com/hazelcast/spi/impl/eventservice/impl/EventServiceImpl"/>
-    <suppress checks="ReturnCount" files="com/hazelcast/spi/impl/operationexecutor/classic/ClassicOperationExecutor"/>
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com/hazelcast/transaction/"/>
