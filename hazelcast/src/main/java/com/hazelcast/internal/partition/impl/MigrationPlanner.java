@@ -223,14 +223,16 @@ class MigrationPlanner {
      *
      * @param migrations migrations to perform prioritization
      */
-    public void prioritizeCopiesAndShiftUps(List<MigrationInfo> migrations) {
+    void prioritizeCopiesAndShiftUps(List<MigrationInfo> migrations) {
         for (int i = 0; i < migrations.size(); i++) {
             prioritize(migrations, i);
         }
 
-        log("Migration order after prioritization: ");
-        for (MigrationInfo migration : migrations) {
-            log(migration.toString());
+        if (ASSERTION_ENABLED) {
+            log("Migration order after prioritization: ");
+            for (MigrationInfo migration : migrations) {
+                log(migration.toString());
+            }
         }
     }
 

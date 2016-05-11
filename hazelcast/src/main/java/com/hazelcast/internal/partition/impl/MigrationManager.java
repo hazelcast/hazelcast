@@ -607,9 +607,8 @@ public class MigrationManager {
                             + ", New replicas: " + Arrays.toString(newReplicas));
                 }
                 migrationPlanner.planMigrations(currentReplicas, newReplicas, migrationCollector);
-                List<MigrationInfo> plannedMigrations = migrationCollector.migrations;
-                migrationPlanner.prioritizeCopiesAndShiftUps(plannedMigrations);
-                migrations.add(new LinkedList<MigrationInfo>(plannedMigrations));
+                migrationPlanner.prioritizeCopiesAndShiftUps(migrationCollector.migrations);
+                migrations.add(migrationCollector.migrations);
             }
 
             scheduleMigrations(migrations);
@@ -676,7 +675,7 @@ public class MigrationManager {
             private final InternalPartitionImpl partition;
             private final MutableInteger migrationCount;
             private final MutableInteger lostCount;
-            private final List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
+            private final LinkedList<MigrationInfo> migrations = new LinkedList<MigrationInfo>();
 
             MigrationCollector(InternalPartitionImpl partition, MutableInteger migrationCount, MutableInteger lostCount) {
                 partitionId = partition.getPartitionId();
