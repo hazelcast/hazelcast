@@ -52,7 +52,6 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSupport {
 
-    private static final int PARTITION_COUNT = 111;
     private static final int PARALLEL_REPLICATIONS = 10;
     private static final int BACKUP_SYNC_INTERVAL = 1;
 
@@ -64,6 +63,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     @Parameterized.Parameter(1)
     public int nodeCount;
 
+    protected int partitionCount = 111;
+
     @Before
     public void setup() {
         factory = createHazelcastInstanceFactory(10);
@@ -71,7 +72,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
     void fillData(HazelcastInstance hz) {
         NodeEngine nodeEngine = getNode(hz).nodeEngine;
-        for (int i = 0; i < PARTITION_COUNT; i++) {
+        for (int i = 0; i < partitionCount; i++) {
             nodeEngine.getOperationService().invokeOnPartition(null, new TestIncrementOperation(), i);
         }
     }
@@ -153,7 +154,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     void assertSizeAndData() throws InterruptedException {
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
         final int actualBackupCount = Math.min(backupCount, instances.size() - 1);
-        final int expectedSize = PARTITION_COUNT * (actualBackupCount + 1);
+        final int expectedSize = partitionCount * (actualBackupCount + 1);
 
         int total = 0;
         for (HazelcastInstance hz : instances) {
@@ -232,7 +233,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             config.getServicesConfig().addServiceConfig(serviceConfig);
         }
 
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         config.setProperty(GroupProperty.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS.getName(), String.valueOf(1));
         config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), String.valueOf(BACKUP_SYNC_INTERVAL));
 

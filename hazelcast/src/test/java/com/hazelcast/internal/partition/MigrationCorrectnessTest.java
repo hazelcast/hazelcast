@@ -16,158 +16,28 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 // related issue https://github.com/hazelcast/hazelcast/issues/5444
-public class MigrationCorrectnessTest extends PartitionCorrectnessTestSupport {
+public class MigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][] {
                 {1, 2},
-                {1, InternalPartition.MAX_REPLICA_COUNT},
                 {2, 3},
-                {2, InternalPartition.MAX_REPLICA_COUNT},
                 {3, 4},
-                {3, InternalPartition.MAX_REPLICA_COUNT}
         });
-    }
-
-    @Test
-    public void testPartitionData_whenNodesStartedSequentially() throws InterruptedException {
-        Config config = getConfig(true, false);
-
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
-        fillData(hz);
-        assertSizeAndDataEventually();
-
-        for (int i = 1; i <= nodeCount; i++) {
-            startNodes(config, 1);
-            assertSizeAndDataEventually();
-        }
-    }
-
-    @Test
-    public void testPartitionData_whenNodesStartedParallel() throws InterruptedException {
-        Config config = getConfig(true, false);
-
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
-        fillData(hz);
-        assertSizeAndDataEventually();
-
-        startNodes(config, nodeCount);
-        assertSizeAndDataEventually();
-    }
-
-    @Test
-    public void testPartitionData_whenBackupNodesTerminated() throws InterruptedException {
-        Config config = getConfig(true, false);
-
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
-        startNodes(config, nodeCount);
-        warmUpPartitions(factory.getAllHazelcastInstances());
-
-        fillData(hz);
-        assertSizeAndDataEventually();
-
-        terminateNodes(backupCount);
-        assertSizeAndDataEventually();
-    }
-
-    @Test(timeout = 6000 * 10 * 10)
-    public void testPartitionData_whenBackupNodesStartedTerminated() throws InterruptedException {
-        testPartitionData_whenBackupNodesStartedTerminated(false);
-    }
-
-    @Test(timeout = 6000 * 10 * 10)
-    public void testPartitionData_whenBackupNodesStartedTerminated_withSafetyCheckAfterTerminate() throws InterruptedException {
-        testPartitionData_whenBackupNodesStartedTerminated(true);
-    }
-
-    public void testPartitionData_whenBackupNodesStartedTerminated(boolean checkAfterTerminate)
-            throws InterruptedException {
-        Config config = getConfig(true, false);
-
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
-        fillData(hz);
-        assertSizeAndDataEventually();
-
-        int size = 1;
-        while (size < (nodeCount + 1)) {
-            startNodes(config, backupCount + 1);
-            size += (backupCount + 1);
-
-            assertSizeAndDataEventually();
-
-            terminateNodes(backupCount);
-            size -= backupCount;
-
-            if (checkAfterTerminate) {
-                assertSizeAndDataEventually();
-            }
-        }
-    }
-
-    @Test(timeout = 6000 * 10 * 10)
-    public void testPartitionData_whenBackupNodesStartedTerminated_withRestart() throws InterruptedException {
-        Config config = getConfig(true, false);
-
-        HazelcastInstance hz = factory.newHazelcastInstance(config);
-        fillData(hz);
-        assertSizeAndDataEventually();
-
-        Collection<Address> addresses = Collections.emptySet();
-
-        int size = 1;
-        while (size < (nodeCount + 1)) {
-            int startCount = (backupCount + 1) - addresses.size();
-            startNodes(config, addresses);
-            startNodes(config, startCount);
-            size += (backupCount + 1);
-
-            assertSizeAndDataEventually();
-
-            addresses = terminateNodes(backupCount);
-            size -= backupCount;
-        }
-    }
-
-    @Test(timeout = 6000 * 10 * 10)
-    public void testPartitionData_whenSameNodesRestarted_afterPartitionsSafe() throws InterruptedException {
-        Config config = getConfig(true, false);
-
-        HazelcastInstance[] instances = factory.newInstances(config, nodeCount);
-        fillData(instances[instances.length - 1]);
-        assertSizeAndDataEventually();
-
-        Address[] restartingAddresses = new Address[backupCount];
-        for (int i = 0; i < backupCount; i++) {
-            restartingAddresses[i] = getAddress(instances[i]);
-        }
-
-        for (int i = 0; i < 10; i++) {
-            for (Address address : restartingAddresses) {
-                TestUtil.terminateInstance(factory.getInstance(address));
-            }
-            startNodes(config, Arrays.asList(restartingAddresses));
-        }
-        assertSizeAndDataEventually();
     }
 }
