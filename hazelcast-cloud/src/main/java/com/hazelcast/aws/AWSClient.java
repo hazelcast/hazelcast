@@ -18,6 +18,7 @@ package com.hazelcast.aws;
 
 import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 
 import java.util.Collection;
 import java.util.Map;
@@ -25,7 +26,9 @@ import java.util.Map;
 public class AWSClient {
 
     private String endpoint;
+    private String defaultHostHeader = "ec2.amazonaws.com";
     private final AwsConfig awsConfig;
+
 
     public AWSClient(AwsConfig awsConfig) {
         if (awsConfig == null) {
@@ -40,7 +43,10 @@ public class AWSClient {
         this.awsConfig = awsConfig;
         endpoint = awsConfig.getHostHeader();
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
-            setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
+            if (!awsConfig.getHostHeader().startsWith("ec2.")) {
+                throw new InvalidConfigurationException("HostHeader should start with \"ec2.\" prefix");
+            }
+            setEndpoint(awsConfig.getHostHeader().replace("ec2.", "ec2." + awsConfig.getRegion() + "."));
         }
     }
 
