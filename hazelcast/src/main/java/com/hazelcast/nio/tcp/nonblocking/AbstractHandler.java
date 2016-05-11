@@ -118,7 +118,7 @@ public abstract class AbstractHandler implements MigratableHandler {
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
 
-        Level level = getLevel(e, connectionType);
+        Level level = getLevel(e);
 
         if (e instanceof IOException) {
             logger.log(level, sb.toString());
@@ -127,14 +127,9 @@ public abstract class AbstractHandler implements MigratableHandler {
         }
     }
 
-    private Level getLevel(Throwable e, ConnectionType connectionType) {
+    private Level getLevel(Throwable e) {
         if (ioService.isActive()) {
-            if (connectionType.isClient()) {
-                // in case of a client disconnecting, we don't want to pollute the log with warnings.
-                return e instanceof EOFException ? Level.INFO : Level.WARNING;
-            } else {
-                return Level.WARNING;
-            }
+            return e instanceof EOFException ? Level.INFO : Level.WARNING;
         } else {
             return Level.FINEST;
         }

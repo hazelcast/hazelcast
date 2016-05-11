@@ -22,6 +22,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.logging.Level;
 
@@ -54,11 +55,20 @@ public abstract class AbstractHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
-        Level level = connectionManager.getIoService().isActive() ? Level.WARNING : Level.FINEST;
+        Level level = getLevel(e);
+
         if (e instanceof IOException) {
             logger.log(level, sb.toString());
         } else {
             logger.log(level, sb.toString(), e);
+        }
+    }
+
+    private Level getLevel(Throwable e) {
+        if (ioService.isActive()) {
+            return e instanceof EOFException ? Level.INFO : Level.WARNING;
+        } else {
+            return Level.FINEST;
         }
     }
 }
