@@ -39,7 +39,7 @@ public abstract class NonBlockingIOThreadAbstractTest extends HazelcastTestSuppo
     private ILogger logger;
     private MockSelector selector;
     private SelectionHandler handler;
-    private NonBlockingIOThread thread;
+    NonBlockingIOThread thread;
 
     @Before
     public void setup() {
@@ -56,10 +56,19 @@ public abstract class NonBlockingIOThreadAbstractTest extends HazelcastTestSuppo
         }
     }
 
-    protected abstract boolean selectNow();
+    protected abstract SelectorMode selectorMode();
+
+    /**
+     * Subclasses that need to do some setup after the IO thread was created but
+     * before starting it should override this method.
+     */
+    protected void beforeStartThread() {
+
+    }
 
     private void startThread() {
-        thread = new NonBlockingIOThread(null, "foo", logger, oomeHandler, selectNow(), selector);
+        thread = new NonBlockingIOThread(null, "foo", logger, oomeHandler, selectorMode(), selector);
+        beforeStartThread();
         thread.start();
     }
 

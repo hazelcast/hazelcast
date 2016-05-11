@@ -23,15 +23,14 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
-import static java.lang.Boolean.getBoolean;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
@@ -54,10 +53,17 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final HazelcastThreadGroup hazelcastThreadGroup;
-    // experimental settings; will be disabled by default.
-    private boolean inputSelectNow = getBoolean("hazelcast.io.input.thread.selectNow");
-    private boolean outputSelectNow = getBoolean("hazelcast.io.output.thread.selectNow");
+    // The selector mode determines how IO threads will block (or not) on the Selector:
+    //  select:         this is the default mode, uses Selector.select(long timeout)
+    //  selectnow:      use Selector.selectNow()
+    //  selectwithfix:  use Selector.select(timeout) with workaround for bug occurring when
+    //                  SelectorImpl.select returns immediately with no channels selected,
+    //                  resulting in 100% CPU usage while doing no progress.
+    // See issue: https://github.com/hazelcast/hazelcast/issues/7943
+    // In Hazelcast 3.8, selector mode must be set via HazelcastProperties
+    private SelectorMode selectorMode;
     private volatile IOBalancer ioBalancer;
+    private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
 
     public NonBlockingIOThreadingModel(
             IOService ioService,
@@ -73,12 +79,23 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         this.outputThreads = new NonBlockingIOThread[ioService.getOutputSelectorThreadCount()];
     }
 
-    public void setInputSelectNow(boolean enabled) {
-        this.inputSelectNow = enabled;
+    private SelectorMode getSelectorMode() {
+        if (selectorMode == null) {
+            selectorMode = SelectorMode.getConfiguredValue();
+        }
+        return selectorMode;
     }
 
-    public void setOutputSelectNow(boolean enabled) {
-        this.outputSelectNow = enabled;
+    public void setSelectorMode(SelectorMode mode) {
+        this.selectorMode = mode;
+    }
+
+    /**
+     * Set to {@code true} for Selector CPU-consuming bug workaround tests
+     * @param selectorWorkaroundTest
+     */
+    void setSelectorWorkaroundTest(boolean selectorWorkaroundTest) {
+        this.selectorWorkaroundTest = selectorWorkaroundTest;
     }
 
     @Override
@@ -106,8 +123,8 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                 + inputThreads.length + " input threads and "
                 + outputThreads.length + " output threads");
 
-        logger.log(inputSelectNow ? INFO : FINE, "InputThreads selectNow enabled=" + inputSelectNow);
-        logger.log(outputSelectNow ? INFO : FINE, "OutputThreads selectNow enabled=" + outputSelectNow);
+        logger.log(getSelectorMode() != SelectorMode.SELECT ? INFO : FINE,
+                    "IO threads selector mode is " + getSelectorMode());
 
         NonBlockingIOThreadOutOfMemoryHandler oomeHandler = new NonBlockingIOThreadOutOfMemoryHandler() {
             @Override
@@ -122,8 +139,9 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                     ioService.getThreadPrefix() + "in-" + i,
                     ioService.getLogger(NonBlockingIOThread.class.getName()),
                     oomeHandler,
-                    inputSelectNow
+                    selectorMode
             );
+            thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();
@@ -135,7 +153,9 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                     ioService.getThreadPrefix() + "out-" + i,
                     ioService.getLogger(NonBlockingIOThread.class.getName()),
                     oomeHandler,
-                    outputSelectNow);
+                    selectorMode
+            );
+            thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();

@@ -1,6 +1,6 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.nio.tcp.TcpIpConnectionManager_ConnectMemberBaseTest;
+import com.hazelcast.nio.tcp.TcpIpConnection_BaseTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -9,11 +9,12 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class SelectNow_TcpIpConnectionManager_ConnectMemberTest extends TcpIpConnectionManager_ConnectMemberBaseTest {
+public class SelectWithSelectorFix_TcpIpConnection_BasicTest
+        extends TcpIpConnection_BaseTest {
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new SelectNow_NonBlockingIOThreadingModelFactory();
+        threadingModelFactory = new SelectWithSelectorFix_NonBlockingIOThreadingModelFactory();
         super.setup();
     }
 }
