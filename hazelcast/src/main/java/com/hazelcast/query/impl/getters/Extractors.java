@@ -86,15 +86,12 @@ public final class Extractors {
             targetData = (Data) target;
             if (targetData.isPortable()) {
                 return targetData;
+            } else {
+                // convert non-portable Data to object
+                return serializationService.toObject(target);
             }
         }
 
-        // convert non-portable Data to object
-        if (target instanceof Data) {
-            return serializationService.toObject(target);
-        }
-
-        // at this stage if it's Data then it's a Portable
         return target;
     }
 

@@ -67,6 +67,17 @@ import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
  * <p>
  * The test is parametrised with 4 parameters
  * Each test execution runs one read operation on the reader.
+ * <p>
+ * The rationale behind these tests is to cover all possible combinations of reads using nested paths and quantifiers
+ * (number or any) with all possible portable types. It's impossible to do it manually, since there's 20 supported
+ * types and a read method for each one of them.
+ *
+ * Each test case is documented, plus each test outputs it's scenario in a readable way, so you it's easy to follow
+ * the test case while you run it. Also each test case shows in which method it is generated.
+ *
+ * IF YOU SEE A FAILURE HERE:
+ * - check the test output - analyse the test scenario
+ * - check in which method the scenario is generated - narrow down the scope of the tests run
  */
 @RunWith(Parameterized.class)
 @Category(QuickTest.class)
@@ -80,7 +91,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     private static final NestedGroupPortable N_NON_EMPTY = nested(new Portable[]{G_NON_EMPTY, G_NON_EMPTY});
 
     // input object
-    private Portable inputObjet;
+    private Portable inputObject;
     // object or exception
     private Object expectedResult;
     // e.g. 'readInt', or generic 'read'
@@ -90,9 +101,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     // parent method of this test to identify it in case of failures
     private String parent;
 
-    public DefaultPortableReaderSpecTest(Portable inputObjet, Object expectedResult, Method method,
+    public DefaultPortableReaderSpecTest(Portable inputObject, Object expectedResult, Method method,
                                          String pathToRead, String parent) {
-        this.inputObjet = inputObjet;
+        this.inputObject = inputObject;
         this.expectedResult = expectedResult;
         this.readMethodNameToInvoke = method.name().replace("Generic", "");
         this.pathToRead = pathToRead;
@@ -117,7 +128,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         printlnScenarioDescription(resultToMatch);
 
         // assert the condition
-        Object result = Invoker.invoke(reader(inputObjet), readMethodNameToInvoke, pathToRead);
+        Object result = Invoker.invoke(reader(inputObject), readMethodNameToInvoke, pathToRead);
         if (result instanceof MultiResult) {
             // in case of multi result while invoking generic "read" method deal with the multi results
             result = ((MultiResult) result).getResults().toArray();
@@ -131,7 +142,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         desc += "path:\t" + pathToRead + "\n";
         desc += "method:\tread" + readMethodNameToInvoke + "\n";
         desc += "result:\t" + resultToMatch + "\n";
-        desc += "input:\t" + inputObjet + "\n";
+        desc += "input:\t" + inputObject + "\n";
         System.out.println(desc);
     }
 
