@@ -583,7 +583,7 @@ public class SerializationTest
             if (!WELL_KNOWN_TEST_CLASSES.contains(name)) {
                 return super.loadClass(name, resolve);
             }
-            synchronized (getClassLoadingLock(name)) {
+            synchronized (this) {
                 // First, check if the class has already been loaded
                 Class<?> c = findLoadedClass(name);
                 if (c == null) {
