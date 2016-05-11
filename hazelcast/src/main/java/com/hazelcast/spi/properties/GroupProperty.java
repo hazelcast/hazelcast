@@ -342,6 +342,8 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.partition.migration.timeout", 300, SECONDS);
     public static final HazelcastProperty PARTITION_MIGRATION_ZIP_ENABLED
             = new HazelcastProperty("hazelcast.partition.migration.zip.enabled", true);
+    public static final HazelcastProperty DISABLE_STALE_READ_ON_PARTITION_MIGRATION
+            = new HazelcastProperty("hazelcast.partition.migration.stale.read.disabled", false);
 
     public static final HazelcastProperty PARTITION_TABLE_SEND_INTERVAL
             = new HazelcastProperty("hazelcast.partition.table.send.interval", 15, SECONDS);

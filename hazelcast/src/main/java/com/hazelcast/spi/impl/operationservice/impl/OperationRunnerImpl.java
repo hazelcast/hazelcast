@@ -68,6 +68,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.spi.properties.GroupProperty.DISABLE_STALE_READ_ON_PARTITION_MIGRATION;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -88,6 +89,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     @Probe(level = DEBUG)
     private final Counter count;
     private final Address thisAddress;
+    private final boolean staleReadOnMigrationEnabled;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
@@ -109,6 +111,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         this.nodeEngine = operationService.nodeEngine;
         this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
         this.executedOperationsCount = operationService.completedOperationsCount;
+        this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
 
         if (partitionId >= 0) {
             this.count = newSwCounter();
@@ -327,7 +330,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private boolean retryDuringMigration(Operation op) {
-        return !(op instanceof ReadonlyOperation || isMigrationOperation(op));
+        return !((op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op));
     }
 
     private void handleOperationError(Operation operation, Throwable e) {
