@@ -14,8 +14,7 @@ public class Select_NonBlockingIOThreadingModelFactory implements IOThreadingMod
                 ioService.loggingService,
                 metricsRegistry,
                 ioService.hazelcastThreadGroup);
-        threadingModel.setInputSelectNow(false);
-        threadingModel.setOutputSelectNow(false);
+        threadingModel.setSelectorMode(SelectorMode.SELECT);
         return threadingModel;
     }
 }
