@@ -325,9 +325,33 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
     public void getAndAlter_when_same_reference() {
         BitSet bitSet = new BitSet();
         IAtomicReference<BitSet> ref2 = newInstance();
+
+        ref2.set(bitSet);
+        assertEquals(bitSet, ref2.getAndAlter(new FailingFunctionAlter()));
+
+        bitSet.set(100);
+        assertEquals(bitSet, ref2.get());
+    }
+
+    @Test
+    public void alterAndGet_when_same_reference() {
+        BitSet bitSet = new BitSet();
+        IAtomicReference<BitSet> ref2 = newInstance();
+
         ref2.set(bitSet);
         bitSet.set(100);
+
         assertEquals(bitSet, ref2.alterAndGet(new FailingFunctionAlter()));
+        assertEquals(bitSet, ref2.get());
+    }
+
+    @Test
+    public void alter_when_same_reference() {
+        BitSet bitSet = new BitSet();
+        IAtomicReference<BitSet> ref2 = newInstance();
+        ref2.set(bitSet);
+        bitSet.set(100);
+        ref2.alter(new FailingFunctionAlter());
         assertEquals(bitSet, ref2.get());
     }
 
