@@ -64,5 +64,36 @@ public class CachePartitionEventData extends CacheEventDataImpl implements Cache
                 + ", partitionId=" + partitionId
                 + '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof CachePartitionEventData)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        CachePartitionEventData that = (CachePartitionEventData) o;
+        if (partitionId != that.partitionId) {
+            return false;
+        }
+        if (member != null ? !member.equals(that.member) : that.member != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + partitionId;
+        result = 31 * result + (member != null ? member.hashCode() : 0);
+        return result;
+    }
 }
 
