@@ -226,7 +226,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = res.replace("${STATUS}", "forbidden");
             } else {
                 res = res.replace("${STATUS}", "success");
+                command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+                textCommandService.sendResponse(command);
                 node.shutdown(false);
+                return;
             }
         } catch (Throwable throwable) {
             res = res.replace("${STATUS}", "fail");
