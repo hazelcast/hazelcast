@@ -59,7 +59,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -552,10 +551,10 @@ public class SerializationTest
     @Test
     public void testNonPublicDynamicProxySerialization_withClassLoaderMess() {
         ClassLoader current = getClass().getClassLoader();
-        DynamicProxyTestClassLoader cl1 = new DynamicProxyTestClassLoader(current, IPrivateObjectC.class.getName());
-        DynamicProxyTestClassLoader cl2 = new DynamicProxyTestClassLoader(cl1, IPrivateObjectD.class.getName());
+        DynamicProxyTestClassLoader cl1 = new DynamicProxyTestClassLoader(current, IPrivateObjectB.class.getName());
+        DynamicProxyTestClassLoader cl2 = new DynamicProxyTestClassLoader(cl1, IPrivateObjectC.class.getName());
         SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl2).build();
-        Object ocd = Proxy.newProxyInstance(current, new Class[] { IPrivateObjectC.class, IPrivateObjectD.class }, DummyInvocationHandler.INSTANCE);
+        Object ocd = Proxy.newProxyInstance(current, new Class[] { IPrivateObjectB.class, IPrivateObjectC.class }, DummyInvocationHandler.INSTANCE);
         Data data = ss.toData(ocd);
         try {
             ss.toObject(data);
@@ -567,7 +566,7 @@ public class SerializationTest
 
     private static final class DynamicProxyTestClassLoader extends ClassLoader {
 
-        private static final Set<String> WELL_KNOWN_TEST_CLASSES = new HashSet<String>(Arrays.asList(IObjectA.class.getName(), IObjectB.class.getName(), IPrivateObjectC.class.getName(), IPrivateObjectD.class.getName()));
+        private static final Set<String> WELL_KNOWN_TEST_CLASSES = new HashSet<String>(Arrays.asList(IObjectA.class.getName(), IPrivateObjectB.class.getName(), IPrivateObjectC.class.getName()));
 
         private final Set<String> wellKnownClasses = new HashSet<String>();
 
@@ -639,15 +638,11 @@ public class SerializationTest
         void doA();
     }
 
-    public static interface IObjectB {
-        void doB();
-    }
-
-    static interface IPrivateObjectC {
+    static interface IPrivateObjectB {
         void doC();
     }
 
-    static interface IPrivateObjectD {
+    static interface IPrivateObjectC {
         void doD();
     }
 
