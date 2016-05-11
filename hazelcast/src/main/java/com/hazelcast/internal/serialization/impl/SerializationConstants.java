@@ -83,8 +83,6 @@ public final class SerializationConstants {
     // NUMBER OF CONSTANT SERIALIZERS...
     public static final int CONSTANT_SERIALIZERS_LENGTH = 28;
 
-
-
     // ------------------------------------------------------------
     // JAVA SERIALIZATION
 
@@ -99,6 +97,10 @@ public final class SerializationConstants {
 
     public static final int HIBERNATE4_TYPE_HIBERNATE_CACHE_KEY = -202;
     public static final int HIBERNATE4_TYPE_HIBERNATE_CACHE_ENTRY = -203;
+
+    public static final int HIBERNATE5_TYPE_HIBERNATE_CACHE_KEY = -204;
+    public static final int HIBERNATE5_TYPE_HIBERNATE_CACHE_ENTRY = -205;
+    public static final int HIBERNATE5_TYPE_HIBERNATE_NATURAL_ID_KEY = -206;
 
     private SerializationConstants() {
     }
