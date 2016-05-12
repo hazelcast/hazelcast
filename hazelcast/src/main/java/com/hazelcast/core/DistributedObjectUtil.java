@@ -27,8 +27,7 @@ public final class DistributedObjectUtil {
     /**
      * Gets the name of the given distributed object.
      *
-     * @param distributedObject the {@link DistributedObject} instance
-     *                          whose name is requested
+     * @param distributedObject the {@link DistributedObject} instance whose name is requested
      * @return name of the given distributed object
      */
     public static String getName(DistributedObject distributedObject) {
@@ -52,9 +51,8 @@ public final class DistributedObjectUtil {
          */
         if (distributedObject instanceof PrefixedDistributedObject) {
             return ((PrefixedDistributedObject) distributedObject).getPrefixedName();
-        } else  {
+        } else {
             return distributedObject.getName();
         }
     }
-
 }
