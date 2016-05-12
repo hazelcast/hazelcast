@@ -30,6 +30,14 @@ public class ComplexDataStructure {
 
         transient PersonPortable portable;
 
+        public String getName() {
+            return name;
+        }
+
+        public Limb getFirstLimb() {
+            return firstLimb;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Person)) return false;
@@ -101,6 +109,10 @@ public class ComplexDataStructure {
         Finger[] fingers_array;
         List<String> tattoos_list = new ArrayList<String>();
         String[] tattoos_array;
+
+        public String getName() {
+            return name;
+        }
 
         transient LimbPortable portable;
 
