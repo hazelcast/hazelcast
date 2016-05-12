@@ -42,7 +42,7 @@ import static com.hazelcast.query.impl.extractor.specification.ComplexDataStruct
 public class QueryPerformanceTest extends HazelcastTestSupport {
 
     private static final int WARMUP_ITERATIONS_COUNT = 1000;
-    private static final int MEASUREMENT_ITERATIONS_COUNT = 3000;
+    private static final int MEASUREMENT_ITERATIONS_COUNT = 10000;
 
     private HazelcastInstanceProxy hz;
     private IMap portableMap;
@@ -162,6 +162,16 @@ public class QueryPerformanceTest extends HazelcastTestSupport {
     }
 
     @Benchmark
+    public Object query_portable_nested_collection_equalsPredicate() throws IOException {
+        return portableMap.values(Predicates.equal("limbs_portable[1].name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_portable_nestedTwice_collection_equalsPredicate() throws IOException {
+        return portableMap.values(Predicates.equal("limbs_portable[0].fingers_portable[1].name", "Ferrari"));
+    }
+
+    @Benchmark
     public Object query_portable_extractor_equalsPredicate() throws IOException {
         return portableMapWithExtractor.values(Predicates.equal("nameWithExtractor", "Ferrari"));
     }
@@ -182,6 +192,16 @@ public class QueryPerformanceTest extends HazelcastTestSupport {
     }
 
     @Benchmark
+    public Object query_object_nested_collection_equalsPredicate() throws IOException {
+        return objectMap.values(Predicates.equal("limbs_list[1].name", "Ferrari"));
+    }
+
+    @Benchmark
+    public Object query_object_nestedTwice_collection_equalsPredicate() throws IOException {
+        return objectMap.values(Predicates.equal("limbs_list[0].fingers_list[1].name", "Ferrari"));
+    }
+
+    @Benchmark
     public Object query_object_extractor_equalsPredicate() throws IOException {
         return objectMapWithExtractor.values(Predicates.equal("nameWithExtractor", "Ferrari"));
     }
@@ -190,7 +210,6 @@ public class QueryPerformanceTest extends HazelcastTestSupport {
     public Object query_object_extractor_nested_equalsPredicate() throws IOException {
         return objectMapWithExtractor.values(Predicates.equal("limbNameWithExtractor", "Ferrari"));
     }
-
 
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
