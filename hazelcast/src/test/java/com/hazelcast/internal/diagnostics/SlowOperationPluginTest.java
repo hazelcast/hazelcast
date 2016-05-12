@@ -59,7 +59,7 @@ public class SlowOperationPluginTest extends AbstractDiagnosticsPluginTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logWriter.write(plugin);
+                plugin.run(logWriter);
                 assertContains(EntryOperation.class.getName());
                 assertContains("stackTrace");
                 assertContains("invocations=1");

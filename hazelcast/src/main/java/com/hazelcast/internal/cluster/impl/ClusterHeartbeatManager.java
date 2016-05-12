@@ -259,10 +259,11 @@ public class ClusterHeartbeatManager {
     private boolean removeMemberIfNotHeartBeating(long now, MemberImpl member) {
         long heartbeatTime = getHeartbeatTime(member);
         if ((now - heartbeatTime) > maxNoHeartbeatMillis) {
-            logger.warning(format("Removing %s because it has not sent any heartbeats for %d ms."
+            String reason = format("Removing %s because it has not sent any heartbeats for %d ms."
                             + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
-                    timeToString(now), timeToString(heartbeatTime)));
-            clusterService.removeAddress(member.getAddress());
+                    timeToString(now), timeToString(heartbeatTime));
+            logger.warning(reason);
+            clusterService.removeAddress(member.getAddress(), reason);
             return true;
         }
         if (logger.isFinestEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
@@ -277,9 +278,16 @@ public class ClusterHeartbeatManager {
             lastConfirmation = 0L;
         }
         if (now - lastConfirmation > maxNoMasterConfirmationMillis) {
-            logger.warning(format("Removing %s because it has not sent any master confirmation for %d ms. "
-                    + " Last confirmation time was %s", member, maxNoMasterConfirmationMillis, timeToString(lastConfirmation)));
-            clusterService.removeAddress(member.getAddress());
+            String reason = format("Removing %s because it has not sent any master confirmation for %d ms. "
+                            + " Clock time: %s."
+                            + " Cluster time: %s."
+                            + " Last confirmation time was %s.",
+                    member, maxNoMasterConfirmationMillis,
+                    timeToString(Clock.currentTimeMillis()),
+                    timeToString(now),
+                    timeToString(lastConfirmation));
+            logger.warning(reason);
+            clusterService.removeAddress(member.getAddress(), reason);
             return true;
         }
         return false;
@@ -346,8 +354,9 @@ public class ClusterHeartbeatManager {
                         }
                     }
                     // host not reachable
-                    logger.warning(format("%s could not ping %s", node.getThisAddress(), address));
-                    clusterService.removeAddress(address);
+                    String reason = format("%s could not ping %s", node.getThisAddress(), address);
+                    logger.warning(reason);
+                    clusterService.removeAddress(address, reason);
                 } catch (Throwable ignored) {
                     EmptyStatement.ignore(ignored);
                 }

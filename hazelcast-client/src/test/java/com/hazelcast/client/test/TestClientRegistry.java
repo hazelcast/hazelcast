@@ -294,7 +294,7 @@ public class TestClientRegistry {
 
         @Override
         protected void innerClose() throws IOException {
-            serverSideConnection.close();
+            serverSideConnection.close(null, null);
         }
     }
 
@@ -350,10 +350,10 @@ public class TestClientRegistry {
         }
 
         @Override
-        public void close() {
-            super.close();
+        public void close(String reason, Throwable cause) {
+            super.close(reason, cause);
             ClientConnectionManager connectionManager = responseConnection.getConnectionManager();
-            connectionManager.destroyConnection(responseConnection,
+            connectionManager.destroyConnection(responseConnection, reason,
                     new TargetDisconnectedException("Mocked Remote socket closed"));
         }
 

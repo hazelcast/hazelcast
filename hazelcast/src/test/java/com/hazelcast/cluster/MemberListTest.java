@@ -121,7 +121,7 @@ public class MemberListTest {
         }
 
         final Node n3 = TestUtil.getNode(h3);
-        n3.clusterService.removeAddress(((MemberImpl) h1.getCluster().getLocalMember()).getAddress());
+        n3.clusterService.removeAddress(h1.getCluster().getLocalMember().getAddress(), null);
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
         Thread.sleep(30 * 1000);

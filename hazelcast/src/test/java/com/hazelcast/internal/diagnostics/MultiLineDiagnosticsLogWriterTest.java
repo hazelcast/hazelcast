@@ -3,6 +3,7 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.StringUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -15,7 +16,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MultiLineDiagnosticsLogFileWriterTest extends HazelcastTestSupport {
+public class MultiLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
 
     private MultiLineDiagnosticsLogWriter writer;
 
@@ -37,6 +38,11 @@ public class MultiLineDiagnosticsLogFileWriterTest extends HazelcastTestSupport 
         writer.writeEntry("foobar");
         writer.endSection();
 
+        String actual = writer.sb.toString();
+
+        // we need to get rid of the time/date prefix
+        actual = actual.substring(actual.indexOf("SomeSection"));
+
         assertEquals("" +
                 "SomeSection[" + LINE_SEPARATOR +
                 "                          boolean=true" + LINE_SEPARATOR +
@@ -45,7 +51,7 @@ public class MultiLineDiagnosticsLogFileWriterTest extends HazelcastTestSupport 
                 "                                  integer=10]" + LINE_SEPARATOR +
                 "                          string=foo" + LINE_SEPARATOR +
                 "                          double=11.0" + LINE_SEPARATOR +
-                "                          foobar]", writer.sb.toString());
+                "                          foobar]" + LINE_SEPARATOR, actual);
     }
 
     @Test

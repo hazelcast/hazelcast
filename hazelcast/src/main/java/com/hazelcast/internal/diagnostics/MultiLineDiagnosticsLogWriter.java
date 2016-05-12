@@ -16,18 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
-
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
-import static java.util.Calendar.DAY_OF_MONTH;
-import static java.util.Calendar.HOUR;
-import static java.util.Calendar.MINUTE;
-import static java.util.Calendar.MONTH;
-import static java.util.Calendar.SECOND;
-import static java.util.Calendar.YEAR;
 
 /**
  * A {@link DiagnosticsLogWriter} that writes over multiple lines. Useful for human reading.
@@ -44,32 +33,37 @@ class MultiLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
             LINE_SEPARATOR + "                                          ",
             LINE_SEPARATOR + "                                                  ", };
 
-    private int indentLevel = -1;
     private final StringBuffer tmpSb = new StringBuffer();
-    // lots of stuff to write a date without generating litter
-    private final Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
-    private final Date date = new Date();
 
     @Override
     public void startSection(String name) {
-        if (indentLevel >= 0) {
-            sb.append(INDENTS[indentLevel]);
+        if (sectionLevel == -1) {
+            appendDateTime();
+            sb.append(' ');
+        }
+
+        if (sectionLevel >= 0) {
+            sb.append(INDENTS[sectionLevel]);
         }
 
         sb.append(name);
         sb.append('[');
-        indentLevel++;
+        sectionLevel++;
     }
 
     @Override
     public void endSection() {
         sb.append(']');
-        indentLevel--;
+        sectionLevel--;
+
+        if (sectionLevel == -1) {
+            sb.append(LINE_SEPARATOR);
+        }
     }
 
     @Override
     public void writeEntry(String s) {
-        sb.append(INDENTS[indentLevel]);
+        sb.append(INDENTS[sectionLevel]);
         sb.append(s);
     }
 
@@ -131,62 +125,8 @@ class MultiLineDiagnosticsLogWriter extends DiagnosticsLogWriter {
     }
 
     private void writeKeyValueHead(String key) {
-        sb.append(INDENTS[indentLevel]);
+        sb.append(INDENTS[sectionLevel]);
         sb.append(key);
         sb.append('=');
-    }
-
-    @Override
-    void write(DiagnosticsPlugin plugin) {
-        clean();
-
-        appendDateTime();
-        sb.append(' ');
-        plugin.run(this);
-        sb.append(LINE_SEPARATOR);
-    }
-
-    // we can't rely on DateFormat since it generates a ton of garbage
-    private void appendDateTime() {
-        date.setTime(System.currentTimeMillis());
-        calendar.setTime(date);
-        appendDate();
-        sb.append(' ');
-        appendTime();
-    }
-
-    private void appendDate() {
-        sb.append(calendar.get(DAY_OF_MONTH));
-        sb.append('-');
-        sb.append(calendar.get(MONTH));
-        sb.append('-');
-        sb.append(calendar.get(YEAR));
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    private void appendTime() {
-        int hour = calendar.get(HOUR);
-        if (hour < 10) {
-            sb.append('0');
-        }
-        sb.append(hour);
-        sb.append(':');
-        int minute = calendar.get(MINUTE);
-        if (minute < 10) {
-            sb.append('0');
-        }
-        sb.append(minute);
-        sb.append(':');
-        int second = calendar.get(SECOND);
-        if (second < 10) {
-            sb.append('0');
-        }
-        sb.append(second);
-    }
-
-    @Override
-    protected void clean() {
-        super.clean();
-        indentLevel = -1;
     }
 }

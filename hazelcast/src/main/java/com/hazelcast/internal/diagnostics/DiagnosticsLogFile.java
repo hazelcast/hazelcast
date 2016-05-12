@@ -107,7 +107,8 @@ final class DiagnosticsLogFile {
     }
 
     private void renderPlugin(DiagnosticsPlugin plugin) throws IOException {
-        logWriter.write(plugin);
+        logWriter.clean();
+        plugin.run(logWriter);
         //bufferedWriter.append()
         int desiredLength = charBuff.length;
         int actualSize = logWriter.length();

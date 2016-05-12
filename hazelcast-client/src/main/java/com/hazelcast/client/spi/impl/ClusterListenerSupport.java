@@ -249,7 +249,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             ClientConnection clientConnection = (ClientConnection) connection;
             Exception ex = newTargetDisconnectedExceptionCausedByHeartBeat(clientConnection.getRemoteEndpoint(),
                     clientConnection.getLastHeartbeatMillis(), clientConnection.getCloseCause());
-            connectionManager.destroyConnection(connection, ex);
+            connectionManager.destroyConnection(connection, null, ex);
         }
     }
 }

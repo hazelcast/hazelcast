@@ -37,6 +37,16 @@ class DroppingConnection implements Connection {
     }
 
     @Override
+    public Throwable getCloseCause() {
+        return null;
+    }
+
+    @Override
+    public String getCloseReason() {
+        return null;
+    }
+
+    @Override
     public boolean write(OutboundFrame frame) {
         return true;
     }
@@ -57,7 +67,7 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public void close() {
+    public void close(String msg, Throwable cause) {
     }
 
     @Override

@@ -115,13 +115,13 @@ public class MockConnectionManager implements ConnectionManager {
                 otherNode.getNodeEngine().getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
                         ClusterServiceImpl clusterService = (ClusterServiceImpl) otherNode.getClusterService();
-                        clusterService.removeAddress(node.getThisAddress());
+                        clusterService.removeAddress(node.getThisAddress(), null);
                     }
                 });
             }
         }
         for (MockConnection connection : mapConnections.values()) {
-            connection.close();
+            connection.close(null, null);
         }
     }
 
@@ -154,7 +154,6 @@ public class MockConnectionManager implements ConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
-    @Override
     public void destroyConnection(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
         final boolean removed = mapConnections.remove(endPoint, connection);

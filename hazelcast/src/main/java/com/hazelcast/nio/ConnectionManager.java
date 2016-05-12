@@ -85,17 +85,6 @@ public interface ConnectionManager extends ConnectionListenable {
     boolean registerConnection(Address address, Connection connection);
 
     /**
-     * Destroys a connection.
-     *
-     * If connection is null, the call is ignored.
-     *
-     * If the connection is already destroyed, the call is ignored.
-     *
-     * @param connection the Connection to destroy.
-     */
-    void destroyConnection(Connection connection);
-
-    /**
      * Transmits a packet to a certain connection.
      *
      * If this method is called with a null connection, the call returns false

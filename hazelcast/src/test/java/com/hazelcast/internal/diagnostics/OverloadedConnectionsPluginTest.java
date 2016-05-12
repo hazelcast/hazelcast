@@ -75,7 +75,8 @@ public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTe
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logWriter.write(plugin);
+                plugin.run(logWriter);
+
                 assertContains(GetOperation.class.getSimpleName() + " sampleCount=");
             }
         });

@@ -57,20 +57,13 @@ public abstract class TcpIpConnectionManager_ConnectMemberBaseTest extends TcpIp
     // ================== destroy ======================================================
 
     @Test
-    public void destroyConnection_whenNull_thenCallIgnored() throws Exception {
-        connManagerA.start();
-
-        connManagerA.destroyConnection(null);
-    }
-
-    @Test
     public void destroyConnection_whenActive() throws Exception {
         startAllConnectionManagers();
 
         final TcpIpConnection connAB = connect(connManagerA, addressB);
         final TcpIpConnection connBA = connect(connManagerB, addressA);
 
-        connManagerA.destroyConnection(connAB);
+        connAB.close(null, null);
 
         assertIsDestroyed(connAB);
         assertTrueEventually(new AssertTask() {
@@ -89,10 +82,10 @@ public abstract class TcpIpConnectionManager_ConnectMemberBaseTest extends TcpIp
         TcpIpConnection c = connect(connManagerA, addressB);
 
         // first destroy
-        connManagerA.destroyConnection(c);
+        c.close(null, null);
 
         // second destroy
-        connManagerA.destroyConnection(c);
+        c.close(null, null);
 
         assertIsDestroyed(c);
     }

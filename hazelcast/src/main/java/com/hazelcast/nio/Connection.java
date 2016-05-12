@@ -18,7 +18,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.spi.annotation.PrivateApi;
 
-import java.io.Closeable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
@@ -27,7 +26,7 @@ import java.net.InetSocketAddress;
  * {@link com.hazelcast.nio.tcp.TcpIpConnection}.
  */
 @PrivateApi
-public interface Connection extends Closeable {
+public interface Connection {
 
     /**
      * Checks if the Connection is alive.
@@ -127,7 +126,36 @@ public interface Connection extends Closeable {
      * Pending packets on this connection are discarded
      * <p>
      * If the Connection is already closed, the call is ignored. So it can safely be called multiple times.
+     *
+     * @param reason the reason this connection is going to be closed. Is allowed to be null.
+     * @param cause the Throwable responsible for closing this connection. Is allowed to be null.
      */
-    void close();
+    void close(String reason, Throwable cause);
 
+    /**
+     * Gets the reason this Connection was closed. Can be null if no reason was given or if the connection is still active. It
+     * is purely meant for debugging to shed some light on why connections are closed.
+     *
+     * This method is thread-safe and can be called at any moment.
+     *
+     * If the connection is closed and no reason is available, it is very likely that the close cause does contain the reason
+     * of closing.
+     *
+     * @return the reason this connection was closed.
+     * @see #getCloseCause()
+     * @see #close(String, Throwable)
+     */
+    String getCloseReason();
+
+    /**
+     * Gets the cause this Connection was closed. Can be null if no cause was given or if the connection is still active. It
+     * is purely meant for debugging to shed some light on why connections are closed.
+     *
+     * This method is thread-safe and can be called at any moment.
+     *
+     * @return the cause of closing this connection.
+     * @see #getCloseReason() ()
+     * @see #close(String, Throwable)
+     */
+    Throwable getCloseCause();
 }

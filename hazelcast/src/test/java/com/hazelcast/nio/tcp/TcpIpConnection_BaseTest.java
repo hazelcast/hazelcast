@@ -172,7 +172,7 @@ public abstract class TcpIpConnection_BaseTest extends TcpIpConnection_AbstractT
     @Test
     public void write_whenNotAlive() {
         TcpIpConnection c = connect(connManagerA, addressB);
-        connManagerA.destroyConnection(c);
+        c.close(null, null);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 

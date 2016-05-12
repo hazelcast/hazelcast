@@ -54,7 +54,7 @@ public class PendingInvocationsPluginTest extends AbstractDiagnosticsPluginTest 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                logWriter.write(plugin);
+                plugin.run(logWriter);
 
                 assertContains("PendingInvocations[");
                 assertContains("count=1");

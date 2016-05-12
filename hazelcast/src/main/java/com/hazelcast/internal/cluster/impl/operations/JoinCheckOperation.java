@@ -100,7 +100,8 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
         if (removeCaller) {
             ClusterServiceImpl service = getService();
             Address caller = getCallerAddress();
-            service.removeAddress(caller);
+            service.removeAddress(caller, "Removing " + caller + ", since it thinks it's already split from this cluster "
+                    + "and looking to merge.");
         }
     }
 

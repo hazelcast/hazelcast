@@ -484,8 +484,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm1.block(n3.address);
 
         // remove and block n1 on n2 & n3
-        n2.clusterService.removeAddress(n1.address);
-        n3.clusterService.removeAddress(n1.address);
+        n2.clusterService.removeAddress(n1.address, null);
+        n3.clusterService.removeAddress(n1.address, null);
         cm2.block(n1.address);
         cm3.block(n1.address);
 
@@ -667,7 +667,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private void disconnect(final HazelcastInstance source, final HazelcastInstance target) {
-        getNode(source).clusterService.removeAddress(getNode(target).address);
+        getNode(source).clusterService.removeAddress(getNode(target).address, null);
     }
 
 
@@ -734,8 +734,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm3.block(n1.address);
         cm3.block(n2.address);
 
-        n1.clusterService.removeAddress(n3.address);
-        n2.clusterService.removeAddress(n3.address);
+        n1.clusterService.removeAddress(n3.address, null);
+        n2.clusterService.removeAddress(n3.address, null);
         cm1.block(n3.address);
         cm2.block(n3.address);
 
@@ -821,8 +821,8 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm1.block(n2.address);
         cm1.block(n3.address);
 
-        n2.clusterService.removeAddress(n1.address);
-        n3.clusterService.removeAddress(n1.address);
+        n2.clusterService.removeAddress(n1.address, null);
+        n3.clusterService.removeAddress(n1.address, null);
         cm2.block(n1.address);
         cm3.block(n1.address);
 

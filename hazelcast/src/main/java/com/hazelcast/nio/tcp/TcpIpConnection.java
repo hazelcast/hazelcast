@@ -62,6 +62,10 @@ public final class TcpIpConnection implements Connection {
 
     private volatile ConnectionType type = ConnectionType.NONE;
 
+    private volatile Throwable closeCause;
+
+    private volatile String closeReason;
+
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
                            SocketChannelWrapper socketChannel,
@@ -217,15 +221,14 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public void close() {
-        close(null);
-    }
-
-    public void close(Throwable t) {
+    public void close(String reason, Throwable cause) {
         if (!alive.compareAndSet(true, false)) {
             // it is already closed.
             return;
         }
+
+        this.closeCause = cause;
+        this.closeReason = reason;
 
         try {
             if (socketChannel != null && socketChannel.isOpen()) {
@@ -239,18 +242,30 @@ public final class TcpIpConnection implements Connection {
 
         Object connAddress = getConnectionAddress();
         String message = "Connection [" + connAddress + "] lost. Reason: ";
-        if (t == null) {
+        if (closeReason != null) {
+            message = closeReason;
+        } else if (cause == null) {
             message += "Socket explicitly closed";
         } else {
-            message += t.getClass().getName() + "[" + t.getMessage() + "]";
+            message += cause.getClass().getName() + "[" + cause.getMessage() + "]";
         }
 
         logger.info(message);
-        connectionManager.destroyConnection(this);
+        connectionManager.onClose(this);
         connectionManager.getIoService().onDisconnect(endPoint);
-        if (t != null && monitor != null) {
-            monitor.onError(t);
+        if (cause != null && monitor != null) {
+            monitor.onError(cause);
         }
+    }
+
+    @Override
+    public Throwable getCloseCause() {
+        return closeCause;
+    }
+
+    @Override
+    public String getCloseReason() {
+        return closeReason;
     }
 
     @Override

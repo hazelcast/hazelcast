@@ -108,7 +108,9 @@ public abstract class AbstractHandler implements MigratableHandler {
         if (selectionKey != null) {
             selectionKey.cancel();
         }
-        connection.close(e);
+
+        connection.close("Closing connection due to exception in " + getClass().getSimpleName(), e);
+
         ConnectionType connectionType = connection.getType();
         if (connectionType.isClient() && !connectionType.isBinary()) {
             return;

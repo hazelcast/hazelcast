@@ -166,21 +166,21 @@ public class PartitionedCluster {
         cm5.block(n2.address);
         cm5.block(n3.address);
 
-        n4.clusterService.removeAddress(n1.address);
-        n4.clusterService.removeAddress(n2.address);
-        n4.clusterService.removeAddress(n3.address);
+        n4.clusterService.removeAddress(n1.address, null);
+        n4.clusterService.removeAddress(n2.address, null);
+        n4.clusterService.removeAddress(n3.address, null);
 
-        n5.clusterService.removeAddress(n1.address);
-        n5.clusterService.removeAddress(n2.address);
-        n5.clusterService.removeAddress(n3.address);
+        n5.clusterService.removeAddress(n1.address, null);
+        n5.clusterService.removeAddress(n2.address, null);
+        n5.clusterService.removeAddress(n3.address, null);
 
-        n1.clusterService.removeAddress(n4.address);
-        n2.clusterService.removeAddress(n4.address);
-        n3.clusterService.removeAddress(n4.address);
+        n1.clusterService.removeAddress(n4.address, null);
+        n2.clusterService.removeAddress(n4.address, null);
+        n3.clusterService.removeAddress(n4.address, null);
 
-        n1.clusterService.removeAddress(n5.address);
-        n2.clusterService.removeAddress(n5.address);
-        n3.clusterService.removeAddress(n5.address);
+        n1.clusterService.removeAddress(n5.address, null);
+        n2.clusterService.removeAddress(n5.address, null);
+        n3.clusterService.removeAddress(n5.address, null);
     }
 
     private static FirewallingMockConnectionManager getConnectionManager(Node node) {

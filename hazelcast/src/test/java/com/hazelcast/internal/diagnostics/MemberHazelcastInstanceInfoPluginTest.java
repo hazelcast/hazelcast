@@ -33,7 +33,8 @@ public class MemberHazelcastInstanceInfoPluginTest extends AbstractDiagnosticsPl
 
     @Test
     public void testRun() throws IOException {
-        logWriter.write(plugin);
+        plugin.run(logWriter);
+
         assertContains("HazelcastInstance[");
         assertContains("isRunning=true");
         assertContains("Members[");

@@ -36,7 +36,7 @@ public class ConfigPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Test
     public void testRun() throws IOException {
-        logWriter.write(plugin);
+        plugin.run(logWriter);
         assertContains("property1=value1");
     }
 }

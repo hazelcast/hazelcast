@@ -49,7 +49,6 @@ public class Diagnostics {
     public static final HazelcastProperty METRICS_LEVEL =
             new HazelcastProperty(PREFIX + ".metric.level", ProbeLevel.MANDATORY.name())
                     .setDeprecatedName("hazelcast.performance.metric.level");
-
     /**
      * Use the {@link Diagnostics} to see internal performance metrics and cluster related information.
      * <p/>

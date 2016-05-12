@@ -76,9 +76,10 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * If connection is already destroyed before calling this then does nothing.
      *
      * @param connection to be closed
-     * @param exception  exception that cause connection to be closed, null if closed explicitly
+     * @param reason the reason of closing this exception. Can be null if no reason is given.
+     * @param cause  exception that cause connection to be closed, null if closed explicitly
      */
-    void destroyConnection(Connection connection, Throwable exception);
+    void destroyConnection(Connection connection, String reason, Throwable cause);
 
     /**
      * Handles incoming network package
