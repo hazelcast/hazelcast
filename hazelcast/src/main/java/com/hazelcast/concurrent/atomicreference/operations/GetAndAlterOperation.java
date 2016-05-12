@@ -37,14 +37,15 @@ public class GetAndAlterOperation extends AbstractAlterOperation {
         IFunction f = nodeEngine.toObject(function);
         AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
 
+        response = atomicReferenceContainer.get();
         Object input = nodeEngine.toObject(atomicReferenceContainer.get());
-        response = input;
         //noinspection unchecked
         Object output = f.apply(input);
-        shouldBackup = !isEquals(input, output);
+        Data serializedOutput = nodeEngine.toData(output);
+        shouldBackup = !isEquals(response, serializedOutput);
         if (shouldBackup) {
-            backup = nodeEngine.toData(output);
-            atomicReferenceContainer.set(backup);
+            atomicReferenceContainer.set(serializedOutput);
+            backup = serializedOutput;
         }
     }
 
