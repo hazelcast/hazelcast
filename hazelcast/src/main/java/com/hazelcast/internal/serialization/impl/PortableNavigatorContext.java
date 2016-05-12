@@ -33,7 +33,7 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeN
  * Mutable navigator context that holds the state of the navigation in the portable byte stream.
  * Tightly coupled with the {@link PortablePositionNavigator}
  */
-class PortableNavigatorContext {
+final class PortableNavigatorContext {
 
     // mutable fields that hold the mutable state
     private BufferObjectDataInput in;
@@ -152,13 +152,23 @@ class PortableNavigatorContext {
     void setupContextForGivenPathToken(PortablePathCursor path) {
         String fieldName = path.token();
         fd = cd.getField(fieldName);
-        if (fd == null) {
-            fieldName = extractAttributeNameNameWithoutArguments(path.token());
-            fd = cd.getField(fieldName);
+        if (fd != null) {
+            return;
         }
+
+        fieldName = extractAttributeNameNameWithoutArguments(path.token());
+        fd = cd.getField(fieldName);
         if (fd == null || fieldName == null) {
             throw createUnknownFieldException(this, path.path());
         }
+    }
+
+    /**
+     * @return true if managed to setup the context and the path was a single token path indeed, false otherwise
+     */
+    boolean trySetupContextForSingleTokenPath(String path) {
+        fd = cd.getField(path);
+        return fd != null;
     }
 
     /**

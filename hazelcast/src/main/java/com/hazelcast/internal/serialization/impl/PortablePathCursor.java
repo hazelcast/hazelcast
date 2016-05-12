@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.query.impl.getters.ExtractorHelper;
+import com.hazelcast.util.StringUtil;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
 
@@ -45,11 +45,25 @@ final class PortablePathCursor {
         this.path = checkHasText(path, "path cannot be null or empty");
         this.index = 0;
         this.offset = 0;
-        this.nextSplit = ExtractorHelper.indexOf(path, '.', 0);
+        this.nextSplit = StringUtil.indexOf(path, '.', 0);
         this.token = null;
         if (nextSplit == 0) {
             throw new IllegalArgumentException("The path cannot begin with a dot: " + path);
         }
+    }
+
+    /**
+     * Inits the cursor with the given assuming it's a path with single token (and without validating it).
+     * It's an optimisation for the common execution path where there's only a single field beeing read.
+     *
+     * @param path path to initialise the cursor with
+     */
+    void initWithSingleTokenPath(String path) {
+        this.path = path;
+        this.index = 0;
+        this.offset = 0;
+        this.nextSplit = -1;
+        this.token = path;
     }
 
     /**
@@ -88,7 +102,7 @@ final class PortablePathCursor {
         }
         token = null;
         int oldNextSplit = nextSplit;
-        nextSplit = ExtractorHelper.indexOf(path, '.', oldNextSplit + 1);
+        nextSplit = StringUtil.indexOf(path, '.', oldNextSplit + 1);
         offset = oldNextSplit + 1;
         index++;
         return true;
@@ -103,7 +117,7 @@ final class PortablePathCursor {
     void index(int indexToNavigateTo) {
         this.index = 0;
         this.offset = 0;
-        this.nextSplit = ExtractorHelper.indexOf(path, '.', 0);
+        this.nextSplit = StringUtil.indexOf(path, '.', 0);
         this.token = null;
 
         for (int i = 1; i <= indexToNavigateTo; i++) {

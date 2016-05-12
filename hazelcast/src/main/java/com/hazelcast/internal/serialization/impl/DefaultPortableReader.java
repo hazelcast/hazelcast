@@ -106,7 +106,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public byte readByte(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.BYTE);
         return in.readByte(pos.getStreamPosition());
@@ -114,7 +113,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public short readShort(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.SHORT);
         return in.readShort(pos.getStreamPosition());
@@ -122,7 +120,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public int readInt(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.INT);
         return in.readInt(pos.getStreamPosition());
@@ -130,7 +127,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public long readLong(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.LONG);
         return in.readLong(pos.getStreamPosition());
@@ -138,7 +134,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public float readFloat(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.FLOAT);
         return in.readFloat(pos.getStreamPosition());
@@ -146,7 +141,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public double readDouble(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.DOUBLE);
         return in.readDouble(pos.getStreamPosition());
@@ -154,7 +148,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public boolean readBoolean(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.BOOLEAN);
         return in.readBoolean(pos.getStreamPosition());
@@ -162,7 +155,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public char readChar(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         PortablePosition pos = findPositionForReading(path);
         validatePrimitive(pos, FieldType.CHAR);
         return in.readChar(pos.getStreamPosition());
@@ -170,7 +162,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
 
     @Override
     public String readUTF(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         final int currentPos = in.position();
         try {
             PortablePosition position = findPositionForReading(path);
@@ -189,13 +180,13 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     @Override
     @SuppressWarnings("unchecked")
     public Portable readPortable(String path) throws IOException {
-        validateNotAnyQuantifier(path);
         final int currentPos = in.position();
         try {
             PortablePosition position = findPositionForReading(path);
             if (position.isNullOrEmpty()) {
                 return null;
             }
+            validateNotMultiPosition(position);
             validateType(position, FieldType.PORTABLE);
             in.position(position.getStreamPosition());
             return serializer.readAndInitialize(in, position.getFactoryId(), position.getClassId());
@@ -224,7 +215,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private byte[] readMultiByteArray(List<PortablePosition> positions) throws IOException {
         byte[] result = new byte[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.BYTE);
             result[i] = in.readByte(position.getStreamPosition());
         }
@@ -257,7 +249,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private boolean[] readMultiBooleanArray(List<PortablePosition> positions) throws IOException {
         boolean[] result = new boolean[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.BOOLEAN);
             result[i] = in.readBoolean(position.getStreamPosition());
         }
@@ -290,7 +283,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private char[] readMultiCharArray(List<PortablePosition> positions) throws IOException {
         char[] result = new char[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.CHAR);
             result[i] = in.readChar(position.getStreamPosition());
         }
@@ -323,7 +317,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private int[] readMultiIntArray(List<PortablePosition> positions) throws IOException {
         int[] result = new int[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.INT);
             result[i] = in.readInt(position.getStreamPosition());
         }
@@ -356,7 +351,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private long[] readMultiLongArray(List<PortablePosition> positions) throws IOException {
         long[] result = new long[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.LONG);
             result[i] = in.readLong(position.getStreamPosition());
         }
@@ -389,7 +385,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private double[] readMultiDoubleArray(List<PortablePosition> positions) throws IOException {
         double[] result = new double[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.DOUBLE);
             result[i] = in.readDouble(position.getStreamPosition());
         }
@@ -422,7 +419,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private float[] readMultiFloatArray(List<PortablePosition> positions) throws IOException {
         float[] result = new float[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.FLOAT);
             result[i] = in.readFloat(position.getStreamPosition());
         }
@@ -455,7 +453,8 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private short[] readMultiShortArray(List<PortablePosition> positions) throws IOException {
         short[] result = new short[positions.size()];
         for (int i = 0; i < result.length; i++) {
-            PortablePosition position = validateNonNullOrEmptyPosition(positions.get(i));
+            PortablePosition position = positions.get(i);
+            validateNonNullOrEmptyPosition(position);
             validateType(position, FieldType.SHORT);
             result[i] = in.readShort(position.getStreamPosition());
         }
@@ -638,11 +637,9 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
             throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
         try {
-            pathCursor.init(path);
-            return PortablePositionNavigator.findPositionForReading(ctx, pathCursor);
+            return PortablePositionNavigator.findPositionForReading(ctx, path, pathCursor);
         } finally {
-            // The context and path is reset each time to enable its reuse in consecutive calls and avoid allocation
-            pathCursor.reset();
+            // The context is reset each time to enable its reuse in consecutive calls and avoid allocation
             ctx.reset();
         }
     }
@@ -737,34 +734,26 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         }
     }
 
-    private void validateNotAnyQuantifier(String path) {
-        if (path.contains("[any]")) {
-            throw new IllegalArgumentException("Invalid method for [any] quantifier. Use the readArray method family.");
-        }
-    }
-
-    private PortablePosition validatePrimitive(PortablePosition position, FieldType expectedType) {
+    private void validatePrimitive(PortablePosition position, FieldType expectedType) {
         validateNonNullOrEmptyPosition(position);
         validateNotMultiPosition(position);
         validateType(position, expectedType);
-        return position;
     }
 
-    private PortablePosition validateNonNullOrEmptyPosition(PortablePosition position) {
+    private void validateNonNullOrEmptyPosition(PortablePosition position) {
         if (position.isNullOrEmpty()) {
             throw new IllegalArgumentException("Primitive type cannot be returned since the result is/contains null.");
         }
-        return position;
     }
 
-    private PortablePosition validateNotMultiPosition(PortablePosition position) {
+    private void validateNotMultiPosition(PortablePosition position) {
         if (position.isMultiPosition()) {
-            throw new IllegalArgumentException("The method expected a single result but multiple results have been returned");
+            throw new IllegalArgumentException("The method expected a single result but multiple results have been returned."
+                    + "Did you use the [any] quantifier? If so, use the readArray method family.");
         }
-        return position;
     }
 
-    private PortablePosition validateType(PortablePosition position, FieldType expectedType) {
+    private void validateType(PortablePosition position, FieldType expectedType) {
         FieldType returnedType = position.getType();
         if (position.getIndex() >= 0) {
             returnedType = returnedType.getSingleType();
@@ -773,7 +762,6 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
             throw new IllegalArgumentException("Wrong type read! Actual:" + returnedType.name() + " Expected: "
                     + expectedType.name() + ". Did you you a correct read method? E.g. readInt() for int.");
         }
-        return position;
     }
 
 }

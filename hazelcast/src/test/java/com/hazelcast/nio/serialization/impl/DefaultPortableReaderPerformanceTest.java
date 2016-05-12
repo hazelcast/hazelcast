@@ -1,10 +1,8 @@
 package com.hazelcast.nio.serialization.impl;
 
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -15,7 +13,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -34,49 +31,121 @@ import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTes
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
 
+    private static final int WARMUP_ITERATIONS_COUNT = 500;
+    private static final int MEASUREMENT_ITERATIONS_COUNT = 2000;
 
-    private static final int WARMUP_ITERATIONS_COUNT = 1000;
-    private static final int MEASUREMENT_ITERATIONS_COUNT = 5000;
-
-    private HazelcastInstanceProxy hz;
     private PortableReader reader;
+    private PortableReader primitiveReader;
+    private InternalSerializationService ss;
+
 
     @Setup
     public void setup() throws IOException {
-        Config config = new Config();
-        config.getSerializationConfig().addPortableFactory(DefaultPortableReaderQuickTest.TestPortableFactory.ID,
-                new DefaultPortableReaderQuickTest.TestPortableFactory());
+        ss = new DefaultSerializationServiceBuilder()
+                .addPortableFactory(DefaultPortableReaderQuickTest.TestPortableFactory.ID,
+                        new DefaultPortableReaderQuickTest.TestPortableFactory()).build();
 
-        hz = (HazelcastInstanceProxy) createHazelcastInstance(config);
+        Portable primitive = new DefaultPortableReaderTestStructure.PrimitivePortable();
+        primitiveReader = reader(primitive);
+
         reader = reader(PORSCHE);
     }
 
-    @TearDown
-    public void tearDown() throws IOException {
-        hz.shutdown();
+    public PortableReader reader(Portable portable) throws IOException {
+        ss.createPortableReader(ss.toData(NON_EMPTY_PORSCHE));
+        return ss.createPortableReader(ss.toData(portable));
     }
 
-    public PortableReader reader(Portable portable) throws IOException {
-        IMap map = hz.getMap("stealingMap");
 
-        map.put(NON_EMPTY_PORSCHE.toString(), NON_EMPTY_PORSCHE);
-        map.put(portable.toString(), portable);
+    @Benchmark
+    public Object readByte() throws IOException {
+        return primitiveReader.readByte("byte_");
+    }
 
-        DefaultPortableReaderSpecTest.EntryStealingProcessor processor = new DefaultPortableReaderSpecTest.EntryStealingProcessor(portable.toString());
-        map.executeOnEntries(processor);
+    @Benchmark
+    public Object readShort() throws IOException {
+        return primitiveReader.readShort("short_");
+    }
 
-        SerializationServiceV1 ss = (SerializationServiceV1) hz.getSerializationService();
-        return ss.createPortableReader(processor.stolenEntryData);
+    @Benchmark
+    public Object readInt() throws IOException {
+        return primitiveReader.readInt("int_");
+    }
+
+    @Benchmark
+    public Object readLong() throws IOException {
+        return primitiveReader.readLong("long_");
+    }
+
+    @Benchmark
+    public Object readFloat() throws IOException {
+        return primitiveReader.readFloat("float_");
+    }
+
+    @Benchmark
+    public Object readDouble() throws IOException {
+        return primitiveReader.readDouble("double_");
+    }
+
+    @Benchmark
+    public Object readBoolean() throws IOException {
+        return primitiveReader.readBoolean("boolean_");
+    }
+
+    @Benchmark
+    public Object readChar() throws IOException {
+        return primitiveReader.readChar("char_");
     }
 
     @Benchmark
     public Object readUTF() throws IOException {
-        return reader.readUTF("name");
+        return primitiveReader.readUTF("string_");
+    }
+
+
+    @Benchmark
+    public Object readByteArray() throws IOException {
+        return primitiveReader.readByteArray("bytes");
+    }
+
+    @Benchmark
+    public Object readShortArray() throws IOException {
+        return primitiveReader.readShortArray("shorts");
+    }
+
+    @Benchmark
+    public Object readIntArray() throws IOException {
+        return primitiveReader.readIntArray("ints");
+    }
+
+    @Benchmark
+    public Object readLongArray() throws IOException {
+        return primitiveReader.readLongArray("longs");
+    }
+
+    @Benchmark
+    public Object readFloatArray() throws IOException {
+        return primitiveReader.readFloatArray("floats");
+    }
+
+    @Benchmark
+    public Object readDoubleArray() throws IOException {
+        return primitiveReader.readDoubleArray("doubles");
+    }
+
+    @Benchmark
+    public Object readBooleanArray() throws IOException {
+        return primitiveReader.readBooleanArray("booleans");
+    }
+
+    @Benchmark
+    public Object readCharArray() throws IOException {
+        return primitiveReader.readCharArray("chars");
     }
 
     @Benchmark
     public Object readUTFArray() throws IOException {
-        return reader.readUTFArray("model");
+        return primitiveReader.readUTFArray("strings");
     }
 
     @Benchmark
@@ -90,13 +159,18 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
     }
 
     @Benchmark
-    public Object readInt_nested() throws IOException {
+    public Object readPortableInt_nested() throws IOException {
         return reader.readInt("engine.power");
     }
 
     @Benchmark
-    public Object readInt_nestedTwice() throws IOException {
+    public Object readPortablePortableInt_nestedTwice() throws IOException {
         return reader.readInt("engine.chip.power");
+    }
+
+    @Benchmark
+    public Object readPortableFromArray() throws IOException {
+        return reader.readPortable("wheels[0]");
     }
 
     public static void main(String[] args) throws RunnerException {

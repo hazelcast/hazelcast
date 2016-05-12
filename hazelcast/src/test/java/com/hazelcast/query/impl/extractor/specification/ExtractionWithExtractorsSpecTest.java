@@ -153,7 +153,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     public void extractorWithParam_wrongInput_squareBracketsInInput() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[1183[2]3]", 1), mv),
-                Expected.of(IllegalArgumentException.class));
+                Expected.of(QueryException.class));
     }
 
     protected AbstractExtractionTest.Configurator getInstanceConfigurator() {

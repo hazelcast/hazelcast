@@ -18,23 +18,13 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.util.StringUtil;
 
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public final class ExtractorHelper {
-
-    private static final String NO_SQUARE_BRACKETS_EXP = "[^\\Q[]\\E]";
-    private static final String SQUARE_BRACKETS_EXP = "\\[([^\\Q[]\\E])*\\]";
-
-    private static final Pattern EXTRACTOR_ARGS_PATTERN = Pattern.compile(
-            String.format("^(%s)+%s$", NO_SQUARE_BRACKETS_EXP, SQUARE_BRACKETS_EXP));
-
-    private static final Pattern COLLECTION_ARGS_PATTERN = Pattern.compile(
-            String.format("^((%s)+(%s){0,1})+$", NO_SQUARE_BRACKETS_EXP, SQUARE_BRACKETS_EXP));
 
     private ExtractorHelper() {
     }
@@ -69,36 +59,29 @@ public final class ExtractorHelper {
         }
     }
 
-    @Nullable
+    public static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
+        int start = StringUtil.lastIndexOf(attributeNameWithArguments, '[');
+        int end = StringUtil.lastIndexOf(attributeNameWithArguments, ']');
+        if (start > 0 && end > 0 && end > start) {
+            return attributeNameWithArguments.substring(0, start);
+        }
+        if (start < 0 && end < 0) {
+            return attributeNameWithArguments;
+        }
+        throw new IllegalArgumentException("Wrong argument input passed " + attributeNameWithArguments);
+
+    }
+
     public static String extractArgumentsFromAttributeName(String attributeNameWithArguments) {
-        int start = attributeNameWithArguments.lastIndexOf('[');
-        int end = attributeNameWithArguments.lastIndexOf(']');
-        if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
+        int start = StringUtil.lastIndexOf(attributeNameWithArguments, '[');
+        int end = StringUtil.lastIndexOf(attributeNameWithArguments, ']');
+        if (start > 0 && end > 0 && end > start) {
             return attributeNameWithArguments.substring(start + 1, end);
-        } else if (start < 0 && end < 0) {
+        }
+        if (start < 0 && end < 0) {
             return null;
         }
-        throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
-    }
-
-    public static String extractAttributeNameNameWithoutArguments(String attributeNameWithArguments) {
-        if (EXTRACTOR_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
-            int start = attributeNameWithArguments.lastIndexOf('[');
-            return attributeNameWithArguments.substring(0, start);
-        } else if (COLLECTION_ARGS_PATTERN.matcher(attributeNameWithArguments).matches()) {
-            return attributeNameWithArguments;
-        } else {
-            throw new IllegalArgumentException("Wrong argument input passed to extractor " + attributeNameWithArguments);
-        }
-    }
-
-    public static int indexOf(String input, char splitter, int offset) {
-        for (int i = offset; i < input.length(); i++) {
-            if (input.charAt(i) == splitter) {
-                return i;
-            }
-        }
-        return -1;
+        throw new IllegalArgumentException("Wrong argument input passed " + attributeNameWithArguments);
     }
 
 }

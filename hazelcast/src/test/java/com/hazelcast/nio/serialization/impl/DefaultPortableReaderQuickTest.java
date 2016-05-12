@@ -411,6 +411,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         final static int FACTORY_ID = 1;
         final static int ID = 5;
 
+        public int power;
         public String name;
         public EnginePortable engine;
         public Portable[] wheels;
@@ -418,6 +419,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         public String[] model;
 
         public CarPortable(String name, EnginePortable engine, WheelPortable... wheels) {
+            this.power = 100;
             this.name = name;
             this.engine = engine;
             this.wheels = wheels;
@@ -436,6 +438,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
+            writer.writeInt("power", power);
             writer.writeUTF("name", name);
             writer.writePortable("engine", engine);
             writer.writePortableArray("wheels", wheels);
@@ -443,6 +446,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         }
 
         public void readPortable(PortableReader reader) throws IOException {
+            power = reader.readInt("power");
             name = reader.readUTF("name");
             engine = reader.readPortable("engine");
             wheels = reader.readPortableArray("wheels");
