@@ -178,6 +178,7 @@ final class PortableContextImpl implements PortableContext {
     }
 
     @Override
+    // TODO cache the result
     public FieldDefinition getFieldDefinition(ClassDefinition classDef, String name) {
         FieldDefinition fd = classDef.getField(name);
         if (fd == null) {

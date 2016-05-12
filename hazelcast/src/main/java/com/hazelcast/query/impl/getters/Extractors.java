@@ -50,6 +50,7 @@ public final class Extractors {
     private final EvictableGetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
 
+    // TODO InternalSerializationService should be passed in constructor
     public Extractors(List<MapAttributeConfig> mapAttributeConfigs) {
         this.extractors = instantiateExtractors(mapAttributeConfigs);
         this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
