@@ -26,7 +26,6 @@ import java.util.Map;
 public class AWSClient {
 
     private String endpoint;
-    private String defaultHostHeader = "ec2.amazonaws.com";
     private final AwsConfig awsConfig;
 
 
