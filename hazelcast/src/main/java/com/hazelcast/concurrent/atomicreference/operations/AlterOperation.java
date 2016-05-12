@@ -37,12 +37,14 @@ public class AlterOperation extends AbstractAlterOperation {
         IFunction f = nodeEngine.toObject(function);
         AtomicReferenceContainer reference = getReferenceContainer();
 
-        Object input = nodeEngine.toObject(reference.get());
+        Data originalData = reference.get();
+        Object input = nodeEngine.toObject(originalData);
         //noinspection unchecked
         Object output = f.apply(input);
-        shouldBackup = !isEquals(input, output);
+        Data serializedOutput = nodeEngine.toData(output);
+        shouldBackup = !isEquals(originalData, serializedOutput);
         if (shouldBackup) {
-            backup = nodeEngine.toData(output);
+            backup = serializedOutput;
             reference.set(backup);
         }
     }
