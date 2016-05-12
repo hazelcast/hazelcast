@@ -227,9 +227,6 @@ public class GroupProperties extends HazelcastProperties {
     @Deprecated
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName();
     @Deprecated
-    public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
-            = GroupProperty.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS.getName();
-    @Deprecated
     public static final String PROP_BACKPRESSURE_ENABLED = GroupProperty.BACKPRESSURE_ENABLED.getName();
     @Deprecated
     public static final String PROP_BACKPRESSURE_SYNCWINDOW = GroupProperty.BACKPRESSURE_SYNCWINDOW.getName();

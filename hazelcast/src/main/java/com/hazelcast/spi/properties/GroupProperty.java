@@ -276,8 +276,6 @@ public final class GroupProperty {
 
     public static final HazelcastProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.client.max.no.heartbeat.seconds", 300, SECONDS);
-    public static final HazelcastProperty MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
-            = new HazelcastProperty("hazelcast.migration.min.delay.on.member.removed.seconds", 5, SECONDS);
 
     public static final HazelcastProperty CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.cluster.shutdown.timeout.seconds", 900, SECONDS);

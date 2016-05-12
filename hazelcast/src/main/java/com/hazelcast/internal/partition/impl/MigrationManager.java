@@ -83,9 +83,7 @@ public class MigrationManager {
 
     private static final boolean ASSERTION_ENABLED = MigrationManager.class.desiredAssertionStatus();
     private static final int PARTITION_STATE_VERSION_INCREMENT_DELTA_ON_MIGRATION_FAILURE = 2;
-    private static final boolean DISABLE_RESUME_EVENTUALLY
-            = Boolean.getBoolean("hazelcast.migration.resume.eventually.disabled");
-
+    private static final int MIGRATION_PAUSE_DURATION_SECONDS_ON_MIGRATION_FAILURE = 3;
 
     final long partitionMigrationInterval;
 
@@ -145,9 +143,7 @@ public class MigrationManager {
         ILogger migrationThreadLogger = node.getLogger(MigrationThread.class);
         migrationThread = new MigrationThread(this, node.getHazelcastThreadGroup(), migrationThreadLogger, migrationQueue);
 
-        long migrationPauseDelayMs =
-                properties.getMillis(GroupProperty.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS);
-
+        long migrationPauseDelayMs = TimeUnit.SECONDS.toMillis(MIGRATION_PAUSE_DURATION_SECONDS_ON_MIGRATION_FAILURE);
         ExecutionService executionService = nodeEngine.getExecutionService();
         delayedResumeMigrationTrigger = new CoalescingDelayedTrigger(
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, new Runnable() {
@@ -171,12 +167,7 @@ public class MigrationManager {
         migrationAllowed.set(true);
     }
 
-    void resumeMigrationEventually() {
-        if (DISABLE_RESUME_EVENTUALLY) {
-            resumeMigration();
-            return;
-        }
-
+    private void resumeMigrationEventually() {
         delayedResumeMigrationTrigger.executeWithDelay();
     }
 
