@@ -25,6 +25,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
@@ -94,6 +95,7 @@ public abstract class AbstractCacheService
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
     protected CacheSplitBrainHandler cacheSplitBrainHandler;
+    protected ILogger logger;
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
@@ -105,6 +107,7 @@ public abstract class AbstractCacheService
         }
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
         this.cacheSplitBrainHandler = new CacheSplitBrainHandler(nodeEngine, configs, segments);
+        this.logger = nodeEngine.getLogger(getClass());
         postInit(nodeEngine, properties);
     }
 
@@ -304,12 +307,19 @@ public abstract class AbstractCacheService
                 setManagementEnabled(config, config.getNameWithPrefix(), true);
             }
         }
+        if (localConfig == null) {
+            logger.info("Added cache config: " + config);
+        }
         return localConfig;
     }
 
     @Override
     public CacheConfig deleteCacheConfig(String name) {
-        return configs.remove(name);
+        CacheConfig config = configs.remove(name);
+        if (config != null) {
+            logger.info("Removed cache config: " + config);
+        }
+        return config;
     }
 
     @Override
