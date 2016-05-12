@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.plugin.multicast;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.ByteArrayInputStream;
@@ -25,31 +26,35 @@ import java.net.MulticastSocket;
 
 public class MulticastDiscoveryReceiver {
 
-    MulticastSocket multicastSocket;
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
+    MulticastSocket multicastSocket;
     DatagramPacket datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
+    ILogger logger;
 
 
-    public MulticastDiscoveryReceiver(MulticastSocket multicastSocket) {
+    public MulticastDiscoveryReceiver(MulticastSocket multicastSocket, ILogger logger) {
         this.multicastSocket = multicastSocket;
+        this.logger = logger;
     }
 
     public MulticastMemberInfo receive() {
+        ObjectInputStream in = null;
+        ByteArrayInputStream bis = null;
         try {
             Object o;
             multicastSocket.receive(datagramPacketReceive);
             byte[] data = datagramPacketReceive.getData();
             MulticastMemberInfo multicastMemberInfo;
-            ByteArrayInputStream bis = new ByteArrayInputStream(data);
-            ObjectInputStream in;
+            bis = new ByteArrayInputStream(data);
             in = new ObjectInputStream(bis);
             o = in.readObject();
             multicastMemberInfo = (MulticastMemberInfo) o;
-            IOUtil.closeResource(bis);
-            IOUtil.closeResource(in);
             return multicastMemberInfo;
         } catch (Exception e) {
-            // ignore exception
+            logger.finest("Couldn't get member info from multicast channel " + e.getMessage());
+        } finally {
+            IOUtil.closeResource(bis);
+            IOUtil.closeResource(in);
         }
         return null;
     }

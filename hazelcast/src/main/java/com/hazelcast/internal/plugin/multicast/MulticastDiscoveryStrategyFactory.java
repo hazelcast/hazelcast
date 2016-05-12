@@ -32,8 +32,8 @@ public class MulticastDiscoveryStrategyFactory implements DiscoveryStrategyFacto
     }
 
     @Override
-    public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
-        return new MulticastDiscoveryStrategy(discoveryNode, logger, properties);
+    public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> prop) {
+        return new MulticastDiscoveryStrategy(discoveryNode, logger, prop);
     }
 
     @Override

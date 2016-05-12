@@ -27,8 +27,10 @@ import com.hazelcast.internal.plugin.multicast.MulticastDiscoveryStrategy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
@@ -37,6 +39,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientToMemberDiscoveryTest extends HazelcastTestSupport {
 
     Config serverConfig;

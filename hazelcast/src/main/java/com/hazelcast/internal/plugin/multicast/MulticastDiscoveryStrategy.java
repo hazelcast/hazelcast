@@ -33,41 +33,44 @@ import java.util.Map;
 
 public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
+    private static final int DATA_OUTPUT_BUFFER_SIZE = 64 * 1024;
+    private static final int DEFAULT_MULTICAST_PORT = 64 * 54327;
+    private static final int SOCKET_TIME_TO_LIVE = 255;
+    private static final int SOCKET_TIMEOUT = 3000;
+    private static final String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
+
     private DiscoveryNode discoveryNode;
     private MulticastSocket multicastSocket;
-    Thread thread;
-    private Map<String, Comparable> properties;
-    private static final int DATA_OUTPUT_BUFFER_SIZE = 1024;
-    boolean isClient;
+    private Thread thread;
     private MulticastDiscoveryReceiver multicastDiscoveryReceiver;
     private MulticastDiscoverySender multicastDiscoverySender;
     private ILogger logger;
+    private boolean isClient;
 
     public MulticastDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
         super(logger, properties);
         this.discoveryNode = discoveryNode;
-        this.properties = properties;
         this.logger = logger;
     }
 
     private void initializeMulticastSocket() {
         try {
-            int port = getOrDefault(MulticastProperties.PORT, 54327);
-            String group = getOrDefault(MulticastProperties.GROUP, "224.2.2.3");
+            int port = getOrDefault(MulticastProperties.PORT, DEFAULT_MULTICAST_PORT);
+            String group = getOrDefault(MulticastProperties.GROUP, DEFAULT_MULTICAST_GROUP);
             multicastSocket = new MulticastSocket(port);
             multicastSocket.setReuseAddress(true);
-            multicastSocket.setTimeToLive(255);
-            multicastSocket.setReceiveBufferSize(64 * DATA_OUTPUT_BUFFER_SIZE);
-            multicastSocket.setSendBufferSize(64 * DATA_OUTPUT_BUFFER_SIZE);
-            multicastSocket.setSoTimeout(3000);
+            multicastSocket.setTimeToLive(SOCKET_TIME_TO_LIVE);
+            multicastSocket.setReceiveBufferSize(DATA_OUTPUT_BUFFER_SIZE);
+            multicastSocket.setSendBufferSize(DATA_OUTPUT_BUFFER_SIZE);
+            multicastSocket.setSoTimeout(SOCKET_TIMEOUT);
             multicastSocket.joinGroup(InetAddress.getByName(group));
-            multicastDiscoverySender = new MulticastDiscoverySender(discoveryNode, multicastSocket);
-            multicastDiscoveryReceiver = new MulticastDiscoveryReceiver(multicastSocket);
+            multicastDiscoverySender = new MulticastDiscoverySender(discoveryNode, multicastSocket, logger);
+            multicastDiscoveryReceiver = new MulticastDiscoveryReceiver(multicastSocket, logger);
             if (discoveryNode != null) {
                 isClient = false;
             }
         } catch (Exception e) {
-            logger.warning(e.getMessage());
+            logger.finest(e.getMessage());
         }
 
     }
@@ -86,13 +89,15 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
         DiscoveryNode discoveryNode;
         MulticastMemberInfo multicastMemberInfo = multicastDiscoveryReceiver.receive();
 
-        if (multicastMemberInfo == null) return null;
+        if (multicastMemberInfo == null) {
+            return null;
+        }
         ArrayList<DiscoveryNode> arrayList = new ArrayList<DiscoveryNode>();
         try {
             discoveryNode = new SimpleDiscoveryNode(new Address(multicastMemberInfo.getHost(), multicastMemberInfo.getPort()));
             arrayList.add(discoveryNode);
         } catch (UnknownHostException e) {
-            logger.warning(e.getMessage());
+            logger.finest(e.getMessage());
         }
         return arrayList;
     }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.plugin.multicast;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 
 import java.io.ByteArrayOutputStream;
@@ -23,49 +25,50 @@ import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
-import java.net.InetAddress;
 import java.net.MulticastSocket;
 
 public class MulticastDiscoverySender implements Runnable {
 
-    DiscoveryNode discoveryNode;
+    private static final int SLEEP_DURATION = 2000;
     MulticastSocket multicastSocket;
     MulticastMemberInfo multicastMemberInfo;
     DatagramPacket datagramPacket;
-    private boolean stop = false;
+    ILogger logger;
+    private boolean stop;
 
-    public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket) throws IOException {
-        this.discoveryNode = discoveryNode;
+    public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket, ILogger logger)
+            throws IOException {
         this.multicastSocket = multicastSocket;
+        this.logger = logger;
         if (discoveryNode != null) {
-            multicastMemberInfo = new MulticastMemberInfo(discoveryNode.getPublicAddress().getHost(), discoveryNode.getPublicAddress().getPort());
+            Address address = discoveryNode.getPublicAddress();
+            multicastMemberInfo = new MulticastMemberInfo(address.getHost(), address.getPort());
         }
         initDatagramPacket();
     }
 
     private void initDatagramPacket() throws IOException {
-
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutput out;
         out = new ObjectOutputStream(bos);
         out.writeObject(multicastMemberInfo);
         byte[] yourBytes = bos.toByteArray();
-        datagramPacket = new DatagramPacket(yourBytes, yourBytes.length, InetAddress
-                .getByName("224.2.2.3"), 54327);
+        datagramPacket = new DatagramPacket(yourBytes, yourBytes.length,
+                multicastSocket.getInetAddress(), multicastSocket.getPort());
     }
 
     @Override
     public void run() {
         while (!stop) {
             try {
-                Thread.sleep(2000);
+                Thread.sleep(SLEEP_DURATION);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.finest("Thread sleeping interrupted. This may due to graceful shutdown.");
             }
             try {
                 send();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.finest(e.getMessage());
             }
         }
     }
