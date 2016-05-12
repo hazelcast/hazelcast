@@ -30,23 +30,25 @@ public class MulticastDiscoverySender implements Runnable {
 
     DiscoveryNode discoveryNode;
     MulticastSocket multicastSocket;
-    MemberInfo memberInfo;
+    MulticastMemberInfo multicastMemberInfo;
     DatagramPacket datagramPacket;
+    private boolean stop = false;
 
     public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket) throws IOException {
         this.discoveryNode = discoveryNode;
         this.multicastSocket = multicastSocket;
-        if (discoveryNode != null)
-            memberInfo = new MemberInfo(discoveryNode.getPublicAddress().getHost(), discoveryNode.getPublicAddress().getPort());
+        if (discoveryNode != null) {
+            multicastMemberInfo = new MulticastMemberInfo(discoveryNode.getPublicAddress().getHost(), discoveryNode.getPublicAddress().getPort());
+        }
         initDatagramPacket();
     }
 
     private void initDatagramPacket() throws IOException {
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutput out = null;
+        ObjectOutput out;
         out = new ObjectOutputStream(bos);
-        out.writeObject(memberInfo);
+        out.writeObject(multicastMemberInfo);
         byte[] yourBytes = bos.toByteArray();
         datagramPacket = new DatagramPacket(yourBytes, yourBytes.length, InetAddress
                 .getByName("224.2.2.3"), 54327);
@@ -54,7 +56,7 @@ public class MulticastDiscoverySender implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
+        while (!stop) {
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -70,5 +72,9 @@ public class MulticastDiscoverySender implements Runnable {
 
     void send() throws IOException {
         multicastSocket.send(datagramPacket);
+    }
+
+    void stop() {
+        stop = true;
     }
 }

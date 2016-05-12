@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.plugin.multicast;
 
-import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
-import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
@@ -31,22 +31,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-public class MulticastDiscoveryStrategy implements DiscoveryStrategy {
+public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private DiscoveryNode discoveryNode;
     private MulticastSocket multicastSocket;
-    Thread t;
+    Thread thread;
     private Map<String, Comparable> properties;
     private static final int DATA_OUTPUT_BUFFER_SIZE = 1024;
     boolean isClient;
-
     private MulticastDiscoveryReceiver multicastDiscoveryReceiver;
     private MulticastDiscoverySender multicastDiscoverySender;
+    private ILogger logger;
 
-    public MulticastDiscoveryStrategy(DiscoveryNode discoveryNode, Map<String, Comparable> properties) {
+    public MulticastDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
+        super(logger, properties);
         this.discoveryNode = discoveryNode;
         this.properties = properties;
-
+        this.logger = logger;
     }
 
     private void initializeMulticastSocket() {
@@ -66,40 +67,40 @@ public class MulticastDiscoveryStrategy implements DiscoveryStrategy {
                 isClient = false;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.warning(e.getMessage());
         }
 
     }
-
 
     @Override
     public void start() {
         initializeMulticastSocket();
         if (!isClient) {
-            t = new Thread(multicastDiscoverySender);
-            t.start();
+            thread = new Thread(multicastDiscoverySender);
+            thread.start();
         }
     }
 
     @Override
     public Iterable<DiscoveryNode> discoverNodes() {
-        DiscoveryNode discoveryNode = null;
-        MemberInfo memberInfo = multicastDiscoveryReceiver.receive();
+        DiscoveryNode discoveryNode;
+        MulticastMemberInfo multicastMemberInfo = multicastDiscoveryReceiver.receive();
 
-        if (memberInfo == null) return null;
+        if (multicastMemberInfo == null) return null;
         ArrayList<DiscoveryNode> arrayList = new ArrayList<DiscoveryNode>();
         try {
-            discoveryNode = new SimpleDiscoveryNode(new Address(memberInfo.getHost(), memberInfo.getPort()));
+            discoveryNode = new SimpleDiscoveryNode(new Address(multicastMemberInfo.getHost(), multicastMemberInfo.getPort()));
+            arrayList.add(discoveryNode);
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            logger.warning(e.getMessage());
         }
-        arrayList.add(discoveryNode);
         return arrayList;
     }
 
     @Override
     public void destroy() {
-        t.stop();
+        multicastDiscoverySender.stop();
+        thread.interrupt();
     }
 
     @Override
@@ -111,24 +112,5 @@ public class MulticastDiscoveryStrategy implements DiscoveryStrategy {
     public Map<String, Object> discoverLocalMetadata() {
         return new HashMap<String, Object>();
     }
-
-    private <T extends Comparable> T getOrNull(PropertyDefinition property) {
-        return getOrDefault(property, null);
-    }
-
-    private <T extends Comparable> T getOrDefault(PropertyDefinition property, T defaultValue) {
-
-        if (properties == null || property == null) {
-            return defaultValue;
-        }
-
-        Comparable value = properties.get(property.key());
-        if (value == null) {
-            return defaultValue;
-        }
-
-        return (T) value;
-    }
-
 
 }

@@ -19,12 +19,12 @@ package com.hazelcast.internal.plugin.multicast;
 import java.io.Serializable;
 
 
-public class MemberInfo implements Serializable {
+public class MulticastMemberInfo implements Serializable {
 
     private String host;
     private int port;
 
-    public MemberInfo(String host, int port) {
+    public MulticastMemberInfo(String host, int port) {
         this.host = host;
         this.port = port;
     }

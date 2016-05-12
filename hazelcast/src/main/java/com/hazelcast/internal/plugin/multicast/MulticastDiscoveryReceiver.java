@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.plugin.multicast;
 
+import com.hazelcast.nio.IOUtil;
+
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.MulticastSocket;
@@ -34,35 +34,22 @@ public class MulticastDiscoveryReceiver {
         this.multicastSocket = multicastSocket;
     }
 
-    public MemberInfo receive() {
+    public MulticastMemberInfo receive() {
         try {
             Object o;
             multicastSocket.receive(datagramPacketReceive);
             byte[] data = datagramPacketReceive.getData();
-            MemberInfo memberInfo = null;
+            MulticastMemberInfo multicastMemberInfo;
             ByteArrayInputStream bis = new ByteArrayInputStream(data);
-            ObjectInput in = null;
-            try {
-                in = new ObjectInputStream(bis);
-                o = in.readObject();
-                memberInfo = (MemberInfo) o;
-            } finally {
-                try {
-                    bis.close();
-                } catch (IOException ex) {
-                    // ignore close exception
-                }
-                try {
-                    if (in != null) {
-                        in.close();
-                    }
-                } catch (IOException ex) {
-                    // ignore close exception
-                }
-                return memberInfo;
-            }
-
+            ObjectInputStream in;
+            in = new ObjectInputStream(bis);
+            o = in.readObject();
+            multicastMemberInfo = (MulticastMemberInfo) o;
+            IOUtil.closeResource(bis);
+            IOUtil.closeResource(in);
+            return multicastMemberInfo;
         } catch (Exception e) {
+            // ignore exception
         }
         return null;
     }
