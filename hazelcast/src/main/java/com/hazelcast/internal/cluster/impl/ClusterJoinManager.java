@@ -48,9 +48,9 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -85,7 +85,7 @@ public class ClusterJoinManager {
     private final ClusterClockImpl clusterClock;
     private final ClusterStateManager clusterStateManager;
 
-    private final Set<MemberInfo> setJoins = new LinkedHashSet<MemberInfo>(100);
+    private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<Address, MemberInfo>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
     private final FutureUtil.ExceptionHandler whileFinalizeJoinsExceptionHandler;
@@ -117,7 +117,7 @@ public class ClusterJoinManager {
 
         clusterServiceLock.lock();
         try {
-            return joinInProgress || !setJoins.isEmpty();
+            return joinInProgress || !joiningMembers.isEmpty();
         } finally {
             clusterServiceLock.unlock();
         }
@@ -147,7 +147,7 @@ public class ClusterJoinManager {
             return;
         }
 
-        executeJoinRequest(joinRequest, connection, target);
+        executeJoinRequest(joinRequest, connection);
     }
 
     private boolean ensureNodeIsReady() {
@@ -202,13 +202,14 @@ public class ClusterJoinManager {
         }
     }
 
-    private void executeJoinRequest(JoinRequest joinRequest, Connection connection, Address target) {
+    private void executeJoinRequest(JoinRequest joinRequest, Connection connection) {
         clusterServiceLock.lock();
         try {
             if (checkIfJoinRequestFromAnExistingMember(joinRequest, connection)) {
                 return;
             }
 
+            final Address target = joinRequest.getAddress();
             if (checkClusterStateBeforeJoin(target)) {
                 return;
             }
@@ -219,7 +220,7 @@ public class ClusterJoinManager {
                 logger.finest(format("Handling join from %s, joinInProgress: %b%s", target, joinInProgress, timeToStart));
             }
 
-            MemberInfo memberInfo = getMemberInfo(joinRequest, target);
+            MemberInfo memberInfo = getMemberInfo(joinRequest);
             if (memberInfo == null) {
                 return;
             }
@@ -228,7 +229,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            startJoinRequest(target, now, memberInfo);
+            startJoinRequest(now, memberInfo);
         } finally {
             clusterServiceLock.unlock();
         }
@@ -255,14 +256,14 @@ public class ClusterJoinManager {
         return false;
     }
 
-    private MemberInfo getMemberInfo(JoinRequest joinRequest, Address target) {
+    private MemberInfo getMemberInfo(JoinRequest joinRequest) {
         MemberInfo memberInfo = joinRequest.toMemberInfo();
-        if (!setJoins.contains(memberInfo)) {
+        if (!joiningMembers.containsKey(joinRequest.getAddress())) {
             try {
-                checkSecureLogin(joinRequest, memberInfo);
+                checkSecureLogin(joinRequest);
             } catch (Exception e) {
                 ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
-                nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), target);
+                nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinRequest.getAddress());
                 securityLogger.severe(e);
                 return null;
             }
@@ -270,8 +271,8 @@ public class ClusterJoinManager {
         return memberInfo;
     }
 
-    private void checkSecureLogin(JoinRequest joinRequest, MemberInfo newMemberInfo) {
-        if (node.securityContext != null && !setJoins.contains(newMemberInfo)) {
+    private void checkSecureLogin(JoinRequest joinRequest) {
+        if (node.securityContext != null) {
             Credentials credentials = joinRequest.getCredentials();
             if (credentials == null) {
                 throw new SecurityException("Expecting security credentials, but credentials could not be found in join request");
@@ -299,16 +300,21 @@ public class ClusterJoinManager {
         return true;
     }
 
-    private void startJoinRequest(Address target, long now, MemberInfo memberInfo) {
+    private void startJoinRequest(long now, MemberInfo memberInfo) {
         if (firstJoinRequest == 0) {
             firstJoinRequest = now;
         }
 
-        if (setJoins.add(memberInfo)) {
-            sendMasterAnswer(target);
+        final MemberInfo existing = joiningMembers.put(memberInfo.getAddress(), memberInfo);
+        if (existing == null) {
+            sendMasterAnswer(memberInfo.getAddress());
             if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
                 timeToStartJoin = now + waitMillisBeforeJoin;
             }
+        } else if (!existing.getUuid().equals(memberInfo.getUuid())) {
+            logger.warning("Received a new join request from " + memberInfo.getAddress()
+                    + " with a new uuid " + memberInfo.getUuid()
+                    + ". Previous uuid was " + existing.getUuid());
         }
         if (now >= timeToStartJoin) {
             startJoin();
@@ -486,7 +492,7 @@ public class ClusterJoinManager {
                 node.getPartitionService().pauseMigration();
                 Collection<MemberImpl> members = clusterService.getMemberImpls();
                 Collection<MemberInfo> memberInfos = createMemberInfoList(members);
-                for (MemberInfo memberJoining : setJoins) {
+                for (MemberInfo memberJoining : joiningMembers.values()) {
                     memberInfos.add(memberJoining);
                 }
                 long time = clusterClock.getClusterTime();
@@ -497,10 +503,12 @@ public class ClusterJoinManager {
                 boolean createPostJoinOperation = (postJoinOps != null && postJoinOps.length > 0);
                 PostJoinOperation postJoinOp = (createPostJoinOperation ? new PostJoinOperation(postJoinOps) : null);
 
-                int count = members.size() - 1 + setJoins.size();
+                clusterService.updateMembers(memberInfos);
+
+                int count = members.size() - 1 + joiningMembers.size();
                 List<Future> calls = new ArrayList<Future>(count);
                 PartitionRuntimeState partitionState = node.getPartitionService().createPartitionState();
-                for (MemberInfo member : setJoins) {
+                for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
                             clusterService.getClusterId(), startTime,
@@ -514,10 +522,10 @@ public class ClusterJoinManager {
                     }
                 }
 
-                clusterService.updateMembers(memberInfos);
                 int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);
                 waitWithDeadline(calls, timeout, TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
             } finally {
+                reset();
                 node.getPartitionService().resumeMigration();
             }
         } finally {
@@ -535,7 +543,7 @@ public class ClusterJoinManager {
         clusterServiceLock.lock();
         try {
             joinInProgress = false;
-            setJoins.clear();
+            joiningMembers.clear();
             timeToStartJoin = Clock.currentTimeMillis() + waitMillisBeforeJoin;
             firstJoinRequest = 0;
         } finally {
@@ -543,7 +551,7 @@ public class ClusterJoinManager {
         }
     }
 
-    void removeJoin(MemberInfo memberInfo) {
-        setJoins.remove(memberInfo);
+    void removeJoin(Address address) {
+        joiningMembers.remove(address);
     }
 }

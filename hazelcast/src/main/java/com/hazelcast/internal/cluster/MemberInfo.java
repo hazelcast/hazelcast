@@ -144,6 +144,7 @@ public class MemberInfo implements DataSerializable {
     public String toString() {
         return "MemberInfo{"
                 + "address=" + address
+                + ", uuid=" + uuid
                 + ", liteMember=" + liteMember
                 + '}';
     }

@@ -181,6 +181,7 @@ public abstract class AbstractMember implements Member {
         sb.append("]");
         sb.append(":");
         sb.append(address.getPort());
+        sb.append(" - ").append(uuid);
         if (localMember()) {
             sb.append(" this");
         }
