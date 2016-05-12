@@ -14,8 +14,7 @@ public class SelectNow_NonBlockingIOThreadingModelFactory implements IOThreading
                 ioService.loggingService,
                 metricsRegistry,
                 ioService.hazelcastThreadGroup);
-        threadingModel.setInputSelectNow(true);
-        threadingModel.setOutputSelectNow(true);
+        threadingModel.setSelectorMode(SelectorMode.SELECT_NOW);
         return threadingModel;
     }
 }

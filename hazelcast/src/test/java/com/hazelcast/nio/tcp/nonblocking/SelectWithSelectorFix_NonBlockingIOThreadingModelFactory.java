@@ -1,10 +1,11 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.nio.tcp.MockIOService;
 import com.hazelcast.nio.tcp.IOThreadingModelFactory;
+import com.hazelcast.nio.tcp.MockIOService;
 
-public class Select_NonBlockingIOThreadingModelFactory implements IOThreadingModelFactory {
+public class SelectWithSelectorFix_NonBlockingIOThreadingModelFactory
+        implements IOThreadingModelFactory {
 
     @Override
     public NonBlockingIOThreadingModel create(
@@ -14,7 +15,8 @@ public class Select_NonBlockingIOThreadingModelFactory implements IOThreadingMod
                 ioService.loggingService,
                 metricsRegistry,
                 ioService.hazelcastThreadGroup);
-        threadingModel.setSelectorMode(SelectorMode.SELECT);
+        threadingModel.setSelectorMode(SelectorMode.SELECT_WITH_FIX);
+        threadingModel.setSelectorWorkaroundTest(true);
         return threadingModel;
     }
 }
