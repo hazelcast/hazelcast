@@ -116,5 +116,4 @@ public class InterceptorRegistry {
 
         interceptors = unmodifiableList(tmpInterceptors);
     }
-
 }

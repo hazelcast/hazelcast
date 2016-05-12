@@ -16,9 +16,18 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationexecutor.impl.DefaultOperationQueue;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationQueue;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,44 +37,114 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class InterceptorRegistryTest extends HazelcastTestSupport {
 
+    private static final ILogger LOGGER = Logger.getLogger(InterceptorRegistryTest.class);
+
     private final InterceptorRegistry registry = new InterceptorRegistry();
+    private final TestMapInterceptor interceptor = new TestMapInterceptor();
 
     @Test
-    public void test_register() throws Exception {
-        TestMapInterceptor interceptor = new TestMapInterceptor();
-
+    public void testRegister() {
         registry.register(interceptor.id, interceptor);
 
-        List<MapInterceptor> interceptors = registry.getInterceptors();
-
-        assertTrue(interceptors.contains(interceptor));
+        assertInterceptorRegistryContainsInterceptor();
     }
 
     @Test
-    public void test_deregister() throws Exception {
-        TestMapInterceptor interceptor = new TestMapInterceptor();
+    public void testRegister_whenRegisteredTwice_doNothing() {
+        registry.register(interceptor.id, interceptor);
+        registry.register(interceptor.id, interceptor);
 
+        assertInterceptorRegistryContainsInterceptor();
+    }
+
+    @Test
+    @RequireAssertEnabled
+    public void testRegister_fromPartitionOperationThread() throws Exception {
+        OperationQueue queue = new DefaultOperationQueue();
+        PartitionOperationThread thread = getPartitionOperationThread(queue);
+        thread.start();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Object task = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    registry.register(interceptor.id, interceptor);
+                } catch (AssertionError e) {
+                    e.printStackTrace();
+                    latch.countDown();
+                }
+            }
+        };
+        queue.add(task, false);
+
+        latch.await();
+        thread.shutdown();
+        thread.join();
+
+        assertInterceptorRegistryContainsNotInterceptor();
+    }
+
+    @Test
+    public void testDeregister() {
         registry.register(interceptor.id, interceptor);
         registry.deregister(interceptor.id);
 
-        List<MapInterceptor> interceptors = registry.getInterceptors();
-
-        assertFalse(interceptors.contains(interceptor));
+        assertInterceptorRegistryContainsNotInterceptor();
     }
 
+    @Test
+    public void testDeregister_whenInterceptorWasNotRegistered_thenDoNothing() {
+        registry.deregister(interceptor.id);
+
+        assertInterceptorRegistryContainsNotInterceptor();
+    }
+
+    @Test
+    @RequireAssertEnabled
+    public void testDeregister_fromPartitionOperationThread() throws Exception {
+        OperationQueue queue = new DefaultOperationQueue();
+        PartitionOperationThread thread = getPartitionOperationThread(queue);
+        thread.start();
+
+        registry.register(interceptor.id, interceptor);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Object task = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    registry.deregister(interceptor.id);
+                } catch (AssertionError e) {
+                    e.printStackTrace();
+                    latch.countDown();
+                }
+            }
+        };
+        queue.add(task, false);
+
+        latch.await();
+        thread.shutdown();
+        thread.join();
+
+        assertInterceptorRegistryContainsInterceptor();
+    }
 
     @Test
     @Category(NightlyTest.class)
-    public void testInternalStructuresEmptied_after_concurrent_register_deregister() throws Exception {
+    public void test_afterConcurrentRegisterDeregister_thenInternalStructuresAreEmpty() throws Exception {
         final AtomicBoolean stop = new AtomicBoolean(false);
 
         List<Thread> threads = new ArrayList<Thread>();
@@ -91,11 +170,39 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        // expecting internals empty.
-        assertTrue("Id2Interceptor map should be empty", registry.getId2InterceptorMap().isEmpty());
+        // expecting internals empty
         assertTrue("Interceptor list should be empty", registry.getInterceptors().isEmpty());
+        assertTrue("Id2Interceptor map should be empty", registry.getId2InterceptorMap().isEmpty());
     }
 
+    private void assertInterceptorRegistryContainsInterceptor() {
+        List<MapInterceptor> interceptors = registry.getInterceptors();
+        assertTrue(interceptors.contains(interceptor));
+
+        Map<String, MapInterceptor> id2InterceptorMap = registry.getId2InterceptorMap();
+        assertTrue(id2InterceptorMap.containsKey(interceptor.id));
+        assertTrue(id2InterceptorMap.containsValue(interceptor));
+    }
+
+    private void assertInterceptorRegistryContainsNotInterceptor() {
+        List<MapInterceptor> interceptors = registry.getInterceptors();
+        assertFalse(interceptors.contains(interceptor));
+
+        Map<String, MapInterceptor> id2InterceptorMap = registry.getId2InterceptorMap();
+        assertFalse(id2InterceptorMap.containsKey(interceptor.id));
+        assertFalse(id2InterceptorMap.containsValue(interceptor));
+    }
+
+    private PartitionOperationThread getPartitionOperationThread(OperationQueue queue) {
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("instanceName", LOGGER, getClass().getClassLoader());
+        NodeExtension nodeExtension = mock(NodeExtension.class);
+
+        OperationRunner operationRunner = mock(OperationRunner.class);
+        OperationRunner[] operationRunners = new OperationRunner[]{operationRunner};
+
+        return new PartitionOperationThread("threadName", 0, queue, LOGGER, hazelcastThreadGroup,
+                nodeExtension, operationRunners);
+    }
 
     private static class TestMapInterceptor implements MapInterceptor {
 
@@ -108,7 +215,6 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
 
         @Override
         public void afterGet(Object value) {
-
         }
 
         @Override
@@ -118,7 +224,6 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
 
         @Override
         public void afterPut(Object value) {
-
         }
 
         @Override
@@ -128,12 +233,11 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
 
         @Override
         public void afterRemove(Object value) {
-
         }
 
         @Override
         public int hashCode() {
-            return id != null ? id.hashCode() : 0;
+            return id.hashCode();
         }
 
         @Override
@@ -147,9 +251,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
             }
 
             TestMapInterceptor that = (TestMapInterceptor) o;
-
-            return id != null ? id.equals(that.id) : that.id == null;
-
+            return id.equals(that.id);
         }
     }
 }
