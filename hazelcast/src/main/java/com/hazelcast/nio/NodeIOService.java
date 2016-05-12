@@ -26,6 +26,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -44,6 +45,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @PrivateApi
 public class NodeIOService implements IOService {
@@ -125,18 +127,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void removeEndpoint(final Address endPoint) {
-        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
-            @Override
-            public void run() {
-                // we can safely pass null because removeEndpoint is triggered from the connectionManager after
-                // the connection is closed. So a reason is already set.
-                node.clusterService.removeAddress(endPoint, null);
-            }
-        });
-    }
-
-    @Override
     public String getThreadPrefix() {
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         return threadGroup.getThreadPoolNamePrefix("IO");
@@ -149,6 +139,25 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public void removeEndpoint(final Address endPoint) {
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
+            @Override
+            public void run() {
+                // we can safely pass null because removeEndpoint is triggered from the connectionManager after
+                // the connection is closed. So a reason is already set.
+                node.clusterService.removeAddress(endPoint, null);
+            }
+        });
+    }
+
+    @Override
+    public void onDisconnect(final Address endpoint) {
+        if (node.clusterService.getMember(endpoint) != null) {
+            nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new ReconnectionTask(endpoint));
+        }
+    }
+
+    @Override
     public void onSuccessfulConnection(Address address) {
         if (!node.joined()) {
             node.getJoiner().unblacklist(address);
@@ -156,9 +165,14 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void onFailedConnection(Address address) {
+    public void onFailedConnection(final Address address) {
         if (!node.joined()) {
             node.getJoiner().blacklist(address, false);
+        } else {
+            if (node.clusterService.getMember(address) != null) {
+                nodeEngine.getExecutionService().schedule(ExecutionService.IO_EXECUTOR, new ReconnectionTask(address),
+                        getConnectionMonitorInterval(), TimeUnit.MILLISECONDS);
+            }
         }
     }
 
@@ -234,10 +248,6 @@ public class NodeIOService implements IOService {
     @Override
     public int getOutputSelectorThreadCount() {
         return node.getProperties().getInteger(GroupProperty.IO_OUTPUT_THREAD_COUNT);
-    }
-
-    @Override
-    public void onDisconnect(final Address endpoint) {
     }
 
     @Override
@@ -357,6 +367,22 @@ public class NodeIOService implements IOService {
     private Collection<String> getPortDefinitions(NetworkConfig networkConfig) {
         return networkConfig.getOutboundPortDefinitions() == null
                 ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
+    }
+
+    private class ReconnectionTask implements Runnable {
+        private final Address endpoint;
+
+        ReconnectionTask(Address endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        @Override
+        public void run() {
+            ClusterServiceImpl clusterService = node.clusterService;
+            if (clusterService.getMember(endpoint) != null) {
+                node.connectionManager.getOrConnect(endpoint);
+            }
+        }
     }
 }
 

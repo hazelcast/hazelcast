@@ -351,7 +351,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 migrationManager.triggerControlTask();
             }
 
-            migrationManager.resumeMigrationEventually();
+            migrationManager.resumeMigration();
         } finally {
             lock.unlock();
         }
@@ -552,8 +552,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 }
             }
         }
-
-
 
         return applyNewState(partitionState, sender);
     }

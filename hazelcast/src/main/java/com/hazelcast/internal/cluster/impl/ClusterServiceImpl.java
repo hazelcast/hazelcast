@@ -229,7 +229,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 assignNewMaster();
             }
             if (node.isMaster()) {
-                clusterJoinManager.removeJoin(new MemberInfo(deadAddress));
+                clusterJoinManager.removeJoin(deadAddress);
             }
             Connection conn = node.connectionManager.getConnection(deadAddress);
             if (destroyConnection && conn != null) {
@@ -365,7 +365,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             setMembers(updatedMembers);
             sendMembershipEvents(currentMemberMap.values(), newMembers);
 
-            clusterJoinManager.reset();
             clusterHeartbeatManager.heartBeat();
             node.setJoined();
             logger.info(membersString());
