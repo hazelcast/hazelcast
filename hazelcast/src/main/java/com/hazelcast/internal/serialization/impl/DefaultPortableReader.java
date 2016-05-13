@@ -644,8 +644,9 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         }
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "unchecked"})
     private <T> T readSinglePositionFromArray(PortablePosition position) throws IOException {
+        assert position.getType() != null : "Unsupported type read: null";
         switch (position.getType()) {
             case BYTE:
             case BYTE_ARRAY:
@@ -684,8 +685,9 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
         }
     }
 
-    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "unchecked"})
     private <T> T readSinglePositionFromNonArray(PortablePosition position) throws IOException {
+        assert position.getType() != null : "Unsupported type read: null";
         switch (position.getType()) {
             case BYTE:
                 return (T) Byte.valueOf(in.readByte(position.getStreamPosition()));
@@ -756,7 +758,7 @@ public class DefaultPortableReader extends ValueReader implements PortableReader
     private void validateType(PortablePosition position, FieldType expectedType) {
         FieldType returnedType = position.getType();
         if (position.getIndex() >= 0) {
-            returnedType = returnedType.getSingleType();
+            returnedType = returnedType != null ? returnedType.getSingleType() : null;
         }
         if (expectedType != returnedType) {
             throw new IllegalArgumentException("Wrong type read! Actual:" + returnedType.name() + " Expected: "

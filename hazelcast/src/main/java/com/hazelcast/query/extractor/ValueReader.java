@@ -29,29 +29,29 @@ package com.hazelcast.query.extractor;
  * <p>
  * The wildcard quantifier may be used a couple of times, like person.leg[any].finger[any] which returns all fingers
  * from all legs.
- *
- * @param <T> Type of the value to read
  */
-public abstract class ValueReader<T> {
+public abstract class ValueReader {
 
     /**
      * Read the value of the attribute specified by the path and returns the result via the callback.
      *
      * @param path     attribute to read the value from
      * @param callback callback to call with the value. May be called more than once in case of wildcards.
+     * @param <T>      Type of the value to read
      * @throws ValueReadingException in case of any reading errors. If an exception occurs the callback won't
      *                               be called at all
      */
-    public abstract void read(String path, ValueCallback<T> callback) throws ValueReadingException;
+    public abstract <T> void read(String path, ValueCallback<T> callback) throws ValueReadingException;
 
     /**
      * Read the value of the attribute specified by the path and returns the result directly to the collector.
      *
      * @param path      attribute to read the value from
      * @param collector collector to collect the result with. May collect more than one result in case of wildcards.
+     * @param <T>       Type of the value to read
      * @throws ValueReadingException in case of any reading errors. If an exception occurs the collector won't
      *                               be called at all
      */
-    public abstract void read(String path, ValueCollector<T> collector) throws ValueReadingException;
+    public abstract <T> void read(String path, ValueCollector<T> collector) throws ValueReadingException;
 
 }
