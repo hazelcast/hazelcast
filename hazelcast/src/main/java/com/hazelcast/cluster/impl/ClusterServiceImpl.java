@@ -893,7 +893,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
 
         logger.info("Number of other nodes remaining: " + getSize(NON_LOCAL_MEMBER_SELECTOR) + ". Shutting down itself.");
-        node.shutdown(false);
+
+        final HazelcastInstanceImpl hazelcastInstance = node.hazelcastInstance;
+        hazelcastInstance.getLifecycleService().shutdown();
     }
 
     public void initialClusterState(ClusterState clusterState) {
