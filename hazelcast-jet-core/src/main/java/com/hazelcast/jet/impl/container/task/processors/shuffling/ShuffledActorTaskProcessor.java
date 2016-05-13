@@ -28,9 +28,6 @@ import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.container.task.processors.ActorTaskProcessor;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.spi.dag.Edge;
-import com.hazelcast.jet.spi.data.DataReader;
-import com.hazelcast.jet.spi.data.DataWriter;
 import com.hazelcast.jet.spi.processor.ContainerProcessor;
 import com.hazelcast.nio.Address;
 
