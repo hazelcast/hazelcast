@@ -18,26 +18,39 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class ContainsKeyOperation extends KeyBasedMapOperation implements ReadonlyOperation, BlockingOperation {
+public class ContainsKeyOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation, IdentifiedDataSerializable {
 
-    private boolean containsKey;
+    private transient boolean containsKey;
 
     public ContainsKeyOperation() {
     }
 
     public ContainsKeyOperation(String name, Data dataKey) {
-        super(name, dataKey);
+        this.name = name;
+        this.dataKey = dataKey;
     }
 
+    @Override
     public void run() {
         containsKey = recordStore.containsKey(dataKey);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.CONTAINS_KEY;
     }
 
     @Override

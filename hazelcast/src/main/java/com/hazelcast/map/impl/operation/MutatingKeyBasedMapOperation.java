@@ -20,41 +20,42 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
-public abstract class KeyBasedMapOperation extends MapOperation implements PartitionAwareOperation, NamedOperation {
+public abstract class MutatingKeyBasedMapOperation extends MapOperation
+        implements PartitionAwareOperation, MutatingOperation {
 
     protected Data dataKey;
     protected long threadId;
     protected Data dataValue;
     protected long ttl = DEFAULT_TTL;
 
-    public KeyBasedMapOperation() {
+    public MutatingKeyBasedMapOperation() {
     }
 
-    public KeyBasedMapOperation(String name, Data dataKey) {
+    public MutatingKeyBasedMapOperation(String name, Data dataKey) {
         super(name);
         this.dataKey = dataKey;
     }
 
-    protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue) {
+    protected MutatingKeyBasedMapOperation(String name, Data dataKey, Data dataValue) {
         super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;
     }
 
-    protected KeyBasedMapOperation(String name, Data dataKey, long ttl) {
+    protected MutatingKeyBasedMapOperation(String name, Data dataKey, long ttl) {
         super(name);
         this.dataKey = dataKey;
         this.ttl = ttl;
     }
 
-    protected KeyBasedMapOperation(String name, Data dataKey, Data dataValue, long ttl) {
+    protected MutatingKeyBasedMapOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name);
         this.dataKey = dataKey;
         this.dataValue = dataValue;
@@ -113,13 +114,5 @@ public abstract class KeyBasedMapOperation extends MapOperation implements Parti
         threadId = in.readLong();
         dataValue = in.readData();
         ttl = in.readLong();
-    }
-
-
-    @Override
-    protected void toString(StringBuilder sb) {
-        super.toString(sb);
-
-        sb.append(", name=").append(name);
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
@@ -43,20 +44,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE = 2;
     public static final int PUT_BACKUP = 3;
     public static final int REMOVE_BACKUP = 4;
-    //public static final int DATA_RECORD = 5;
-    //public static final int OBJECT_RECORD = 6;
-    //public static final int CACHED_RECORD = 7;
-    public static final int KEY_SET = 8;
-    public static final int VALUES = 9;
-    public static final int MAP_ENTRIES = 10;
-    public static final int ENTRY_VIEW = 11;
-    //public static final int MAP_STATS = 12;
-    public static final int QUERY_RESULT_ROW = 13;
-    //public static final int QUERY_RESULT_SET = 14;
-    public static final int QUERY_RESULT = 15;
-    public static final int EVICT_BACKUP = 16;
+    public static final int KEY_SET = 5;
+    public static final int VALUES = 6;
+    public static final int MAP_ENTRIES = 7;
+    public static final int ENTRY_VIEW = 8;
+    public static final int QUERY_RESULT_ROW = 9;
+    public static final int QUERY_RESULT = 10;
+    public static final int EVICT_BACKUP = 11;
+    public static final int CONTAINS_KEY = 12;
 
-    private static final int LEN = EVICT_BACKUP + 1;
+    private static final int LEN = CONTAINS_KEY + 1;
 
     @Override
     public int getFactoryId() {
@@ -117,11 +114,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();
             }
         };
-//        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new LocalMapStatsImpl();
-//            }
-//        };
         constructors[QUERY_RESULT_ROW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueryResultRow();
@@ -130,6 +122,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueryResult();
+            }
+        };
+        constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ContainsKeyOperation();
             }
         };
 

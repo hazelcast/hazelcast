@@ -24,11 +24,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public final class GetOperation extends KeyBasedMapOperation
-        implements IdentifiedDataSerializable, BlockingOperation, ReadonlyOperation {
+public final class GetOperation extends ReadonlyKeyBasedMapOperation
+        implements IdentifiedDataSerializable, BlockingOperation {
 
     private Data result;
 
@@ -37,6 +36,8 @@ public final class GetOperation extends KeyBasedMapOperation
 
     public GetOperation(String name, Data dataKey) {
         super(name, dataKey);
+
+        this.dataKey = dataKey;
     }
 
     @Override
@@ -68,7 +69,7 @@ public final class GetOperation extends KeyBasedMapOperation
     }
 
     @Override
-    public Object getResponse() {
+    public Data getResponse() {
         return result;
     }
 
