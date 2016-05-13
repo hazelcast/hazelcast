@@ -200,7 +200,11 @@ public class HTTPCommunicator {
 
         String url = address + "management/cluster/nodes";
         return doPost(url, groupName, groupPassword);
+    }
 
+    public String syncMapOverWAN(String wanRepName, String targetGroupName, String mapName) throws IOException {
+        String url = address + "wan/sync/map";
+        return doPost(url, wanRepName, targetGroupName, mapName);
     }
 
     private String doGet(final String url) throws IOException {

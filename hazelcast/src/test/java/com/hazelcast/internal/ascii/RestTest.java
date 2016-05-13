@@ -283,4 +283,12 @@ public class RestTest extends HazelcastTestSupport {
 
         assertEquals("{\"status\":\"forbidden\"}", communicator.killMember("dev1", "dev-pass"));
     }
+
+    @Test
+    public void syncMapOverWAN() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        String result = communicator.syncMapOverWAN("atob", "b", "default");
+        assertEquals("{\"status\":\"fail\",\"message\":\"WAN sync for map is not supported.\"}", result);
+    }
 }

@@ -62,6 +62,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleListNodes(command);
             } else if (uri.startsWith(URI_KILLNODE_CLUSTER_URL)) {
                 handleKillNode(command);
+            } else if (uri.startsWith(URI_WAN_SYNC_MAP)) {
+                handleWanSyncMap(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
             }
@@ -298,6 +300,27 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         byte[] data = command.getData();
         textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
         command.send200();
+    }
+
+    private void handleWanSyncMap(HttpPostCommand command) throws UnsupportedEncodingException {
+
+        String res = "{\"status\":\"${STATUS}\",\"message\":\"${MESSAGE}\"}";
+
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String wanRepName = URLDecoder.decode(strList[0], "UTF-8");
+        String targetGroup = URLDecoder.decode(strList[1], "UTF-8");
+        String mapName = URLDecoder.decode(strList[2], "UTF-8");
+        try {
+            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, targetGroup, mapName);
+            res = res.replace("${STATUS}", "success");
+            res = res.replace("${MESSAGE}", "Sync initiated");
+        } catch (Exception ex) {
+            res = res.replace("${STATUS}", "fail");
+            res = res.replace("${MESSAGE}", ex.getMessage());
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+        textCommandService.sendResponse(command);
     }
 
     @Override

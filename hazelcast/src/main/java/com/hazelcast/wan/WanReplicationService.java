@@ -64,4 +64,6 @@ public interface WanReplicationService
     void resume(String name, String targetGroupName);
 
     void checkWanReplicationQueues(String name);
+
+    void syncMap(String wanReplicationName, String targetGroupName, String mapName);
 }
