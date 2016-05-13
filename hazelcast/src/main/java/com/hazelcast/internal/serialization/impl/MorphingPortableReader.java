@@ -43,6 +43,12 @@ import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 
+/**
+ * Enables reading from a portable byte stream if the portableVersion from the classDefinition is different than
+ * the portableVersion from the byte stream.
+ * In this case only "compatible" changes are allowed - otherwise the read operation will fail with an
+ * IncompatibleClassChangeError exception.
+ */
 public class MorphingPortableReader extends DefaultPortableReader {
 
     public MorphingPortableReader(PortableSerializer serializer, BufferObjectDataInput in, ClassDefinition cd) {

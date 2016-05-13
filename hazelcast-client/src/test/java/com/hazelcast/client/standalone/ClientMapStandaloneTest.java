@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
@@ -37,6 +38,8 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -201,6 +204,9 @@ public class ClientMapStandaloneTest {
         }, predicate, true);
         map.put(key, element);
         assertOpenEventually(eventLatch);
+
+        Collection values = map.values(Predicates.lessThan("date", new Date().getTime()));
+        assertEquals(values.iterator().next(), element);
     }
 
 }

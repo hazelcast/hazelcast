@@ -17,17 +17,12 @@
 package com.hazelcast.query.extractor;
 
 /**
- * Enables collecting values extracted in a {@see com.hazelcast.query.extractor.ValueExtractor}
- *
- * @param <T> type of the collected value
+ * Exception thrown if there is any checked or unchecked exception caught in the value reading in {@link ValueReader}
  */
-public abstract class ValueCollector<T> {
+public class ValueReadingException extends RuntimeException {
 
-    /**
-     * Collects a value passed as an argument
-     *
-     * @param value value to be collected
-     */
-    public abstract void addObject(T value);
+    public ValueReadingException(String message, Throwable throwable) {
+        super(message, throwable);
+    }
 
 }

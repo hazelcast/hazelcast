@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.extractor;
 
+import com.hazelcast.nio.serialization.Portable;
+
 /***
  * Common superclass for all extractors that enable the user to define custom attributes and extract their values.
  * The extraction logic may just extract the underlying value or group, reduce or transform it.
@@ -62,6 +64,9 @@ package com.hazelcast.query.extractor;
  * <p/>
  * Reflection-based extraction is the default mechanism - ValueExtractors are an alternative way of extracting
  * attribute values from an object.
+ * <p>
+ * It is also possible to use a ValueExtractor with a Portable data format. In this case the target object passed to the
+ * extractor implements a {@link ValueReader} interface.
  *
  * @param <T> type of the target object to extract the value from
  * @param <A> type of the extraction argument object passed to the extract() method
@@ -77,6 +82,9 @@ public abstract class ValueExtractor<T, A> {
      * In order to return multiple results from a single extraction just invoke the ValueCollector#collect method
      * multiple times, so that the collector collects all results.
      * <p/>
+     * If the extraction is executed for an Object that implements a {@link Portable} interface the target object
+     * passed to the extractor is an instance of a {@link ValueReader} enabling extraction from the Portable byte stream.
+     * <p>
      * It sounds counter-intuitive, but a single extraction may return multiple values when arrays or collections are
      * involved.
      * <p/>
@@ -103,7 +111,8 @@ public abstract class ValueExtractor<T, A> {
      * In such a case, it is enough if a single value evaluates the predicate's condition to true to return a match, so
      * it will return a Motorbike if 'any' of the wheels matches the expression.
      *
-     * @param target    object to extract the value from
+     * @param target    object to extract the value from. In case the target object implements {@link Portable}
+     *                  interface the target object passed to this method is an instance of a {@link ValueReader}.
      * @param argument  extraction argument
      * @param collector collector of the extracted value(s)
      * @see ValueCollector
