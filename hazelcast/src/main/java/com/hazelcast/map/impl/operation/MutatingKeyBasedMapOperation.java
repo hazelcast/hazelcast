@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -60,11 +59,6 @@ public abstract class MutatingKeyBasedMapOperation extends MapOperation
         this.dataKey = dataKey;
         this.dataValue = dataValue;
         this.ttl = ttl;
-    }
-
-    @Override
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
     }
 
     public final Data getKey() {
