@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
@@ -43,7 +44,8 @@ public class ShutdownNodeOperation
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        nodeEngine.getNode().shutdown(false);
+                        final Node node = nodeEngine.getNode();
+                        node.hazelcastInstance.getLifecycleService().shutdown();
                     }
                 }).start();
             } else {
