@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class SemaphoreContainer implements DataSerializable {
 
@@ -31,7 +32,7 @@ public class SemaphoreContainer implements DataSerializable {
 
     private int available;
     private int partitionId;
-    private Map<String, Integer> attachMap;
+    private Map<UUID, Integer> attachMap;
     private int backupCount;
     private int asyncBackupCount;
     private boolean initialized;
@@ -44,10 +45,10 @@ public class SemaphoreContainer implements DataSerializable {
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
         this.available = config.getInitialPermits();
-        this.attachMap = new HashMap<String, Integer>(INITIAL_CAPACITY);
+        this.attachMap = new HashMap<UUID, Integer>(INITIAL_CAPACITY);
     }
 
-    private void attach(String caller, int permitCount) {
+    private void attach(UUID caller, int permitCount) {
         Integer attached = attachMap.get(caller);
         if (attached == null) {
             attached = 0;
@@ -55,7 +56,7 @@ public class SemaphoreContainer implements DataSerializable {
         attachMap.put(caller, attached + permitCount);
     }
 
-    private void detach(String caller, int permitCount) {
+    private void detach(UUID caller, int permitCount) {
         Integer attached = attachMap.get(caller);
         if (attached == null) {
             return;
@@ -69,7 +70,7 @@ public class SemaphoreContainer implements DataSerializable {
         }
     }
 
-    public boolean memberRemoved(String caller) {
+    public boolean memberRemoved(UUID caller) {
         Integer attached = attachMap.remove(caller);
         if (attached != null) {
             available += attached;
@@ -95,7 +96,7 @@ public class SemaphoreContainer implements DataSerializable {
         return available - permitCount >= 0;
     }
 
-    public boolean acquire(int permitCount, String caller) {
+    public boolean acquire(int permitCount, UUID caller) {
         if (isAvailable(permitCount)) {
             available -= permitCount;
             attach(caller, permitCount);
@@ -105,7 +106,7 @@ public class SemaphoreContainer implements DataSerializable {
         return false;
     }
 
-    public int drain(String caller) {
+    public int drain(UUID caller) {
         int drain = available;
         available = 0;
         if (drain > 0) {
@@ -126,7 +127,7 @@ public class SemaphoreContainer implements DataSerializable {
         return true;
     }
 
-    public void release(int permitCount, String caller) {
+    public void release(int permitCount, UUID caller) {
         available += permitCount;
         initialized = true;
         detach(caller, permitCount);
@@ -159,8 +160,8 @@ public class SemaphoreContainer implements DataSerializable {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(attachMap.size());
-        for (Map.Entry<String, Integer> entry : attachMap.entrySet()) {
-            out.writeUTF(entry.getKey());
+        for (Map.Entry<UUID, Integer> entry : attachMap.entrySet()) {
+            out.writeUUID(entry.getKey());
             out.writeInt(entry.getValue());
         }
     }
@@ -172,9 +173,9 @@ public class SemaphoreContainer implements DataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int size = in.readInt();
-        attachMap = new HashMap<String, Integer>(size);
+        attachMap = new HashMap<UUID, Integer>(size);
         for (int i = 0; i < size; i++) {
-            String caller = in.readUTF();
+            UUID caller = in.readUUID();
             Integer val = in.readInt();
             attachMap.put(caller, val);
         }
@@ -190,7 +191,7 @@ public class SemaphoreContainer implements DataSerializable {
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append('}');
         sb.append("\n");
-        for (Map.Entry<String, Integer> entry : attachMap.entrySet()) {
+        for (Map.Entry<UUID, Integer> entry : attachMap.entrySet()) {
             sb.append("{caller=").append(entry.getKey());
             sb.append(", attached=").append(entry.getValue());
             sb.append("} ");

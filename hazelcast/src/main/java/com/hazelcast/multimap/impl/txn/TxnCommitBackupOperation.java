@@ -27,16 +27,17 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     List<Operation> opList;
-    String caller;
+    UUID caller;
 
     public TxnCommitBackupOperation() {
     }
 
-    public TxnCommitBackupOperation(String name, Data dataKey, List<Operation> opList, String caller, long threadId) {
+    public TxnCommitBackupOperation(String name, Data dataKey, List<Operation> opList, UUID caller, long threadId) {
         super(name, dataKey);
         this.opList = opList;
         this.caller = caller;
@@ -63,7 +64,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
         for (Operation op : opList) {
             out.writeObject(op);
         }
-        out.writeUTF(caller);
+        out.writeUUID(caller);
     }
 
     @Override
@@ -74,7 +75,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }
-        caller = in.readUTF();
+        caller = in.readUUID();
     }
 
     @Override

@@ -34,6 +34,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,6 +53,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     private LoginContext loginContext;
     private ClientPrincipal principal;
+
+    private String uuidString;
+    private UUID uuid;
     private boolean firstConnection;
     private Credentials credentials;
     private volatile boolean authenticated;
@@ -74,7 +78,12 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public String getUuid() {
-        return principal != null ? principal.getUuid() : null;
+        return uuidString;
+    }
+
+    @Override
+    public UUID getUUID() {
+        return uuid;
     }
 
     @Override
@@ -99,6 +108,10 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection) {
         this.principal = principal;
+        if (principal != null) {
+            uuid = UUID.fromString(principal.getUuid());
+            uuidString = principal.getOwnerUuid();
+        }
         this.firstConnection = firstConnection;
         this.credentials = credentials;
         this.authenticated = true;
@@ -107,6 +120,10 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public void authenticated(ClientPrincipal principal) {
         this.principal = principal;
+        if (principal != null) {
+            uuid = UUID.fromString(principal.getUuid());
+            uuidString = principal.getOwnerUuid();
+        }
         this.authenticated = true;
     }
 

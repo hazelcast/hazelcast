@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -134,7 +135,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid) {
-        return new TransactionContextImpl(this, nodeEngine, options, clientUuid, true);
+        return new TransactionContextImpl(this, nodeEngine, options, UUID.fromString(clientUuid), true);
     }
 
     /**
@@ -304,15 +305,15 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return addresses;
     }
 
-    public void createBackupLog(String callerUuid, String txnId) {
+    public void createBackupLog(UUID callerUuid, String txnId) {
         createBackupLog(callerUuid, txnId, false);
     }
 
-    public void createAllowedDuringPassiveStateBackupLog(String callerUuid, String txnId) {
+    public void createAllowedDuringPassiveStateBackupLog(UUID callerUuid, String txnId) {
         createBackupLog(callerUuid, txnId, true);
     }
 
-    private void createBackupLog(String callerUuid, String txnId, boolean allowedDuringPassiveState) {
+    private void createBackupLog(UUID callerUuid, String txnId, boolean allowedDuringPassiveState) {
         TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid,
                 ACTIVE, -1, -1, allowedDuringPassiveState);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
@@ -320,7 +321,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    public void replicaBackupLog(List<TransactionLogRecord> records, String callerUuid, String txnId,
+    public void replicaBackupLog(List<TransactionLogRecord> records, UUID callerUuid, String txnId,
                                  long timeoutMillis, long startTime) {
         TxBackupLog beginLog = txBackupLogs.get(txnId);
         if (beginLog == null) {
@@ -352,13 +353,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     static final class TxBackupLog {
         final List<TransactionLogRecord> records;
-        final String callerUuid;
+        final UUID callerUuid;
         final long timeoutMillis;
         final long startTime;
         final boolean allowedDuringPassiveState;
         volatile State state;
 
-        private TxBackupLog(List<TransactionLogRecord> records, String callerUuid, State state,
+        private TxBackupLog(List<TransactionLogRecord> records, UUID callerUuid, State state,
                             long timeoutMillis, long startTime, boolean allowedDuringPassiveState) {
             this.records = records;
             this.callerUuid = callerUuid;

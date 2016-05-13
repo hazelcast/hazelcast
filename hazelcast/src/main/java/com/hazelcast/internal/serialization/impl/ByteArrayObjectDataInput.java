@@ -25,6 +25,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
@@ -58,6 +59,18 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         this.service = service;
         this.pos = offset;
         this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+    }
+
+    @Override
+    public UUID readUUID() throws IOException {
+        long mostSignificantBits = readLong();
+        long leastSignificantBits = readLong();
+
+        if (mostSignificantBits == 0 && leastSignificantBits == 0) {
+            return null;
+        }
+
+        return new UUID(mostSignificantBits, leastSignificantBits);
     }
 
     @Override

@@ -26,9 +26,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
 
     private final InternalSerializationService serializationService;
@@ -39,6 +41,11 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         this.serializationService = serializationService;
         this.dataOut = new DataOutputStream(outputStream);
         this.byteOrder = serializationService.getByteOrder();
+    }
+
+    @Override
+    public void writeUUID(UUID uuid) throws IOException {
+
     }
 
     @Override

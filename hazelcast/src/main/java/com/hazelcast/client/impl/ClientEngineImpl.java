@@ -235,7 +235,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             Address address = new Address(conn.getRemoteSocketAddress());
             ((TcpIpConnection) conn).setEndPoint(address);
         }
-        ClientEvent event = new ClientEvent(endpoint.getUuid(),
+        ClientEvent event = new ClientEvent(endpoint.getUUID(),
                 ClientEventType.CONNECTED,
                 endpoint.getSocketAddress(),
                 endpoint.getClientType());

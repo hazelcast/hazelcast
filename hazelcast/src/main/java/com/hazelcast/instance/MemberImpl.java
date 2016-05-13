@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
@@ -210,7 +211,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
     private void invokeOnAllMembers(Operation operation) {
         NodeEngineImpl nodeEngine = instance.node.nodeEngine;
         OperationService os = nodeEngine.getOperationService();
-        String uuid = nodeEngine.getLocalMember().getUuid();
+        UUID uuid = nodeEngine.getLocalMember().getUUID();
         operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
         try {
             for (Member member : nodeEngine.getClusterService().getMembers()) {

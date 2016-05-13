@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.UUID;
 
 public class SimpleMemberImpl implements Member {
 
@@ -43,6 +44,11 @@ public class SimpleMemberImpl implements Member {
         this.uuid = uuid;
         this.address = address;
         this.liteMember = liteMember;
+    }
+
+    @Override
+    public UUID getUUID() {
+        return UUID.fromString(uuid);
     }
 
     @Override

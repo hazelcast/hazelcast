@@ -11,6 +11,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,7 +71,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
 
         // other independent transaction in same thread
         // should behave identically
-        tx = new TransactionImpl(txManagerService, nodeEngine, options, "123");
+        tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         try {
             tx.begin();
             fail("Transaction expected to fail");
@@ -98,7 +99,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
 
     public void assertRequiresPrepare(int recordCount, boolean expected) throws Exception {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         for (int k = 0; k < recordCount; k++) {
             tx.add(new MockTransactionLogRecord());
@@ -114,7 +115,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test(expected = TransactionException.class)
     public void prepare_whenThrowsExceptionDuringPrepare() throws Exception {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord().failPrepare());
 
@@ -126,7 +127,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test(expected = IllegalStateException.class)
     public void commit_whenNotActive() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options,UuidUtil.newSecureUUID());
         tx.begin();
         tx.rollback();
 
@@ -136,7 +137,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test(expected = IllegalStateException.class)
     public void commit_whenNotPreparedAndMoreThanOneTransactionLogRecord() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord());
         tx.add(new MockTransactionLogRecord());
@@ -148,7 +149,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test
     public void commit_whenOneTransactionLogRecord_thenCommit() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord());
 
@@ -160,7 +161,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test
     public void commit_whenThrowsExceptionDuringCommit() throws Exception {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord().failCommit());
         tx.prepare();
@@ -179,7 +180,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test
     public void rollback() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
 
         tx.rollback();
@@ -190,7 +191,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test(expected = IllegalStateException.class)
     public void rollback_whenAlreadyRolledBack() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         tx.rollback();
 
@@ -200,7 +201,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test
     public void rollback_whenFailureDuringRollback() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord().failRollback());
 
@@ -210,7 +211,7 @@ public class TransactionImpl_TwoPhaseTest extends HazelcastTestSupport {
     @Test
     public void rollback_whenRollingBackCommitFailedTransaction() {
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(0);
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         tx.begin();
         tx.add(new MockTransactionLogRecord().failCommit());
         try {

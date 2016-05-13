@@ -37,6 +37,7 @@ import com.hazelcast.util.UuidUtil;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -76,7 +77,7 @@ public final class XATransaction implements Transaction {
     private final long timeoutMillis;
     private final String txnId;
     private final SerializableXID xid;
-    private final String txOwnerUuid;
+    private final UUID txOwnerUuid;
     private final TransactionLog transactionLog;
 
     private State state = NO_TXN;
@@ -84,13 +85,13 @@ public final class XATransaction implements Transaction {
 
     private boolean originatedFromClient;
 
-    public XATransaction(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout, boolean originatedFromClient) {
+    public XATransaction(NodeEngine nodeEngine, Xid xid, UUID txOwnerUuid, int timeout, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog();
         this.timeoutMillis = SECONDS.toMillis(timeout);
         this.txnId = UuidUtil.newUnsecureUuidString();
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
-        this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
+        this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUUID() : txOwnerUuid;
 
         ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
@@ -100,7 +101,7 @@ public final class XATransaction implements Transaction {
     }
 
     public XATransaction(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
-                         String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
+                         String txnId, SerializableXID xid, UUID txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
         this.timeoutMillis = timeoutMillis;
@@ -260,7 +261,7 @@ public final class XATransaction implements Transaction {
     }
 
     @Override
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return txOwnerUuid;
     }
 

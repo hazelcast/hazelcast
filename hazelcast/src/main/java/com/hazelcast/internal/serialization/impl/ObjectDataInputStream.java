@@ -26,6 +26,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
@@ -39,6 +40,17 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         this.serializationService = serializationService;
         this.dataInput = new DataInputStream(in);
         this.byteOrder = serializationService.getByteOrder();
+    }
+
+    @Override
+    public UUID readUUID() throws IOException {
+        long mostSignificantBits = readLong();
+        long leastSignificantBits = readLong();
+        if (mostSignificantBits == 0 && leastSignificantBits == 0) {
+            return null;
+        }
+
+        return new UUID(mostSignificantBits, leastSignificantBits);
     }
 
     @Override

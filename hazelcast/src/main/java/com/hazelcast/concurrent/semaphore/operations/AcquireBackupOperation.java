@@ -19,12 +19,14 @@ package com.hazelcast.concurrent.semaphore.operations;
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 
+import java.util.UUID;
+
 public class AcquireBackupOperation extends SemaphoreBackupOperation {
 
     public AcquireBackupOperation() {
     }
 
-    public AcquireBackupOperation(String name, int permitCount, String firstCaller) {
+    public AcquireBackupOperation(String name, int permitCount, UUID firstCaller) {
         super(name, permitCount, firstCaller);
     }
 

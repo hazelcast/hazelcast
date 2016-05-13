@@ -139,7 +139,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                 }
             }, DESTROY_ENDPOINT_DELAY_MS, TimeUnit.MILLISECONDS);
         }
-        ClientEvent event = new ClientEvent(endpoint.getUuid(),
+        ClientEvent event = new ClientEvent(endpoint.getUUID(),
                 ClientEventType.DISCONNECTED,
                 endpoint.getSocketAddress(),
                 endpoint.getClientType());

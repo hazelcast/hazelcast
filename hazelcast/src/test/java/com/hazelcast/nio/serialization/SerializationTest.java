@@ -176,7 +176,7 @@ public class SerializationTest
     public void test_callid_on_correct_stream_position() throws Exception {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
-        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
+        operation.setCallerUuid(UuidUtil.newUnsecureUUID());
         OperationAccessor.setCallId(operation, 12345);
 
         Data data = serializationService.toData(operation);

@@ -52,6 +52,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
@@ -662,7 +663,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         final long defaultCallTimeoutMillis;
         final InvocationRegistry invocationRegistry;
         final InvocationMonitor invocationMonitor;
-        final String localMemberUuid;
+        final UUID localMemberUuid;
         final ILogger logger;
         final Node node;
         final NodeEngine nodeEngine;
@@ -682,7 +683,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
                        long defaultCallTimeoutMillis,
                        InvocationRegistry invocationRegistry,
                        InvocationMonitor invocationMonitor,
-                       String localMemberUuid,
+                       UUID localMemberUuid,
                        ILogger logger,
                        Node node,
                        NodeEngine nodeEngine,

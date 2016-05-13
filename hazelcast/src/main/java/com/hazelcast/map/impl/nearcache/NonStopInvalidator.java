@@ -26,6 +26,7 @@ import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -40,17 +41,17 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
     }
 
     @Override
-    public void invalidate(String mapName, Data key, String sourceUuid) {
+    public void invalidate(String mapName, Data key, UUID sourceUuid) {
         invalidateInternal(mapName, key, null, sourceUuid);
     }
 
     @Override
-    public void invalidate(String mapName, List<Data> keys, String sourceUuid) {
+    public void invalidate(String mapName, List<Data> keys, UUID sourceUuid) {
         invalidateInternal(mapName, null, keys, sourceUuid);
     }
 
     @Override
-    public void clear(String mapName, boolean owner, String sourceUuid) {
+    public void clear(String mapName, boolean owner, UUID sourceUuid) {
         if (owner) {
             // only send invalidation event to clients, server near-caches are cleared by ClearOperation.
             invalidateClient(mapName, null, null, sourceUuid);
@@ -74,13 +75,13 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
         // nop.
     }
 
-    private void invalidateInternal(String mapName, Data key, List<Data> keys, String sourceUuid) {
+    private void invalidateInternal(String mapName, Data key, List<Data> keys, UUID sourceUuid) {
         invalidateMember(mapName, key, keys, sourceUuid);
         invalidateClient(mapName, key, keys, sourceUuid);
         invalidateLocal(mapName, key, keys);
     }
 
-    protected void invalidateClient(String mapName, Data key, List<Data> keys, String sourceUuid) {
+    protected void invalidateClient(String mapName, Data key, List<Data> keys, UUID sourceUuid) {
         if (!hasInvalidationListener(mapName)) {
             return;
         }
@@ -99,7 +100,7 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
         }
     }
 
-    private static Invalidation newInvalidation(String mapName, Data key, List<Data> keys, String sourceUuid) {
+    private static Invalidation newInvalidation(String mapName, Data key, List<Data> keys, UUID sourceUuid) {
         if (key != null) {
             return new SingleNearCacheInvalidation(mapName, key, sourceUuid);
         }
@@ -117,7 +118,7 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
         return new CleaningNearCacheInvalidation(mapName, sourceUuid);
     }
 
-    protected void invalidateMember(String mapName, Data key, List<Data> keys, String sourceUuid) {
+    protected void invalidateMember(String mapName, Data key, List<Data> keys, UUID sourceUuid) {
         if (!isMemberNearCacheInvalidationEnabled(mapName)) {
             return;
         }

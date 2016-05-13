@@ -31,15 +31,16 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to rollback transaction by unlocking the key on key owner.
  */
 public class TxnRollbackOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
-    private String ownerUuid;
+    private UUID ownerUuid;
 
-    protected TxnRollbackOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
+    protected TxnRollbackOperation(int partitionId, String name, Data dataKey, UUID ownerUuid) {
         super(name, dataKey);
         setPartitionId(partitionId);
         this.ownerUuid = ownerUuid;
@@ -106,12 +107,12 @@ public class TxnRollbackOperation extends MutatingKeyBasedMapOperation implement
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(ownerUuid);
+        out.writeUUID(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ownerUuid = in.readUTF();
+        ownerUuid = in.readUUID();
     }
 }

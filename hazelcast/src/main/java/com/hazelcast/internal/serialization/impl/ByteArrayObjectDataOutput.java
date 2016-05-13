@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
@@ -31,7 +32,9 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput {
+public class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput {
+
+    private static final UUID NULL_UUID = new UUID(0, 0);
 
     final int initialSize;
 
@@ -48,6 +51,16 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         this.buffer = new byte[size];
         this.service = service;
         isBigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+    }
+
+    @Override
+    public void writeUUID(UUID uuid) throws IOException {
+        if (uuid == null) {
+            uuid = NULL_UUID;
+        }
+
+        writeLong(uuid.getMostSignificantBits());
+        writeLong(uuid.getLeastSignificantBits());
     }
 
     @Override

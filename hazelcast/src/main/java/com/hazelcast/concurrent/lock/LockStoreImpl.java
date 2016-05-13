@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -65,7 +66,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+    public boolean lock(Data key, UUID caller, long threadId, long referenceId, long leaseTime) {
         leaseTime = getLeaseTime(leaseTime);
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, false, false);
@@ -84,13 +85,13 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
+    public boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, true, blockReads);
     }
 
     @Override
-    public boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime) {
+    public boolean extendLeaseTime(Data key, UUID caller, long threadId, long leaseTime) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return false;
@@ -109,7 +110,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean isLockedBy(Data key, String caller, long threadId) {
+    public boolean isLockedBy(Data key, UUID caller, long threadId) {
         LockResource lock = locks.get(key);
         if (lock == null) {
             return false;
@@ -143,7 +144,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean canAcquireLock(Data key, String caller, long threadId) {
+    public boolean canAcquireLock(Data key, UUID caller, long threadId) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return true;
@@ -159,7 +160,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
+    public boolean unlock(Data key, UUID caller, long threadId, long referenceId) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return false;
@@ -258,17 +259,17 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         return backupCount + asyncBackupCount;
     }
 
-    public boolean addAwait(Data key, String conditionId, String caller, long threadId) {
+    public boolean addAwait(Data key, String conditionId, UUID caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         return lock.addAwait(conditionId, caller, threadId);
     }
 
-    public boolean removeAwait(Data key, String conditionId, String caller, long threadId) {
+    public boolean removeAwait(Data key, String conditionId, UUID caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         return lock.removeAwait(conditionId, caller, threadId);
     }
 
-    public boolean startAwaiting(Data key, String conditionId, String caller, long threadId) {
+    public boolean startAwaiting(Data key, String conditionId, UUID caller, long threadId) {
         LockResourceImpl lock = getLock(key);
         return lock.startAwaiting(conditionId, caller, threadId);
     }

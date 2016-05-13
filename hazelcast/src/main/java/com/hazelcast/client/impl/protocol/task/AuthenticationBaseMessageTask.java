@@ -40,6 +40,7 @@ import javax.security.auth.login.LoginException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 
 /**
@@ -155,9 +156,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
     private ClientMessage handleAuthenticated() {
         if (isOwnerConnection()) {
             final String uuid = getUuid();
-            final String localMemberUUID = clientEngine.getLocalMember().getUuid();
+            final UUID localMemberUUID = clientEngine.getLocalMember().getUUID();
 
-            principal = new ClientPrincipal(uuid, localMemberUUID);
+            principal = new ClientPrincipal(uuid, localMemberUUID.toString());
             reAuthLocal();
             Collection<Member> members = nodeEngine.getClusterService().getMembers();
             for (Member member : members) {

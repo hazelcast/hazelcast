@@ -22,17 +22,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
 
     private Data key;
-    private String sourceUuid;
+    private UUID sourceUuid;
 
     public CacheSingleInvalidationMessage() {
 
     }
 
-    public CacheSingleInvalidationMessage(String name, Data key, String sourceUuid) {
+    public CacheSingleInvalidationMessage(String name, Data key, UUID sourceUuid) {
         super(name);
         this.key = key;
         this.sourceUuid = sourceUuid;
@@ -43,7 +44,7 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
         return key;
     }
 
-    public String getSourceUuid() {
+    public UUID getSourceUuid() {
         return sourceUuid;
     }
 
@@ -56,7 +57,7 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(sourceUuid);
+        out.writeUUID(sourceUuid);
         boolean hasKey = key != null;
         out.writeBoolean(hasKey);
         if (hasKey) {
@@ -67,7 +68,7 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        sourceUuid = in.readUTF();
+        sourceUuid = in.readUUID();
         if (in.readBoolean()) {
             key = in.readData();
         }

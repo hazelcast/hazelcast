@@ -27,6 +27,7 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_TX_BACKUP_LOG;
@@ -40,7 +41,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     // todo: probably we don't want to use linked list.
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
-    private String callerUuid;
+    private UUID callerUuid;
     private String txnId;
     private long timeoutMillis;
     private long startTime;
@@ -48,7 +49,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
     public ReplicateTxBackupLogOperation() {
     }
 
-    public ReplicateTxBackupLogOperation(List<TransactionLogRecord> logs, String callerUuid, String txnId,
+    public ReplicateTxBackupLogOperation(List<TransactionLogRecord> logs, UUID callerUuid, String txnId,
                                          long timeoutMillis, long startTime) {
         records.addAll(logs);
         this.callerUuid = callerUuid;
@@ -83,7 +84,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
+        out.writeUUID(callerUuid);
         out.writeUTF(txnId);
         out.writeLong(timeoutMillis);
         out.writeLong(startTime);
@@ -98,7 +99,7 @@ public class ReplicateTxBackupLogOperation extends AbstractTxOperation {
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
+        callerUuid = in.readUUID();
         txnId = in.readUTF();
         timeoutMillis = in.readLong();
         startTime = in.readLong();

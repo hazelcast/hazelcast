@@ -248,7 +248,7 @@ final class OperationBackupHandler {
 
         backup.setPartitionId(op.getPartitionId())
                 .setReplicaIndex(replicaIndex)
-                .setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                .setCallerUuid(nodeEngine.getLocalMember().getUUID());
         setCallId(backup, op.getCallId());
 
         return backup;

@@ -34,6 +34,7 @@ import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -79,7 +80,7 @@ public class TransactionImpl implements Transaction {
     private final TransactionType transactionType;
     private final boolean checkThreadAccess;
     private final ILogger logger;
-    private final String txOwnerUuid;
+    private final UUID txOwnerUuid;
     private final TransactionLog transactionLog;
     private Long threadId;
     private long timeoutMillis;
@@ -90,12 +91,12 @@ public class TransactionImpl implements Transaction {
     private boolean originatedFromClient;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                           TransactionOptions options, String txOwnerUuid) {
+                           TransactionOptions options, UUID txOwnerUuid) {
         this(transactionManagerService, nodeEngine, options, txOwnerUuid, false);
     }
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                           TransactionOptions options, String txOwnerUuid, boolean originatedFromClient) {
+                           TransactionOptions options, UUID txOwnerUuid, boolean originatedFromClient) {
         this.transactionLog = new TransactionLog();
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
@@ -103,7 +104,7 @@ public class TransactionImpl implements Transaction {
         this.timeoutMillis = options.getTimeoutMillis();
         this.transactionType = options.getTransactionType() == LOCAL ? ONE_PHASE : options.getTransactionType();
         this.durability = transactionType == ONE_PHASE ? 0 : options.getDurability();
-        this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
+        this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUUID() : txOwnerUuid;
         this.checkThreadAccess = txOwnerUuid == null;
 
         this.logger = nodeEngine.getLogger(getClass());
@@ -115,7 +116,7 @@ public class TransactionImpl implements Transaction {
     // used by tx backups
     TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                     String txnId, List<TransactionLogRecord> transactionLog, long timeoutMillis,
-                    long startTime, String txOwnerUuid) {
+                    long startTime, UUID txOwnerUuid) {
         this.transactionLog = new TransactionLog(transactionLog);
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
@@ -143,7 +144,7 @@ public class TransactionImpl implements Transaction {
     }
 
     @Override
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return txOwnerUuid;
     }
 

@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.hazelcast.util.Clock.currentTimeMillis;
 
@@ -61,7 +62,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         this.creationTime = currentTimeMillis();
     }
 
-    public boolean canAcquireLock(Data dataKey, String caller, long threadId) {
+    public boolean canAcquireLock(Data dataKey, UUID caller, long threadId) {
         return lockStore != null && lockStore.canAcquireLock(dataKey, caller, threadId);
     }
 
@@ -73,11 +74,11 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return lockStore != null && lockStore.shouldBlockReads(key);
     }
 
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads) {
+    public boolean txnLock(Data key, UUID caller, long threadId, long referenceId, long ttl, boolean blockReads) {
         return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl, blockReads);
     }
 
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
+    public boolean unlock(Data key, UUID caller, long threadId, long referenceId) {
         return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
     }
 
@@ -85,7 +86,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return lockStore != null && lockStore.forceUnlock(key);
     }
 
-    public boolean extendLock(Data key, String caller, long threadId, long ttl) {
+    public boolean extendLock(Data key, UUID caller, long threadId, long ttl) {
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 

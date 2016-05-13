@@ -30,6 +30,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
 import java.util.Collection;
+import java.util.UUID;
 
 public interface ICacheService
         extends ManagedService,
@@ -64,7 +65,7 @@ public interface ICacheService
 
     CacheContext getOrCreateCacheContext(String name);
 
-    void deleteCache(String name, String callerUuid, boolean destroy);
+    void deleteCache(String name, UUID callerUuid, boolean destroy);
 
     void deleteCacheStat(String name);
 
@@ -95,7 +96,7 @@ public interface ICacheService
 
     String addInvalidationListener(String name, CacheEventListener listener, boolean localOnly);
 
-    void sendInvalidationEvent(String name, Data key, String sourceUuid);
+    void sendInvalidationEvent(String name, Data key, UUID sourceUuid);
 
     boolean isWanReplicationEnabled(String cacheName);
 

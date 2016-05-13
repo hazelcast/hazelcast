@@ -32,6 +32,7 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @PrivateApi
@@ -40,6 +41,7 @@ public abstract class AbstractMember implements Member {
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
     protected Address address;
     protected String uuid;
+    protected UUID uuidObject;
     protected boolean liteMember;
 
     protected AbstractMember() {
@@ -113,11 +115,17 @@ public abstract class AbstractMember implements Member {
 
     void setUuid(String uuid) {
         this.uuid = uuid;
+        this.uuidObject = UUID.fromString(uuid);
     }
 
     @Override
     public String getUuid() {
         return uuid;
+    }
+
+    @Override
+    public UUID getUUID() {
+        return uuidObject;
     }
 
     @Override
@@ -152,6 +160,7 @@ public abstract class AbstractMember implements Member {
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
+        uuidObject = UUID.fromString(uuid);
         liteMember = in.readBoolean();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {

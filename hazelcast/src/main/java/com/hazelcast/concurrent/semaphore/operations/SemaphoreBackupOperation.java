@@ -21,15 +21,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public abstract class SemaphoreBackupOperation extends SemaphoreOperation implements BackupOperation {
 
-    protected String firstCaller;
+    protected UUID firstCaller;
 
     protected SemaphoreBackupOperation() {
     }
 
-    protected SemaphoreBackupOperation(String name, int permitCount, String firstCaller) {
+    protected SemaphoreBackupOperation(String name, int permitCount, UUID firstCaller) {
         super(name, permitCount);
         this.firstCaller = firstCaller;
     }
@@ -37,12 +38,12 @@ public abstract class SemaphoreBackupOperation extends SemaphoreOperation implem
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(firstCaller);
+        out.writeUUID(firstCaller);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        firstCaller = in.readUTF();
+        firstCaller = in.readUUID();
     }
 }

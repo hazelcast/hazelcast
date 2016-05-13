@@ -18,15 +18,17 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.UUID;
+
 public interface LockResource {
 
     Data getKey();
 
     boolean isLocked();
 
-    boolean isLockedBy(String owner, long threadId);
+    boolean isLockedBy(UUID owner, long threadId);
 
-    String getOwner();
+    UUID getOwner();
 
     boolean isTransactional();
 

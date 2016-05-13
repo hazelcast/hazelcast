@@ -39,6 +39,7 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class XATransactionContextImpl implements TransactionContext {
 
@@ -47,7 +48,7 @@ public class XATransactionContextImpl implements TransactionContext {
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
-    public XATransactionContextImpl(NodeEngineImpl nodeEngine, Xid xid, String txOwnerUuid,
+    public XATransactionContextImpl(NodeEngineImpl nodeEngine, Xid xid, UUID txOwnerUuid,
                                     int timeout, boolean originatedFromClient) {
         this.nodeEngine = nodeEngine;
         this.transaction = new XATransaction(nodeEngine, xid, txOwnerUuid, timeout, originatedFromClient);

@@ -371,7 +371,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         operation.setServiceName(SERVICE_NAME)
                 .setNodeEngine(nodeEngine)
                 .setPartitionId(partitionId)
-                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
+                .setCallerUuid(nodeEngine.getLocalMember().getUUID())
                 .setOperationResponseHandler(createEmptyResponseHandler());
 
         operationService.executeOperation(operation);

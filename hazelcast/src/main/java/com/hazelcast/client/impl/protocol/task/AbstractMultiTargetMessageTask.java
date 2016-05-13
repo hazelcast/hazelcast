@@ -56,7 +56,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         MultiTargetCallback callback = new MultiTargetCallback(targets);
         for (Address target : targets) {
             Operation op = operationFactory.createOperation();
-            op.setCallerUuid(endpoint.getUuid());
+            op.setCallerUuid(endpoint.getUUID());
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
                     .setTryCount(TRY_COUNT)
                     .setResultDeserialized(false)

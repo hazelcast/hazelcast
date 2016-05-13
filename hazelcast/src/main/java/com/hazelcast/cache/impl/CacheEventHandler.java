@@ -30,6 +30,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -137,7 +138,7 @@ class CacheEventHandler {
         eventService.publishEvent(ICacheService.SERVICE_NAME, candidates, eventSet, orderKey);
     }
 
-    void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+    void sendInvalidationEvent(String name, Data key, UUID sourceUuid) {
         if (key == null) {
             sendSingleInvalidationEvent(name, null, sourceUuid);
         } else {
@@ -155,7 +156,7 @@ class CacheEventHandler {
         }
     }
 
-    private void sendSingleInvalidationEvent(String name, Data key, String sourceUuid) {
+    private void sendSingleInvalidationEvent(String name, Data key, UUID sourceUuid) {
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(ICacheService.SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
@@ -165,7 +166,7 @@ class CacheEventHandler {
         }
     }
 
-    private void sendBatchInvalidationEvent(String name, Data key, String sourceUuid) {
+    private void sendBatchInvalidationEvent(String name, Data key, UUID sourceUuid) {
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(ICacheService.SERVICE_NAME, name);
         if (registrations.isEmpty()) {

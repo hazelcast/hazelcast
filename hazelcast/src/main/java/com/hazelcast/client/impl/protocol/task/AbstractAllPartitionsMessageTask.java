@@ -35,7 +35,7 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
     @Override
     protected void processMessage() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
-        OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
+        OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUUID());
         final InternalOperationService operationService = nodeEngine.getOperationService();
         Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
         sendResponse(reduce(map));

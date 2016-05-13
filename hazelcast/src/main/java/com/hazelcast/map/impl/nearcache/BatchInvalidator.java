@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -84,17 +85,17 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     }
 
     @Override
-    public void invalidate(String mapName, Data key, String sourceUuid) {
+    public void invalidate(String mapName, Data key, UUID sourceUuid) {
         invalidateInternal(mapName, key, null, sourceUuid);
     }
 
     @Override
-    public void invalidate(String mapName, List<Data> keys, String sourceUuid) {
+    public void invalidate(String mapName, List<Data> keys, UUID sourceUuid) {
         invalidateInternal(mapName, null, keys, sourceUuid);
     }
 
     @Override
-    public void clear(String mapName, boolean owner, String sourceUuid) {
+    public void clear(String mapName, boolean owner, UUID sourceUuid) {
         if (owner) {
             // only send invalidation event to clients, server near-caches are cleared by ClearOperation.
             invalidateClient(new CleaningNearCacheInvalidation(mapName, sourceUuid));
@@ -103,7 +104,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         clearLocal(mapName);
     }
 
-    private void invalidateInternal(String mapName, Data key, List<Data> keys, String sourceUuid) {
+    private void invalidateInternal(String mapName, Data key, List<Data> keys, UUID sourceUuid) {
         accumulateOrInvalidate(mapName, key, keys, sourceUuid);
         invalidateLocal(mapName, key, keys);
     }
@@ -133,7 +134,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         invalidationQueues.clear();
     }
 
-    public void accumulateOrInvalidate(String mapName, Data key, List<Data> keys, String sourceUuid) {
+    public void accumulateOrInvalidate(String mapName, Data key, List<Data> keys, UUID sourceUuid) {
         if (!mapServiceContext.getMapContainer(mapName).isInvalidationEnabled()) {
             return;
         }

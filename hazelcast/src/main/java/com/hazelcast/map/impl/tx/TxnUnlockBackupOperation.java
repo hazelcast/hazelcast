@@ -23,19 +23,20 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to unlock key on the backup owner.
  */
 public class TxnUnlockBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
 
-    private String ownerUuid;
+    private UUID ownerUuid;
 
 
     public TxnUnlockBackupOperation() {
     }
 
-    public TxnUnlockBackupOperation(String name, Data dataKey, String ownerUuid) {
+    public TxnUnlockBackupOperation(String name, Data dataKey, UUID ownerUuid) {
         super(name, dataKey, -1);
         this.ownerUuid = ownerUuid;
     }
@@ -53,12 +54,12 @@ public class TxnUnlockBackupOperation extends MutatingKeyBasedMapOperation imple
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(ownerUuid);
+        out.writeUUID(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ownerUuid = in.readUTF();
+        ownerUuid = in.readUUID();
     }
 }

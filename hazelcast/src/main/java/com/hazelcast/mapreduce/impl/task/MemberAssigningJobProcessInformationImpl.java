@@ -19,6 +19,8 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 
+import java.util.UUID;
+
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.stateChange;
 
@@ -34,7 +36,7 @@ public class MemberAssigningJobProcessInformationImpl
         super(partitionCount, supervisor);
     }
 
-    public int assignMemberId(Address address, String memberUuid, JobTaskConfiguration configuration) {
+    public int assignMemberId(Address address, UUID memberUuid, JobTaskConfiguration configuration) {
         JobPartitionState[] partitionStates = getPartitionStates();
         for (int i = 0; i < partitionStates.length; i++) {
             JobPartitionState partitionState = partitionStates[i];

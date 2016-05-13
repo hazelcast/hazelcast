@@ -32,6 +32,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * An operation to unlock and set (key,value) on the partition .
@@ -40,7 +41,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     private long version;
     private transient boolean shouldBackup;
-    private String ownerUuid;
+    private UUID ownerUuid;
 
     public TxnSetOperation() {
     }
@@ -96,7 +97,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     @Override
-    public void setOwnerUuid(String ownerUuid) {
+    public void setOwnerUuid(UUID ownerUuid) {
         this.ownerUuid = ownerUuid;
     }
 
@@ -133,13 +134,13 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(version);
-        out.writeUTF(ownerUuid);
+        out.writeUUID(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         version = in.readLong();
-        ownerUuid = in.readUTF();
+        ownerUuid = in.readUUID();
     }
 }

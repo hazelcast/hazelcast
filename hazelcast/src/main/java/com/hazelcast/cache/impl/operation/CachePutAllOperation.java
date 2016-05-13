@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class CachePutAllOperation
         extends AbstractNamedOperation
@@ -75,7 +76,7 @@ public class CachePutAllOperation
     public void run()
             throws Exception {
         int partitionId = getPartitionId();
-        String callerUuid = getCallerUuid();
+        UUID callerUuid = getCallerUuid();
         ICacheService service = getService();
         cache = service.getOrCreateRecordStore(name, partitionId);
         backupRecords = new HashMap<Data, CacheRecord>(entries.size());

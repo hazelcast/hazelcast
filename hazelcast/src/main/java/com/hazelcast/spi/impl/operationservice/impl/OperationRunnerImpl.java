@@ -440,7 +440,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         }
         MemberImpl callerMember = node.clusterService.getMember(caller);
         if (callerMember != null) {
-            op.setCallerUuid(callerMember.getUuid());
+            op.setCallerUuid(callerMember.getUUID());
         }
     }
 
