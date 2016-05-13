@@ -14,51 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
 /**
- * An operation to unlock key on the backup owner.
+ * Abstract {@link MapOperation} that serves as based for readonly operations.
  */
-public class TxnUnlockBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
+public abstract class ReadonlyKeyBasedMapOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
-    private String ownerUuid;
+    protected Data dataKey;
+    protected long threadId;
 
-
-    public TxnUnlockBackupOperation() {
+    public ReadonlyKeyBasedMapOperation() {
     }
 
-    public TxnUnlockBackupOperation(String name, Data dataKey, String ownerUuid) {
-        super(name, dataKey, -1);
-        this.ownerUuid = ownerUuid;
-    }
-
-    @Override
-    public void run() {
-        recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
+    public ReadonlyKeyBasedMapOperation(String name, Data dataKey) {
+        this.name = name;
+        this.dataKey = dataKey;
     }
 
     @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
+    public final long getThreadId() {
+        return threadId;
+    }
+
+    @Override
+    public final void setThreadId(long threadId) {
+        this.threadId = threadId;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(ownerUuid);
+        out.writeUTF(name);
+        out.writeData(dataKey);
+        out.writeLong(threadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        ownerUuid = in.readUTF();
+        name = in.readUTF();
+        dataKey = in.readData();
+        threadId = in.readLong();
     }
 }

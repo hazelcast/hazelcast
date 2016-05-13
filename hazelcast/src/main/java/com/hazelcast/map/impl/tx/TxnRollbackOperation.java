@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +35,7 @@ import java.io.IOException;
 /**
  * An operation to rollback transaction by unlocking the key on key owner.
  */
-public class TxnRollbackOperation extends KeyBasedMapOperation implements BackupAwareOperation, Notifier {
+public class TxnRollbackOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
     private String ownerUuid;
 

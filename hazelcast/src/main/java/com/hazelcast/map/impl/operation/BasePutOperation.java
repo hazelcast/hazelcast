@@ -25,11 +25,10 @@ import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
-public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
+public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
     protected transient Data dataOldValue;
     protected transient EntryEventType eventType;
