@@ -22,7 +22,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
@@ -49,7 +48,6 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     private boolean sync;
 
     private Operation backupOp;
-    private Data backupOpData;
 
     private transient boolean valid = true;
 
@@ -65,18 +63,6 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         if (sync && originalCaller == null) {
             throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation: "
                     + backupOp);
-        }
-    }
-
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public Backup(Data backupOpData, Address originalCaller, long[] replicaVersions, boolean sync) {
-        this.backupOpData = backupOpData;
-        this.originalCaller = originalCaller;
-        this.sync = sync;
-        this.replicaVersions = replicaVersions;
-        if (sync && originalCaller == null) {
-            throw new IllegalArgumentException("Sync backup requires original caller address, Backup operation data: "
-                    + backupOpData);
         }
     }
 
@@ -108,7 +94,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         }
     }
 
-    private void ensureBackupOperationInitialized() {
+    private void initBackupOp() {
         if (backupOp.getNodeEngine() == null) {
             backupOp.setNodeEngine(getNodeEngine());
             backupOp.setPartitionId(getPartitionId());
@@ -130,17 +116,11 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
-        if (backupOp == null && backupOpData != null) {
-            backupOp = nodeEngine.getSerializationService().toObject(backupOpData);
-        }
+        initBackupOp();
 
-        if (backupOp != null) {
-            ensureBackupOperationInitialized();
-
-            backupOp.beforeRun();
-            backupOp.run();
-            backupOp.afterRun();
-        }
+        backupOp.beforeRun();
+        backupOp.run();
+        backupOp.afterRun();
 
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
@@ -186,7 +166,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
                 // Be sure that backup operation is initialized.
                 // If there is an exception before `run` (for example caller is not valid anymore),
                 // backup operation is initialized. So, we are initializing it here ourselves.
-                ensureBackupOperationInitialized();
+                initBackupOp();
                 backupOp.onExecutionFailure(e);
             } catch (Throwable t) {
                 getLogger().warning("While calling operation.onFailure(). op: " + backupOp, t);
@@ -200,7 +180,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             // Be sure that backup operation is initialized.
             // If there is an exception before `run` (for example caller is not valid anymore),
             // backup operation is initialized. So, we are initializing it here ourselves.
-            ensureBackupOperationInitialized();
+            initBackupOp();
             backupOp.logError(e);
         } else {
             ReplicaErrorLogger.log(e, getLogger());
@@ -219,13 +199,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (backupOpData != null) {
-            out.writeBoolean(true);
-            out.writeData(backupOpData);
-        } else {
-            out.writeBoolean(false);
-            out.writeObject(backupOp);
-        }
+        out.writeObject(backupOp);
 
         if (originalCaller != null) {
             out.writeBoolean(true);
@@ -251,11 +225,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.readBoolean()) {
-            backupOpData = in.readData();
-        } else {
-            backupOp = in.readObject();
-        }
+        backupOp = in.readObject();
 
         if (in.readBoolean()) {
             originalCaller = new Address();
@@ -276,7 +246,6 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         super.toString(sb);
 
         sb.append(", backupOp=").append(backupOp);
-        sb.append(", backupOpData=").append(backupOpData);
         sb.append(", originalCaller=").append(originalCaller);
         sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append(", sync=").append(sync);
