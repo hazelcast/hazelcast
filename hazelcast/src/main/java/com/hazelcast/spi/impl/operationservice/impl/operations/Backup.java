@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
 
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
@@ -49,7 +50,8 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
     private Operation backupOp;
     private Data backupOpData;
-    private boolean valid = true;
+
+    private transient boolean valid = true;
 
     public Backup() {
     }
@@ -224,13 +226,26 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             out.writeBoolean(false);
             out.writeObject(backupOp);
         }
+
         if (originalCaller != null) {
             out.writeBoolean(true);
             originalCaller.writeData(out);
         } else {
             out.writeBoolean(false);
         }
-        out.writeLongArray(replicaVersions);
+
+        byte replicaVersionCount = 0;
+        for (int k = 0; k < replicaVersions.length; k++) {
+            if (replicaVersions[k] != 0) {
+                replicaVersionCount = (byte) (k + 1);
+            }
+        }
+
+        out.writeByte(replicaVersionCount);
+        for (int k = 0; k < replicaVersionCount; k++) {
+            out.writeLong(replicaVersions[k]);
+        }
+
         out.writeBoolean(sync);
     }
 
@@ -241,11 +256,18 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         } else {
             backupOp = in.readObject();
         }
+
         if (in.readBoolean()) {
             originalCaller = new Address();
             originalCaller.readData(in);
         }
-        replicaVersions = in.readLongArray();
+
+        replicaVersions = new long[MAX_BACKUP_COUNT];
+        byte replicaVersionCount = in.readByte();
+        for (int k = 0; k < replicaVersionCount; k++) {
+            replicaVersions[k] = in.readLong();
+        }
+
         sync = in.readBoolean();
     }
 
