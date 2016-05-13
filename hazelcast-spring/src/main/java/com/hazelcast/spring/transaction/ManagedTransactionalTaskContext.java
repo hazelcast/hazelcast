@@ -37,11 +37,9 @@ public class ManagedTransactionalTaskContext implements TransactionalTaskContext
 
     private final HazelcastTransactionManager hzTxMgr;
 
-
     public ManagedTransactionalTaskContext(HazelcastTransactionManager hzTxMgr) {
         this.hzTxMgr = hzTxMgr;
     }
-
 
     @Override
     public <K, V> TransactionalMap<K, V> getMap(String name) {

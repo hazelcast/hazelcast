@@ -30,11 +30,9 @@ class TransactionContextHolder {
     private final TransactionContext transactionContext;
     private boolean transactionActive;
 
-
     public TransactionContextHolder(TransactionContext transactionContext) {
         this.transactionContext = transactionContext;
     }
-
 
     public boolean isTransactionActive() {
         return transactionActive;

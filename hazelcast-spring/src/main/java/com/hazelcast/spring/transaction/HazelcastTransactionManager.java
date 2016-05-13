@@ -43,11 +43,9 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
 
     private HazelcastInstance hazelcastInstance;
 
-
     public HazelcastTransactionManager(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
     }
-
 
     /**
      * Returns the transaction context for the given Hazelcast instance bounded to the current thread.
@@ -76,7 +74,6 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
     public Object getResourceFactory() {
         return hazelcastInstance;
     }
-
 
     @Override
     protected Object doGetTransaction() throws TransactionException {
@@ -173,8 +170,7 @@ public class HazelcastTransactionManager extends AbstractPlatformTransactionMana
         txObject.getTransactionContextHolder().clear();
     }
 
-
-    private class HazelcastTransactionObject {
+    private static class HazelcastTransactionObject {
 
         private TransactionContextHolder transactionContextHolder;
         private boolean newTransactionContextHolder;
