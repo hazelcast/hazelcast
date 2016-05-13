@@ -145,10 +145,13 @@ public class HazelcastServerCacheManager
                 // If still cache config not found, try to find it from partition
                 config = getCacheConfig(cacheName, simpleCacheName);
             }
-            if (config != null) {
-                // Cache config possibly is not exist on other nodes, so create also on them if absent
-                createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
-            }
+        }
+        if (config != null) {
+            // Also create cache config on other nodes to be sure that cache config is exist on all nodes.
+            // This is needed because even though cache config is exist on this node
+            // (for example added by an in-flight cache config creation operation)
+            // it still might not exist on other nodes yet (but will created eventually).
+            createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
         }
         return config;
     }
