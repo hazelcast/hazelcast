@@ -1,6 +1,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -48,21 +49,23 @@ public class ClusterShutdownTest
 
     private void testClusterShutdownWithSingleMember(final ClusterState clusterState) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
-        final HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances();
 
-        final HazelcastInstance hz1 = instances[0];
+        HazelcastInstance hz1 = instances[0];
+        Node[] nodes = getNodes(instances);
 
         hz1.getCluster().changeClusterState(clusterState);
         hz1.getCluster().shutdown();
 
-        assertNodesShutDownEventually(instances);
+        assertNodesShutDownEventually(nodes);
     }
 
     private void testClusterShutdownWithMultipleMembers(final int clusterSize, final int nodeCountToTriggerShutdown) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
-        final HazelcastInstance[] instances = factory.newInstances();
+        HazelcastInstance[] instances = factory.newInstances();
 
         instances[0].getCluster().changeClusterState(ClusterState.PASSIVE);
+        Node[] nodes = getNodes(instances);
 
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -80,16 +83,24 @@ public class ClusterShutdownTest
         }
 
         latch.countDown();
-        assertNodesShutDownEventually(instances);
+        assertNodesShutDownEventually(nodes);
     }
 
-    private void assertNodesShutDownEventually(HazelcastInstance[] instances) {
-        for (final HazelcastInstance instance : instances) {
+    private Node[] getNodes(HazelcastInstance[] instances) {
+        Node[] nodes = new Node[instances.length];
+        for (int i = 0; i < instances.length; i++) {
+            nodes[i] = getNode(instances[i]);
+        }
+        return nodes;
+    }
+
+    private void assertNodesShutDownEventually(Node[] nodes) {
+        for (final Node node : nodes) {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run()
                         throws Exception {
-                    assertEquals(NodeState.SHUT_DOWN, getNode(instance).getState());
+                    assertEquals(NodeState.SHUT_DOWN, node.getState());
                 }
             });
         }
