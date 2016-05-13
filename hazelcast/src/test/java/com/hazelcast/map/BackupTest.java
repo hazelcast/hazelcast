@@ -19,349 +19,176 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceManager;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class BackupTest extends HazelcastTestSupport {
 
-    private static final String MAP_NAME = "default";
+    private final String mapName = randomMapName();
 
-    @Before
-    @After
-    public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceManager.terminateAll();
-    }
+    @Test
+    public void testNodeStartAndGracefulShutdown_inSequence() throws Exception {
+        int size = 10000;
+        int nodeCount = 4;
 
-    @Before
-    public void gc() {
-        Runtime.getRuntime().gc();
-    }
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = getConfig();
+        config.getMapConfig(mapName).setBackupCount(0);
 
-    private void checkSizeEventually(final int expectedSize, final IMap map) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(expectedSize, map.size());
-            }
-        });
+        HazelcastInstance master = factory.newHazelcastInstance(config);
+        IMap<Integer, Integer> map = master.getMap(mapName);
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+
+        for (int i = 0; i < nodeCount ; i++) {
+            HazelcastInstance slave = factory.newHazelcastInstance(config);
+            map = slave.getMap(mapName);
+            master.shutdown();
+            checkSize(size, map);
+            master = slave;
+        }
     }
 
     @Test
     public void testGracefulShutdown() throws Exception {
-        int size = 50000;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
+        final int nodeCount = 6;
+        final int size = 10000;
         Config config = getConfig();
+        config.getMapConfig(mapName).setBackupCount(0);
 
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
-        for (int i = 0; i < size; i++) {
-            m1.put(i, i);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Collection<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(nodeCount);
+
+        for (int i = 0; i < nodeCount; i++) {
+            HazelcastInstance hz = factory.newHazelcastInstance(config);
+            instances.add(hz);
+            IMap<Integer, Integer> map = hz.getMap(mapName);
+            if (i == 0) {
+                for (int k = 0; k < size; k++) {
+                    map.put(k, k);
+                }
+            }
+            checkSize(size, map);
         }
 
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap<Integer, Integer> m2 = h2.getMap(MAP_NAME);
-        h1.shutdown();
-        checkSizeEventually(size, m2);
+        Iterator<HazelcastInstance> iterator = instances.iterator();
+        while (iterator.hasNext()) {
+            HazelcastInstance hz = iterator.next();
+            iterator.remove();
+            hz.shutdown();
 
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap<Integer, Integer> m3 = h3.getMap(MAP_NAME);
-        h2.shutdown();
-        checkSizeEventually(size, m3);
+            for (HazelcastInstance instance : instances) {
+                IMap<Integer, Integer> map = instance.getMap(mapName);
+                checkSize(size, map);
+            }
+        }
+    }
 
-        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
-        IMap<Integer, Integer> m4 = h4.getMap(MAP_NAME);
-        h3.shutdown();
-        checkSizeEventually(size, m4);
+    private static void checkSize(final int expectedSize, final IMap map) {
+        assertEquals(expectedSize, map.size());
     }
 
     @Test
-    public void testGracefulShutdown2() throws Exception {
-        Config config = getConfig();
-        config.getMapConfig(MAP_NAME).setBackupCount(2);
-
-        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(8);
-        final HazelcastInstance hz = f.newHazelcastInstance(config);
-
-        final IMap<Integer, Integer> map = hz.getMap(MAP_NAME);
-        final int size = 50000;
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-
-        final HazelcastInstance hz2 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map2 = hz2.getMap(MAP_NAME);
-
-        checkSizeEventually(size, map2);
-
-        final HazelcastInstance hz3 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map3 = hz3.getMap(MAP_NAME);
-
-        final HazelcastInstance hz4 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map4 = hz4.getMap(MAP_NAME);
-
-        checkSizeEventually(size, map3);
-        checkSizeEventually(size, map4);
-
-        final HazelcastInstance hz5 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map5 = hz5.getMap(MAP_NAME);
-
-        final HazelcastInstance hz6 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map6 = hz6.getMap(MAP_NAME);
-
-        final HazelcastInstance hz7 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map7 = hz7.getMap(MAP_NAME);
-
-        final HazelcastInstance hz8 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map8 = hz8.getMap(MAP_NAME);
-
-        checkSizeEventually(size, map5);
-        checkSizeEventually(size, map6);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz.shutdown();
-        hz2.shutdown();
-
-        checkSizeEventually(size, map3);
-        checkSizeEventually(size, map4);
-        checkSizeEventually(size, map5);
-        checkSizeEventually(size, map6);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz3.shutdown();
-        hz4.shutdown();
-
-        checkSizeEventually(size, map5);
-        checkSizeEventually(size, map6);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz7.shutdown();
-        hz8.shutdown();
-
-        checkSizeEventually(size, map5);
-        checkSizeEventually(size, map6);
-
-        hz5.shutdown();
-        checkSizeEventually(size, map6);
-    }
-
-    @Test
-    public void testGracefulShutdown3() throws Exception {
-        Config config = getConfig();
-        config.getMapConfig(MAP_NAME).setBackupCount(1);
-
-        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(8);
-        final HazelcastInstance hz = f.newHazelcastInstance(config);
-
-        final IMap<Integer, Integer> map = hz.getMap(MAP_NAME);
-        final int size = 50000;
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-
-        final HazelcastInstance hz2 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map2 = hz2.getMap(MAP_NAME);
-
-        final HazelcastInstance hz3 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map3 = hz3.getMap(MAP_NAME);
-
-        final HazelcastInstance hz4 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map4 = hz4.getMap(MAP_NAME);
-
-        final HazelcastInstance hz5 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map5 = hz5.getMap(MAP_NAME);
-
-        final HazelcastInstance hz6 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map6 = hz6.getMap(MAP_NAME);
-
-        final HazelcastInstance hz7 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map7 = hz7.getMap(MAP_NAME);
-
-        final HazelcastInstance hz8 = f.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map8 = hz8.getMap(MAP_NAME);
-
-        checkSizeEventually(size, map2);
-        checkSizeEventually(size, map3);
-        checkSizeEventually(size, map4);
-        checkSizeEventually(size, map5);
-        checkSizeEventually(size, map6);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz6.shutdown();
-        checkSizeEventually(size, map);
-        checkSizeEventually(size, map2);
-        checkSizeEventually(size, map3);
-        checkSizeEventually(size, map4);
-        checkSizeEventually(size, map5);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz2.shutdown();
-        checkSizeEventually(size, map);
-        checkSizeEventually(size, map3);
-        checkSizeEventually(size, map4);
-        checkSizeEventually(size, map5);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz5.shutdown();
-        checkSizeEventually(size, map);
-        checkSizeEventually(size, map3);
-        checkSizeEventually(size, map4);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz3.shutdown();
-        checkSizeEventually(size, map);
-        checkSizeEventually(size, map4);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz4.shutdown();
-        checkSizeEventually(size, map);
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz.shutdown();
-        checkSizeEventually(size, map7);
-        checkSizeEventually(size, map8);
-
-        hz7.shutdown();
-        checkSizeEventually(size, map8);
-    }
-
-    /**
-     * Test for the issue https://code.google.com/p/hazelcast/issues/detail?id=275.
-     */
-    @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/4318
-    public void testBackupMigrationAndRecovery() throws Exception {
+    public void testBackupMigrationAndRecovery_singleBackup() throws Exception {
         testBackupMigrationAndRecovery(4, 1, 5000);
     }
 
-    /**
-     * Test for the issue https://code.google.com/p/hazelcast/issues/detail?id=395.
-     */
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/4057
-    public void testBackupMigrationAndRecovery2() throws Exception {
-        testBackupMigrationAndRecovery(7, 2, 5000);
+    public void testBackupMigrationAndRecovery_twoBackups() throws Exception {
+        testBackupMigrationAndRecovery(6, 2, 5000);
     }
 
     private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
-        final String name = MAP_NAME;
+        final String name = mapName;
 
         Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "5");
+        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
-        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(nodeCount);
 
-        HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        instances[0] = hz;
-        IMap<Integer, String> map1 = hz.getMap(name);
-        for (int i = 0; i < mapSize; i++) {
-            map1.put(i, "value" + i);
-        }
-        checkMapSizes(mapSize, backupCount, instances);
-
-        for (int i = 1; i < nodeCount; i++) {
-            instances[i] = nodeFactory.newHazelcastInstance(config);
+        for (int i = 0; i < nodeCount; i++) {
+            HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+            instances.add(hz);
+            if (i == 0) {
+                IMap<Integer, String> map = hz.getMap(name);
+                for (int k = 0; k < mapSize; k++) {
+                    map.put(k, "value" + k);
+                }
+            }
             checkMapSizes(mapSize, backupCount, instances);
         }
 
-        final Random rand = new Random();
-        for (int i = 1; i < nodeCount; i++) {
-            int ix;
-            do {
-                ix = rand.nextInt(nodeCount);
-            } while (instances[ix] == null);
-
-            TestUtil.terminateInstance(instances[ix]);
-            instances[ix] = null;
+        Random rand = new Random();
+        while (!instances.isEmpty()) {
+            int ix = rand.nextInt(instances.size());
+            HazelcastInstance removedInstance = instances.remove(ix);
+            TestUtil.terminateInstance(removedInstance);
             checkMapSizes(mapSize, backupCount, instances);
         }
     }
 
-    private static void checkMapSizes(final int expectedSize, int backupCount, HazelcastInstance... instances)
+    private void checkMapSizes(final int expectedSize, final int backupCount, List<HazelcastInstance> instances)
             throws InterruptedException {
-        int nodeCount = 0;
-        final IMap[] maps = new IMap[instances.length];
-        for (int i = 0; i < 20; i++) {
-            for (int j = 0; j < instances.length; j++) {
-                final HazelcastInstance hz = instances[j];
-                if (hz != null) {
-                    if (i == 0) {
-                        maps[j] = hz.getMap(MAP_NAME);
-                        nodeCount++;
-                    }
-                    assertEquals(expectedSize, maps[j].size());
-                }
-            }
-            Thread.sleep(10);
+
+        final int nodeCount = instances.size();
+        if (nodeCount == 0) {
+            return;
         }
+
+        final IMap[] maps = new IMap[instances.size()];
+        int i = 0;
+        for (HazelcastInstance hz : instances) {
+            IMap map = hz.getMap(mapName);
+            assertEquals(expectedSize, map.size());
+            maps[i++] = map;
+        }
+
         final int expectedBackupSize = Math.min(nodeCount - 1, backupCount) * expectedSize;
 
-        for (int i = 0; i < 600; i++) {
-            long ownedSize = getTotalOwnedEntryCount(maps);
-            long backupSize = getTotalBackupEntryCount(maps);
-            if (ownedSize == expectedSize && backupSize == expectedBackupSize) {
-                int votes = 0;
-                for (HazelcastInstance hz : instances) {
-                    if (hz != null) {
-                        votes += TestUtil.getNode(hz).getPartitionService().hasOnGoingMigration() ? 0 : 1;
-                    }
-                }
-                if (votes == nodeCount) {
-                    break;
-                }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long ownedSize = getTotalOwnedEntryCount(maps);
+                assertEquals("Missing owned entries, node-count: " + nodeCount, expectedSize, ownedSize);
+
+                long backupSize = getTotalBackupEntryCount(maps);
+                assertEquals("Missing owned entries, node-count: " + nodeCount + ", backup-count: " + backupCount,
+                        expectedBackupSize, backupSize);
             }
-            Thread.sleep(1000);
-        }
-        long actualBackupSize = getTotalBackupEntryCount(maps);
-        if (expectedBackupSize > actualBackupSize) {
-            fail("Missing backups, node-count: " + nodeCount + ", expected:<" + expectedBackupSize
-                    + "> but was:<" + actualBackupSize + ">");
-        }
+        });
     }
 
     private static long getTotalOwnedEntryCount(IMap... maps) {
         long total = 0;
         for (IMap map : maps) {
-            if (map != null) {
-                total += map.getLocalMapStats().getOwnedEntryCount();
-            }
+            total += map.getLocalMapStats().getOwnedEntryCount();
         }
         return total;
     }
@@ -369,73 +196,62 @@ public class BackupTest extends HazelcastTestSupport {
     private static long getTotalBackupEntryCount(IMap... maps) {
         long total = 0;
         for (IMap map : maps) {
-            if (map != null) {
-                total += map.getLocalMapStats().getBackupEntryCount();
-            }
+            total += map.getLocalMapStats().getBackupEntryCount();
         }
         return total;
     }
 
     @Test
     public void testIssue177BackupCount() throws InterruptedException {
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
+        final int nodeCount = 6;
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory();
         final Config config = getConfig();
-        config.getMapConfig(MAP_NAME).setBackupCount(1).setStatisticsEnabled(true);
+        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        config.getMapConfig(mapName).setBackupCount(1).setStatisticsEnabled(true);
 
         final Random rand = new Random();
-        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(nodeCount);
         final int count = 10000;
-        final int totalCount = count * (instances.length() - 1);
-        final CountDownLatch latch = new CountDownLatch(instances.length());
+        final int totalCount = count * (nodeCount - 1);
+        final CountDownLatch latch = new CountDownLatch(nodeCount);
 
-        for (int i = 0; i < instances.length(); i++) {
-            final int finalI = i;
-            Thread thread = new Thread() {
+        for (int i = 0; i < nodeCount; i++) {
+            final int index = i;
+            new Thread() {
                 public void run() {
-                    try {
-                        Thread.sleep(3000 * finalI);
-                        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-                        instances.set(finalI, instance);
-                        Thread.sleep(rand.nextInt(100));
-                        if (finalI != 0) { // do not run on master node,
-                            // let partition assignment be made during put ops.
-                            for (int j = 0; j < 10000; j++) {
-                                instance.getMap(MAP_NAME).put(getName() + "-" + j, "value");
-                            }
+                    sleepMillis(index * rand.nextInt(1000));
+                    HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+                    instances.set(index, instance);
+                    if (index != 0) {
+                        // do not run on master node,
+                        // let partition assignment be made during put ops.
+                        IMap<Object, Object> map = instance.getMap(mapName);
+                        for (int j = 0; j < count; j++) {
+                            map.put(getName() + "-" + j, "value");
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } finally {
-                        latch.countDown();
                     }
+                    latch.countDown();
                 }
-            };
-            thread.start();
+            }.start();
         }
 
         assertTrue(latch.await(5, TimeUnit.MINUTES));
 
-        final int trials = 50;
-        for (int i = 0; i < trials; i++) {
-            long totalOwned = 0L;
-            long totalBackup = 0L;
-            for (int j = 0; j < instances.length(); j++) {
-                HazelcastInstance hz = instances.get(j);
-                LocalMapStats stats = hz.getMap(MAP_NAME).getLocalMapStats();
-                totalOwned += stats.getOwnedEntryCount();
-                totalBackup += stats.getBackupEntryCount();
-            }
-            assertEquals("Owned entry count is wrong! ", totalCount, totalOwned);
-            if (i < trials - 1) {
-                if (totalBackup == totalCount) {
-                    break;
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long totalOwned = 0L;
+                long totalBackup = 0L;
+                for (int i = 0; i < instances.length(); i++) {
+                    HazelcastInstance hz = instances.get(i);
+                    LocalMapStats stats = hz.getMap(mapName).getLocalMapStats();
+                    totalOwned += stats.getOwnedEntryCount();
+                    totalBackup += stats.getBackupEntryCount();
                 }
-                // check again after sometime
-                Thread.sleep(1000);
-            } else {
+                assertEquals("Owned entry count is wrong! ", totalCount, totalOwned);
                 assertEquals("Backup entry count is wrong! ", totalCount, totalBackup);
             }
-        }
+        });
     }
 
     /**
@@ -445,53 +261,41 @@ public class BackupTest extends HazelcastTestSupport {
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
-        final IMap<Integer, byte[]> map = hz2.getMap(MAP_NAME);
 
-        final int size = 100000;
-        final byte[] data = new byte[250];
-        final int threads = 100;
-        final int l = size / threads;
-        final CountDownLatch latch = new CountDownLatch(threads);
-        ExecutorService ex = Executors.newFixedThreadPool(threads);
+        final HazelcastInstance hz1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final IMap<Object, Object> map = hz2.getMap(mapName);
+
+        final int threads = 16;
+        final int perThreadSize = 1000;
+        final int size = threads * perThreadSize;
 
         new Thread() {
             public void run() {
-                while (hz.getMap(MAP_NAME).size() < size / 2) {
-                    try {
-                        sleep(5);
-                    } catch (InterruptedException ignored) {
-                        return;
-                    }
+                IMap<Object, Object> m = hz1.getMap(mapName);
+                while (m.size() < size / 2) {
+                    sleepMillis(5);
                 }
-                TestUtil.terminateInstance(hz);
+                TestUtil.terminateInstance(hz1);
             }
         }.start();
 
+        final CountDownLatch latch = new CountDownLatch(threads);
         for (int i = 0; i < threads; i++) {
-            final int n = i;
-            ex.execute(new Runnable() {
+            final int index = i;
+            new Thread() {
                 public void run() {
-                    for (int j = (n * l); j < (n + 1) * l; j++) {
-                        map.put(j, data);
-                        try {
-                            Thread.sleep(1);
-                        } catch (InterruptedException ignored) {
-                            return;
-                        }
+                    for (int k = (index * perThreadSize); k < (index + 1) * perThreadSize; k++) {
+                        map.put(k, k);
+                        sleepMillis(1);
                     }
                     latch.countDown();
                 }
-            });
+            }.start();
         }
 
-        try {
-            assertTrue(latch.await(5, TimeUnit.MINUTES));
-            assertEquals("Data lost!", size, map.size());
-        } finally {
-            ex.shutdownNow();
-        }
+        assertTrue(latch.await(5, TimeUnit.MINUTES));
+        assertEquals("Data lost!", size, map.size());
     }
 
     /**
@@ -501,68 +305,46 @@ public class BackupTest extends HazelcastTestSupport {
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
-        final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
-        final IMap<Integer, Integer> map = hz2.getMap(MAP_NAME);
 
-        final int size = 100000;
-        final int threads = 100;
-        ExecutorService ex = Executors.newFixedThreadPool(threads);
-        final int loadCount = 10;
-        final CountDownLatch loadLatch = new CountDownLatch(loadCount);
+        final HazelcastInstance hz1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        final IMap<Object, Object> map = hz2.getMap(mapName);
+
+        final int threads = 16;
+        final int perThreadSize = 1000;
+        final int size = threads * perThreadSize;
 
         // initial load
-        for (int i = 0; i < loadCount; i++) {
-            final int n = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    int chunk = size / loadCount;
-                    for (int j = (n * chunk); j < (n + 1) * chunk; j++) {
-                        map.put(j, j);
-                    }
-                    loadLatch.countDown();
-                }
-            });
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
         }
-        loadLatch.await();
 
         new Thread() {
             public void run() {
-                while (hz.getMap(MAP_NAME).size() > size / 2) {
-                    try {
-                        sleep(5);
-                    } catch (InterruptedException ignored) {
-                        return;
-                    }
+                IMap<Object, Object> m = hz1.getMap(mapName);
+                while (m.size() > size / 2) {
+                    sleepMillis(5);
                 }
-                TestUtil.terminateInstance(hz);
+                TestUtil.terminateInstance(hz1);
             }
         }.start();
 
-        final int chunk = size / threads;
         final CountDownLatch latch = new CountDownLatch(threads);
         for (int i = 0; i < threads; i++) {
-            final int n = i;
-            ex.execute(new Runnable() {
+            final int index = i;
+            new Thread() {
                 public void run() {
-                    for (int j = (n * chunk); j < (n + 1) * chunk; j++) {
-                        map.remove(j);
-                        try {
-                            Thread.sleep(1);
-                        } catch (InterruptedException ignored) {
-                        }
+                    for (int k = (index * perThreadSize); k < (index + 1) * perThreadSize; k++) {
+                        map.remove(k);
+                        sleepMillis(1);
                     }
                     latch.countDown();
                 }
-            });
+            }.start();
         }
 
-        try {
-            assertTrue(latch.await(5, TimeUnit.MINUTES));
-            assertEquals("Remove failed!", 0, map.size());
-        } finally {
-            ex.shutdown();
-        }
+        assertTrue(latch.await(5, TimeUnit.MINUTES));
+        assertEquals("Remove failed!", 0, map.size());
     }
 
     /**
@@ -582,7 +364,7 @@ public class BackupTest extends HazelcastTestSupport {
         String key = "key";
         String value = "value";
 
-        IMap<String, String> map = h1.getMap(MAP_NAME);
+        IMap<String, String> map = h1.getMap(mapName);
         map.put(key, value);
 
         h2.shutdown();
