@@ -20,7 +20,6 @@ import com.hazelcast.jet.spi.PartitionIdAware;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.strategy.CalculationStrategyAware;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
 /**

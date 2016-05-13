@@ -237,7 +237,7 @@ public abstract class AbstractProcessingContainer extends
         if (taskCount == 0) {
             throw new IllegalStateException("No containerTasks for container");
         }
-        
+
         List<ObjectProducer> producers = new ArrayList<ObjectProducer>(this.sourcesProducers);
         List<ObjectProducer>[] tasksProducers = new List[taskCount];
 
