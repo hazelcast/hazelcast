@@ -30,6 +30,8 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -119,11 +121,57 @@ public final class IOUtil {
     }
 
     public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, InputStream in) throws IOException {
-        return new ObjectInputStream(in) {
-            protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
-                return ClassLoaderUtil.loadClass(classLoader, desc.getName());
+        return new ClassLoaderAwareObjectInputStream(classLoader, in);
+    }
+
+    private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
+
+        private final ClassLoader classLoader;
+
+        private ClassLoaderAwareObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
+            super(in);
+            this.classLoader = classLoader;
+        }
+
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
+            return ClassLoaderUtil.loadClass(classLoader, desc.getName());
+        }
+
+        protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
+            ClassLoader theClassLoader = getClassLoader();
+            if (theClassLoader == null) {
+                return super.resolveProxyClass(interfaces);
             }
-        };
+            ClassLoader nonPublicLoader = null;
+            Class<?>[] classObjs = new Class<?>[interfaces.length];
+            for (int i = 0; i < interfaces.length; i++) {
+                Class<?> cl = ClassLoaderUtil.loadClass(theClassLoader, interfaces[i]);
+                if ((cl.getModifiers() & Modifier.PUBLIC) == 0) {
+                    if (nonPublicLoader != null) {
+                        if (nonPublicLoader != cl.getClassLoader()) {
+                            throw new IllegalAccessError("conflicting non-public interface class loaders");
+                        }
+                    } else {
+                        nonPublicLoader = cl.getClassLoader();
+                    }
+                }
+                classObjs[i] = cl;
+            }
+            try {
+                return Proxy.getProxyClass(nonPublicLoader != null ? nonPublicLoader : theClassLoader, classObjs);
+            } catch (IllegalArgumentException e) {
+                throw new ClassNotFoundException(null, e);
+            }
+        }
+
+        private ClassLoader getClassLoader() {
+            ClassLoader theClassLoader = this.classLoader;
+            if (theClassLoader == null) {
+                theClassLoader = Thread.currentThread().getContextClassLoader();
+            }
+            return theClassLoader;
+        }
+
     }
 
     public static OutputStream newOutputStream(final ByteBuffer dst) {
