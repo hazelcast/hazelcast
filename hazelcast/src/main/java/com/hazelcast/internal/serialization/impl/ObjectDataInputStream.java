@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -332,6 +333,11 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     @Override
     public Object readObject() throws IOException {
         return serializationService.readObject(this);
+    }
+
+    @Override
+    public <E extends DataSerializable> E readDataSerializable() throws IOException {
+        return serializationService.readDataSerializable(this);
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.Closeable;
 import java.io.DataOutputStream;
@@ -29,6 +30,7 @@ import java.nio.ByteOrder;
 
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
 
     private final InternalSerializationService serializationService;
@@ -248,6 +250,11 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     @Override
     public void writeObject(Object object) throws IOException {
         serializationService.writeObject(this, object);
+    }
+
+    @Override
+    public void writeDataSerializable(DataSerializable object) throws IOException {
+        serializationService.writeDataSerializable(this, object);
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.hazelcast.nio.Disposable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -40,6 +41,10 @@ public interface InternalSerializationService extends SerializationService, Disp
     void writeObject(ObjectDataOutput out, Object obj);
 
     <T> T readObject(ObjectDataInput in);
+
+    void writeDataSerializable(ObjectDataOutput out, DataSerializable obj);
+
+    <T extends DataSerializable> T readDataSerializable(ObjectDataInput in);
 
     void disposeData(Data data);
 

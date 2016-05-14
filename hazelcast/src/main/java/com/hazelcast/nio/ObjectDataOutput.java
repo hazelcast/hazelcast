@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -86,6 +87,12 @@ public interface ObjectDataOutput extends DataOutput {
      * @throws IOException
      */
     void writeObject(Object object) throws IOException;
+
+    /**
+     * @param object object to be written
+     * @throws IOException
+     */
+    void writeDataSerializable(DataSerializable object) throws IOException;
 
     /**
      * @param data data to be written

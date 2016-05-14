@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -26,6 +27,10 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
 
     @Override
     public void writeObject(Object object) throws IOException {
+    }
+
+    @Override
+    public void writeDataSerializable(DataSerializable object) throws IOException {
     }
 
     @Override

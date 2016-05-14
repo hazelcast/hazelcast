@@ -21,6 +21,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
@@ -28,15 +29,19 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.Serializer;
 
 import java.io.Externalizable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteOrder;
 import java.util.IdentityHashMap;
@@ -221,6 +226,79 @@ public abstract class AbstractSerializationService implements InternalSerializat
         } catch (Throwable e) {
             throw handleException(e);
         }
+    }
+
+    @Override
+    public void writeDataSerializable(ObjectDataOutput out, DataSerializable object) {
+        try {
+            if (object == null) {
+                out.writeByte(0);
+            } else if (object instanceof IdentifiedDataSerializable) {
+                IdentifiedDataSerializable identified = (IdentifiedDataSerializable) object;
+                int factoryId = identified.getFactoryId();
+                int typeId = identified.getId();
+
+                if (isByte(factoryId) && isByte(typeId)) {
+                    out.writeByte(1);
+                    out.writeByte(factoryId);
+                    out.writeByte(typeId);
+                } else {
+                    out.writeByte(2);
+                    out.writeInt(factoryId);
+                    out.writeInt(typeId);
+                }
+                object.writeData(out);
+            } else {
+                out.writeByte(3);
+                out.writeUTF(object.getClass().getName());
+                object.writeData(out);
+            }
+        } catch (Throwable e) {
+            throw handleSerializeException(object, e);
+        }
+    }
+
+    private boolean isByte(int value) {
+        return value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE;
+    }
+
+    @Override
+    public <T extends DataSerializable> T readDataSerializable(ObjectDataInput in) {
+        try {
+            byte state = in.readByte();
+            T object;
+            DataSerializableSerializer serializer = (DataSerializableSerializer) dataSerializerAdapter.getImpl();
+            switch (state) {
+                case 0:
+                    return null;
+                case 1:
+                    object = (T) serializer.create(in.readByte(), in.readByte());
+                    break;
+                case 2:
+                    object = (T) serializer.create(in.readInt(), in.readInt());
+                    break;
+                case 3:
+                    String className = in.readUTF();
+                    object = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
+            object.readData(in);
+            return object;
+        } catch (Throwable e) {
+            throw handleException(e);
+        }
+    }
+
+    @Override
+    public PortableReader createPortableReader(Data data) throws IOException {
+        return null;
+    }
+
+    @Override
+    public PortableContext getPortableContext() {
+        return null;
     }
 
     @Override

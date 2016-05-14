@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -87,6 +88,13 @@ public interface ObjectDataInput extends DataInput {
      * @throws IOException if it reaches end of file before finish reading
      */
     <T> T readObject() throws IOException;
+
+    /**
+     * @param <T> type of the DataSerializable to read
+     * @return object read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    <T extends DataSerializable> T readDataSerializable() throws IOException;
 
     /**
      * @return data read

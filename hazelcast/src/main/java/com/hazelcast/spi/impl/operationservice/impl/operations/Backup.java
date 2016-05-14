@@ -224,7 +224,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             out.writeData(backupOpData);
         } else {
             out.writeBoolean(false);
-            out.writeObject(backupOp);
+            out.writeDataSerializable(backupOp);
         }
 
         if (originalCaller != null) {
@@ -254,7 +254,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
         if (in.readBoolean()) {
             backupOpData = in.readData();
         } else {
-            backupOp = in.readObject();
+            backupOp = in.readDataSerializable();
         }
 
         if (in.readBoolean()) {

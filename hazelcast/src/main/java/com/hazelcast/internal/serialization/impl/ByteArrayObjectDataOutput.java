@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -31,7 +32,7 @@ import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput {
+public class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput {
 
     final int initialSize;
 
@@ -369,6 +370,11 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     @Override
     public void writeObject(Object object) throws IOException {
         service.writeObject(this, object);
+    }
+
+    @Override
+    public void writeDataSerializable(DataSerializable object) throws IOException {
+        service.writeDataSerializable(this, object);
     }
 
     @Override

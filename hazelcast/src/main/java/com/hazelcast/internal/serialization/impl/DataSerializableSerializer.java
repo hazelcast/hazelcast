@@ -109,16 +109,8 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             // BasicOperationService::extractOperationCallId
             if (identified) {
                 factoryId = in.readInt();
-                final DataSerializableFactory dsf = factories.get(factoryId);
-                if (dsf == null) {
-                    throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
-                }
                 id = in.readInt();
-                ds = dsf.create(id);
-                if (ds == null) {
-                    throw new HazelcastSerializationException(dsf
-                            + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
-                }
+                ds = create(factoryId, id);
                 // TODO: @mm - we can check if DS class is final.
             } else {
                 className = in.readUTF();
@@ -129,6 +121,19 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         } catch (Exception e) {
             throw rethrowReadException(id, factoryId, className, e);
         }
+    }
+
+    public DataSerializable create(int factoryId, int id) {
+        DataSerializableFactory dsf = factories.get(factoryId);
+        if (dsf == null) {
+            throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
+        }
+        DataSerializable ds = dsf.create(id);
+        if (ds == null) {
+            throw new HazelcastSerializationException(dsf
+                    + " is not be able to create an instance for id: " + id + " on factoryId: " + factoryId);
+        }
+        return ds;
     }
 
     private IOException rethrowReadException(int id, int factoryId, String className, Exception e) throws IOException {

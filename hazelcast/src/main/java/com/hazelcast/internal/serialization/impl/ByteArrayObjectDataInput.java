@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -598,6 +599,11 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     @Override
     public final Object readObject() throws EOFException {
         return service.readObject(this);
+    }
+
+    @Override
+    public <E extends DataSerializable> E readDataSerializable() throws IOException {
+        return service.readDataSerializable(this);
     }
 
     @Override

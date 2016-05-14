@@ -283,7 +283,7 @@ public abstract class Operation implements DataSerializable {
         operationResponseHandler.sendResponse(this, value);
     }
 
-     /**
+    /**
      * Gets the time in milliseconds since this invocation started.
      *
      * For more information, see {@link ClusterClock#getClusterTime()}.

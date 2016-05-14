@@ -156,7 +156,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeObject(operationFactory);
+        out.writeDataSerializable(operationFactory);
         out.writeIntArray(partitions);
     }
 
@@ -164,7 +164,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        operationFactory = in.readObject();
+        operationFactory = in.readDataSerializable();
         partitions = in.readIntArray();
     }
 
