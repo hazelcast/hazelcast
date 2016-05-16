@@ -19,9 +19,8 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 
+import java.util.Collections;
 import java.util.List;
-
-import static java.util.Arrays.asList;
 
 /**
  * Factory for creating private implementations of the {@link PortablePosition} interface
@@ -73,7 +72,7 @@ final class PortablePositionFactory {
         position.factoryId = factoryId;
         position.classId = classId;
         position.len = len;
-        potentiallyNullify(position);
+        position.nil = isEmptyNil(position);
         return position;
     }
 
@@ -90,16 +89,12 @@ final class PortablePositionFactory {
         position.len = 0;
         position.leaf = leaf;
         position.any = any;
-        potentiallyNullify(position);
+        position.nil = isEmptyNil(position);
         return position;
     }
 
-    private static void potentiallyNullify(PortableSinglePosition position) {
-        if (position.isEmpty() && !position.isLeaf()) {
-            position.nil = true;
-        } else if (position.isEmpty() && position.getIndex() >= 0) {
-            position.nil = true;
-        }
+    private static boolean isEmptyNil(PortableSinglePosition position) {
+        return position.isEmpty() && (!position.isLeaf() || position.getIndex() >= 0);
     }
 
     static PortableSinglePosition nil(boolean leaf) {
@@ -229,11 +224,11 @@ final class PortablePositionFactory {
 
         private final List<PortablePosition> positions;
 
-        public PortableMultiPosition(PortablePosition position) {
-            this.positions = asList(position);
+        PortableMultiPosition(PortablePosition position) {
+            this.positions = Collections.singletonList(position);
         }
 
-        public PortableMultiPosition(List<PortablePosition> positions) {
+        PortableMultiPosition(List<PortablePosition> positions) {
             this.positions = positions;
         }
 
