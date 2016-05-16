@@ -22,10 +22,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareService;
-import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
-import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.ProxyService;
 
-import java.util.LinkedList;
+import java.util.Collection;
 
 /**
  * Defines partition-aware operations' behavior of map service.
@@ -37,11 +36,12 @@ class MapPartitionAwareService implements PartitionAwareService {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
-    private ProxyRegistry mapProxyRegistry;
+    private final ProxyService proxyService;
 
     public MapPartitionAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.proxyService = this.nodeEngine.getProxyService();
     }
 
     @Override
@@ -49,8 +49,7 @@ class MapPartitionAwareService implements PartitionAwareService {
         final Address thisAddress = nodeEngine.getThisAddress();
         final int partitionId = partitionLostEvent.getPartitionId();
 
-        LinkedList<DistributedObject> result = new LinkedList<DistributedObject>();
-        getMapProxyRegistry().getDistributedObjects(result);
+        Collection<DistributedObject> result = proxyService.getDistributedObjects(MapService.SERVICE_NAME);
 
         for (DistributedObject object : result) {
             final MapProxyImpl mapProxy = (MapProxyImpl) object;
@@ -62,10 +61,4 @@ class MapPartitionAwareService implements PartitionAwareService {
         }
     }
 
-    private ProxyRegistry getMapProxyRegistry() {
-        if (mapProxyRegistry == null) {
-            mapProxyRegistry = ((ProxyServiceImpl) nodeEngine.getProxyService()).getOrCreateRegistry(MapService.SERVICE_NAME);
-        }
-        return mapProxyRegistry;
-    }
 }

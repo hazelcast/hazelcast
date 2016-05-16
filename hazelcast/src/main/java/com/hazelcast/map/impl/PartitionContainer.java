@@ -142,6 +142,7 @@ public class PartitionContainer {
 
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         mapServiceContext.removeMapContainer(mapContainer);
+        PartitioningStrategyFactory.removePartitioningStrategyFromCache(mapContainer.getName());
     }
 
     private void clearLockStore(String name) {

@@ -66,4 +66,12 @@ public final class PartitioningStrategyFactory {
             }
             return strategy;
     }
+
+    /**
+     * Remove the cached {@code PartitioningStrategy} from the internal cache, if it exists.
+     * @param mapName name of the map whose partitioning strategy will be removed from internal cache
+     */
+    public static void removePartitioningStrategyFromCache(String mapName) {
+        CACHE.remove(mapName);
+    }
 }
