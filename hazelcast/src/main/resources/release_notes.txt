@@ -81,6 +81,12 @@ The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
 
 The following are the fixed issues for 3.6.3 release.
 
+- Expiration time for the map entries should be calculated based on their latest update times. [8111]
+- Support for the usage of IAM role's defaults should be added. [8100]
+- Binary property for MultiMap should be added to XmlConfigBuilder. [8094]
+- EC2 auto-discovery in China throws an exception due to a bug in host header handling mechanism. [8073]
+- The method `Cluster.shutdown()` ignores lifecycle listeners. [8070]
+- Resource adapters should not cast to implementation when using a container to get a connection. [8019]
 - Unnecessary deserialization step during the execution of put operations should be removed. [8018]
 - A URL text with spaces should not be transformed into a URI. [8016]
 - Unnecessary deserialization step in the replicated map data structure should be removed. [8014]
