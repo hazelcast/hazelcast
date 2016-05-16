@@ -16,12 +16,16 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareService;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
-import java.util.Map.Entry;
+import java.util.LinkedList;
 
 /**
  * Defines partition-aware operations' behavior of map service.
@@ -33,6 +37,7 @@ class MapPartitionAwareService implements PartitionAwareService {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
+    private ProxyRegistry mapProxyRegistry;
 
     public MapPartitionAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -44,13 +49,23 @@ class MapPartitionAwareService implements PartitionAwareService {
         final Address thisAddress = nodeEngine.getThisAddress();
         final int partitionId = partitionLostEvent.getPartitionId();
 
-        for (Entry<String, MapContainer> entry : mapServiceContext.getMapContainers().entrySet()) {
-            final String mapName = entry.getKey();
-            final MapContainer mapContainer = entry.getValue();
+        LinkedList<DistributedObject> result = new LinkedList<DistributedObject>();
+        getMapProxyRegistry().getDistributedObjects(result);
 
-            if (mapContainer.getBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
+        for (DistributedObject object : result) {
+            final MapProxyImpl mapProxy = (MapProxyImpl) object;
+            final String mapName = mapProxy.getName();
+
+            if (mapProxy.getBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
                 mapServiceContext.getMapEventPublisher().publishMapPartitionLostEvent(thisAddress, mapName, partitionId);
             }
         }
+    }
+
+    private ProxyRegistry getMapProxyRegistry() {
+        if (mapProxyRegistry == null) {
+            mapProxyRegistry = ((ProxyServiceImpl) nodeEngine.getProxyService()).getOrCreateRegistry(MapService.SERVICE_NAME);
+        }
+        return mapProxyRegistry;
     }
 }

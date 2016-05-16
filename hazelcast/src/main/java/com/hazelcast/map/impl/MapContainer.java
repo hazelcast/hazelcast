@@ -32,7 +32,6 @@ import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.PartitioningStrategyFactory;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -146,7 +145,7 @@ public class MapContainer {
 
     private PartitioningStrategy createPartitioningStrategy() {
         return PartitioningStrategyFactory.getPartitioningStrategy(mapServiceContext.getNodeEngine(),
-                mapConfig.getPartitioningStrategyConfig());
+                mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
     }
 
     public Indexes getIndexes() {

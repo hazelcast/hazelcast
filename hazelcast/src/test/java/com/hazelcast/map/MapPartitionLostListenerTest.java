@@ -1,7 +1,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
@@ -43,10 +42,7 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         HazelcastInstance instance = instances.get(0);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        IMap map = instance.getMap(getIthMapName(0));
-        map.addPartitionLostListener(listener);
-        // add some dummy data for the MapContainer to be initialized
-        map.put("foo", "bar");
+        instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
 
         final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 0, null);
 
@@ -72,10 +68,8 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
         HazelcastInstance instance = instances.get(0);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        IMap map = instance.getMap(getIthMapName(0));
-        map.addPartitionLostListener(listener);
-        map.addEntryListener(mock(EntryAddedListener.class), true);
-        map.put("a", "b");
+        instance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
+        instance.getMap(getIthMapName(0)).addEntryListener(mock(EntryAddedListener.class), true);
 
         final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 0, null);
 
@@ -101,14 +95,9 @@ public class MapPartitionLostListenerTest extends AbstractPartitionLostListenerT
 
         HazelcastInstance survivingInstance = instances.get(0);
         HazelcastInstance terminatingInstance = instances.get(1);
-        warmUpPartitions(instances);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        IMap<String, String> map = survivingInstance.getMap(getIthMapName(0));
-        map.addPartitionLostListener(listener);
-        // ensure map containers are created on both nodes by putting values in surviving & terminating instances
-        map.put(generateKeyOwnedBy(survivingInstance), randomString());
-        map.put(generateKeyOwnedBy(terminatingInstance), randomString());
+        survivingInstance.getMap(getIthMapName(0)).addPartitionLostListener(listener);
 
         final Set<Integer> survivingPartitionIds = new HashSet<Integer>();
         Node survivingNode = getNode(survivingInstance);

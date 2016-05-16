@@ -5,7 +5,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
@@ -89,9 +88,7 @@ public class ClientMapPartitionLostListenerTest {
         warmUpPartitions(instance, client);
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        IMap map = client.getMap(mapName);
-        map.addPartitionLostListener(listener);
-        map.put("a", "b");
+        client.getMap(mapName).addPartitionLostListener(listener);
 
         final MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
         final int partitionId = 5;

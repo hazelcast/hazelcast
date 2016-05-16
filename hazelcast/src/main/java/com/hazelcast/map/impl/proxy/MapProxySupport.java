@@ -65,7 +65,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.PartitioningStrategyFactory;
+import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.Predicate;
@@ -142,7 +142,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.mapServiceContext = service.getMapServiceContext();
         this.mapConfig = mapConfig;
         this.partitionStrategy = PartitioningStrategyFactory.getPartitioningStrategy(nodeEngine,
-                mapConfig.getPartitioningStrategyConfig());
+                mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
@@ -1047,6 +1047,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public void setOperationProvider(MapOperationProvider operationProvider) {
         this.operationProvider = operationProvider;
+    }
+
+    public int getBackupCount() {
+        return mapConfig.getBackupCount();
     }
 }
 
