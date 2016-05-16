@@ -31,7 +31,6 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writethrough.WriteThroughStore;
 import com.hazelcast.spi.NodeEngine;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createBoundedWriteBehindQueue;
@@ -66,13 +65,10 @@ public final class MapDataStores {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
-        final int writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
-        final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
         final boolean writeCoalescing = mapStoreConfig.isWriteCoalescing();
         final InMemoryFormat inMemoryFormat = getInMemoryFormat(mapStoreContext);
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService,
-                        writeDelayMillis, partitionId, inMemoryFormat, writeCoalescing);
+                = new WriteBehindStore(store, serializationService, partitionId, inMemoryFormat, writeCoalescing);
         final WriteBehindQueue writeBehindQueue = newWriteBehindQueue(mapServiceContext, writeCoalescing);
         mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
