@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
 
-    final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    private final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     public FirewallingTcpIpConnectionManager(
             LoggingService loggingService,
@@ -64,6 +64,7 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
         Connection connection = getConnection(address);
         if (connection instanceof DroppingConnection) {
             connection.close(null, null);
+            onClose(connection);
         }
     }
 
