@@ -12,12 +12,14 @@ public class MyPortableElement implements Portable {
     public static final int CLASS_ID = 1;
 
     private int id;
+    private Long date;
 
     private MyPortableElement() {
     }
 
     public MyPortableElement(int id) {
         this.id = id;
+        this.date = 123L;
     }
 
     @Override
@@ -33,11 +35,32 @@ public class MyPortableElement implements Portable {
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("id", id);
+        writer.writeLong("date", date);
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         id = reader.readInt("id");
+        date = reader.readLong("date");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MyPortableElement that = (MyPortableElement) o;
+
+        if (id != that.id) return false;
+        return date != null ? date.equals(that.date) : that.date == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id;
+        result = 31 * result + (date != null ? date.hashCode() : 0);
+        return result;
     }
 
     public static class Factory implements PortableFactory {

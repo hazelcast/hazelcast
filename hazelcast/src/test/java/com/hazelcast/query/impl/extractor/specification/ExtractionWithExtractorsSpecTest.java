@@ -5,8 +5,11 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
+import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.query.extractor.ValueReader;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -16,10 +19,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Collection;
+import java.util.UUID;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.LIST;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.PORTABLE;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.limb;
@@ -57,6 +62,16 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         super(inMemoryFormat, index, multivalue);
     }
 
+    @Override
+    protected void doWithMap() {
+        // init fully populated object to handle nulls properly
+        if (mv == PORTABLE) {
+            String key = UUID.randomUUID().toString();
+            map.put(key, KRUEGER.getPortable());
+            map.remove(key);
+        }
+    }
+
     @Test
     public void extractorWithParam_bondCase() {
         execute(Input.of(BOND, KRUEGER),
@@ -72,17 +87,24 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    public void extractorWithParam_nullCollection() {
+        execute(Input.of(HUNT_NULL_LIMB),
+                Query.of(Predicates.equal("tattoosCount[0]", 1), mv),
+                Expected.of(QueryException.class, IllegalArgumentException.class));
+    }
+
+    @Test
     public void extractorWithParam_indexOutOfBound() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[2]", 1), mv),
-                Expected.of(IndexOutOfBoundsException.class));
+                Expected.of(IndexOutOfBoundsException.class, QueryException.class));
     }
 
     @Test
     public void extractorWithParam_negativeInput() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[-1]", 1), mv),
-                Expected.of(IndexOutOfBoundsException.class));
+                Expected.of(ArrayIndexOutOfBoundsException.class, QueryException.class));
     }
 
     @Test
@@ -117,28 +139,21 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
     public void extractorWithParam_wrongInput_noArgumentWithBrackets() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[]", 1), mv),
-                Expected.of(NumberFormatException.class));
+                Expected.of(QueryException.class));
     }
 
     @Test
     public void extractorWithParam_wrongInput_noArgumentNoBrackets() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount", 1), mv),
-                Expected.of(NumberFormatException.class));
+                Expected.of(QueryException.class));
     }
 
     @Test
     public void extractorWithParam_wrongInput_squareBracketsInInput() {
         execute(Input.of(BOND, KRUEGER, HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("tattoosCount[1183[2]3]", 1), mv),
-                Expected.of(IllegalArgumentException.class));
-    }
-
-    @Test
-    public void extractorWithParam_nullCollection() {
-        execute(Input.of(HUNT_NULL_LIMB),
-                Query.of(Predicates.equal("tattoosCount[0]", 1), mv),
-                Expected.of(NullPointerException.class));
+                Expected.of(QueryException.class));
     }
 
     protected AbstractExtractionTest.Configurator getInstanceConfigurator() {
@@ -151,15 +166,30 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
                 tattoosCount.setName("tattoosCount");
                 tattoosCount.setExtractor("com.hazelcast.query.impl.extractor.specification.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
                 mapConfig.addMapAttributeConfig(tattoosCount);
+
+                config.getSerializationConfig().addPortableFactory(ComplexDataStructure.PersonPortableFactory.ID, new ComplexDataStructure.PersonPortableFactory());
             }
         };
     }
 
-    public static class LimbTattoosCountExtractor extends ValueExtractor<Person, String> {
+    @SuppressWarnings("unchecked")
+    public static class LimbTattoosCountExtractor extends ValueExtractor {
         @Override
-        public void extract(Person target, String arguments, ValueCollector collector) {
-            Integer parsedId = Integer.parseInt(arguments);
-            collector.addObject(target.limbs_list.get(parsedId).tattoos_list.size());
+        public void extract(Object target, Object arguments, final ValueCollector collector) {
+            Integer parsedId = Integer.parseInt((String) arguments);
+            if (target instanceof Person) {
+                Integer size = ((Person) target).limbs_list.get(parsedId).tattoos_list.size();
+                collector.addObject(size);
+            } else {
+                ValueReader reader = (ValueReader) target;
+                reader.read("limbs_portable[" + parsedId + "].tattoos_portable", new ValueCallback() {
+                    @Override
+                    public void onResult(Object value) {
+                        collector.addObject(((String[]) value).length);
+                    }
+                });
+            }
+
         }
     }
 
@@ -168,7 +198,7 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         return axes(
                 asList(OBJECT),
                 asList(NO_INDEX),
-                asList(LIST)
+                asList(PORTABLE, LIST)
         );
     }
 

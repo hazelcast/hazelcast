@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.nio.serialization.Portable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -42,6 +43,7 @@ public final class TypeConverters {
     public static final TypeConverter IDENTITY_CONVERTER = new IdentityConverter();
     public static final TypeConverter NULL_CONVERTER = new IdentityConverter();
     public static final TypeConverter UUID_CONVERTER = new UUIDConverter();
+    public static final TypeConverter PORTABLE_CONVERTER = new PortableConverter();
 
     private TypeConverters() {
     }
@@ -289,6 +291,16 @@ public final class TypeConverters {
                 return number.intValue();
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to char");
+        }
+    }
+
+    static class PortableConverter extends BaseTypeConverter {
+        @Override
+        Comparable convertInternal(Comparable value) {
+            if (value instanceof Portable) {
+                return value;
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "]");
         }
     }
 }

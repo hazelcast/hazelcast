@@ -1,7 +1,9 @@
 package com.hazelcast.query.impl.extractor.specification;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -19,6 +21,7 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.ORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.UNORDERED;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.ARRAY;
+import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.PORTABLE;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Finger;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexDataStructure.finger;
@@ -38,7 +41,6 @@ import static java.util.Arrays.asList;
  */
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelTest.class})
-@Ignore("Checking array's length does not work for now")
 public class ExtractionInArraySpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",
@@ -57,11 +59,21 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
 
     private static final Person HUNT_NULL_LIMB = person("Hunt");
 
+    protected Configurator getInstanceConfigurator() {
+        return new Configurator() {
+            @Override
+            public void doWithConfig(Config config, Multivalue mv) {
+                config.getSerializationConfig().addPortableFactory(ComplexDataStructure.PersonPortableFactory.ID, new ComplexDataStructure.PersonPortableFactory());
+            }
+        };
+    }
+
     public ExtractionInArraySpecTest(InMemoryFormat inMemoryFormat, Index index, Multivalue multivalue) {
         super(inMemoryFormat, index, multivalue);
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void length_property() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_.length", 2), mv),
@@ -69,6 +81,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void length_property_atLeaf() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.equal("limbs_[0].tattoos_.length", 1), mv),
@@ -76,6 +89,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length() {
         execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("limbs_[0].fingers_.length", 1), mv),
@@ -83,6 +97,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length_compared_to_null() {
         execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("limbs_[0].fingers_.length", null), mv),
@@ -90,6 +105,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length_reduced() {
         execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("limbs_[any].fingers_.length", 1), mv),
@@ -97,6 +113,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length_reduced_compared_to_null() {
         execute(Input.of(HUNT_NULL_LIMB),
                 Query.of(Predicates.equal("limbs_[any].fingers_.length", null), mv),
@@ -104,6 +121,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length_atLeaf() {
         execute(Input.of(HUNT_NULL_TATTOOS),
                 Query.of(Predicates.equal("limbs_[0].tattoos_.length", 1), mv),
@@ -111,6 +129,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length_atLeaf_compared_to_null() {
         execute(Input.of(HUNT_NULL_TATTOOS),
                 Query.of(Predicates.equal("limbs_[0].tattoos_.length", null), mv),
@@ -118,6 +137,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length_atLeaf_reduced() {
         execute(Input.of(HUNT_NULL_TATTOOS),
                 Query.of(Predicates.equal("limbs_[any].tattoos_.length", 1), mv),
@@ -125,18 +145,40 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
     }
 
     @Test
+    @Ignore("Checking array's length does not work for now")
     public void null_collection_length_atLeaf_reduced_compared_to_null() {
         execute(Input.of(HUNT_NULL_TATTOOS),
                 Query.of(Predicates.equal("limbs_[any].tattoos_.length", null), mv),
                 Expected.of(HUNT_NULL_TATTOOS));
     }
 
+    @Test
+    public void indexOutOfBound_notExistingProperty() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[100].sdafasdf", "knife"), mv),
+                Expected.of(QueryException.class));
+    }
+
+    @Test
+    public void indexOutOfBound_notExistingProperty_notAtLeaf() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[100].sdafasdf.zxcvzxcv", "knife"), mv),
+                Expected.of(QueryException.class));
+    }
+
+    @Test
+    public void indexOutOfBound_atLeaf_notExistingProperty() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(equal("limbs_[0].tattoos_[100].asdfas", "knife"), mv),
+                Expected.of(QueryException.class));
+    }
+
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> parametrisationData() {
         return axes(
                 asList(BINARY, OBJECT),
-                asList(NO_INDEX, UNORDERED, ORDERED),
-                asList(ARRAY)
+                asList(NO_INDEX, ORDERED, UNORDERED),
+                asList(ARRAY, PORTABLE)
         );
     }
 

@@ -24,6 +24,8 @@ import java.util.Set;
 /**
  * Provides a mean of reading portable fields from a binary in form of java primitives
  * arrays of java primitives , nested portable fields and array of portable fields.
+ * <p/>
+ * PortableReader read method family support nested paths. For example <code>body.brain.iq</code> is a valid nested path.
  */
 public interface PortableReader {
 
@@ -33,7 +35,7 @@ public interface PortableReader {
     int getVersion();
 
     /**
-     * @param fieldName name of the field
+     * @param fieldName name of the field (does not support nested paths)
      * @return true if field exist in this class.
      */
     boolean hasField(String fieldName);
