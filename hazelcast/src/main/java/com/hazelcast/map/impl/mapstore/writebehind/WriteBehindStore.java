@@ -47,7 +47,6 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Write behind map data store implementation.
@@ -107,7 +106,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final NodeEngine nodeEngine;
     private final String mapName;
     private final int partitionId;
-    private final long writeDelayMillis;
 
     private WriteBehindProcessor writeBehindProcessor;
     private WriteBehindQueue<DelayedEntry> writeBehindQueue;
@@ -116,7 +114,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         super(mapStoreContext.getMapStoreWrapper(),
                 mapStoreContext.getMapServiceContext().getNodeEngine().getSerializationService());
         MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
-        this.writeDelayMillis = SECONDS.toMillis(mapStoreConfig.getWriteDelaySeconds());
         this.partitionId = partitionId;
         this.inMemoryFormat = getInMemoryFormat(mapStoreContext);
         this.coalesce = mapStoreConfig.isWriteCoalescing();
@@ -147,9 +144,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             value = toData(value);
         }
 
-        long storeTime = now + writeDelayMillis;
         DelayedEntry<Data, Object> delayedEntry
-                = DelayedEntries.createDefault(key, value, storeTime, partitionId);
+                = DelayedEntries.createDefault(key, value, now, partitionId);
 
         add(delayedEntry);
 
@@ -183,9 +179,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             key = toData(key);
         }
 
-        long storeTime = now + writeDelayMillis;
         DelayedEntry<Data, Object> delayedEntry
-                = DelayedEntries.createWithoutValue(key, storeTime, partitionId);
+                = DelayedEntries.createWithoutValue(key, now, partitionId);
 
         add(delayedEntry);
     }
