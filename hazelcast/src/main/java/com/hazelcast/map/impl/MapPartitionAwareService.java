@@ -55,7 +55,7 @@ class MapPartitionAwareService implements PartitionAwareService {
             final MapProxyImpl mapProxy = (MapProxyImpl) object;
             final String mapName = mapProxy.getName();
 
-            if (mapProxy.getBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
+            if (mapProxy.getTotalBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
                 mapServiceContext.getMapEventPublisher().publishMapPartitionLostEvent(thisAddress, mapName, partitionId);
             }
         }

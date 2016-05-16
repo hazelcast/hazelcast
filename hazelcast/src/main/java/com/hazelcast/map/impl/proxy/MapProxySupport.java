@@ -1049,8 +1049,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.operationProvider = operationProvider;
     }
 
-    public int getBackupCount() {
-        return mapConfig.getBackupCount();
+    public int getTotalBackupCount() {
+        return mapConfig.getBackupCount() + mapConfig.getAsyncBackupCount();
     }
 }
 
