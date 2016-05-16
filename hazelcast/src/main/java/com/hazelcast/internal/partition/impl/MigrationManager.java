@@ -1048,6 +1048,10 @@ public class MigrationManager {
 
             partitionServiceLock.lock();
             try {
+                if (!partitionStateManager.isInitialized()) {
+                    // node reset/terminated while running task
+                    return false;
+                }
                 if (success) {
                     for (MigrationInfo migration : migrations) {
                         InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(migration.getPartitionId());
