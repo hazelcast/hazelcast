@@ -67,7 +67,6 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
         out.writeObject(predicate);
         out.writeByte(iterationType.getId());
     }
@@ -75,7 +74,6 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
         predicate = in.readObject();
         iterationType = IterationType.getById(in.readByte());
     }
