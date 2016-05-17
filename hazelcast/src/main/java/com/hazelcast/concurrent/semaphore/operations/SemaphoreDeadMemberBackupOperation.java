@@ -20,12 +20,14 @@ import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 
+import java.util.UUID;
+
 public class SemaphoreDeadMemberBackupOperation extends SemaphoreBackupOperation {
 
     public SemaphoreDeadMemberBackupOperation() {
     }
 
-    public SemaphoreDeadMemberBackupOperation(String name, String firstCaller) {
+    public SemaphoreDeadMemberBackupOperation(String name, UUID firstCaller) {
         super(name, -1, firstCaller);
     }
 

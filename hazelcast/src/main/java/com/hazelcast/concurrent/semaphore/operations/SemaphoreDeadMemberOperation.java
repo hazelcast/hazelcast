@@ -30,15 +30,16 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
-    private String firstCaller;
+    private UUID firstCaller;
 
     public SemaphoreDeadMemberOperation() {
     }
 
-    public SemaphoreDeadMemberOperation(String name, String firstCaller) {
+    public SemaphoreDeadMemberOperation(String name, UUID firstCaller) {
         super(name, -1);
         this.firstCaller = firstCaller;
     }
@@ -88,12 +89,12 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(firstCaller);
+        out.writeUUID(firstCaller);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        firstCaller = in.readUTF();
+        firstCaller = in.readUUID();
     }
 }

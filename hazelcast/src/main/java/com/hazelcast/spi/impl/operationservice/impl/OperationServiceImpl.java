@@ -436,7 +436,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS),
                 invocationRegistry,
                 invocationMonitor,
-                nodeEngine.getLocalMember().getUuid(),
+                nodeEngine.getLocalMember().getUUID(),
                 nodeEngine.getLogger(Invocation.class),
                 node,
                 nodeEngine,

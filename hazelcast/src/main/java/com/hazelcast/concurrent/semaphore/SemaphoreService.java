@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -97,7 +98,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        String caller = event.getMember().getUuid();
+        UUID caller = event.getMember().getUUID();
         onOwnerDisconnected(caller);
     }
 
@@ -105,7 +106,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    private void onOwnerDisconnected(final String caller) {
+    private void onOwnerDisconnected(final UUID caller) {
         IPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
 
@@ -189,6 +190,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public void clientDisconnected(String clientUuid) {
-        onOwnerDisconnected(clientUuid);
+        onOwnerDisconnected(UUID.fromString(clientUuid));
     }
 }

@@ -36,7 +36,7 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractCalla
     @Override
     protected Object call() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
-        OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
+        OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUUID());
 
         final InternalOperationService operationService = nodeEngine.getOperationService();
         Map<Integer, Object> map = operationService.invokeOnPartitions(getServiceName(), operationFactory, getPartitions());

@@ -201,7 +201,7 @@ public class ExpirationManager {
         final ClearExpiredOperation clearExpiredOperation = new ClearExpiredOperation(expirationPercentage);
         clearExpiredOperation
                 .setNodeEngine(nodeEngine)
-                .setCallerUuid(nodeEngine.getLocalMember().getUuid())
+                .setCallerUuid(nodeEngine.getLocalMember().getUUID())
                 .setPartitionId(partitionId)
                 .setValidateTarget(false)
                 .setService(mapServiceContext.getService());

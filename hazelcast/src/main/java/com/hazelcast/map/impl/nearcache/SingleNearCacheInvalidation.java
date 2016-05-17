@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class SingleNearCacheInvalidation extends Invalidation {
 
@@ -29,7 +30,7 @@ public class SingleNearCacheInvalidation extends Invalidation {
     public SingleNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(String mapName, Data key, String sourceUuid) {
+    public SingleNearCacheInvalidation(String mapName, Data key, UUID sourceUuid) {
         super(mapName, sourceUuid);
         this.key = key;
 

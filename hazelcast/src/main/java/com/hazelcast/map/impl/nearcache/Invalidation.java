@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Root interface for near-cache invalidation data.
@@ -31,12 +32,12 @@ import java.io.IOException;
 public abstract class Invalidation implements IMapEvent, DataSerializable {
 
     private String mapName;
-    private String sourceUuid;
+    private UUID sourceUuid;
 
     public Invalidation() {
     }
 
-    public Invalidation(String mapName, String sourceUuid) {
+    public Invalidation(String mapName, UUID sourceUuid) {
         this.mapName = mapName;
         this.sourceUuid = sourceUuid;
     }
@@ -46,7 +47,7 @@ public abstract class Invalidation implements IMapEvent, DataSerializable {
         return mapName;
     }
 
-    public String getSourceUuid() {
+    public UUID getSourceUuid() {
         return sourceUuid;
     }
 
@@ -63,12 +64,12 @@ public abstract class Invalidation implements IMapEvent, DataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        out.writeUTF(sourceUuid);
+        out.writeUUID(sourceUuid);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        sourceUuid = in.readUTF();
+        sourceUuid = in.readUUID();
     }
 }

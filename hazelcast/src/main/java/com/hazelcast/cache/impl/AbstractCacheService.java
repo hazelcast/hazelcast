@@ -55,6 +55,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -280,7 +281,7 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public void deleteCache(String name, String callerUuid, boolean destroy) {
+    public void deleteCache(String name, UUID callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(name);
         if (destroy) {
             destroySegments(name);
@@ -663,7 +664,7 @@ public abstract class AbstractCacheService
      * @param sourceUuid an id that represents the source for invalidation event
      */
     @Override
-    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+    public void sendInvalidationEvent(String name, Data key, UUID sourceUuid) {
         cacheEventHandler.sendInvalidationEvent(name, key, sourceUuid);
     }
 

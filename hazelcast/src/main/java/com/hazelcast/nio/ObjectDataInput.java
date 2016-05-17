@@ -21,11 +21,14 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 /**
  * Provides serialization methods for arrays of primitive types
  */
 public interface ObjectDataInput extends DataInput {
+
+    UUID readUUID() throws IOException;
 
     /**
      * @return the byte array read

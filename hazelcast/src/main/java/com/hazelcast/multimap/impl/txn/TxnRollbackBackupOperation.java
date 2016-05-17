@@ -26,15 +26,16 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
-    String caller;
+    UUID caller;
 
     public TxnRollbackBackupOperation() {
     }
 
-    public TxnRollbackBackupOperation(String name, Data dataKey, String caller, long threadId) {
+    public TxnRollbackBackupOperation(String name, Data dataKey, UUID caller, long threadId) {
         super(name, dataKey);
         this.caller = caller;
         this.threadId = threadId;
@@ -53,13 +54,13 @@ public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implem
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(caller);
+        out.writeUUID(caller);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        caller = in.readUTF();
+        caller = in.readUUID();
     }
 
     @Override

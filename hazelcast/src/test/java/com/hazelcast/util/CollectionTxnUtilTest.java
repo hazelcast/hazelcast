@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -55,7 +56,7 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
 
     private String serviceName;
 
-    private String callerUuid;
+    private UUID callerUuid;
 
     private int partitionId;
 
@@ -68,7 +69,7 @@ public class CollectionTxnUtilTest extends HazelcastTestSupport {
         serviceName = randomString();
         when(nodeEngine.getService(serviceName)).thenReturn(remoteService);
 
-        callerUuid = randomString();
+        callerUuid = UuidUtil.newUnsecureUUID();
         partitionId = RandomPicker.getInt(271);
         operationList = new ArrayList<Operation>(10);
         for (int i = 0; i < 10; i++) {

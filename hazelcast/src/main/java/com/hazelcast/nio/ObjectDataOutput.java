@@ -21,11 +21,18 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 /**
  * Provides serialization methods for arrays by extending DataOutput
  */
 public interface ObjectDataOutput extends DataOutput {
+
+    /**
+     * @param uuid UUID to be written
+     * @throws IOException
+     */
+    void writeUUID(UUID uuid) throws IOException;
 
     /**
      * @param bytes byte array to be written

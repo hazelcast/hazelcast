@@ -9,10 +9,13 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static java.lang.String.format;
@@ -50,20 +53,20 @@ public class TransactionImplTest extends HazelcastTestSupport {
 
     @Test
     public void getTimeoutMillis() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         assertEquals(options.getTimeoutMillis(), tx.getTimeoutMillis());
     }
 
     @Test
     public void testToString() throws Exception {
-        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, "dummy-uuid");
+        TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, UuidUtil.newSecureUUID());
         assertEquals(format("Transaction{txnId='%s', state=%s, txType=%s, timeoutMillis=%s}",
                 tx.getTxnId(), tx.getState(), options.getTransactionType(), options.getTimeoutMillis()), tx.toString());
     }
 
     @Test
     public void getOwnerUUID() throws Exception {
-        String ownerUUID = "dummy-uuid";
+        UUID ownerUUID = UuidUtil.newSecureUUID();
         TransactionImpl tx = new TransactionImpl(txManagerService, nodeEngine, options, ownerUUID);
         assertEquals(ownerUUID, tx.getOwnerUuid());
     }

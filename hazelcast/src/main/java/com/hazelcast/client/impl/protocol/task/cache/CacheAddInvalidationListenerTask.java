@@ -35,6 +35,7 @@ import com.hazelcast.spi.NotifiableEventListener;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class CacheAddInvalidationListenerTask
         extends AbstractCallableMessageTask<CacheAddInvalidationListenerCodec.RequestParameters> {
@@ -72,7 +73,7 @@ public class CacheAddInvalidationListenerTask
                 return;
             }
             if (eventObject instanceof CacheInvalidationMessage) {
-                String targetUuid = endpoint.getUuid();
+                UUID targetUuid = endpoint.getUUID();
                 if (eventObject instanceof CacheSingleInvalidationMessage) {
                     CacheSingleInvalidationMessage message = (CacheSingleInvalidationMessage) eventObject;
                     if (!targetUuid.equals(message.getSourceUuid())) {

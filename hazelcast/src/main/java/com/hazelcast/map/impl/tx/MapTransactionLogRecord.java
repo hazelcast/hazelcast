@@ -25,6 +25,7 @@ import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Represents an operation on the map in the transaction log.
@@ -35,13 +36,13 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     private String name;
     private Data key;
     private long threadId = ThreadUtil.getThreadId();
-    private String ownerUuid;
+    private UUID ownerUuid;
     private Operation op;
 
     public MapTransactionLogRecord() {
     }
 
-    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, long version, String ownerUuid) {
+    public MapTransactionLogRecord(String name, Data key, int partitionId, Operation op, long version, UUID ownerUuid) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -85,7 +86,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
             out.writeData(key);
         }
         out.writeLong(threadId);
-        out.writeUTF(ownerUuid);
+        out.writeUUID(ownerUuid);
         out.writeObject(op);
     }
 
@@ -98,7 +99,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
             key = in.readData();
         }
         threadId = in.readLong();
-        ownerUuid = in.readUTF();
+        ownerUuid = in.readUUID();
         op = in.readObject();
     }
 

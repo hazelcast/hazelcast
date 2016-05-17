@@ -24,19 +24,20 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.CREATE_TX_BACKUP_LOG;
 
 public class CreateTxBackupLogOperation extends AbstractTxOperation {
 
-    private String callerUuid;
+    private UUID callerUuid;
     private String txnId;
 
     public CreateTxBackupLogOperation() {
     }
 
-    public CreateTxBackupLogOperation(String callerUuid, String txnId) {
+    public CreateTxBackupLogOperation(UUID callerUuid, String txnId) {
         this.callerUuid = callerUuid;
         this.txnId = txnId;
     }
@@ -66,7 +67,7 @@ public class CreateTxBackupLogOperation extends AbstractTxOperation {
     }
 
     @Override
-    public String getCallerUuid() {
+    public UUID getCallerUuid() {
         return callerUuid;
     }
 
@@ -76,13 +77,13 @@ public class CreateTxBackupLogOperation extends AbstractTxOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
+        out.writeUUID(callerUuid);
         out.writeUTF(txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
+        callerUuid = in.readUUID();
         txnId = in.readUTF();
     }
 }

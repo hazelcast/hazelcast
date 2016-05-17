@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ManagedService;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Responsible for local and remote near-cache invalidation.
@@ -37,7 +38,7 @@ public interface NearCacheInvalidator {
      * @param key        key of the entry to be removed from near-cache.
      * @param sourceUuid caller uuid
      */
-    void invalidate(String mapName, Data key, String sourceUuid);
+    void invalidate(String mapName, Data key, UUID sourceUuid);
 
     /**
      * Invalidates local and remote near-caches.
@@ -47,7 +48,7 @@ public interface NearCacheInvalidator {
      * @param keys       keys of the entries to be removed from near-cache.
      * @param sourceUuid caller uuid
      */
-    void invalidate(String mapName, List<Data> keys, String sourceUuid);
+    void invalidate(String mapName, List<Data> keys, UUID sourceUuid);
 
 
     /**
@@ -58,7 +59,7 @@ public interface NearCacheInvalidator {
      * @param owner      <code>true</code> if this method is called from partition owner, otherwise <code>false</code>.
      * @param sourceUuid caller uuid
      */
-    void clear(String mapName, boolean owner, String sourceUuid);
+    void clear(String mapName, boolean owner, UUID sourceUuid);
 
     /**
      * Removes supplied maps invalidation queue and flushes its content.

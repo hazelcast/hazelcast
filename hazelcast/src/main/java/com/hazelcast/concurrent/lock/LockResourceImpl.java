@@ -31,11 +31,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 final class LockResourceImpl implements DataSerializable, LockResource {
 
     private Data key;
-    private String owner;
+    private UUID owner;
     private long threadId;
     private long referenceId;
     private int lockCount;
@@ -71,11 +72,11 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     @Override
-    public boolean isLockedBy(String owner, long threadId) {
+    public boolean isLockedBy(UUID owner, long threadId) {
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    boolean lock(String owner, long threadId, long referenceId, long leaseTime, boolean transactional, boolean blockReads) {
+    boolean lock(UUID owner, long threadId, long referenceId, long leaseTime, boolean transactional, boolean blockReads) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
@@ -108,7 +109,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
      * @param leaseTime
      * @return
      */
-    boolean extendLeaseTime(String caller, long threadId, long leaseTime) {
+    boolean extendLeaseTime(UUID caller, long threadId, long leaseTime) {
         if (!isLockedBy(caller, threadId)) {
             return false;
         }
@@ -135,7 +136,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         }
     }
 
-    boolean unlock(String owner, long threadId, long referenceId) {
+    boolean unlock(UUID owner, long threadId, long referenceId) {
         if (lockCount == 0) {
             return false;
         }
@@ -156,11 +157,11 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return true;
     }
 
-    boolean canAcquireLock(String caller, long threadId) {
+    boolean canAcquireLock(UUID caller, long threadId) {
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
-    boolean addAwait(String conditionId, String caller, long threadId) {
+    boolean addAwait(String conditionId, UUID caller, long threadId) {
         if (conditions == null) {
             conditions = new HashMap<String, ConditionInfo>(2);
         }
@@ -173,7 +174,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return condition.addWaiter(caller, threadId);
     }
 
-    boolean removeAwait(String conditionId, String caller, long threadId) {
+    boolean removeAwait(String conditionId, UUID caller, long threadId) {
         if (conditions == null) {
             return false;
         }
@@ -190,7 +191,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return ok;
     }
 
-    boolean startAwaiting(String conditionId, String caller, long threadId) {
+    boolean startAwaiting(String conditionId, UUID caller, long threadId) {
         if (conditions == null) {
             return false;
         }
@@ -281,7 +282,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     @Override
-    public String getOwner() {
+    public UUID getOwner() {
         return owner;
     }
 
@@ -342,7 +343,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeData(key);
-        out.writeUTF(owner);
+        out.writeUUID(owner);
         out.writeLong(threadId);
         out.writeLong(referenceId);
         out.writeInt(lockCount);
@@ -390,7 +391,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = in.readData();
-        owner = in.readUTF();
+        owner = in.readUUID();
         threadId = in.readLong();
         referenceId = in.readLong();
         lockCount = in.readInt();

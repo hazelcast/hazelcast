@@ -74,7 +74,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         operation.setServiceName(SERVICE_NAME);
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-        operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+        operation.setCallerUuid(nodeEngine.getLocalMember().getUUID());
         operation.setOperationResponseHandler(unlockResponseHandler);
         operation.setValidateTarget(false);
         operation.setAsyncBackup(true);

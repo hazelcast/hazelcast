@@ -21,19 +21,22 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.net.InetSocketAddress;
+import java.util.UUID;
 
 /**
  * Event used for notification of client connection and disconnection
+ *
+ * //todo: this is bad modelling. An event is not a client.
  */
 @PrivateApi
 public class ClientEvent implements Client {
 
-    private final String uuid;
+    private final UUID uuid;
     private final ClientEventType eventType;
     private final InetSocketAddress address;
     private final ClientType clientType;
 
-    public ClientEvent(String uuid, ClientEventType eventType, InetSocketAddress address, ClientType clientType) {
+    public ClientEvent(UUID uuid, ClientEventType eventType, InetSocketAddress address, ClientType clientType) {
         this.uuid = uuid;
         this.eventType = eventType;
         this.address = address;
@@ -42,6 +45,11 @@ public class ClientEvent implements Client {
 
     @Override
     public String getUuid() {
+        return uuid.toString();
+    }
+
+    @Override
+    public UUID getUUID() {
         return uuid;
     }
 

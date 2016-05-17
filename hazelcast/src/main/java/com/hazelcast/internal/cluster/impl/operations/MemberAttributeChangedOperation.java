@@ -43,7 +43,7 @@ public class MemberAttributeChangedOperation extends AbstractClusterOperation {
     @Override
     public void run() throws Exception {
         final ClusterServiceImpl cs = getService();
-        cs.updateMemberAttribute(getCallerUuid(), operationType, key, value);
+        cs.updateMemberAttribute(getCallerUuid().toString(), operationType, key, value);
     }
 
     @Override

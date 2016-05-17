@@ -32,6 +32,7 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @PrivateApi
@@ -39,7 +40,8 @@ public abstract class AbstractMember implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
     protected Address address;
-    protected String uuid;
+    protected String uuidString;
+    protected UUID uuid;
     protected boolean liteMember;
 
     protected AbstractMember() {
@@ -59,7 +61,9 @@ public abstract class AbstractMember implements Member {
 
     protected AbstractMember(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
         this.address = address;
-        this.uuid = uuid;
+        this.uuidString = uuid;
+        this.uuid = UUID.fromString(uuidString);
+
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }
@@ -68,6 +72,7 @@ public abstract class AbstractMember implements Member {
 
     protected AbstractMember(AbstractMember member) {
         this.address = member.address;
+        this.uuidString = member.uuidString;
         this.uuid = member.uuid;
         this.attributes.putAll(member.attributes);
         this.liteMember = member.liteMember;
@@ -112,11 +117,17 @@ public abstract class AbstractMember implements Member {
     }
 
     void setUuid(String uuid) {
-        this.uuid = uuid;
+        this.uuidString = uuid;
+        this.uuid = UUID.fromString(uuid);
     }
 
     @Override
     public String getUuid() {
+        return uuidString;
+    }
+
+    @Override
+    public UUID getUUID() {
         return uuid;
     }
 
@@ -151,7 +162,8 @@ public abstract class AbstractMember implements Member {
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        uuid = in.readUTF();
+        uuidString = in.readUTF();
+        uuid = UUID.fromString(uuidString);
         liteMember = in.readBoolean();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
@@ -164,7 +176,7 @@ public abstract class AbstractMember implements Member {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
-        out.writeUTF(uuid);
+        out.writeUTF(uuidString);
         out.writeBoolean(liteMember);
         Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
         out.writeInt(attributes.size());
@@ -181,7 +193,7 @@ public abstract class AbstractMember implements Member {
         sb.append("]");
         sb.append(":");
         sb.append(address.getPort());
-        sb.append(" - ").append(uuid);
+        sb.append(" - ").append(uuidString);
         if (localMember()) {
             sb.append(" this");
         }

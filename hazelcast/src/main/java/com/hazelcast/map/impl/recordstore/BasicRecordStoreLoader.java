@@ -238,7 +238,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         });
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-        operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+        operation.setCallerUuid(nodeEngine.getLocalMember().getUUID());
         operation.setServiceName(MapService.SERVICE_NAME);
         return operation;
     }

@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Transactional lock and get operation.
@@ -32,14 +33,14 @@ import java.io.IOException;
 public class TxnLockAndGetOperation extends LockAwareOperation implements MutatingOperation {
 
     private VersionedValue response;
-    private String ownerUuid;
+    private UUID ownerUuid;
     private boolean shouldLoad;
     private boolean blockReads;
 
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, String ownerUuid,
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, UUID ownerUuid,
                                   boolean shouldLoad, boolean blockReads) {
         super(name, dataKey, ttl);
         this.ownerUuid = ownerUuid;
@@ -78,7 +79,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(ownerUuid);
+        out.writeUUID(ownerUuid);
         out.writeBoolean(shouldLoad);
         out.writeBoolean(blockReads);
     }
@@ -86,7 +87,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ownerUuid = in.readUTF();
+        ownerUuid = in.readUUID();
         shouldLoad = in.readBoolean();
         blockReads = in.readBoolean();
     }

@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.UUID;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
@@ -293,6 +294,28 @@ public class ByteArrayObjectDataOutputTest {
     public void testWriteObject() throws Exception {
         out.writeObject("TEST");
         verify(mockSerializationService).writeObject(out, "TEST");
+    }
+
+
+    @Test
+    public void testWriteUUID_whenNull() throws Exception {
+        out.writeUUID(null);
+        long most = Bits.readLongB(out.buffer, 0);
+        long least = Bits.readLongB(out.buffer, Bits.LONG_SIZE_IN_BYTES);
+
+        assertEquals(0, most);
+        assertEquals(0, least);
+    }
+
+    @Test
+    public void testWriteUUID_whenNotNull() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        out.writeUUID(uuid);
+        long most = Bits.readLongB(out.buffer, 0);
+        long least = Bits.readLongB(out.buffer, Bits.LONG_SIZE_IN_BYTES);
+
+        assertEquals(uuid.getMostSignificantBits(), most);
+        assertEquals(uuid.getLeastSignificantBits(), least);
     }
 
     @Test

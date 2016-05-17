@@ -7,6 +7,7 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -14,6 +15,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -128,11 +130,10 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     @Test
     public void test_callerUuid() {
         test_callerUuid(null, false);
-        test_callerUuid("", true);
-        test_callerUuid("foofbar", true);
+        test_callerUuid(UuidUtil.newUnsecureUUID(), true);
     }
 
-    public void test_callerUuid(String callerUuid, boolean callerUuidSet) {
+    public void test_callerUuid(UUID callerUuid, boolean callerUuidSet) {
         Operation op = new DummyOperation();
         op.setCallerUuid(callerUuid);
         assertEquals(callerUuid, op.getCallerUuid());

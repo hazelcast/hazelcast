@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.nearcache;
 
+import java.util.UUID;
+
 /**
  * Used when invalidating client near-caches.
  * When a client near-cache invalidation listener receives this data, it clears its near-cache.
@@ -25,7 +27,7 @@ public class CleaningNearCacheInvalidation extends Invalidation {
     public CleaningNearCacheInvalidation() {
     }
 
-    public CleaningNearCacheInvalidation(String mapName, String sourceUuid) {
+    public CleaningNearCacheInvalidation(String mapName, UUID sourceUuid) {
         super(mapName, sourceUuid);
     }
 }

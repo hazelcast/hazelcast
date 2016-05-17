@@ -21,8 +21,13 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
+import java.util.UUID;
 
 final class EmptyObjectDataOutput implements ObjectDataOutput {
+
+    @Override
+    public void writeUUID(UUID uuid) throws IOException {
+    }
 
     @Override
     public void writeObject(Object object) throws IOException {

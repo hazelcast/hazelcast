@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public abstract class CacheInvalidationMessage implements IdentifiedDataSerializable {
 
@@ -43,7 +44,7 @@ public abstract class CacheInvalidationMessage implements IdentifiedDataSerializ
         return null;
     }
 
-    public String getSourceUuid() {
+    public UUID getSourceUuid() {
         return null;
     }
 

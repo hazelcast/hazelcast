@@ -22,16 +22,17 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public final class OperationFactoryWrapper implements OperationFactory {
 
     private OperationFactory opFactory;
-    private String uuid;
+    private UUID uuid;
 
     public OperationFactoryWrapper() {
     }
 
-    public OperationFactoryWrapper(OperationFactory opFactory, String uuid) {
+    public OperationFactoryWrapper(OperationFactory opFactory, UUID uuid) {
         this.opFactory = opFactory;
         this.uuid = uuid;
     }
@@ -45,13 +46,13 @@ public final class OperationFactoryWrapper implements OperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uuid);
+        out.writeUUID(uuid);
         out.writeObject(opFactory);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uuid = in.readUTF();
+        uuid = in.readUUID();
         opFactory = in.readObject();
     }
 }

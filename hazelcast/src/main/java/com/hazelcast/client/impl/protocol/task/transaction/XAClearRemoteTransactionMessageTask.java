@@ -60,7 +60,7 @@ public class XAClearRemoteTransactionMessageTask
 
         Data xidData = serializationService.toData(parameters.xid);
         Operation op = new ClearRemoteTransactionOperation(xidData);
-        op.setCallerUuid(endpoint.getUuid());
+        op.setCallerUuid(endpoint.getUUID());
         int partitionId = partitionService.getPartitionId(xidData);
 
         InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId);

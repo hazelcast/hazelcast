@@ -24,11 +24,12 @@ import com.hazelcast.transaction.impl.TransactionLogRecord;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class XATransactionDTO implements DataSerializable {
     private String txnId;
     private SerializableXID xid;
-    private String ownerUuid;
+    private UUID ownerUuid;
     private long timeoutMilis;
     private long startTime;
     private List<TransactionLogRecord> records;
@@ -45,7 +46,7 @@ public class XATransactionDTO implements DataSerializable {
         records = xaTransaction.getTransactionRecords();
     }
 
-    public XATransactionDTO(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,
+    public XATransactionDTO(String txnId, SerializableXID xid, UUID ownerUuid, long timeoutMilis,
                             long startTime, List<TransactionLogRecord> records) {
         this.txnId = txnId;
         this.xid = xid;
@@ -63,7 +64,7 @@ public class XATransactionDTO implements DataSerializable {
         return xid;
     }
 
-    public String getOwnerUuid() {
+    public UUID getOwnerUuid() {
         return ownerUuid;
     }
 
@@ -83,7 +84,7 @@ public class XATransactionDTO implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(txnId);
         out.writeObject(xid);
-        out.writeUTF(ownerUuid);
+        out.writeUUID(ownerUuid);
         out.writeLong(timeoutMilis);
         out.writeLong(startTime);
         int len = records.size();
@@ -99,7 +100,7 @@ public class XATransactionDTO implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         txnId = in.readUTF();
         xid = in.readObject();
-        ownerUuid = in.readUTF();
+        ownerUuid = in.readUUID();
         timeoutMilis = in.readLong();
         startTime = in.readLong();
         int size = in.readInt();

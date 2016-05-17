@@ -25,6 +25,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * {@link ICacheRecordStore} is the core contract providing internal functionality to
@@ -78,7 +79,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return the stored {@link CacheRecord}  (added as new record or updated). <code>null</code> if record has expired.
      */
-    CacheRecord put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    CacheRecord put(Data key, Object value, ExpiryPolicy expiryPolicy, UUID caller, int completionId);
 
     /**
      * Associates the specified value with the specified key in this cache,
@@ -100,7 +101,7 @@ public interface ICacheRecordStore {
      * @return the value associated with the key at the start of the operation or
      *         null if none was associated.
      */
-    Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy, UUID caller, int completionId);
 
     /**
      * Removes the mapping for a key from this cache if it is present.
@@ -122,7 +123,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return true if a value was set..
      */
-    boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, UUID caller, int completionId);
 
     /**
      * Atomically removes the entry for a key only if it is currently mapped to some
@@ -144,7 +145,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return the value if one existed or null if no mapping existed for this key.
      */
-    Object getAndRemove(Data key, String caller, int completionId);
+    Object getAndRemove(Data key, UUID caller, int completionId);
 
     /**
      * Removes the mapping for a key from this cache if it is present.
@@ -164,7 +165,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return returns false if there was no matching key.
      */
-    boolean remove(Data key, String caller, int completionId);
+    boolean remove(Data key, UUID caller, int completionId);
 
     /**
      * Atomically removes the mapping for a key only if currently mapped to the
@@ -186,7 +187,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return returns false if there was no matching key.
      */
-    boolean remove(Data key, Object value, String caller, int completionId);
+    boolean remove(Data key, Object value, UUID caller, int completionId);
 
     /**
      * Atomically replaces the entry for a key only if currently mapped to some
@@ -208,7 +209,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return <tt>true</tt> if the value was replaced.
      */
-    boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, UUID caller, int completionId);
 
     /**
      * Atomically replaces the entry for a key only if currently mapped to a
@@ -232,7 +233,7 @@ public interface ICacheRecordStore {
      * @param caller  uuid of the calling node or client.
      * @return <tt>true</tt> if the value was replaced.
      */
-    boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy, UUID caller, int completionId);
 
     /**
      * Atomically replaces the value for a given key if and only if there is a
@@ -257,7 +258,7 @@ public interface ICacheRecordStore {
      * @return the previous value associated with the specified key, or
      *         <tt>null</tt> if there was no mapping for the key.
      */
-    Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, UUID caller, int completionId);
 
     /**
      * Determines if this store contains an entry for the specified key.

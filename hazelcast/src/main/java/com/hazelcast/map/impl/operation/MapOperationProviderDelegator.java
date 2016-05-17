@@ -26,6 +26,7 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Base class which basically delegates all method calls to underlying {@link MapOperationProvider}
@@ -150,7 +151,7 @@ public abstract class MapOperationProviderDelegator implements MapOperationProvi
 
     @Override
     public MapOperation createTxnLockAndGetOperation(String name, Data dataKey, long timeout,
-                                                     long ttl, String ownerUuid, boolean shouldLoad, boolean blockReads) {
+                                                     long ttl, UUID ownerUuid, boolean shouldLoad, boolean blockReads) {
         return getDelegate().createTxnLockAndGetOperation(name, dataKey, timeout, ttl, ownerUuid, shouldLoad, blockReads);
     }
 

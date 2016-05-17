@@ -176,7 +176,7 @@ public final class MapReduceUtil {
                 if (nodeEngine.getThisAddress().equals(member.getAddress())) {
                     // Locally we can call the operation directly
                     operation.setNodeEngine(nodeEngine);
-                    operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                    operation.setCallerUuid(nodeEngine.getLocalMember().getUUID());
                     operation.setService(mapReduceService);
                     operation.run();
 
@@ -227,7 +227,7 @@ public final class MapReduceUtil {
             if (cs.getThisAddress().equals(address)) {
                 // Locally we can call the operation directly
                 operation.setNodeEngine(nodeEngine);
-                operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                operation.setCallerUuid(nodeEngine.getLocalMember().getUUID());
                 operation.setService(mapReduceService);
                 operation.run();
 

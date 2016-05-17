@@ -25,15 +25,16 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class LockBackupOperation extends AbstractLockOperation implements BackupOperation {
 
-    private String originalCallerUuid;
+    private UUID originalCallerUuid;
 
     public LockBackupOperation() {
     }
 
-    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, String originalCallerUuid) {
+    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, UUID originalCallerUuid) {
         super(namespace, key, threadId);
         this.leaseTime = leaseTime;
         this.originalCallerUuid = originalCallerUuid;
@@ -53,12 +54,12 @@ public class LockBackupOperation extends AbstractLockOperation implements Backup
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(originalCallerUuid);
+        out.writeUUID(originalCallerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        originalCallerUuid = in.readUTF();
+        originalCallerUuid = in.readUUID();
     }
 }

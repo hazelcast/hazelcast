@@ -15,6 +15,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
@@ -36,7 +38,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
     private TransactionManagerServiceImpl localTxService;
     private TransactionManagerServiceImpl remoteTxService;
     private NodeEngineImpl localNodeEngine;
-    private String txOwner;
+    private UUID txOwner;
 
     @Before
     public void setup() {
@@ -45,7 +47,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
         localNodeEngine = getNodeEngineImpl(cluster[0]);
         localTxService = getTransactionManagerService(cluster[0]);
         remoteTxService = getTransactionManagerService(cluster[1]);
-        txOwner = UuidUtil.newUnsecureUuidString();
+        txOwner = UuidUtil.newUnsecureUUID();
     }
 
     private void assertPrepared(TransactionImpl tx) {
@@ -297,7 +299,7 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
 
     @Test
     public void prepare_whenMultipleItemsAndDurabilityOne_thenRemoveBackupLog() {
-        final String txOwner = localNodeEngine.getLocalMember().getUuid();
+        final UUID txOwner = localNodeEngine.getLocalMember().getUUID();
         TransactionOptions options = new TransactionOptions().setTransactionType(TWO_PHASE).setDurability(1);
         final TransactionImpl tx = new TransactionImpl(localTxService, localNodeEngine, options, txOwner);
         tx.begin();
