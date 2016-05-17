@@ -181,7 +181,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         Config config = getConfig();
         ServicesConfig servicesConfig = config.getServicesConfig();
         servicesConfig.addServiceConfig(new ServiceConfig().setName(DUMMY_TX_SERVICE)
-                .setEnabled(true).setServiceImpl(new DummyTransactionalService(DUMMY_TX_SERVICE)));
+                .setEnabled(true).setImplementation(new DummyTransactionalService(DUMMY_TX_SERVICE)));
         return config;
     }
 

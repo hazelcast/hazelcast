@@ -56,7 +56,7 @@ public class ServiceConfigTest extends HazelcastTestSupport {
         MyServiceConfig configObject = new MyServiceConfig();
         MyService service = new MyService();
         config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true)
-                .setName("my-service").setConfigObject(configObject).setServiceImpl(service));
+                .setName("my-service").setConfigObject(configObject).setImplementation(service));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         factory.newHazelcastInstance(config);

@@ -55,6 +55,11 @@
                         <hz:property name="property">value</hz:property>
                     </hz:properties>
                 </hz:login-module>
+                <hz:login-module implementation="dummyLoginModule" usage="OPTIONAL">
+                    <hz:properties>
+                        <hz:property name="property">value2</hz:property>
+                    </hz:properties>
+                </hz:login-module>
             </hz:member-login-modules>
             <hz:client-login-modules>
                 <hz:login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
@@ -113,4 +118,5 @@
     <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory"/>
     <bean id="dummyPermissionPolicy" class="com.hazelcast.spring.security.DummyPermissionPolicy"/>
     <bean id="dummySecurityInterceptor" class="com.hazelcast.spring.security.DummySecurityInterceptor"/>
+    <bean id="dummyLoginModule" class="com.hazelcast.spring.security.DummyLoginModule"/>
 </beans>
