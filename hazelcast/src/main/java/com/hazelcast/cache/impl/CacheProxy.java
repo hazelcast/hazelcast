@@ -31,15 +31,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
-
-import javax.cache.CacheException;
-import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.Configuration;
-import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CompletionListener;
-import javax.cache.processor.EntryProcessor;
-import javax.cache.processor.EntryProcessorException;
-import javax.cache.processor.EntryProcessorResult;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,6 +39,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
+import javax.cache.CacheException;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.Configuration;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CompletionListener;
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -281,9 +280,9 @@ public class CacheProxy<K, V>
         final ICacheService service = getService();
         final CacheEventListenerAdaptor<K, V> entryListener =
                 new CacheEventListenerAdaptor<K, V>(this,
-                                                    cacheEntryListenerConfiguration,
-                                                    getNodeEngine().getSerializationService(),
-                                                    getNodeEngine().getHazelcastInstance());
+                        cacheEntryListenerConfiguration,
+                        getNodeEngine().getSerializationService(),
+                        getNodeEngine().getHazelcastInstance());
         final String regId =
                 service.registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
@@ -328,13 +327,18 @@ public class CacheProxy<K, V>
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClusterWideIterator<K, V>(this);
+        return new ClusterWideIterator<K, V>(this, false);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClusterWideIterator<K, V>(this, fetchSize);
+        return new ClusterWideIterator<K, V>(this, fetchSize, false);
+    }
+
+    public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
+        ensureOpen();
+        return new CachePartitionIterator<K, V>(this, fetchSize, partitionId, prefetchValues);
     }
 
     @Override

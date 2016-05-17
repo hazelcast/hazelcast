@@ -16,48 +16,48 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheEntryIterationResult;
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
+import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.util.Collections;
+import java.util.Map;
 
 /**
- * This client request  specifically calls {@link CacheKeyIteratorOperation} on the server side.
+ * This client request  specifically calls {@link CacheEntryIteratorOperation} on the server side.
  *
- * @see CacheKeyIteratorOperation
+ * @see CacheEntryIteratorOperation
  */
-public class CacheIterateMessageTask
-        extends AbstractCacheMessageTask<CacheIterateCodec.RequestParameters> {
+public class CacheIterateEntriesMessageTask
+        extends AbstractCacheMessageTask<CacheIterateEntriesCodec.RequestParameters> {
 
-    public CacheIterateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public CacheIterateEntriesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createKeyIteratorOperation(parameters.tableIndex, parameters.batch);
+        return operationProvider.createEntryIteratorOperation(parameters.tableIndex, parameters.batch);
     }
 
     @Override
-    protected CacheIterateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheIterateCodec.decodeRequest(clientMessage);
+    protected CacheIterateEntriesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheIterateEntriesCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         if (response == null) {
-            return CacheIterateCodec.encodeResponse(0, Collections.<Data>emptyList());
+            return CacheIterateEntriesCodec.encodeResponse(0, Collections.<Map.Entry<Data, Data>>emptyList());
         }
-        CacheKeyIterationResult keyIteratorResult = (CacheKeyIterationResult) response;
-        return CacheIterateCodec.encodeResponse(keyIteratorResult.getTableIndex(), keyIteratorResult.getKeys());
+        CacheEntryIterationResult iteratorResult = (CacheEntryIterationResult) response;
+        return CacheIterateEntriesCodec.encodeResponse(iteratorResult.getTableIndex(), iteratorResult.getEntries());
     }
 
     @Override

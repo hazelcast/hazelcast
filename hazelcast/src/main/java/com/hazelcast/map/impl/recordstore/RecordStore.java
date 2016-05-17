@@ -21,6 +21,8 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
+import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
@@ -187,6 +189,20 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * @return read only iterator for map values.
      */
     Iterator<Record> iterator(long now, boolean backup);
+
+    /**
+     * Fetches specified number of keys from provided tableIndex.
+     *
+     * @return {@link MapKeysWithCursor} which is a holder for keys and next index to read from.
+     */
+    MapKeysWithCursor fetchKeys(int tableIndex, int size);
+
+    /**
+     * Fetches specified number of entries from provided tableIndex.
+     *
+     * @return {@link MapEntriesWithCursor} which is a holder for entries and next index to read from.
+     */
+    MapEntriesWithCursor fetchEntries(int tableIndex, int size);
 
     /**
      * Iterates over record store entries but first waits map store to load.
