@@ -105,7 +105,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected EventService eventService;
     protected MapOperationProviders operationProviders;
 
-    private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
+    protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
