@@ -16,6 +16,8 @@
 
 package com.hazelcast.azure;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.microsoft.aad.adal4j.AuthenticationContext;
 import com.microsoft.aad.adal4j.AuthenticationResult;
 import com.microsoft.aad.adal4j.ClientCredential;
@@ -37,6 +39,8 @@ import java.util.concurrent.Future;
  * Authentication helper for Azure Active Directory
  */
 public final class AzureAuthHelper {
+
+    private static final ILogger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class);
 
     private AzureAuthHelper() {
     }

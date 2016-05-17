@@ -20,10 +20,12 @@ package com.hazelcast.azure;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 
+import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.microsoft.azure.management.compute.VirtualMachineOperations;
 import com.microsoft.azure.management.compute.ComputeManagementClient;
 import com.microsoft.azure.management.compute.models.NetworkProfile;
@@ -45,23 +47,28 @@ import com.microsoft.azure.management.network.PublicIpAddressOperations;
 import com.microsoft.windowsazure.Configuration;
 import com.microsoft.windowsazure.exception.ServiceException;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.HashMap;
 
 import java.net.URISyntaxException;
 import java.io.IOException;
 
+
 /**
  * Azure implementation of {@link DiscoveryStrategy}
  */
-public class AzureDiscoveryStrategy implements DiscoveryStrategy {
+public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private static final ILogger LOGGER = Logger.getLogger(AzureDiscoveryStrategy.class);
 
     private ComputeManagementClient computeManagement;
     private NetworkResourceProviderClient networkManagement;
     private Map<String, Comparable> properties;
+    private final Map<String, Object> memberMetaData = new HashMap<String, Object>();
 
     /**
      * Instantiates a new AzureDiscoveryStrategy
@@ -69,7 +76,8 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
      * @param properties the discovery strategy properties
      */
     public AzureDiscoveryStrategy(Map<String, Comparable> properties) {
-         this.properties = properties;
+        super(LOGGER, properties);
+        this.properties = properties;
     }
 
     @Override
@@ -81,6 +89,11 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
         } catch (Exception e) {
           LOGGER.finest("Failed to start Azure SPI", e);
         }
+    }
+
+    @Override
+    public Map<String, Object> discoverLocalMetadata() {
+        return memberMetaData;
     }
 
     @Override
@@ -111,7 +124,8 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
                 }
 
                 int port = Integer.parseInt(tags.get(clusterId));
-                DiscoveryNode node = buildDiscoveredNode(netProfile, port);
+                final String  faultDomainId = vm.getInstanceView().getPlatformFaultDomain().toString();
+                DiscoveryNode node = buildDiscoveredNode(faultDomainId, netProfile, port);
 
                 if (node != null) {
                     nodes.add(node);
@@ -179,7 +193,7 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
     * @port the port number of the Hazelcast service
     * @return DiscoveryNode the Hazelcast DiscoveryNode
     */
-    private DiscoveryNode buildDiscoveredNode(NetworkProfile profile, int port) throws Exception {
+    private DiscoveryNode buildDiscoveredNode(String faultDomainId, NetworkProfile profile, int port) throws Exception {
         PublicIpAddressOperations pubOps = this.networkManagement.getPublicIpAddressesOperations();
         String rgName = AzureProperties.getOrNull(AzureProperties.GROUP_NAME, properties);
         NetworkInterfaceOperations nicOps = this.networkManagement.getNetworkInterfacesOperations();
@@ -211,12 +225,64 @@ public class AzureDiscoveryStrategy implements DiscoveryStrategy {
                 String pubIpName = getResourceNameFromUri(id);
                 PublicIpAddress pubIp = pubOps.get(rgName, pubIpName).getPublicIpAddress();
                 publicAddress = new Address(pubIp.getIpAddress(), port);
+                if (getLocalHostAddress() != null && pubIp.getIpAddress().equals(getLocalHostAddress())) {
+                    if (pubIp.getDnsSettings() != null) {
+                        final String dnsDomainName = pubIp.getDnsSettings().getDomainNameLabel();
+                        fetchVirtualMachineMetaData(faultDomainId, dnsDomainName);
+                    }
+                }
                 return new SimpleDiscoveryNode(privateAddress, publicAddress);
+            }
+            if (getLocalHostAddress() != null && ip.getPrivateIpAddress().equals(getLocalHostAddress())) {
+                //In private address there is no host name so we are passing null.
+                fetchVirtualMachineMetaData(faultDomainId, null);
             }
             return new SimpleDiscoveryNode(privateAddress);
         }
 
         // no node found;
         return null;
+    }
+
+    private void fetchVirtualMachineMetaData (String faultDomain, String dnsDomainName) {
+
+        if (faultDomain != null) {
+            memberMetaData.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, faultDomain);
+        }
+
+        if (dnsDomainName != null) {
+            memberMetaData.put(PartitionGroupMetaData.PARTITION_GROUP_HOST, dnsDomainName);
+        }
+    }
+
+    public  String getLocalHostAddress() {
+        try {
+            InetAddress candidateAddress = null;
+            // Iterate all NICs (network interface cards)...
+            for (Enumeration ifaces = java.net.NetworkInterface.getNetworkInterfaces(); ifaces.hasMoreElements(); ) {
+                java.net.NetworkInterface iface = (java.net.NetworkInterface) ifaces.nextElement();
+                for (Enumeration inetAddrs = iface.getInetAddresses(); inetAddrs.hasMoreElements(); ) {
+                    InetAddress inetAddr = (InetAddress) inetAddrs.nextElement();
+                    if (!inetAddr.isLoopbackAddress()) {
+                        if (inetAddr.isSiteLocalAddress()) {
+                            return inetAddr.getHostAddress();
+                        } else if (candidateAddress == null) {
+                            candidateAddress = inetAddr;
+                        }
+                    }
+                }
+            }
+            if (candidateAddress != null) {
+                return candidateAddress.getHostAddress();
+            }
+            InetAddress jdkSuppliedAddress = InetAddress.getLocalHost();
+            if (jdkSuppliedAddress == null) {
+                throw new UnknownHostException("The JDK InetAddress.getLocalHost() method unexpectedly returned null.");
+            }
+            return jdkSuppliedAddress.getHostAddress();
+        } catch (Exception e) {
+            LOGGER.warning("Failed to determine Host address: " + e);
+            return null;
+        }
     }
 }

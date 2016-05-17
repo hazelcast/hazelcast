@@ -16,6 +16,7 @@
 package com.hazelcast.azure;
 
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.microsoft.azure.management.compute.ComputeManagementClient;
 import com.microsoft.azure.management.compute.ComputeManagementService;
@@ -35,6 +36,7 @@ import com.microsoft.azure.management.network.models.NetworkInterface;
 import com.microsoft.azure.management.network.models.NetworkInterfaceGetResponse;
 import com.microsoft.azure.management.network.models.NetworkInterfaceIpConfiguration;
 import com.microsoft.azure.management.network.models.PublicIpAddress;
+import com.microsoft.azure.management.network.models.PublicIpAddressDnsSettings;
 import com.microsoft.azure.management.network.models.PublicIpAddressGetResponse;
 import com.microsoft.azure.management.network.models.ResourceId;
 import com.microsoft.windowsazure.Configuration;
@@ -54,6 +56,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import static com.hazelcast.azure.AzureAuthHelper.getAzureConfiguration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -83,6 +86,10 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
         virtuaMachines = new ArrayList<VirtualMachine>();
     }
 
+    private final int FAULT_DOMAIN_ID = 2099;
+    private final String DNS_DOMAIN_NAME = "azure1.microsoft.com";
+
+
     @Before
     public void setup() throws Exception {
         Configuration mockAzureConfig = mock(Configuration.class);
@@ -92,7 +99,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
 
         // mock all the static methods in a class called "Static"
         PowerMockito.mockStatic(AzureAuthHelper.class);
-        Mockito.when(AzureAuthHelper.getAzureConfiguration(properties)).thenReturn(mockAzureConfig);
+        Mockito.when(getAzureConfiguration(properties)).thenReturn(mockAzureConfig);
         PowerMockito.mockStatic(ComputeManagementService.class);
         Mockito.when(ComputeManagementService.create(mockAzureConfig)).thenReturn(mockComputeManagementClient);
         PowerMockito.mockStatic(NetworkResourceProviderService.class);
@@ -107,69 +114,88 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     private void buildFakeVmList(int count) throws IOException, ServiceException, URISyntaxException {
         virtuaMachines.clear();
         for (int i = 0; i < count; i++) {
-            VirtualMachine vm = new VirtualMachine();
-            
-            // set instance status
-            VirtualMachineInstanceView mockInstanceView = new VirtualMachineInstanceView();
-            ArrayList<InstanceViewStatus> statuses = new ArrayList<InstanceViewStatus>();
-            InstanceViewStatus mockStatus1 = new InstanceViewStatus();
-            InstanceViewStatus mockStatus2 = new InstanceViewStatus();
-            // this is based on what running VMs look like on resources.azure.com
-            mockStatus1.setCode("PowerState/running");
-            mockStatus2.setCode("ProvisioningState/succeeded");
-            statuses.add(mockStatus1);
-            statuses.add(mockStatus2);
-            mockInstanceView.setStatuses(statuses);
-            vm.setInstanceView(mockInstanceView);
-
-            NetworkProfile profile = new NetworkProfile();
-            NetworkInterfaceReference nir = new NetworkInterfaceReference();
-            nir.setReferenceUri("/subscriptions/" + (String)properties.get("subscription-id") 
-                + "/resourceGroups/" + (String)properties.get("subscription-id") + "/virtualMachines/vm-" + i);
-            ArrayList<NetworkInterfaceReference> nirs = new ArrayList<NetworkInterfaceReference>();
-            nirs.add(nir);
-            profile.setNetworkInterfaces(nirs);
-            vm.setNetworkProfile(profile);
-
-            HashMap<String, String> tags = new HashMap<String, String>();
-            tags.put((String)properties.get("cluster-id"), "5701");
-            vm.setTags(tags);
-            virtuaMachines.add(vm);
-
-            // we already stick the instance view on the vm, unlike the api list response
-            VirtualMachineGetResponse getVmResponse = new VirtualMachineGetResponse();
-            getVmResponse.setVirtualMachine(vm);
-            Mockito.when(mockVmOps.getWithInstanceView((String)properties.get("group-name"), vm.getName()))
-            .thenReturn(getVmResponse);
-            NetworkInterface mockNic = new NetworkInterface();
-            ArrayList<NetworkInterfaceIpConfiguration> ips = new ArrayList<NetworkInterfaceIpConfiguration>();
-            NetworkInterfaceIpConfiguration ip = new NetworkInterfaceIpConfiguration();
-            
-
-            ResourceId pubIpRid = new ResourceId();
-            pubIpRid.setId("/subscriptions/" + (String)properties.get("subscription-id") 
-                + "/resourceGroups/" + (String)properties.get("subscription-id") + "/publicIpAddresses/pubip-" + i);
-            
-            // this assumes we'll never have more than 256 fake vms
-            ip.setPrivateIpAddress("10.0.0." + i);
-            ip.setPublicIpAddress(pubIpRid);
-            ips.add(ip);
-            mockNic.setIpConfigurations(ips);
-
-            // setup public ip address
-            PublicIpAddressGetResponse mockPubIpGetResponse = new PublicIpAddressGetResponse();
-            PublicIpAddress mockPubIp = new PublicIpAddress();
-            mockPubIp.setIpAddress("44.18.12." + i);
-            mockPubIpGetResponse.setPublicIpAddress(mockPubIp);
-            
-            Mockito.when(mockPubOps.get((String)properties.get("group-name"), "pubip-" + i)).thenReturn(mockPubIpGetResponse);
-
-            NetworkInterfaceGetResponse mockNicGetResponse = mock(NetworkInterfaceGetResponse.class);
-            Mockito.when(mockNicGetResponse.getNetworkInterface()).thenReturn(mockNic);
-
-            Mockito.when(mockNicOps.get((String)properties.get("group-name"), "vm-" + i)).thenReturn(mockNicGetResponse);
+            createVMWithIp(i, null);
             
         }
+    }
+
+    private void buildFakeVm(int count, String ip) throws IOException, ServiceException, URISyntaxException {
+        virtuaMachines.clear();
+        createVMWithIp(count, ip);
+    }
+
+    private void createVMWithIp(int i, String ipAddress) throws IOException, ServiceException, URISyntaxException {
+        VirtualMachine vm = new VirtualMachine();
+
+        // set instance status
+        VirtualMachineInstanceView mockInstanceView = new VirtualMachineInstanceView();
+        ArrayList<InstanceViewStatus> statuses = new ArrayList<InstanceViewStatus>();
+        InstanceViewStatus mockStatus1 = new InstanceViewStatus();
+        InstanceViewStatus mockStatus2 = new InstanceViewStatus();
+        // this is based on what running VMs look like on resources.azure.com
+        mockStatus1.setCode("PowerState/running");
+        mockStatus2.setCode("ProvisioningState/succeeded");
+        statuses.add(mockStatus1);
+        statuses.add(mockStatus2);
+        mockInstanceView.setStatuses(statuses);
+        mockInstanceView.setPlatformFaultDomain(new Integer(FAULT_DOMAIN_ID));
+        vm.setInstanceView(mockInstanceView);
+
+        NetworkProfile profile = new NetworkProfile();
+        NetworkInterfaceReference nir = new NetworkInterfaceReference();
+        nir.setReferenceUri("/subscriptions/" + (String)properties.get("subscription-id")
+            + "/resourceGroups/" + (String)properties.get("subscription-id") + "/virtualMachines/vm-" + i);
+        ArrayList<NetworkInterfaceReference> nirs = new ArrayList<NetworkInterfaceReference>();
+        nirs.add(nir);
+        profile.setNetworkInterfaces(nirs);
+        vm.setNetworkProfile(profile);
+
+        HashMap<String, String> tags = new HashMap<String, String>();
+        tags.put((String)properties.get("cluster-id"), "5701");
+        vm.setTags(tags);
+        virtuaMachines.add(vm);
+
+        // we already stick the instance view on the vm, unlike the api list response
+        VirtualMachineGetResponse getVmResponse = new VirtualMachineGetResponse();
+        getVmResponse.setVirtualMachine(vm);
+        Mockito.when(mockVmOps.getWithInstanceView((String)properties.get("group-name"), vm.getName()))
+        .thenReturn(getVmResponse);
+        NetworkInterface mockNic = new NetworkInterface();
+        ArrayList<NetworkInterfaceIpConfiguration> ips = new ArrayList<NetworkInterfaceIpConfiguration>();
+        NetworkInterfaceIpConfiguration ip = new NetworkInterfaceIpConfiguration();
+
+
+        ResourceId pubIpRid = new ResourceId();
+        pubIpRid.setId("/subscriptions/" + (String)properties.get("subscription-id")
+            + "/resourceGroups/" + (String)properties.get("subscription-id") + "/publicIpAddresses/pubip-" + i);
+
+        // this assumes we'll never have more than 256 fake vms
+        ip.setPrivateIpAddress("10.0.0." + i);
+        ip.setPublicIpAddress(pubIpRid);
+        ips.add(ip);
+        mockNic.setIpConfigurations(ips);
+
+
+        // setup public ip address
+        PublicIpAddressGetResponse mockPubIpGetResponse = new PublicIpAddressGetResponse();
+        PublicIpAddress mockPubIp = new PublicIpAddress();
+        PublicIpAddressDnsSettings dnsSettings = new PublicIpAddressDnsSettings();
+        dnsSettings.setDomainNameLabel(DNS_DOMAIN_NAME);
+        mockPubIp.setDnsSettings(dnsSettings);
+        if (ipAddress == null) {
+            mockPubIp.setIpAddress("44.18.12." + i);
+        } else {
+            mockPubIp.setIpAddress(ipAddress);
+        }
+
+        mockPubIpGetResponse.setPublicIpAddress(mockPubIp);
+
+        Mockito.when(mockPubOps.get((String)properties.get("group-name"), "pubip-" + i)).thenReturn(mockPubIpGetResponse);
+
+        NetworkInterfaceGetResponse mockNicGetResponse = mock(NetworkInterfaceGetResponse.class);
+        Mockito.when(mockNicGetResponse.getNetworkInterface()).thenReturn(mockNic);
+
+        Mockito.when(mockNicOps.get((String)properties.get("group-name"), "vm-" + i)).thenReturn(mockNicGetResponse);
     }
 
     private void testDiscoverNodesMocked(int vmCount) throws IOException, ServiceException {
@@ -177,7 +203,7 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     }
 
     private void testDiscoverNodesMockedWithSkip(int vmCount, int skipIndex) throws IOException, ServiceException {
-        
+
         AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
         AzureDiscoveryStrategy strategy = (AzureDiscoveryStrategy)factory.newDiscoveryStrategy(null,null, properties);
 
@@ -216,6 +242,22 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDiscoverNodesMetadata() throws IOException, ServiceException, URISyntaxException {
+        AzureDiscoveryStrategyFactory factory = new AzureDiscoveryStrategyFactory();
+        AzureDiscoveryStrategy strategy = (AzureDiscoveryStrategy)factory.newDiscoveryStrategy(null,null, properties);
+        strategy.start();
+        String localIp = strategy.getLocalHostAddress();
+        buildFakeVm(0, localIp);
+        strategy.discoverNodes();
+
+        assertEquals(strategy.discoverLocalMetadata().get(PartitionGroupMetaData.PARTITION_GROUP_ZONE),
+                new Integer(FAULT_DOMAIN_ID).toString());
+
+        assertEquals(strategy.discoverLocalMetadata().get(PartitionGroupMetaData.PARTITION_GROUP_HOST),
+                DNS_DOMAIN_NAME);
+    }
+
+    @Test
     public void testDiscoverNodesMocked3() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(3);
         testDiscoverNodesMocked(3);
@@ -229,6 +271,12 @@ public class AzureDiscoveryStrategyTest extends HazelcastTestSupport {
 
     @Test
     public void testDiscoverNodesMocked_0() throws IOException, ServiceException, URISyntaxException {
+        buildFakeVmList(0);
+        testDiscoverNodesMocked(0);
+    }
+
+    @Test
+    public void testFaultDomainIsSet() throws IOException, ServiceException, URISyntaxException {
         buildFakeVmList(0);
         testDiscoverNodesMocked(0);
     }
