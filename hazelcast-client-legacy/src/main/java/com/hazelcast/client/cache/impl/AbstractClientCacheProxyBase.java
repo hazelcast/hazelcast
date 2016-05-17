@@ -96,6 +96,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
         waitOnGoingLoadAllCallsToFinish();
         closeListeners();
+        postClose();
+    }
+
+    protected void postClose() {
     }
 
     private void waitOnGoingLoadAllCallsToFinish() {
@@ -128,9 +132,13 @@ abstract class AbstractClientCacheProxyBase<K, V> {
                             request, partitionId);
             final Future<SerializableList> future = clientInvocation.invoke();
             future.get();
+            postDestroy();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    protected void postDestroy() {
     }
 
     public boolean isClosed() {

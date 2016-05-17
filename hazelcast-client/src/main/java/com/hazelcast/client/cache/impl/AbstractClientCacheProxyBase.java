@@ -113,6 +113,10 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         }
         waitOnGoingLoadAllCallsToFinish();
         closeListeners();
+        postClose();
+    }
+
+    protected void postClose() {
     }
 
     private void waitOnGoingLoadAllCallsToFinish() {
@@ -144,9 +148,13 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
             final Future<ClientMessage> future = clientInvocation.invoke();
             future.get();
+            postDestroy();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    protected void postDestroy() {
     }
 
     public boolean isClosed() {
