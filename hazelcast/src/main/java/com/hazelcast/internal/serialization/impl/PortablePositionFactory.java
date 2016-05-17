@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Factory for creating private implementations of the {@link PortablePosition} interface
+ * Factory for creating private implementations of the {@link PortablePosition} interface.
  */
 final class PortablePositionFactory {
 
@@ -130,10 +130,10 @@ final class PortablePositionFactory {
         private boolean leaf;
         private boolean any;
 
-        public PortableSinglePosition() {
+        PortableSinglePosition() {
         }
 
-        public PortableSinglePosition(FieldDefinition fd, int streamPosition, int index, boolean leaf) {
+        PortableSinglePosition(FieldDefinition fd, int streamPosition, int index, boolean leaf) {
             this.fd = fd;
             this.streamPosition = streamPosition;
             this.index = index;
@@ -207,17 +207,6 @@ final class PortablePositionFactory {
             }
             return null;
         }
-
-        public void reset() {
-            fd = null;
-            streamPosition = 0;
-            nil = false;
-            index = -1;
-            len = -1;
-            factoryId = -1;
-            classId = -1;
-            leaf = false;
-        }
     }
 
     private static class PortableMultiPosition extends PortableSinglePosition {
@@ -251,5 +240,4 @@ final class PortablePositionFactory {
             return positions;
         }
     }
-
 }

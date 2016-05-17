@@ -2,18 +2,31 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 
+import java.util.List;
+
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-public class PortablePositionFactoryTest {
+@SuppressWarnings("ConstantConditions")
+public class PortablePositionFactoryTest extends HazelcastTestSupport {
 
     @Test
-    public void nilNonAnyPosition_nonLeaf() throws Exception {
+    public void testConstructor() {
+        assertUtilityConstructor(PortablePositionFactory.class);
+    }
+
+    @Test
+    public void nilNonAnyPosition_nonLeaf() {
         PortablePosition p = PortablePositionFactory.nilNotLeafPosition();
 
         assertTrue(p.isNull());
@@ -24,14 +37,14 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void nilNonAnyPosition_nonLeaf_cached() throws Exception {
+    public void nilNonAnyPosition_nonLeaf_cached() {
         PortablePosition p1 = PortablePositionFactory.nilNotLeafPosition();
         PortablePosition p2 = PortablePositionFactory.nilNotLeafPosition();
         assertSame(p1, p2);
     }
 
     @Test
-    public void nilAnyPosition_leaf() throws Exception {
+    public void nilAnyPosition_leaf() {
         PortablePosition p = PortablePositionFactory.nilAnyPosition(true);
 
         assertTrue(p.isNull());
@@ -42,21 +55,21 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void nilAnyPositionNonLeaf_cached() throws Exception {
+    public void nilAnyPositionNonLeaf_cached() {
         PortablePosition p1 = PortablePositionFactory.nilAnyPosition(false);
         PortablePosition p2 = PortablePositionFactory.nilAnyPosition(false);
         assertSame(p1, p2);
     }
 
     @Test
-    public void nilAnyPositionLeaf_cached() throws Exception {
+    public void nilAnyPositionLeaf_cached() {
         PortablePosition p1 = PortablePositionFactory.nilAnyPosition(true);
         PortablePosition p2 = PortablePositionFactory.nilAnyPosition(true);
         assertSame(p1, p2);
     }
 
     @Test
-    public void nilAnyPosition_nonLeaf() throws Exception {
+    public void nilAnyPosition_nonLeaf() {
         PortablePosition p = PortablePositionFactory.nilAnyPosition(false);
 
         assertTrue(p.isNull());
@@ -67,7 +80,7 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void emptyAnyPosition_leaf() throws Exception {
+    public void emptyAnyPosition_leaf() {
         PortablePosition p = PortablePositionFactory.emptyAnyPosition(true);
 
         assertFalse(p.isNull());
@@ -78,7 +91,7 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void emptyAnyPosition_nonLeaf() throws Exception {
+    public void emptyAnyPosition_nonLeaf() {
         PortablePosition p = PortablePositionFactory.emptyAnyPosition(false);
 
         assertTrue(p.isNull()); // automatically nullified, since empty and nonLeaf
@@ -89,21 +102,21 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void emptyAnyPositionNonLeaf_cached() throws Exception {
+    public void emptyAnyPositionNonLeaf_cached() {
         PortablePosition p1 = PortablePositionFactory.emptyAnyPosition(false);
         PortablePosition p2 = PortablePositionFactory.emptyAnyPosition(false);
         assertSame(p1, p2);
     }
 
     @Test
-    public void emptyAnyPositionLeaf_cached() throws Exception {
+    public void emptyAnyPositionLeaf_cached() {
         PortablePosition p1 = PortablePositionFactory.emptyAnyPosition(true);
         PortablePosition p2 = PortablePositionFactory.emptyAnyPosition(true);
         assertSame(p1, p2);
     }
 
     @Test
-    public void nilNotLeaf() throws Exception {
+    public void nilNotLeaf() {
         PortablePosition p = PortablePositionFactory.nil(false);
 
         assertTrue(p.isNull());
@@ -113,7 +126,7 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void nilLeaf() throws Exception {
+    public void nilLeaf() {
         PortablePosition p = PortablePositionFactory.nil(true);
 
         assertTrue(p.isNull());
@@ -123,7 +136,7 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void nilNotLeaf_any() throws Exception {
+    public void nilNotLeaf_any() {
         PortablePosition p = PortablePositionFactory.nil(true, true);
 
         assertTrue(p.isNull());
@@ -133,7 +146,7 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void nilLeaf_any() throws Exception {
+    public void nilLeaf_any() {
         PortablePosition p = PortablePositionFactory.nil(false, true);
 
         assertTrue(p.isNull());
@@ -191,7 +204,7 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void createSinglePrimitivePosition() throws Exception {
+    public void createSinglePrimitivePosition() {
         // GIVEN
         FieldDefinition fd = new FieldDefinitionImpl(1, "field", FieldType.PORTABLE);
         int streamPosition = 100;
@@ -218,10 +231,41 @@ public class PortablePositionFactoryTest {
         assertEquals(index, p.getIndex());
         assertEquals(streamPosition, p.getStreamPosition());
         assertFalse(p.isMultiPosition());
+        assertAsMultiPositionThrowsException(p);
     }
 
     @Test
-    public void createSinglePortablePosition() throws Exception {
+    public void createSinglePrimitivePosition_withoutFieldDefinition() {
+        // GIVEN
+        int streamPosition = 100;
+        int index = 1;
+        boolean leaf = true;
+
+        // WHEN
+        PortablePosition p = PortablePositionFactory.createSinglePrimitivePosition(null, streamPosition, index, leaf);
+
+        // THEN
+        assertFalse(p.isNull());
+        assertFalse(p.isEmpty());
+        assertFalse(p.isNullOrEmpty());
+
+        assertEquals(leaf, p.isLeaf());
+        assertFalse(p.isAny());
+
+        assertNull(p.getType());
+
+        assertEquals(-1, p.getLen());
+        assertEquals(-1, p.getClassId());
+        assertEquals(-1, p.getFactoryId());
+
+        assertEquals(index, p.getIndex());
+        assertEquals(streamPosition, p.getStreamPosition());
+        assertFalse(p.isMultiPosition());
+        assertAsMultiPositionThrowsException(p);
+    }
+
+    @Test
+    public void createSinglePortablePosition() {
         // GIVEN
         FieldDefinition fd = new FieldDefinitionImpl(1, "field", FieldType.PORTABLE);
         int streamPosition = 100;
@@ -250,10 +294,11 @@ public class PortablePositionFactoryTest {
         assertEquals(-1, p.getIndex());
         assertEquals(streamPosition, p.getStreamPosition());
         assertFalse(p.isMultiPosition());
+        assertAsMultiPositionThrowsException(p);
     }
 
     @Test
-    public void createSinglePortablePosition_withIndex() throws Exception {
+    public void createSinglePortablePosition_withIndex() {
         // GIVEN
         FieldDefinition fd = new FieldDefinitionImpl(1, "field", FieldType.PORTABLE);
         int streamPosition = 100;
@@ -286,7 +331,7 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void createSinglePortablePosition_withIndex_nullifiedDueIndexOutOfBound() throws Exception {
+    public void createSinglePortablePosition_withIndex_nullifiedDueIndexOutOfBound() {
         // GIVEN
         FieldDefinition fd = new FieldDefinitionImpl(1, "field", FieldType.PORTABLE);
         int streamPosition = 100;
@@ -303,7 +348,21 @@ public class PortablePositionFactoryTest {
     }
 
     @Test
-    public void createMultiPosition_withOnePosition() throws Exception {
+    public void createMultiPosition_withEmptyPositionList() {
+        // GIVEN
+        List<PortablePosition> list = emptyList();
+
+        // WHEN
+        PortablePosition m = PortablePositionFactory.createMultiPosition(list);
+
+        // THEN
+        assertTrue(m.isMultiPosition());
+        assertEquals(0, m.asMultiPosition().size());
+        assertNull(m.getType());
+    }
+
+    @Test
+    public void createMultiPosition_withOnePosition() {
         // GIVEN
         PortablePosition p = PortablePositionFactory.nilNotLeafPosition();
 
@@ -314,10 +373,11 @@ public class PortablePositionFactoryTest {
         assertTrue(m.isMultiPosition());
         assertEquals(1, m.asMultiPosition().size());
         assertEquals(p, m.asMultiPosition().get(0));
+        assertEquals(p.getType(), m.getType());
     }
 
     @Test
-    public void createMultiPosition_withMorePositions() throws Exception {
+    public void createMultiPosition_withMorePositions() {
         // GIVEN
         PortablePosition p1 = PortablePositionFactory.nilNotLeafPosition();
         PortablePosition p2 = PortablePositionFactory.nil(true);
@@ -330,6 +390,15 @@ public class PortablePositionFactoryTest {
         assertEquals(2, m.asMultiPosition().size());
         assertEquals(p1, m.asMultiPosition().get(0));
         assertEquals(p2, m.asMultiPosition().get(1));
+        assertEquals(p1.getType(), m.getType());
     }
 
+    private static void assertAsMultiPositionThrowsException(PortablePosition portablePosition) {
+        try {
+            portablePosition.asMultiPosition();
+            fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+            EmptyStatement.ignore(expected);
+        }
+    }
 }
