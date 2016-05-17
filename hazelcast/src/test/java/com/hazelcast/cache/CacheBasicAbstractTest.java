@@ -702,8 +702,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertTrue(cache.isClosed());
         assertTrue(cache.isDestroyed());
 
-        Cache<Object, Object> cacheAfterClose = cacheManager.getCache(cacheName);
-        assertNotNull(cacheAfterClose);
+        Cache<Object, Object> cacheAfterDestroy = cacheManager.getCache(cacheName);
+        assertNull(cacheAfterDestroy);
         assertTrue(cache.isClosed());
         assertTrue(cache.isDestroyed());
 
@@ -835,4 +835,27 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
         assertNull(cache.get(1));
     }
+
+    @Test
+    public void removeCacheFromOwnerCacheManagerWhenCacheIsDestroyed() {
+        ICache cache = createCache();
+
+        assertTrue(isCacheExist(cache));
+
+        cache.destroy();
+
+        assertFalse(isCacheExist(cache));
+    }
+
+    private boolean isCacheExist(ICache cache) {
+        Iterator<String> cacheNamesIter = cacheManager.getCacheNames().iterator();
+        while (cacheNamesIter.hasNext()) {
+            String cacheName = cacheNamesIter.next();
+            if (cacheName.equals(cache.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

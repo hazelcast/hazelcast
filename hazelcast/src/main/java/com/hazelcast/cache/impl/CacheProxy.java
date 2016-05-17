@@ -33,7 +33,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
-import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
 import javax.cache.expiry.ExpiryPolicy;
@@ -76,15 +75,9 @@ public class CacheProxy<K, V>
 
     protected final ILogger logger;
 
-    private HazelcastServerCacheManager cacheManager;
-
     CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         logger = getNodeEngine().getLogger(getClass());
-    }
-
-    void setCacheManager(HazelcastServerCacheManager cacheManager) {
-        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -270,11 +263,6 @@ public class CacheProxy<K, V>
             }
         }
         return allResult;
-    }
-
-    @Override
-    public CacheManager getCacheManager() {
-        return cacheManager;
     }
 
     @Override

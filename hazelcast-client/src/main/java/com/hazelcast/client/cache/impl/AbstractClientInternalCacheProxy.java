@@ -179,6 +179,13 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         this.cacheManager = cacheManager;
     }
 
+    @Override
+    protected void postDestroy() {
+        if (cacheManager != null) {
+            cacheManager.destroyCache(getName());
+        }
+    }
+
     private void initNearCache() {
         NearCacheConfig nearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {

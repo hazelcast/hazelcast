@@ -98,14 +98,11 @@ public abstract class ClientProxy implements DistributedObject {
             context.removeProxy(this);
             try {
                 new ClientInvocation(getClient(), clientMessage).invoke().get();
+                postDestroy();
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
         }
-    }
-
-    protected boolean preDestroy() {
-        return true;
     }
 
     /**
@@ -121,6 +118,21 @@ public abstract class ClientProxy implements DistributedObject {
      * Overriding implementations should clean/release resources created during initialization.
      */
     protected void onDestroy() {
+    }
+
+    /**
+     * Called before proxy is destroyed and determines whether destroy should be done.
+     *
+     * @return <code>true</code> if destroy should be done, otherwise <code>false</code>
+     */
+    protected boolean preDestroy() {
+        return true;
+    }
+
+    /**
+     * Called after proxy is destroyed.
+     */
+    protected void postDestroy() {
     }
 
     /**

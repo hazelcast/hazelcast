@@ -278,11 +278,16 @@ public abstract class AbstractHazelcastCacheManager
 
     @Override
     public void destroyCache(String cacheName) {
+        removeCache(cacheName, true);
+    }
+
+    @Override
+    public void removeCache(String cacheName, boolean destroy) {
         checkIfManagerNotClosed();
         checkNotNull(cacheName, "cacheName cannot be null");
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICacheInternal<?, ?> cache = caches.remove(cacheNameWithPrefix);
-        if (cache != null) {
+        if (cache != null && destroy) {
             cache.destroy();
         }
         removeCacheConfigFromLocal(cacheNameWithPrefix);
