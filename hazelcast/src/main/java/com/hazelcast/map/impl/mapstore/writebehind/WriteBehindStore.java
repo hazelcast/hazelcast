@@ -48,8 +48,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      */
     private static final DelayedEntry TRANSIENT = DelayedEntries.emptyDelayedEntry();
 
-    private final long writeDelayTime;
-
     private final int partitionId;
 
     /**
@@ -93,9 +91,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final ConcurrentMap<Data, DelayedEntry> stagingArea;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
-                            long writeDelayTime, int partitionId, InMemoryFormat inMemoryFormat, boolean coalesce) {
+                            int partitionId, InMemoryFormat inMemoryFormat, boolean coalesce) {
         super(store, serializationService);
-        this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;
         this.stagingArea = new ConcurrentHashMap<Data, DelayedEntry>();
         this.flushCounter = new AtomicInteger(0);
@@ -125,9 +122,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             value = toData(value);
         }
 
-        long storeTime = now + writeDelayTime;
         DelayedEntry<Data, Object> delayedEntry
-                = DelayedEntries.createDefault(key, value, storeTime, partitionId);
+                = DelayedEntries.createDefault(key, value, now, partitionId);
 
         add(delayedEntry);
 
@@ -159,9 +155,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             key = toData(key);
         }
 
-        long storeTime = now + writeDelayTime;
         DelayedEntry<Data, Object> delayedEntry
-                = DelayedEntries.createWithoutValue(key, storeTime, partitionId);
+                = DelayedEntries.createWithoutValue(key, now, partitionId);
 
         add(delayedEntry);
     }
