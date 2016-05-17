@@ -48,9 +48,9 @@ class MapRemoteService implements RemoteService {
         if (mapConfig.isNearCacheEnabled()) {
             checkInMemoryFormat(mapConfig.getNearCacheConfig().getInMemoryFormat());
 
-            return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+            return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {
-            return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine);
+            return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         }
     }
 
