@@ -593,8 +593,8 @@ public abstract class AbstractCacheService
     public void onPartitionLost(IPartitionLostEvent partitionLostEvent) {
         int partitionId = partitionLostEvent.getPartitionId();
         for (CacheConfig config : getCacheConfigs()) {
-            String cacheName = config.getName();
-            if (config.getBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
+            final String cacheName = config.getName();
+            if (config.getTotalBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
                 publishCachePartitionLostEvent(cacheName, partitionId);
             }
         }
