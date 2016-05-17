@@ -36,6 +36,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
+import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
@@ -79,6 +80,8 @@ abstract class AbstractInternalCacheProxy<K, V>
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
+    private HazelcastServerCacheManager cacheManager;
+
     protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine,
                                          ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
@@ -97,6 +100,22 @@ abstract class AbstractInternalCacheProxy<K, V>
                 service.getNodeEngine().getEventService()
                         .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
             }
+        }
+    }
+
+    @Override
+    public CacheManager getCacheManager() {
+        return cacheManager;
+    }
+
+    void setCacheManager(HazelcastServerCacheManager cacheManager) {
+        this.cacheManager = cacheManager;
+    }
+
+    @Override
+    protected void postDestroy() {
+        if (cacheManager != null) {
+            cacheManager.destroyCache(getName());
         }
     }
 

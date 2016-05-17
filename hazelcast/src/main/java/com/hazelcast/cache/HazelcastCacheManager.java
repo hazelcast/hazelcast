@@ -36,7 +36,7 @@ public interface HazelcastCacheManager
     /**
      * Gets cache name by adding manager prefix.
      *
-     * @param name pure cache name with prefix
+     * @param name pure cache name without prefix
      * @return the cache name with manager prefix
      */
     String getCacheNameWithPrefix(String name);
@@ -47,6 +47,14 @@ public interface HazelcastCacheManager
      * @return the underlying {@link HazelcastInstance} implementation
      */
     HazelcastInstance getHazelcastInstance();
+
+    /**
+     * Removes associated cache with the given cache name.
+     *
+     * @param cacheName pure cache name without prefix
+     * @param destroy   flag to specify whether removed cache will be destroyed
+     */
+    void removeCache(String cacheName, boolean destroy);
 
     /**
      * Destroys cache manager.
