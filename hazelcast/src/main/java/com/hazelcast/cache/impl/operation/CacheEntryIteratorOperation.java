@@ -17,33 +17,31 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheEntryIterationResult;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ReadonlyOperation;
-
 import java.io.IOException;
 
 /**
  * <p>Provides iterator functionality for ICache.</p>
  * <p>
- * Initializes and grabs a number of keys defined by <code>size</code> parameter from the
+ * Initializes and grabs a number of entries defined by <code>size</code> parameter from the
  * {@link com.hazelcast.cache.impl.ICacheRecordStore} with the last table index.
  * </p>
- * @see com.hazelcast.cache.impl.ICacheRecordStore#fetchKeys(int, int)
+ *
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#fetchEntries(int, int) (int, int)
  */
-public class CacheKeyIteratorOperation
-        extends AbstractCacheOperation
-        implements ReadonlyOperation {
+public class CacheEntryIteratorOperation extends AbstractCacheOperation implements ReadonlyOperation {
 
     private int tableIndex;
     private int size;
 
-    public CacheKeyIteratorOperation() {
+    public CacheEntryIteratorOperation() {
     }
 
-    public CacheKeyIteratorOperation(String name, int tableIndex, int size) {
+    public CacheEntryIteratorOperation(String name, int tableIndex, int size) {
         super(name, new HeapData());
         this.tableIndex = tableIndex;
         this.size = size;
@@ -51,13 +49,13 @@ public class CacheKeyIteratorOperation
 
     @Override
     public int getId() {
-        return CacheDataSerializerHook.KEY_ITERATOR;
+        return CacheDataSerializerHook.ENTRY_ITERATOR;
     }
 
     @Override
     public void run()
             throws Exception {
-        final CacheKeyIterationResult iterator = this.cache.fetchKeys(tableIndex, size);
+        final CacheEntryIterationResult iterator = this.cache.fetchEntries(tableIndex, size);
         response = iterator;
     }
 

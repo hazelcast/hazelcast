@@ -18,13 +18,18 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.SizeEstimator;
+import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
+import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.AbstractRecord;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
 
@@ -151,6 +156,26 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     @Override
     public Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount) {
         return records.getRandomSamples(sampleCount);
+    }
+
+    @Override
+    public MapKeysWithCursor fetchKeys(int tableIndex, int size) {
+        List<Data> keys = new ArrayList<Data>(size);
+        int newTableIndex = records.fetchKeys(tableIndex, size, keys);
+        return new MapKeysWithCursor(keys, newTableIndex);
+    }
+
+    @Override
+    public MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService) {
+        List<Map.Entry<Data, R>> entries = new ArrayList<Map.Entry<Data, R>>(size);
+        int newTableIndex = records.fetchEntries(tableIndex, size, entries);
+        List<Map.Entry<Data, Data>> entriesData = new ArrayList<Map.Entry<Data, Data>>(entries.size());
+        for (Map.Entry<Data, R> entry : entries) {
+            R record = entry.getValue();
+            Data dataValue = serializationService.toData(record.getValue());
+            entriesData.add(new AbstractMap.SimpleEntry<Data, Data>(entry.getKey(), dataValue));
+        }
+        return new MapEntriesWithCursor(entriesData, newTableIndex);
     }
 
 }
