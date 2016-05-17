@@ -471,6 +471,9 @@ public class MigrationCommitServiceTest
 
                 final String msg = getAssertMessage(migration, service);
 
+                assertFalse(service.getBeforeEvents().isEmpty());
+                assertFalse(service.getCommitEvents().isEmpty());
+
                 final PartitionMigrationEvent beforeEvent = service.getBeforeEvents().get(0);
                 final PartitionMigrationEvent commitEvent = service.getCommitEvents().get(0);
 
