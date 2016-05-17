@@ -284,7 +284,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            						<xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">
@@ -561,7 +561,7 @@
                                                             type="timed-expiry-policy-factory"
                                                             minOccurs="0" maxOccurs="1"/>
                                             </xs:sequence>
-                                            <xs:attribute name="class-name"/>
+                                            <xs:attributeGroup ref="class-or-bean-name"/>
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0"
