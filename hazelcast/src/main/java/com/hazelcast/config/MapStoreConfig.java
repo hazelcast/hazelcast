@@ -328,4 +328,46 @@ public class MapStoreConfig {
                 + ", writeCoalescing=" + writeCoalescing
                 + '}';
     }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof MapStoreConfig)) {
+            return false;
+        }
+
+        MapStoreConfig that = (MapStoreConfig) o;
+
+        return enabled == that.enabled
+            && writeCoalescing == that.writeCoalescing
+            && writeDelaySeconds == that.writeDelaySeconds
+            && writeBatchSize == that.writeBatchSize
+            && (className != null ? className.equals(that.className) : that.className == null)
+            && (factoryClassName != null ? factoryClassName.equals(that.factoryClassName) : that.factoryClassName == null)
+            && (implementation != null ? implementation.equals(that.implementation) : that.implementation == null)
+            && (factoryImplementation != null ? factoryImplementation.equals(that.factoryImplementation)
+                : that.factoryImplementation == null)
+            && (properties != null ? properties.equals(that.properties) : that.properties == null)
+            && initialLoadMode == that.initialLoadMode;
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = (enabled ? 1 : 0);
+        result = prime * result + (writeCoalescing ? 1 : 0);
+        result = prime * result + (className != null ? className.hashCode() : 0);
+        result = prime * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
+        result = prime * result + writeDelaySeconds;
+        result = prime * result + writeBatchSize;
+        result = prime * result + (implementation != null ? implementation.hashCode() : 0);
+        result = prime * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
+        result = prime * result + (properties != null ? properties.hashCode() : 0);
+        result = prime * result + (initialLoadMode != null ? initialLoadMode.hashCode() : 0);
+        return result;
+    }
 }
