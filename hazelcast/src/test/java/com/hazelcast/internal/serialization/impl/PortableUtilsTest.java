@@ -6,36 +6,48 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class PortableUtilsTest {
+public class PortableUtilsTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(PortableUtils.class);
+    }
+
     @Test(expected = IllegalArgumentException.class)
-    public void validateAndGetArrayQuantifierFromCurrentToken_malformed() throws Exception {
+    public void validateAndGetArrayQuantifierFromCurrentToken_malformed() {
         PortableUtils.validateAndGetArrayQuantifierFromCurrentToken("legs[", "person.legs[0]");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void validateAndGetArrayQuantifierFromCurrentToken_negtive() throws Exception {
+    public void validateAndGetArrayQuantifierFromCurrentToken_negative() {
         assertEquals(0, PortableUtils.validateAndGetArrayQuantifierFromCurrentToken("legs[-1]", "person.legs[-1]"));
     }
 
     @Test
-    public void validateAndGetArrayQuantifierFromCurrentToken_correct() throws Exception {
+    public void validateAndGetArrayQuantifierFromCurrentToken_correct() {
         assertEquals(0, PortableUtils.validateAndGetArrayQuantifierFromCurrentToken("legs[0]", "person.legs[0]"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void validateAndGetArrayQuantifierFromCurrentToken_withException() {
+        PortableUtils.validateAndGetArrayQuantifierFromCurrentToken("legs", null);
     }
 
     @Test
@@ -53,49 +65,49 @@ public class PortableUtilsTest {
     }
 
     @Test
-    public void isCurrentPathTokenWithoutQuantifier() throws Exception {
+    public void isCurrentPathTokenWithoutQuantifier() {
         assertTrue(PortableUtils.isCurrentPathTokenWithoutQuantifier("wheels"));
         assertFalse(PortableUtils.isCurrentPathTokenWithoutQuantifier("wheels[1]"));
         assertFalse(PortableUtils.isCurrentPathTokenWithoutQuantifier("wheels[any]"));
     }
 
     @Test
-    public void isCurrentPathTokenWithAnyQuantifier() throws Exception {
+    public void isCurrentPathTokenWithAnyQuantifier() {
         assertFalse(PortableUtils.isCurrentPathTokenWithAnyQuantifier("wheels"));
         assertFalse(PortableUtils.isCurrentPathTokenWithAnyQuantifier("wheels[1]"));
         assertTrue(PortableUtils.isCurrentPathTokenWithAnyQuantifier("wheels[any]"));
     }
 
     @Test
-    public void unknownFieldException() throws Exception {
+    public void unknownFieldException() {
         // GIVEN
         BufferObjectDataInput in = mock(BufferObjectDataInput.class);
         ClassDefinition cd = mock(ClassDefinition.class);
         PortableNavigatorContext ctx = new PortableNavigatorContext(in, cd, null);
 
         // WHEN
-        Exception ex = PortableUtils.createUnknownFieldException(ctx, "person.brain");
+        HazelcastSerializationException ex = PortableUtils.createUnknownFieldException(ctx, "person.brain");
 
         // THEN
-        assertTrue(ex instanceof HazelcastSerializationException);
+        assertNotNull(ex);
     }
 
     @Test
-    public void wrongUseOfAnyOperationException() throws Exception {
+    public void wrongUseOfAnyOperationException() {
         // GIVEN
         BufferObjectDataInput in = mock(BufferObjectDataInput.class);
         ClassDefinition cd = mock(ClassDefinition.class);
         PortableNavigatorContext ctx = new PortableNavigatorContext(in, cd, null);
 
         // WHEN
-        Exception ex = PortableUtils.createWrongUseOfAnyOperationException(ctx, "person.brain");
+        IllegalArgumentException ex = PortableUtils.createWrongUseOfAnyOperationException(ctx, "person.brain");
 
         // THEN
-        assertTrue(ex instanceof IllegalArgumentException);
+        assertNotNull(ex);
     }
 
     @Test
-    public void validateArrayType_notArray() throws Exception {
+    public void validateArrayType_notArray() {
         // GIVEN
         ClassDefinition cd = mock(ClassDefinition.class);
         FieldDefinition fd = mock(FieldDefinition.class);
@@ -106,11 +118,10 @@ public class PortableUtilsTest {
         // THEN - ex thrown
         expected.expect(IllegalArgumentException.class);
         PortableUtils.validateArrayType(cd, fd, "person.brain");
-
     }
 
     @Test
-    public void validateArrayType_array() throws Exception {
+    public void validateArrayType_array() {
         // GIVEN
         ClassDefinition cd = mock(ClassDefinition.class);
         FieldDefinition fd = mock(FieldDefinition.class);
@@ -123,7 +134,7 @@ public class PortableUtilsTest {
     }
 
     @Test
-    public void validateFactoryAndClass_compatible() throws Exception {
+    public void validateFactoryAndClass_compatible() {
         // GIVEN
         int factoryId = 1;
         int classId = 2;
@@ -138,7 +149,7 @@ public class PortableUtilsTest {
     }
 
     @Test
-    public void validateFactoryAndClass_incompatibleFactoryId() throws Exception {
+    public void validateFactoryAndClass_incompatibleFactoryId() {
         // GIVEN
         int factoryId = 1;
         int classId = 2;
@@ -154,7 +165,7 @@ public class PortableUtilsTest {
     }
 
     @Test
-    public void validateFactoryAndClass_incompatibleClassId() throws Exception {
+    public void validateFactoryAndClass_incompatibleClassId() {
         // GIVEN
         int factoryId = 1;
         int classId = 2;
@@ -168,5 +179,4 @@ public class PortableUtilsTest {
         expected.expect(IllegalArgumentException.class);
         PortableUtils.validateFactoryAndClass(fd, factoryId, classId, "person.brain");
     }
-
 }
