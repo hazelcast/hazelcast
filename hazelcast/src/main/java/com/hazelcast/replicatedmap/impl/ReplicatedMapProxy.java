@@ -46,7 +46,6 @@ import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,6 +61,8 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.lang.Math.ceil;
+import static java.lang.Math.log10;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.ReplicatedMap} interface.
@@ -69,6 +70,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @param <K> key type
  * @param <V> value type
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<ReplicatedMapService>
         implements ReplicatedMap<K, V>, InitializingObject {
 
@@ -256,7 +258,14 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public void putAll(Map<? extends K, ? extends V> entries) {
         checkNotNull(entries, "entries cannot be null");
+        int mapSize = entries.size();
+        if (mapSize == 0) {
+            return;
+        }
+
         int partitionCount = partitionService.getPartitionCount();
+        int initialSize = getPutAllInitialSize(mapSize, partitionCount);
+
         try {
             List<Future> futures = new ArrayList<Future>(partitionCount);
             ReplicatedMapEntries[] entrySetPerPartition = new ReplicatedMapEntries[partitionCount];
@@ -267,24 +276,23 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
                 isNotNull(entry.getValue(), "value must not be null!");
 
                 int partitionId = partitionService.getPartitionId(entry.getKey());
-                ReplicatedMapEntries entrySet = entrySetPerPartition[partitionId];
-                if (entrySet == null) {
-                    entrySet = new ReplicatedMapEntries();
-                    entrySetPerPartition[partitionId] = entrySet;
+                ReplicatedMapEntries mapEntries = entrySetPerPartition[partitionId];
+                if (mapEntries == null) {
+                    mapEntries = new ReplicatedMapEntries(initialSize);
+                    entrySetPerPartition[partitionId] = mapEntries;
                 }
 
                 Data keyData = serializationService.toData(entry.getKey());
                 Data valueData = serializationService.toData(entry.getValue());
-                entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+                mapEntries.add(keyData, valueData);
             }
 
             // then we invoke the operations
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                 ReplicatedMapEntries entrySet = entrySetPerPartition[partitionId];
                 if (entrySet != null) {
-                    // If there is a single entry, we could make use of a PutOperation since that is a bit cheaper
-                    Future f = createPutAllOperationFuture(name, entrySet, partitionId);
-                    futures.add(f);
+                    Future future = createPutAllOperationFuture(name, entrySet, partitionId);
+                    futures.add(future);
                 }
             }
 
@@ -297,9 +305,18 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         }
     }
 
-    private Future createPutAllOperationFuture(final String name, ReplicatedMapEntries entrySet, int partitionId) {
+    @SuppressWarnings("checkstyle:magicnumber")
+    private int getPutAllInitialSize(int mapSize, int partitionCount) {
+        if (mapSize == 1) {
+            return 1;
+        }
+        // this is an educated guess for the initial size of the entries per partition, depending on the map size
+        return (int) ceil(20f * mapSize / partitionCount / log10(mapSize));
+    }
+
+    private Future createPutAllOperationFuture(String name, ReplicatedMapEntries entrySet, int partitionId) {
         OperationService operationService = nodeEngine.getOperationService();
-        Operation op = new PutAllOperation(name, entrySet).setPartitionId(partitionId);
+        Operation op = new PutAllOperation(name, entrySet);
         return operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
     }
 

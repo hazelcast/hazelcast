@@ -31,8 +31,9 @@ import java.io.IOException;
 public class PutAllOperationFactory implements OperationFactory {
 
     private String name;
-    private ReplicatedMapEntries entries = new ReplicatedMapEntries();
+    private ReplicatedMapEntries entries;
 
+    @SuppressWarnings("unused")
     public PutAllOperationFactory() {
     }
 
