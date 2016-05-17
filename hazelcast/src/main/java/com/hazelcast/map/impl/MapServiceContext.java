@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
@@ -134,6 +135,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     LocalMapStatsProvider getLocalMapStatsProvider();
 
     MapOperationProvider getMapOperationProvider(String name);
+
+    MapOperationProvider getMapOperationProvider(MapConfig mapConfig);
 
     Extractors getExtractors(String mapName);
 

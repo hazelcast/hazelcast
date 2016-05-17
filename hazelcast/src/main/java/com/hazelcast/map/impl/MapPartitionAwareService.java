@@ -16,12 +16,15 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
+import com.hazelcast.spi.ProxyService;
 
-import java.util.Map.Entry;
+import java.util.Collection;
 
 /**
  * Defines partition-aware operations' behavior of map service.
@@ -33,10 +36,12 @@ class MapPartitionAwareService implements PartitionAwareService {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
+    private final ProxyService proxyService;
 
     public MapPartitionAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.proxyService = this.nodeEngine.getProxyService();
     }
 
     @Override
@@ -44,13 +49,16 @@ class MapPartitionAwareService implements PartitionAwareService {
         final Address thisAddress = nodeEngine.getThisAddress();
         final int partitionId = partitionLostEvent.getPartitionId();
 
-        for (Entry<String, MapContainer> entry : mapServiceContext.getMapContainers().entrySet()) {
-            final String mapName = entry.getKey();
-            final MapContainer mapContainer = entry.getValue();
+        Collection<DistributedObject> result = proxyService.getDistributedObjects(MapService.SERVICE_NAME);
 
-            if (mapContainer.getBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
+        for (DistributedObject object : result) {
+            final MapProxyImpl mapProxy = (MapProxyImpl) object;
+            final String mapName = mapProxy.getName();
+
+            if (mapProxy.getTotalBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
                 mapServiceContext.getMapEventPublisher().publishMapPartitionLostEvent(thisAddress, mapName, partitionId);
             }
         }
     }
+
 }
