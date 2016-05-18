@@ -32,17 +32,16 @@ import com.hazelcast.nio.ClassLoaderUtil;
  */
 public final class JCacheDetector {
 
-    private static final String JCACHE_CACHING_CLASSNAME =  "javax.cache.Caching";
+    private static final String JCACHE_CACHING_CLASSNAME = "javax.cache.Caching";
     private static final String[] JCACHE_ADDITIONAL_REQUIRED_CLASSES = new String[]{
             "javax.cache.integration.CacheLoaderException",
             "javax.cache.integration.CacheWriterException",
             "javax.cache.processor.EntryProcessorException",
             "javax.cache.configuration.CompleteConfiguration",
-            };
+    };
 
     // do not allow construction of instances
     private JCacheDetector() {
-
     }
 
     public static boolean isJcacheAvailable(ClassLoader classLoader) {
@@ -50,9 +49,9 @@ public final class JCacheDetector {
     }
 
     /**
-     * @param classLoader   the class loader to use, when attempting to load JCache API classes.
-     * @param logger        if not null and a pre-v1.0.0 JCache JAR is detected on the classpath,
-     *                      logs a warning against using this version.
+     * @param classLoader the class loader to use, when attempting to load JCache API classes.
+     * @param logger      if not null and a pre-v1.0.0 JCache JAR is detected on the classpath,
+     *                    logs a warning against using this version.
      * @return {@code true} if JCache 1.0.0 is located in the classpath, otherwise {@code false}.
      */
     public static boolean isJcacheAvailable(ClassLoader classLoader, ILogger logger) {
@@ -62,8 +61,10 @@ public final class JCacheDetector {
         }
         for (String className : JCACHE_ADDITIONAL_REQUIRED_CLASSES) {
             if (!ClassLoaderUtil.isClassAvailable(classLoader, className)) {
-                logger.warning("An outdated version of JCache API was located in the classpath, please use newer versions of "
-                        + "JCache API rather than 1.0.0-PFD or 0.x versions.");
+                if (logger != null) {
+                    logger.warning("An outdated version of JCache API was located in the classpath, please use newer versions of "
+                            + "JCache API rather than 1.0.0-PFD or 0.x versions.");
+                }
                 return false;
             }
         }
