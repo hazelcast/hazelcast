@@ -743,7 +743,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } catch (Exception e) {
             expiryDuration = Duration.ETERNAL;
         }
-        long expiryTime = expiryDuration.getAdjustedTime(now);
+        long expiryTime = getAdjustedExpireTime(expiryDuration, now);
         if (isExpiredAt(expiryTime, now)) {
             return null;
         }
