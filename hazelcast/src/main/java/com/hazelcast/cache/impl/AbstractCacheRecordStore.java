@@ -287,6 +287,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return isEventsEnabled() ? toHeapData(obj) : null;
     }
 
+    private long getAdjustedExpireTime(Duration duration, long now) {
+        return duration.getDurationAmount() != 0 ? duration.getAdjustedTime(now) : CacheRecord.TIME_NOT_AVAILABLE;
+    }
+
     protected ExpiryPolicy getExpiryPolicy(ExpiryPolicy expiryPolicy) {
         return expiryPolicy != null ? expiryPolicy : defaultExpiryPolicy;
     }
@@ -335,8 +339,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         Data recordEventData = toEventData(removedRecord);
         onProcessExpiredEntry(key, removedRecord, expiryTime, now, source, origin);
         if (isEventsEnabled()) {
-            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData,
-                                                 CacheRecord.TIME_NOT_AVAILABLE,
+            publishEvent(createCacheExpiredEvent(keyEventData, recordEventData, CacheRecord.TIME_NOT_AVAILABLE,
                                                  origin, IGNORE_COMPLETION));
         }
         return null;
@@ -395,7 +398,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForAccess();
             if (expiryDuration != null) {
-                expiryTime = expiryDuration.getAdjustedTime(now);
+                expiryTime = getAdjustedExpireTime(expiryDuration, now);
                 record.setExpirationTime(expiryTime);
                 if (isEventsEnabled()) {
                     CacheEventContext cacheEventContext =
@@ -491,9 +494,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return record;
     }
 
-    protected void onCreateRecordError(Data key, Object value, long expiryTime, long now,
-                                       boolean disableWriteThrough, int completionId, String origin,
-                                       R record, Throwable error) {
+    protected void onCreateRecordError(Data key, Object value, long expiryTime, long now, boolean disableWriteThrough,
+                                       int completionId, String origin, R record, Throwable error) {
     }
 
     protected R createRecord(Data key, Object value, long expiryTime,
@@ -556,7 +558,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } catch (Exception e) {
             expiryDuration = Duration.ETERNAL;
         }
-        long expiryTime = expiryDuration.getAdjustedTime(now);
+        long expiryTime = getAdjustedExpireTime(expiryDuration, now);
         return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, origin);
     }
 
@@ -641,7 +643,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                              boolean disableWriteThrough, int completionId,
                                              String source, String origin) {
         updateRecord(key, record, value, expiryTime, now, disableWriteThrough, completionId, source, origin);
-
         return processExpiredEntry(key, record, expiryTime, now, source) != null;
     }
 
@@ -676,7 +677,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForUpdate();
             if (expiryDuration != null) {
-                expiryTime = expiryDuration.getAdjustedTime(now);
+                expiryTime = getAdjustedExpireTime(expiryDuration, now);
             }
         } catch (Exception e) {
             EmptyStatement.ignore(e);
@@ -737,7 +738,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } catch (Exception e) {
             expiryDuration = Duration.ETERNAL;
         }
-        long expiryTime = expiryDuration.getAdjustedTime(now);
+        long expiryTime = getAdjustedExpireTime(expiryDuration, now);
         if (isExpiredAt(expiryTime, now)) {
             return null;
         }
@@ -854,7 +855,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void putRecord(Data key, CacheRecord record) {
         evictIfRequired();
-
         doPutRecord(key, (R) record);
     }
 
@@ -1034,8 +1034,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
             }
-            onPutIfAbsent(key, value, expiryPolicy, source, disableWriteThrough,
-                          record, isExpired, saved);
+            onPutIfAbsent(key, value, expiryPolicy, source, disableWriteThrough, record, isExpired, saved);
             if (saved && isStatisticsEnabled()) {
                 statistics.increaseCachePuts(1);
                 statistics.addPutTimeNanos(System.nanoTime() - start);
