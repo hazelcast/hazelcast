@@ -302,6 +302,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op) {
+        return invokeOnPartition(op, false);
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op, boolean sync) {
         return new PartitionInvocation(
                 invocationContext, op, DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();

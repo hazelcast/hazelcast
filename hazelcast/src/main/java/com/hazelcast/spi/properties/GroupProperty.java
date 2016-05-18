@@ -58,7 +58,7 @@ public final class GroupProperty {
      * Total number of partitions in the Hazelcast cluster.
      */
     public static final HazelcastProperty PARTITION_COUNT
-            = new HazelcastProperty("hazelcast.partition.count", 271);
+            = new HazelcastProperty("hazelcast.partition.count", 5003);
 
     /**
      * The number of partition operation handler threads per Member.
@@ -70,6 +70,10 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.thread.count", -1);
+
+    public static final HazelcastProperty OPERATION_CALLER_RUNS
+            = new HazelcastProperty("hazelcast.operation.callerruns", true);
+
 
     /**
      * The number of generic operation handler threads per Member.

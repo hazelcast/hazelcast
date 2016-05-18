@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,6 +31,7 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -125,6 +127,7 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
 
     @Test
     public void test_whenPartitionOperation_andCallingFromGenericThread() {
+        fail();
         initExecutor();
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation(0);

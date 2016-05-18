@@ -31,6 +31,9 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     protected static final PartitioningStrategy PARTITIONING_STRATEGY = StringPartitioningStrategy.INSTANCE;
 
+    public static final boolean ASYNC = false;
+    public static final boolean SYNC = true;
+
     private volatile NodeEngine nodeEngine;
     private volatile S service;
 
@@ -68,7 +71,15 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     }
 
     protected final <E> InternalCompletableFuture<E> invokeOnPartition(Operation operation) {
-        return getNodeEngine().getOperationService().invokeOnPartition(operation);
+        operation.setService(service);
+        OperationService operationService = getNodeEngine().getOperationService();
+        return operationService.invokeOnPartition(operation);
+    }
+
+    protected final <E> InternalCompletableFuture<E> invokeOnPartition(Operation operation, boolean sync) {
+        operation.setService(service);
+        OperationService service = getNodeEngine().getOperationService();
+        return service.invokeOnPartition(operation, sync);
     }
 
     protected final int getPartitionId(Data key) {

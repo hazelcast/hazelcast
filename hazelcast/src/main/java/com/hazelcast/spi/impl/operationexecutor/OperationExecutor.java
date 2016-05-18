@@ -122,7 +122,7 @@ public interface OperationExecutor extends PacketHandler {
      * @param op the {@link Operation} to run or execute.
      * @throws java.lang.NullPointerException if op is null.
      */
-    void runOrExecute(Operation op);
+    void runOrElseExecute(Operation op);
 
     void scan(LiveOperations result);
 

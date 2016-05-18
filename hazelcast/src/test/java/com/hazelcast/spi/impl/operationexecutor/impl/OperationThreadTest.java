@@ -159,6 +159,9 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
     private PartitionOperationThread createNewOperationThread(OperationQueue mockOperationQueue) {
         ILogger mockLogger = mock(ILogger.class);
         OperationRunner[] runners = new OperationRunner[0];
-        return new PartitionOperationThread("threadName", 0, mockOperationQueue, mockLogger, threadGroup, nodeExtension, runners);
+        PartitionOperationThread thread = new PartitionOperationThread(
+                "threadName", 0, mockOperationQueue, mockLogger, threadGroup, nodeExtension, runners, null);
+
+        return thread;
     }
 }

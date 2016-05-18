@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -39,7 +40,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
     public void whenNullOperation() {
         initExecutor();
 
-        executor.runOrExecute(null);
+        executor.runOrElseExecute(null);
     }
 
     // ============= generic operations ==============================
@@ -51,7 +52,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
         Operation operation = new ThreadCapturingOperation(executingThread);
 
-        executor.runOrExecute(operation);
+        executor.runOrElseExecute(operation);
 
         assertSame(Thread.currentThread(), executingThread.get());
     }
@@ -66,7 +67,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(0) {
             @Override
             public Thread call() {
-                executor.runOrExecute(operation);
+                executor.runOrElseExecute(operation);
                 return Thread.currentThread();
             }
         };
@@ -91,7 +92,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(GENERIC_PARTITION_ID) {
             @Override
             public Thread call() {
-                executor.runOrExecute(operation);
+                executor.runOrElseExecute(operation);
                 return Thread.currentThread();
             }
         };
@@ -108,6 +109,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
     @Test
     public void whenGenericOperation_andCallingFromOperationHostileThread() {
+        fail();
         initExecutor();
 
         final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
@@ -116,7 +118,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         DummyOperationHostileThread thread = new DummyOperationHostileThread(new Runnable() {
             @Override
             public void run() {
-                executor.runOrExecute(operation);
+                executor.runOrElseExecute(operation);
             }
         });
         thread.start();
@@ -138,7 +140,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
         final Operation operation = new ThreadCapturingOperation(executingThread).setPartitionId(0);
 
-        executor.runOrExecute(operation);
+        executor.runOrElseExecute(operation);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -163,7 +165,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
             @Override
             public void run() {
-                executor.runOrExecute(operation);
+                executor.runOrElseExecute(operation);
             }
         });
 
@@ -184,7 +186,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(operation.getPartitionId()) {
             @Override
             public Thread call() {
-                executor.runOrExecute(operation);
+                executor.runOrElseExecute(operation);
                 return Thread.currentThread();
             }
         };
@@ -201,6 +203,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
     @Test
     public void whenPartitionOperation_andCallingFromPartitionOperationThread_andWrongPartition() {
+        fail();
         initExecutor();
 
         final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
@@ -208,7 +211,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         final PartitionSpecificCallable<Thread> task = new PartitionSpecificCallable<Thread>(operation.getPartitionId() + 1) {
             @Override
             public Thread call() {
-                executor.runOrExecute(operation);
+                executor.runOrElseExecute(operation);
                 return Thread.currentThread();
             }
         };
@@ -226,6 +229,8 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
     @Test
     public void whenPartitionOperation_andCallingFromOperationHostileThread() {
+        fail();
+
         initExecutor();
 
         final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
@@ -234,7 +239,7 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         DummyOperationHostileThread thread = new DummyOperationHostileThread(new Runnable() {
             @Override
             public void run() {
-                executor.runOrExecute(operation);
+                executor.runOrElseExecute(operation);
             }
         });
         thread.start();

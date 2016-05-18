@@ -56,6 +56,8 @@ public interface OperationService {
      */
     <E> InternalCompletableFuture<E> invokeOnPartition(Operation op);
 
+    <E> InternalCompletableFuture<E> invokeOnPartition(Operation op, boolean sync);
+
     <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
