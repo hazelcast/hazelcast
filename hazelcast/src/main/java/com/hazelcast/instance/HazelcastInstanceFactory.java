@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -54,20 +53,9 @@ public final class HazelcastInstanceFactory {
     /***
      * Instance for clientManagers
      */
-    private static final IHazelcastInstanceFactory INSTANCE_FACTORY;
     private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
     private static final int ADDITIONAL_SLEEP_SECONDS_FOR_NON_FIRST_MEMBERS = 4;
     private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<String, InstanceFuture>(5);
-
-    static {
-        ServiceLoader serviceLoader = ServiceLoader.load(IHazelcastInstanceFactory.class);
-        Iterator iterator = serviceLoader.iterator();
-        if (iterator.hasNext()) {
-            INSTANCE_FACTORY = ServiceLoader.load(IHazelcastInstanceFactory.class).iterator().next();
-        } else {
-            INSTANCE_FACTORY = new DefaultIHazelcastInstanceFactory();
-        }
-    }
 
     private HazelcastInstanceFactory() {
 
@@ -222,10 +210,9 @@ public final class HazelcastInstanceFactory {
         HazelcastInstanceProxy proxy;
         try {
             if (classLoader == null) {
-                Thread.currentThread().setContextClassLoader(IHazelcastInstanceFactory.class.getClassLoader());
+                Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
             }
-            HazelcastInstanceImpl hazelcastInstance =
-                    (HazelcastInstanceImpl) INSTANCE_FACTORY.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             OutOfMemoryErrorDispatcher.registerServer(hazelcastInstance);
 
             proxy = newHazelcastProxy(hazelcastInstance);
