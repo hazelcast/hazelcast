@@ -76,7 +76,7 @@ public class LoginModuleConfig {
     public Object getImplementation() {
         return implementation;
     }
-    
+
     public Properties getProperties() {
         return properties;
     }
@@ -94,7 +94,7 @@ public class LoginModuleConfig {
         this.implementation = implementation;
         return this;
     }
-    
+
     public LoginModuleConfig setUsage(LoginModuleUsage usage) {
         this.usage = usage;
         return this;
@@ -107,6 +107,7 @@ public class LoginModuleConfig {
 
     @Override
     public String toString() {
-        return "LoginModuleConfig{className='" + className + "', usage=" + usage + ", implementation=" + implementation + ", properties=" + properties + '}';
+        return "LoginModuleConfig{className='" + className + "', usage=" + usage
+                + ", implementation=" + implementation + ", properties=" + properties + '}';
     }
 }

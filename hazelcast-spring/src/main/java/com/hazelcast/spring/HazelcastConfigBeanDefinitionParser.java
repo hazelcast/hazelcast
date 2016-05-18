@@ -319,7 +319,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("name".equals(nodeName)) {
                     serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                 } else if ("class-name".equals(nodeName)) {
-                    // log message about element deprecation..?                	
+                    // log message about element deprecation..?
                     serviceConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                     classNameSet = true;
                 } else if ("properties".equals(nodeName)) {
@@ -337,14 +337,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                 }
             }
-            
+
             final NamedNodeMap attrs = node.getAttributes();
             Node classNameNode = attrs.getNamedItem("class-name");
-            if (classNameNode != null) { 
+            if (classNameNode != null) {
                 serviceConfigBuilder.addPropertyValue("className", getTextContent(classNameNode));
             }
             Node implNode = attrs.getNamedItem("implementation");
-            if (implNode != null) { 
+            if (implNode != null) {
                 serviceConfigBuilder.addPropertyReference("implementation", getTextContent(implNode));
             }
             Assert.isTrue(classNameSet || classNameNode != null || implNode != null, "One of 'class-name' or 'implementation' "
@@ -504,7 +504,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {
-            final BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, MulticastConfig.class, 
+            final BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, MulticastConfig.class,
                     "multicastConfig", joinConfigBuilder, "trusted-interfaces", "interface");
             final ManagedList<String> interfaces = new ManagedList<String>();
             for (Node n : childElements(node)) {

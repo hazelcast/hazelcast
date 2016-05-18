@@ -31,6 +31,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapAttributeConfig;
@@ -54,6 +55,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
@@ -370,14 +372,17 @@ public class TestFullApplicationContext {
         assertNotNull(testQConfig);
         assertEquals("testQ", testQConfig.getName());
         assertEquals(1000, testQConfig.getMaxSize());
+        assertEquals(1, testQConfig.getItemListenerConfigs().size());
+        assertTrue(testQConfig.isStatisticsEnabled());
+        ItemListenerConfig listenerConfig = testQConfig.getItemListenerConfigs().get(0);
+        assertEquals("com.hazelcast.spring.DummyItemListener", listenerConfig.getClassName());
+        assertTrue(listenerConfig.isIncludeValue());
         QueueConfig qConfig = config.getQueueConfig("q");
         assertNotNull(qConfig);
         assertEquals("q", qConfig.getName());
         assertEquals(2500, qConfig.getMaxSize());
-        assertEquals(1, testQConfig.getItemListenerConfigs().size());
-        ItemListenerConfig listenerConfig = testQConfig.getItemListenerConfigs().get(0);
-        assertEquals("com.hazelcast.spring.DummyItemListener", listenerConfig.getClassName());
-        assertTrue(listenerConfig.isIncludeValue());
+        assertFalse(qConfig.isStatisticsEnabled());
+        assertEquals(100, qConfig.getEmptyQueueTtl());
     }
 
     @Test
@@ -401,6 +406,28 @@ public class TestFullApplicationContext {
         }
     }
 
+    @Test
+    public void testListConfig() {
+        ListConfig testListConfig = config.getListConfig("testList");
+        assertNotNull(testListConfig);
+        assertEquals("testList", testListConfig.getName());
+        assertEquals(9999, testListConfig.getMaxSize());
+        assertEquals(1, testListConfig.getBackupCount());
+        assertEquals(1, testListConfig.getAsyncBackupCount());
+        assertFalse(testListConfig.isStatisticsEnabled());
+    }
+    
+    @Test
+    public void testSetConfig() {
+        SetConfig testSetConfig = config.getSetConfig("testSet");
+        assertNotNull(testSetConfig);
+        assertEquals("testSet", testSetConfig.getName());
+        assertEquals(7777, testSetConfig.getMaxSize());
+        assertEquals(0, testSetConfig.getBackupCount());
+        assertEquals(0, testSetConfig.getAsyncBackupCount());
+        assertFalse(testSetConfig.isStatisticsEnabled());
+    }
+    
     @Test
     public void testTopicConfig() {
         TopicConfig testTopicConfig = config.getTopicConfig("testTopic");
@@ -444,11 +471,13 @@ public class TestFullApplicationContext {
         assertEquals("testExec", testExecConfig.getName());
         assertEquals(2, testExecConfig.getPoolSize());
         assertEquals(100, testExecConfig.getQueueCapacity());
+        assertEquals(true, testExecConfig.isStatisticsEnabled());
         ExecutorConfig testExec2Config = config.getExecutorConfig("testExec2");
         assertNotNull(testExec2Config);
         assertEquals("testExec2", testExec2Config.getName());
         assertEquals(5, testExec2Config.getPoolSize());
         assertEquals(300, testExec2Config.getQueueCapacity());
+        assertEquals(false, testExec2Config.isStatisticsEnabled());
     }
 
     @Test
@@ -465,6 +494,7 @@ public class TestFullApplicationContext {
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
+        assertEquals(false, networkConfig.getJoin().getMulticastConfig().isLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());
         assertEquals("10.10.10.*", tis.iterator().next());
@@ -488,6 +518,7 @@ public class TestFullApplicationContext {
         assertEquals("sample-group", aws.getSecurityGroupName());
         assertEquals("sample-tag-key", aws.getTagKey());
         assertEquals("sample-tag-value", aws.getTagValue());
+        assertEquals("sample-role", aws.getIamRole());
 
         assertTrue("reuse-address", networkConfig.isReuseAddress());
 

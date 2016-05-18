@@ -82,7 +82,7 @@
                 </hz:outbound-ports>
                 <hz:join>
                     <hz:multicast enabled="${boolean.false}" multicast-group="224.2.2.3" multicast-port="54327"
-                                  multicast-time-to-live="16" multicast-timeout-seconds="8">
+                                  multicast-time-to-live="16" multicast-timeout-seconds="8" loopback-mode-enabled="false">
                         <hz:trusted-interfaces>
                             <hz:interface>10.10.10.*</hz:interface>
                         </hz:trusted-interfaces>
@@ -95,7 +95,7 @@
                     </hz:tcp-ip>
                     <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key"
                             region="sample-region" security-group-name="sample-group"
-                            tag-key="sample-tag-key" tag-value="sample-tag-value"/>
+                            tag-key="sample-tag-key" tag-value="sample-tag-value" iam-role="sample-role"/>
                     <hz:discovery-strategies>
                         <hz:node-filter implementation="dummyNodeFilter"/>
                         <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
@@ -146,6 +146,7 @@
             <hz:executor-service name="testExec2"
                                  pool-size="5"
                                  queue-capacity="300"
+                                 statistics-enabled="false"
             />
             <hz:queue name="testQ"
                       max-size="1000"
@@ -159,6 +160,8 @@
                       max-size="2500"
                       backup-count="1"
                       async-backup-count="1"
+                      statistics-enabled="false"
+                      empty-queue-ttl="100"
             />
             <hz:map name="testMap"
                     backup-count="2"
@@ -306,6 +309,19 @@
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
             </hz:multimap>
+
+            <hz:list name="testList"
+                      max-size="9999"
+                      backup-count="1"
+                      async-backup-count="1"
+                      statistics-enabled="false"
+            />
+            <hz:set name="testSet"
+                      max-size="7777"
+                      backup-count="0"
+                      async-backup-count="0"
+                      statistics-enabled="false"
+            />
 
             <hz:topic name="testTopic">
                 <hz:statistics-enabled>false</hz:statistics-enabled>
