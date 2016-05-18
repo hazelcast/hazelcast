@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
 
-    TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {
@@ -83,7 +83,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertFalse(map.isEmpty());
             }
         });
@@ -94,21 +94,22 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
-        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
 
+        final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
         final String key = generateKeyOwnedBy(instance2);
+        final String value = randomString();
+
         int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
         setPartitionId(map, partitionId);
-        String value = randomString();
+
         map.put(key, value);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection<String> keySet = map.keySet();
                 assertEquals(1, keySet.size());
                 assertEquals(key, keySet.iterator().next());
-
             }
         });
     }
@@ -118,20 +119,24 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
+
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
         final String key = generateKeyOwnedBy(instance2);
+        final String value = randomString();
+
         int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
         setPartitionId(map, partitionId);
-        final String value = randomString();
+
         map.put(key, value);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Set<Map.Entry<String, String>> entries = map.entrySet();
                 assertEquals(1, entries.size());
-                assertEquals(key, entries.iterator().next().getKey());
-                assertEquals(value, entries.iterator().next().getValue());
+                Map.Entry<String, String> entry = entries.iterator().next();
+                assertEquals(key, entry.getKey());
+                assertEquals(value, entry.getValue());
             }
         });
     }
@@ -141,17 +146,19 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig(instance1));
+
         final ReplicatedMap<String, String> map = client.getReplicatedMap(randomMapName());
         final String key = generateKeyOwnedBy(instance2);
+        final String value = randomString();
+
         int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
         setPartitionId(map, partitionId);
 
-        final String value = randomString();
         map.put(key, value);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Collection<String> values = map.values();
                 assertEquals(1, values.size());
                 assertEquals(value, values.iterator().next());
@@ -190,7 +197,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(map.containsValue(value));
             }
         });
@@ -211,7 +218,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(1, map.size());
             }
         });
@@ -233,7 +240,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, map.size());
             }
         });
@@ -255,7 +262,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(0, map.size());
             }
         });
@@ -272,7 +279,7 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         int partitionId = instance1.getPartitionService().getPartition(key).getPartitionId();
         setPartitionId(map, partitionId);
         String value = randomString();
-        HashMap m = new HashMap();
+        HashMap<String, String> m = new HashMap<String, String>();
         m.put(key, value);
         map.putAll(m);
 
@@ -290,12 +297,10 @@ public class DummyClientReplicatedMapTest extends HazelcastTestSupport {
         return dummyClientConfig;
     }
 
-    private void setPartitionId(ReplicatedMap<String, String> map, int partitionId) throws NoSuchFieldException, IllegalAccessException {
+    private void setPartitionId(ReplicatedMap<String, String> map, int partitionId) throws Exception {
         Class<?> clazz = map.getClass();
         Field targetPartitionId = clazz.getDeclaredField("targetPartitionId");
         targetPartitionId.setAccessible(true);
         targetPartitionId.setInt(map, partitionId);
     }
-
-
 }

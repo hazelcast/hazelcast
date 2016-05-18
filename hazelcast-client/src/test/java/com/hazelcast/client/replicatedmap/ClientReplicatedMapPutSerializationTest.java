@@ -28,12 +28,13 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,21 +42,21 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientReplicatedMapPutSerializationTest extends HazelcastTestSupport {
 
-    TestHazelcastFactory factory = new TestHazelcastFactory();
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.terminateAll();
     }
 
-    static AtomicInteger deSerializationCount = new AtomicInteger(0);
+    private static AtomicInteger deSerializationCount = new AtomicInteger(0);
 
     @Test
-    public void testPutShouldNotDeserializeData() throws Exception {
+    public void testPutShouldNotDeserializeData() {
         String mapName = randomName();
         Config config = new Config();
         config.getReplicatedMapConfig(mapName).setInMemoryFormat(InMemoryFormat.BINARY);
-        HazelcastInstance server = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         HazelcastInstance client = factory.newHazelcastClient();
         ReplicatedMap<String, SerializationCountingData> map = client.getReplicatedMap(mapName);
         String key = randomString();
@@ -63,12 +64,12 @@ public class ClientReplicatedMapPutSerializationTest extends HazelcastTestSuppor
         map.put(key, value);
         map.put(key, value);
 
-        // only deserialized once in the proxy.
+        // only deserialized once in the proxy
         assertEquals(1, deSerializationCount.get());
     }
 
-
     static class SerializationCountingData implements DataSerializable {
+
         public SerializationCountingData() {
         }
 
