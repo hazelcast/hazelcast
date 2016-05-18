@@ -35,9 +35,5 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
  */
 public interface PartitionGroupStrategy {
 
-    /**
-     * TODO Has probably to be changed :)
-     */
     Iterable<MemberGroup> getMemberGroups();
-
 }

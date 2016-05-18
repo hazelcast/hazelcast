@@ -100,6 +100,10 @@ public class DefaultDiscoveryService
         }
     }
 
+    public Iterable<DiscoveryStrategy> getDiscoveryStrategies() {
+        return discoveryStrategies;
+    }
+
     private NodeFilter getNodeFilter(DiscoveryServiceSettings settings) {
         DiscoveryConfig discoveryConfig = settings.getDiscoveryConfig();
         ClassLoader configClassLoader = settings.getConfigClassLoader();

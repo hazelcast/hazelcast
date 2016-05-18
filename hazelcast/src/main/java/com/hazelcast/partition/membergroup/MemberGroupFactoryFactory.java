@@ -17,13 +17,15 @@
 package com.hazelcast.partition.membergroup;
 
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 public final class MemberGroupFactoryFactory {
 
     private MemberGroupFactoryFactory() {
     }
 
-    public static MemberGroupFactory newMemberGroupFactory(PartitionGroupConfig partitionGroupConfig) {
+    public static MemberGroupFactory newMemberGroupFactory(PartitionGroupConfig partitionGroupConfig,
+                                                           DiscoveryService discoveryService) {
         PartitionGroupConfig.MemberGroupType memberGroupType;
 
         if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
@@ -39,6 +41,10 @@ public final class MemberGroupFactoryFactory {
                 return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
             case PER_MEMBER:
                 return new SingleMemberGroupFactory();
+            case ZONE_AWARE:
+                return new ZoneAwareMemberGroupFactory();
+            case SPI:
+                return new SPIAwareMemberGroupFactory(discoveryService);
             default:
                 throw new RuntimeException("Unknown MemberGroupType:" + memberGroupType);
         }

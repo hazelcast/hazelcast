@@ -583,6 +583,10 @@ public class Node {
         return nodeExtension;
     }
 
+    public DiscoveryService getDiscoveryService() {
+        return discoveryService;
+    }
+
     public class NodeShutdownHookThread extends Thread {
 
         NodeShutdownHookThread(String name) {

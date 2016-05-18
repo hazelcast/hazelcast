@@ -86,7 +86,8 @@ public class PartitionStateManager {
             this.partitions[i] = new InternalPartitionImpl(i, listener, thisAddress);
         }
 
-        memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig());
+        memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
+                node.getDiscoveryService());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
     }
 

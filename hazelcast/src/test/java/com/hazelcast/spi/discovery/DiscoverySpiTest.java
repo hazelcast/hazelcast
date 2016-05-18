@@ -31,9 +31,15 @@ import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.membergroup.DefaultMemberGroup;
+import com.hazelcast.partition.membergroup.MemberGroup;
+import com.hazelcast.partition.membergroup.MemberGroupFactory;
+import com.hazelcast.partition.membergroup.SPIAwareMemberGroupFactory;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
@@ -58,11 +64,14 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -154,22 +163,7 @@ public class DiscoverySpiTest
     @Test
     public void testNodeStartup() {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
-        InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
-        Config config = new XmlConfigBuilder(xmlResource).build();
-        config.getNetworkConfig().setPort(50001);
-        InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
-        interfaces.clear();
-        interfaces.setEnabled(true);
-        interfaces.addInterface("127.0.0.1");
-
-        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
-        DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
-
-        DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
-        discoveryConfig.getDiscoveryStrategyConfigs().clear();
-
-        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
-        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+        Config config = getDiscoverySPIConfig(xmlFileName);
 
         try {
             final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
@@ -268,6 +262,24 @@ public class DiscoverySpiTest
 
         assertEquals(1111, (long) strategy.getOrDefault(value, 1111));
         assertEquals(1111, (long) strategy.getOrDefault("test", value, 1111));
+    }
+
+    @Test
+    public void testSPIAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
+        String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
+        Config config = getDiscoverySPIConfig(xmlFileName);
+        // We create this instance in order to fully create Node
+        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+
+        MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
+        Collection<Member> members = createMembers();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 2, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+        }
+        hazelcastInstance.shutdown();
     }
 
     private static void setEnvironment(String key, String value) throws Exception {
@@ -435,6 +447,11 @@ public class DiscoverySpiTest
             getLogger();
             getProperties();
         }
+        //Need to provide a custom impl
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return new SPIPartitionGroupStrategy();
+        }
 
         @Override
         public Iterable<DiscoveryNode> discoverNodes() {
@@ -499,6 +516,11 @@ public class DiscoverySpiTest
         }
 
         @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return new SPIPartitionGroupStrategy();
+        }
+
+        @Override
         public Map<String, Object> discoverLocalMetadata() {
             Map<String, Object> metadata = new HashMap<String, Object>();
             metadata.put("test-byte", Byte.MAX_VALUE);
@@ -511,6 +533,51 @@ public class DiscoverySpiTest
             metadata.put("test-string", "TEST");
             return metadata;
         }
+    }
+
+    private static class SPIPartitionGroupStrategy implements PartitionGroupStrategy  {
+
+        @Override
+        public Iterable<MemberGroup> getMemberGroups() {
+            List<MemberGroup> groups = new ArrayList<MemberGroup>();
+            try {
+                groups.add(new DefaultMemberGroup(createMembers()));
+                groups.add(new DefaultMemberGroup(createMembers()));
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+            return groups;
+        }
+    }
+
+    private static Collection<Member> createMembers() throws UnknownHostException {
+        Collection<Member> members = new HashSet<Member>();
+        InetAddress fakeAddress = InetAddress.getLocalHost();
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5701), true));
+        members.add(new MemberImpl(new Address("192.192.0.1", fakeAddress, 5702), false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5701), false));
+        members.add(new MemberImpl(new Address("download.hazelcast.org", fakeAddress, 5702), false));
+        return members;
+    }
+
+    private Config getDiscoverySPIConfig(String xmlFileName) {
+        InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Config config = new XmlConfigBuilder(xmlResource).build();
+        config.getNetworkConfig().setPort(50001);
+        InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
+        interfaces.clear();
+        interfaces.setEnabled(true);
+        interfaces.addInterface("127.0.0.1");
+
+        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
+        DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
+
+        DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
+        discoveryConfig.getDiscoveryStrategyConfigs().clear();
+
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+        return config;
     }
 
 }
