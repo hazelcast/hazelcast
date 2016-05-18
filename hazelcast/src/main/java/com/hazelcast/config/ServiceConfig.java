@@ -65,11 +65,11 @@ public class ServiceConfig {
         return this;
     }
 
-    public Object getServiceImpl() {
+    public Object getImplementation() {
         return serviceImpl;
     }
 
-    public ServiceConfig setServiceImpl(final Object serviceImpl) {
+    public ServiceConfig setImplementation(final Object serviceImpl) {
         this.serviceImpl = serviceImpl;
         return this;
     }
@@ -103,7 +103,7 @@ public class ServiceConfig {
                 + "enabled=" + enabled
                 + ", name='" + name + '\''
                 + ", className='" + className + '\''
-                + ", serviceImpl=" + serviceImpl
+                + ", implementation=" + serviceImpl
                 + ", properties=" + properties
                 + '}';
     }

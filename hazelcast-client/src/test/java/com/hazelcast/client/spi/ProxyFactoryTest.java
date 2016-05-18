@@ -38,7 +38,7 @@ public class ProxyFactoryTest {
         Config config = new Config();
         ServiceConfig serviceConfig = new ServiceConfig();
         serviceConfig.setEnabled(true).setName(SERVICE_NAME)
-                .setServiceImpl(new CustomService());
+                .setImplementation(new CustomService());
         config.getServicesConfig().addServiceConfig(serviceConfig);
         hazelcastFactory.newHazelcastInstance(config);
     }
