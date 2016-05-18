@@ -858,4 +858,18 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         return false;
     }
 
+    @Test
+    public void entryShouldNotBeExpiredWhenDurationIsZero() {
+        Duration duration = new Duration(TimeUnit.MILLISECONDS, 0);
+        CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
+        cacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(duration));
+
+        Cache<Integer, String> cache = createCache(cacheConfig);
+        cache.put(1, "value");
+
+        sleepAtLeastMillis(1);
+
+        assertNotNull(cache.get(1));
+    }
+
 }
