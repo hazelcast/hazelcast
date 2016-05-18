@@ -26,8 +26,33 @@ public final class ClientMessageSplitter {
     private ClientMessageSplitter() {
     }
 
-    private static ClientMessage getSubFrame(int frameSize, int frameIndex, int numberOfSubFrames,
-                                             ClientMessage originalClientMessage) {
+    /**
+     * Splits a {@link ClientMessage} into frames of a maximum size.
+     *
+     * @param maxFrameSize  each split will have max size of maxFrameSize (last split can be smaller than frame size)
+     * @param clientMessage main message that will be split
+     * @return ordered array of split client message frames
+     */
+    public static List<ClientMessage> getSubFrames(int maxFrameSize, ClientMessage clientMessage) {
+        int numberOFSubFrames = ClientMessageSplitter.getNumberOfSubFrames(maxFrameSize, clientMessage);
+        ArrayList<ClientMessage> messages = new ArrayList<ClientMessage>(numberOFSubFrames);
+        for (int i = 0; i < numberOFSubFrames; i++) {
+            messages.add(ClientMessageSplitter.getSubFrame(maxFrameSize, i, numberOFSubFrames, clientMessage));
+        }
+        return messages;
+    }
+
+    static int getNumberOfSubFrames(int frameSize, ClientMessage originalClientMessage) {
+        assert ClientMessage.HEADER_SIZE < frameSize;
+        int frameLength = originalClientMessage.getFrameLength();
+        int sizeWithoutHeader = frameSize - ClientMessage.HEADER_SIZE;
+        System.out.println(ClientMessage.HEADER_SIZE);
+        System.out.println(frameLength);
+        System.out.println(sizeWithoutHeader);
+        return (int) Math.ceil((float) (frameLength - ClientMessage.HEADER_SIZE) / sizeWithoutHeader);
+    }
+
+    static ClientMessage getSubFrame(int frameSize, int frameIndex, int numberOfSubFrames, ClientMessage originalClientMessage) {
         assert frameIndex > -1;
         assert frameIndex < numberOfSubFrames;
         assert ClientMessage.HEADER_SIZE < frameSize;
@@ -57,26 +82,4 @@ public final class ClientMessageSplitter {
         subFrame.setCorrelationId(originalClientMessage.getCorrelationId());
         return subFrame;
     }
-
-    private static int getNumberOfSubFrames(int frameSize, ClientMessage originalClientMessage) {
-        assert ClientMessage.HEADER_SIZE < frameSize;
-        int frameLength = originalClientMessage.getFrameLength();
-        int sizeWithoutHeader = frameSize - ClientMessage.HEADER_SIZE;
-        return (int) Math.ceil((float) (frameLength - ClientMessage.HEADER_SIZE) / sizeWithoutHeader);
-    }
-
-    /**
-     * @param maxFrameSize  each split will have max size of maxFrameSize(last split can be smaller than frame size)
-     * @param clientMessage main message that will be split
-     * @return ordered array of split client message frames
-     */
-    public static List<ClientMessage> getSubFrames(int maxFrameSize, ClientMessage clientMessage) {
-        int numberOFSubFrames = ClientMessageSplitter.getNumberOfSubFrames(maxFrameSize, clientMessage);
-        ArrayList<ClientMessage> messages = new ArrayList<ClientMessage>(numberOFSubFrames);
-        for (int i = 0; i < numberOFSubFrames; i++) {
-            messages.add(ClientMessageSplitter.getSubFrame(maxFrameSize, i, numberOFSubFrames, clientMessage));
-        }
-        return messages;
-    }
-
 }
