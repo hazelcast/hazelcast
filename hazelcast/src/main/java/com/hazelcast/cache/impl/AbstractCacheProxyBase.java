@@ -135,6 +135,10 @@ abstract class AbstractCacheProxyBase<K, V> {
 
         cacheService.deleteCache(getDistributedObjectName(), true, null, true);
         f.getSafely();
+        postDestroy();
+    }
+
+    protected void postDestroy() {
     }
 
     public boolean isClosed() {

@@ -167,7 +167,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     @Override
-    public void close() {
+    public void postClose() {
         if (nearCache != null) {
             removeInvalidationListener();
             nearCacheManager.clearNearCache(nearCache.getName());
@@ -175,11 +175,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         if (statisticsEnabled) {
             statistics.clear();
         }
-        super.close();
     }
 
     @Override
-    public void destroy() {
+    protected void postDestroy() {
         if (nearCache != null) {
             removeInvalidationListener();
             nearCacheManager.destroyNearCache(nearCache.getName());
@@ -187,7 +186,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         if (statisticsEnabled) {
             statistics.clear();
         }
-        super.destroy();
+        cacheManager.removeCache(cacheConfig.getName(), false);
     }
 
     protected <T> ClientInvocationFuture<T> invoke(ClientRequest req, int partitionId, boolean completionOperation) {

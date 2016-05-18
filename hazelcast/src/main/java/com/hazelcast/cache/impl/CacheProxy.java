@@ -87,6 +87,11 @@ public class CacheProxy<K, V>
     }
 
     @Override
+    protected void postDestroy() {
+        cacheManager.destroyCache(getName());
+    }
+
+    @Override
     public V get(K key) {
         return get(key, null);
     }
