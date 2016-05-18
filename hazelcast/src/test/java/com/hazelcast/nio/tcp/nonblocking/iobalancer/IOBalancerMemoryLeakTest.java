@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.internal.ascii.HTTPCommunicator;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocols;
@@ -46,7 +46,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test

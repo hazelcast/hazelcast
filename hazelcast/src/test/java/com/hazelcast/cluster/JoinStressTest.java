@@ -24,7 +24,7 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -72,7 +72,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     @Before
     @After
     public void tearDown() throws Exception {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test

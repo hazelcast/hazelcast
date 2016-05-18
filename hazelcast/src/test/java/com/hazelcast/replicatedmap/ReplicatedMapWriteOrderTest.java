@@ -19,7 +19,7 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
@@ -71,7 +71,7 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapBaseTest {
 
     @After
     public void setUp() throws Exception {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test

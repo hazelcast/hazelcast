@@ -12,7 +12,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,7 +41,7 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test

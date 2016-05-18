@@ -97,7 +97,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             if (node != null) {
                 node.shutdown(terminate);
             }
-            HazelcastInstanceManager.remove(instance);
+            HazelcastInstanceFactory.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
         }
     }

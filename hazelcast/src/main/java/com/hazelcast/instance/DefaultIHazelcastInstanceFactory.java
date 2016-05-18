@@ -25,7 +25,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
  * Default implementation for Hazelcast instance factory;
  */
 @PrivateApi
-public class DefaultHazelcastInstanceFactory implements HazelcastInstanceFactory {
+public class DefaultIHazelcastInstanceFactory implements IHazelcastInstanceFactory {
     protected Config wrapConfig(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
