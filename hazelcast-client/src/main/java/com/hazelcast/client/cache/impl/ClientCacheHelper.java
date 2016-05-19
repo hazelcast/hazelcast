@@ -28,7 +28,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
 import java.util.ArrayList;
@@ -36,6 +35,9 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Helper class for some client cache related stuff.
@@ -48,16 +50,15 @@ final class ClientCacheHelper {
     /**
      * Gets the cache configuration from the server.
      *
-     * @param client            the client instance which will send the operation to server
-     * @param cacheName         full cache name with prefixes
-     * @param simpleCacheName   pure cache name without any prefix
-     * @param <K>               type of the key of the cache
-     * @param <V>               type of the value of the cache
-     *
+     * @param client          the client instance which will send the operation to server
+     * @param cacheName       full cache name with prefixes
+     * @param simpleCacheName pure cache name without any prefix
+     * @param <K>             type of the key of the cache
+     * @param <V>             type of the value of the cache
      * @return the cache configuration if it can be found
      */
-    static <K, V>  CacheConfig<K, V> getCacheConfig(HazelcastClientInstanceImpl client,
-                                                    String cacheName, String simpleCacheName) {
+    static <K, V> CacheConfig<K, V> getCacheConfig(HazelcastClientInstanceImpl client,
+                                                   String cacheName, String simpleCacheName) {
         ClientMessage request = CacheGetConfigCodec.encodeRequest(cacheName, simpleCacheName);
         try {
             int partitionId = client.getClientPartitionService().getPartitionId(cacheName);
@@ -67,23 +68,22 @@ final class ClientCacheHelper {
             SerializationService serializationService = client.getSerializationService();
             return serializationService.toObject(CacheGetConfigCodec.decodeResponse(responseMessage).response);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
     /**
      * Sends the cache configuration to server.
      *
-     * @param client                the client instance which will send the operation to server
-     * @param configs               {@link ConcurrentMap} based store that holds cache configurations
-     * @param cacheName             full cache name with prefixes
-     * @param newCacheConfig        the cache configuration to be sent to server
-     * @param createAlsoOnOthers    flag which represents whether cache config
-     *                              will be sent to other nodes by the target node
-     * @param syncCreate            flag which represents response will be waited from the server
-     * @param <K>                   type of the key of the cache
-     * @param <V>                   type of the value of the cache
-     *
+     * @param client             the client instance which will send the operation to server
+     * @param configs            {@link ConcurrentMap} based store that holds cache configurations
+     * @param cacheName          full cache name with prefixes
+     * @param newCacheConfig     the cache configuration to be sent to server
+     * @param createAlsoOnOthers flag which represents whether cache config
+     *                           will be sent to other nodes by the target node
+     * @param syncCreate         flag which represents response will be waited from the server
+     * @param <K>                type of the key of the cache
+     * @param <V>                type of the value of the cache
      * @return the created cache configuration
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
@@ -107,17 +107,17 @@ final class ClientCacheHelper {
                 return currentCacheConfig;
             }
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
     /**
      * Enables/disables statistics or management support of cache on the all servers in the cluster.
      *
-     * @param client        the client instance which will send the operation to server
-     * @param cacheName     full cache name with prefixes
-     * @param statOrMan     flag that represents which one of the statistics or management will be enabled
-     * @param enabled       flag which represents whether it is enable or disable
+     * @param client    the client instance which will send the operation to server
+     * @param cacheName full cache name with prefixes
+     * @param statOrMan flag that represents which one of the statistics or management will be enabled
+     * @param enabled   flag which represents whether it is enable or disable
      */
     static void enableStatisticManagementOnNodes(HazelcastClientInstanceImpl client,
                                                  String cacheName,
@@ -127,18 +127,15 @@ final class ClientCacheHelper {
         for (Member member : members) {
             try {
                 Address address = member.getAddress();
-
-                ClientMessage request =
-                        CacheManagementConfigCodec.encodeRequest(cacheName, statOrMan, enabled, address);
+                ClientMessage request = CacheManagementConfigCodec.encodeRequest(cacheName, statOrMan, enabled, address);
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
                 Future<ClientMessage> future = clientInvocation.invoke();
                 futures.add(future);
             } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
+                sneakyThrow(e);
             }
         }
-        // Make sure all configs are created
+        // make sure all configs are created
         FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
     }
-
 }
