@@ -347,11 +347,12 @@ public abstract class AbstractHazelcastCacheManager
         }
 
         deregisterLifecycleListener();
-        isClosed.set(true);
         for (ICacheInternal cache : caches.values()) {
             cache.destroy();
         }
         caches.clear();
+
+        isClosed.set(true);
     }
 
     @Override
