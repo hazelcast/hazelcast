@@ -25,7 +25,6 @@ import com.hazelcast.core.OutOfMemoryHandler;
 
 import java.util.Collection;
 
-
 /**
  * The HazelcastClient is comparable to the {@link com.hazelcast.core.Hazelcast} class and provides the ability
  * the create and manage Hazelcast clients. Hazelcast clients are {@link HazelcastInstance} implementations, so
@@ -48,6 +47,7 @@ import java.util.Collection;
  * When the connected cluster member dies, client will automatically switch to another live member.
  */
 public final class HazelcastClient {
+
     private static final HazelcastClientFactory HAZELCAST_CLIENT_FACTORY = new HazelcastClientFactory() {
         @Override
         public HazelcastClientInstanceImpl createHazelcastInstanceClient(ClientConfig config,

@@ -47,18 +47,21 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@SuppressWarnings("SynchronizationOnStaticField")
+/**
+ * Central manager for all Hazelcast members of the JVM.
+ *
+ * All creation functionality will be stored here and a particular instance of a member will delegate here.
+ */
 @PrivateApi
+@SuppressWarnings("SynchronizationOnStaticField")
 public final class HazelcastInstanceFactory {
-    /***
-     * Instance for clientManagers
-     */
-    private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
+
     private static final int ADDITIONAL_SLEEP_SECONDS_FOR_NON_FIRST_MEMBERS = 4;
+
+    private static final AtomicInteger FACTORY_ID_GEN = new AtomicInteger();
     private static final ConcurrentMap<String, InstanceFuture> INSTANCE_MAP = new ConcurrentHashMap<String, InstanceFuture>(5);
 
     private HazelcastInstanceFactory() {
-
     }
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
@@ -221,7 +224,7 @@ public final class HazelcastInstanceFactory {
             boolean firstMember = isFirstMember(node);
             long initialWaitSeconds = node.getProperties().getSeconds(GroupProperty.INITIAL_WAIT_SECONDS);
             if (initialWaitSeconds > 0) {
-                hazelcastInstance.logger.info(format("Waiting %d ms before completing HazelcastInstance startup...",
+                hazelcastInstance.logger.info(format("Waiting %d seconds before completing HazelcastInstance startup...",
                         initialWaitSeconds));
                 try {
                     SECONDS.sleep(initialWaitSeconds);
@@ -339,6 +342,7 @@ public final class HazelcastInstanceFactory {
     }
 
     private static class InstanceFuture {
+
         private volatile HazelcastInstanceProxy hz;
         private volatile Throwable throwable;
 
