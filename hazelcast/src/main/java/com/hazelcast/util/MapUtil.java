@@ -37,4 +37,13 @@ public final class MapUtil {
         return new HashMap<K, V>(initialCapacity);
     }
 
+    /**
+     * Test the given map and return {@code true} if the map is null or empty.
+     * @param map the map to test
+     * @return    {@code true} if {@code map} is null or empty, otherwise {@code false}.
+     */
+    public static boolean isNullOrEmpty(Map map) {
+        return map == null || map.isEmpty();
+    }
+
 }
