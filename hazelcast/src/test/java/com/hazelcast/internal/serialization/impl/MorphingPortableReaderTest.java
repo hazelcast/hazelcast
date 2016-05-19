@@ -257,6 +257,11 @@ public class MorphingPortableReaderTest {
     }
 
     @Test
+    public void testReadUTFArray() throws Exception {
+        assertNull(reader.readUTFArray("NO SUCH FIELD"));
+    }
+
+    @Test
     public void testReadPortable() throws Exception {
         assertNull(reader.readPortable("NO SUCH FIELD"));
     }
