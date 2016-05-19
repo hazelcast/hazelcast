@@ -73,9 +73,7 @@ public class CacheGetAllMessageTask
         List<Map.Entry<Data, Data>> reducedMap = new ArrayList<Map.Entry<Data, Data>>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
             MapEntries mapEntries = (MapEntries) nodeEngine.toObject(entry.getValue());
-            for (Map.Entry<Data, Data> dataEntry : mapEntries) {
-                reducedMap.add(dataEntry);
-            }
+            mapEntries.putAllToList(reducedMap);
         }
         return reducedMap;
     }

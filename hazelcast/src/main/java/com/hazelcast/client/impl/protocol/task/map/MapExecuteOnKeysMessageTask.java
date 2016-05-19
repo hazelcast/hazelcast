@@ -62,9 +62,7 @@ public class MapExecuteOnKeysMessageTask
         for (Object o : map.values()) {
             if (o != null) {
                 MapEntries mapEntries = (MapEntries) mapService.getMapServiceContext().toObject(o);
-                for (Map.Entry<Data, Data> entry : mapEntries) {
-                    entries.add(entry);
-                }
+                mapEntries.putAllToList(entries);
             }
         }
         return entries;

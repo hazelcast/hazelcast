@@ -32,7 +32,6 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
@@ -42,7 +41,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
 
-    private MapEntries mapEntries;
+    private final MapEntries mapEntries;
 
     private boolean hasMapListener;
     private boolean hasWanReplication;
@@ -51,9 +50,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
-
-    public PutAllOperation() {
-    }
 
     public PutAllOperation(String name, MapEntries mapEntries) {
         super(name);
@@ -74,8 +70,8 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
             invalidationKeys = new ArrayList<Data>(mapEntries.size());
         }
 
-        for (Map.Entry<Data, Data> entry : mapEntries) {
-            put(entry);
+        for (int i = 0; i < mapEntries.size(); i++) {
+            put(mapEntries.getKey(i), mapEntries.getValue(i));
         }
     }
 
@@ -87,10 +83,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         return (mapContainer.getTotalBackupCount() > 0);
     }
 
-    private void put(Map.Entry<Data, Data> entry) {
-        Data dataKey = entry.getKey();
-        Data dataValue = entry.getValue();
-
+    private void put(Data dataKey, Data dataValue) {
         Object oldValue = putToRecordStore(dataKey, dataValue);
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
         mapServiceContext.interceptAfterPut(name, dataValue);
@@ -171,13 +164,11 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(mapEntries);
+        throw new UnsupportedOperationException("this is a local operation!");
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        mapEntries = in.readObject();
+        throw new UnsupportedOperationException("this is a local operation!");
     }
 }

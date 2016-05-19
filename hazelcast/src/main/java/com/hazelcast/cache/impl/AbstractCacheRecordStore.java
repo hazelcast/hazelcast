@@ -1316,7 +1316,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public MapEntries getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-        MapEntries result = new MapEntries();
+        MapEntries result = new MapEntries(keySet.size());
         for (Data key : keySet) {
             Object value = get(key, expiryPolicy);
             if (value != null) {
