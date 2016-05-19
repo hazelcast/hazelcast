@@ -9,6 +9,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
@@ -859,6 +860,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast-enterprise/issues/903")
     public void entryShouldNotBeExpiredWhenDurationIsZero() {
         Duration duration = new Duration(TimeUnit.MILLISECONDS, 0);
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
