@@ -20,6 +20,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
 /**
  * Size estimator for maps which have {@link InMemoryFormat#BINARY} memory-format.
  */

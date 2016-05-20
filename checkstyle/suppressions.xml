@@ -329,4 +329,6 @@
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>
 
+    <suppress checks="" files="com.hazelcast.util.JVMUtil"/>
+
 </suppressions>

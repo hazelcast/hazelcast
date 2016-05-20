@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordStatistics;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,12 +35,8 @@ public final class ExpirationTimeSetter {
      * Sets expiration time if statistics are enabled.
      */
     public static void setExpirationTime(Record record, long maxIdleMillis) {
-        final RecordStatistics statistics = record.getStatistics();
-        if (statistics == null) {
-            return;
-        }
         final long expirationTime = calculateExpirationTime(record, maxIdleMillis);
-        statistics.setExpirationTime(expirationTime);
+        record.setExpirationTime(expirationTime);
     }
 
     private static long calculateExpirationTime(Record record, long maxIdleMillis) {

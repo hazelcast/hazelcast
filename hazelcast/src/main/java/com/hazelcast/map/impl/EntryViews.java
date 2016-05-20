@@ -18,7 +18,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordStatistics;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -51,12 +50,9 @@ public final class EntryViews {
         simpleEntryView.setLastUpdateTime(record.getLastUpdateTime());
         simpleEntryView.setTtl(record.getTtl());
         simpleEntryView.setCreationTime(record.getCreationTime());
+        simpleEntryView.setExpirationTime(record.getExpirationTime());
+        simpleEntryView.setLastStoredTime(record.getLastStoredTime());
 
-        final RecordStatistics statistics = record.getStatistics();
-        if (statistics != null) {
-            simpleEntryView.setExpirationTime(statistics.getExpirationTime());
-            simpleEntryView.setLastStoredTime(statistics.getLastStoredTime());
-        }
         return simpleEntryView;
     }
 
@@ -64,9 +60,10 @@ public final class EntryViews {
         return new SimpleEntryView<K, V>();
     }
 
-    public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record
-            , SerializationService serializationService, MapMergePolicy mergePolicy) {
-        final LazyEntryView lazyEntryView = new LazyEntryView(key, value, serializationService, mergePolicy);
+    public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record,
+                                                             SerializationService serializationService,
+                                                             MapMergePolicy mergePolicy) {
+        LazyEntryView lazyEntryView = new LazyEntryView(key, value, serializationService, mergePolicy);
         lazyEntryView.setCost(record.getCost());
         lazyEntryView.setVersion(record.getVersion());
         lazyEntryView.setHits(record.getHits());
@@ -74,11 +71,8 @@ public final class EntryViews {
         lazyEntryView.setLastUpdateTime(record.getLastUpdateTime());
         lazyEntryView.setTtl(record.getTtl());
         lazyEntryView.setCreationTime(record.getCreationTime());
-        final RecordStatistics statistics = record.getStatistics();
-        if (statistics != null) {
-            lazyEntryView.setExpirationTime(statistics.getExpirationTime());
-            lazyEntryView.setLastStoredTime(statistics.getLastStoredTime());
-        }
+        lazyEntryView.setExpirationTime(lazyEntryView.getExpirationTime());
+        lazyEntryView.setLastStoredTime(lazyEntryView.getLastStoredTime());
         return lazyEntryView;
     }
 

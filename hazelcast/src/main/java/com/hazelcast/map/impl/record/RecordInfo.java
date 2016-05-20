@@ -22,39 +22,36 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
+import static com.hazelcast.map.impl.record.Record.NOT_AVAILABLE;
 
 /**
  * Record info.
  */
 public class RecordInfo implements DataSerializable {
-    protected RecordStatistics statistics;
     protected long version;
     protected long ttl;
     protected long creationTime;
     protected long lastAccessTime;
     protected long lastUpdateTime;
     protected long hits;
+    // available when stats are enabled.
+    protected long lastStoredTime;
+    protected long expirationTime;
 
     public RecordInfo() {
     }
 
     public RecordInfo(RecordInfo recordInfo) {
-        this.statistics = recordInfo.statistics;
         this.version = recordInfo.version;
         this.hits = recordInfo.hits;
         this.ttl = recordInfo.ttl;
         this.creationTime = recordInfo.creationTime;
         this.lastAccessTime = recordInfo.lastAccessTime;
         this.lastUpdateTime = recordInfo.lastUpdateTime;
-    }
 
-    public RecordStatistics getStatistics() {
-        return statistics;
-    }
-
-    public void setStatistics(RecordStatistics statistics) {
-        this.statistics = statistics;
+        // available when stats are enabled.
+        this.lastStoredTime = recordInfo.lastStoredTime;
+        this.expirationTime = recordInfo.expirationTime;
     }
 
     public long getVersion() {
@@ -105,14 +102,24 @@ public class RecordInfo implements DataSerializable {
         this.lastUpdateTime = lastUpdateTime;
     }
 
+    public long getExpirationTime() {
+        return expirationTime;
+    }
+
+    public void setExpirationTime(long expirationTime) {
+        this.expirationTime = expirationTime;
+    }
+
+    public long getLastStoredTime() {
+        return lastStoredTime;
+    }
+
+    public void setLastStoredTime(long lastStoredTime) {
+        this.lastStoredTime = lastStoredTime;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        if (statistics != EMPTY_STATS) {
-            out.writeBoolean(true);
-            statistics.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
         out.writeLong(version);
         out.writeLong(hits);
         out.writeLong(ttl);
@@ -120,33 +127,42 @@ public class RecordInfo implements DataSerializable {
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
 
+        boolean statsEnabled = lastStoredTime == NOT_AVAILABLE && expirationTime == NOT_AVAILABLE;
+        out.writeBoolean(statsEnabled);
+        if (statsEnabled) {
+            out.writeLong(lastStoredTime);
+            out.writeLong(expirationTime);
+        }
+
+
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        boolean statsEnabled = in.readBoolean();
-        if (statsEnabled) {
-            statistics = new RecordStatisticsImpl();
-            statistics.readData(in);
-        }
         version = in.readLong();
         hits = in.readLong();
         ttl = in.readLong();
         creationTime = in.readLong();
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
+
+        boolean statsEnabled = in.readBoolean();
+        lastStoredTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
+        expirationTime = statsEnabled ? in.readLong() : NOT_AVAILABLE;
+
     }
 
     @Override
     public String toString() {
         return "RecordInfo{"
-                + "statistics=" + statistics
+                + "creationTime=" + creationTime
                 + ", version=" + version
-                + ", hits=" + hits
                 + ", ttl=" + ttl
-                + ", creationTime=" + creationTime
                 + ", lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
+                + ", hits=" + hits
+                + ", lastStoredTime=" + lastStoredTime
+                + ", expirationTime=" + expirationTime
                 + '}';
     }
 }

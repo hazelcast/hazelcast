@@ -19,7 +19,8 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.nio.serialization.Data;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static com.hazelcast.map.impl.record.RecordStatistics.EMPTY_STATS;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
  * @param <V> the type of the value of Record.
@@ -32,12 +33,11 @@ public abstract class AbstractRecord<V> implements Record<V> {
     protected long ttl;
     protected long creationTime;
 
-    protected volatile long lastAccessTime;
-    protected volatile long lastUpdateTime;
-
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "Record can be accessed by only its own partition thread.")
     protected volatile long hits;
+    protected volatile long lastAccessTime;
+    protected volatile long lastUpdateTime;
 
     AbstractRecord() {
     }
@@ -104,12 +104,8 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        final int objectReferenceInBytes = 4;
         final int numberOfLongs = 6;
-        long size = numberOfLongs * (Long.SIZE / Byte.SIZE);
-        // add key size.
-        size += objectReferenceInBytes;
-        return size;
+        return REFERENCE_COST_IN_BYTES + numberOfLongs * LONG_SIZE_IN_BYTES;
     }
 
     @Override
@@ -137,16 +133,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
     }
 
     @Override
-    public RecordStatistics getStatistics() {
-        return EMPTY_STATS;
-    }
-
-    @Override
-    public void setStatistics(RecordStatistics stats) {
-
-    }
-
-    @Override
     public boolean casCachedValue(Object expectedValue, Object newValue) {
         return true;
     }
@@ -162,10 +148,28 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public final long getSequence() {
-        return -1L;
+        return NOT_AVAILABLE;
     }
 
     @Override
     public final void setSequence(long sequence) {
+    }
+
+    @Override
+    public long getExpirationTime() {
+        return NOT_AVAILABLE;
+    }
+
+    @Override
+    public void setExpirationTime(long expirationTime) {
+    }
+
+    @Override
+    public long getLastStoredTime() {
+        return NOT_AVAILABLE;
+    }
+
+    @Override
+    public void setLastStoredTime(long lastStoredTime) {
     }
 }

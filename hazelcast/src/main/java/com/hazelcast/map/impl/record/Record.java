@@ -28,15 +28,13 @@ public interface Record<V> {
      */
     Object NOT_CACHED = new Object();
 
+    int NOT_AVAILABLE = -1;
+
     Data getKey();
 
     V getValue();
 
     void setValue(V value);
-
-    RecordStatistics getStatistics();
-
-    void setStatistics(RecordStatistics stats);
 
     void onAccess(long now);
 
@@ -44,6 +42,11 @@ public interface Record<V> {
 
     void onStore();
 
+    /**
+     * Returns heap cost of this record in bytes.
+     *
+     * @return heap cost of this record in bytes.
+     */
     long getCost();
 
     long getVersion();
@@ -91,6 +94,14 @@ public interface Record<V> {
 
     void setHits(long hits);
 
+    long getExpirationTime();
+
+    void setExpirationTime(long expirationTime);
+
+    long getLastStoredTime();
+
+    void setLastStoredTime(long lastStoredTime);
+
     /**
      * Only used for Hot Restart, HDRecord
      *
@@ -104,4 +115,6 @@ public interface Record<V> {
      * @return
      */
     void setSequence(long sequence);
+
+
 }

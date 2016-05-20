@@ -16,37 +16,50 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.util.Clock;
+
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+
 /**
  * @param <V>
  */
 abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
-    protected RecordStatistics recordStatistics;
+    protected long lastStoredTime;
+    protected long expirationTime;
 
     protected AbstractRecordWithStats() {
-        this.recordStatistics = new RecordStatisticsImpl();
-    }
-
-    @Override
-    public final RecordStatistics getStatistics() {
-        return recordStatistics;
-    }
-
-    @Override
-    public final void setStatistics(RecordStatistics recordStatistics) {
-        this.recordStatistics = recordStatistics;
     }
 
     @Override
     public final void onStore() {
-        recordStatistics.store();
+        lastStoredTime = Clock.currentTimeMillis();
     }
 
     @Override
     public long getCost() {
-        final long cost = super.getCost();
-        // reference cost of RecordStatistics object.
-        final int objectReferenceInBytes = 4;
-        return cost + objectReferenceInBytes + recordStatistics.getMemoryCost();
+        final int numberOfLongFields = 2;
+        return super.getCost() + numberOfLongFields * LONG_SIZE_IN_BYTES;
     }
+
+    @Override
+    public long getExpirationTime() {
+        return expirationTime;
+    }
+
+    @Override
+    public void setExpirationTime(long expirationTime) {
+        this.expirationTime = expirationTime;
+    }
+
+    @Override
+    public long getLastStoredTime() {
+        return lastStoredTime;
+    }
+
+    @Override
+    public void setLastStoredTime(long lastStoredTime) {
+        this.lastStoredTime = lastStoredTime;
+    }
+
 }

@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
 class DataRecord extends AbstractRecord<Data> {
 
     protected volatile Data value;
@@ -29,17 +31,9 @@ class DataRecord extends AbstractRecord<Data> {
     DataRecord() {
     }
 
-    /*
-    * get record size in bytes.
-    *
-    * */
     @Override
     public long getCost() {
-        long size = super.getCost();
-        final int objectReferenceInBytes = 4;
-        // add value size.
-        size += objectReferenceInBytes + (value == null ? 0 : value.getHeapCost());
-        return size;
+        return super.getCost() + REFERENCE_COST_IN_BYTES + (value == null ? 0 : value.getHeapCost());
     }
 
     @Override
