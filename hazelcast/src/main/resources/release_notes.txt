@@ -81,6 +81,9 @@ The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
 
 The following are the fixed issues for 3.6.3 release.
 
+- MapStatisticsAwareService should obtain the map names from proxy registry. [8209]
+- Cache should not expire the entities when Duration value is set to 0. [8148], [8206]
+- Type extraction by the method extractedMultiResult should be fixed when the extraction result is null. [8134]
 - Expiration time for the map entries should be calculated based on their latest update times. [8111]
 - Support for the usage of IAM role's defaults should be added. [8100]
 - Binary property for MultiMap should be added to XmlConfigBuilder. [8094]
