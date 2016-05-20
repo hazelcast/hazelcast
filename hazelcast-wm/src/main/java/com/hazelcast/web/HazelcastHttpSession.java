@@ -310,7 +310,7 @@ public class HazelcastHttpSession implements HttpSession {
                 attributeNames = webFilter.getClusteredSessionService().getAttributeNames(id);
             } catch (Exception ignored) {
                 for (Map.Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
-                    if (!entry.getValue().isRemoved() && !entry.getValue().equals(WebFilter.NULL_ENTRY)) {
+                    if (!entry.getValue().isRemoved() && entry.getValue().getValue() != null) {
                         keys.add(entry.getKey());
                     }
                 }
@@ -320,7 +320,7 @@ public class HazelcastHttpSession implements HttpSession {
             }
         } else {
             for (Map.Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
-                if (!entry.getValue().isRemoved() && !entry.getValue().equals(WebFilter.NULL_ENTRY)) {
+                if (!entry.getValue().isRemoved() && entry.getValue().getValue() != null) {
                     keys.add(entry.getKey());
                 }
             }
