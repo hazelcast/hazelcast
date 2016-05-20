@@ -87,7 +87,7 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
 
     @After
     public void tearDownTests() {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
         if (multicastGroup == null) {
             System.clearProperty("hazelcast.multicast.group");
         } else {
@@ -102,10 +102,10 @@ public class MulticastLoopbackModeTest extends HazelcastTestSupport {
         multicastConfig.setEnabled(true);
         multicastConfig.setLoopbackModeEnabled(loopbackMode);
 
-        hz1 = HazelcastInstanceManager.newHazelcastInstance(config);
+        hz1 = HazelcastInstanceFactory.newHazelcastInstance(config);
         assertNotNull("Cannot create the first HazelcastInstance", hz1);
 
-        hz2 = HazelcastInstanceManager.newHazelcastInstance(config);
+        hz2 = HazelcastInstanceFactory.newHazelcastInstance(config);
         assertNotNull("Cannot create the second HazelcastInstance", hz2);
     }
 

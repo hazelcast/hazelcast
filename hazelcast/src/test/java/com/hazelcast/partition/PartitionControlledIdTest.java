@@ -42,7 +42,7 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -92,7 +92,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
     @AfterClass
     public static void killHazelcastInstances() {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     private HazelcastInstance getHazelcastInstance(String partitionKey) {

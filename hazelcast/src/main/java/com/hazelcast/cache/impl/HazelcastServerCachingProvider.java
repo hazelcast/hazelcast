@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -103,7 +103,7 @@ public final class HazelcastServerCachingProvider
             }
             try {
                 Config config = getConfig(configURL, theClassLoader, instanceName);
-                return HazelcastInstanceManager.getOrCreateHazelcastInstance(config);
+                return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

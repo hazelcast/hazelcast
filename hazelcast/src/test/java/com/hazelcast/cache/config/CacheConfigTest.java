@@ -34,7 +34,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.NodeEngine;
@@ -84,7 +84,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     @Before
     @After
     public void cleanup() {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
         Caching.getCachingProvider().close();
     }
 

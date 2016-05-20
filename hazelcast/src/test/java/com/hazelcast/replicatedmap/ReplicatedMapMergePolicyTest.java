@@ -26,7 +26,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.replicatedmap.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
@@ -54,7 +54,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() {
-        HazelcastInstanceManager.terminateAll();
+        HazelcastInstanceFactory.terminateAll();
     }
 
     @Test

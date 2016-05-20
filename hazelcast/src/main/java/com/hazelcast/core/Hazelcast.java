@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.HazelcastInstanceManager;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
 import java.util.Set;
@@ -38,7 +38,7 @@ public final class Hazelcast {
      * @see #newHazelcastInstance(Config)
      */
     public static void shutdownAll() {
-        HazelcastInstanceManager.shutdownAll();
+        HazelcastInstanceFactory.shutdownAll();
     }
 
     /**
@@ -55,7 +55,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance(Config config) {
-        return HazelcastInstanceManager.newHazelcastInstance(config);
+        return HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
     /**
@@ -84,7 +84,7 @@ public final class Hazelcast {
      * @see #getHazelcastInstanceByName(String)
      */
     public static HazelcastInstance newHazelcastInstance() {
-        return HazelcastInstanceManager.newHazelcastInstance(null);
+        return HazelcastInstanceFactory.newHazelcastInstance(null);
     }
 
     /**
@@ -99,7 +99,7 @@ public final class Hazelcast {
      * @see #shutdownAll()
      */
     public static HazelcastInstance getHazelcastInstanceByName(String instanceName) {
-        return HazelcastInstanceManager.getHazelcastInstance(instanceName);
+        return HazelcastInstanceFactory.getHazelcastInstance(instanceName);
     }
 
     /**
@@ -113,7 +113,7 @@ public final class Hazelcast {
      * @throws IllegalArgumentException if the instance name of the config is null or empty.
      */
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
-        return HazelcastInstanceManager.getOrCreateHazelcastInstance(config);
+        return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
     }
 
 
@@ -129,7 +129,7 @@ public final class Hazelcast {
      * @see #shutdownAll()
      */
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
-        return HazelcastInstanceManager.getAllHazelcastInstances();
+        return HazelcastInstanceFactory.getAllHazelcastInstances();
     }
 
     /**
