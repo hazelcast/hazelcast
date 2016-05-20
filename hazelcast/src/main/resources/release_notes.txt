@@ -1,5 +1,5 @@
 
-In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.6 release.
+In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.7 release.
 The numbers in the square brackets refer to the issue number in Hazelcast’s GitHub repository. You can reach
 to the full descriptions of the issues at https://github.com/hazelcast/hazelcast/issues/<issue number>.
 
