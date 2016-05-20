@@ -18,6 +18,8 @@ package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -55,6 +57,10 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     @Override
     public void run() throws Exception {
         try {
+            if (operationFactory instanceof PartitionWideEntryWithPredicateOperationFactory) {
+                MapService mapService = getService();
+                ((PartitionWideEntryWithPredicateOperationFactory) operationFactory).queryIndex(mapService);
+            }
             Object[] responses = executeOperations();
             results = resolveResponses(responses);
         } catch (Exception e) {
