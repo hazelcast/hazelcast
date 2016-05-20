@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
@@ -131,7 +132,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public boolean shouldBackup() {
-        return entryProcessor.getBackupProcessor() != null;
+        return mapContainer.getBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override
@@ -196,7 +197,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     private Map.Entry createMapEntry(Data key, Object value) {
-        return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
+        InternalSerializationService serializationService
+                = ((InternalSerializationService) getNodeEngine().getSerializationService());
+        return new LazyMapEntry(key, value, serializationService, mapContainer.getExtractors());
     }
 
     private LocalMapStatsImpl getLocalMapStats() {

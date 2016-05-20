@@ -16,12 +16,12 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestJavaSerializationUtils;
@@ -42,13 +42,13 @@ import static org.junit.Assert.assertTrue;
 public class LazyMapEntryTest extends HazelcastTestSupport {
 
     private LazyMapEntry entry = new LazyMapEntry();
-    private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testSerialization() throws IOException, ClassNotFoundException {
         Data keyData = serializationService.toData("keyData");
         Data valueData = serializationService.toData("valueData");
-        entry.init(keyData, valueData, serializationService);
+        entry.init(serializationService, keyData, valueData, null);
         LazyMapEntry copy = TestJavaSerializationUtils.serializeAndDeserialize(entry);
 
         assertEquals(entry, copy);
@@ -58,27 +58,25 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
     public void test_init() throws Exception {
         Data keyData = serializationService.toData("keyData");
         Data valueData = serializationService.toData("valueData");
-        entry.init(keyData, valueData, serializationService);
+        entry.init(serializationService, keyData, valueData, null);
 
         Object valueObject = entry.getValue();
-        Object keyObject = entry.getKey();
 
-        entry.init(keyObject, valueObject, serializationService);
+        entry.init(serializationService, keyData, valueObject, null);
 
-        assertTrue("Old keyData should not be here", keyData != entry.getKeyData());
         assertTrue("Old valueData should not be here", valueData != entry.getValueData());
     }
 
     @Test
     public void test_init_doesNotSerializeObject() throws Exception {
-        MyObject key = new MyObject();
+        Data key = serializationService.toData("keyData");
         MyObject value = new MyObject();
 
-        entry.init(key, value, serializationService);
+        entry.init(serializationService, key, value, null);
 
-        assertEquals(0, key.serializedCount);
         assertEquals(0, value.serializedCount);
     }
+
 
     @Test
     public void test_init_doesNotDeserializeObject() throws Exception {
@@ -88,7 +86,7 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
         Data keyData = serializationService.toData(keyObject);
         Data valueData = serializationService.toData(valueObject);
 
-        entry.init(keyData, valueData, serializationService);
+        entry.init(serializationService, keyData, valueData, null);
 
         assertEquals(1, keyObject.serializedCount);
         assertEquals(1, valueObject.serializedCount);
@@ -105,7 +103,7 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
         Data keyData = serializationService.toData(keyObject);
         Data valueData = serializationService.toData(valueObject);
 
-        entry.init(keyData, valueData, serializationService);
+        entry.init(serializationService, keyData, valueData, null);
 
         Object key = entry.getKey();
         Object value = entry.getValue();

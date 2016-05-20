@@ -26,10 +26,10 @@ import com.hazelcast.query.impl.getters.Extractors;
  */
 public class CachedQueryEntry extends QueryableEntry {
 
-    private Data keyData;
-    private Object keyObject;
-    private Data valueData;
-    private Object valueObject;
+    protected Data keyData;
+    protected Object keyObject;
+    protected Data valueData;
+    protected Object valueObject;
 
     public CachedQueryEntry() {
     }

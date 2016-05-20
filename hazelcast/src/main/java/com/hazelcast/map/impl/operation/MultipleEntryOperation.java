@@ -33,7 +33,7 @@ import java.util.Set;
 
 public class MultipleEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation {
 
-    private Set<Data> keys;
+    protected Set<Data> keys;
 
     public MultipleEntryOperation() {
     }
@@ -54,29 +54,32 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
 
     @Override
     public void run() throws Exception {
-        final long now = getNow();
-        final Set<Data> keys = this.keys;
-        for (Data dataKey : keys) {
-            if (keyNotOwnedByThisPartition(dataKey)) {
+        long now = getNow();
+        for (Data key : keys) {
+            if (!isKeyProcessable(key)) {
                 continue;
             }
-            final Object oldValue = recordStore.get(dataKey, false);
 
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
+            Object value = recordStore.get(key, false);
 
-            final Data response = process(entry);
+            Map.Entry entry = createMapEntry(key, value);
+            if (!isEntryProcessable(entry)) {
+                continue;
+            }
 
-            addToResponses(dataKey, response);
+            Data response = process(entry);
+
+            addToResponses(key, response);
 
             // first call noOp, other if checks below depends on it.
-            if (noOp(entry, oldValue)) {
+            if (noOp(entry, value)) {
                 continue;
             }
-            if (entryRemoved(entry, dataKey, oldValue, now)) {
+            if (entryRemoved(entry, key, value, now)) {
                 continue;
             }
 
-            entryAddedOrUpdated(entry, dataKey, oldValue, now);
+            entryAddedOrUpdated(entry, key, value, now);
 
             evict();
         }
@@ -89,7 +92,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
 
     @Override
     public boolean shouldBackup() {
-        return entryProcessor.getBackupProcessor() != null;
+        return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override
@@ -135,5 +138,4 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             out.writeData(key);
         }
     }
-
 }

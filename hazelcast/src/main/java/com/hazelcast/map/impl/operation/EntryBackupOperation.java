@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
@@ -130,7 +131,9 @@ public class EntryBackupOperation extends MutatingKeyBasedMapOperation implement
     }
 
     private Map.Entry createMapEntry(Data key, Object value) {
-        return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
+        InternalSerializationService serializationService
+                = ((InternalSerializationService) getNodeEngine().getSerializationService());
+        return new LazyMapEntry(key, value, serializationService, mapContainer.getExtractors());
     }
 
     @Override

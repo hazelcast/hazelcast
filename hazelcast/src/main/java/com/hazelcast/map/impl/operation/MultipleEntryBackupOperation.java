@@ -41,24 +41,27 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
 
     @Override
     public void run() throws Exception {
-        final Set<Data> keys = this.keys;
-        for (Data dataKey : keys) {
-            if (keyNotOwnedByThisPartition(dataKey)) {
+        for (Data key : keys) {
+            if (!isKeyProcessable(key)) {
                 continue;
             }
-            final Object oldValue = recordStore.get(dataKey, true);
 
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
+            Object value = recordStore.get(key, true);
+
+            Map.Entry entry = createMapEntry(key, value);
+            if (!isEntryProcessable(entry)) {
+                continue;
+            }
 
             processBackup(entry);
 
-            if (noOp(entry, oldValue)) {
+            if (noOp(entry, value)) {
                 continue;
             }
-            if (entryRemovedBackup(entry, dataKey)) {
+            if (entryRemovedBackup(entry, key)) {
                 continue;
             }
-            entryAddedOrUpdatedBackup(entry, dataKey);
+            entryAddedOrUpdatedBackup(entry, key);
 
             evict();
         }

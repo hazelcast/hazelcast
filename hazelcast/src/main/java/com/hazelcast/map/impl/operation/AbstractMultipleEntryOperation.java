@@ -20,6 +20,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
@@ -64,7 +65,9 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
     }
 
     protected Map.Entry createMapEntry(Data key, Object value) {
-        return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
+        InternalSerializationService serializationService
+                = ((InternalSerializationService) getNodeEngine().getSerializationService());
+        return new LazyMapEntry(key, value, serializationService, mapContainer.getExtractors());
     }
 
     protected boolean hasRegisteredListenerForThisMap() {
@@ -241,9 +244,14 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         backupProcessor.processBackup(entry);
     }
 
-    protected boolean keyNotOwnedByThisPartition(Data key) {
-        final IPartitionService partitionService = getNodeEngine().getPartitionService();
-        return partitionService.getPartitionId(key) != getPartitionId();
+    protected boolean isKeyProcessable(Data key) {
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
+        return partitionService.getPartitionId(key) == getPartitionId();
+    }
+
+    // This method is overridden.
+    protected boolean isEntryProcessable(Map.Entry entry) {
+        return true;
     }
 
     public void setWanEventList(List<WanEventWrapper> wanEventList) {

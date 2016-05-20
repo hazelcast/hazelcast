@@ -55,7 +55,13 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     @Override
     public void run() throws Exception {
         try {
-            Object[] responses = executeOperations();
+            Object[] responses;
+            if (operationFactory instanceof PartitionAwareOperationFactory) {
+                responses = executePartitionAwareOperations();
+            } else {
+                responses = executeOperations();
+            }
+
             results = resolveResponses(responses);
         } catch (Exception e) {
             getLogger(getNodeEngine()).severe(e);
@@ -83,9 +89,38 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         return responses;
     }
 
+
+    private Object[] executePartitionAwareOperations() {
+        PartitionAwareOperationFactory operationFactory = (PartitionAwareOperationFactory) this.operationFactory;
+        operationFactory.init(getNodeEngine());
+
+        NodeEngine nodeEngine = getNodeEngine();
+        int[] operationFactoryPartitions = operationFactory.getPartitions();
+        partitions = operationFactoryPartitions == null ? partitions : operationFactoryPartitions;
+        Object[] responses = new Object[partitions.length];
+
+        for (int i = 0; i < partitions.length; i++) {
+            ResponseQueue responseQueue = new ResponseQueue();
+            responses[i] = responseQueue;
+
+            int partition = partitions[i];
+            Operation operation = operationFactory.createPartitionOperation(partition);
+            operation.setNodeEngine(nodeEngine)
+                    .setPartitionId(partition)
+                    .setReplicaIndex(getReplicaIndex())
+                    .setOperationResponseHandler(responseQueue)
+                    .setServiceName(getServiceName())
+                    .setService(getService())
+                    .setCallerUuid(getCallerUuid());
+            OperationAccessor.setCallerAddress(operation, getCallerAddress());
+            nodeEngine.getOperationService().executeOperation(operation);
+        }
+        return responses;
+    }
+
     /**
      * Replaces the {@link ResponseQueue} entries with its results.
-     *
+     * <p>
      * The responses array is reused to avoid the allocation of a new array.
      */
     private Object[] resolveResponses(Object[] responses) throws InterruptedException {
@@ -225,4 +260,6 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             }
         }
     }
+
+
 }

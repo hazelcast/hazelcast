@@ -42,7 +42,7 @@ public interface MapQueryEngine {
 
     /**
      * Executes a query a specific local partition.
-     *
+     * <p>
      * todo: what happens when the partition is not local?
      *
      * @param mapName     map name.
@@ -54,9 +54,9 @@ public interface MapQueryEngine {
 
     /**
      * Query all local partitions.
-     *
+     * <p>
      * todo: we need better explanation of difference between this method and
-     *  {@link #queryLocalPartitions(String, Predicate, IterationType)}
+     * {@link #queryLocalPartitions(String, Predicate, IterationType)}
      *
      * @param mapName       map name.
      * @param predicate     except paging predicate.
@@ -67,15 +67,15 @@ public interface MapQueryEngine {
     /**
      * Queries all partitions. Paging predicates are not allowed.
      *
-     * @param mapName   map name.
-     * @param predicate except paging predicate.
+     * @param mapName       map name.
+     * @param predicate     except paging predicate.
      * @param iterationType the IterationType
      */
     QueryResult invokeQueryAllPartitions(String mapName, Predicate predicate, IterationType iterationType);
 
     /**
      * Query all local partitions with a paging predicate.
-     *
+     * <p>
      * todo: it would be better to have a single queryLocal... method and let the implementation figure out how to deal
      * with a regular predicate and a paging predicate. No need to have that in the interface. The problem is that currently
      * the signatures don't match up. This implementation detail should not be exposed through the interface.
@@ -89,7 +89,7 @@ public interface MapQueryEngine {
 
     /**
      * Queries all partitions with a paging predicate.
-     *
+     * <p>
      * todo: it would be better to have single queryAll method and let the implementation figure out how to deal
      * with a paging predicate. See comment in {@link #queryLocalPartitionsWithPagingPredicate}
      *

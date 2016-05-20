@@ -41,6 +41,7 @@ import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -101,6 +102,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final MergePolicyProvider mergePolicyProvider;
     protected final MapQueryEngine mapQueryEngine;
+    protected final QueryOptimizer queryOptimizer;
     protected MapEventPublisher mapEventPublisher;
     protected MapService mapService;
     protected EventService eventService;
@@ -116,7 +118,8 @@ class MapServiceContextImpl implements MapServiceContext {
         this.localMapStatsProvider = createLocalMapStatsProvider();
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
-        this.mapQueryEngine = createMapQueryEngine();
+        this.queryOptimizer = newOptimizer(nodeEngine.getProperties());
+        this.mapQueryEngine = createMapQueryEngine(queryOptimizer);
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
     }
@@ -131,8 +134,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     // this method is overridden in another context.
-    MapQueryEngineImpl createMapQueryEngine() {
-        return new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getProperties()));
+    MapQueryEngineImpl createMapQueryEngine(QueryOptimizer queryOptimizer) {
+        return new MapQueryEngineImpl(this, queryOptimizer);
     }
 
     // this method is overridden in another context.
@@ -357,6 +360,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MapQueryEngine getMapQueryEngine(String mapName) {
         return mapQueryEngine;
+    }
+
+    @Override
+    public QueryOptimizer getQueryOptimizer() {
+        return queryOptimizer;
     }
 
     @Override
