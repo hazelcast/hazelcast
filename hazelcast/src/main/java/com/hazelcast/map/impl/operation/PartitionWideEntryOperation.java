@@ -95,7 +95,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
 
     @Override
     public boolean shouldBackup() {
-        return entryProcessor.getBackupProcessor() != null;
+        return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override

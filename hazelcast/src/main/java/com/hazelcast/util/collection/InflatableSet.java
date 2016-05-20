@@ -27,23 +27,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Provides fast {@link Set} implementation for cases where items are known to not
  * contain duplicates.
- *
+ * <p>
  * It requires creation via {@link com.hazelcast.util.collection.InflatableSet.Builder}
- *
+ * <p>
  * The builder doesn't call equals/hash methods on initial data insertion, hence it avoids
  * performance penalty in the case these methods are expensive. It also means it does
  * not detect duplicates - it's the responsibility of the caller to make sure no duplicated
  * entries are inserted.
- *
+ * <p>
  * Once InflatableSet is constructed via {@link Builder#build()} then it acts as a regular set. It has
  * been designed to mimic {@link HashSet}. On new entry insertion or lookup via
  * {@link #contains(Object)} it inflates itself: The backing list is copied into
  * internal {@link HashSet}. This obviously costs time and space. We are making a bet the
  * Set won't be modified in most cases.
- *
+ * <p>
  * It's intended to be used in cases where the contract mandates us to return Set,
  * but we know our data does not contain duplicates. It performs best in cases
  * biased towards sequential iteration.
@@ -96,6 +98,10 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
 
     public static <T> Builder<T> newBuilder(int initialCapacity) {
         return new Builder<T>(initialCapacity);
+    }
+
+    public static <T> Builder<T> newBuilder(List<T> list) {
+        return new Builder<T>(list);
     }
 
     @Override
@@ -250,6 +256,10 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
 
         private Builder(int initialCapacity) {
             this.list = new ArrayList<T>(initialCapacity);
+        }
+
+        private Builder(List<T> list) {
+            this.list = checkNotNull(list, "list cannot be null");
         }
 
         public Builder add(T item) {

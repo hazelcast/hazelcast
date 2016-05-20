@@ -29,6 +29,11 @@ public class InflatableSetTest {
         InflatableSet.newBuilder(-1);
     }
 
+    @Test(expected = NullPointerException.class)
+    public void whenNullListPassed_thenNullPointerException() {
+        InflatableSet.newBuilder(null);
+    }
+
     @Test
     public void serialization_whenInInitialLoadingAndEmpty() throws IOException, ClassNotFoundException {
         InflatableSet<Object> set = InflatableSet.newBuilder(0).build();

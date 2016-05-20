@@ -93,6 +93,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -1071,7 +1072,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapEntrySetCodec.ResponseParameters resultParameters = MapEntrySetCodec.decodeResponse(response);
 
         InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService
+                = ((InternalSerializationService) getContext().getSerializationService());
         for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);
@@ -1128,7 +1130,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapEntriesWithPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPredicateCodec.decodeResponse(response);
 
         InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(resultParameters.response.size());
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService
+                = ((InternalSerializationService) getContext().getSerializationService());
         for (Entry<Data, Data> row : resultParameters.response) {
             LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
             setBuilder.add(entry);

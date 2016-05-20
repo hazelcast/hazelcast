@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A {@link java.util.Map.Entry Map.Entry} implementation which serializes/de-serializes key and value objects on demand.
@@ -42,63 +42,20 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @see com.hazelcast.map.impl.operation.EntryOperation#createMapEntry(Data, Object)
  */
 
-public class LazyMapEntry implements Map.Entry, Serializable {
+public class LazyMapEntry extends CachedQueryEntry implements Serializable {
     private static final long serialVersionUID = 0L;
 
-    private transient Object keyObject;
-    private transient Object valueObject;
-    private transient Data keyData;
-    private transient Data valueData;
     private transient boolean modified;
-    private transient SerializationService serializationService;
 
     public LazyMapEntry() {
     }
 
-    public LazyMapEntry(Object key, Object value, SerializationService serializationService) {
-        init(key, value, serializationService);
+    public LazyMapEntry(Data key, Object value, InternalSerializationService serializationService) {
+        this(key, value, serializationService, null);
     }
 
-    public void init(Object key, Object value, SerializationService serializationService) {
-        checkNotNull(key, "key cannot be null");
-        checkNotNull(serializationService, "SerializationService cannot be null");
-
-        keyData = null;
-        keyObject = null;
-
-        if (key instanceof Data) {
-            this.keyData = (Data) key;
-        } else {
-            this.keyObject = key;
-        }
-
-        valueData = null;
-        valueObject = null;
-
-        if (value instanceof Data) {
-            this.valueData = (Data) value;
-        } else {
-            this.valueObject = value;
-        }
-
-        this.serializationService = serializationService;
-    }
-
-    @Override
-    public Object getKey() {
-        if (keyObject == null) {
-            keyObject = serializationService.toObject(keyData);
-        }
-        return keyObject;
-    }
-
-
-    @Override
-    public Object getValue() {
-        if (valueObject == null) {
-            valueObject = serializationService.toObject(valueData);
-        }
-        return valueObject;
+    public LazyMapEntry(Data key, Object value, InternalSerializationService serializationService, Extractors extractors) {
+        init(serializationService, key, value, extractors);
     }
 
     @Override
@@ -110,19 +67,6 @@ public class LazyMapEntry implements Map.Entry, Serializable {
         return oldValue;
     }
 
-    public Object getKeyData() {
-        if (keyData == null) {
-            keyData = serializationService.toData(keyObject);
-        }
-        return keyData;
-    }
-
-    public Object getValueData() {
-        if (valueData == null) {
-            valueData = serializationService.toData(valueObject);
-        }
-        return valueData;
-    }
 
     public boolean isModified() {
         return modified;

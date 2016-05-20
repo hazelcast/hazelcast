@@ -33,10 +33,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -59,6 +62,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
@@ -1145,6 +1149,77 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final List<Integer> actualOrder = processorMap.get(key);
         assertEquals("entry processor tasks executed in unexpected order", expectedOrder, actualOrder);
     }
+
+    @Test
+    public void test_executeOnEntriesWithPredicate_usesIndexes_whenIndexesAvailable() {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        IMap<Integer, Integer> map = node.getMap("test");
+        map.addIndex("__key", true);
+
+        for (int i = 0; i < 10; i++) {
+            map.put(i, i);
+        }
+
+        AtomicBoolean indexCalled = new AtomicBoolean(false);
+        map.executeOnEntries(new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                return null;
+            }
+        }, new IndexedTestPredicate(indexCalled));
+
+
+        assertTrue("isIndexed method of IndexAwarePredicate should be called", indexCalled.get());
+    }
+
+    @Test
+    public void test_executeOnEntriesWithPredicate_notTriesToUseIndexes_whenNoIndexAvailable() {
+        HazelcastInstance node = createHazelcastInstance(getConfig());
+        IMap<Integer, Integer> map = node.getMap("test");
+
+        for (int i = 0; i < 10; i++) {
+            map.put(i, i);
+        }
+
+        AtomicBoolean indexCalled = new AtomicBoolean(false);
+        map.executeOnEntries(new AbstractEntryProcessor() {
+            @Override
+            public Object process(Map.Entry entry) {
+                return null;
+            }
+        }, new IndexedTestPredicate(indexCalled));
+
+        assertFalse("isIndexed method of IndexAwarePredicate should not be called", indexCalled.get());
+    }
+
+    /**
+     * This predicate is used to check whether or not {@link IndexAwarePredicate#isIndexed} method is called.
+     */
+    private static class IndexedTestPredicate implements IndexAwarePredicate {
+
+        private final AtomicBoolean indexCalled;
+
+        public IndexedTestPredicate(AtomicBoolean indexCalled) {
+            this.indexCalled = indexCalled;
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            return null;
+        }
+
+        @Override
+        public boolean isIndexed(QueryContext queryContext) {
+            indexCalled.set(true);
+            return false;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            return false;
+        }
+    }
+
 
     private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
         private Integer id;

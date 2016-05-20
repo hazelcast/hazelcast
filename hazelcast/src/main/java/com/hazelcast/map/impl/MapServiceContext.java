@@ -27,6 +27,7 @@ import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
@@ -128,6 +129,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MapQueryEngine getMapQueryEngine(String name);
 
+    QueryOptimizer getQueryOptimizer();
+
     LocalMapStatsProvider getLocalMapStatsProvider();
 
     MapOperationProvider getMapOperationProvider(String name);
@@ -137,4 +140,5 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
     void incrementOperationStats(long startTime, LocalMapStatsImpl localMapStats, String mapName, Operation operation);
 
     void removeMapContainer(MapContainer mapContainer);
+
 }

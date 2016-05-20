@@ -266,7 +266,7 @@ public class MapContainer {
         this.evictor = evictor;
     }
 
-    Extractors getExtractors() {
+    public Extractors getExtractors() {
         return extractors;
     }
 
