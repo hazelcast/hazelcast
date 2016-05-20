@@ -219,21 +219,16 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         }
     }
 
-    public static List<Data> getKeys(BatchNearCacheInvalidation batch) {
-        return getKeysExcludingSource(batch, null);
-    }
 
-    public static List<Data> getKeysExcludingSource(BatchNearCacheInvalidation batch, String excludedSourceUuid) {
+    public static List<Data> getKeys(BatchNearCacheInvalidation batch) {
         List<SingleNearCacheInvalidation> invalidations = batch.getInvalidations();
 
         List<Data> keyList = null;
         for (SingleNearCacheInvalidation invalidation : invalidations) {
-            if (excludedSourceUuid == null || !invalidation.getSourceUuid().equals(excludedSourceUuid)) {
-                if (keyList == null) {
-                    keyList = new ArrayList<Data>(invalidations.size());
-                }
-                keyList.add(invalidation.getKey());
+            if (keyList == null) {
+                keyList = new ArrayList<Data>(invalidations.size());
             }
+            keyList.add(invalidation.getKey());
         }
 
         return keyList == null ? EMPTY_LIST : keyList;

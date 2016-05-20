@@ -44,6 +44,11 @@ public interface NearCache<K, V> {
     Object NULL_OBJECT = new Object();
 
     /**
+     * Value of a marker {@link NearCacheRecord}
+     */
+    Object MARKER_VALUE = new Object();
+
+    /**
      * Gets the name of the <code>this</code> {@link com.hazelcast.cache.impl.nearcache.NearCache} instance.
      *
      * @return the name of the <code>this</code> {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
@@ -72,6 +77,23 @@ public interface NearCache<K, V> {
      * @param key the key of the value will be removed
      */
     boolean remove(K key);
+
+    /**
+     * Maps a key to a marker object.
+     *
+     * @param key key with which a marker is associated
+     * @return marker object associated to this key
+     */
+    Object mapKeyToMarker(K key);
+
+    /**
+     * Updates a key if it is currently mapped to the marker value.
+     *
+     * @param key      key with which the specified value is associated
+     * @param marker   expected current mapped value for the key
+     * @param newValue value to be associated with the specified key
+     */
+    void updateKeyIfMappedToMarker(K key, Object marker, V newValue);
 
     /**
      * @return
@@ -116,5 +138,4 @@ public interface NearCache<K, V> {
      * @return the count of stored records
      */
     int size();
-
 }

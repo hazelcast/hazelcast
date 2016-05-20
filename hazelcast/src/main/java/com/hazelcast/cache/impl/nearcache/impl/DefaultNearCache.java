@@ -138,6 +138,16 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     }
 
     @Override
+    public Object mapKeyToMarker(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateKeyIfMappedToMarker(K key, Object marker, V newValue) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean isInvalidateOnChange() {
         return nearCacheConfig.isInvalidateOnChange();
     }

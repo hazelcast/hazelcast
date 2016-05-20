@@ -38,6 +38,10 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
+
 /**
  * Implementation of the {@link NearCache}.
  * <p/>
@@ -45,8 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @param <K>
  */
-public class ClientHeapNearCache<K>
-        implements NearCache<K, Object> {
+public class ClientHeapNearCache<K> implements NearCache<K, Object> {
 
     /**
      * Eviction factor
@@ -81,7 +84,7 @@ public class ClientHeapNearCache<K>
         maxSize = nearCacheConfig.getMaxSize();
         maxIdleMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getMaxIdleSeconds());
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        if (inMemoryFormat != InMemoryFormat.BINARY && inMemoryFormat != InMemoryFormat.OBJECT) {
+        if (inMemoryFormat != BINARY && inMemoryFormat != OBJECT) {
             throw new IllegalArgumentException("Illegal in-memory-format: " + inMemoryFormat);
         }
         timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
@@ -97,26 +100,7 @@ public class ClientHeapNearCache<K>
 
     @Override
     public void put(K key, Object object) {
-        fireTtlCleanup();
-        if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
-            return;
-        }
-        if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
-            fireEvictCache();
-        }
-        Object value = null;
-        if (object != null) {
-            SerializationService serializationService = context.getSerializationService();
-            if (inMemoryFormat == InMemoryFormat.BINARY) {
-                value = serializationService.toData(object);
-            } else if (inMemoryFormat == InMemoryFormat.OBJECT) {
-                value = serializationService.toObject(object);
-            } else {
-                throw new IllegalArgumentException();
-            }
-        }
-        value = value == null ? NULL_OBJECT : value;
-        cache.put(key, new NearCacheRecord(key, value));
+        throw new UnsupportedOperationException();
     }
 
     private void fireEvictCache() {
@@ -169,7 +153,13 @@ public class ClientHeapNearCache<K>
                         try {
                             lastCleanup = Clock.currentTimeMillis();
                             for (Map.Entry<K, NearCacheRecord> entry : cache.entrySet()) {
-                                if (entry.getValue().isExpired(maxIdleMillis, timeToLiveMillis)) {
+                                NearCacheRecord nearCacheRecord = entry.getValue();
+
+                                if (nearCacheRecord.getValue() == MARKER_VALUE) {
+                                    continue;
+                                }
+
+                                if (nearCacheRecord.isExpired(maxIdleMillis, timeToLiveMillis)) {
                                     cache.remove(entry.getKey());
                                 }
                             }
@@ -196,19 +186,22 @@ public class ClientHeapNearCache<K>
         fireTtlCleanup();
         NearCacheRecord record = cache.get(key);
         if (record != null) {
+            Object value = record.getValue();
+            if (value == MARKER_VALUE) {
+                return null;
+            }
             record.access();
             if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
                 cache.remove(key);
                 stats.incrementMisses();
                 return null;
             }
-            if (record.getValue().equals(NULL_OBJECT)) {
+            if (value == NULL_OBJECT) {
                 stats.incrementMisses();
                 return NULL_OBJECT;
             }
             stats.incrementHits();
-            return inMemoryFormat.equals(InMemoryFormat.BINARY)
-                    ? context.getSerializationService().toObject(record.getValue()) : record.getValue();
+            return inMemoryFormat == BINARY ? context.getSerializationService().toObject(value) : value;
         } else {
             stats.incrementMisses();
             return null;
@@ -218,6 +211,40 @@ public class ClientHeapNearCache<K>
     @Override
     public boolean remove(K key) {
         return null != cache.remove(key);
+    }
+
+    @Override
+    public Object mapKeyToMarker(K key) {
+        NearCacheRecord nearCacheRecord = new NearCacheRecord(key, MARKER_VALUE);
+        cache.put(key, nearCacheRecord);
+        return nearCacheRecord;
+    }
+
+    @Override
+    public void updateKeyIfMappedToMarker(K key, Object marker, Object newValue) {
+        fireTtlCleanup();
+        if (evictionPolicy == NONE && cache.size() > maxSize) {
+            cache.remove(key, marker);
+            return;
+        }
+        if (evictionPolicy != NONE && cache.size() > maxSize) {
+            fireEvictCache();
+        }
+        Object value = null;
+        if (newValue != null) {
+            SerializationService serializationService = context.getSerializationService();
+            if (inMemoryFormat == BINARY) {
+                value = serializationService.toData(newValue);
+            } else if (inMemoryFormat == OBJECT) {
+                value = serializationService.toObject(newValue);
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
+        value = value == null ? NULL_OBJECT : value;
+
+        NearCacheRecord nearCacheRecord = new NearCacheRecord(key, value);
+        cache.replace(key, ((NearCacheRecord) marker), nearCacheRecord);
     }
 
     @Override

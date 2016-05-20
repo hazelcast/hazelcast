@@ -22,7 +22,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,9 +32,8 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -70,6 +68,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.valueOf;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -707,7 +706,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             }
         }, callback);
 
-        latch.await(3, TimeUnit.SECONDS);
+        latch.await(3, SECONDS);
         NearCacheStats nearCacheStats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(mapSize - 1, nearCacheStats.getOwnedEntryCount());
     }
@@ -881,11 +880,12 @@ public class NearCacheTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(mapSize);
 
         addListener(map, latch);
-        populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
+        populateMapWithExpirableEntries(map, mapSize, 15, SECONDS);
         pullEntriesToNearCache(map, mapSize);
+        assertNearCacheSize(map, mapSize);
 
         waitUntilEvictionEventsReceived(latch);
-        assertNearCacheSize(mapSize, mapName, map);
+        assertNearCacheSize(map, mapSize);
     }
 
     protected void waitUntilEvictionEventsReceived(CountDownLatch latch) {
@@ -893,12 +893,12 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     protected void addListener(IMap<Integer, Integer> map, final CountDownLatch latch) {
-        map.addLocalEntryListener(new EntryAdapter<Integer, Integer>() {
+        map.addEntryListener(new EntryEvictedListener<Integer, Integer>() {
             @Override
             public void entryEvicted(EntryEvent<Integer, Integer> event) {
                 latch.countDown();
             }
-        });
+        }, true);
     }
 
     protected void pullEntriesToNearCache(IMap<Integer, Integer> map, int mapSize) {
@@ -919,18 +919,16 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
     }
 
-    protected void assertNearCacheSize(final int expectedSize, final String mapName, final Map map) {
+    protected void assertNearCacheSize(final Map map, final int expectedSize) {
 
         final AssertTask assertionTask = new AssertTask() {
             @Override
             public void run() throws Exception {
-                final MapProxyImpl mapProxy = (MapProxyImpl) map;
-                final MapService mapService = (MapService) mapProxy.getService();
-                final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-                final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-                final NearCache nearCache = nearCacheProvider.getOrCreateNearCache(mapName);
+                NearCachedMapProxyImpl mapProxy = (NearCachedMapProxyImpl) map;
+                NearCache nearCache = mapProxy.getNearCache();
 
-                assertEquals(expectedSize, nearCache.size());
+                int size = nearCache.size();
+                assertEquals("Map size " + map.size() + " and NearCache size " + size + ", but should be " + expectedSize, expectedSize, size);
             }
         };
 

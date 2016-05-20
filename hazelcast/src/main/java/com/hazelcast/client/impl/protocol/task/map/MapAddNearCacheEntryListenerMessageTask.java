@@ -34,7 +34,7 @@ import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
-import static com.hazelcast.map.impl.nearcache.BatchInvalidator.getKeysExcludingSource;
+import static com.hazelcast.map.impl.nearcache.BatchInvalidator.getKeys;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public class MapAddNearCacheEntryListenerMessageTask
@@ -101,7 +101,7 @@ public class MapAddNearCacheEntryListenerMessageTask
 
         private void sendEvent(Invalidation event) {
             if (event instanceof BatchNearCacheInvalidation) {
-                List<Data> keys = getKeysExcludingSource(((BatchNearCacheInvalidation) event), endpoint.getUuid());
+                List<Data> keys = getKeys(((BatchNearCacheInvalidation) event));
                 if (!isEmpty(keys)) {
                     sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
                 }
