@@ -288,8 +288,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     private long getAdjustedExpireTime(Duration duration, long now) {
-        // TODO Reverted back because of fail on EE but it should be like
-        // `duration.getDurationAmount() != 0 ? duration.getAdjustedTime(now) : CacheRecord.TIME_NOT_AVAILABLE;`
         return duration.getAdjustedTime(now);
     }
 
