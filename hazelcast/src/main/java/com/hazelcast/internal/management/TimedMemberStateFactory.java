@@ -202,7 +202,11 @@ public class TimedMemberStateFactory {
             for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
                 if (cacheConfig.isStatisticsEnabled() && count < maxVisibleInstanceCount) {
                     CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
-                    count = handleCache(memberState, count, cacheConfig, statistics, longInstanceNames);
+                    //Statistics can be null for a short period of time since config is created at first then stats map
+                    //is filled.git
+                    if (statistics != null) {
+                        count = handleCache(memberState, count, cacheConfig, statistics, longInstanceNames);
+                    }
                 }
             }
         }
