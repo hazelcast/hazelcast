@@ -246,7 +246,7 @@ public final class ServiceManagerImpl implements ServiceManager {
             return;
         }
 
-        Object service = serviceConfig.getServiceImpl();
+        Object service = serviceConfig.getImplementation();
         if (service == null) {
             service = createServiceObject(serviceConfig.getClassName());
         }

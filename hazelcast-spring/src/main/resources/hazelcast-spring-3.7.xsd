@@ -56,6 +56,14 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
+                                              use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="queue" minOccurs="0" maxOccurs="unbounded">
@@ -109,6 +117,21 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
+                                              use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="empty-queue-ttl" use="optional" default="-1">
+                                    <xs:simpleType>
+                                        <xs:restriction base="xs:int">
+                                            <xs:minInclusive value="-1"/>
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="map" minOccurs="0" maxOccurs="unbounded">
@@ -121,15 +144,14 @@
                                                             maxOccurs="1"/>
                                             </xs:sequence>
                                             <xs:attribute name="enabled" use="required" type="xs:string"/>
-                                            <xs:attribute name="class-name" use="optional" type="xs:string">
-                                                <xs:annotation>
-                                                    <xs:documentation>
-                                                        Name of the class implementing MapLoader and/or MapStore.
-                                                    </xs:documentation>
-                                                </xs:annotation>
-                                            </xs:attribute>
+                                            <xs:attributeGroup ref="class-or-bean-name">
+                                                  <xs:annotation>
+                                                      <xs:documentation>
+                                                        Name of the class or bean implementing MapLoader and/or MapStore.
+                                                      </xs:documentation>
+                                                  </xs:annotation>
+                                            </xs:attributeGroup>
                                             <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
-                                            <xs:attribute name="implementation" use="optional" type="xs:string"/>
                                             <xs:attribute name="factory-implementation" use="optional"
                                                           type="xs:string"/>
                                             <xs:attribute name="write-delay-seconds" use="required" type="xs:string">
@@ -262,6 +284,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
+                                    <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">
@@ -794,6 +817,14 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
+                                              use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="set" minOccurs="0" maxOccurs="unbounded">
@@ -831,6 +862,14 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             Count of asynchronous backups.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
+                                              use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1119,20 +1158,17 @@
     </xs:element>
 
     <xs:complexType name="serialization-factory">
+        <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="factory-id" type="xs:string" use="required"/>
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="global-serializer">
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="override-java-serialization" type="parameterized-boolean" default="false" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="serializer">
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="type-class" type="xs:string" use="required"/>
     </xs:complexType>
 
@@ -1497,12 +1533,29 @@
     </xs:complexType>
 
     <xs:complexType name="multicast">
-        <xs:sequence/>
+        <xs:sequence>
+            <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Includes IP addresses of trusted members. When a node wants to join to the cluster,
+                        its join request will be rejected if it is not a trusted member. You can give an IP
+                        addresses range using the wildcard (*) on the last digit of the IP address
+                        (e.g. 192.168.1.* or 192.168.1.100-110).
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="interface" type="interface" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
         <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
         <xs:attribute name="multicast-group" type="xs:string" use="optional" default="224.2.2.3"/>
         <xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
         <xs:attribute name="multicast-timeout-seconds" type="xs:string" use="optional" default="2"/>
         <xs:attribute name="multicast-time-to-live" type="xs:string" use="optional" default="32"/>
+        <xs:attribute name="loopback-mode-enabled" type="xs:boolean" use="optional" default="true"/>
     </xs:complexType>
 
     <xs:complexType name="aws">
@@ -1510,6 +1563,7 @@
         <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
         <xs:attribute name="access-key" type="xs:string" use="optional"/>
         <xs:attribute name="secret-key" type="xs:string" use="optional"/>
+        <xs:attribute name="iam-role" type="xs:string" use="optional"/>
         <xs:attribute name="region" type="xs:string" use="optional" default="us-east-1"/>
         <xs:attribute name="host-header" type="xs:string" use="optional" default="ec2.amazonaws.com"/>
         <xs:attribute name="security-group-name" type="xs:string" use="optional" default=""/>
@@ -1526,17 +1580,16 @@
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="discovery-service-provider">
-        <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
     <xs:complexType name="discovery-node-filter">
-        <xs:attribute name="class-name" type="non-space-string" use="optional"/>
-        <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
     <xs:complexType name="discovery-strategy">
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
-        <xs:attribute name="class-name" type="non-space-string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="discovery-strategy-factory" type="non-space-string" use="optional"/>
     </xs:complexType>
 
@@ -1548,13 +1601,11 @@
 
     <xs:complexType name="map-merge-policy">
         <xs:attribute name="name" type="xs:string" use="required"/>
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
     <xs:complexType name="map-eviction-policy">
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
     <xs:complexType name="outbound-ports">
@@ -1724,8 +1775,7 @@
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" default="false" type="xs:string"/>
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
     <xs:complexType name="symmetric-encryption">
@@ -1762,8 +1812,7 @@
                         <xs:element name="queue-capacity" type="xs:integer" default="10000" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
-                    <xs:attribute name="class-name" type="non-space-string" use="optional"/>
-                    <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+                    <xs:attributeGroup ref="class-or-bean-name"/>
                     <xs:attribute name="group-name" use="required">
                         <xs:simpleType>
                             <xs:restriction base="xs:string"/>
@@ -1776,8 +1825,7 @@
                     <xs:sequence>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
-                    <xs:attribute name="class-name" type="non-space-string" use="optional"/>
-                    <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+                    <xs:attributeGroup ref="class-or-bean-name"/>
                 </xs:complexType>
             </xs:element>
         </xs:sequence>
@@ -1814,8 +1862,7 @@
         <xs:attribute name="synchronous" type="parameterized-boolean" use="optional" default="false"/>
     </xs:complexType>
     <xs:complexType name="listener">
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
     <xs:complexType name="item-listener">
         <xs:complexContent>
@@ -1839,8 +1886,7 @@
                     <xs:sequence>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
-                    <xs:attribute name="class-name" type="non-space-string" use="optional"/>
-                    <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+                    <xs:attributeGroup ref="class-or-bean-name"/>
                 </xs:complexType>
             </xs:element>
             <xs:element name="member-login-modules" type="login-modules" minOccurs="0" maxOccurs="1"/>
@@ -1850,8 +1896,7 @@
                     <xs:sequence>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
-                    <xs:attribute name="class-name" type="non-space-string" use="optional"/>
-                    <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+                    <xs:attributeGroup ref="class-or-bean-name"/>
                 </xs:complexType>
             </xs:element>
             <xs:element name="client-permissions" minOccurs="0" maxOccurs="1">
@@ -1898,8 +1943,7 @@
     </xs:complexType>
 
     <xs:complexType name="interceptor">
-        <xs:attribute name="class-name" type="non-space-string" use="optional"/>
-        <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
     </xs:complexType>
 
     <xs:complexType name="login-modules">
@@ -1912,7 +1956,7 @@
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
-        <xs:attribute name="class-name" type="non-space-string" use="required"/>
+        <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="usage" use="optional" default="required">
             <xs:simpleType>
                 <xs:union>
@@ -2075,7 +2119,13 @@
     <xs:complexType name="service">
         <xs:sequence>
             <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Deprecated element, subject to remove. Please use class-name/implementation attributes instead
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
             <xs:element name="configuration" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
@@ -2086,6 +2136,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:sequence>
+        <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="enabled" type="parameterized-boolean" default="true"/>
     </xs:complexType>
 
@@ -2585,4 +2636,9 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:attributeGroup name="class-or-bean-name">
+        <xs:attribute name="class-name" type="non-space-string" use="optional"/>
+        <xs:attribute name="implementation" type="non-space-string" use="optional"/>
+    </xs:attributeGroup>
 </xs:schema>

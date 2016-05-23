@@ -82,7 +82,11 @@
                 </hz:outbound-ports>
                 <hz:join>
                     <hz:multicast enabled="${boolean.false}" multicast-group="224.2.2.3" multicast-port="54327"
-                                  multicast-time-to-live="16" multicast-timeout-seconds="8"/>
+                                  multicast-time-to-live="16" multicast-timeout-seconds="8" loopback-mode-enabled="false">
+                        <hz:trusted-interfaces>
+                            <hz:interface>10.10.10.*</hz:interface>
+                        </hz:trusted-interfaces>
+                    </hz:multicast>
                     <hz:tcp-ip enabled="${boolean.true}">
                         <hz:required-member>127.0.0.1:5700</hz:required-member>
                         <!--                         <hz:members>${cluster.members}</hz:members> -->
@@ -91,7 +95,7 @@
                     </hz:tcp-ip>
                     <hz:aws enabled="false" access-key="sample-access-key" secret-key="sample-secret-key"
                             region="sample-region" security-group-name="sample-group"
-                            tag-key="sample-tag-key" tag-value="sample-tag-value"/>
+                            tag-key="sample-tag-key" tag-value="sample-tag-value" iam-role="sample-role"/>
                     <hz:discovery-strategies>
                         <hz:node-filter implementation="dummyNodeFilter"/>
                         <hz:discovery-strategy discovery-strategy-factory="dummyDiscoveryStrategyFactory">
@@ -142,6 +146,7 @@
             <hz:executor-service name="testExec2"
                                  pool-size="5"
                                  queue-capacity="300"
+                                 statistics-enabled="false"
             />
             <hz:queue name="testQ"
                       max-size="1000"
@@ -155,6 +160,8 @@
                       max-size="2500"
                       backup-count="1"
                       async-backup-count="1"
+                      statistics-enabled="false"
+                      empty-queue-ttl="100"
             />
             <hz:map name="testMap"
                     backup-count="2"
@@ -269,6 +276,10 @@
                 </hz:partition-lost-listeners>
             </hz:map>
 
+            <hz:map name="mapWithPartitionStrategy">
+                <hz:partition-strategy>com.hazelcast.spring.DummyPartitionStrategy</hz:partition-strategy>
+            </hz:map>
+
             <hz:map name="mapWithMapEvictionPolicyClassName">
                 <hz:map-eviction-policy class-name="com.hazelcast.map.eviction.LRUEvictionPolicy"/>
             </hz:map>
@@ -298,6 +309,19 @@
                     <hz:entry-listener implementation="dummyEntryListener" local="true"/>
                 </hz:entry-listeners>
             </hz:multimap>
+
+            <hz:list name="testList"
+                      max-size="9999"
+                      backup-count="1"
+                      async-backup-count="1"
+                      statistics-enabled="false"
+            />
+            <hz:set name="testSet"
+                      max-size="7777"
+                      backup-count="0"
+                      async-backup-count="0"
+                      statistics-enabled="false"
+            />
 
             <hz:topic name="testTopic">
                 <hz:statistics-enabled>false</hz:statistics-enabled>
@@ -365,7 +389,7 @@
             </hz:member-attributes>
 
             <hz:services>
-                <hz:service>
+                <hz:service implementation="dummyService">
                     <hz:name>my-service</hz:name>
                     <hz:class-name>com.hazelcast.spring.MyService</hz:class-name>
                     <hz:properties>
@@ -430,5 +454,6 @@
     <bean id="dummyNodeFilter" class="com.hazelcast.spring.DummyNodeFilter"/>
     <bean id="dummyDiscoveryStrategyFactory" class="com.hazelcast.spring.DummyDiscoveryStrategyFactory"/>
     <bean id="dummyDiscoveryServiceProvider" class="com.hazelcast.spring.DummyDiscoveryServiceProvider"/>
+    <bean id="dummyService" class="com.hazelcast.spring.MyService"/>
 
 </beans>

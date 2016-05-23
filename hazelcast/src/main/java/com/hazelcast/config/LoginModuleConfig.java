@@ -26,6 +26,7 @@ import java.util.Properties;
 public class LoginModuleConfig {
 
     private String className;
+    private Object implementation;
     private LoginModuleUsage usage;
     private Properties properties = new Properties();
 
@@ -72,6 +73,10 @@ public class LoginModuleConfig {
         return className;
     }
 
+    public Object getImplementation() {
+        return implementation;
+    }
+
     public Properties getProperties() {
         return properties;
     }
@@ -82,6 +87,11 @@ public class LoginModuleConfig {
 
     public LoginModuleConfig setClassName(String className) {
         this.className = className;
+        return this;
+    }
+
+    public LoginModuleConfig setImplementation(Object implementation) {
+        this.implementation = implementation;
         return this;
     }
 
@@ -97,6 +107,7 @@ public class LoginModuleConfig {
 
     @Override
     public String toString() {
-        return "LoginModuleConfig{className='" + className + "', usage=" + usage + ", properties=" + properties + '}';
+        return "LoginModuleConfig{className='" + className + "', usage=" + usage
+                + ", implementation=" + implementation + ", properties=" + properties + '}';
     }
 }
