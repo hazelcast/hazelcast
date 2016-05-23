@@ -32,7 +32,7 @@ public interface ObjectWriter<T> {
      * @param object              - object to write;
      * @param objectDataOutput    - source for binary object's representation;
      * @param objectWriterFactory - factory for the object writers;
-     * @throws Exception if any exception
+     * @throws IOException if any exception
      */
     void writeType(T object, ObjectDataOutput objectDataOutput, ObjectWriterFactory objectWriterFactory)
             throws IOException;
@@ -43,7 +43,7 @@ public interface ObjectWriter<T> {
      * @param object              - object to write;
      * @param objectDataOutput    - source for binary object's representation;
      * @param objectWriterFactory - factory for the object writers;
-     * @throws Exception if any exception
+     * @throws IOException if any exception
      */
     void writePayLoad(T object, ObjectDataOutput objectDataOutput, ObjectWriterFactory objectWriterFactory)
             throws IOException;
@@ -54,7 +54,7 @@ public interface ObjectWriter<T> {
      * @param object              - object to write;
      * @param objectDataOutput    - source for binary object's representation;
      * @param objectWriterFactory - factory for the object writers;
-     * @throws Exception if any exception
+     * @throws IOException if any exception
      */
     void write(T object, ObjectDataOutput objectDataOutput, ObjectWriterFactory objectWriterFactory)
             throws IOException;

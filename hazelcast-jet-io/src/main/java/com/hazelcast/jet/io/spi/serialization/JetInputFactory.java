@@ -25,10 +25,12 @@ import com.hazelcast.internal.memory.MemoryManager;
 public interface JetInputFactory {
 
     /**
-     * @param memoryManager - memory manager to be used for de-serialization
-     * @param service       - instance of serialization service
+     * @param memoryManager - memory manager to be used for de-serialization;
+     * @param service       - instance of serialization service;
+     * @param useBigEndian  - defines if big-endian would be used;
      * @return JetDataInput object to read de-serialized data
      */
     JetDataInput createInput(MemoryManager memoryManager,
-                             JetSerializationService service, boolean useBigEndian);
+                             JetSerializationService service,
+                             boolean useBigEndian);
 }
