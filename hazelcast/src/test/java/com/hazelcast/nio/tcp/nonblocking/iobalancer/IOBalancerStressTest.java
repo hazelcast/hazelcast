@@ -32,7 +32,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,7 +58,6 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         HazelcastInstanceFactory.terminateAll();
     }
 
-    @Repeat(25)
     @Test
     public void testEachConnectionUseDifferentSelectorEventually() {
         Config config = new Config();

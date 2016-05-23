@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -218,7 +217,6 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
         assertEquals(0, semaphore.availablePermits());
     }
 
-    @Repeat(10)
     @Test(timeout = 30000)
     public void testMultipleRelease_whenBlockedAcquireThreads() throws InterruptedException {
         int numberOfPermits = 10;
