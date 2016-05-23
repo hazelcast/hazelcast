@@ -24,8 +24,9 @@ import com.hazelcast.internal.memory.MemoryManager;
  */
 public interface JetOutputFactory {
     /**
-     * @param memoryManager - memory manager to be used for serialization
-     * @param service       - instance of the  serialization service
+     * @param memoryManager - memory manager to be used for serialization;
+     * @param service       - instance of the  serialization service;
+     * @param useBigEndian  - defines if big-endian would be used;
      * @return JetDataOutput object to read serialize data
      */
     JetDataOutput createOutput(MemoryManager memoryManager,
