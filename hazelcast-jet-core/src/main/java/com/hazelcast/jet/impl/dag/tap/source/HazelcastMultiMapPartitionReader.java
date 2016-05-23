@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.dag.tap.source;
 
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.data.tuple.TupleIterator;
+import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.spi.container.ContainerDescriptor;
@@ -107,7 +107,7 @@ public class HazelcastMultiMapPartitionReader<K, V> extends AbstractHazelcastRea
                 getPartitionId()
         ).getCollectionContainer(getName());
         Iterator<Map.Entry<Data, MultiMapValue>> it = multiMapContainer.getMultiMapValues().entrySet().iterator();
-        this.iterator = new TupleIterator<Map.Entry<Data, MultiMapValue>, K, V>(it, tupleConverter, ss);
+        this.iterator = new JetTupleIterator<Map.Entry<Data, MultiMapValue>, K, V>(it, tupleConverter, ss);
     }
 
     @Override

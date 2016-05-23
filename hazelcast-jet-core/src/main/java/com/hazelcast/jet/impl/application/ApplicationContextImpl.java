@@ -21,7 +21,9 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.jet.api.JetApplicationManager;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.application.ExecutorContext;
-import com.hazelcast.jet.api.application.IOContext;
+import com.hazelcast.jet.impl.data.io.JetTupleDataType;
+import com.hazelcast.jet.io.impl.IOContextImpl;
+import com.hazelcast.jet.io.spi.IOContext;
 import com.hazelcast.jet.api.application.localization.LocalizationStorage;
 import com.hazelcast.jet.api.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.api.data.io.SocketReader;
@@ -148,7 +150,7 @@ public class ApplicationContextImpl implements ApplicationContext {
         this.hzToAddressMapping = new HashMap<Address, Address>();
         this.accumulators = new CopyOnWriteArrayList<ConcurrentMap<CounterKey, Accumulator>>();
         this.applicationMaster = createApplicationMaster(nodeEngine);
-        this.ioContext = new IOContextImpl();
+        this.ioContext = new IOContextImpl(JetTupleDataType.INSTANCE);
     }
 
     private ApplicationMasterImpl createApplicationMaster(NodeEngine nodeEngine) {
@@ -166,7 +168,9 @@ public class ApplicationContextImpl implements ApplicationContext {
 
     @Override
     public boolean validateOwner(Address applicationOwner) {
-        return this.owner.compareAndSet(null, applicationOwner) || (this.owner.compareAndSet(applicationOwner, applicationOwner));
+        return (this.owner.compareAndSet(null, applicationOwner))
+                ||
+                (this.owner.compareAndSet(applicationOwner, applicationOwner));
     }
 
     @Override

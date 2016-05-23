@@ -58,6 +58,13 @@
             <version>${hazelcast.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-jet-io</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+
         <!--TEST DEPENDENCIES-->
         <dependency>
             <groupId>com.hazelcast</groupId>

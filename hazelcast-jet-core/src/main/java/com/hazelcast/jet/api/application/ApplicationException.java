@@ -45,6 +45,20 @@ public class ApplicationException extends RuntimeException {
         this.reason = null;
     }
 
+    @Override
+    public Throwable getCause() {
+        if ((this.reason != null) && (this.reason instanceof Throwable)) {
+            return (Throwable) this.reason;
+        }
+
+        return null;
+    }
+
+    @Override
+    public String getMessage() {
+        return toString();
+    }
+
     public String toString() {
         if (this.initiatorAddress != null) {
             String error = "Application was invalidated by member with address: " + initiatorAddress;

@@ -27,6 +27,7 @@ import com.hazelcast.jet.spi.container.ContainerListener;
 import com.hazelcast.jet.spi.container.CounterKey;
 import com.hazelcast.jet.spi.counters.Accumulator;
 import com.hazelcast.jet.spi.dag.DAG;
+import com.hazelcast.jet.io.spi.IOContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 

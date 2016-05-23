@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_EXECUTION_COMPLETED;
 import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_EXECUTION_ERROR;
-import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_INTERRUPTED;
 import static com.hazelcast.jet.api.container.task.TaskEvent.TASK_READY_FOR_FINALIZATION;
 
 
@@ -60,14 +59,6 @@ public class DefaultEventProcessorFactory implements EventProcessorFactory {
                 processingContainer
         ));
         this.processorMap.put(TASK_READY_FOR_FINALIZATION, new TaskEventFinalizationProcessor(
-                completedTasks,
-                interruptedTasks,
-                readyForFinalizationTasksCounter,
-                containerTasks,
-                containerContext,
-                processingContainer
-        ));
-        this.processorMap.put(TASK_INTERRUPTED, new TaskEventInterruptedProcessor(
                 completedTasks,
                 interruptedTasks,
                 readyForFinalizationTasksCounter,

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.spi.data.tuple;
 
+import com.hazelcast.jet.io.spi.tuple.Tuple;
 import com.hazelcast.jet.spi.PartitionIdAware;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 import com.hazelcast.jet.spi.strategy.CalculationStrategyAware;
@@ -87,17 +88,4 @@ public interface JetTuple<K, V> extends CalculationStrategyAware, PartitionIdAwa
      * @return - Hazelcast Data object;
      */
     Data getValueData(int index, CalculationStrategy calculationStrategy, NodeEngine nodeEngine);
-
-    /**
-     * @return - clone of key's part array.
-     * Data will not be cloned;
-     */
-
-    K[] cloneKeys();
-
-    /**
-     * @return - clone of value's part array.
-     * Data will not be cloned;
-     */
-    V[] cloneValues();
 }

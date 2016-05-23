@@ -16,22 +16,13 @@
 
 package com.hazelcast.jet.spi.data.tuple;
 
+import com.hazelcast.jet.io.spi.tuple.TupleFactory;
 import com.hazelcast.jet.spi.strategy.CalculationStrategy;
 
 /**
- * Factory to create tuple;
+ * Factory to create jet-tuple;
  */
-public interface JetTupleFactory {
-    /**
-     * Will create tuple with 1-element key part and 1-element value part;
-     *
-     * @param k   - value of the key part;
-     * @param v-  value of the value part;
-     * @param <K> - type of the key part;
-     * @param <V> - value of the key part;
-     * @return - constructed tuple;
-     */
-    <K, V> JetTuple<K, V> tuple(K k, V v);
+public interface JetTupleFactory extends TupleFactory {
 
     /**
      * Will create tuple with 1-element key part and 1-element value part;
@@ -46,16 +37,6 @@ public interface JetTupleFactory {
      */
     <K, V> JetTuple<K, V> tuple(K k, V v, int partitionId, CalculationStrategy calculationStrategy);
 
-    /**
-     * Will create tuple with 1-element key part and multi-element value part
-     *
-     * @param k   - value of the key part
-     * @param v-  values of the value part
-     * @param <K> - type of the key part
-     * @param <V> - value of the key part
-     * @return - constructed tuple;
-     */
-    <K, V> JetTuple<K, V> tuple(K k, V[] v);
 
     /**
      * Will create tuple with 1-element key part and multi-element value part;
@@ -69,17 +50,6 @@ public interface JetTupleFactory {
      * @return - constructed tuple;
      */
     <K, V> JetTuple<K, V> tuple(K k, V[] v, int partitionId, CalculationStrategy calculationStrategy);
-
-    /**
-     * Will create tuple with multi-element key part and multi-element value part;
-     *
-     * @param k   - values of the key part;
-     * @param v-  values of the value part;
-     * @param <K> - type of the key part;
-     * @param <V> - value of the key part;
-     * @return - constructed tuple;
-     */
-    <K, V> JetTuple<K, V> tuple(K[] k, V[] v);
 
     /**
      * Will create tuple with multi-element key part and multi-element value part;

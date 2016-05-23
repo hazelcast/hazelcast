@@ -17,6 +17,8 @@
 package com.hazelcast.jet.spi.config;
 
 
+import com.hazelcast.jet.impl.util.JetUtil;
+
 import java.io.Serializable;
 import java.util.Properties;
 
@@ -87,6 +89,26 @@ public class JetApplicationConfig implements Serializable {
      */
     private static final int DEFAULT_IO_THREADS_COUNT = 5;
 
+    /**
+     * 1 Gigabyte
+     */
+    private static final long DEFAULT_MAX_HEAP_SIZE_IN_BYTES = JetUtil.GIGABYTE;
+
+    /**
+     * 4 Gigabytes
+     */
+    private static final long DEFAULT_MAX_NATIVE_SIZE_IN_BYTES = 4L * JetUtil.GIGABYTE;
+
+    /**
+     * 128 Gigabytes
+     */
+    private static final long DEFAULT_MAX_DISK_SIZE_IN_BYTES = 128L * JetUtil.GIGABYTE;
+
+    /**
+     * 16 Megabytes
+     */
+    private static final long DEFAULT_MEMORY_BLOCK_SIZE = 16 * JetUtil.MEGABYTE;
+
     private final Properties properties;
 
     private String localizationDirectory;
@@ -109,13 +131,15 @@ public class JetApplicationConfig implements Serializable {
 
     private int shufflingBatchSizeBytes = DEFAULT_SHUFFLING_BATCH_SIZE_BYTES;
 
+    private long maxHeapSizeInBytes = DEFAULT_MAX_HEAP_SIZE_IN_BYTES;
+
+    private long maxNativeSizeInBytes = DEFAULT_MAX_NATIVE_SIZE_IN_BYTES;
+
+    private long maxDiskSizeInBytes = DEFAULT_MAX_DISK_SIZE_IN_BYTES;
+
+    private long memoryBlockSize = DEFAULT_MEMORY_BLOCK_SIZE;
+
     private String name;
-
-    public JetApplicationConfig(JetApplicationConfig defConfig, String name) {
-        this.name = name;
-        this.properties = new Properties();
-
-    }
 
     public JetApplicationConfig() {
         this.name = null;
@@ -218,5 +242,29 @@ public class JetApplicationConfig implements Serializable {
 
     public void setDefaultTCPBufferSize(int defaultTCPBufferSize) {
         this.defaultTCPBufferSize = defaultTCPBufferSize;
+    }
+
+    public long getMaxHeapSizeInBytes() {
+        return maxHeapSizeInBytes;
+    }
+
+    public void setMaxHeapSizeInBytes(long maxHeapSizeInBytes) {
+        this.maxHeapSizeInBytes = maxHeapSizeInBytes;
+    }
+
+    public long getMaxNativeSizeInBytes() {
+        return maxNativeSizeInBytes;
+    }
+
+    public void setMaxNativeSizeInBytes(long maxNativeSizeInBytes) {
+        this.maxNativeSizeInBytes = maxNativeSizeInBytes;
+    }
+
+    public long getMaxDiskSizeInBytes() {
+        return maxDiskSizeInBytes;
+    }
+
+    public void setMaxDiskSizeInBytes(long maxDiskSizeInBytes) {
+        this.maxDiskSizeInBytes = maxDiskSizeInBytes;
     }
 }

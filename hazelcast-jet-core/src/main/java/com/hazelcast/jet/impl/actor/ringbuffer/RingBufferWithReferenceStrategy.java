@@ -20,7 +20,6 @@ import com.hazelcast.jet.api.actor.RingBuffer;
 import com.hazelcast.jet.api.data.BufferAware;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.UnsafeHelper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
@@ -38,7 +37,12 @@ abstract class RingBufferFieldsByReference<T> extends RingBufferPadByReference {
     protected static final int BUFFER_PAD;
 
     static {
-        final int scale = UnsafeHelper.UNSAFE.arrayIndexScale(Object[].class);
+        final int scale =
+                UnsafeUtil.UNSAFE_AVAILABLE
+                        ?
+                        UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class)
+                        :
+                        1;
         BUFFER_PAD = 128 / scale;
     }
 

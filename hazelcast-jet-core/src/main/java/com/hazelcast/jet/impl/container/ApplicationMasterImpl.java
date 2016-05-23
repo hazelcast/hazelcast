@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.api.application.ApplicationContext;
 import com.hazelcast.jet.api.application.ApplicationException;
 import com.hazelcast.jet.api.container.ContainerContext;
@@ -236,7 +237,8 @@ public class ApplicationMasterImpl extends
         );
 
         jetPacket.setHeader(JetPacket.HEADER_JET_EXECUTION_ERROR);
-        this.discoveryService.getSocketWriters().get(member.getAddress()).sendServicePacket(jetPacket);
+        Address jetAddress = getApplicationContext().getHzToJetAddressMapping().get(member.getAddress());
+        this.discoveryService.getSocketWriters().get(jetAddress).sendServicePacket(jetPacket);
     }
 
     @Override
@@ -271,7 +273,7 @@ public class ApplicationMasterImpl extends
     }
 
     private Throwable toException(Address initiator, JetPacket packet) {
-        Object object = getNodeEngine().getSerializationService().toObject(packet.toByteArray());
+        Object object = getNodeEngine().getSerializationService().toObject(new HeapData(packet.toByteArray()));
 
         if (object instanceof Throwable) {
             return new CombinedJetException(Arrays.asList((Throwable) object, new ApplicationException(initiator)));

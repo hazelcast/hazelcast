@@ -70,6 +70,34 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
+    public void simpleListTest() throws Exception {
+        System.out.println(System.nanoTime() + " --> simpleListTest");
+        Application application = createApplication("simpleListTest");
+        IList targetList = SERVER.getList("target.simpleListTest");
+
+        try {
+            DAG dag = createDAG();
+
+            int CNT = 10000;
+
+            fillMap("source.simpleListTest", SERVER, CNT);
+
+            Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class);
+
+            addVertices(dag, vertex);
+            vertex.addSourceMap("source.simpleListTest");
+            vertex.addSinkList("target.simpleListTest");
+            executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+            assertEquals(CNT, targetList.size());
+        } finally {
+            SERVER.getMap("source.simpleListTest").clear();
+            SERVER.getMap("target.simpleListTest").clear();
+            application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
+        }
+    }
+
+
+    @Test
     @Repeat(500)
     public void simpleList2ListTest() throws Exception {
         Application application = createApplication("simpleList2ListTest");

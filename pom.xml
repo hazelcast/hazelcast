@@ -30,7 +30,8 @@
     <modules>
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-hadoop</module>
-        <module>hazelcast-jet-language</module>
+        <module>hazelcast-jet-batching</module>
+        <module>hazelcast-jet-io</module>
     </modules>
 
     <repositories>
@@ -148,6 +149,11 @@
             <version>${slf4j.api.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${hazelcast.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>

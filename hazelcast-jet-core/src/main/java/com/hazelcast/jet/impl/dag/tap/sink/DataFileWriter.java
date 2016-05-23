@@ -24,7 +24,7 @@ import com.hazelcast.jet.spi.container.ContainerDescriptor;
 import com.hazelcast.jet.spi.dag.tap.SinkOutputStream;
 import com.hazelcast.jet.spi.dag.tap.SinkTap;
 import com.hazelcast.jet.spi.dag.tap.SinkTapWriteStrategy;
-import com.hazelcast.jet.spi.data.tuple.Tuple;
+import com.hazelcast.jet.io.spi.tuple.Tuple;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 public class DataFileWriter extends AbstractHazelcastWriter {

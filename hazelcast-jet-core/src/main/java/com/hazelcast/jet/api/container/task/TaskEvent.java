@@ -32,8 +32,4 @@ public enum TaskEvent {
      * Raised on execution's error;
      */
     TASK_EXECUTION_ERROR,
-    /**
-     * Raised on task's interruption;
-     */
-    TASK_INTERRUPTED
 }

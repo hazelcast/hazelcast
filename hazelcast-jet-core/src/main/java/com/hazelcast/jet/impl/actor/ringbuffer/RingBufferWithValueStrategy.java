@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.actor.ringbuffer;
 
-import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.jet.api.actor.RingBuffer;
 import com.hazelcast.jet.api.data.BufferAware;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
@@ -36,7 +35,13 @@ abstract class RingBufferFieldsByValue<T> extends RingBufferPadByValue {
     protected static final int BUFFER_PAD;
 
     static {
-        final int scale = UnsafeHelper.UNSAFE.arrayIndexScale(Object[].class);
+        final int scale =
+                UnsafeUtil.UNSAFE_AVAILABLE
+                        ?
+                        UnsafeUtil.UNSAFE.arrayIndexScale(Object[].class)
+                        :
+                        1;
+
         BUFFER_PAD = 128 / scale;
     }
 
