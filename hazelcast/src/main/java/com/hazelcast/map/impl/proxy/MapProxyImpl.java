@@ -343,7 +343,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
-        // NOTE: putAllInternal() will take care of the null key/value checks
         putAllInternal(map);
     }
 

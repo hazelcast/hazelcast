@@ -23,6 +23,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExecutionService;
@@ -261,12 +262,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Future createPutAllOperationFuture(String name, MapEntries mapEntries, int partitionId) {
-        Collection<Entry<Data, Data>> collection = mapEntries.entries();
-        for (Entry<Data, Data> entry : collection) {
-            invalidateCache(entry.getKey());
+    protected Future createPutAllOperationFuture(String name, long size, int[] partitions, MapEntries[] entries,
+                                                 Address address) {
+        for (MapEntries mapEntries : entries) {
+            for (int i = 0; i < mapEntries.size(); i++) {
+                invalidateCache(mapEntries.getKey(i));
+            }
         }
-        return super.createPutAllOperationFuture(name, mapEntries, partitionId);
+        return super.createPutAllOperationFuture(name, size, partitions, entries, address);
     }
 
     @Override

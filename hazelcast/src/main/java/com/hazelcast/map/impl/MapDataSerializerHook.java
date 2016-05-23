@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
+import com.hazelcast.map.impl.operation.PutAllPerMemberOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
@@ -52,8 +53,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int QUERY_RESULT = 10;
     public static final int EVICT_BACKUP = 11;
     public static final int CONTAINS_KEY = 12;
+    public static final int PUT_ALL_PER_MEMBER = 13;
 
-    private static final int LEN = CONTAINS_KEY + 1;
+    private static final int LEN = PUT_ALL_PER_MEMBER + 1;
 
     @Override
     public int getFactoryId() {
@@ -127,6 +129,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ContainsKeyOperation();
+            }
+        };
+        constructors[PUT_ALL_PER_MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PutAllPerMemberOperation();
             }
         };
 

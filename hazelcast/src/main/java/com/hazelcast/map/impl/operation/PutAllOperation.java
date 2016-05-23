@@ -40,6 +40,11 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
+/**
+ * Inserts the {@link MapEntries} for a single partition to the local {@link com.hazelcast.map.impl.recordstore.RecordStore}.
+ * <p/>
+ * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
+ */
 public class PutAllOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation, MutatingOperation {
 
     private MapEntries mapEntries;
@@ -52,6 +57,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
 
+    @SuppressWarnings("unused")
     public PutAllOperation() {
     }
 
@@ -74,8 +80,8 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
             invalidationKeys = new ArrayList<Data>(mapEntries.size());
         }
 
-        for (Map.Entry<Data, Data> entry : mapEntries) {
-            put(entry);
+        for (int i = 0; i < mapEntries.size(); i++) {
+            put(mapEntries.getKey(i), mapEntries.getValue(i));
         }
     }
 
@@ -87,10 +93,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         return (mapContainer.getTotalBackupCount() > 0);
     }
 
-    private void put(Map.Entry<Data, Data> entry) {
-        Data dataKey = entry.getKey();
-        Data dataValue = entry.getValue();
-
+    private void put(Data dataKey, Data dataValue) {
         Object oldValue = putToRecordStore(dataKey, dataValue);
         dataValue = getValueOrPostProcessedValue(dataKey, dataValue);
         mapServiceContext.interceptAfterPut(name, dataValue);
@@ -120,7 +123,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
      * The method recordStore.put() tries to fetch the old value from the MapStore,
      * which can lead to a serious performance degradation if loading from MapStore is expensive.
      * We prevent this by calling recordStore.set() if no map listeners are registered.
-      */
+     */
     private Object putToRecordStore(Data dataKey, Data dataValue) {
         if (hasMapListener) {
             return recordStore.put(dataKey, dataValue, DEFAULT_TTL);
@@ -172,12 +175,13 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(mapEntries);
+        mapEntries.writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapEntries = in.readObject();
+        mapEntries = new MapEntries();
+        mapEntries.readData(in);
     }
 }

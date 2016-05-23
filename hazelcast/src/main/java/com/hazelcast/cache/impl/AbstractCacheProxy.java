@@ -182,11 +182,7 @@ abstract class AbstractCacheProxy<K, V>
             Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
                 MapEntries mapEntries = serializationService.toObject(response);
-                for (Map.Entry<Data, Data> entry : mapEntries) {
-                    final V value = serializationService.toObject(entry.getValue());
-                    final K key = serializationService.toObject(entry.getKey());
-                    result.put(key, value);
-                }
+                mapEntries.putAllToMap(serializationService, result);
             }
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
