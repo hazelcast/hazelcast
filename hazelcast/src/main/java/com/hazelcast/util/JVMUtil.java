@@ -16,6 +16,8 @@
 
 package com.hazelcast.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.openmbean.CompositeDataSupport;
@@ -36,22 +38,23 @@ public final class JVMUtil {
     }
 
     private static boolean isCompressedOops() {
-        // Check HotSpot JVM implementation.
+        // check HotSpot JVM implementation
         Boolean enabled = isHotSpotCompressedOopsOrNull();
         if (enabled != null) {
             return enabled;
         }
 
-        // Fallback check for other JVM implementations.
+        // fallback check for other JVM implementations
         enabled = isCompressedOopsOrNull();
         if (enabled != null) {
             return enabled;
         }
 
-        // Accept compressed oops is used by default
+        // accept compressed oops is used by default
         return true;
     }
 
+    @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     private static Boolean isHotSpotCompressedOopsOrNull() {
         try {
             MBeanServer server = ManagementFactory.getPlatformMBeanServer();
@@ -68,20 +71,19 @@ public final class JVMUtil {
         return null;
     }
 
-
-    /*
+    /**
      * Fallback when checking CompressedOopsEnabled.
      *
      * Borrowed from http://openjdk.java.net/projects/code-tools/jol/
      */
+    @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     private static Boolean isCompressedOopsOrNull() {
         if (!UNSAFE_AVAILABLE) {
             return null;
         }
 
-        // When running with CompressedOops on 64-bit platform, the address size
-        // reported by Unsafe is still 8, while the real reference fields are 4 bytes long.
-        // Try to guess the reference field size with this naive trick.
+        // when running with CompressedOops on 64-bit platform, the address size reported by Unsafe is still 8, while
+        // the real reference fields are 4 bytes long, so we try to guess the reference field size with this naive trick
         int oopSize;
         try {
             long off1 = UNSAFE.objectFieldOffset(CompressedOopsClass.class.getField("obj1"));
@@ -95,8 +97,10 @@ public final class JVMUtil {
         return oopSize != UNSAFE.addressSize();
     }
 
-    static class CompressedOopsClass {
-        public Object obj1;
-        public Object obj2;
+    @SuppressWarnings("unused")
+    private static class CompressedOopsClass {
+
+        Object obj1;
+        Object obj2;
     }
 }
