@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.map.impl.record.RecordStatistics;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
@@ -74,8 +73,7 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
 
     @Override
     public long getExpirationTime() {
-        RecordStatistics statistics = record.getStatistics();
-        return statistics == null ? -1L : statistics.getExpirationTime();
+        return record.getExpirationTime();
     }
 
     @Override
@@ -90,8 +88,7 @@ public class LazyEntryViewFromRecord<R extends Record> extends SampleableConcurr
 
     @Override
     public long getLastStoredTime() {
-        RecordStatistics statistics = record.getStatistics();
-        return statistics == null ? -1L : statistics.getLastStoredTime();
+        return record.getLastStoredTime();
     }
 
     @Override

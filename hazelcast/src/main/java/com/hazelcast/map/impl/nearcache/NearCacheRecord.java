@@ -24,6 +24,9 @@ import com.hazelcast.util.QuickMath;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
 /**
  * Entry holder to be used in Client and Node side Near cache
  */
@@ -56,8 +59,9 @@ public class NearCacheRecord {
 
     private final Object key;
     private final Object value;
-    private final long creationTime;
     private final AtomicLong hit;
+    private final long creationTime;
+
     private volatile long lastAccessTime;
 
     public NearCacheRecord(Object key, Object value) {
@@ -95,11 +99,11 @@ public class NearCacheRecord {
         // value is Data
         return ((Data) key).getHeapCost()
                 + ((Data) value).getHeapCost()
-                + 2 * (Long.SIZE / Byte.SIZE)
+                + 2 * LONG_SIZE_IN_BYTES
                 // sizeof atomic long
-                + (Long.SIZE / Byte.SIZE)
-                // object references (key, value, hit)
-                + 3 * (Integer.SIZE / Byte.SIZE);
+                + LONG_SIZE_IN_BYTES
+                // reference cost of key, value, hit
+                + 3 * REFERENCE_COST_IN_BYTES;
     }
 
     public boolean isExpired(long maxIdleMillis, long timeToLiveMillis) {

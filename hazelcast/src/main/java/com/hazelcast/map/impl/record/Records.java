@@ -30,24 +30,28 @@ public final class Records {
     }
 
     public static void applyRecordInfo(Record record, RecordInfo replicationInfo) {
-        record.setStatistics(replicationInfo.getStatistics());
         record.setVersion(replicationInfo.getVersion());
         record.setHits(replicationInfo.getHits());
         record.setTtl(replicationInfo.getTtl());
         record.setCreationTime(replicationInfo.getCreationTime());
         record.setLastAccessTime(replicationInfo.getLastAccessTime());
         record.setLastUpdateTime(replicationInfo.getLastUpdateTime());
+        record.setExpirationTime(replicationInfo.getExpirationTime());
+        record.setLastStoredTime(replicationInfo.getLastStoredTime());
     }
 
     public static RecordInfo buildRecordInfo(Record record) {
-        final RecordInfo info = new RecordInfo();
-        info.setStatistics(record.getStatistics());
+        RecordInfo info = new RecordInfo();
+
         info.setVersion(record.getVersion());
         info.setHits(record.getHits());
         info.setCreationTime(record.getCreationTime());
         info.setLastAccessTime(record.getLastAccessTime());
         info.setLastUpdateTime(record.getLastUpdateTime());
         info.setTtl(record.getTtl());
+        info.setExpirationTime(record.getExpirationTime());
+        info.setLastStoredTime(record.getLastStoredTime());
+
         return info;
     }
 

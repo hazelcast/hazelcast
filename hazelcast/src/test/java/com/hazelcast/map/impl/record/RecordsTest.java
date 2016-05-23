@@ -128,8 +128,8 @@ public class RecordsTest extends HazelcastTestSupport {
         assertEquals(now, record.getLastUpdateTime());
         assertEquals(123, record.getVersion());
         assertEquals(12, record.getHits());
-        assertEquals(now, record.getStatistics().getExpirationTime());
-        assertEquals(now, record.getStatistics().getLastStoredTime());
+        assertEquals(now, record.getExpirationTime());
+        assertEquals(now, record.getLastStoredTime());
     }
 
     protected RecordInfo newRecordInfo(long now) {
@@ -140,11 +140,9 @@ public class RecordsTest extends HazelcastTestSupport {
         when(recordInfo.getLastUpdateTime()).thenReturn(now);
         when(recordInfo.getHits()).thenReturn(12L);
         when(recordInfo.getVersion()).thenReturn(123L);
+        when(recordInfo.getExpirationTime()).thenReturn(now);
+        when(recordInfo.getLastStoredTime()).thenReturn(now);
 
-        RecordStatistics statistics = mock(RecordStatistics.class);
-        when(statistics.getExpirationTime()).thenReturn(now);
-        when(statistics.getLastStoredTime()).thenReturn(now);
-        when(recordInfo.getStatistics()).thenReturn(statistics);
         return recordInfo;
     }
 
@@ -161,21 +159,20 @@ public class RecordsTest extends HazelcastTestSupport {
         assertEquals(now, recordInfo.getLastUpdateTime());
         assertEquals(12, recordInfo.getHits());
         assertEquals(123, recordInfo.getVersion());
-        assertEquals(now, recordInfo.getStatistics().getExpirationTime());
-        assertEquals(now, recordInfo.getStatistics().getLastStoredTime());
+        assertEquals(now, recordInfo.getExpirationTime());
+        assertEquals(now, recordInfo.getLastStoredTime());
     }
 
     protected Record newRecord(long now) {
-        Record record = mock(Record.class, withSettings().extraInterfaces(RecordStatistics.class));
+        Record record = mock(Record.class, withSettings());
 
         when(record.getCreationTime()).thenReturn(now);
         when(record.getLastAccessTime()).thenReturn(now);
         when(record.getLastUpdateTime()).thenReturn(now);
         when(record.getHits()).thenReturn(12L);
         when(record.getVersion()).thenReturn(123L);
-        when(record.getStatistics()).thenReturn(((RecordStatistics) record));
-        when(((RecordStatistics) record).getExpirationTime()).thenReturn(now);
-        when(((RecordStatistics) record).getLastStoredTime()).thenReturn(now);
+        when(record.getExpirationTime()).thenReturn(now);
+        when(record.getLastStoredTime()).thenReturn(now);
         return record;
     }
 

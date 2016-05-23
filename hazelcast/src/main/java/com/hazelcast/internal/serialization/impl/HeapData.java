@@ -23,7 +23,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
 /**
  * A {@link Data} implementation where the content lives on the heap.
@@ -93,8 +93,7 @@ public class HeapData implements Data {
     @Override
     public int getHeapCost() {
         // reference (assuming compressed oops)
-        int objectRef = INT_SIZE_IN_BYTES;
-        return objectRef + (payload != null ? ARRAY_HEADER_SIZE_IN_BYTES + payload.length : 0);
+        return REFERENCE_COST_IN_BYTES + (payload != null ? ARRAY_HEADER_SIZE_IN_BYTES + payload.length : 0);
     }
 
     @Override

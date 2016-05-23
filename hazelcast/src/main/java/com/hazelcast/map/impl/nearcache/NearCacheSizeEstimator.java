@@ -20,6 +20,8 @@ import com.hazelcast.map.impl.SizeEstimator;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+
 /**
  * Size estimator for near cache.
  */
@@ -49,7 +51,7 @@ public class NearCacheSizeEstimator
         final int numberOfIntegers = 4;
         long size = 0;
         // entry size in CHM
-        size += numberOfIntegers * ((Integer.SIZE / Byte.SIZE));
+        size += numberOfIntegers * INT_SIZE_IN_BYTES;
         size += cost;
         return size;
     }
