@@ -87,6 +87,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.ThreadUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -716,6 +717,26 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return idToKeys;
     }
 
+    private boolean isPutAllUseBatching(int mapSize) {
+        // we check if the feature is enabled and if the map size is bigger than a single batch per member
+        return (putAllBatchSize > 0 && mapSize > putAllBatchSize * getNodeEngine().getClusterService().getSize());
+    }
+
+    @SuppressWarnings("checkstyle:magicnumber")
+    private int getPutAllInitialSize(boolean useBatching, int mapSize, int partitionCount) {
+        if (mapSize == 1) {
+            return 1;
+        }
+        if (useBatching) {
+            return putAllBatchSize;
+        }
+        if (putAllInitialSizeFactor < 1) {
+            // this is an educated guess for the initial size of the entries per partition, depending on the map size
+            return (int) ceil(20f * mapSize / partitionCount / log10(mapSize));
+        }
+        return (int) ceil(putAllInitialSizeFactor * mapSize / partitionCount);
+    }
+
     /**
      * This method will group all puts per partition and send a {@link com.hazelcast.map.impl.operation.PutAllPerMemberOperation}
      * per member.
@@ -727,6 +748,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * Takes care about {@code null} checks for keys and values.
      */
     @SuppressWarnings({"checkstyle:npathcomplexity", "UnnecessaryBoxing"})
+    @SuppressFBWarnings(value = "DM_NUMBER_CTOR", justification = "we need a shared counter object for each member per partition")
     protected void putAllInternal(Map<?, ?> map) {
         try {
             int mapSize = map.size();
@@ -794,26 +816,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         } catch (Exception e) {
             throw rethrow(e);
         }
-    }
-
-    private boolean isPutAllUseBatching(int mapSize) {
-        // we check if the feature is enabled and if the map size is bigger than a single batch per member
-        return (putAllBatchSize > 0 && mapSize > putAllBatchSize * getNodeEngine().getClusterService().getSize());
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    private int getPutAllInitialSize(boolean useBatching, int mapSize, int partitionCount) {
-        if (mapSize == 1) {
-            return 1;
-        }
-        if (useBatching) {
-            return putAllBatchSize;
-        }
-        if (putAllInitialSizeFactor < 1) {
-            // this is an educated guess for the initial size of the entries per partition, depending on the map size
-            return (int) ceil(20f * mapSize / partitionCount / log10(mapSize));
-        }
-        return (int) ceil(putAllInitialSizeFactor * mapSize / partitionCount);
     }
 
     private int getPutAllFutureSize(int mapSize, boolean useBatching, int partitionCount) {

@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Map;
@@ -43,6 +44,7 @@ public class PutAllPerMemberOperation extends MapOperation implements Identified
     public PutAllPerMemberOperation() {
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public PutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries) {
         super(name);
         this.partitions = partitions;
