@@ -34,14 +34,15 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/***
- * This is central manager for all Hazelcast clients in JVM;
- * All creation functionality will be stored here and particular;
- * instance of Client will delegate here;
+/**
+ * Central manager for all Hazelcast clients of the JVM.
+ *
+ * All creation functionality will be stored here and a particular instance of a client will delegate here.
  */
 public final class HazelcastClientManager {
-    /***
-     * Instance for clientManagers
+
+    /**
+     * Global instance of {@link HazelcastClientManager}
      */
     public static final HazelcastClientManager INSTANCE = new HazelcastClientManager();
 
@@ -65,7 +66,7 @@ public final class HazelcastClientManager {
             config = new XmlClientConfigBuilder().build();
         }
 
-        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
@@ -83,7 +84,7 @@ public final class HazelcastClientManager {
                         + "' already exists!");
             }
         } finally {
-            Thread.currentThread().setContextClassLoader(tccl);
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
         return proxy;
     }
@@ -113,7 +114,6 @@ public final class HazelcastClientManager {
         OutOfMemoryErrorDispatcher.clearClients();
         INSTANCE.clients.clear();
     }
-
 
     public static void shutdown(HazelcastInstance instance) {
         if (instance instanceof HazelcastClientProxy) {

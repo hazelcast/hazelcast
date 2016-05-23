@@ -23,6 +23,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,16 +35,26 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class HazelcastFactoryTest extends HazelcastTestSupport {
 
+    private TestHazelcastFactory instanceFactory;
+
+    @Before
+    public void setUp() {
+        instanceFactory = new TestHazelcastFactory();
+    }
+
+    @After
+    public void tearDown() {
+        instanceFactory.terminateAll();
+    }
+
     @Test
     public void testTestHazelcastInstanceFactory_smartClients() {
-        TestHazelcastFactory instanceFactory = new TestHazelcastFactory();
         final HazelcastInstance instance1 = instanceFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = instanceFactory.newHazelcastInstance();
         final HazelcastInstance instance3 = instanceFactory.newHazelcastInstance();
 
         final HazelcastInstance client1 = instanceFactory.newHazelcastClient();
         final HazelcastInstance client2 = instanceFactory.newHazelcastClient();
-
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -59,18 +71,10 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
                 assertEquals(2, instance3.getClientService().getConnectedClients().size());
             }
         });
-
-        instanceFactory.terminateAll();
-
-    }
-
-    private void touchRandomNode(HazelcastInstance hazelcastInstance) {
-        hazelcastInstance.getMap(randomString()).get(randomString());
     }
 
     @Test
     public void testTestHazelcastInstanceFactory_dummyClients() {
-        TestHazelcastFactory instanceFactory = new TestHazelcastFactory();
         final HazelcastInstance instance1 = instanceFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = instanceFactory.newHazelcastInstance();
         final HazelcastInstance instance3 = instanceFactory.newHazelcastInstance();
@@ -79,7 +83,6 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setSmartRouting(false);
         final HazelcastInstance client1 = instanceFactory.newHazelcastClient(clientConfig);
         final HazelcastInstance client2 = instanceFactory.newHazelcastClient(clientConfig);
-
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -110,8 +113,9 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
                 assertEquals(3, client1.getCluster().getMembers().size());
             }
         });
+    }
 
-        instanceFactory.terminateAll();
-
+    private static void touchRandomNode(HazelcastInstance hazelcastInstance) {
+        hazelcastInstance.getMap(randomString()).get(randomString());
     }
 }
