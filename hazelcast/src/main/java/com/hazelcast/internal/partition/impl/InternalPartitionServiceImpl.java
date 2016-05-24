@@ -1051,9 +1051,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             processResults(futures, allCompletedMigrations, allActiveMigrations);
 
             logger.info("Most recent partition table version: " + maxVersion);
-            processNewState(allCompletedMigrations, allActiveMigrations);
-
-            syncPartitionRuntimeState();
+            if (processNewState(allCompletedMigrations, allActiveMigrations)) {
+                syncPartitionRuntimeState();
+            }
         }
 
         private Collection<Future<PartitionRuntimeState>> invokeFetchPartitionStateOps() {
@@ -1108,22 +1108,17 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
 
-        private void processNewState(Collection<MigrationInfo> allCompletedMigrations,
+        private boolean processNewState(Collection<MigrationInfo> allCompletedMigrations,
                 Collection<MigrationInfo> allActiveMigrations) {
 
             lock.lock();
             try {
-                allCompletedMigrations.addAll(migrationManager.getCompletedMigrations());
-                if (migrationManager.getActiveMigration() != null) {
-                    allActiveMigrations.add(migrationManager.getActiveMigration());
+                if (!partitionStateManager.isInitialized()) {
+                    logger.info("Skipping processing fetched partition table state since partition table state is reset");
+                    return false;
                 }
 
-                for (MigrationInfo activeMigration : allActiveMigrations) {
-                    activeMigration.setStatus(MigrationStatus.FAILED);
-                    if (allCompletedMigrations.add(activeMigration)) {
-                        logger.info("Marked active migration " + activeMigration + " as " + MigrationStatus.FAILED);
-                    }
-                }
+                processMigrations(allCompletedMigrations, allActiveMigrations);
 
                 if (newState != null) {
                     newState.setCompletedMigrations(allCompletedMigrations);
@@ -1143,12 +1138,29 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         }
                     }
                 } else {
-                    assert allCompletedMigrations.isEmpty() : "Partitions are not initialized!";
+                    assert allCompletedMigrations.isEmpty()
+                            : "Partitions are not initialized! completed migrations: " + allCompletedMigrations;
                 }
 
                 shouldFetchPartitionTables = false;
+                return true;
             } finally {
                 lock.unlock();
+            }
+        }
+
+        private void processMigrations(Collection<MigrationInfo> allCompletedMigrations,
+                                       Collection<MigrationInfo> allActiveMigrations) {
+            allCompletedMigrations.addAll(migrationManager.getCompletedMigrations());
+            if (migrationManager.getActiveMigration() != null) {
+                allActiveMigrations.add(migrationManager.getActiveMigration());
+            }
+
+            for (MigrationInfo activeMigration : allActiveMigrations) {
+                activeMigration.setStatus(MigrationStatus.FAILED);
+                if (allCompletedMigrations.add(activeMigration)) {
+                    logger.info("Marked active migration " + activeMigration + " as " + MigrationStatus.FAILED);
+                }
             }
         }
 
