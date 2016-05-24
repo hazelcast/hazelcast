@@ -12,6 +12,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.config.MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE;
+import static com.hazelcast.config.MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static org.junit.Assert.*;
@@ -19,17 +21,36 @@ import static org.junit.Assert.*;
 /**
  * Test MapStoreConfig
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+//@RunWith(HazelcastParallelClassRunner.class)
+//@Category({QuickTest.class, ParallelTest.class})
 public class MapStoreConfigTest {
 
+    MapStoreConfig defaultCfg = new MapStoreConfig();
+    MapStoreConfig cfgNotEnabled = new MapStoreConfig().setEnabled(false);
+    MapStoreConfig cfgNotWriteCoalescing = new MapStoreConfig().setWriteCoalescing(false);
+    MapStoreConfig cfgNonDefaultWriteDelaySeconds = new MapStoreConfig()
+            .setWriteDelaySeconds(DEFAULT_WRITE_DELAY_SECONDS+1);
+    MapStoreConfig cfgNonDefaultWriteBatchSize = new MapStoreConfig()
+            .setWriteBatchSize(DEFAULT_WRITE_BATCH_SIZE+1);
+    MapStoreConfig cfgNonNullClassName = new MapStoreConfig().setClassName("some.class");
+    MapStoreConfig cfgNonNullOtherClassName = new MapStoreConfig().setClassName("some.class.other");
+    MapStoreConfig cfgNonNullFactoryClassName = new MapStoreConfig().setFactoryClassName("factoryClassName");
+    MapStoreConfig cfgNonNullOtherFactoryClassName = new MapStoreConfig().setFactoryClassName("some.class.other");
+    MapStoreConfig cfgNonNullImplementation = new MapStoreConfig().setImplementation(new Object());
+    MapStoreConfig cfgNonNullOtherImplementation = new MapStoreConfig().setImplementation(new Object());
+    MapStoreConfig cfgNonNullFactoryImplementation = new MapStoreConfig().setFactoryImplementation(new Object());
+    MapStoreConfig cfgNonNullOtherFactoryImplementation = new MapStoreConfig().setFactoryImplementation(new Object());
+    MapStoreConfig cfgWithProperties = new MapStoreConfig().setProperty("a","b");
+    MapStoreConfig cfgEagerMode = new MapStoreConfig().setInitialLoadMode(EAGER);
+    MapStoreConfig cfgNullMode = new MapStoreConfig().setInitialLoadMode(null);
 
     @Test
     public void getAsReadOnly() {
-        MapStoreConfig cfg = new MapStoreConfig().setClassName("mapStoreClassName");
-        MapStoreConfigReadOnly readOnlyCfg = cfg.getAsReadOnly();
-        assertEquals("mapStoreClassName", readOnlyCfg.getClassName());
-        assertEquals(cfg, readOnlyCfg);
+        MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
+        assertEquals("some.class", readOnlyCfg.getClassName());
+        assertEquals(cfgNonNullClassName, readOnlyCfg);
+        // also test returning cached read only instance
+        assertEquals(readOnlyCfg, cfgNonNullClassName.getAsReadOnly());
     }
 
     @Test
@@ -39,9 +60,8 @@ public class MapStoreConfigTest {
 
     @Test
     public void setClassName() {
-        MapStoreConfig cfg = new MapStoreConfig().setClassName("mapStoreClassName");
-        assertEquals("mapStoreClassName", cfg.getClassName());
-        assertEquals(new MapStoreConfig().setClassName("mapStoreClassName"), cfg);
+        assertEquals("some.class", cfgNonNullClassName.getClassName());
+        assertEquals(new MapStoreConfig().setClassName("some.class"), cfgNonNullClassName);
     }
 
     @Test
@@ -51,34 +71,35 @@ public class MapStoreConfigTest {
 
     @Test
     public void setFactoryClassName() {
-        MapStoreConfig cfg = new MapStoreConfig().setFactoryClassName("factoryClassName");
-        assertEquals("factoryClassName", cfg.getFactoryClassName());
-        assertEquals(new MapStoreConfig().setFactoryClassName("factoryClassName"), cfg);
+        assertEquals("factoryClassName", cfgNonNullFactoryClassName.getFactoryClassName());
+        assertEquals(new MapStoreConfig().setFactoryClassName("factoryClassName"), cfgNonNullFactoryClassName);
     }
 
     @Test
     public void getWriteDelaySeconds() {
-        assertEquals(MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS, new MapStoreConfig().getWriteDelaySeconds());
+        assertEquals(DEFAULT_WRITE_DELAY_SECONDS, new MapStoreConfig().getWriteDelaySeconds());
     }
 
     @Test
-    public void setWriteDelaySeconds()
-            throws Exception {
-        MapStoreConfig cfg = new MapStoreConfig().setWriteDelaySeconds(199);
-        assertEquals(199, cfg.getWriteDelaySeconds());
-        assertEquals(new MapStoreConfig().setWriteDelaySeconds(199), cfg);
+    public void setWriteDelaySeconds() {
+        assertEquals(DEFAULT_WRITE_DELAY_SECONDS+1, cfgNonDefaultWriteDelaySeconds.getWriteDelaySeconds());
+        assertEquals(new MapStoreConfig().setWriteDelaySeconds(DEFAULT_WRITE_DELAY_SECONDS+1), cfgNonDefaultWriteDelaySeconds);
     }
 
     @Test
     public void getWriteBatchSize() {
-        assertEquals(MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE, new MapStoreConfig().getWriteBatchSize());
+        assertEquals(DEFAULT_WRITE_BATCH_SIZE, new MapStoreConfig().getWriteBatchSize());
     }
 
     @Test
     public void setWriteBatchSize() {
-        MapStoreConfig cfg = new MapStoreConfig().setWriteBatchSize(399);
-        assertEquals(399, cfg.getWriteBatchSize());
-        assertEquals(new MapStoreConfig().setWriteBatchSize(399), cfg);
+        assertEquals(DEFAULT_WRITE_BATCH_SIZE+1, cfgNonDefaultWriteBatchSize.getWriteBatchSize());
+        assertEquals(new MapStoreConfig().setWriteBatchSize(DEFAULT_WRITE_BATCH_SIZE+1), cfgNonDefaultWriteBatchSize);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setWriteBatchSize_whenLessThanOne() {
+        MapStoreConfig cfg = new MapStoreConfig().setWriteBatchSize(-15);
     }
 
     @Test
@@ -88,9 +109,8 @@ public class MapStoreConfigTest {
 
     @Test
     public void setEnabled() {
-        MapStoreConfig cfg = new MapStoreConfig().setEnabled(false);
-        assertFalse(cfg.isEnabled());
-        assertEquals(new MapStoreConfig().setEnabled(false), cfg);
+        assertFalse(cfgNotEnabled.isEnabled());
+        assertEquals(new MapStoreConfig().setEnabled(false), cfgNotEnabled);
     }
 
     @Test
@@ -175,4 +195,71 @@ public class MapStoreConfigTest {
         assertEquals(otherCfg, cfg);
     }
 
+    @Test
+    public void equals_whenNull() {
+        MapStoreConfig cfg = new MapStoreConfig();
+        assertFalse(cfg.equals(null));
+    }
+
+    @Test
+    public void equals_whenSame() {
+        MapStoreConfig cfg = new MapStoreConfig();
+        assertTrue(cfg.equals(cfg));
+    }
+
+    @Test
+    public void equals_whenOtherClass() {
+        MapStoreConfig cfg = new MapStoreConfig();
+        assertFalse(cfg.equals(new Object()));
+    }
+
+    @Test
+    public void testEquals() {
+        assertFalse(defaultCfg.equals(cfgNotEnabled));
+        assertFalse(defaultCfg.equals(cfgNotWriteCoalescing));
+        assertFalse(defaultCfg.equals(cfgNonDefaultWriteDelaySeconds));
+        assertFalse(defaultCfg.equals(cfgNonDefaultWriteBatchSize));
+
+        // class name branches
+        assertFalse(defaultCfg.equals(cfgNonNullClassName));
+        assertFalse(cfgNonNullClassName.equals(cfgNonNullOtherClassName));
+        assertFalse(cfgNonNullClassName.equals(defaultCfg));
+
+        // factory class name branches
+        assertFalse(defaultCfg.equals(cfgNonNullFactoryClassName));
+        assertFalse(cfgNonNullFactoryClassName.equals(cfgNonNullOtherFactoryClassName));
+        assertFalse(cfgNonNullFactoryClassName.equals(defaultCfg));
+
+        // implementation
+        assertFalse(defaultCfg.equals(cfgNonNullImplementation));
+        assertFalse(cfgNonNullImplementation.equals(cfgNonNullOtherImplementation));
+        assertFalse(cfgNonNullImplementation.equals(defaultCfg));
+
+        // factory implementation
+        assertFalse(defaultCfg.equals(cfgNonNullFactoryImplementation));
+        assertFalse(cfgNonNullFactoryImplementation.equals(cfgNonNullOtherFactoryImplementation));
+        assertFalse(cfgNonNullFactoryImplementation.equals(defaultCfg));
+
+        assertFalse(defaultCfg.equals(cfgWithProperties));
+
+        assertFalse(defaultCfg.equals(cfgEagerMode));
+    }
+
+    @Test
+    public void testHashCode() {
+        assertNotEquals(defaultCfg.hashCode(), cfgNotEnabled.hashCode());
+        assertNotEquals(defaultCfg.hashCode(), cfgNotWriteCoalescing.hashCode());
+        assertNotEquals(defaultCfg.hashCode(), cfgNonNullClassName.hashCode());
+        assertNotEquals(defaultCfg.hashCode(), cfgNonNullFactoryClassName.hashCode());
+        assertNotEquals(defaultCfg.hashCode(), cfgNonNullImplementation.hashCode());
+        assertNotEquals(defaultCfg.hashCode(), cfgNonNullFactoryImplementation.hashCode());
+        assertNotEquals(defaultCfg.hashCode(), cfgEagerMode.hashCode());
+        assertNotEquals(defaultCfg.hashCode(), cfgNullMode.hashCode());
+    }
+
+    @Test
+    public void testToString() {
+        String toString = defaultCfg.toString();
+        assertTrue(toString.contains("MapStoreConfig"));
+    }
 }
