@@ -226,7 +226,9 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
     private void fireInitialMembershipEvent(InitialMembershipEvent event) {
         for (MembershipListener listener : listeners.values()) {
-            ((InitialMembershipListener) listener).init(event);
+            if (listener instanceof InitialMembershipListener) {
+                ((InitialMembershipListener) listener).init(event);
+            }
         }
     }
 

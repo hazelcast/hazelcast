@@ -107,6 +107,36 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void givenMixOfListenerExists_whenConnect_thenCallInitialMembershipListener() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+
+        final ClientConfig config = new ClientConfig();
+
+        // first add bunch of *regular* MembershipListener. They do not implement InitialMembershipListener
+        config.addListenerConfig(new ListenerConfig().setImplementation(new MemberShipEventLogger()));
+        config.addListenerConfig(new ListenerConfig().setImplementation(new MemberShipEventLogger()));
+        config.addListenerConfig(new ListenerConfig().setImplementation(new MemberShipEventLogger()));
+
+        // now add an InitialMembershipListener
+        // if there is an exception thrown during event delivery to regular listeners
+        // then no event will likely be delivered to InitialMemberShipEventLogger
+        final InitialMemberShipEventLogger initialListener = new InitialMemberShipEventLogger();
+        config.addListenerConfig(new ListenerConfig().setImplementation(initialListener));
+
+        //connect to a grid
+        hazelcastFactory.newHazelcastClient(config);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals("Expecting one event", 1, initialListener.events.size());
+                InitialMembershipEvent event = (InitialMembershipEvent) initialListener.events.getLast();
+                assertEquals(1, event.getMembers().size());
+            }
+        });
+    }
+
+    @Test
     public void whenMemberRemoved_thenMemberRemovedEvent() throws Exception {
         final HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
         final MemberShipEventLogger listener = new MemberShipEventLogger();
