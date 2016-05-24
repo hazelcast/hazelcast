@@ -90,6 +90,14 @@ public final class SerializationConstants {
     public static final int JAVA_DEFAULT_TYPE_EXTERNALIZABLE = -101;
 
     // ------------------------------------------------------------
+    // LANGUAGE SPECIFIC SERIALIZERS
+    // USED BY CLIENTS (Not deserialized by server)
+
+    public static final int CSHARP_CLR_SERIALIZATION_TYPE = -110;
+    public static final int PYTHON_PICKLE_SERIALIZATION_TYPE = -120;
+    public static final int JAVASCRIPT_JSON_SERIALIZATION_TYPE = -130;
+
+    // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS
 
     public static final int HIBERNATE3_TYPE_HIBERNATE_CACHE_KEY = -200;
