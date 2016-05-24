@@ -726,6 +726,11 @@ public class MigrationManager {
 
             partitionServiceLock.lock();
             try {
+                if (!partitionStateManager.isInitialized()) {
+                    logger.info("Skipping partition table assertions since partition table state is reset");
+                    return;
+                }
+
                 final InternalPartition[] partitions = partitionStateManager.getPartitions();
                 final int maxBackupCount = partitionService.getMaxAllowedBackupCount();
                 final Set<Address> replicas = new HashSet<Address>();
@@ -1152,6 +1157,11 @@ public class MigrationManager {
             partitionServiceLock.lock();
             try {
                 migrationQueue.clear();
+
+                if (!partitionStateManager.isInitialized()) {
+                    logger.info("Skipping control task since partition table state is reset");
+                    return;
+                }
 
                 if (partitionService.scheduleFetchMostRecentPartitionTableTaskIfRequired()) {
                     if (logger.isFinestEnabled()) {
