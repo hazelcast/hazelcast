@@ -21,8 +21,8 @@ import static org.junit.Assert.*;
 /**
  * Test MapStoreConfig
  */
-//@RunWith(HazelcastParallelClassRunner.class)
-//@Category({QuickTest.class, ParallelTest.class})
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MapStoreConfigTest {
 
     MapStoreConfig defaultCfg = new MapStoreConfig();
