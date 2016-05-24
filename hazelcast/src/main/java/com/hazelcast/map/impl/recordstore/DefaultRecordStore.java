@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.NativeMemoryConfig;
-import com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
@@ -57,6 +56,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -160,7 +160,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void destroy() {
         clearPartition(false);
-        storage.destroy();
+        storage.destroy(false);
     }
 
     @Override
@@ -287,13 +287,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         if (onShutdown) {
             NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
-            boolean clear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != MemoryAllocatorType.POOLED);
-            if (clear) {
-                storage.clear();
+            boolean shouldClear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != POOLED);
+            if (shouldClear) {
+                storage.clear(true);
             }
-            storage.destroy();
+            storage.destroy(true);
         } else {
-            storage.clear();
+            storage.clear(false);
         }
     }
 
@@ -475,7 +475,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void reset() {
         mapDataStore.reset();
-        storage.clear();
+        storage.clear(false);
         resetStats();
     }
 

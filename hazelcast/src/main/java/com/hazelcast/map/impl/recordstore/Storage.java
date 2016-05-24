@@ -45,9 +45,9 @@ public interface Storage<K, R> {
 
     boolean isEmpty();
 
-    void clear();
+    void clear(boolean isDuringShutdown);
 
-    void destroy();
+    void destroy(boolean isDuringShutdown);
 
     SizeEstimator getSizeEstimator();
 
