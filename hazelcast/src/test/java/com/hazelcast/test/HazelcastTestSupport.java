@@ -104,7 +104,25 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    // overridden in another context.
+    public static void assertEnumCoverage(Class<? extends Enum<?>> enumClass) {
+        Object values = null;
+        Object lastValue = null;
+        try {
+            values = enumClass.getMethod("values").invoke(null);
+        } catch (Throwable e) {
+            fail("could not invoke values() method of enum " + enumClass);
+        }
+        try {
+            for (Object value : (Object[]) values) {
+                lastValue = value;
+                enumClass.getMethod("valueOf", String.class).invoke(null, value.toString());
+            }
+        } catch (Throwable e) {
+            fail("could not invoke valueOf(" + lastValue + ") method of enum " + enumClass);
+        }
+    }
+
+    // overridden in another context
     protected Config getConfig() {
         return new Config();
     }
