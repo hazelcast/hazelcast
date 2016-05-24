@@ -34,24 +34,13 @@ import static org.junit.Assert.assertTrue;
 public class GlobalMemoryAccessorRegistryTest extends UnsafeDependentMemoryAccessorTest {
 
     @Test
+    public void testConstructor() {
+        assertUtilityConstructor(GlobalMemoryAccessorRegistry.class);
+    }
+
+    @Test
     public void test_getMemoryAccessor_default() {
         assertNotNull(GlobalMemoryAccessorRegistry.getDefaultGlobalMemoryAccessor());
-    }
-
-    private void checkStandardMemoryAccessorAvailable() {
-        MemoryAccessor memoryAccessor = GlobalMemoryAccessorRegistry.getGlobalMemoryAccessor(GlobalMemoryAccessorType.STANDARD);
-        if (StandardMemoryAccessor.isAvailable()) {
-            assertNotNull(memoryAccessor);
-            assertTrue(memoryAccessor instanceof StandardMemoryAccessor);
-        }
-    }
-
-    private void checkAlignmentAwareMemoryAccessorAvailable() {
-        MemoryAccessor memoryAccessor = GlobalMemoryAccessorRegistry.getGlobalMemoryAccessor(GlobalMemoryAccessorType.ALIGNMENT_AWARE);
-        if (AlignmentAwareMemoryAccessor.isAvailable()) {
-            assertNotNull(memoryAccessor);
-            assertTrue(memoryAccessor instanceof AlignmentAwareMemoryAccessor);
-        }
     }
 
     @Test
@@ -73,4 +62,19 @@ public class GlobalMemoryAccessorRegistryTest extends UnsafeDependentMemoryAcces
         }
     }
 
+    private void checkStandardMemoryAccessorAvailable() {
+        MemoryAccessor memoryAccessor = GlobalMemoryAccessorRegistry.getGlobalMemoryAccessor(GlobalMemoryAccessorType.STANDARD);
+        if (StandardMemoryAccessor.isAvailable()) {
+            assertNotNull(memoryAccessor);
+            assertTrue(memoryAccessor instanceof StandardMemoryAccessor);
+        }
+    }
+
+    private void checkAlignmentAwareMemoryAccessorAvailable() {
+        MemoryAccessor memoryAccessor = GlobalMemoryAccessorRegistry.getGlobalMemoryAccessor(GlobalMemoryAccessorType.ALIGNMENT_AWARE);
+        if (AlignmentAwareMemoryAccessor.isAvailable()) {
+            assertNotNull(memoryAccessor);
+            assertTrue(memoryAccessor instanceof AlignmentAwareMemoryAccessor);
+        }
+    }
 }

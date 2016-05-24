@@ -16,9 +16,10 @@
 
 package com.hazelcast.internal.memory.impl;
 
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.ClassRule;
 
-public abstract class UnsafeDependentMemoryAccessorTest {
+public abstract class UnsafeDependentMemoryAccessorTest extends HazelcastTestSupport {
 
     @ClassRule
     public static final TestIgnoreRuleAccordingToUnsafeAvailability UNSAFE_AVAILABILITY_RULE
