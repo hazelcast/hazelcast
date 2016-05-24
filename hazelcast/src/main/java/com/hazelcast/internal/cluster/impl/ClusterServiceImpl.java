@@ -612,9 +612,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key,
                                           Object value) {
+        LinkedHashSet<Member> members = new LinkedHashSet<Member>(membersRef.get());
         final MemberAttributeServiceEvent event
-                = new MemberAttributeServiceEvent(this, member, operationType, key, value);
-        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, operationType, key, value);
+                = new MemberAttributeServiceEvent(this, member, operationType, key, value, members);
+
+        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, operationType, key, value, members);
         Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             for (final MembershipAwareService service : membershipAwareServices) {

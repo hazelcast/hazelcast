@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.util.CollectionUtil.getItemAtPositionOrNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -113,6 +114,21 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         h1.shutdown();
         h2.shutdown();
+    }
+
+    @Test
+    public void givenMemberAttributedListenerRegistered_whenAttributeIsChanged_thenEventContainsCurrentMemberSet() {
+        HazelcastInstance instance = createHazelcastInstanceFactory().newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final LatchMembershipListener listener = new LatchMembershipListener(latch);
+        instance.getCluster().addMembershipListener(listener);
+        final Member localMember = instance.getCluster().getLocalMember();
+
+        localMember.setStringAttribute("foo", "bar");
+
+        assertOpenEventually(latch);
+        MemberAttributeEvent event = listener.lastMemberAttributeEvent;
+        assertEquals(localMember, getItemAtPositionOrNull(event.getMembers(), 0));
     }
 
     @Test(timeout = 120000)
@@ -258,6 +274,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
     private static class LatchMembershipListener implements MembershipListener {
         private final CountDownLatch latch;
+        private volatile MemberAttributeEvent lastMemberAttributeEvent;
 
         private LatchMembershipListener(CountDownLatch latch) {
             this.latch = latch;
@@ -273,6 +290,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
 
         @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+            lastMemberAttributeEvent = memberAttributeEvent;
             latch.countDown();
         }
     }
