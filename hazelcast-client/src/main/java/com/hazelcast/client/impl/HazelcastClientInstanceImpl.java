@@ -281,6 +281,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     private DiscoveryService initDiscoveryService(ClientConfig config) {
+        // Prevent confusing behavior where the DiscoveryService is started
+        // and strategies are resolved but the AddressProvider is never registered
+        if (!properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED)) {
+            return null;
+        }
+
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig().getAsReadOnly();
         if (discoveryConfig == null || !discoveryConfig.isEnabled()) {

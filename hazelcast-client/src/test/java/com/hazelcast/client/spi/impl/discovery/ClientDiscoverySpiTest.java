@@ -151,6 +151,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
         try {
             ClientConfig clientConfig = new ClientConfig();
+            clientConfig.setProperty("hazelcast.discovery.enabled", "true");
             discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
             discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
@@ -424,7 +425,9 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public void start() {
             super.start();
-            discoveryNodes.add(discoveryNode);
+            if (discoveryNode != null) {
+                discoveryNodes.add(discoveryNode);
+            }
             getLogger();
             getProperties();
         }
