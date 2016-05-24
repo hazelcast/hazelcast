@@ -43,5 +43,4 @@ public enum PartitionGroupMetaData {
      * Metadata key definition for a low-latency link on a shared physical node, in case of virtualization being used
      */
     public static final String PARTITION_GROUP_HOST = "hazelcast.partition.group.host";
-
 }
