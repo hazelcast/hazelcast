@@ -48,7 +48,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void clear() {
+    public void clear(boolean isDuringShutdown) {
         records.clear();
 
         sizeEstimator.reset();
@@ -99,8 +99,8 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
-    public void destroy() {
-        clear();
+    public void destroy(boolean isDuringShutdown) {
+        clear(isDuringShutdown);
     }
 
     @Override
