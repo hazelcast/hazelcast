@@ -65,13 +65,35 @@ public class ServiceConfig {
         return this;
     }
 
+    /**
+     * @since 3.7
+     */
     public Object getImplementation() {
         return serviceImpl;
     }
 
+    /**
+     * @since 3.7
+     */
     public ServiceConfig setImplementation(final Object serviceImpl) {
         this.serviceImpl = serviceImpl;
         return this;
+    }
+
+    /**
+     * @deprecated use {@link #getImplementation()} instead
+     */
+    @Deprecated
+    public Object getServiceImpl() {
+        return getImplementation();
+    }
+
+    /**
+     * @deprecated use {@link #setImplementation(Object)} instead
+     */
+    @Deprecated
+    public ServiceConfig setServiceImpl(final Object serviceImpl) {
+        return setImplementation(serviceImpl);
     }
 
     public Properties getProperties() {
