@@ -308,8 +308,9 @@ public class MapStoreConfig {
      * @param writeCoalescing {@code true} to enable write-coalescing, {@code false} otherwise.
      * @see GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
      */
-    public void setWriteCoalescing(boolean writeCoalescing) {
+    public MapStoreConfig setWriteCoalescing(boolean writeCoalescing) {
         this.writeCoalescing = writeCoalescing;
+        return this;
     }
 
     @Override
@@ -327,5 +328,65 @@ public class MapStoreConfig {
                 + ", initialLoadMode=" + initialLoadMode
                 + ", writeCoalescing=" + writeCoalescing
                 + '}';
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MapStoreConfig)) {
+            return false;
+        }
+
+        MapStoreConfig that = (MapStoreConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (writeCoalescing != that.writeCoalescing) {
+            return false;
+        }
+        if (writeDelaySeconds != that.writeDelaySeconds) {
+            return false;
+        }
+        if (writeBatchSize != that.writeBatchSize) {
+            return false;
+        }
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (factoryClassName != null ? !factoryClassName.equals(that.factoryClassName) : that.factoryClassName != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        if (factoryImplementation != null ? !factoryImplementation.equals(that.factoryImplementation)
+                : that.factoryImplementation != null) {
+            return false;
+        }
+        if (!properties.equals(that.properties)) {
+            return false;
+        }
+        return initialLoadMode == that.initialLoadMode;
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = (enabled ? 1 : 0);
+        result = prime * result + (writeCoalescing ? 1 : 0);
+        result = prime * result + (className != null ? className.hashCode() : 0);
+        result = prime * result + (factoryClassName != null ? factoryClassName.hashCode() : 0);
+        result = prime * result + writeDelaySeconds;
+        result = prime * result + writeBatchSize;
+        result = prime * result + (implementation != null ? implementation.hashCode() : 0);
+        result = prime * result + (factoryImplementation != null ? factoryImplementation.hashCode() : 0);
+        result = prime * result + properties.hashCode();
+        result = prime * result + (initialLoadMode != null ? initialLoadMode.hashCode() : 0);
+        return result;
     }
 }
