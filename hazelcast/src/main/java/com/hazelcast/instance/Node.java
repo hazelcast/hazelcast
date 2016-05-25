@@ -631,6 +631,14 @@ public class Node {
     }
 
     public void join() {
+        if (joined()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Calling join on already joined node. ", new Exception("stacktrace"));
+            } else {
+                logger.warning("Calling join on already joined node. ");
+            }
+            return;
+        }
         if (joiner == null) {
             logger.warning("No join method is enabled! Starting standalone.");
             setAsMaster();
@@ -639,7 +647,6 @@ public class Node {
 
         try {
             masterAddress = null;
-            joined.set(false);
             joiner.join();
         } catch (Throwable e) {
             logger.severe("Error while joining the cluster!", e);
