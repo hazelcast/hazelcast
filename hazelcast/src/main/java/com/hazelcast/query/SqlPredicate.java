@@ -22,8 +22,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.query.impl.predicates.Visitor;
+import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,7 +45,6 @@ import static com.hazelcast.query.Predicates.lessEqual;
 import static com.hazelcast.query.Predicates.lessThan;
 import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
-import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 
 /**
@@ -299,6 +300,36 @@ public class SqlPredicate
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         predicate = createPredicate(sql);
+    }
+
+    /**
+     * Return an {@link OrPredicate}, possibly flattened if one or both arguments is an instance of {@code OrPredicate}.
+     *
+     * The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
+     * however since we only care for 2-argument flattening, we can avoid constructing a visitor and its internals
+     * for each token pass at the cost of explicit code.
+     */
+     static Predicate or(Predicate predicateLeft, Predicate predicateRight) {
+        Predicate[] leftPredicates;
+        Predicate[] rightPredicates;
+        if (predicateLeft instanceof OrPredicate) {
+            leftPredicates = ((OrPredicate) predicateLeft).getPredicates();
+            if (predicateRight instanceof OrPredicate) {
+                rightPredicates = ((OrPredicate) predicateRight).getPredicates();
+            } else {
+                rightPredicates = new Predicate[] {predicateRight};
+            }
+            Predicate[] predicates = new Predicate[leftPredicates.length + rightPredicates.length];
+            ArrayUtils.concat(leftPredicates, rightPredicates, predicates);
+            return new OrPredicate(predicates);
+        } else if (predicateRight instanceof OrPredicate) {
+            rightPredicates = ((OrPredicate) predicateRight).getPredicates();
+            Predicate[] predicates = new Predicate[rightPredicates.length + 1];
+            ArrayUtils.concat(new Predicate[] {predicateLeft}, rightPredicates, predicates);
+            return new OrPredicate(predicates);
+        } else {
+            return Predicates.or(predicateLeft, predicateRight);
+        }
     }
 
     @Override

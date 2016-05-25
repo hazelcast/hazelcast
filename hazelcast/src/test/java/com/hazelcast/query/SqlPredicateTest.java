@@ -16,6 +16,9 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
@@ -35,6 +38,7 @@ import com.hazelcast.query.SampleObjects.ObjectWithUUID;
 import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -48,13 +52,18 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -362,6 +371,74 @@ public class SqlPredicateTest {
     @Test(expected = RuntimeException.class)
     public void testInvalidSqlPredicate2() {
         new SqlPredicate("");
+    }
+
+    // This test used to fail with a stack overflow exception, due to the way SQL predicates were
+    // nested, missing an opportunity to flatten.
+    // https://github.com/hazelcast/hazelcast/issues/7583
+    @Test
+    public void testLongPredicate() {
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+        IMap<Integer, Integer> map = hazelcastInstance.getMap(randomString());
+
+        for (int i=0; i < 8000; i++) {
+            map.put(i, i);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 8000; i++) {
+            sb.append("intValue() == " + i);
+            sb.append(" or ");
+        }
+        sb.append(" intValue() == -1");
+
+        SqlPredicate predicate = new SqlPredicate(sb.toString());
+
+        // all entries must match
+        Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
+        assertEquals(map.size(), entries.size());
+
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void testOr_whenBothPredicatesOr() {
+        OrPredicate predicate1 = new OrPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
+        OrPredicate predicate2 = new OrPredicate(new SqlPredicate("a == 3"));
+        OrPredicate concatenatedOr = (OrPredicate) SqlPredicate.or(predicate1, predicate2);
+        assertEquals(3, concatenatedOr.getPredicates().length);
+    }
+
+    @Test
+    public void testOr_whenLeftPredicateOr() {
+        OrPredicate predicate1 = new OrPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
+        TruePredicate predicate2 = new TruePredicate();
+        OrPredicate concatenatedOr = (OrPredicate) SqlPredicate.or(predicate1, predicate2);
+        assertEquals(3, concatenatedOr.getPredicates().length);
+        assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[0]);
+        assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[1]);
+        assertSame(predicate2, concatenatedOr.getPredicates()[2]);
+    }
+
+    @Test
+    public void testOr_whenRightPredicateOr() {
+        OrPredicate predicate1 = new OrPredicate(new SqlPredicate("a == 1"), new SqlPredicate("a == 2"));
+        TruePredicate predicate2 = new TruePredicate();
+        OrPredicate concatenatedOr = (OrPredicate) SqlPredicate.or(predicate2, predicate1);
+        assertEquals(3, concatenatedOr.getPredicates().length);
+        assertSame(predicate2, concatenatedOr.getPredicates()[0]);
+        assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[1]);
+        assertInstanceOf(SqlPredicate.class, concatenatedOr.getPredicates()[2]);
+    }
+
+    @Test
+    public void testOr_whenNoPredicateOr() {
+        TruePredicate predicate1 = new TruePredicate();
+        TruePredicate predicate2 = new TruePredicate();
+        OrPredicate concatenatedOr = (OrPredicate) SqlPredicate.or(predicate1, predicate2);
+        assertEquals(2, concatenatedOr.getPredicates().length);
+        assertSame(predicate1, concatenatedOr.getPredicates()[0]);
+        assertSame(predicate2, concatenatedOr.getPredicates()[1]);
     }
 
     private String sql(String sql) {

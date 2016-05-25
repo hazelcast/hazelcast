@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.collection;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
@@ -81,5 +82,18 @@ public final class ArrayUtils {
             return array[position];
         }
         return null;
+    }
+
+    /**
+     * Copies in order {@code sourceFirst} and {@code sourceSecond} into {@code dest},
+     * i
+     * @param sourceFirst
+     * @param sourceSecond
+     * @param dest
+     * @param <T>
+     */
+    public static <T> void concat(T[] sourceFirst, T[] sourceSecond, T[] dest) {
+        System.arraycopy(sourceFirst, 0, dest, 0, sourceFirst.length);
+        System.arraycopy(sourceSecond, 0, dest, sourceFirst.length, sourceSecond.length);
     }
 }

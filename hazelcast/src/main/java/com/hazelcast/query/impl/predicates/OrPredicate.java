@@ -163,4 +163,8 @@ public final class OrPredicate
     public int getId() {
         return PredicateDataSerializerHook.OR_PREDICATE;
     }
+
+    public Predicate[] getPredicates() {
+        return predicates;
+    }
 }
