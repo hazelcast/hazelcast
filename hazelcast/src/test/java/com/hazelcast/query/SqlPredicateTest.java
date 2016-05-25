@@ -41,6 +41,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -379,7 +380,8 @@ public class SqlPredicateTest {
     // https://github.com/hazelcast/hazelcast/issues/7583
     @Test
     public void testLongPredicate() {
-        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
+        HazelcastInstance hazelcastInstance = factory.newHazelcastInstance();
         IMap<Integer, Integer> map = hazelcastInstance.getMap(randomString());
 
         for (int i=0; i < 8000; i++) {
@@ -399,7 +401,7 @@ public class SqlPredicateTest {
         Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
         assertEquals(map.size(), entries.size());
 
-        hazelcastInstance.shutdown();
+        factory.terminateAll();
     }
 
     @Test

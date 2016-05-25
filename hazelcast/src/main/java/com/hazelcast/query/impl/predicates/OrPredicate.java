@@ -171,6 +171,10 @@ public final class OrPredicate
 
     @Override
     public <K, V> void setPredicates(Predicate<K, V>[] predicates) {
-        this.predicates = predicates;
+        if (this.predicates == null) {
+            this.predicates = predicates;
+        } else {
+            throw new IllegalStateException("Cannot reset predicates in an OrPredicate after they have been already set.");
+        }
     }
 }

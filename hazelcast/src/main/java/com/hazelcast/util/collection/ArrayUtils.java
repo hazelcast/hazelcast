@@ -84,8 +84,7 @@ public final class ArrayUtils {
     }
 
     /**
-     * Copies in order {@code sourceFirst} and {@code sourceSecond} into {@code dest},
-     * i
+     * Copies in order {@code sourceFirst} and {@code sourceSecond} into {@code dest}.
      * @param sourceFirst
      * @param sourceSecond
      * @param dest

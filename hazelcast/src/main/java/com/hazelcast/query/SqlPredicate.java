@@ -307,14 +307,14 @@ public class SqlPredicate
      * Return a {@link CompoundPredicate}, possibly flattened if one or both arguments is an instance of
      * {@code CompoundPredicate}.
      *
-     * The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
-     * however since we only care for 2-argument flattening, we can avoid constructing a visitor and its internals
-     * for each token pass at the cost of the following ugly piece of code.
      */
-     static <T extends CompoundPredicate> T flattenCompound(Predicate predicateLeft, Predicate predicateRight, Class<T> klass) {
+    static <T extends CompoundPredicate> T flattenCompound(Predicate predicateLeft, Predicate predicateRight, Class<T> klass) {
+        // The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
+        // however since we only care for 2-argument flattening, we can avoid constructing a visitor and its internals
+        // for each token pass at the cost of the following explicit code.
         Predicate[] subpredicatesLeft;
         Predicate[] subpredicatesRight;
-         Predicate[] predicates;
+        Predicate[] predicates;
         if (klass.isInstance(predicateLeft)) {
             subpredicatesLeft = ((CompoundPredicate) predicateLeft).getPredicates();
             if (predicateRight instanceof CompoundPredicate) {
@@ -331,15 +331,15 @@ public class SqlPredicate
         } else {
             predicates = new Predicate[] {predicateLeft, predicateRight};
         }
-         try {
-             CompoundPredicate compoundPredicate = klass.newInstance();
-             compoundPredicate.setPredicates(predicates);
-             return (T) compoundPredicate;
-         } catch (InstantiationException e) {
-             throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
-         } catch (IllegalAccessException e) {
-             throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
-         }
+        try {
+            CompoundPredicate compoundPredicate = klass.newInstance();
+            compoundPredicate.setPredicates(predicates);
+            return (T) compoundPredicate;
+        } catch (InstantiationException e) {
+            throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
+        }
     }
 
     @Override
