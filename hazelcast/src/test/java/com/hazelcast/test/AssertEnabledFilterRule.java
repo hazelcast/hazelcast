@@ -38,7 +38,7 @@ public class AssertEnabledFilterRule implements TestRule {
                 if (assertEnabled) {
                     base.evaluate();
                 } else {
-                    System.err.println("WARNING! Test cannot run when Java assertions are not enabled (java -ea ...): "
+                    System.out.println("WARNING! Test cannot run when Java assertions are not enabled (java -ea ...): "
                             + description.getDisplayName());
                 }
             }
