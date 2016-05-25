@@ -39,7 +39,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
  * And Predicate
  */
 public final class AndPredicate
-        implements IndexAwarePredicate, IdentifiedDataSerializable, VisitablePredicate, NegatablePredicate {
+        implements IndexAwarePredicate, IdentifiedDataSerializable, VisitablePredicate, NegatablePredicate, CompoundPredicate {
 
     protected Predicate[] predicates;
 
@@ -177,5 +177,15 @@ public final class AndPredicate
     @Override
     public int getId() {
         return PredicateDataSerializerHook.AND_PREDICATE;
+    }
+
+    @Override
+    public <K, V> Predicate<K, V>[] getPredicates() {
+        return predicates;
+    }
+
+    @Override
+    public <K, V> void setPredicates(Predicate<K, V>[] predicates) {
+        this.predicates = predicates;
     }
 }
