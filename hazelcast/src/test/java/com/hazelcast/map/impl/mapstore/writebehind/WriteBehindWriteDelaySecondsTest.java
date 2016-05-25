@@ -102,26 +102,25 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
-                .withWriteDelaySeconds(2)
+                .withWriteDelaySeconds(6)
                 .withPartitionCount(1)
                 .build();
 
 
         for (int i = 1; i <= 60; i++) {
             map.put(1, i);
-            sleepMillis(100);
+            sleepMillis(500);
         }
 
         // min expected 2 --> Expect to observe at least 2 store operations in every write-delay-seconds window.
-        // Currently it is 2 seconds. We don't want to see 1 store operation in the course of this 60 * 100 millis test period.
+        // Current write-delay-seconds is 6 seconds. We don't want to see 1 store operation in the course of this 60 * 500 millis test period.
         // It should be bigger than 1.
-        //
-        // max expected 3 --> 60 * 100 millis / 2 * 1000 millis
-        assertMinMaxStoreOperationsCount(2, 3, mapStore);
+
+        assertMinMaxStoreOperationsCount(2, mapStore);
+        final int countStore = mapStore.countStore.get();
     }
 
     private void assertMinMaxStoreOperationsCount(final int minimumExpectedStoreOperationCount,
-                                                  final int maximumExpectedStoreOperationCount,
                                                   final MapStoreWithCounter mapStore) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -130,11 +129,9 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
                 final int countStore = mapStore.countStore.get();
 
                 assertEquals(60, value);
-                assertTrue("Minimum store operation count should be bigger than 1 but found = " + countStore,
+                assertTrue("Minimum store operation count should be bigger than "
+                                + minimumExpectedStoreOperationCount + " but found = " + countStore,
                         countStore >= minimumExpectedStoreOperationCount);
-                assertTrue("Maximum store operation count should be smaller than " + maximumExpectedStoreOperationCount
-                                + " but found = " + countStore,
-                        countStore <= maximumExpectedStoreOperationCount);
             }
         });
     }
