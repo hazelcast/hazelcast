@@ -976,7 +976,7 @@ public class EvictionTest extends HazelcastTestSupport {
         nodes[1].shutdown();
 
         // 3. Background task should sweep all keys.
-        assertSizeEventually(0, map);
+        assertSizeEventually(0, map, 240);
     }
 
     private void assertExpirationOccuredOnJoinerNode(String mapName, String key, HazelcastInstance joinerNode) {
