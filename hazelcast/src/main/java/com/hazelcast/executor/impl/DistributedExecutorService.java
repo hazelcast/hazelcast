@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
@@ -90,8 +91,11 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public void execute(String name, String uuid, Callable callable, Operation op) {
-        startPending(name);
-        CallableProcessor processor = new CallableProcessor(name, uuid, callable, op);
+        ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
+        if (cfg.isStatisticsEnabled()) {
+            startPending(name);
+        }
+        CallableProcessor processor = new CallableProcessor(name, uuid, callable, op, cfg.isStatisticsEnabled());
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
@@ -99,7 +103,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         try {
             executionService.execute(name, processor);
         } catch (RejectedExecutionException e) {
-            rejectExecution(name);
+            if (cfg.isStatisticsEnabled()) {
+                rejectExecution(name);
+            }
             logger.warning("While executing " + callable + " on Executor[" + name + "]", e);
             if (uuid != null) {
                 submittedTasks.remove(uuid);
@@ -112,7 +118,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         CallableProcessor processor = submittedTasks.remove(uuid);
         if (processor != null && processor.cancel(interrupt)) {
             if (processor.sendResponse(new CancellationException())) {
-                getLocalExecutorStats(processor.name).cancelExecution();
+                if (processor.isStatisticsEnabled()) {
+                    getLocalExecutorStats(processor.name).cancelExecution();
+                }
                 return true;
             }
         }
@@ -186,20 +194,24 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         private final Operation op;
         private final String callableToString;
         private final long creationTime = Clock.currentTimeMillis();
+        private final boolean statisticsEnabled;
 
-        private CallableProcessor(String name, String uuid, Callable callable, Operation op) {
+        private CallableProcessor(String name, String uuid, Callable callable, Operation op, boolean statisticsEnabled) {
             //noinspection unchecked
             super(callable);
             this.name = name;
             this.uuid = uuid;
             this.callableToString = String.valueOf(callable);
             this.op = op;
+            this.statisticsEnabled = statisticsEnabled;
         }
 
         @Override
         public void run() {
             long start = Clock.currentTimeMillis();
-            startExecution(name, start - creationTime);
+            if (statisticsEnabled) {
+                startExecution(name, start - creationTime);
+            }
             Object result = null;
             try {
                 super.run();
@@ -215,7 +227,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 }
                 if (!isCancelled()) {
                     sendResponse(result);
-                    finishExecution(name, Clock.currentTimeMillis() - start);
+                    if (statisticsEnabled) {
+                        finishExecution(name, Clock.currentTimeMillis() - start);
+                    }
                 }
             }
         }
@@ -233,6 +247,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             }
 
             return false;
+        }
+
+        boolean isStatisticsEnabled() {
+            return statisticsEnabled;
         }
     }
 }
