@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
@@ -32,7 +31,6 @@ import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -41,7 +39,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
@@ -156,20 +153,8 @@ public class MapContainer {
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
-        PartitioningStrategy strategy = null;
-        PartitioningStrategyConfig partitioningStrategyConfig = mapConfig.getPartitioningStrategyConfig();
-        if (partitioningStrategyConfig != null) {
-            strategy = partitioningStrategyConfig.getPartitioningStrategy();
-            if (strategy == null && partitioningStrategyConfig.getPartitioningStrategyClass() != null) {
-                try {
-                    strategy = ClassLoaderUtil.newInstance(mapServiceContext.getNodeEngine().getConfigClassLoader(),
-                            partitioningStrategyConfig.getPartitioningStrategyClass());
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
-            }
-        }
-        return strategy;
+        return PartitioningStrategyFactory.getPartitioningStrategy(mapServiceContext.getNodeEngine(),
+                mapConfig.getName(), mapConfig.getPartitioningStrategyConfig());
     }
 
     public Indexes getIndexes() {

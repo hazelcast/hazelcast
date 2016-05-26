@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.proxy;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
@@ -67,6 +68,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.emptyMap;
 
@@ -76,10 +78,11 @@ import static java.util.Collections.emptyMap;
  * @param <K> the key type of map.
  * @param <V> the value type of map.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
 
-    public MapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine) {
-        super(name, mapService, nodeEngine);
+    public MapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
+        super(name, mapService, nodeEngine, mapConfig);
     }
 
     @Override
@@ -553,14 +556,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
-        checkNotNull(getMapStore(), "First you should configure a map store");
+        checkTrue(isMapStoreEnabled(), "First you should configure a map store");
 
         loadAllInternal(replaceExistingValues);
     }
 
     @Override
     public void loadAll(Set<K> keys, boolean replaceExistingValues) {
-        checkNotNull(getMapStore(), "First you should configure a map store");
+        checkTrue(isMapStoreEnabled(), "First you should configure a map store");
         checkNotNull(keys, "Parameter keys should not be null.");
 
         Iterable<Data> dataKeys = convertToData(keys);

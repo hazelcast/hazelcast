@@ -16,10 +16,13 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.MapUtil;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -32,19 +35,21 @@ import java.util.Map;
 class MapStatisticsAwareService implements StatisticsAwareService {
 
     private final MapServiceContext mapServiceContext;
+    private final ProxyService proxyService;
 
     MapStatisticsAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
+        this.proxyService = mapServiceContext.getNodeEngine().getProxyService();
     }
 
     @Override
     public Map<String, LocalMapStats> getStats() {
         MapServiceContext mapServiceContext = this.mapServiceContext;
-        Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        Map<String, LocalMapStats> mapStats = MapUtil.createHashMap(mapContainers.size());
-        for (String mapName : mapContainers.keySet()) {
+        Collection<DistributedObject> mapProxies = proxyService.getDistributedObjects(MapService.SERVICE_NAME);
+        Map<String, LocalMapStats> mapStats = MapUtil.createHashMap(mapProxies.size());
+        for (DistributedObject mapProxy : mapProxies) {
             LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-            mapStats.put(mapName, localMapStatsProvider.createLocalMapStats(mapName));
+            mapStats.put(mapProxy.getName(), localMapStatsProvider.createLocalMapStats(mapProxy.getName()));
         }
         return mapStats;
     }

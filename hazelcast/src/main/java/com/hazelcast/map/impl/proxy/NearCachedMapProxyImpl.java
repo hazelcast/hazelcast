@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
@@ -51,8 +52,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     protected NearCache<Data, Data> nearCache;
     protected boolean cacheLocalEntries;
 
-    public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine) {
-        super(name, mapService, nodeEngine);
+    public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
+        super(name, mapService, nodeEngine, mapConfig);
     }
 
     @Override
