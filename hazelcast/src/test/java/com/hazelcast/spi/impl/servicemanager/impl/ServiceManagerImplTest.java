@@ -46,8 +46,7 @@ public class ServiceManagerImplTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        serviceManager = new ServiceManagerImpl(nodeEngine);
-        serviceManager.start();
+        serviceManager = (ServiceManagerImpl) nodeEngine.getServiceManager();
     }
 
     static class FooService implements ManagedService, ConfigurableService {
