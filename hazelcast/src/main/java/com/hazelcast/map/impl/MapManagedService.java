@@ -40,7 +40,7 @@ public class MapManagedService implements ManagedService {
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        final LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(MapService.SERVICE_NAME,
                     new ObjectNamespaceLockStoreInfoConstructorFunction());
