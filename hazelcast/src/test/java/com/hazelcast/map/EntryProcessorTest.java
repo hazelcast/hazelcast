@@ -165,7 +165,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.put("b", new TempData("abc", "123"));
         TestPredicate predicate = new TestPredicate("foo");
         Map<String, Object> entries = map.executeOnEntries(new LoggingEntryProcessor(), predicate);
-        assertEquals("The predicate should be applied to only one entry if indexing works!", entries.size(), 1);
+        assertEquals("The predicate should only relate to one entry!", 1, entries.size());
+        assertEquals("The predicate's apply method should only be invoked once!", 1, predicate.getApplied());
+        assertTrue("The predicate should only be used via index service!", predicate.isFilteredAndAppliedOnlyOnce());
     }
 
     /**
@@ -1211,7 +1213,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         @Override
         public boolean isIndexed(QueryContext queryContext) {
             indexCalled.set(true);
-            return false;
+            return true;
         }
 
         @Override

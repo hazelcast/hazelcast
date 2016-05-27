@@ -26,19 +26,21 @@ import java.util.Set;
 public class TestPredicate implements IndexAwarePredicate<String, TempData> {
 
     private String value;
-    private boolean didApply;
+    private boolean filtered;
+    private int applied;
 
     public TestPredicate(String value) {
         this.value = value;
     }
 
     public boolean apply(Map.Entry<String, TempData> mapEntry) {
-        didApply = true;
+        applied++;
         TempData data = (TempData) mapEntry.getValue();
         return data.getAttr1().equals(value);
     }
 
     public Set<QueryableEntry<String, TempData>> filter(QueryContext queryContext) {
+        filtered = true;
         return (Set) queryContext.getIndex("attr1").getRecords(value);
     }
 
@@ -46,8 +48,12 @@ public class TestPredicate implements IndexAwarePredicate<String, TempData> {
         return queryContext.getIndex("attr1") != null;
     }
 
-    public boolean didApply() {
-        return didApply;
+    public boolean isFilteredAndAppliedOnlyOnce() {
+        return filtered && applied == 1;
+    }
+
+    public int getApplied() {
+        return applied;
     }
 
 }
