@@ -63,6 +63,8 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
         config.setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "1");
 
         HazelcastInstance[] instances = factory.newInstances(config, nodeCount);
+        warmUpPartitions(instances);
+
         fillData(instances[instances.length - 1]);
         assertSizeAndDataEventually();
 

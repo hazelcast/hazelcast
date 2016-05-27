@@ -192,37 +192,6 @@ public class InternalPartitionImplTest {
     }
 
     @Test
-    public void testRemoveAddress_whenAddressExists() throws Exception {
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            replicaAddresses[i] = newAddress(5000 + i);
-        }
-        partition.setInitialReplicaAddresses(replicaAddresses);
-
-        int replicaIndex = partition.getReplicaIndex(thisAddress);
-        assertEquals(replicaIndex, partition.removeAddress(thisAddress));
-
-        assertNull(partition.getReplicaAddress(replicaIndex));
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            if (i != replicaIndex) {
-                assertEquals(replicaAddresses[i], partition.getReplicaAddress(i));
-            }
-        }
-    }
-
-    @Test
-    public void testRemoveAddress_whenAddressNOTExists() throws Exception {
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            replicaAddresses[i] = newAddress(5000 + i);
-        }
-        partition.setInitialReplicaAddresses(replicaAddresses);
-
-        assertEquals(-1, partition.removeAddress(newAddress(6000)));
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            assertEquals(replicaAddresses[i], partition.getReplicaAddress(i));
-        }
-    }
-
-    @Test
     public void testReset() throws Exception {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             replicaAddresses[i] = newAddress(5000 + i);

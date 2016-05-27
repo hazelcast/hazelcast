@@ -24,9 +24,6 @@ import com.hazelcast.core.HazelcastException;
  */
 public class PartitionStateVersionMismatchException extends HazelcastException {
 
-    public PartitionStateVersionMismatchException() {
-    }
-
     public PartitionStateVersionMismatchException(String message) {
         super(message);
     }

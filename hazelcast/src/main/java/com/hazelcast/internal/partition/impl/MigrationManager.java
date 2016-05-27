@@ -22,7 +22,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -84,6 +83,7 @@ public class MigrationManager {
     private static final boolean ASSERTION_ENABLED = MigrationManager.class.desiredAssertionStatus();
     private static final int PARTITION_STATE_VERSION_INCREMENT_DELTA_ON_MIGRATION_FAILURE = 2;
     private static final int MIGRATION_PAUSE_DURATION_SECONDS_ON_MIGRATION_FAILURE = 3;
+    private static final String INVALID_UUID = "<invalid-uuid>";
 
     final long partitionMigrationInterval;
 
@@ -311,9 +311,6 @@ public class MigrationManager {
 
     private boolean commitMigrationToDestination(Address destination, MigrationInfo... migrations) {
         assert migrations.length > 0 : "No migrations to commit!";
-        if (!node.isMaster()) {
-            return false;
-        }
 
         if (node.getThisAddress().equals(destination)) {
             if (logger.isFinestEnabled()) {
@@ -323,12 +320,18 @@ public class MigrationManager {
             return true;
         }
 
+        MemberImpl member = node.getClusterService().getMember(destination);
+        if (member == null) {
+            logger.warning("Destination " + destination + " is not member anymore");
+            return false;
+        }
+
         try {
             if (logger.isFinestEnabled()) {
                 logger.finest("Sending commit operation to " + destination + " for " + Arrays.toString(migrations));
             }
             PartitionRuntimeState partitionState = partitionService.createMigrationCommitPartitionState(migrations);
-            String destinationUuid = partitionStateManager.getMemberUuid(destination);
+            String destinationUuid = member.getUuid();
             MigrationCommitOperation operation = new MigrationCommitOperation(partitionState, destinationUuid);
             Future<Boolean> future = nodeEngine.getOperationService()
                     .createInvocationBuilder(SERVICE_NAME, operation, destination)
@@ -530,6 +533,15 @@ public class MigrationManager {
         }
     }
 
+    MigrationRunnable getActiveTask() {
+        return migrationThread.getActiveTask();
+    }
+
+    private String getMemberUuid(Address address) {
+        MemberImpl member = node.getClusterService().getMember(address);
+        return member != null ? member.getUuid() : INVALID_UUID;
+    }
+
     private class RepartitioningTask implements MigrationRunnable {
 
         @Override
@@ -547,7 +559,6 @@ public class MigrationManager {
 
                 lastRepartitionTime.set(Clock.currentTimeMillis());
 
-                partitionStateManager.updateMemberUuidMap();
                 processNewPartitionState(newState);
 
                 if (ASSERTION_ENABLED) {
@@ -634,7 +645,7 @@ public class MigrationManager {
         }
 
         private void assignNewPartitionOwner(int partitionId, InternalPartitionImpl currentPartition, Address newOwner) {
-            String destinationUuid = partitionStateManager.getMemberUuid(newOwner);
+            String destinationUuid = getMemberUuid(newOwner);
             MigrationInfo migrationInfo = new MigrationInfo(partitionId, null, null, newOwner, destinationUuid, -1, -1, -1, 0);
             PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
             partitionEventManager.sendMigrationEvent(migrationInfo, MigrationEvent.MigrationStatus.STARTED);
@@ -703,8 +714,8 @@ public class MigrationManager {
 
                     partition.setReplicaAddress(sourceCurrentReplicaIndex, null);
                 } else {
-                    String sourceUuid = partitionStateManager.getMemberUuid(source);
-                    String destinationUuid = partitionStateManager.getMemberUuid(destination);
+                    String sourceUuid = getMemberUuid(source);
+                    String destinationUuid = getMemberUuid(destination);
                     MigrationInfo migration = new MigrationInfo(partitionId, source, sourceUuid, destination, destinationUuid,
                             sourceCurrentReplicaIndex, sourceNewReplicaIndex,
                             destinationCurrentReplicaIndex, destinationNewReplicaIndex);
@@ -716,11 +727,16 @@ public class MigrationManager {
         }
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     private class AssertPartitionTableTask implements MigrationRunnable {
 
         @Override
         public void run() {
             if (!ASSERTION_ENABLED) {
+                return;
+            }
+
+            if (!node.isMaster()) {
                 return;
             }
 
@@ -1003,10 +1019,7 @@ public class MigrationManager {
         private Map<Address, Collection<MigrationInfo>> removeUnknownAddressesAndCollectPromotions() {
             partitionServiceLock.lock();
             try {
-                Collection<Address> addresses = collectUnknownAddresses();
-                for (Address address : addresses) {
-                    partitionStateManager.removeDeadAddress(address);
-                }
+                partitionStateManager.removeUnknownAddresses();
 
                 Map<Address, Collection<MigrationInfo>> promotions = new HashMap<Address, Collection<MigrationInfo>>();
                 for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
@@ -1108,7 +1121,7 @@ public class MigrationManager {
                 }
 
                 if (destination != null) {
-                    String destinationUuid = partitionStateManager.getMemberUuid(destination);
+                    String destinationUuid = getMemberUuid(destination);
                     MigrationInfo migration =
                             new MigrationInfo(partitionId, null, null, destination, destinationUuid, -1, -1, index, 0);
                     migration.setMaster(node.getThisAddress());
@@ -1124,29 +1137,6 @@ public class MigrationManager {
                 partitionEventManager.sendPartitionLostEvent(partitionId, InternalPartition.MAX_BACKUP_COUNT);
             }
             return null;
-        }
-
-        private Collection<Address> collectUnknownAddresses() {
-            InternalPartition[] partitions = partitionStateManager.getPartitions();
-            ClusterServiceImpl clusterService = node.getClusterService();
-
-            Collection<Address> addresses = new HashSet<Address>();
-
-            for (InternalPartition partition : partitions) {
-                for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
-                    Address address = partition.getReplicaAddress(i);
-                    if (address == null) {
-                        continue;
-                    }
-
-                    MemberImpl member = clusterService.getMember(address);
-                    if (member == null || !partitionStateManager.isKnownMemberUuid(address, member.getUuid())) {
-                        addresses.add(address);
-                    }
-                }
-            }
-
-            return addresses;
         }
     }
 
@@ -1201,7 +1191,7 @@ public class MigrationManager {
                     } else {
                         boolean present = false;
                         for (Address address : shutdownRequestedAddresses) {
-                            if (isAbsentInPartitionTable(address)) {
+                            if (partitionStateManager.isAbsentInPartitionTable(address)) {
                                 sendShutdownOperation(address);
                             } else {
                                 logger.warning(address + " requested to shutdown but still in partition table");
@@ -1218,17 +1208,6 @@ public class MigrationManager {
                 partitionServiceLock.unlock();
             }
         }
-
-        private boolean isAbsentInPartitionTable(Address address) {
-            for (InternalPartition partition : partitionStateManager.getPartitions()) {
-                if (partition.isOwnerOrBackup(address)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
     }
 
 }

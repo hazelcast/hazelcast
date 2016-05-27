@@ -76,25 +76,6 @@ public class InternalPartitionImpl implements InternalPartition {
         return addresses[replicaIndex];
     }
 
-    // This method is called under InternalPartitionServiceImpl.lock,
-    // so there's no need to guard `addresses` field or to use a CAS.
-    int removeAddress(Address deadAddress) {
-        Address[] currentAddresses = addresses;
-        Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
-
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            if (!deadAddress.equals(currentAddresses[i])) {
-                continue;
-            }
-
-            newAddresses[i] = null;
-            addresses = newAddresses;
-            callPartitionListener(i, deadAddress, null);
-            return i;
-        }
-        return -1;
-    }
-
     void swapAddresses(int index1, int index2) {
         Address[] newAddresses = Arrays.copyOf(addresses, MAX_REPLICA_COUNT);
 
@@ -172,12 +153,7 @@ public class InternalPartitionImpl implements InternalPartition {
 
     @Override
     public boolean isOwnerOrBackup(Address address) {
-        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            if (address.equals(getReplicaAddress(i))) {
-                return true;
-            }
-        }
-        return false;
+        return getReplicaIndex(address) >= 0;
     }
 
     @Override

@@ -27,42 +27,75 @@ import java.io.IOException;
 
 public class MemberRemoveOperation extends AbstractClusterOperation implements AllowedDuringPassiveState {
 
-    private Address deadAddress;
+    private Address address;
+    private String memberUuid;
 
     public MemberRemoveOperation() {
     }
 
-    public MemberRemoveOperation(Address deadAddress) {
-        this.deadAddress = deadAddress;
+    public MemberRemoveOperation(Address address) {
+        this.address = address;
+    }
+
+    public MemberRemoveOperation(Address address, String uuid) {
+        this.address = address;
+        this.memberUuid = uuid;
     }
 
     @Override
     public void run() {
-        final ClusterServiceImpl clusterService = getService();
-        final Address caller = getCallerAddress();
+        ClusterServiceImpl clusterService = getService();
+        Address caller = getCallerAddress();
         ILogger logger = getLogger();
-        if (caller != null && (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
-            String msg = "Removing dead member " + deadAddress + ", called from " + caller;
-            if (logger.isFinestEnabled()) {
-                logger.finest(msg);
-            }
-            clusterService.removeAddress(deadAddress, msg);
-        } else {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Ignoring removal request of " + deadAddress + ", because sender is neither dead-member "
-                        + "nor master, called from " + caller);
-            }
+
+        if (!isCallerValid(caller)) {
+            return;
         }
+
+        String msg = "Removing member " + address + (memberUuid != null ? ", uuid: " + memberUuid : "")
+                + ", requested by: " + caller;
+        if (logger.isFineEnabled()) {
+            logger.fine(msg);
+        }
+
+        if (memberUuid != null) {
+            clusterService.removeAddress(address, memberUuid, msg);
+        } else {
+            clusterService.removeAddress(address, msg);
+        }
+    }
+
+    private boolean isCallerValid(Address caller) {
+        ClusterServiceImpl clusterService = getService();
+        ILogger logger = getLogger();
+
+        if (caller == null) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Ignoring removal request of " + address + ", because sender is local or not known.");
+            }
+            return false;
+        }
+
+        if (!address.equals(caller) && !caller.equals(clusterService.getMasterAddress())) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Ignoring removal request of " + address + ", because sender is neither dead-member "
+                        + "nor master: " + caller);
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        deadAddress = new Address();
-        deadAddress.readData(in);
+        address = new Address();
+        address.readData(in);
+        memberUuid = in.readUTF();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        deadAddress.writeData(out);
+        address.writeData(out);
+        out.writeUTF(memberUuid);
     }
 }
