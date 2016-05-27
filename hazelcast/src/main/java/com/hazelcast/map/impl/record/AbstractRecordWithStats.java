@@ -62,4 +62,35 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
         this.lastStoredTime = lastStoredTime;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        AbstractRecordWithStats<?> that = (AbstractRecordWithStats<?>) o;
+
+        if (lastStoredTime != that.lastStoredTime) {
+            return false;
+        }
+
+        return expirationTime == that.expirationTime;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) (lastStoredTime ^ (lastStoredTime >>> 32));
+        result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
+        return result;
+    }
 }

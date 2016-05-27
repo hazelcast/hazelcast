@@ -172,4 +172,57 @@ public abstract class AbstractRecord<V> implements Record<V> {
     @Override
     public void setLastStoredTime(long lastStoredTime) {
     }
+
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractRecord<?> that = (AbstractRecord<?>) o;
+
+        if (version != that.version) {
+            return false;
+        }
+
+        if (ttl != that.ttl) {
+            return false;
+        }
+
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+
+        if (hits != that.hits) {
+            return false;
+        }
+
+        if (lastAccessTime != that.lastAccessTime) {
+            return false;
+        }
+
+        if (lastUpdateTime != that.lastUpdateTime) {
+            return false;
+        }
+
+        return key.equals(that.key);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = key.hashCode();
+        result = 31 * result + (int) (version ^ (version >>> 32));
+        result = 31 * result + (int) (ttl ^ (ttl >>> 32));
+        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (hits ^ (hits >>> 32));
+        result = 31 * result + (int) (lastAccessTime ^ (lastAccessTime >>> 32));
+        result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
+        return result;
+    }
 }

@@ -44,4 +44,31 @@ class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
     public void setValue(Object o) {
         value = o;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        ObjectRecord that = (ObjectRecord) o;
+
+        return value.equals(that.value);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + value.hashCode();
+        return result;
+    }
 }

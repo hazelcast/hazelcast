@@ -60,7 +60,7 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig().setStatisticsEnabled(true).setCacheDeserializedValues(CacheDeserializedValues.NEVER);
         DataRecordFactory dataRecordFactory = new DataRecordFactory(mapConfig, mockSerializationService, mockPartitioningStrategy);
 
-        Record<Data> dataRecord = dataRecordFactory.newRecord(object);
+        Record<Data> dataRecord = newDataRecord(dataRecordFactory);
 
         assertInstanceOf(DataRecordWithStats.class, dataRecord);
     }
@@ -70,9 +70,15 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig().setStatisticsEnabled(false).setCacheDeserializedValues(CacheDeserializedValues.NEVER);
         DataRecordFactory dataRecordFactory = new DataRecordFactory(mapConfig, mockSerializationService, mockPartitioningStrategy);
 
-        Record<Data> dataRecord = dataRecordFactory.newRecord(object);
+        Record<Data> dataRecord = newDataRecord(dataRecordFactory);
 
         assertInstanceOf(DataRecord.class, dataRecord);
+    }
+
+    protected Record<Data> newDataRecord(DataRecordFactory dataRecordFactory) {
+        Record<Data> record = dataRecordFactory.newRecord(object);
+        ((AbstractRecord) record).setKey(data);
+        return record;
     }
 
     @Test
@@ -80,7 +86,7 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig().setStatisticsEnabled(true);
         DataRecordFactory dataRecordFactory = new DataRecordFactory(mapConfig, mockSerializationService, mockPartitioningStrategy);
 
-        Record<Data> dataRecord = dataRecordFactory.newRecord(object);
+        Record<Data> dataRecord = newDataRecord(dataRecordFactory);
 
         assertInstanceOf(CachedDataRecordWithStats.class, dataRecord);
     }
@@ -90,7 +96,7 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
         MapConfig mapConfig = new MapConfig().setStatisticsEnabled(false);
         DataRecordFactory dataRecordFactory = new DataRecordFactory(mapConfig, mockSerializationService, mockPartitioningStrategy);
 
-        Record<Data> dataRecord = dataRecordFactory.newRecord(object);
+        Record<Data> dataRecord = newDataRecord(dataRecordFactory);
 
         assertInstanceOf(CachedDataRecord.class, dataRecord);
     }
