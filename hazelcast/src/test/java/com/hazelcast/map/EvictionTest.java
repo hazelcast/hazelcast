@@ -50,7 +50,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
+import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -287,7 +289,7 @@ public class EvictionTest extends HazelcastTestSupport {
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         mapConfig.setEvictionPercentage(25);
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
-        maxSizeConfig.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
+        maxSizeConfig.setMaxSizePolicy(PER_PARTITION);
         maxSizeConfig.setSize(size);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
 
@@ -347,7 +349,7 @@ public class EvictionTest extends HazelcastTestSupport {
         mc.setEvictionPercentage(50);
         mc.setMinEvictionCheckMillis(0);
         final MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
+        msc.setMaxSizePolicy(PER_PARTITION);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
@@ -1006,6 +1008,24 @@ public class EvictionTest extends HazelcastTestSupport {
         assertEquals("getAll should not shift lastUpdateTime of the entry",
                 lastUpdateTimeBeforeGetAll, lastUpdateTimeAfterGetAll);
 
+    }
+
+    @Test
+    public void testRandomEvictionPolicyWorks() throws Exception {
+        Config config = getConfig();
+        int maxSize = 300;
+        config.getMapConfig("test").setEvictionPolicy(RANDOM).getMaxSizeConfig().setSize(maxSize).setMaxSizePolicy(PER_NODE);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap("test");
+
+        for (int i = 0; i < 500; i++) {
+            map.put(i, i);
+        }
+
+        int size = map.size();
+        String message = "map-size should be smaller than max-size but found [map-size = %d and max-size = %d]";
+        assertTrue(format(message, size, maxSize), size <= maxSize);
     }
 }
 
