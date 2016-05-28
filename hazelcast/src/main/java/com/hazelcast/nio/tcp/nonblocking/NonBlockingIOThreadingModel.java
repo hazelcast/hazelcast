@@ -187,7 +187,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Shutting down IO selectors... Total: " + (inputThreads.length + outputThreads.length));
+            logger.finest("Shutting down IO Threads... Total: " + (inputThreads.length + outputThreads.length));
         }
 
         shutdown(inputThreads);
