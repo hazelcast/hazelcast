@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -192,6 +193,11 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         }
     }
 
+    void cleanWaitersAndSignalsFor(Data key, String uuid) {
+        LockResourceImpl lockResource = locks.get(key);
+        lockResource.cleanWaitersAndSignalsFor(uuid);
+    }
+
     public int getVersion(Data key) {
         LockResourceImpl lock = locks.get(key);
         if (lock != null) {
@@ -258,32 +264,30 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         return backupCount + asyncBackupCount;
     }
 
-    public boolean addAwait(Data key, String conditionId, String caller, long threadId) {
+    public void addAwait(Data key, String conditionId, String caller, long threadId) {
         LockResourceImpl lock = getLock(key);
-        return lock.addAwait(conditionId, caller, threadId);
+        lock.addAwait(conditionId, caller, threadId);
     }
 
-    public boolean removeAwait(Data key, String conditionId, String caller, long threadId) {
+    public void removeAwait(Data key, String conditionId, String caller, long threadId) {
         LockResourceImpl lock = getLock(key);
-        return lock.removeAwait(conditionId, caller, threadId);
+        lock.removeAwait(conditionId, caller, threadId);
     }
 
-    public boolean startAwaiting(Data key, String conditionId, String caller, long threadId) {
+    public void signal(Data key, String conditionId, int maxSignalCount) {
         LockResourceImpl lock = getLock(key);
-        return lock.startAwaiting(conditionId, caller, threadId);
+        lock.signal(conditionId, maxSignalCount);
     }
 
-    public int getAwaitCount(Data key, String conditionId) {
-        LockResourceImpl lock = getLock(key);
-        return lock.getAwaitCount(conditionId);
+    public WaitNotifyKey getNotifiedKey(Data key) {
+        ConditionKey conditionKey = getSignalKey(key);
+        if (conditionKey == null) {
+            return new LockWaitNotifyKey(namespace, key);
+        }
+        return conditionKey;
     }
 
-    public void registerSignalKey(ConditionKey conditionKey) {
-        LockResourceImpl lock = getLock(conditionKey.getKey());
-        lock.registerSignalKey(conditionKey);
-    }
-
-    public ConditionKey getSignalKey(Data key) {
+    private ConditionKey getSignalKey(Data key) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return null;
@@ -297,6 +301,14 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         if (lock != null) {
             lock.removeSignalKey(conditionKey);
         }
+    }
+
+    public boolean hasSignalKey(ConditionKey conditionKey) {
+        LockResourceImpl lock = locks.get(conditionKey.getKey());
+        if (lock == null) {
+            return false;
+        }
+        return lock.hasSignalKey(conditionKey);
     }
 
     public void registerExpiredAwaitOp(AwaitOperation awaitResponse) {

@@ -24,16 +24,24 @@ public final class ConditionKey implements WaitNotifyKey {
     private final String name;
     private final Data key;
     private final String conditionId;
+    private final long threadId;
+    private final String uuid;
 
-    public ConditionKey(String name, Data key, String conditionId) {
+    public ConditionKey(String name, Data key, String conditionId, String uuid, long threadId) {
         this.name = name;
         this.key = key;
         this.conditionId = conditionId;
+        this.uuid = uuid;
+        this.threadId = threadId;
     }
 
     @Override
     public String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 
     @Override
@@ -49,31 +57,53 @@ public final class ConditionKey implements WaitNotifyKey {
         return conditionId;
     }
 
+    public long getThreadId() {
+        return threadId;
+    }
+
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ConditionKey)) {
             return false;
         }
-
         ConditionKey that = (ConditionKey) o;
-
-        if (key != null ? !key.equals(that.key) : that.key != null) {
+        if (threadId != that.threadId) {
             return false;
         }
-        if (conditionId != null ? !conditionId.equals(that.conditionId) : that.conditionId != null) {
+        if (!name.equals(that.name)) {
             return false;
         }
+        if (!key.equals(that.key)) {
+            return false;
+        }
+        if (!uuid.equals(that.uuid)) {
+            return false;
+        }
+        return conditionId.equals(that.conditionId);
 
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = key != null ? key.hashCode() : 0;
-        result = 31 * result + (conditionId != null ? conditionId.hashCode() : 0);
+        int result = name.hashCode();
+        result = 31 * result + key.hashCode();
+        result = 31 * result + conditionId.hashCode();
+        result = 31 * result + (int) (threadId ^ (threadId >>> 32));
+        result = 31 * result + uuid.hashCode();
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ConditionKey{"
+                + "name='" + name + '\''
+                + ", key=" + key
+                + ", conditionId='" + conditionId + '\''
+                + ", threadId=" + threadId
+                + '}';
     }
 }

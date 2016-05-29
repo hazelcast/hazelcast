@@ -44,14 +44,6 @@ public class AwaitOperation extends AbstractLockOperation
     }
 
     @Override
-    public void beforeRun() throws Exception {
-        if (!expired) {
-            LockStoreImpl lockStore = getLockStore();
-            lockStore.startAwaiting(key, conditionId, getCallerUuid(), threadId);
-        }
-    }
-
-    @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         if (!lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime)) {
@@ -70,25 +62,18 @@ public class AwaitOperation extends AbstractLockOperation
 
     @Override
     public ConditionKey getWaitKey() {
-        return new ConditionKey(namespace.getObjectName(), key, conditionId);
+        return new ConditionKey(namespace.getObjectName(), key, conditionId, getCallerUuid(), threadId);
     }
 
     @Override
     public boolean shouldWait() {
         LockStoreImpl lockStore = getLockStore();
-
-        ConditionKey signalKey = lockStore.getSignalKey(key);
-        if (signalKey == null) {
-            return true;
-        }
-
         boolean canAcquireLock = lockStore.canAcquireLock(key, getCallerUuid(), threadId);
-
         if (!canAcquireLock) {
             return true;
         }
 
-        return !conditionId.equals(signalKey.getConditionId());
+        return !lockStore.hasSignalKey(getWaitKey());
     }
 
     @Override

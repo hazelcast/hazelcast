@@ -179,7 +179,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 @Override
                 public void run() {
                     for (LockStoreImpl lockStore : container.getLockStores()) {
-                        releaseLock(operationService, uuid, container.getPartitionId(), lockStore);
+                        cleanUpLock(operationService, uuid, container.getPartitionId(), lockStore);
                     }
                 }
 
@@ -192,18 +192,19 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         }
     }
 
-    private void releaseLock(OperationService operationService, String uuid, int partitionId, LockStoreImpl lockStore) {
+    private void cleanUpLock(OperationService operationService, String uuid, int partitionId, LockStoreImpl lockStore) {
         Collection<LockResource> locks = lockStore.getLocks();
         for (LockResource lock : locks) {
             Data key = lock.getKey();
             if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
-                UnlockOperation op = createUnlockOperation(partitionId, lockStore.getNamespace(), key, uuid);
+                UnlockOperation op = createLockCleanupOperation(partitionId, lockStore.getNamespace(), key, uuid);
                 operationService.runOperationOnCallingThread(op);
             }
+            lockStore.cleanWaitersAndSignalsFor(key, uuid);
         }
     }
 
-    private UnlockOperation createUnlockOperation(int partitionId, ObjectNamespace namespace, Data key, String uuid) {
+    private UnlockOperation createLockCleanupOperation(int partitionId, ObjectNamespace namespace, Data key, String uuid) {
         UnlockOperation op = new LocalLockCleanupOperation(namespace, key, uuid);
         op.setAsyncBackup(true);
         op.setNodeEngine(nodeEngine);

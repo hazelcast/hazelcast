@@ -13,7 +13,6 @@ import static org.junit.Assert.assertNull;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore // https://github.com/hazelcast/hazelcast/issues/2272
 public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
 
     private static volatile Object object;
@@ -27,20 +26,19 @@ public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
     public void test() {
         HazelcastInstance[] instances = createHazelcastInstanceFactory(INSTANCE_COUNT).newInstances();
         HazelcastInstance hz = instances[0];
-        //Hazelcast.newHazelcastInstance();
         ILock lock = hz.getLock(randomString());
         ICondition condition = lock.newCondition(randomString());
 
         ConsumerThread[] consumers = new ConsumerThread[CONSUMER_COUNT];
         for (int k = 0; k < consumers.length; k++) {
-            ConsumerThread thread = new ConsumerThread(1, lock, condition);
+            ConsumerThread thread = new ConsumerThread(k, lock, condition);
             thread.start();
             consumers[k] = thread;
         }
 
         ProducerThread[] producers = new ProducerThread[PRODUCER_COUNT];
         for (int k = 0; k < producers.length; k++) {
-            ProducerThread thread = new ProducerThread(1, lock, condition);
+            ProducerThread thread = new ProducerThread(k, lock, condition);
             thread.start();
             producers[k] = thread;
         }

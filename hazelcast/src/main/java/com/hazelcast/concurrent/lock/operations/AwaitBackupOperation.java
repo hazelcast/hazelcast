@@ -47,7 +47,7 @@ public class AwaitBackupOperation extends AbstractLockOperation
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         lockStore.lock(key, originalCaller, threadId, getReferenceCallId(), leaseTime);
-        ConditionKey conditionKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
+        ConditionKey conditionKey = new ConditionKey(namespace.getObjectName(), key, conditionId, originalCaller, threadId);
         lockStore.removeSignalKey(conditionKey);
         lockStore.removeAwait(key, conditionId, originalCaller, threadId);
         response = true;

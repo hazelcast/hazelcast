@@ -21,52 +21,41 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
-final class ConditionInfo implements DataSerializable {
+final class WaitersInfo implements DataSerializable {
 
     private String conditionId;
-    private Map<ConditionWaiter, ConditionWaiter> waiters = new HashMap<ConditionWaiter, ConditionWaiter>(2);
+    private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(2);
 
-    public ConditionInfo() {
+    public WaitersInfo() {
     }
 
-    public ConditionInfo(String conditionId) {
+    public WaitersInfo(String conditionId) {
         this.conditionId = conditionId;
     }
 
-    public boolean addWaiter(String caller, long threadId) {
+    public void addWaiter(String caller, long threadId) {
         ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
-        return waiters.put(waiter, waiter) == null;
+        waiters.add(waiter);
     }
 
-    public boolean removeWaiter(String caller, long threadId) {
+    public void removeWaiter(String caller, long threadId) {
         ConditionWaiter waiter = new ConditionWaiter(caller, threadId);
-        return waiters.remove(waiter) != null;
+        waiters.remove(waiter);
     }
 
     public String getConditionId() {
         return conditionId;
     }
 
-    public int getAwaitCount() {
-        return waiters.size();
+    public boolean hasWaiter() {
+        return !waiters.isEmpty();
     }
 
-    public boolean startWaiter(String caller, long threadId) {
-        ConditionWaiter key = new ConditionWaiter(caller, threadId);
-        ConditionWaiter waiter = waiters.get(key);
-        if (waiter == null) {
-            throw new IllegalStateException();
-        }
-
-        if (waiter.started) {
-            return false;
-        } else {
-            waiter.started = true;
-            return true;
-        }
+    public Set<ConditionWaiter> getWaiters() {
+        return waiters;
     }
 
     @Override
@@ -75,7 +64,7 @@ final class ConditionInfo implements DataSerializable {
         int len = waiters.size();
         out.writeInt(len);
         if (len > 0) {
-            for (ConditionWaiter w : waiters.values()) {
+            for (ConditionWaiter w : waiters) {
                 out.writeUTF(w.caller);
                 out.writeLong(w.threadId);
             }
@@ -89,19 +78,26 @@ final class ConditionInfo implements DataSerializable {
         if (len > 0) {
             for (int i = 0; i < len; i++) {
                 ConditionWaiter waiter = new ConditionWaiter(in.readUTF(), in.readLong());
-                waiters.put(waiter, waiter);
+                waiters.add(waiter);
             }
         }
     }
 
-    private static class ConditionWaiter {
+    public static class ConditionWaiter {
         private final String caller;
         private final long threadId;
-        private transient boolean started;
 
         ConditionWaiter(String caller, long threadId) {
             this.caller = caller;
             this.threadId = threadId;
+        }
+
+        public long getThreadId() {
+            return threadId;
+        }
+
+        public String getCaller() {
+            return caller;
         }
 
         @Override
