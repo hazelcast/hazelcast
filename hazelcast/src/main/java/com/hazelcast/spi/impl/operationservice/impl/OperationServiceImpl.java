@@ -378,6 +378,24 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory, int[] partitions)
+            throws Exception {
+        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        for (int partition : partitions) {
+            Address owner = partitionService.getPartitionOwnerOrWait(partition);
+
+            if (!memberPartitions.containsKey(owner)) {
+                memberPartitions.put(owner, new ArrayList<Integer>());
+            }
+
+            memberPartitions.get(owner).add(partition);
+        }
+        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
+        return invokeOnPartitions.invoke();
+    }
+
+    @Override
     public boolean send(Operation op, Address target) {
         checkNotNull(target, "Target is required!");
 

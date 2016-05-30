@@ -72,8 +72,6 @@ public interface MapOperationProvider {
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
-    MapOperation createPutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries);
-
     MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence);
 
     MapOperation createTxnDeleteOperation(String name, Data dataKey, long version);
@@ -115,5 +113,7 @@ public interface MapOperationProvider {
     OperationFactory createGetAllOperationFactory(String name, List<Data> keys);
 
     OperationFactory createMapSizeOperationFactory(String name);
+
+    OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries);
 }
 
