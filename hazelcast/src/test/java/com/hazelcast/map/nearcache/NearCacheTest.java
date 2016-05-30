@@ -412,6 +412,7 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         Config config = getConfig();
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
+        nearCacheConfig.setInvalidateOnChange(false);
         config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
 
         TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
