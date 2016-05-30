@@ -38,6 +38,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.test.AssertTask;
@@ -65,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.predicateApplyCount;
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
 import static java.util.Collections.emptyMap;
@@ -1192,6 +1194,80 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }, new IndexedTestPredicate(indexCalled));
 
         assertFalse("isIndexed method of IndexAwarePredicate should not be called", indexCalled.get());
+    }
+
+    @Test
+    public void test_executeOnEntriesWithPredicate_runsOnBackup_whenIndexesAvailable() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        Config config = getConfig();
+        HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+
+        final IMap<Integer, Integer> map = node1.getMap("test");
+        map.addIndex("__key", true);
+
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                try {
+                    map.set(1, 1);
+
+                    ApplyCountAwareIndexedTestPredicate predicate = new ApplyCountAwareIndexedTestPredicate("__key", 1);
+                    map.executeOnEntries(new DeleterEP(), predicate);
+
+                    assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
+                            2, predicateApplyCount.get());
+                } finally {
+                    // set predicateApplyCount to zero, for the cases we repeat this test.
+                    predicateApplyCount.set(0);
+                }
+            }
+        };
+
+        assertTrueEventually(task);
+    }
+
+    public static class DeleterEP extends AbstractEntryProcessor {
+
+        @Override
+        public Object process(Map.Entry entry) {
+            entry.setValue(null);
+            return null;
+        }
+    }
+
+
+    public static class ApplyCountAwareIndexedTestPredicate implements IndexAwarePredicate {
+
+        public static final AtomicInteger predicateApplyCount = new AtomicInteger(0);
+
+        private Comparable key;
+        private String attributeName;
+
+        public ApplyCountAwareIndexedTestPredicate() {
+        }
+
+        public ApplyCountAwareIndexedTestPredicate(String attributeName, Comparable key) {
+            this.key = key;
+            this.attributeName = attributeName;
+        }
+
+        @Override
+        public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Index index = queryContext.getIndex(attributeName);
+            return index.getRecords(key);
+        }
+
+        @Override
+        public boolean isIndexed(QueryContext queryContext) {
+            return true;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            predicateApplyCount.incrementAndGet();
+            return true;
+        }
     }
 
     /**
