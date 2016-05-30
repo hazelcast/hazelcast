@@ -40,6 +40,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -309,9 +310,10 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
 
 
     @Test(timeout = 120000)
+    @Category(NightlyTest.class)
     //issue#2747:when MapStore configured with write behind, distributed objects' destroy method does not work.
     public void testWriteBehindDestroy() throws InterruptedException {
-        final int writeDelaySeconds = 3;
+        final int writeDelaySeconds = 5;
         String mapName = randomMapName();
 
         final MapStore<String, String> store = new SimpleMapStore<String, String>();
