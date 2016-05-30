@@ -28,6 +28,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.operation.MultiPartitionOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
@@ -375,6 +376,13 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         }
         InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invoke();
+    }
+
+    @Override
+    public Map<Integer, Object> invokeMultiplePartitionOperation(String serviceName, MultiPartitionOperation op, Address address,
+                                                                 ExecutionCallback<Object> executionCallback) throws Exception {
+        InvokeOnMultiplePartitions invocation = new InvokeOnMultiplePartitions(this, serviceName, op, address, executionCallback);
+        return invocation.invoke();
     }
 
     @Override

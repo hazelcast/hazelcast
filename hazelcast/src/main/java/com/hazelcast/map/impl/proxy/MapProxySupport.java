@@ -38,7 +38,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
-import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -53,6 +52,7 @@ import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.operation.MultiPartitionOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
@@ -75,9 +75,9 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -115,7 +115,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
-import static java.lang.Math.round;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
@@ -176,7 +175,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final MapServiceContext mapServiceContext;
     protected final IPartitionService partitionService;
     protected final Address thisAddress;
-    protected final OperationService operationService;
+    protected final InternalOperationService operationService;
     protected final SerializationService serializationService;
     protected final boolean statisticsEnabled;
     protected final MapConfig mapConfig;
@@ -202,7 +201,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.lockSupport = new LockProxySupport(new DefaultObjectNamespace(SERVICE_NAME, name),
                 LockServiceImpl.getMaxLeaseTimeInMillis(properties));
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
-        this.operationService = nodeEngine.getOperationService();
+        this.operationService = (InternalOperationService) nodeEngine.getOperationService();
         this.serializationService = nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapConfig.isStatisticsEnabled();
@@ -763,7 +762,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             int initialSize = getPutAllInitialSize(useBatching, mapSize, partitionCount);
 
             Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
-            List<Future> futures = new ArrayList<Future>(getPutAllFutureSize(mapSize, useBatching, partitionCount));
 
             // init counters for batching
             MutableLong[] counterPerMember = null;
@@ -801,31 +799,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(addresses[partitionId], partitions, futures, entriesPerPartition);
+                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition);
                     }
                 }
             }
 
             // invoke operations for entriesPerPartition
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), futures, entriesPerPartition);
-            }
-
-            // sync on completion of the operations
-            for (Future future : futures) {
-                future.get();
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition);
             }
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
-    private int getPutAllFutureSize(int mapSize, boolean useBatching, int partitionCount) {
-        return (useBatching ? round((float) partitionCount * mapSize / putAllBatchSize) : partitionCount);
-    }
-
-    private void invokePutAllOperation(Address address, List<Integer> memberPartitions, List<Future> futures,
-                                       MapEntries[] entriesPerPartition) {
+    private void invokePutAllOperation(Address address, List<Integer> memberPartitions, MapEntries[] entriesPerPartition)
+            throws Exception {
         int size = memberPartitions.size();
         int[] partitions = new int[size];
         int index = 0;
@@ -857,29 +846,23 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             return;
         }
 
-        Future future = createPutAllOperationFuture(name, totalSize, partitions, entries, address);
-        futures.add(future);
+        createPutAllPerMemberOperation(address, totalSize, partitions, entries);
     }
 
-    protected Future createPutAllOperationFuture(final String name, final long size, int[] partitions, MapEntries[] entries,
-                                                 Address address) {
-        MapOperation op = operationProvider.createPutAllPerMemberOperation(name, partitions, entries);
+    protected void createPutAllPerMemberOperation(Address address, final long size, int[] partitions, MapEntries[] entries)
+            throws Exception {
+        MultiPartitionOperation op = operationProvider.createPutAllPerMemberOperation(name, partitions, entries);
         final long time = System.currentTimeMillis();
-        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(SERVICE_NAME, op, address);
-        future.andThen(new ExecutionCallback<Object>() {
+        operationService.invokeMultiplePartitionOperation(SERVICE_NAME, op, address, new ExecutionCallback<Object>() {
             @Override
             public void onResponse(Object response) {
-                LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-                LocalMapStatsImpl localMapStats = localMapStatsProvider.getLocalMapStatsImpl(name);
-                long currentTime = System.currentTimeMillis();
-                localMapStats.incrementPuts(size, currentTime - time);
+                localMapStats.incrementPuts(size, System.currentTimeMillis() - time);
             }
 
             @Override
             public void onFailure(Throwable t) {
             }
         });
-        return future;
     }
 
     // TODO: add a feature to mancenter to sync cache to db completely

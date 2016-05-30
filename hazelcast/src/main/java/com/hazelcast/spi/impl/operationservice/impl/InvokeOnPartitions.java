@@ -20,6 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionResponse;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -93,8 +94,7 @@ final class InvokeOnPartitions {
         for (Map.Entry<Address, Future> response : futures.entrySet()) {
             try {
                 Future future = response.getValue();
-                PartitionIteratingOperation.PartitionResponse result = (PartitionIteratingOperation.PartitionResponse)
-                        nodeEngine.toObject(future.get());
+                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(future.get());
                 result.addResults(partitionResults);
             } catch (Throwable t) {
                 if (operationService.logger.isFinestEnabled()) {

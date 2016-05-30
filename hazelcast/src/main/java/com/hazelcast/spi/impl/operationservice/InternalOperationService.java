@@ -18,11 +18,14 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.map.impl.operation.MultiPartitionOperation;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
@@ -106,6 +109,20 @@ public interface InternalOperationService extends OperationService {
      * @return list of {@link SlowOperationDTO} instances.
      */
     List<SlowOperationDTO> getSlowOperationDTOs();
+
+    /**
+     * Invokes a {@link MultiPartitionOperation} on a selected target node.
+     * * <p/>
+     * This method blocks until the operation completes for all partitions.
+     *
+     * @param serviceName the name of the service
+     * @param op          the operation
+     * @param address     the target node the operation should be executed on
+     * @return a Map with partitionId as key and the outcome of the operation as value.
+     * @throws Exception
+     */
+    Map<Integer, Object> invokeMultiplePartitionOperation(String serviceName, MultiPartitionOperation op, Address address,
+                                                          ExecutionCallback<Object> executionCallback) throws Exception;
 
     <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
 }

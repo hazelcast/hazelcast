@@ -35,9 +35,8 @@ import java.util.concurrent.Future;
  * <p/>
  * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
  */
-public class PutAllPerMemberOperation extends MapOperation implements IdentifiedDataSerializable {
+public class PutAllPerMemberOperation extends AbstractMultiPartitionOperation implements IdentifiedDataSerializable {
 
-    private int[] partitions;
     private MapEntries[] mapEntries;
 
     @SuppressWarnings("unused")
@@ -46,15 +45,13 @@ public class PutAllPerMemberOperation extends MapOperation implements Identified
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public PutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries) {
-        super(name);
-        this.partitions = partitions;
+        super(name, partitions);
         this.mapEntries = mapEntries;
     }
 
     @Override
-    public void run() throws Exception {
+    protected void doRun(int[] partitions, Future[] futures) {
         NodeEngine nodeEngine = getNodeEngine();
-        Future[] futures = new Future[partitions.length];
         for (int i = 0; i < partitions.length; i++) {
             Operation op = new PutAllOperation(name, mapEntries[i]);
             op.setNodeEngine(nodeEngine)
@@ -65,25 +62,16 @@ public class PutAllPerMemberOperation extends MapOperation implements Identified
             OperationAccessor.setCallerAddress(op, getCallerAddress());
             futures[i] = nodeEngine.getOperationService().invokeOnPartition(op);
         }
-        // TODO: this should be done non-blocking to free the operation thread as soon as possible
-        for (Future future : futures) {
-            future.get();
-        }
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
+    public Operation createFailureOperation(int failedPartitionId, int partitionIndex) {
+        return new PutAllOperation(name, mapEntries[partitionIndex]);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeIntArray(partitions);
         for (MapEntries entry : mapEntries) {
             entry.writeData(out);
         }
@@ -92,9 +80,8 @@ public class PutAllPerMemberOperation extends MapOperation implements Identified
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        partitions = in.readIntArray();
-        mapEntries = new MapEntries[partitions.length];
-        for (int i = 0; i < partitions.length; i++) {
+        mapEntries = new MapEntries[getPartitionCount()];
+        for (int i = 0; i < mapEntries.length; i++) {
             MapEntries entry = new MapEntries();
             entry.readData(in);
             mapEntries[i] = entry;

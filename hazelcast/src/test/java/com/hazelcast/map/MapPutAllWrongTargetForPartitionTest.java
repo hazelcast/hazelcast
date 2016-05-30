@@ -21,11 +21,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.MultiPartitionOperation;
 import com.hazelcast.map.impl.operation.PutAllPerMemberOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -127,12 +127,11 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         assertEquals("Expected an empty map", 0, map.size());
 
         // create a PutAllPerMemberOperation with entries for all partitions
-        Operation op = createPutAllPerMemberOperation(entriesPerPartition, mapName, hz, serializationService);
+        MultiPartitionOperation op = createPutAllPerMemberOperation(entriesPerPartition, mapName, hz, serializationService);
 
         // invoke the operation on a random remote target
         InternalOperationService operationService = nodeEngine.getOperationService();
-        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, randomNodeEngine.getThisAddress());
-        future.get();
+        operationService.invokeMultiplePartitionOperation(MapService.SERVICE_NAME, op, randomNodeEngine.getThisAddress(), null);
 
         // assert that all entries have been written
         assertEquals(format("Expected %d entries in the map", expectedEntryCount), expectedEntryCount, map.size());
@@ -151,8 +150,8 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         assertEquals(format("Expected to find %d backups in the cluster", expectedEntryCount), expectedEntryCount, totalBackups);
     }
 
-    private Operation createPutAllPerMemberOperation(int entriesPerPartition, String mapName, HazelcastInstance hz,
-                                                     SerializationService serializationService) {
+    private MultiPartitionOperation createPutAllPerMemberOperation(int entriesPerPartition, String mapName, HazelcastInstance hz,
+                                                                   SerializationService serializationService) {
         int[] partitions = new int[INSTANCE_COUNT];
         MapEntries[] entries = new MapEntries[INSTANCE_COUNT];
         for (int partitionId = 0; partitionId < INSTANCE_COUNT; partitionId++) {
