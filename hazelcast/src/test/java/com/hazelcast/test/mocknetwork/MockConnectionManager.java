@@ -17,6 +17,8 @@
 
 package com.hazelcast.test.mocknetwork;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -100,22 +102,31 @@ public class MockConnectionManager implements ConnectionManager {
         logger.fine("Stopping connection manager");
         live = false;
 
+        final Member localMember = node.getLocalMember();
+        final Address thisAddress = localMember.getAddress();
+
         for (Address address : registry.getAddresses()) {
-            if (address.equals(node.getThisAddress())) {
+            if (address.equals(thisAddress)) {
                 continue;
             }
 
             final Node otherNode = registry.getNode(address);
             if (otherNode != null && otherNode.getState() != NodeState.SHUT_DOWN) {
-                if (otherNode.getClusterService().getMember(node.getThisAddress()) == null) {
+                final ClusterServiceImpl clusterService = otherNode.getClusterService();
+                if (clusterService.getMember(thisAddress) == null) {
                     continue;
                 }
 
-                logger.fine(otherNode.getThisAddress() + " is instructed to remove this node.");
+                logger.fine(otherNode.getThisAddress() + " is instructed to remove us.");
                 otherNode.getNodeEngine().getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
-                        ClusterServiceImpl clusterService = (ClusterServiceImpl) otherNode.getClusterService();
-                        clusterService.removeAddress(node.getThisAddress(), null);
+                        ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
+                        otherLogger.fine(localMember + " will be removed from the cluster if present, "
+                                + "because it has requested to leave.");
+                        MemberImpl member = clusterService.getMember(thisAddress);
+                        if (member != null && member.getUuid().equals(localMember.getUuid())) {
+                            clusterService.removeAddress(thisAddress, "Connection manager is stopped on " + localMember);
+                        }
                     }
                 });
             }
