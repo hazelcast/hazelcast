@@ -17,9 +17,12 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -79,8 +82,8 @@ final class InvokeOnPartitions {
         for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             Address address = mp.getKey();
             List<Integer> partitions = mp.getValue();
-            PartitionIteratingOperation pi = new PartitionIteratingOperation(operationFactory, partitions);
-            Future future = operationService.createInvocationBuilder(serviceName, pi, address)
+            PartitionIteratingOperation operation = new PartitionIteratingOperation(operationFactory, partitions);
+            Future future = operationService.createInvocationBuilder(serviceName, operation, address)
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke();
@@ -93,8 +96,7 @@ final class InvokeOnPartitions {
         for (Map.Entry<Address, Future> response : futures.entrySet()) {
             try {
                 Future future = response.getValue();
-                PartitionIteratingOperation.PartitionResponse result = (PartitionIteratingOperation.PartitionResponse)
-                        nodeEngine.toObject(future.get());
+                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(future.get());
                 result.addResults(partitionResults);
             } catch (Throwable t) {
                 if (operationService.logger.isFinestEnabled()) {
@@ -121,14 +123,20 @@ final class InvokeOnPartitions {
         }
 
         for (Integer failedPartition : failedPartitions) {
-            Future f = operationService.createInvocationBuilder(
-                    serviceName, operationFactory.createOperation(), failedPartition).invoke();
-            partitionResults.put(failedPartition, f);
+            Operation operation;
+            if (operationFactory instanceof PartitionAwareOperationFactory) {
+                operation = ((PartitionAwareOperationFactory) operationFactory).createPartitionOperation(failedPartition);
+            } else {
+                operation = operationFactory.createOperation();
+            }
+
+            Future future = operationService.createInvocationBuilder(serviceName, operation, failedPartition).invoke();
+            partitionResults.put(failedPartition, future);
         }
 
         for (Integer failedPartition : failedPartitions) {
-            Future f = (Future) partitionResults.get(failedPartition);
-            Object result = f.get();
+            Future future = (Future) partitionResults.get(failedPartition);
+            Object result = future.get();
             partitionResults.put(failedPartition, result);
         }
     }

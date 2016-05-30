@@ -17,17 +17,16 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.operation.PutAllPerMemberOperation;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -44,7 +43,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -56,8 +54,6 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
 
     private static final int INSTANCE_COUNT = 3;
 
-    private static final Random RANDOM = new Random();
-
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance[] instances;
 
@@ -65,14 +61,12 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
     public void setUp() {
         assertTrue("Expected at least two members in the cluster", INSTANCE_COUNT > 2);
 
-        MapConfig mapConfig = new MapConfig("*");
-        mapConfig.setBackupCount(1);
-        mapConfig.setAsyncBackupCount(0);
-
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(INSTANCE_COUNT));
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
-        config.addMapConfig(mapConfig);
+        config.getMapConfig("default")
+                .setBackupCount(1)
+                .setAsyncBackupCount(0);
 
         factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         instances = factory.newInstances(config);
@@ -97,10 +91,11 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
     }
 
     /**
-     * Tests that all entries and backups of a {@link PutAllPerMemberOperation} are sent to the correct members.
+     * Tests that all entries and backups of a {@link PutAllPartitionAwareOperationFactory} are sent to the correct members.
      * <p/>
-     * The test creates a cluster with a single partition per member and invokes {@link PutAllPerMemberOperation} which contains
-     * a single entry for every partition in the cluster. So just a single entry is for the member the operation is executed on.
+     * The test creates a cluster with a single partition per member and invokes {@link PutAllPartitionAwareOperationFactory}
+     * which contains a single entry for every partition in the cluster. So just a single entry is for the member the factory
+     * is executed on.
      * <p/>
      * After the operation is invoked we assert that each member owns one entry of the map and that all backups have been written.
      */
@@ -109,9 +104,7 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         HazelcastInstance hz = instances[0];
-        HazelcastInstance randomHz = instances[1 + RANDOM.nextInt(INSTANCE_COUNT - 1)];
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        NodeEngineImpl randomNodeEngine = getNodeEngineImpl(randomHz);
         SerializationService serializationService = nodeEngine.getSerializationService();
 
         // assert that each member has a single partition
@@ -127,12 +120,12 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         assertEquals("Expected an empty map", 0, map.size());
 
         // create a PutAllPerMemberOperation with entries for all partitions
-        Operation op = createPutAllPerMemberOperation(entriesPerPartition, mapName, hz, serializationService);
+        PartitionAwareOperationFactory factory = createPutAllOperationFactory(entriesPerPartition, mapName, hz,
+                serializationService);
 
         // invoke the operation on a random remote target
         InternalOperationService operationService = nodeEngine.getOperationService();
-        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, randomNodeEngine.getThisAddress());
-        future.get();
+        operationService.invokeOnPartitions(MapService.SERVICE_NAME, factory, factory.getPartitions());
 
         // assert that all entries have been written
         assertEquals(format("Expected %d entries in the map", expectedEntryCount), expectedEntryCount, map.size());
@@ -151,8 +144,9 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         assertEquals(format("Expected to find %d backups in the cluster", expectedEntryCount), expectedEntryCount, totalBackups);
     }
 
-    private Operation createPutAllPerMemberOperation(int entriesPerPartition, String mapName, HazelcastInstance hz,
-                                                     SerializationService serializationService) {
+    private PartitionAwareOperationFactory createPutAllOperationFactory(int entriesPerPartition, String mapName,
+                                                                        HazelcastInstance hz,
+                                                                        SerializationService serializationService) {
         int[] partitions = new int[INSTANCE_COUNT];
         MapEntries[] entries = new MapEntries[INSTANCE_COUNT];
         for (int partitionId = 0; partitionId < INSTANCE_COUNT; partitionId++) {
@@ -168,6 +162,11 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
             partitions[partitionId] = partitionId;
             entries[partitionId] = mapEntries;
         }
-        return new PutAllPerMemberOperation(mapName, partitions, entries);
+        return getPutAllPartitionAwareOperationFactory(mapName, partitions, entries);
+    }
+
+    protected PartitionAwareOperationFactory getPutAllPartitionAwareOperationFactory(String mapName, int[] partitions,
+                                                                                     MapEntries[] entries) {
+        return new PutAllPartitionAwareOperationFactory(mapName, partitions, entries);
     }
 }

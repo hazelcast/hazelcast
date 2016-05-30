@@ -38,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
@@ -303,16 +302,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Future createPutAllOperationFuture(String name, long size, int[] partitions, MapEntries[] entries,
-                                                 Address address) {
-        Future future = super.createPutAllOperationFuture(name, size, partitions, entries, address);
-
+    protected void invokePutAllOperationFactory(Address address, long size, int[] partitions, MapEntries[] entries)
+            throws Exception {
+        super.invokePutAllOperationFactory(address, size, partitions, entries);
         for (MapEntries mapEntries : entries) {
             for (int i = 0; i < mapEntries.size(); i++) {
                 invalidateCache(mapEntries.getKey(i));
             }
         }
-        return future;
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -51,15 +50,13 @@ public class MapPutAllWithBatchingTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        MapConfig mapConfig = new MapConfig("*");
-        mapConfig.setBackupCount(1);
-        mapConfig.setAsyncBackupCount(0);
-
-        Config config = new Config();
+        Config config = getConfig();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), valueOf(INSTANCE_COUNT * 2));
         config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
         config.setProperty("hazelcast.map.put.all.batch.size", valueOf(BATCH_SIZE));
-        config.addMapConfig(mapConfig);
+        config.getMapConfig("default")
+                .setBackupCount(1)
+                .setAsyncBackupCount(0);
 
         factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         instances = factory.newInstances(config);
