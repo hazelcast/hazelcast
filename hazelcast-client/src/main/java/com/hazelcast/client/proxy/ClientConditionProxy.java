@@ -91,8 +91,11 @@ public class ClientConditionProxy extends PartitionSpecificClientProxy implement
     @Override
     public boolean awaitUntil(Date deadline) throws InterruptedException {
         long until = deadline.getTime();
-        final long timeToDeadline = until - Clock.currentTimeMillis();
-        return await(timeToDeadline, TimeUnit.MILLISECONDS);
+        final long durationMs = until - Clock.currentTimeMillis();
+        if (durationMs <= 0) {
+            return false;
+        }
+        return await(durationMs, TimeUnit.MILLISECONDS);
     }
 
     @Override

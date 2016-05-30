@@ -440,6 +440,17 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
         assertFalse(condition.awaitUntil(currentTimeAfterGivenMillis(1000)));
     }
 
+
+    @Test(timeout = 60000)
+    public void testAwaitUntil_whenDeadLineInThePast() throws InterruptedException {
+        ILock lock = callerInstance.getLock(newName());
+        ICondition condition = lock.newCondition(newName());
+
+        lock.lock();
+
+        assertFalse(condition.awaitUntil(currentTimeAfterGivenMillis(-1000)));
+    }
+
     // https://github.com/hazelcast/hazelcast/issues/3262
     @Test(timeout = 60000)
     @Ignore

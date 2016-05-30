@@ -32,6 +32,7 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
@@ -90,6 +91,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
     }
 
     public ICondition newCondition(String name) {
+        checkNotNull(name, "Condition name can't be null");
         ClientConditionProxy clientConditionProxy = new ClientConditionProxy(this, name, getContext());
         clientConditionProxy.onInitialize();
         return clientConditionProxy;

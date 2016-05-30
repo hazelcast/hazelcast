@@ -107,7 +107,11 @@ final class ConditionImpl implements ICondition {
     @Override
     public boolean awaitUntil(Date deadline) throws InterruptedException {
         long until = deadline.getTime();
-        return await(until - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        long durationMs = until - Clock.currentTimeMillis();
+        if (durationMs <= 0) {
+            return false;
+        }
+        return await(durationMs, TimeUnit.MILLISECONDS);
     }
 
     @Override
