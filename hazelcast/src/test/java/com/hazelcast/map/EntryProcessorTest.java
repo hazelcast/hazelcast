@@ -38,6 +38,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -1152,6 +1153,27 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         });
         final List<Integer> actualOrder = processorMap.get(key);
         assertEquals("entry processor tasks executed in unexpected order", expectedOrder, actualOrder);
+    }
+
+    @Test
+    public void test_executeOnEntriesWithPredicate_withIndexes() {
+        Config config = getConfig();
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance node = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = node.getMap("test");
+        map.addIndex("__key", true);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, i);
+        }
+
+        map.executeOnEntries(new DeleterEP(), new SqlPredicate("__key >=0"));
+
+        assertSizeEventually(0, map);
     }
 
     @Test
