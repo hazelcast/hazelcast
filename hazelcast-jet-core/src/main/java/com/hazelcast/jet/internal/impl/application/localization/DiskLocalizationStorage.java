@@ -20,8 +20,7 @@ import com.hazelcast.jet.internal.api.application.ApplicationContext;
 import com.hazelcast.jet.internal.impl.application.localization.classloader.ResourceStream;
 import com.hazelcast.jet.internal.impl.util.JetUtil;
 import com.hazelcast.jet.api.JetException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.hazelcast.logging.ILogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,9 +30,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
 public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
-    protected static final Logger LOG = LoggerFactory.getLogger(DiskLocalizationStorage.class);
 
     private final File tmpApplicationDir;
+    private final ILogger logger;
 
     private long fileNameCounter = 1;
 
@@ -41,6 +40,8 @@ public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
                                    String applicationName
     ) {
         super(applicationContext.getJetApplicationConfig());
+
+        this.logger = applicationContext.getNodeEngine().getLogger(getClass());
 
         String containerDir = this.jetConfig.getLocalizationDirectory();
         if (containerDir == null) {
@@ -142,7 +143,7 @@ public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
         }
 
         if (!file.delete()) {
-            LOG.info("Can't delete file " + file.getName());
+            logger.info("Can't delete file " + file.getName());
         }
     }
 

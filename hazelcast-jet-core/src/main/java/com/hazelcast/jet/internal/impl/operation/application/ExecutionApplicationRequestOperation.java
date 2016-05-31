@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.internal.impl.operation.application;
 
+import com.hazelcast.jet.api.config.JetApplicationConfig;
 import com.hazelcast.jet.internal.api.application.ApplicationContext;
 import com.hazelcast.jet.internal.api.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.internal.api.hazelcast.JetService;
@@ -23,7 +24,6 @@ import com.hazelcast.jet.internal.api.statemachine.container.applicationmaster.A
 import com.hazelcast.jet.internal.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
 import com.hazelcast.jet.internal.impl.statemachine.applicationmaster.requests.InterruptApplicationRequest;
 import com.hazelcast.jet.internal.impl.util.JetUtil;
-import com.hazelcast.jet.api.config.JetApplicationConfig;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.concurrent.BlockingQueue;

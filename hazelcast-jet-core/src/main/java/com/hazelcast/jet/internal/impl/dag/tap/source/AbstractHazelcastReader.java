@@ -25,6 +25,7 @@ import com.hazelcast.jet.api.dag.Vertex;
 import com.hazelcast.jet.api.data.DataReader;
 import com.hazelcast.jet.api.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.api.strategy.DataTransferringStrategy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -34,15 +35,12 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public abstract class AbstractHazelcastReader<V> implements DataReader {
-    protected static final Logger LOG = LoggerFactory.getLogger(AbstractHazelcastReader.class);
     protected final SettableFuture<Boolean> future = SettableFuture.create();
     protected final NodeEngine nodeEngine;
     protected final JetTupleFactory tupleFactory;
     protected final ContainerDescriptor containerDescriptor;
+    protected final ILogger logger;
     protected long position;
     protected Iterator<V> iterator;
     protected volatile Object[] chunkBuffer;
@@ -125,6 +123,7 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
         this.tupleFactory = tupleFactory;
         this.containerDescriptor = containerDescriptor;
         this.nodeEngine = containerDescriptor.getNodeEngine();
+        this.logger = nodeEngine.getLogger(getClass());
         this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
         JetApplicationConfig config = containerDescriptor.getConfig();
