@@ -36,6 +36,7 @@ import javax.cache.spi.CachingProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -419,9 +420,14 @@ public abstract class AbstractHazelcastCacheManager
     protected <K, V> void registerListeners(CacheConfig<K, V> cacheConfig, ICache<K, V> source) {
         Iterator<CacheEntryListenerConfiguration<K, V>> iterator =
                 cacheConfig.getCacheEntryListenerConfigurations().iterator();
+        Set<CacheEntryListenerConfiguration> removedListenerConfigs = new HashSet<CacheEntryListenerConfiguration>();
         while (iterator.hasNext()) {
             CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
+            if (removedListenerConfigs.contains(listenerConfig)) {
+                continue;
+            }
             iterator.remove();
+            removedListenerConfigs.add(listenerConfig);
             source.registerCacheEntryListener(listenerConfig);
         }
     }
