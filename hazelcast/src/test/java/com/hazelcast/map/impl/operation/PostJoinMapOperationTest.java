@@ -39,7 +39,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -51,8 +50,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class PostJoinMapOperationTest extends HazelcastTestSupport {
-
-    public final AtomicInteger isIndexedInvoked = new AtomicInteger(0);
 
     private static class Person implements Serializable {
         private final int age;
@@ -135,6 +132,12 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
 
     // if it locates an index on Person.age, increments isIndexedInvoked
     public class AgePredicate implements IndexAwarePredicate {
+        private final AtomicInteger isIndexedInvocationCounter;
+
+        public AgePredicate(AtomicInteger atomicInteger) {
+            this.isIndexedInvocationCounter = atomicInteger;
+        }
+
         @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
             Index ix = queryContext.getIndex("age");
@@ -150,7 +153,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         public boolean isIndexed(QueryContext queryContext) {
             Index ix = queryContext.getIndex("age");
             if (ix != null) {
-                isIndexedInvoked.incrementAndGet();
+                isIndexedInvocationCounter.incrementAndGet();
                 return true;
             }
             else {
@@ -213,14 +216,10 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         waitAllForSafeState(hz1, hz2);
 
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");
-        Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate());
-        assertEqualsEventually(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return isIndexedInvoked.get();
-            }
-        }, 1);
-        assertEquals(1, personsWithAgePredicate.size());
+        final AtomicInteger invocationCounter = new AtomicInteger(0);
+        Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate(invocationCounter));
+        assertEquals("isIndexed should have located an index", 1, invocationCounter.get());
+        assertEquals("index should return 1 match", 1, personsWithAgePredicate.size());
 
         hzFactory.terminate(hz2);
     }
