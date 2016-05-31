@@ -57,12 +57,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class DefaultContainerTask extends AbstractTask
         implements ContainerTask {
-    private final ILogger logger;
 
     private static final InterruptedException INTERRUPTED_EXCEPTION =
             new InterruptedException("Execution has been interrupted");
+
+    private final ILogger logger;
 
     private final int taskID;
 

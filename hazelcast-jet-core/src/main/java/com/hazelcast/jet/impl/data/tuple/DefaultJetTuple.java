@@ -16,19 +16,19 @@
 
 package com.hazelcast.jet.impl.data.tuple;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.io.impl.tuple.DefaultTuple;
+import com.hazelcast.jet.spi.data.tuple.JetTuple;
+import com.hazelcast.jet.spi.strategy.CalculationStrategy;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.jet.spi.data.tuple.JetTuple;
-import com.hazelcast.jet.io.impl.tuple.DefaultTuple;
-import com.hazelcast.jet.spi.strategy.CalculationStrategy;
-import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -152,7 +152,7 @@ public class DefaultJetTuple<K, V> extends DefaultTuple<K, V> implements JetTupl
         result = 31 * result + valueSize;
         return result;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

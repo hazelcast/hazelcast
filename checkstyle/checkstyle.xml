@@ -229,7 +229,8 @@
             <property name="tokens" value="PARAMETER_DEF, METHOD_DEF"/>
         </module>
         <module name="InnerAssignment"/>
-        <module name="JUnitTestCase"/>
+        <!--obsolete module-->
+        <!--<module name="JUnitTestCase"/>-->
         <module name="ReturnCount">
             <property name="max" value="8"/>
         </module>
@@ -240,10 +241,11 @@
             <property name="max" value="2"/>
         </module>
         <module name="PackageDeclaration"/>
-        <module name="RedundantThrows">
-            <property name="severity" value="warning"/>
-            <property name="allowUnchecked" value="true"/>
-        </module>
+        <!--obsolete module-->
+        <!--<module name="RedundantThrows">-->
+            <!--<property name="severity" value="warning"/>-->
+            <!--<property name="allowUnchecked" value="true"/>-->
+        <!--</module>-->
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>

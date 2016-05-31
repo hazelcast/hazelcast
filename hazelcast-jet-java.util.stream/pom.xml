@@ -17,55 +17,38 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>hazelcast-jet</name>
-    <artifactId>hazelcast-jet-core</artifactId>
+    <name>hazelcast-jet-java.util.stream</name>
+    <artifactId>hazelcast-jet-java.util.stream</artifactId>
     <packaging>jar</packaging>
     <version>0.1-SNAPSHOT</version>
-    <description>Hazelcast Jet Data Processor</description>
+    <description>Hazelcast Jet extension for java.util.stream</description>
     <url>http://www.hazelcast.com/</url>
 
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-jet-root</artifactId>
         <version>0.1-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
-            <version>${hazelcast.version}</version>
+            <artifactId>hazelcast-jet-core</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-jet-io</artifactId>
-            <version>${project.version}</version>
+            <artifactId>hazelcast-jet-core</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
         </dependency>
 
-
-        <!--TEST DEPENDENCIES-->
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
@@ -73,7 +56,6 @@
             <version>${hazelcast.version}</version>
             <classifier>tests</classifier>
         </dependency>
-
 
         <dependency>
             <groupId>com.hazelcast</groupId>
