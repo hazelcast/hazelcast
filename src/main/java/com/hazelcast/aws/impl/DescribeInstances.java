@@ -58,6 +58,7 @@ public class DescribeInstances {
         this.awsConfig = awsConfig;
         this.endpoint = endpoint;
         if (awsConfig.getIamRole() != null) {
+            tryGetDefaultIamRole();
             getKeysFromIamRole();
         }
         String timeStamp = getFormattedTimestamp();
@@ -69,6 +70,22 @@ public class DescribeInstances {
         attributes.put("X-Amz-Date", timeStamp);
         attributes.put("X-Amz-SignedHeaders", "host");
         attributes.put("X-Amz-Expires", "30");
+    }
+
+    private void tryGetDefaultIamRole() {
+        if (!awsConfig.getIamRole().equals("DEFAULT")) {
+            return;
+        }
+        try {
+            String query = "latest/meta-data/iam/security-credentials/";
+            URL url;
+            url = new URL("http", IAM_ROLE_ENDPOINT, query);
+            InputStreamReader is = new InputStreamReader(url.openStream(), "UTF-8");
+            BufferedReader reader = new BufferedReader(is);
+            awsConfig.setIamRole(reader.readLine());
+        } catch (Exception e) {
+            throw new InvalidConfigurationException("Invalid Aws Configuration");
+        }
     }
 
     private void getKeysFromIamRole() {
