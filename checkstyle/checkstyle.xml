@@ -242,10 +242,6 @@
             <property name="max" value="2"/>
         </module>
         <module name="PackageDeclaration"/>
-        <module name="RedundantThrows">
-            <property name="severity" value="warning"/>
-            <property name="allowUnchecked" value="true"/>
-        </module>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
