@@ -48,7 +48,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
     }
 
-    public static void initCluster(int membersCount) throws Exception {
+    public static void initCluster(int membersCount) {
         JETCONFIG = new JetApplicationConfig("testApplication");
         JETCONFIG.setJetSecondsToAwait(100000);
         JETCONFIG.setChunkSize(4000);
@@ -64,7 +64,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
         buildCluster(membersCount);
     }
 
-    protected static void buildCluster(int memberCount) throws Exception {
+    protected static void buildCluster(int memberCount) {
         HAZELCAST_INSTANCES = new HazelcastInstance[memberCount];
 
         for (int i = 0; i < memberCount; i++) {
