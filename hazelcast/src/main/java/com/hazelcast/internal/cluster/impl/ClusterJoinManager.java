@@ -214,14 +214,12 @@ public class ClusterJoinManager {
                 return;
             }
 
-            long now = Clock.currentTimeMillis();
-            if (logger.isFinestEnabled()) {
-                String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
-                logger.finest(format("Handling join from %s, joinInProgress: %b%s", target, joinInProgress, timeToStart));
+            if (!node.getPartitionService().isMemberAllowedToJoin(target)) {
+                logger.warning(format("%s not allowed to join right now, it seems restarted.", target));
+                return;
             }
 
-            MemberInfo memberInfo = getMemberInfo(joinRequest);
-            if (memberInfo == null) {
+            if (!authenticate(joinRequest)) {
                 return;
             }
 
@@ -229,21 +227,21 @@ public class ClusterJoinManager {
                 return;
             }
 
-            startJoinRequest(now, memberInfo);
+            startJoinRequest(joinRequest.toMemberInfo());
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
     private boolean checkClusterStateBeforeJoin(Address target) {
-        if (clusterStateManager.getState() == ClusterState.IN_TRANSITION) {
-            String message = "Cluster state either is in transition process. Join is not allowed for now -> "
-                    + clusterStateManager.stateToString();
-            logger.warning(message);
-            OperationService operationService = nodeEngine.getOperationService();
-            operationService.send(new BeforeJoinCheckFailureOperation(message), target);
+        ClusterState state = clusterStateManager.getState();
+        if (state == ClusterState.IN_TRANSITION) {
+            logger.warning("Cluster state is in transition process. Join is not allowed for now -> "
+                    + clusterStateManager.stateToString());
             return true;
-        } else if (clusterStateManager.getState() != ClusterState.ACTIVE) {
+        }
+
+        if (state != ClusterState.ACTIVE) {
             if (!clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
                 String message = "Cluster state either is locked or doesn't allow new members to join -> "
                         + clusterStateManager.stateToString();
@@ -256,22 +254,21 @@ public class ClusterJoinManager {
         return false;
     }
 
-    private MemberInfo getMemberInfo(JoinRequest joinRequest) {
-        MemberInfo memberInfo = joinRequest.toMemberInfo();
+    private boolean authenticate(JoinRequest joinRequest) {
         if (!joiningMembers.containsKey(joinRequest.getAddress())) {
             try {
-                checkSecureLogin(joinRequest);
+                secureLogin(joinRequest);
             } catch (Exception e) {
                 ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
                 nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinRequest.getAddress());
                 securityLogger.severe(e);
-                return null;
+                return false;
             }
         }
-        return memberInfo;
+        return true;
     }
 
-    private void checkSecureLogin(JoinRequest joinRequest) {
+    private void secureLogin(JoinRequest joinRequest) {
         if (node.securityContext != null) {
             Credentials credentials = joinRequest.getCredentials();
             if (credentials == null) {
@@ -300,7 +297,14 @@ public class ClusterJoinManager {
         return true;
     }
 
-    private void startJoinRequest(long now, MemberInfo memberInfo) {
+    private void startJoinRequest(MemberInfo memberInfo) {
+        long now = Clock.currentTimeMillis();
+        if (logger.isFinestEnabled()) {
+            String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
+            logger.finest(format("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
+                    joinInProgress, timeToStart));
+        }
+
         if (firstJoinRequest == 0) {
             firstJoinRequest = now;
         }

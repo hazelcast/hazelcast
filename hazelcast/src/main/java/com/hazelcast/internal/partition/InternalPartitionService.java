@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.concurrent.TimeUnit;
@@ -62,6 +63,8 @@ public interface InternalPartitionService extends IPartitionService {
     void pauseMigration();
 
     void resumeMigration();
+
+    boolean isMemberAllowedToJoin(Address address);
 
     void memberAdded(MemberImpl newMember);
 

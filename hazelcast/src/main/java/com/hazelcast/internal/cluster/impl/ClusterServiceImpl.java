@@ -214,6 +214,23 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         nodeEngine.getOperationService().send(op, target);
     }
 
+    public void removeAddress(Address deadAddress, String uuid, String reason) {
+        lock.lock();
+        try {
+            MemberImpl member = getMember(deadAddress);
+            if (member == null || !uuid.equals(member.getUuid())) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Cannot remove " + deadAddress + ", either member is not present "
+                            + "or uuid is not matching. Uuid: " + uuid + ", member: " + member);
+                }
+                return;
+            }
+            doRemoveAddress(deadAddress, reason, true);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public void removeAddress(Address deadAddress, String reason) {
         doRemoveAddress(deadAddress, reason, true);
     }
@@ -512,7 +529,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                     if (logger.isFinestEnabled()) {
                         logger.finest(deadMember + " is dead, sending remove to all other members...");
                     }
-                    invokeMemberRemoveOperation(deadAddress);
+                    sendMemberRemoveOperation(deadMember);
                 }
 
                 final ClusterState clusterState = clusterStateManager.getState();
@@ -572,17 +589,18 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private void invokeMemberRemoveOperation(Address deadAddress) {
+    private void sendMemberRemoveOperation(Member deadMember) {
         for (Member member : getMembers()) {
             Address address = member.getAddress();
-            if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
-                nodeEngine.getOperationService().send(new MemberRemoveOperation(deadAddress), address);
+            if (!thisAddress.equals(address) && !address.equals(deadMember.getAddress())) {
+                MemberRemoveOperation op = new MemberRemoveOperation(deadMember.getAddress(), deadMember.getUuid());
+                nodeEngine.getOperationService().send(op, address);
             }
         }
     }
 
     public void sendShutdownMessage() {
-        invokeMemberRemoveOperation(thisAddress);
+        sendMemberRemoveOperation(thisMember);
     }
 
     private void sendMembershipEventNotifications(MemberImpl member, Set<Member> members, final boolean added) {

@@ -18,7 +18,6 @@
 package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -123,10 +122,8 @@ public class MockConnectionManager implements ConnectionManager {
                         ILogger otherLogger = otherNode.getLogger(MockConnectionManager.class);
                         otherLogger.fine(localMember + " will be removed from the cluster if present, "
                                 + "because it has requested to leave.");
-                        MemberImpl member = clusterService.getMember(thisAddress);
-                        if (member != null && member.getUuid().equals(localMember.getUuid())) {
-                            clusterService.removeAddress(thisAddress, "Connection manager is stopped on " + localMember);
-                        }
+                        clusterService.removeAddress(localMember.getAddress(), localMember.getUuid(),
+                                "Connection manager is stopped on " + localMember);
                     }
                 });
             }

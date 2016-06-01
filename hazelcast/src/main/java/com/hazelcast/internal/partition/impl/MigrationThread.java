@@ -38,6 +38,8 @@ class MigrationThread extends Thread implements Runnable {
     private final long partitionMigrationInterval;
     private final long sleepTime;
 
+    private volatile MigrationRunnable activeTask;
+
     MigrationThread(MigrationManager migrationManager, HazelcastThreadGroup hazelcastThreadGroup, ILogger logger,
                     MigrationQueue queue) {
         super(hazelcastThreadGroup.getInternalThreadGroup(), hazelcastThreadGroup.getThreadNamePrefix("migration"));
@@ -100,14 +102,20 @@ class MigrationThread extends Thread implements Runnable {
                 return false;
             }
 
+            activeTask = runnable;
             runnable.run();
         } catch (Throwable t) {
             logger.warning(t);
         } finally {
             queue.afterTaskCompletion(runnable);
+            activeTask = null;
         }
 
         return true;
+    }
+
+    MigrationRunnable getActiveTask() {
+        return activeTask;
     }
 
     void stopNow() {
