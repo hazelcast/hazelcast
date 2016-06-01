@@ -268,7 +268,7 @@ public class ClusterStateManager {
         try {
             tx.commit();
         } catch (Throwable  e) {
-            if (e instanceof TargetNotMemberException || e instanceof MemberLeftException) {
+            if (e instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException) {
                 // Member left while tx is being committed after prepare successful.
                 // We cannot rollback tx after this point. Cluster state change is done
                 // on other members.
