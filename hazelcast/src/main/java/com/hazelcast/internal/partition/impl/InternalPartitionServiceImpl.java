@@ -411,7 +411,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
 
             List<MigrationInfo> completedMigrations = migrationManager.getCompletedMigrations();
-            ILogger logger = node.getLogger(PartitionRuntimeState.class);
 
             InternalPartition[] partitions = partitionStateManager.getPartitions();
 
@@ -431,7 +430,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
 
             List<MigrationInfo> completedMigrations = new ArrayList<MigrationInfo>(migrationManager.getCompletedMigrations());
-            ILogger logger = node.getLogger(PartitionRuntimeState.class);
 
             InternalPartition[] partitions = partitionStateManager.getPartitionsCopy();
 
