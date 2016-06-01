@@ -472,8 +472,9 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void complete(Object value) {
-        context.invocationRegistry.deregister(this);
-        future.complete(value);
+        if (future.complete(value)) {
+            context.invocationRegistry.deregister(this);
+        }
     }
 
     private void handleRetry(Object cause) {
