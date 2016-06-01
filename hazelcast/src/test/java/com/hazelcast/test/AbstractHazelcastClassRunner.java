@@ -51,7 +51,7 @@ import static java.lang.Integer.getInteger;
  */
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 
-    protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE = getBoolean("hazelcast.test.disableThreadDumpOnFailure");
+    protected static final boolean THREAD_DUMP_ON_FAILURE = getBoolean("hazelcast.test.threadDumpOnFailure");
     protected static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
 
     private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
@@ -153,7 +153,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected Statement withAfters(FrameworkMethod method, Object target, Statement statement) {
         List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
-        if (!DISABLE_THREAD_DUMP_ON_FAILURE) {
+        if (THREAD_DUMP_ON_FAILURE) {
             return new ThreadDumpAwareRunAfters(method, statement, afters, target);
         }
         if (afters.isEmpty()) {
