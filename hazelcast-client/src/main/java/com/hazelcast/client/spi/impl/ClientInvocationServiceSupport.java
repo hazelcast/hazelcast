@@ -218,8 +218,11 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 }
 
                 iter.remove();
-                Exception ex = newTargetDisconnectedExceptionCausedByHeartBeat(connection.getRemoteEndpoint(),
-                        connection.getLastHeartbeatMillis(), connection.getCloseCause());
+                Exception ex = newTargetDisconnectedExceptionCausedByHeartBeat(
+                        connection.getRemoteEndpoint(),
+                        connection.toString(),
+                        connection.getLastHeartbeatMillis(),
+                        connection.getCloseCause());
                 invocation.notifyException(ex);
             }
             if (expiredConnections != null) {
