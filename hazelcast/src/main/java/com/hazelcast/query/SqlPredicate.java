@@ -22,8 +22,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.AndPredicate;
+import com.hazelcast.query.impl.predicates.CompoundPredicate;
+import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.query.impl.predicates.Visitor;
+import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +37,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
-import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.greaterEqual;
@@ -43,7 +46,6 @@ import static com.hazelcast.query.Predicates.lessEqual;
 import static com.hazelcast.query.Predicates.lessThan;
 import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.notEqual;
-import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.query.Predicates.regex;
 
 /**
@@ -233,13 +235,13 @@ public class SqlPredicate
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, and(eval(first), eval(second)));
+                        setOrAdd(tokens, position, flattenCompound(eval(first), eval(second), AndPredicate.class));
                     } else if ("OR".equalsIgnoreCase(token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
-                        setOrAdd(tokens, position, or(eval(first), eval(second)));
+                        setOrAdd(tokens, position, flattenCompound(eval(first), eval(second), OrPredicate.class));
                     } else {
                         throw new RuntimeException("Unknown token " + token);
                     }
@@ -299,6 +301,45 @@ public class SqlPredicate
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         predicate = createPredicate(sql);
+    }
+
+    /**
+     * Return a {@link CompoundPredicate}, possibly flattened if one or both arguments is an instance of
+     * {@code CompoundPredicate}.
+     *
+     */
+    static <T extends CompoundPredicate> T flattenCompound(Predicate predicateLeft, Predicate predicateRight, Class<T> klass) {
+        // The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
+        // however since we only care for 2-argument flattening, we can avoid constructing a visitor and its internals
+        // for each token pass at the cost of the following explicit code.
+        Predicate[] subpredicatesLeft;
+        Predicate[] subpredicatesRight;
+        Predicate[] predicates;
+        if (klass.isInstance(predicateLeft)) {
+            subpredicatesLeft = ((CompoundPredicate) predicateLeft).getPredicates();
+            if (predicateRight instanceof CompoundPredicate) {
+                subpredicatesRight = ((CompoundPredicate) predicateRight).getPredicates();
+            } else {
+                subpredicatesRight = new Predicate[] {predicateRight};
+            }
+            predicates = new Predicate[subpredicatesLeft.length + subpredicatesRight.length];
+            ArrayUtils.concat(subpredicatesLeft, subpredicatesRight, predicates);
+        } else if (klass.isInstance(predicateRight)) {
+            subpredicatesRight = ((CompoundPredicate) predicateRight).getPredicates();
+            predicates = new Predicate[subpredicatesRight.length + 1];
+            ArrayUtils.concat(new Predicate[] {predicateLeft}, subpredicatesRight, predicates);
+        } else {
+            predicates = new Predicate[] {predicateLeft, predicateRight};
+        }
+        try {
+            CompoundPredicate compoundPredicate = klass.newInstance();
+            compoundPredicate.setPredicates(predicates);
+            return (T) compoundPredicate;
+        } catch (InstantiationException e) {
+            throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
+        }
     }
 
     @Override

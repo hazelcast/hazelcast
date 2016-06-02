@@ -28,11 +28,13 @@ import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -149,5 +151,45 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         Object result = ArrayUtils.getItemAtPositionOrNull(src, 1);
 
         assertNull(result);
+    }
+
+    @Test
+    public void concat() {
+        Integer[] first = new Integer[] {1,2,3};
+        Integer[] second = new Integer[] {4};
+        Integer[] concatenated = new Integer[4];
+        ArrayUtils.concat(first, second, concatenated);
+        assertEquals(4, concatenated.length);
+        assertEquals(Integer.valueOf(1), concatenated[0]);
+        assertEquals(Integer.valueOf(2), concatenated[1]);
+        assertEquals(Integer.valueOf(3), concatenated[2]);
+        assertEquals(Integer.valueOf(4), concatenated[3]);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void concat_whenFirstNull() {
+        Integer[] first = null;
+        Integer[] second = new Integer[] {4};
+        Integer[] concatenated = new Integer[4];
+        ArrayUtils.concat(first, second, concatenated);
+        fail();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void concat_whenSecondNull() {
+        Integer[] first = new Integer[] {1,2,3};
+        Integer[] second = null;
+        Integer[] concatenated = new Integer[4];
+        ArrayUtils.concat(first, second, concatenated);
+        fail();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void concat_whenDestNull() {
+        Integer[] first = new Integer[] {1,2,3};
+        Integer[] second = new Integer[] {4};
+        Integer[] concatenated = null;
+        ArrayUtils.concat(first, second, concatenated);
+        fail();
     }
 }
