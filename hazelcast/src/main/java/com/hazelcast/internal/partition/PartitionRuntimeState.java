@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
@@ -176,16 +177,26 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(version);
-        int memberCount = addressToIndexes.size();
-        out.writeInt(memberCount);
-        for (Map.Entry<Address, Integer> entry : addressToIndexes.entrySet()) {
-            Address address = entry.getKey();
-            address.writeData(out);
-            int index = entry.getValue();
-            out.writeInt(index);
+        if (addressToIndexes == null) {
+            out.writeInt(addresses.length);
+            for (int index = 0; index < addresses.length; index++) {
+                Address address = addresses[index];
+                address.writeData(out);
+                out.writeInt(index);
+            }
+        } else {
+            int memberCount = addressToIndexes.size();
+            out.writeInt(memberCount);
+            for (Map.Entry<Address, Integer> entry : addressToIndexes.entrySet()) {
+                Address address = entry.getKey();
+                address.writeData(out);
+                int index = entry.getValue();
+                out.writeInt(index);
+            }
         }
 
         out.writeInt(minimizedPartitionTable.length);
@@ -215,9 +226,17 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("PartitionRuntimeState [" + version + "]{\n");
-        for (Address address : addressToIndexes.keySet()) {
-            sb.append(address).append('\n');
+        StringBuilder sb = new StringBuilder("PartitionRuntimeState [" + version + "]{" + LINE_SEPARATOR);
+
+        if (addressToIndexes == null) {
+            //addressToIndexes is null after deserialization. let's use the array
+            for (Address address : addresses) {
+                sb.append(address).append(LINE_SEPARATOR);
+            }
+        } else {
+            for (Address address : addressToIndexes.keySet()) {
+                sb.append(address).append(LINE_SEPARATOR);
+            }
         }
         sb.append(", completedMigrations=").append(completedMigrations);
         sb.append('}');

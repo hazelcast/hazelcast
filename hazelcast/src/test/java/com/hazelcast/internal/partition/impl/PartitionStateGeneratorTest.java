@@ -202,7 +202,7 @@ public class PartitionStateGeneratorTest {
     static InternalPartition[] toPartitionArray(Address[][] state) {
         InternalPartition[] result = new InternalPartition[state.length];
         for (int partitionId = 0; partitionId < state.length; partitionId++) {
-            result[partitionId] = new DummyInternalPartition(state[partitionId]);
+            result[partitionId] = new DummyInternalPartition(state[partitionId], partitionId);
         }
         return result;
     }
@@ -210,52 +210,9 @@ public class PartitionStateGeneratorTest {
     static InternalPartition[] emptyPartitionArray(int partitionCount) {
         InternalPartition[] result = new InternalPartition[partitionCount];
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            result[partitionId] = new DummyInternalPartition(new Address[InternalPartition.MAX_REPLICA_COUNT]);
+            result[partitionId] = new DummyInternalPartition(new Address[InternalPartition.MAX_REPLICA_COUNT], partitionId);
         }
         return result;
-    }
-
-    private static class DummyInternalPartition implements InternalPartition {
-        private Address[] replicas;
-
-        private DummyInternalPartition(Address[] replicas) {
-            this.replicas = replicas;
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
-
-        @Override
-        public int getPartitionId() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Address getOwnerOrNull() {
-            return replicas[0];
-        }
-
-        @Override
-        public boolean isMigrating() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Address getReplicaAddress(int replicaIndex) {
-            return replicas[replicaIndex];
-        }
-
-        @Override
-        public boolean isOwnerOrBackup(Address address) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getReplicaIndex(Address address) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     private static void remove(Address[][] state, List<Member> removedMembers) {
