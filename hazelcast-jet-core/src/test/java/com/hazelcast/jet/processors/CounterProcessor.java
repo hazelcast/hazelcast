@@ -4,10 +4,10 @@ import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.impl.counters.LongCounter;
-import com.hazelcast.jet.spi.container.CounterKey;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.internal.impl.counters.LongCounter;
+import com.hazelcast.jet.api.container.CounterKey;
+import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.api.processor.ContainerProcessor;
 
 public class CounterProcessor implements ContainerProcessor<Object, Object> {
     private final CounterKey OBJECTS_COUNTER = new StringCounterKey("counter");

@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides API for abstract processor
+ * Provides JET-processors
  */
 package com.hazelcast.jet.api.processor;

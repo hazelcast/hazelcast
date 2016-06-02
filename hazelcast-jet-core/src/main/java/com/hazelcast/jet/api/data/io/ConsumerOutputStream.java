@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.api.data.io;
 
-import com.hazelcast.jet.api.actor.Consumer;
+import com.hazelcast.jet.internal.api.actor.Consumer;
 
 /**
  * Represents abstract output-stream to consume data chunk of data-stream;

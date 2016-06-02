@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.jet.impl.dag.DAGImpl;
-import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.api.dag.DAGImpl;
+import com.hazelcast.jet.api.dag.Vertex;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 

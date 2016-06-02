@@ -17,12 +17,12 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.impl.dag.DAGImpl;
-import com.hazelcast.jet.impl.data.tuple.JetTuple2;
-import com.hazelcast.jet.impl.strategy.IListBasedShufflingStrategy;
-import com.hazelcast.jet.io.spi.tuple.Tuple;
-import com.hazelcast.jet.spi.dag.DAG;
-import com.hazelcast.jet.spi.dag.Vertex;
+import com.hazelcast.jet.api.dag.DAGImpl;
+import com.hazelcast.jet.api.data.tuple.JetTuple2;
+import com.hazelcast.jet.api.strategy.IListBasedShufflingStrategy;
+import com.hazelcast.jet.io.api.tuple.Tuple;
+import com.hazelcast.jet.api.dag.DAG;
+import com.hazelcast.jet.api.dag.Vertex;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;

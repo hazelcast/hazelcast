@@ -15,6 +15,7 @@
  */
 
 /**
- * Provides api to work with JET calculation engine
+ * Provides JET API
  */
+
 package com.hazelcast.jet.api;

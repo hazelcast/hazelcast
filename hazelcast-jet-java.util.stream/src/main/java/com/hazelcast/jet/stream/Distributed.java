@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.stream.impl.Pipeline;
+import com.hazelcast.jet.stream.impl.StreamUtil;
 import com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.nio.ObjectDataInput;
@@ -361,7 +361,7 @@ public abstract class Distributed {
                 setPrivateField(this, clazz, "min", in.readInt());
                 setPrivateField(this, clazz, "max", in.readInt());
             } catch (IllegalAccessException | NoSuchFieldException e) {
-                throw JetUtil.reThrow(e);
+                throw StreamUtil.reThrow(e);
             }
         }
     }
@@ -385,7 +385,7 @@ public abstract class Distributed {
                 setPrivateField(this, clazz, "min", in.readDouble());
                 setPrivateField(this, clazz, "max", in.readDouble());
             } catch (IllegalAccessException | NoSuchFieldException e) {
-                throw JetUtil.reThrow(e);
+                throw StreamUtil.reThrow(e);
             }
         }
     }
@@ -409,7 +409,7 @@ public abstract class Distributed {
                 setPrivateField(this, clazz, "min", in.readLong());
                 setPrivateField(this, clazz, "max", in.readLong());
             } catch (IllegalAccessException | NoSuchFieldException e) {
-                throw JetUtil.reThrow(e);
+                throw StreamUtil.reThrow(e);
             }
         }
     }
@@ -418,13 +418,13 @@ public abstract class Distributed {
      * A container object which may or may not contain a non-null value.
      * If a value is present, {@code isPresent()} will return {@code true} and
      * {@code get()} will return the value.
-     * <p>
+     * <p/>
      * <p>Additional methods that depend on the presence or absence of a contained
      * value are provided, such as {@link #orElse(java.lang.Object) orElse()}
      * (return a default value if value not present) and
      * {@link #ifPresent(java.util.function.Consumer) ifPresent()} (execute a block
      * of code if the value is present).
-     * <p>
+     * <p/>
      * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
      * class; use of identity-sensitive operations (including reference equality
      * ({@code ==}), identity hash code, or synchronization) on instances of
@@ -581,14 +581,14 @@ public abstract class Distributed {
          * following code traverses a stream of file names, selects one that has
          * not yet been processed, and then opens that file, returning an
          * {@code Optional<FileInputStream>}:
-         * <p>
+         * <p/>
          * <pre>{@code
          *     Optional<FileInputStream> fis =
          *         names.stream().filter(name -> !isProcessedYet(name))
          *                       .findFirst()
          *                       .map(name -> new FileInputStream(name));
          * }</pre>
-         * <p>
+         * <p/>
          * Here, {@code findFirst} returns an {@code Optional<String>}, and then
          * {@code map} returns an {@code Optional<FileInputStream>} for the desired
          * file if one exists.
