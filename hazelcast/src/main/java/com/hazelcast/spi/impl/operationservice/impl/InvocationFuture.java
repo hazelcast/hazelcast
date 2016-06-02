@@ -127,12 +127,12 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
                     .append(currentTimeMillis() - invocation.firstInvocationTimeMillis).append(" ms. ");
 
             long lastHeartbeatMillis = invocation.lastHeartbeatMillis;
-            sb.append("Last heartbeat: ");
+            sb.append("Last operation heartbeat: ");
             appendHeartbeat(sb, lastHeartbeatMillis);
 
             long lastHeartbeatFromMemberMillis = invocation.context.invocationMonitor
                     .getLastMemberHeartbeatMillis(invocation.invTarget);
-            sb.append("Last member heartbeat: ");
+            sb.append("Last operation heartbeat from member: ");
             appendHeartbeat(sb, lastHeartbeatFromMemberMillis);
         } else {
             sb.append(invocation.op.getClass().getSimpleName())
@@ -150,7 +150,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         return new ExecutionException(msg, new OperationTimeoutException(msg));
     }
 
-    private void appendHeartbeat(StringBuilder sb, long lastHeartbeatMillis) {
+    private static void appendHeartbeat(StringBuilder sb, long lastHeartbeatMillis) {
         if (lastHeartbeatMillis == 0) {
             sb.append("never. ");
         } else {
