@@ -26,6 +26,7 @@ import com.hazelcast.query.impl.AndResultSet;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -179,12 +180,24 @@ public final class AndPredicate
         return PredicateDataSerializerHook.AND_PREDICATE;
     }
 
+    /**
+     * Visitable predicates are treated as effectively immutable, therefore callers should not make any changes to
+     * the returned array.
+     */
     @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public <K, V> Predicate<K, V>[] getPredicates() {
         return predicates;
     }
 
+    /**
+     * Visitable predicates are treated as effectively immutable, therefore callers should not make any changes to
+     * the array passed as argument after is has been set.
+     * @param predicates    the array of sub-predicates for this {@code And} operator. It is not safe to make any changes to
+     *                      this array after it has been set.
+     */
     @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public <K, V> void setPredicates(Predicate<K, V>[] predicates) {
         if (this.predicates == null) {
             this.predicates = predicates;
