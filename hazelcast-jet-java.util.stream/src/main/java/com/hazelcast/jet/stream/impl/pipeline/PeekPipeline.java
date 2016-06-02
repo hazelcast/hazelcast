@@ -17,10 +17,10 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.impl.data.tuple.JetTuple2;
-import com.hazelcast.jet.spi.dag.DAG;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.io.spi.tuple.Tuple;
+import com.hazelcast.jet.api.data.tuple.JetTuple2;
+import com.hazelcast.jet.api.dag.DAG;
+import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.io.api.tuple.Tuple;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;

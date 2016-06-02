@@ -18,11 +18,11 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.impl.dag.tap.sink.HazelcastSinkTap;
-import com.hazelcast.jet.impl.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.spi.tuple.Tuple;
-import com.hazelcast.jet.spi.dag.tap.SinkTap;
-import com.hazelcast.jet.spi.dag.tap.TapType;
+import com.hazelcast.jet.api.dag.tap.HazelcastSinkTap;
+import com.hazelcast.jet.api.data.tuple.JetTuple2;
+import com.hazelcast.jet.io.api.tuple.Tuple;
+import com.hazelcast.jet.api.dag.tap.SinkTap;
+import com.hazelcast.jet.api.dag.tap.TapType;
 import com.hazelcast.jet.stream.Distributed;
 
 import java.util.function.Function;

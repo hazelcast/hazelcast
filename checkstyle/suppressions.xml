@@ -17,10 +17,10 @@
     <suppress checks="" files="com/hazelcast/client/impl/protocol/JetMessageTaskFactoryProvider"/>
 
     <!-- Suppress RingBuffer checks-->
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingBufferWithValueStrategy"/>
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingBufferWithReferenceStrategy"/>
-    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/PaddedLong"/>
-    <suppress checks="IllegalImport" files="com/hazelcast/jet/impl/actor/ringbuffer/UnsafeUtil"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/internal/impl/actor/ringbuffer/RingBufferWithValueStrategy"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/internal/impl/actor/ringbuffer/RingBufferWithReferenceStrategy"/>
+    <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/internal/impl/actor/ringbuffer/PaddedLong"/>
+    <suppress checks="IllegalImport" files="com/hazelcast/jet/internal/impl/actor/ringbuffer/UnsafeUtil"/>
 
     <!-- Temporary suppress javaDocs (will be implemented in future)-->
     <suppress checks="JavadocPackage" files="\.java"/>

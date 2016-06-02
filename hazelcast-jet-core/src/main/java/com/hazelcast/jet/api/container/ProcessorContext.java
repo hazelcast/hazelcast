@@ -17,8 +17,7 @@
 package com.hazelcast.jet.api.container;
 
 
-import com.hazelcast.jet.spi.container.ContainerDescriptor;
-import com.hazelcast.jet.spi.executor.TaskContext;
+import com.hazelcast.jet.api.executor.TaskContext;
 
 /**
  * Represents context of processing container;

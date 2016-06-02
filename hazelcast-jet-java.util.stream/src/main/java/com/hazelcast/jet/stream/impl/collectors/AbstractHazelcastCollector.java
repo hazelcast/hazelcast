@@ -17,10 +17,10 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.dag.DAGImpl;
-import com.hazelcast.jet.io.spi.tuple.Tuple;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.dag.tap.SinkTap;
+import com.hazelcast.jet.api.dag.DAGImpl;
+import com.hazelcast.jet.io.api.tuple.Tuple;
+import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.api.dag.tap.SinkTap;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;

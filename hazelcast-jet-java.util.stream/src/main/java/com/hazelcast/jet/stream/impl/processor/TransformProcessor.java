@@ -18,9 +18,9 @@ package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.JetException;
-import com.hazelcast.jet.io.spi.tuple.Tuple;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.api.JetException;
+import com.hazelcast.jet.io.api.tuple.Tuple;
+import com.hazelcast.jet.api.processor.ContainerProcessor;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
 import java.util.Iterator;

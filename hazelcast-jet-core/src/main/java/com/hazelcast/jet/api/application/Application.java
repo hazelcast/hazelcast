@@ -17,11 +17,11 @@
 package com.hazelcast.jet.api.application;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.api.statemachine.application.ApplicationState;
-import com.hazelcast.jet.impl.application.LocalizationResourceType;
-import com.hazelcast.jet.spi.container.CounterKey;
-import com.hazelcast.jet.spi.counters.Accumulator;
-import com.hazelcast.jet.spi.dag.DAG;
+import com.hazelcast.jet.internal.api.statemachine.application.ApplicationState;
+import com.hazelcast.jet.internal.impl.application.LocalizationResourceType;
+import com.hazelcast.jet.api.container.CounterKey;
+import com.hazelcast.jet.api.counters.Accumulator;
+import com.hazelcast.jet.api.dag.DAG;
 
 import java.io.IOException;
 import java.io.InputStream;

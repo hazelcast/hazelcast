@@ -19,10 +19,10 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.io.spi.tuple.Tuple;
-import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.spi.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.io.api.tuple.Tuple;
+import com.hazelcast.jet.api.processor.tuple.TupleContainerProcessor;
+import com.hazelcast.jet.api.processor.tuple.TupleContainerProcessorFactory;
 
 public class DummyProcessor implements TupleContainerProcessor<Integer, String, Integer, String> {
     @Override

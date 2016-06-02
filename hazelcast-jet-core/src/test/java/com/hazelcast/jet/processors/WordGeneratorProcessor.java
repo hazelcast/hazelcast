@@ -20,9 +20,9 @@ import com.hazelcast.jet.api.container.ProcessorContext;
 import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.api.data.io.ProducerInputStream;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.data.tuple.JetTuple;
-import com.hazelcast.jet.spi.processor.ContainerProcessor;
+import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.api.data.tuple.JetTuple;
+import com.hazelcast.jet.api.processor.ContainerProcessor;
 
 import java.util.Iterator;
 import java.util.StringTokenizer;

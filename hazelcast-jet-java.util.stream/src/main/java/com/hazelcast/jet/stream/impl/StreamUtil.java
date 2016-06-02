@@ -18,15 +18,14 @@ package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.api.application.Application;
 import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.impl.dag.EdgeImpl;
-import com.hazelcast.jet.impl.dag.VertexImpl;
-import com.hazelcast.jet.impl.hazelcast.JetEngine;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.io.spi.tuple.Tuple;
-import com.hazelcast.jet.spi.dag.DAG;
-import com.hazelcast.jet.spi.dag.Edge;
-import com.hazelcast.jet.spi.dag.Vertex;
-import com.hazelcast.jet.spi.processor.ProcessorDescriptor;
+import com.hazelcast.jet.api.dag.EdgeImpl;
+import com.hazelcast.jet.api.dag.VertexImpl;
+import com.hazelcast.jet.api.JetEngine;
+import com.hazelcast.jet.io.api.tuple.Tuple;
+import com.hazelcast.jet.api.dag.DAG;
+import com.hazelcast.jet.api.dag.Edge;
+import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.api.processor.ProcessorDescriptor;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.util.UuidUtil;
@@ -52,8 +51,24 @@ public final class StreamUtil {
         try {
             return future.get();
         } catch (ExecutionException | InterruptedException e) {
-            throw JetUtil.reThrow(e);
+            throw reThrow(e);
         }
+    }
+
+    public static RuntimeException reThrow(Throwable e) {
+        if (e instanceof ExecutionException) {
+            if (e.getCause() != null) {
+                throw reThrow(e.getCause());
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+
+        if (e instanceof RuntimeException) {
+            return (RuntimeException) e;
+        }
+
+        return new RuntimeException(e);
     }
 
     public static String randomName() {
@@ -70,7 +85,7 @@ public final class StreamUtil {
             Set<Class> classes = context.getClasses();
             jetApplication.submit(dag, classes.toArray(new Class[classes.size()]));
         } catch (IOException e) {
-            throw JetUtil.reThrow(e);
+            throw reThrow(e);
         }
         long start = System.currentTimeMillis();
         try {

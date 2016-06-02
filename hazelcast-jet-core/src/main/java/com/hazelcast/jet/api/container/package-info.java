@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides API to work with containers
+ * Provides API to work with JET-container level
  */
 package com.hazelcast.jet.api.container;

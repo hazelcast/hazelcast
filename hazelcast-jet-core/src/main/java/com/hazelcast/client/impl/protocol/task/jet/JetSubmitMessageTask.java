@@ -21,9 +21,9 @@ import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.client.impl.protocol.permission.JetPermission;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.api.hazelcast.JetService;
-import com.hazelcast.jet.impl.operation.application.SubmitApplicationRequestOperation;
-import com.hazelcast.jet.spi.dag.DAG;
+import com.hazelcast.jet.internal.api.hazelcast.JetService;
+import com.hazelcast.jet.internal.impl.operation.application.SubmitApplicationRequestOperation;
+import com.hazelcast.jet.api.dag.DAG;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 

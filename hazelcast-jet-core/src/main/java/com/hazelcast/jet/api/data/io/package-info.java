@@ -15,6 +15,6 @@
  */
 
 /**
- * Provides API for JET-IO
+ * Represents API to work with data and serialization
  */
 package com.hazelcast.jet.api.data.io;
