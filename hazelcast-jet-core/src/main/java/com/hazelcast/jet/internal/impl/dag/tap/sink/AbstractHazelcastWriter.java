@@ -28,6 +28,7 @@ import com.hazelcast.jet.api.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.api.data.DataWriter;
 import com.hazelcast.jet.api.strategy.HashingStrategy;
 import com.hazelcast.jet.api.strategy.ShufflingStrategy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -46,6 +47,8 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     protected final ContainerDescriptor containerDescriptor;
 
     protected final DefaultObjectIOStream<Object> chunkBuffer;
+
+    protected final ILogger logger;
 
     protected volatile boolean isFlushed = true;
 
@@ -93,10 +96,10 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
                                       int partitionId,
                                       SinkTapWriteStrategy sinkTapWriteStrategy) {
         checkNotNull(containerDescriptor);
-
         this.partitionId = partitionId;
         this.sinkTapWriteStrategy = sinkTapWriteStrategy;
         this.nodeEngine = containerDescriptor.getNodeEngine();
+        this.logger = nodeEngine.getLogger(getClass());
         this.containerDescriptor = containerDescriptor;
         JetApplicationConfig jetApplicationConfig = containerDescriptor.getConfig();
         this.awaitInSecondsTime = jetApplicationConfig.getJetSecondsToAwait();

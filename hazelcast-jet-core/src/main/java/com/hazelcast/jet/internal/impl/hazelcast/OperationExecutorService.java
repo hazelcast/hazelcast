@@ -29,8 +29,6 @@ import com.hazelcast.jet.internal.impl.util.JetUtil;
 import com.hazelcast.jet.api.CombinedJetException;
 import com.hazelcast.jet.api.config.JetApplicationConfig;
 import com.hazelcast.jet.api.dag.DAG;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +40,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public abstract class OperationExecutorService<PayLoad> implements ApplicationInvocationService<PayLoad> {
-    protected static final Logger LOG = LoggerFactory.getLogger(OperationExecutorService.class);
 
     protected JetApplicationConfig jetApplicationConfig;
 

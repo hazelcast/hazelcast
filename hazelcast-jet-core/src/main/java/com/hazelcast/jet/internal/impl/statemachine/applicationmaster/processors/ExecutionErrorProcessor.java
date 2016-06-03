@@ -19,22 +19,22 @@ package com.hazelcast.jet.internal.impl.statemachine.applicationmaster.processor
 import com.hazelcast.jet.internal.api.container.ContainerPayLoadProcessor;
 import com.hazelcast.jet.internal.api.container.ProcessingContainer;
 import com.hazelcast.jet.internal.api.container.applicationmaster.ApplicationMaster;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.hazelcast.logging.ILogger;
 
 public class ExecutionErrorProcessor implements ContainerPayLoadProcessor<Throwable> {
-    private static final Logger LOG = LoggerFactory.getLogger(ExecutionErrorProcessor.class);
 
     private final ApplicationMaster applicationMaster;
+    private final ILogger logger;
 
     public ExecutionErrorProcessor(ApplicationMaster applicationMaster) {
+        this.logger = applicationMaster.getNodeEngine().getLogger(getClass());
         this.applicationMaster = applicationMaster;
     }
 
     @Override
     public void process(Throwable error) throws Exception {
         if (error != null) {
-            LOG.error(error.getMessage(), error);
+            logger.severe(error.getMessage(), error);
         }
 
         for (ProcessingContainer container : this.applicationMaster.containers()) {
