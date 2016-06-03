@@ -40,6 +40,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.util.CollectionUtil.getItemAtPositionOrNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -74,6 +75,26 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         }
 
         assertOpenEventually(countDownLatch);
+    }
+
+    @Test
+    public void givenMemberAttributedListenerRegistered_whenAttributeIsChanged_thenEventContainsCurrentMemberSet() {
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final ClientConfig config = new ClientConfig();
+        final ListenerConfig listenerConfig = new ListenerConfig();
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        LatchMembershipListener listener = new LatchMembershipListener(countDownLatch);
+        listenerConfig.setImplementation(listener);
+        config.addListenerConfig(listenerConfig);
+        hazelcastFactory.newHazelcastClient(config);
+
+        final Member localMember = instance.getCluster().getLocalMember();
+        localMember.setStringAttribute("foo", "bar");
+
+        assertOpenEventually(countDownLatch);
+        MemberAttributeEvent event = listener.lastMemberAttributeEvent;
+
+        assertEquals(localMember, getItemAtPositionOrNull(event.getMembers(), 0));
     }
 
     @Test(timeout = 120000)
@@ -324,6 +345,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
     private static class LatchMembershipListener implements MembershipListener {
         private final CountDownLatch latch;
+        private volatile MemberAttributeEvent lastMemberAttributeEvent;
 
         private LatchMembershipListener(CountDownLatch latch) {
             this.latch = latch;
@@ -339,6 +361,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
         @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+            lastMemberAttributeEvent = memberAttributeEvent;
             latch.countDown();
         }
     }

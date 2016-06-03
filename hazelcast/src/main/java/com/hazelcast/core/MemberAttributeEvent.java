@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.Set;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
@@ -41,8 +42,8 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     }
 
     public MemberAttributeEvent(Cluster cluster, Member member, MemberAttributeOperationType operationType,
-                                String key, Object value) {
-        super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, null);
+                                String key, Object value, Set<Member> members) {
+        super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, members);
         this.member = member;
         this.operationType = operationType;
         this.key = key;

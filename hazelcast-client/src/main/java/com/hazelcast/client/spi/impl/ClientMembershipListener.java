@@ -43,6 +43,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByMemberLeftEvent;
+import static java.util.Collections.unmodifiableSet;
 
 class ClientMembershipListener extends ClientAddMembershipListenerCodec.AbstractEventHandler
         implements EventHandler<ClientMessage> {
@@ -99,7 +100,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             //this means this is the first time client connected to server
             logger.info(membersString());
             clusterService.handleInitialMembershipEvent(
-                    new InitialMembershipEvent(client.getCluster(), Collections.unmodifiableSet(members)));
+                    new InitialMembershipEvent(client.getCluster(), unmodifiableSet(members)));
             initialListFetchedLatch.countDown();
             return;
         }
@@ -112,13 +113,14 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     @Override
     public void handle(String uuid, String key, int opType, String value) {
-        Collection<Member> members = clusterService.getMemberList();
-        for (Member target : members) {
+        Collection<Member> memberList = clusterService.getMemberList();
+        for (Member target : memberList) {
             if (target.getUuid().equals(uuid)) {
                 final MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(opType);
                 ((AbstractMember) target).updateAttribute(operationType, key, value);
                 MemberAttributeEvent memberAttributeEvent =
-                        new MemberAttributeEvent(client.getCluster(), target, operationType, key, value);
+                        new MemberAttributeEvent(client.getCluster(), target, operationType, key, value,
+                                unmodifiableSet(members));
                 clusterService.fireMemberAttributeEvent(memberAttributeEvent);
                 break;
             }
@@ -165,7 +167,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
             connectionManager.destroyConnection(connection, null, newTargetDisconnectedExceptionCausedByMemberLeftEvent(member));
         }
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED,
-                Collections.unmodifiableSet(members));
+                unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
     }
 
@@ -177,7 +179,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
 
     private List<MembershipEvent> detectMembershipEvents(Map<String, Member> prevMembers) {
         List<MembershipEvent> events = new LinkedList<MembershipEvent>();
-        Set<Member> eventMembers = Collections.unmodifiableSet(members);
+        Set<Member> eventMembers = unmodifiableSet(members);
 
         List<Member> newMembers = new LinkedList<Member>();
         for (Member member : members) {
@@ -210,7 +212,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
         members.add(member);
         logger.info(membersString());
         MembershipEvent event = new MembershipEvent(client.getCluster(), member,
-                MembershipEvent.MEMBER_ADDED, Collections.unmodifiableSet(members));
+                MembershipEvent.MEMBER_ADDED, unmodifiableSet(members));
         clusterService.handleMembershipEvent(event);
     }
 
