@@ -2,97 +2,47 @@
 Document Revision History
 
 Chapter 1 - Preface
-- Added Hazelcast Architecture as a new section. Renamed the section Product Naming as Hazelcast Editions and updated its content by adding the new edition "Hazelcast Enterprise HD".
+- Updated the architecture diagram.
 
-Chapter 3 - Getting Started
-- Phoning Home: Added as a new section to explain phone home data.
-- Deploying using Docker: Added as a new section to describe how you can deploy your Hazelcast projects using the Docker platform.
-- Using the Scripts in the Package: Added as a new section explaining the scripts you have when you download Hazelcast.
+Chapter 5 - Understanding Configuration
+- Added as a new chapter to provide the fundamentals of Hazelcast configuration.
 
-Chapter 5 - Hazelcast Clusters
-- Discovering Members with jclouds:Added as a new section to explain how you can enable Hazelcast to discover your members with jclouds.
+Chapter 6 - Setting Up Clusters
+- Added as a new chapter to provide all Hazelcast clusters related information.
 
-Chapter 6 - Distributed Data Structures
-- Map Eviction section updated by adding the definition for the `min-eviction-check-millis` property. The section Understanding Map Eviction  added for a more clearer explanation of the eviction mechanism.
-- Setting In Memory Format section updated by adding the information on how to configure Hazelcast Map to use High-Density Memory Store.
-- Creating Near Cache for Map section updated by adding a note related to enabling near caches on a lite member.
-- Using High-Density Memory Store with Near Cache added as a new section.
-- Required configuration changes when using NATIVE added as a new section.
-- Using High-Density Memory Store with Map added as a new section.
-- The section previously known as Continuous Query moved under the Map section with the name "Listening to Map Entries with Predicates"
-- Near Cache Invalidation added as a new section.
-- Lock: Added the explanation for the method `tryLock` with lease.
-- Replicated Map: Replicating instead of Partitioning section updated by adding a note related to replicated map usage in a lite member.
+Chapter 7 - Distributed Data Structures
+- Replicated Map: Replicating instead of Partitioning updated by adding a note related to replicated map usage in a lite member. The whole section enhanced.
+- Lock: Added explanations related to the maximum lease time for locks.
+- Map:	Added the new section Custom Eviction Policy to explain how a customized eviction policy can be plugged.
 
-Chapter 7 - Distributed Events
-- Whole chapter improved and new sections added explaining how to register listeners.
+Chapter 10 - Distributed Query	
+- ValueExtractor with Portable Serialization:	Added as a new section.
 
-Chapter 8 - Distributed Computing
-- Selecting Members for Task Execution: Added a paragraph on how to select a lite member.
+Chapter 11 - Transactions
+- Integrating into J2EE:	Added information related to class loaders.
 
+Chapter 12 - Hazelcast JCache	
+- ICache Configuration:	Added description of the new element disable-per-entry-invalidation-events.
+- JCache - Hazelcast Instance Integration:	Added as a new section.
 
-Chapter 9 - Distributed Query
-- Filtering with Paging Predicates: The note stating that the random page accessing is not supported removed, since it is now supported with this release.
+Chapter 14 - Storage	
+- Hot Restart Persistence:	Added the new section Hot Restart Performance Considerations to summarize the results of performance tests of Hot Restart Persistence.
+- Configuring High-Density Memory Store:	Enhanced the content for allocator-type configuration element.
 
-Chapter 10 - Transactions
-- ONE_PHASE vs. TWO_PHASE: Added as a new section explaining the trade offs between these two transaction types.
-- Creating a Transaction Interface: Replaced the transaction type name LOCAL with ONE_PHASE. Updated the definitions of transaction types. 
+Chapter 15 - Hazelcast Java Client		
+- Enhanced the definition for the property hazelcast.client.invocation.timeout.seconds.
 
-Chapter 11 - Hazelcast JCache
-- ICache Partition Lost Listener: Added as a new section explaining how to listen when a partition is lost in a Hazelcast JCache implementation.
-- JCache Split-Brain: Added as a new section.
+Chapter 16 - Other Client Implementations	
+- C++ Client:	Added the new sections Serialization Support and Raw Pointer API.
 
-Chapter 12 - Integrated Clustering
-- Web Session Replication: Marking Transient Attributes added as a new section.
-- Spring Integration: Declarative Hazelcast JCache Based Caching Configuration added as a new section.
-- Hibernate Second Level Cache: Added additional information related to Hibernate Native Client mode to the introduction paragraph of the Setting Client/Server for Hibernate section.
+Chapter 18 - Management
+- Management Center:	Added information explaining how to configure Hazelcast Management Center when it is deployed onto an SSL-enabled web container.
 
-Chapter 13 - Storage
-- Hot Restart Persistence: Added as a new section to explain how Hazelcast's Hot Restart feature works and its design details.
+Chapter 26 - System Properties	
+- Added definition for the new property hazelcast.partition.migration.stale.read.disabled.
 
-Chapter 14 - Hazelcast Java Client
-- Hazelcast Clients Feature Comparison: Added as a new section.
-- Client Network Configuration: Updated by adding the definition of the new IAM role configuration element.
-
-Chapter 15 - Other Client Implementations
-- Windows C++ Client: Updated by adding static/dynamic library related flag information.
-
-Chapter 16 - Serialization
-- Whole chapter reviewed after serialization improvements and Global Serializer added as a new section.
-
-Chapter 17 - Management
-- Defining a Cluster Quorum: Added information on quorum support for caches. Added the definition of the new configuration element `quorum-ref` to ICache Configuration section.
-- Management Center: A note on how to see the cache statistics on the Management Center added under the Caches section
-- Replicated Maps: Added as a new section.
-- Added the information explaining the new e-mail notification mechanism to Creating Alerts.
-- Monitoring WAN Replication: Added as a new section.
-- Monitoring with JMX: MBean Naming for Hazelcast Data Structures and Connecting to JMX Agent added as new sections.
-- Enabling Lite Members: Added as a new section. Also Data Partitioning and Partition Table sections updated to include Lite Member related information.
-- Using the Script cluster.sh added as a new section explaining this cluster management script that comes when you download Hazelcast. 
-- Using REST API for Cluster Management added as a new section explaining how you can use REST commands to manage your cluster. 
-
-Chapter 18 - Security
-- SSL: First paragraph updated to include the information that SSL is capable of securing socket level communication between Hazelcast members and clients too.
-
-
-Chapter 21 - WAN
-- Whole chapter updated and new content added.
-
-Chapter 22 - OSGI
-- Added as a new chapter.
-
-Chapter 23 - Hazelcast Configuration
-- Improved by adding missing configuration elements and attributes. Added Quorum Configuration section.
-- Network Configuration: Join section updated by adding the explanation for `discovery-strategies` element.
-- System Properties: Added the new system properties `hazelcast.unsafe.mode`,  `hazelcast.io.input.thread.count`, `hazelcast.io.output.thread.count` and `hazelcast.query.optimizer.type`. Updated the definition of `hazelcast.io.thread.count`.
-
-Chapter 24 - Extending Hazelcast
-- This title added as a chapter to include the section previously present as "User Defined Services".
-- Discovery SPI: Added as a new section.
-- Config Properties SPI: Added as a new section.
-
-Chapter 28 - FAQ
+Chapter 29 - FAQ
 - Added new questions/answers.
 
-Chapter 29 - Glossary
+Chapter 30 - Glossary		
 - Added new glossary items.
