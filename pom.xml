@@ -305,9 +305,9 @@
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>failedfirst</runOrder>
 
-                    <forkCount>1C</forkCount>
-                    <reuseForks>true</reuseForks>
-                    <perCoreThreadCount>true</perCoreThreadCount>
+                    <!--<forkCount>1C</forkCount>-->
+                    <!--<reuseForks>true</reuseForks>-->
+                    <!--<perCoreThreadCount>true</perCoreThreadCount>-->
 
                     <argLine>
                         -verbose:gc -Xmx8G
