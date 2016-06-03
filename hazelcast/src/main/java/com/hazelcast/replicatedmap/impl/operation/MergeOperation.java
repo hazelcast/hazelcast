@@ -19,6 +19,7 @@ package com.hazelcast.replicatedmap.impl.operation;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -29,7 +30,7 @@ import java.io.IOException;
 /**
  * Merges two replicated map entries with the given merge policy after the split-brain syndrome is recovered.
  */
-public class MergeOperation extends AbstractReplicatedMapOperation {
+public class MergeOperation extends AbstractReplicatedMapOperation implements IdentifiedDataSerializable {
 
     private String name;
     private Object key;
@@ -67,5 +68,15 @@ public class MergeOperation extends AbstractReplicatedMapOperation {
         key = IOUtil.readObject(in);
         entryView = in.readObject();
         policy = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.OP_MERGE;
     }
 }

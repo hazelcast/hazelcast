@@ -19,6 +19,7 @@ package com.hazelcast.replicatedmap.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -26,7 +27,7 @@ import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 
-public class GetOperation extends AbstractOperation {
+public class GetOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     private String name;
     private Data key;
@@ -70,5 +71,15 @@ public class GetOperation extends AbstractOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         key = in.readData();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.OP_GET;
     }
 }

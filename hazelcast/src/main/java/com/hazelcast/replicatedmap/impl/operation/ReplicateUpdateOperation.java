@@ -22,6 +22,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Replicates the update happened on the partition owner to the other nodes.
  */
-public class ReplicateUpdateOperation extends AbstractOperation implements PartitionAwareOperation {
+public class ReplicateUpdateOperation extends AbstractOperation implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     ILogger logger = Logger.getLogger(ReplicateUpdateOperation.class.getName());
     VersionResponsePair response;
@@ -124,5 +125,15 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
         ttl = in.readLong();
         isRemove = in.readBoolean();
         origin = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.OP_REPLICATE_UPDATE;
     }
 }

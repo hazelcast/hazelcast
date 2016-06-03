@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
@@ -36,7 +37,7 @@ import java.util.Map;
 /**
  * Puts a set of records to the replicated map.
  */
-public class PutAllOperation extends AbstractOperation {
+public class PutAllOperation extends AbstractOperation implements IdentifiedDataSerializable {
     private String name;
     private ReplicatedMapEntries entries;
     private transient ReplicatedMapService service;
@@ -103,5 +104,15 @@ public class PutAllOperation extends AbstractOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         entries = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.OP_PUT_ALL;
     }
 }
