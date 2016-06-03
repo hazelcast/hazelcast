@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -80,7 +79,8 @@ public class BeforeAwaitOperation extends AbstractLockOperation implements Notif
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return new LockWaitNotifyKey(namespace, key);
+        LockStoreImpl lockStore = getLockStore();
+        return lockStore.getNotifiedKey(key);
     }
 
     @Override

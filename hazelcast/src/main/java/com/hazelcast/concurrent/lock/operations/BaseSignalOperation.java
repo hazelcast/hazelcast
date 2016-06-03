@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
-import com.hazelcast.concurrent.lock.ConditionKey;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,23 +41,11 @@ abstract class BaseSignalOperation extends AbstractLockOperation {
 
     @Override
     public void run() throws Exception {
-        LockStoreImpl lockStore = getLockStore();
-        awaitCount = lockStore.getAwaitCount(key, conditionId);
-        int signalCount;
-        if (awaitCount > 0) {
-            if (all) {
-                signalCount = awaitCount;
-            } else {
-                signalCount = 1;
-            }
-        } else {
-            signalCount = 0;
-        }
-        ConditionKey notifiedKey = new ConditionKey(namespace.getObjectName(), key, conditionId);
-        for (int i = 0; i < signalCount; i++) {
-            lockStore.registerSignalKey(notifiedKey);
-        }
         response = true;
+
+        LockStoreImpl lockStore = getLockStore();
+        int signalCount = all ? Integer.MAX_VALUE : 1;
+        lockStore.signal(key, conditionId, signalCount);
     }
 
     @Override

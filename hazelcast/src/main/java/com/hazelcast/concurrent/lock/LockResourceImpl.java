@@ -27,10 +27,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 final class LockResourceImpl implements DataSerializable, LockResource {
 
@@ -43,8 +45,8 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     private long acquireTime = -1L;
     private boolean transactional;
     private boolean blockReads;
-    private Map<String, ConditionInfo> conditions;
-    private List<ConditionKey> signalKeys;
+    private Map<String, WaitersInfo> waiters;
+    private Set<ConditionKey> conditionKeys;
     private List<AwaitOperation> expiredAwaitOps;
     private LockStoreImpl lockStore;
 
@@ -160,71 +162,74 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
-    boolean addAwait(String conditionId, String caller, long threadId) {
-        if (conditions == null) {
-            conditions = new HashMap<String, ConditionInfo>(2);
+    void addAwait(String conditionId, String caller, long threadId) {
+        if (waiters == null) {
+            waiters = new HashMap<String, WaitersInfo>(2);
         }
 
-        ConditionInfo condition = conditions.get(conditionId);
+        WaitersInfo condition = waiters.get(conditionId);
         if (condition == null) {
-            condition = new ConditionInfo(conditionId);
-            conditions.put(conditionId, condition);
+            condition = new WaitersInfo(conditionId);
+            waiters.put(conditionId, condition);
         }
-        return condition.addWaiter(caller, threadId);
+        condition.addWaiter(caller, threadId);
     }
 
-    boolean removeAwait(String conditionId, String caller, long threadId) {
-        if (conditions == null) {
-            return false;
+    void removeAwait(String conditionId, String caller, long threadId) {
+        if (waiters == null) {
+            return;
         }
 
-        ConditionInfo condition = conditions.get(conditionId);
+        WaitersInfo condition = waiters.get(conditionId);
         if (condition == null) {
-            return false;
+            return;
         }
 
-        boolean ok = condition.removeWaiter(caller, threadId);
-        if (condition.getAwaitCount() == 0) {
-            conditions.remove(conditionId);
+        condition.removeWaiter(caller, threadId);
+        if (!condition.hasWaiter()) {
+            waiters.remove(conditionId);
         }
-        return ok;
     }
 
-    boolean startAwaiting(String conditionId, String caller, long threadId) {
-        if (conditions == null) {
-            return false;
+    public void signal(String conditionId, int maxSignalCount) {
+        if (waiters == null) {
+            return;
         }
 
-        ConditionInfo condition = conditions.get(conditionId);
+        Set<WaitersInfo.ConditionWaiter> waiters;
+        WaitersInfo condition = this.waiters.get(conditionId);
         if (condition == null) {
-            return false;
-        }
-
-        return condition.startWaiter(caller, threadId);
-    }
-
-    int getAwaitCount(String conditionId) {
-        if (conditions == null) {
-            return 0;
-        }
-
-        ConditionInfo condition = conditions.get(conditionId);
-        if (condition == null) {
-            return 0;
+            return;
         } else {
-            return condition.getAwaitCount();
+            waiters = condition.getWaiters();
         }
+        if (waiters == null) {
+            return;
+        }
+        String objectName = lockStore.getNamespace().getObjectName();
+        Iterator<WaitersInfo.ConditionWaiter> iterator = waiters.iterator();
+        for (int i = 0; iterator.hasNext() && i < maxSignalCount; i++) {
+            WaitersInfo.ConditionWaiter waiter = iterator.next();
+            ConditionKey signalKey = new ConditionKey(objectName,
+                    key, conditionId, waiter.getCaller(), waiter.getThreadId());
+            registerSignalKey(signalKey);
+            iterator.remove();
+        }
+        if (!condition.hasWaiter()) {
+            this.waiters.remove(conditionId);
+        }
+
     }
 
-    void registerSignalKey(ConditionKey conditionKey) {
-        if (signalKeys == null) {
-            signalKeys = new LinkedList<ConditionKey>();
+    private void registerSignalKey(ConditionKey conditionKey) {
+        if (conditionKeys == null) {
+            conditionKeys = new HashSet<ConditionKey>();
         }
-        signalKeys.add(conditionKey);
+        conditionKeys.add(conditionKey);
     }
 
     ConditionKey getSignalKey() {
-        List<ConditionKey> keys = signalKeys;
+        Set<ConditionKey> keys = conditionKeys;
         if (isNullOrEmpty(keys)) {
             return null;
         }
@@ -233,9 +238,16 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     void removeSignalKey(ConditionKey conditionKey) {
-        if (signalKeys != null) {
-            signalKeys.remove(conditionKey);
+        if (conditionKeys != null) {
+            conditionKeys.remove(conditionKey);
         }
+    }
+
+    boolean hasSignalKey(ConditionKey conditionKey) {
+        if (conditionKeys == null) {
+            return false;
+        }
+        return conditionKeys.contains(conditionKey);
     }
 
     void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
@@ -276,8 +288,9 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     boolean isRemovable() {
         return !isLocked()
-                && isNullOrEmpty(conditions)
-                && isNullOrEmpty(expiredAwaitOps);
+                && isNullOrEmpty(waiters)
+                && isNullOrEmpty(expiredAwaitOps)
+                && isNullOrEmpty(conditionKeys);
     }
 
     @Override
@@ -354,16 +367,18 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         int conditionCount = getConditionCount();
         out.writeInt(conditionCount);
         if (conditionCount > 0) {
-            for (ConditionInfo condition : conditions.values()) {
+            for (WaitersInfo condition : waiters.values()) {
                 condition.writeData(out);
             }
         }
         int signalCount = getSignalCount();
         out.writeInt(signalCount);
         if (signalCount > 0) {
-            for (ConditionKey signalKey : signalKeys) {
+            for (ConditionKey signalKey : conditionKeys) {
                 out.writeUTF(signalKey.getObjectName());
                 out.writeUTF(signalKey.getConditionId());
+                out.writeUTF(signalKey.getUuid());
+                out.writeLong(signalKey.getThreadId());
             }
         }
         int expiredAwaitOpsCount = getExpiredAwaitsOpsCount();
@@ -380,11 +395,11 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     }
 
     private int getSignalCount() {
-        return signalKeys == null ? 0 : signalKeys.size();
+        return conditionKeys == null ? 0 : conditionKeys.size();
     }
 
     private int getConditionCount() {
-        return conditions == null ? 0 : conditions.size();
+        return waiters == null ? 0 : waiters.size();
     }
 
     @Override
@@ -401,19 +416,19 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
         int len = in.readInt();
         if (len > 0) {
-            conditions = new HashMap<String, ConditionInfo>(len);
+            waiters = new HashMap<String, WaitersInfo>(len);
             for (int i = 0; i < len; i++) {
-                ConditionInfo condition = new ConditionInfo();
+                WaitersInfo condition = new WaitersInfo();
                 condition.readData(in);
-                conditions.put(condition.getConditionId(), condition);
+                waiters.put(condition.getConditionId(), condition);
             }
         }
 
         len = in.readInt();
         if (len > 0) {
-            signalKeys = new ArrayList<ConditionKey>(len);
+            conditionKeys = new HashSet<ConditionKey>(len);
             for (int i = 0; i < len; i++) {
-                signalKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF()));
+                conditionKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF(), in.readUTF(), in.readLong()));
             }
         }
 
@@ -470,5 +485,28 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     private static boolean isNullOrEmpty(Map m) {
         return m == null || m.isEmpty();
+    }
+
+    void cleanWaitersAndSignalsFor(String uuid) {
+        if (conditionKeys != null) {
+            Iterator<ConditionKey> iter = conditionKeys.iterator();
+            while (iter.hasNext()) {
+                ConditionKey conditionKey = iter.next();
+                if (conditionKey.getUuid().equals(uuid)) {
+                    iter.remove();
+                }
+            }
+        }
+        if (waiters != null) {
+            for (WaitersInfo waitersInfo : waiters.values()) {
+                Iterator<WaitersInfo.ConditionWaiter> iter = waitersInfo.getWaiters().iterator();
+                while (iter.hasNext()) {
+                    WaitersInfo.ConditionWaiter waiter = iter.next();
+                    if (waiter.getCaller().equals(uuid)) {
+                        iter.remove();
+                    }
+                }
+            }
+        }
     }
 }

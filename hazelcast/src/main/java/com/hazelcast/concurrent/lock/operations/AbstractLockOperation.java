@@ -104,12 +104,12 @@ public abstract class AbstractLockOperation extends AbstractOperation
         }
     }
 
-    protected final void setReferenceCallId(long refCallId) {
-        this.referenceCallId = refCallId;
-    }
-
     protected final long getReferenceCallId() {
         return referenceCallId != 0 ? referenceCallId : getCallId();
+    }
+
+    protected final void setReferenceCallId(long refCallId) {
+        this.referenceCallId = refCallId;
     }
 
     @Override
@@ -149,7 +149,7 @@ public abstract class AbstractLockOperation extends AbstractOperation
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-
         sb.append(", namespace=").append(namespace);
+        sb.append(", threadId=").append(threadId);
     }
 }
