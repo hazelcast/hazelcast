@@ -196,7 +196,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         map.put(keyOwnedByNode2, new Person("not to be returned", 39));
         assertEquals(RETURNED_FROM_INTERCEPTOR, map.get(keyOwnedByNode2));
 
-        hzFactory.terminateAll();
+        hzFactory.shutdownAll();
     }
 
     @Test
@@ -212,7 +212,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance();
         waitAllForSafeState(hz1, hz2);
 
-        hzFactory.terminate(hz1);
+        hz1.shutdown();
         waitAllForSafeState(hz1, hz2);
 
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");
@@ -221,7 +221,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         assertEquals("isIndexed should have located an index", 1, invocationCounter.get());
         assertEquals("index should return 1 match", 1, personsWithAgePredicate.size());
 
-        hzFactory.terminate(hz2);
+        hz2.shutdown();
     }
 
     @Test
@@ -251,7 +251,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");
         assertEquals(RETURNED_FROM_INTERCEPTOR, mapOnNode2.get("whatever"));
 
-        hzFactory.terminateAll();
+        hzFactory.shutdownAll();
     }
 
 }
