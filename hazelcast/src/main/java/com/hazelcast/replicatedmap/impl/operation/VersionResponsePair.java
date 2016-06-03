@@ -20,13 +20,14 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 /**
  * Contains response and partition version for update operations on replicated map.
  */
-public class VersionResponsePair implements DataSerializable {
+public class VersionResponsePair implements DataSerializable, IdentifiedDataSerializable {
     Object response;
     long version;
 
@@ -56,5 +57,15 @@ public class VersionResponsePair implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         response = IOUtil.readObject(in);
         version = in.readLong();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ReplicatedMapDataSerializerHook.VERSION_RESPONSE_PAIR;
     }
 }
