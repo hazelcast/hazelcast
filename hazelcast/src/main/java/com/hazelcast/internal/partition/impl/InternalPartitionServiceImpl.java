@@ -1059,9 +1059,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             processResults(futures, allCompletedMigrations, allActiveMigrations);
 
             logger.info("Most recent partition table version: " + maxVersion);
-            if (processNewState(allCompletedMigrations, allActiveMigrations)) {
-                syncPartitionRuntimeState();
-            }
+
+            processNewState(allCompletedMigrations, allActiveMigrations);
+            syncPartitionRuntimeState();
         }
 
         private Collection<Future<PartitionRuntimeState>> invokeFetchPartitionStateOps() {
@@ -1116,16 +1116,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
 
-        private boolean processNewState(Collection<MigrationInfo> allCompletedMigrations,
+        private void processNewState(Collection<MigrationInfo> allCompletedMigrations,
                 Collection<MigrationInfo> allActiveMigrations) {
 
             lock.lock();
             try {
-                if (!partitionStateManager.isInitialized()) {
-                    logger.info("Skipping processing fetched partition table state since partition table state is reset");
-                    return false;
-                }
-
                 processMigrations(allCompletedMigrations, allActiveMigrations);
 
                 if (newState != null) {
@@ -1145,13 +1140,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                             migrationManager.scheduleActiveMigrationFinalization(migrationInfo);
                         }
                     }
-                } else {
-                    assert allCompletedMigrations.isEmpty()
-                            : "Partitions are not initialized! completed migrations: " + allCompletedMigrations;
                 }
 
                 shouldFetchPartitionTables = false;
-                return true;
             } finally {
                 lock.unlock();
             }

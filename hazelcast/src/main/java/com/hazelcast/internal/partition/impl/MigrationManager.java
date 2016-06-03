@@ -1171,11 +1171,6 @@ public class MigrationManager {
             try {
                 migrationQueue.clear();
 
-                if (!partitionStateManager.isInitialized()) {
-                    logger.info("Skipping control task since partition table state is reset");
-                    return;
-                }
-
                 if (partitionService.scheduleFetchMostRecentPartitionTableTaskIfRequired()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest("FetchMostRecentPartitionTableTask scheduled");
