@@ -17,13 +17,13 @@
 package com.hazelcast.jet.processors;
 
 
-import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.api.dag.Vertex;
-import com.hazelcast.jet.io.api.tuple.Tuple;
-import com.hazelcast.jet.api.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.api.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.container.ProcessorContext;
+import com.hazelcast.jet.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.processor.tuple.TupleContainerProcessor;
+import com.hazelcast.jet.processor.tuple.TupleContainerProcessorFactory;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;

@@ -21,8 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.JetAcceptLocalizationCodec;
 import com.hazelcast.client.impl.protocol.permission.JetPermission;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.internal.api.hazelcast.JetService;
-import com.hazelcast.jet.internal.impl.operation.application.AcceptLocalizationOperation;
+import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 

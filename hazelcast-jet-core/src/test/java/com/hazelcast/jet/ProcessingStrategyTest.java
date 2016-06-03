@@ -1,17 +1,17 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.api.application.Application;
+import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
-import com.hazelcast.jet.internal.impl.counters.LongCounter;
-import com.hazelcast.jet.api.dag.EdgeImpl;
+import com.hazelcast.jet.impl.counters.LongCounter;
+import com.hazelcast.jet.dag.EdgeImpl;
 import com.hazelcast.jet.processors.CounterProcessor;
 import com.hazelcast.jet.processors.DummyProcessor;
-import com.hazelcast.jet.api.container.CounterKey;
-import com.hazelcast.jet.api.counters.Accumulator;
-import com.hazelcast.jet.api.dag.DAG;
-import com.hazelcast.jet.api.dag.Vertex;
-import com.hazelcast.jet.api.strategy.ProcessingStrategy;
+import com.hazelcast.jet.container.CounterKey;
+import com.hazelcast.jet.counters.Accumulator;
+import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.Map;

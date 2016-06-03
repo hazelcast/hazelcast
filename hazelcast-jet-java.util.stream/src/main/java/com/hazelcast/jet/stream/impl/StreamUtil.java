@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.api.application.Application;
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.api.dag.EdgeImpl;
-import com.hazelcast.jet.api.dag.VertexImpl;
-import com.hazelcast.jet.api.JetEngine;
-import com.hazelcast.jet.io.api.tuple.Tuple;
-import com.hazelcast.jet.api.dag.DAG;
-import com.hazelcast.jet.api.dag.Edge;
-import com.hazelcast.jet.api.dag.Vertex;
-import com.hazelcast.jet.api.processor.ProcessorDescriptor;
+import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.dag.VertexImpl;
+import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.util.UuidUtil;

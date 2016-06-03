@@ -1,16 +1,16 @@
 package com.hazelcast.jet.perfomanceIDEtests;
 
-import com.hazelcast.jet.api.dag.DAG;
-import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.base.JetBaseTest;
-import com.hazelcast.jet.api.dag.EdgeImpl;
+import com.hazelcast.jet.dag.EdgeImpl;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.api.application.Application;
-import com.hazelcast.jet.api.strategy.HashingStrategy;
-import com.hazelcast.jet.api.strategy.ProcessingStrategy;
+import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.strategy.HashingStrategy;
+import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.processors.WordCounterProcessor;
 import com.hazelcast.jet.processors.WordGeneratorProcessor;
-import com.hazelcast.jet.api.container.ContainerDescriptor;
+import com.hazelcast.jet.container.ContainerDescriptor;
 
 
 import org.junit.Test;

@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.processors;
 
-import com.hazelcast.jet.api.container.ProcessorContext;
-import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.api.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.api.data.tuple.JetTuple2;
-import com.hazelcast.jet.api.dag.Vertex;
-import com.hazelcast.jet.api.data.tuple.JetTuple;
-import com.hazelcast.jet.api.processor.ContainerProcessor;
+import com.hazelcast.jet.container.ProcessorContext;
+import com.hazelcast.jet.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.HashMap;
 import java.util.Iterator;

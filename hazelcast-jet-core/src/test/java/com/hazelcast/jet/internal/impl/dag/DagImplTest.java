@@ -1,15 +1,15 @@
 package com.hazelcast.jet.internal.impl.dag;
 
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.jet.api.dag.DAGImpl;
-import com.hazelcast.jet.api.dag.EdgeImpl;
-import com.hazelcast.jet.internal.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.internal.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.api.strategy.IListBasedShufflingStrategy;
+import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
+import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
-import com.hazelcast.jet.api.dag.Edge;
-import com.hazelcast.jet.api.dag.Vertex;
-import com.hazelcast.jet.api.strategy.ProcessingStrategy;
+import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;

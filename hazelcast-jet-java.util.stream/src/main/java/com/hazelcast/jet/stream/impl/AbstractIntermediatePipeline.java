@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.api.data.tuple.JetTuple2;
-import com.hazelcast.jet.io.api.tuple.Tuple;
+import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
