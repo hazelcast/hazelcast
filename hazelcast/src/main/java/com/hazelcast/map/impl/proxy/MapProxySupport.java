@@ -29,7 +29,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
@@ -320,19 +319,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return recordStore.readBackupData(key);
     }
 
-    protected ICompletableFuture<Data> getAsyncInternal(Data key) {
+    protected <V> InternalCompletableFuture<V> getAsyncInternal(Data key) {
         int partitionId = partitionService.getPartitionId(key);
 
         MapOperation operation = operationProvider.createGetOperation(name, key);
         try {
             long startTime = System.currentTimeMillis();
-            InternalCompletableFuture<Data> future = operationService
+            InternalCompletableFuture<V> future = operationService
                     .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setResultDeserialized(false)
                     .invoke();
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+                future.andThen(new IncrementStatsExecutionCallback<V>(operation, startTime));
             }
 
             return future;
@@ -385,16 +383,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected ICompletableFuture<Data> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected <V> InternalCompletableFuture<V> putAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
         MapOperation operation = operationProvider.createPutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             long startTime = System.currentTimeMillis();
-            InternalCompletableFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            InternalCompletableFuture<V> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+                future.andThen(new IncrementStatsExecutionCallback(operation, startTime));
             }
 
             return future;
@@ -403,7 +401,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected ICompletableFuture<Data> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected InternalCompletableFuture<Void> setAsyncInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
         MapOperation operation = operationProvider.createSetOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
@@ -530,7 +528,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return (Boolean) invokeOperation(key, operation);
     }
 
-    protected ICompletableFuture<Data> removeAsyncInternal(Data key) {
+    protected InternalCompletableFuture removeAsyncInternal(Data key) {
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
         MapOperation operation = operationProvider.createRemoveOperation(name, key, false);
         operation.setThreadId(ThreadUtil.getThreadId());
@@ -1047,19 +1045,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
-    public ICompletableFuture executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback<Object> callback) {
+    public InternalCompletableFuture<Object> executeOnKeyInternal(Data key, EntryProcessor entryProcessor,
+                                                                  ExecutionCallback<Object> callback) {
         int partitionId = partitionService.getPartitionId(key);
         MapOperation operation = operationProvider.createEntryOperation(name, key, entryProcessor);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
-            if (callback == null) {
-                return operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            } else {
-                return operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setExecutionCallback(new MapExecutionCallbackAdapter(callback))
-                        .invoke();
+            InternalCompletableFuture f = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            if (callback != null) {
+                f.andThen(callback);
             }
+
+            return f;
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -1152,24 +1149,24 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return partitionStrategy;
     }
 
-    private class MapExecutionCallbackAdapter implements ExecutionCallback<Object> {
-
-        private final ExecutionCallback<Object> executionCallback;
-
-        MapExecutionCallbackAdapter(ExecutionCallback<Object> executionCallback) {
-            this.executionCallback = executionCallback;
-        }
-
-        @Override
-        public void onResponse(Object response) {
-            executionCallback.onResponse(toObject(response));
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            executionCallback.onFailure(t);
-        }
-    }
+//    private class MapExecutionCallbackAdapter implements ExecutionCallback<Object> {
+//
+//        private final ExecutionCallback<Object> executionCallback;
+//
+//        MapExecutionCallbackAdapter(ExecutionCallback<Object> executionCallback) {
+//            this.executionCallback = executionCallback;
+//        }
+//
+//        @Override
+//        public void onResponse(Object response) {
+//            executionCallback.onResponse(toObject(response));
+//        }
+//
+//        @Override
+//        public void onFailure(Throwable t) {
+//            executionCallback.onFailure(t);
+//        }
+//    }
 
     private class IncrementStatsExecutionCallback<T> implements ExecutionCallback<T> {
 

@@ -30,7 +30,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class DelegatingFuture<V> implements ICompletableFuture<V> {
+public abstract class DelegatingFuture<V> implements ICompletableFuture<V> {
 
     private final ICompletableFuture future;
     private final InternalSerializationService serializationService;
@@ -41,11 +41,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private volatile V value;
     private volatile boolean done;
 
-    public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
-        this(future, serializationService, null);
-    }
-
-    public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
+     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
         this.future = future;
         this.serializationService = (InternalSerializationService) serializationService;
         this.defaultValue = defaultValue;
