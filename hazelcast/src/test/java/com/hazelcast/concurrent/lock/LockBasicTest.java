@@ -310,7 +310,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 assertFalse(lock.isLocked());
             }
-        }, 5);
+        }, 20);
     }
 
     @Test(expected = NullPointerException.class, timeout = 60000)
