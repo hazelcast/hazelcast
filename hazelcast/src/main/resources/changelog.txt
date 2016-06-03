@@ -13,30 +13,30 @@ Chapter 6 - Setting Up Clusters
 Chapter 7 - Distributed Data Structures
 - Replicated Map: Replicating instead of Partitioning updated by adding a note related to replicated map usage in a lite member. The whole section enhanced.
 - Lock: Added explanations related to the maximum lease time for locks.
-- Map:	Added the new section Custom Eviction Policy to explain how a customized eviction policy can be plugged.
+- Map: Added the new section Custom Eviction Policy to explain how a customized eviction policy can be plugged.
 
 Chapter 10 - Distributed Query	
-- ValueExtractor with Portable Serialization:	Added as a new section.
+- ValueExtractor with Portable Serialization: Added as a new section.
 
 Chapter 11 - Transactions
-- Integrating into J2EE:	Added information related to class loaders.
+- Integrating into J2EE: Added information related to class loaders.
 
 Chapter 12 - Hazelcast JCache	
-- ICache Configuration:	Added description of the new element disable-per-entry-invalidation-events.
-- JCache - Hazelcast Instance Integration:	Added as a new section.
+- ICache Configuration: Added description of the new element disable-per-entry-invalidation-events.
+- JCache - Hazelcast Instance Integration: Added as a new section.
 
 Chapter 14 - Storage	
-- Hot Restart Persistence:	Added the new section Hot Restart Performance Considerations to summarize the results of performance tests of Hot Restart Persistence.
-- Configuring High-Density Memory Store:	Enhanced the content for allocator-type configuration element.
+- Hot Restart Persistence: Added the new section Hot Restart Performance Considerations to summarize the results of performance tests of Hot Restart Persistence.
+- Configuring High-Density Memory Store: Enhanced the content for allocator-type configuration element.
 
 Chapter 15 - Hazelcast Java Client		
 - Enhanced the definition for the property hazelcast.client.invocation.timeout.seconds.
 
 Chapter 16 - Other Client Implementations	
-- C++ Client:	Added the new sections Serialization Support and Raw Pointer API.
+- C++ Client: Added the new sections Serialization Support and Raw Pointer API.
 
 Chapter 18 - Management
-- Management Center:	Added information explaining how to configure Hazelcast Management Center when it is deployed onto an SSL-enabled web container.
+- Management Center: Added information explaining how to configure Hazelcast Management Center when it is deployed onto an SSL-enabled web container.
 
 Chapter 26 - System Properties	
 - Added definition for the new property hazelcast.partition.migration.stale.read.disabled.
