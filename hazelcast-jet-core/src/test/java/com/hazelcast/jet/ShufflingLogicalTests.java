@@ -16,15 +16,15 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.api.application.Application;
+import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
-import com.hazelcast.jet.api.dag.EdgeImpl;
-import com.hazelcast.jet.api.strategy.IListBasedShufflingStrategy;
+import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.CombinerProcessor;
 import com.hazelcast.jet.processors.CountProcessor;
-import com.hazelcast.jet.api.dag.DAG;
-import com.hazelcast.jet.api.dag.Edge;
-import com.hazelcast.jet.api.dag.Vertex;
+import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.BeforeClass;

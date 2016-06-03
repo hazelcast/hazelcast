@@ -21,9 +21,9 @@ import com.hazelcast.client.impl.protocol.codec.JetEventCodec;
 import com.hazelcast.client.impl.protocol.permission.JetPermission;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.internal.api.hazelcast.JetService;
-import com.hazelcast.jet.internal.api.statemachine.application.ApplicationEvent;
-import com.hazelcast.jet.internal.impl.operation.application.ApplicationEventOperation;
+import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
+import com.hazelcast.jet.impl.operation.ApplicationEventOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 

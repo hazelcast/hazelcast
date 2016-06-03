@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.api.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.api.data.io.ProducerInputStream;
-import com.hazelcast.jet.api.JetException;
-import com.hazelcast.jet.io.api.tuple.Tuple;
-import com.hazelcast.jet.api.processor.ContainerProcessor;
+import com.hazelcast.jet.data.io.ConsumerOutputStream;
+import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
 import java.util.Iterator;

@@ -15,8 +15,7 @@
  */
 package com.hazelcast.jet.io;
 
-import com.hazelcast.jet.io.api.tuple.Tuple2;
-import com.hazelcast.jet.io.api.Types;
+import com.hazelcast.jet.io.tuple.Tuple2;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

@@ -1,5 +1,6 @@
 package com.hazelcast.jet.internal.impl.counters;
 
+import com.hazelcast.jet.impl.counters.DoubleCounter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;

@@ -17,9 +17,9 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.api.dag.DAGImpl;
-import com.hazelcast.jet.api.dag.Vertex;
-import com.hazelcast.jet.api.strategy.ProcessingStrategy;
+import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
