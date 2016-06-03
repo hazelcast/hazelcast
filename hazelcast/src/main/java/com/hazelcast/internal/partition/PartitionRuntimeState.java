@@ -97,6 +97,13 @@ public final class PartitionRuntimeState implements IdentifiedDataSerializable {
     }
 
     public Address[][] getPartitionTable() {
+        if (addresses == null) {
+            addresses = new Address[addressToIndexes.size()];
+            for (Map.Entry<Address, Integer> entry : addressToIndexes.entrySet()) {
+                addresses[entry.getValue()] = entry.getKey();
+            }
+        }
+
         int length = minimizedPartitionTable.length;
         Address[][] result = new Address[length][MAX_REPLICA_COUNT];
         for (int partitionId = 0; partitionId < length; partitionId++) {

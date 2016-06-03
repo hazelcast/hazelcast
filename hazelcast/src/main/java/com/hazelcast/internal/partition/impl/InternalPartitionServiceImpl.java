@@ -410,8 +410,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 return null;
             }
 
-            List<MigrationInfo> completedMigrations = migrationManager.getCompletedMigrations();
-
+            List<MigrationInfo> completedMigrations = migrationManager.getCompletedMigrationsCopy();
             InternalPartition[] partitions = partitionStateManager.getPartitions();
 
             PartitionRuntimeState state = new PartitionRuntimeState(partitions, completedMigrations, getPartitionStateVersion());
@@ -422,27 +421,58 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    PartitionRuntimeState createMigrationCommitPartitionState(MigrationInfo... migrationInfos) {
+    /**
+     * Creates a transient PartitionRuntimeState to commit given migration.
+     * Result migration is applied to partition table and migration is added to completed-migrations set.
+     * Version of created partition table is incremented by 1.
+     */
+    PartitionRuntimeState createMigrationCommitPartitionState(MigrationInfo migrationInfo) {
         lock.lock();
         try {
             if (!partitionStateManager.isInitialized()) {
                 return null;
             }
 
-            List<MigrationInfo> completedMigrations = new ArrayList<MigrationInfo>(migrationManager.getCompletedMigrations());
+            List<MigrationInfo> completedMigrations = migrationManager.getCompletedMigrationsCopy();
+            InternalPartition[] partitions = partitionStateManager.getPartitionsCopy();
 
+            int partitionId = migrationInfo.getPartitionId();
+            InternalPartitionImpl partition = (InternalPartitionImpl) partitions[partitionId];
+            migrationManager.applyMigration(partition, migrationInfo);
+
+            migrationInfo.setStatus(MigrationStatus.SUCCESS);
+            completedMigrations.add(migrationInfo);
+
+            int committedVersion = getPartitionStateVersion() + 1;
+            return new PartitionRuntimeState(partitions, completedMigrations, committedVersion);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Creates a transient PartitionRuntimeState to commit promotions.
+     * Results of promotions are applied to partition table.
+     * Version of created partition table is incremented by number of promotions.
+     */
+    PartitionRuntimeState createPromotionCommitPartitionState(Collection<MigrationInfo> migrationInfos) {
+        lock.lock();
+        try {
+            if (!partitionStateManager.isInitialized()) {
+                return null;
+            }
+
+            List<MigrationInfo> completedMigrations = migrationManager.getCompletedMigrationsCopy();
             InternalPartition[] partitions = partitionStateManager.getPartitionsCopy();
 
             for (MigrationInfo migrationInfo : migrationInfos) {
                 int partitionId = migrationInfo.getPartitionId();
                 InternalPartitionImpl partition = (InternalPartitionImpl) partitions[partitionId];
                 migrationManager.applyMigration(partition, migrationInfo);
-
                 migrationInfo.setStatus(MigrationStatus.SUCCESS);
-                completedMigrations.add(migrationInfo);
             }
 
-            int committedVersion = getPartitionStateVersion() + migrationInfos.length;
+            int committedVersion = getPartitionStateVersion() + migrationInfos.size();
             return new PartitionRuntimeState(partitions, completedMigrations, committedVersion);
         } finally {
             lock.unlock();
@@ -559,7 +589,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         final Address master = node.getMasterAddress();
-        if (node.isMaster()) {
+        if (node.isMaster() && !node.getThisAddress().equals(sender)) {
             logger.warning("This is the master node and received a PartitionRuntimeState from "
                     + sender + ". Ignoring incoming state! ");
             return false;
@@ -1150,7 +1180,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         private void processMigrations(Collection<MigrationInfo> allCompletedMigrations,
                                        Collection<MigrationInfo> allActiveMigrations) {
-            allCompletedMigrations.addAll(migrationManager.getCompletedMigrations());
+            allCompletedMigrations.addAll(migrationManager.getCompletedMigrationsCopy());
             if (migrationManager.getActiveMigration() != null) {
                 allActiveMigrations.add(migrationManager.getActiveMigration());
             }

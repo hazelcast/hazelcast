@@ -394,7 +394,7 @@ public class MigrationCommitTest
             public void run()
                     throws Exception {
                 assertTrue(masterListener.commit);
-                assertTrue(migrationManager.getCompletedMigrations().isEmpty());
+                assertTrue(migrationManager.getCompletedMigrationsCopy().isEmpty());
             }
         });
     }
@@ -534,7 +534,7 @@ public class MigrationCommitTest
                 final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(
                         instance);
                 final MigrationManager migrationManager = partitionService.getMigrationManager();
-                nonEmptyCompletedMigrationsVerified = !migrationManager.getCompletedMigrations().isEmpty();
+                nonEmptyCompletedMigrationsVerified = !migrationManager.getCompletedMigrationsCopy().isEmpty();
                 resetInternalMigrationListener(instance);
             } else {
                 start = true;
