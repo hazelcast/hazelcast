@@ -154,7 +154,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
         }
 
-        metricsRegistry.scanAndRegister(executor, "executor." + name);
+        metricsRegistry.scanAndRegister(executor, "executor.[" + name + "]");
 
         return executor;
     }
