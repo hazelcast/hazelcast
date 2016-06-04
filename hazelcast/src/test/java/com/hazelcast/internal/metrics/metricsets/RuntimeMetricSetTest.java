@@ -30,6 +30,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
+        RuntimeMetricSet.register(metricsRegistry);
         runtime = Runtime.getRuntime();
     }
 

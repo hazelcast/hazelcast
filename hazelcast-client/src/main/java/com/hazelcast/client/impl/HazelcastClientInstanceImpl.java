@@ -102,6 +102,12 @@ import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
+import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
+import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
+import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
+import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
+import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
+import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -231,7 +237,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private MetricsRegistryImpl initMetricsRegistry() {
         ProbeLevel probeLevel = properties.getEnum(Diagnostics.METRICS_LEVEL, ProbeLevel.class);
-        return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), probeLevel);
+        ILogger logger = loggingService.getLogger(MetricsRegistryImpl.class);
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(logger, probeLevel);
+        RuntimeMetricSet.register(metricsRegistry);
+        GarbageCollectionMetricSet.register(metricsRegistry);
+        OperatingSystemMetricSet.register(metricsRegistry);
+        ThreadMetricSet.register(metricsRegistry);
+        ClassLoadingMetricSet.register(metricsRegistry);
+        FileMetricSet.register(metricsRegistry);
+        return metricsRegistry;
     }
 
     private Collection<AddressProvider> createAddressProviders(AddressProvider externalAddressProvider) {

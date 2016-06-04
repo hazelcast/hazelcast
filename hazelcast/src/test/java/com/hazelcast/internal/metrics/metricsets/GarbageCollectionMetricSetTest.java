@@ -26,6 +26,7 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        GarbageCollectionMetricSet.register(metricsRegistry);
         gcStats = new GarbageCollectionMetricSet.GcStats();
     }
 

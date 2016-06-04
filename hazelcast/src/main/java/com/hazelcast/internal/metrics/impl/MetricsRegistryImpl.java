@@ -23,11 +23,6 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
-import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
-import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
-import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
-import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 
@@ -68,8 +63,6 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     /**
      * Creates a MetricsRegistryImpl instance.
      *
-     * Automatically registers the com.hazelcast.internal.metrics.metricsets
-     *
      * @param logger       the ILogger used
      * @param minimumLevel the minimum ProbeLevel. If a probe is registered with a ProbeLevel lower than the minimum ProbeLevel,
      *                     then the registration is skipped.
@@ -82,12 +75,6 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         if (logger.isFinestEnabled()) {
             logger.finest("MetricsRegistry minimumLevel:" + minimumLevel);
         }
-
-        RuntimeMetricSet.register(this);
-        GarbageCollectionMetricSet.register(this);
-        OperatingSystemMetricSet.register(this);
-        ThreadMetricSet.register(this);
-        ClassLoadingMetricSet.register(this);
     }
 
     int modCount() {
