@@ -92,6 +92,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
     /**
      * Set to {@code true} for Selector CPU-consuming bug workaround tests
+     *
      * @param selectorWorkaroundTest
      */
     void setSelectorWorkaroundTest(boolean selectorWorkaroundTest) {
@@ -124,7 +125,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
                 + outputThreads.length + " output threads");
 
         logger.log(getSelectorMode() != SelectorMode.SELECT ? INFO : FINE,
-                    "IO threads selector mode is " + getSelectorMode());
+                "IO threads selector mode is " + getSelectorMode());
 
         NonBlockingIOThreadOutOfMemoryHandler oomeHandler = new NonBlockingIOThreadOutOfMemoryHandler() {
             @Override
@@ -144,7 +145,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             inputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
+            metricsRegistry.scanAndRegister(thread, "tcp.inputThread[" + thread.getName() + "]");
             thread.start();
         }
 
@@ -159,7 +160,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
             thread.id = i;
             thread.setSelectorWorkaroundTest(selectorWorkaroundTest);
             outputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
+            metricsRegistry.scanAndRegister(thread, "tcp.outputThread[" + thread.getName() + "]");
             thread.start();
         }
         startIOBalancer();
