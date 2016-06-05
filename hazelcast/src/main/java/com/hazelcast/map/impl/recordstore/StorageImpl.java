@@ -89,6 +89,11 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     }
 
     @Override
+    public R getIfSameKey(Data key) {
+        throw new UnsupportedOperationException("StorageImpl#getIfSameKey");
+    }
+
+    @Override
     public int size() {
         return records.size();
     }

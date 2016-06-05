@@ -32,15 +32,10 @@ public class NativeMemoryConfig {
      */
     public static final int DEFAULT_MIN_BLOCK_SIZE = 16;
     /**
-     * Default power for page size
-     */
-    // this field does not have a special usage
-    // extracted because of checkstyle rules
-    public static final int DEFAULT_POWER = 22;
-    /**
      * Default page size
      */
-    public static final int DEFAULT_PAGE_SIZE = 1 << DEFAULT_POWER;
+    @SuppressWarnings("checkstyle:magicnumber")
+    public static final int DEFAULT_PAGE_SIZE = 1 << 22;
     /**
      * Default metadata space percentage
      */
