@@ -256,6 +256,52 @@ public class LockAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 100000)
+    public void testLockOwnerDies_withMultipleLocks() throws Exception {
+        int lockCount = 10;
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+
+        final String[] names = generateKeysBelongingToSamePartitionsOwnedBy(instance1, lockCount);
+        final ILock[] locks = getLocks(lockOwner, names);
+        lockAll(locks);
+        assertAllLocked(locks);
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                final ILock[] locks = getLocks(instance1, names);
+                lockAll(locks);
+                latch.countDown();
+
+            }
+        });
+        t.start();
+        lockOwner.shutdown();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
+    private void assertAllLocked(ILock...locks) {
+        for (ILock lock : locks) {
+            assertTrue(lock.isLocked());
+        }
+    }
+
+    private void lockAll(ILock...locks) {
+        for (ILock lock : locks) {
+            lock.lock();
+        }
+    }
+
+    private ILock[] getLocks(HazelcastInstance instance, String...names) {
+        ILock[] locks = new ILock[names.length];
+        for (int i = 0; i < names.length; i++) {
+            locks[i] = instance.getLock(names[i]);
+        }
+        return locks;
+    }
+
+    @Test(timeout = 100000)
     public void testKeyOwnerDies() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance();
