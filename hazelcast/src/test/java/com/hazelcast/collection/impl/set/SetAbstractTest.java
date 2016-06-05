@@ -21,7 +21,11 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ISet;
+import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,14 +42,15 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
     protected IAtomicLong atomicLong;
-    private ISet<String> set;
 
+    private ISet<String> set;
+    private Config config;
     private HazelcastInstance local;
     private HazelcastInstance target;
 
     @Before
     public void setup() {
-        Config config = new Config();
+        config = new Config();
         config.addSetConfig(new SetConfig("testAdd_withMaxCapacity*").setMaxSize(1));
 
         instances = newInstances(config);
@@ -269,5 +274,41 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
             contains.add("item" + i);
         }
         assertFalse(set.containsAll(contains));
+    }
+
+    @Test
+    public void testNameBasedAffinity() {
+        //creates more instances to increase a chance 'foo' will not be owned by
+        //the same member as 'foo@1'
+        newInstances(config);
+        newInstances(config);
+
+        int numberOfSets = 100;
+
+        ISet[] localSets = new ISet[numberOfSets];
+        ISet[] targetSets = new ISet[numberOfSets];
+
+        for (int i = 0; i < numberOfSets; i++) {
+            String name = randomName() + "@" + i;
+            localSets[i] = local.getSet(name);
+            targetSets[i] = target.getSet(name);
+        }
+
+        for (final ISet set : localSets) {
+            TransactionalTask task = new TransactionalTask() {
+                @Override
+                public Object execute(TransactionalTaskContext context) throws TransactionException {
+                    TransactionalSet<String> txSet = context.getSet(set.getName());
+                    txSet.add("Hello");
+                    return null;
+                }
+            };
+            local.executeTransaction(task);
+        }
+
+        for (ISet set : localSets) {
+            assertEquals(1, set.size());
+        }
+
     }
 }

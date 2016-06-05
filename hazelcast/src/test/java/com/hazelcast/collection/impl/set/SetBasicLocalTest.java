@@ -15,4 +15,9 @@ public class SetBasicLocalTest extends SetAbstractTest {
     protected HazelcastInstance[] newInstances(Config config) {
         return createHazelcastInstanceFactory(1).newInstances(config);
     }
+
+    @Override
+    public void testNameBasedAffinity() {
+        //no-op. This test has no meaning with a single node
+    }
 }
