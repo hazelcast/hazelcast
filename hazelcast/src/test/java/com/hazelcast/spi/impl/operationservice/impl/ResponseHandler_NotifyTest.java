@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -69,7 +70,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         responseHandler.notifyNormalResponse(callId, value, 0, null);
 
         assertEquals(value, invocation.future.join());
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
     }
 
     @Test
@@ -81,7 +82,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         responseHandler.notifyNormalResponse(callId, "foo", 0, null);
 
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
     }
 
     @Test
@@ -96,7 +97,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         Object value = "foo";
         responseHandler.notifyNormalResponse(callId, value, 1, null);
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
 
         assertEquals(value, invocation.future.join());
     }
@@ -108,13 +109,13 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         Invocation invocation = newInvocation();
 
         invocationRegistry.register(invocation);
-        long callId = invocation.op.getCallId();
+        final long callId = invocation.op.getCallId();
 
         String result = "foo";
         responseHandler.notifyNormalResponse(callId, result, 1, null);
 
         assertEquals(result, invocation.future.get(1, TimeUnit.MINUTES));
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
     }
 
     @Test
@@ -135,7 +136,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         assertSame(invocation, invocationRegistry.get(callId));
 
         responseHandler.notifyBackupComplete(callId);
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
 
         assertEquals(value, invocation.future.join());
     }
@@ -148,7 +149,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.deregister(invocation);
 
         responseHandler.notifyBackupComplete(callId);
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
     }
 
     // ==================== errorResponse ======================
@@ -167,7 +168,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         } catch (ExpectedRuntimeException expected) {
         }
 
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
     }
 
     @Test
@@ -179,7 +180,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         responseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
 
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
     }
 
     // ==================== timeoutResponse =====================
@@ -198,6 +199,15 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         } catch (OperationTimeoutException expected) {
         }
 
-        assertNull(invocationRegistry.get(callId));
+        assertInvocationDeregisteredEventually(callId);
+    }
+
+    private void assertInvocationDeregisteredEventually(final long callId) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(invocationRegistry.get(callId));
+            }
+        });
     }
 }
