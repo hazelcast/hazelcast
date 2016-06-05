@@ -37,12 +37,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferProxy.MAX_BATCH_SIZE;
@@ -50,6 +52,7 @@ import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.lang.String.format;
 
 /**
  * Proxy implementation of {@link Ringbuffer}.
@@ -243,8 +246,20 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         try {
             final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
             return (T) future.get();
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof StaleSequenceException) {
+                StaleSequenceException se = (StaleSequenceException) e.getCause();
+                long l = headSequence();
+                throw new StaleSequenceException(se.getMessage(), l);
+            }
+            throw ExceptionUtil.rethrow(e);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return format("Ringbuffer{name='%s'}", name);
     }
 }
