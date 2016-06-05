@@ -40,14 +40,17 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
     protected IAtomicLong atomicLong;
     private ISet<String> set;
 
+    private HazelcastInstance local;
+    private HazelcastInstance target;
+
     @Before
     public void setup() {
         Config config = new Config();
         config.addSetConfig(new SetConfig("testAdd_withMaxCapacity*").setMaxSize(1));
 
         instances = newInstances(config);
-        HazelcastInstance local = instances[0];
-        HazelcastInstance target = instances[instances.length - 1];
+        local = instances[0];
+        target = instances[instances.length - 1];
         String methodName = getTestMethodName();
         String name = randomNameOwnedBy(target, methodName);
         set = local.getSet(name);
@@ -80,6 +83,8 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAdd_withMaxCapacity() {
+        String name = randomNameOwnedBy(target, "testAdd_withMaxCapacity");
+        set = local.getSet(name);
         set.add("item");
         for (int i = 1; i <= 10; i++) {
             assertFalse(set.add("item" + i));
