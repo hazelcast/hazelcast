@@ -252,7 +252,7 @@ public final class TcpIpConnection implements Connection {
 
         logger.info(message);
         connectionManager.onClose(this);
-        connectionManager.getIoService().onDisconnect(endPoint);
+        connectionManager.getIoService().onDisconnect(endPoint, cause);
         if (cause != null && monitor != null) {
             monitor.onError(cause);
         }
