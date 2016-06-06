@@ -13,6 +13,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,9 +32,8 @@ import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.lang.Math.max;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static java.util.Collections.EMPTY_LIST;
-import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -557,7 +557,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         ReadResultSet<String> resultSet = f.get();
 
-        assertEquals(singletonList("1"), resultSet);
+        assertThat(f.get(), contains("1"));
         assertEquals(1, resultSet.readCount());
     }
 
@@ -587,7 +587,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
         assertNotNull(resultSet);
 
-        assertEquals(asList("1", "2"), f.get());
+        assertThat(f.get(), contains("1", "2"));
         assertEquals(2, resultSet.readCount());
     }
 
@@ -598,7 +598,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 0, 10, null);
 
         assertCompletesEventually(f);
-        assertEquals(singletonList("1"), f.get());
+        assertThat(f.get(), contains("1"));
     }
 
     @Test
@@ -606,7 +606,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ICompletableFuture<ReadResultSet<String>> f = ringbuffer.readManyAsync(0, 0, 10, null);
 
         assertCompletesEventually(f);
-        assertEquals(EMPTY_LIST, f.get());
+        assertEquals(0, f.get().readCount());
     }
 
     @Test
@@ -622,7 +622,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
 
         assertNotNull(resultSet);
-        assertEquals(asList("item2", "item3"), resultSet);
+        Assert.assertThat(f.get(), contains("item2", "item3"));
         assertEquals(2, resultSet.readCount());
     }
 
@@ -639,7 +639,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
 
         assertNotNull(resultSet);
-        assertEquals(asList("item2", "item3"), resultSet);
+        assertThat(f.get(), contains("item2", "item3"));
         assertEquals(2, resultSet.readCount());
     }
 
@@ -666,7 +666,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
 
         assertNotNull(resultSet);
-        assertEquals(asList("good1", "good2", "good3"), resultSet);
+        Assert.assertThat(f.get(), contains("good1", "good2", "good3"));
         assertEquals(6, resultSet.readCount());
     }
 
@@ -678,7 +678,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         ReadResultSet<String> resultSet = f.get();
 
-        assertEquals(new LinkedList<String>(), resultSet);
+        assertEquals(0, f.get().readCount());
         assertEquals(0, resultSet.readCount());
     }
 
@@ -694,7 +694,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
 
         ReadResultSet<String> resultSet = f.get();
 
-        assertEquals(asList("1", "2", "3"), resultSet);
+        assertThat(f.get(), contains("1", "2", "3"));
+
         assertEquals(3, resultSet.readCount());
     }
 
@@ -710,7 +711,7 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
         ReadResultSet<String> resultSet = f.get();
 
         assertNotNull(resultSet);
-        assertEquals(asList("1", "2"), resultSet);
+        assertThat(f.get(), contains("1", "2"));
         assertEquals(2, resultSet.readCount());
     }
 
