@@ -501,6 +501,15 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    protected String[] generateKeysBelongingToSamePartitionsOwnedBy(HazelcastInstance instance, int keyCount) {
+        int partitionId = getPartitionId(instance);
+        String[] keys = new String[keyCount];
+        for (int i = 0; i < keys.length; i++) {
+            keys[i] = generateKeyForPartition(instance, partitionId);
+        }
+        return keys;
+    }
+
     private static void checkPartitionCountGreaterOrEqualMemberCount(HazelcastInstance instance) {
         Cluster cluster = instance.getCluster();
         int memberCount = cluster.getMembers().size();

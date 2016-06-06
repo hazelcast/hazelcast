@@ -195,7 +195,9 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     void cleanWaitersAndSignalsFor(Data key, String uuid) {
         LockResourceImpl lockResource = locks.get(key);
-        lockResource.cleanWaitersAndSignalsFor(uuid);
+        if (lockResource != null) {
+            lockResource.cleanWaitersAndSignalsFor(uuid);
+        }
     }
 
     public int getVersion(Data key) {
