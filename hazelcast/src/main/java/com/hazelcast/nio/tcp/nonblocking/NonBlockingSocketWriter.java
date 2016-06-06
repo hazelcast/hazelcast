@@ -127,7 +127,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         return bytesPending;
     }
 
-    @Probe(name = "idleTimeMs", level = DEBUG)
+    @Probe(name = "idleTimeMs")
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastWriteTime, 0);
     }
