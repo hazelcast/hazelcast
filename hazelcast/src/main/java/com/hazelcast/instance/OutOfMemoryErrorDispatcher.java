@@ -149,7 +149,7 @@ public final class OutOfMemoryErrorDispatcher {
         CLIENT_INSTANCES_REF.set(EMPTY_INSTANCES);
     }
 
-    public static void inspectOutputMemoryError(Throwable throwable) {
+    public static void inspectOutOfMemoryError(Throwable throwable) {
         if (throwable == null) {
             return;
         }

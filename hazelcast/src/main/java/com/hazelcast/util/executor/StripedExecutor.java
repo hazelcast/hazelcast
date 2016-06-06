@@ -186,7 +186,7 @@ public final class StripedExecutor implements Executor {
             try {
                 task.run();
             } catch (Throwable e) {
-                OutOfMemoryErrorDispatcher.inspectOutputMemoryError(e);
+                OutOfMemoryErrorDispatcher.inspectOutOfMemoryError(e);
                 logger.severe(getName() + " caught an exception while processing task:" + task, e);
             }
         }
