@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -101,7 +102,7 @@ public class EC2RequestSignerTest {
     }
 
     @Test
-    public void testSigning() throws NoSuchFieldException, IllegalAccessException {
+    public void testSigning() throws NoSuchFieldException, IllegalAccessException, IOException {
         AwsConfig awsConfig = new AwsConfig();
         awsConfig.setRegion(TEST_REGION).
                 setHostHeader(TEST_HOST).

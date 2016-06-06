@@ -48,7 +48,7 @@ public class DescribeInstances {
     private String endpoint;
     private Map<String, String> attributes = new HashMap<String, String>();
 
-    public DescribeInstances(AwsConfig awsConfig, String endpoint) {
+    public DescribeInstances(AwsConfig awsConfig, String endpoint) throws IOException {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
@@ -72,7 +72,9 @@ public class DescribeInstances {
         attributes.put("X-Amz-Expires", "30");
     }
 
-    private void tryGetDefaultIamRole() {
+    private void tryGetDefaultIamRole() throws IOException {
+        InputStreamReader is = null;
+        BufferedReader reader = null;
         if (!awsConfig.getIamRole().equals("DEFAULT")) {
             return;
         }
@@ -80,11 +82,18 @@ public class DescribeInstances {
             String query = "latest/meta-data/iam/security-credentials/";
             URL url;
             url = new URL("http", IAM_ROLE_ENDPOINT, query);
-            InputStreamReader is = new InputStreamReader(url.openStream(), "UTF-8");
-            BufferedReader reader = new BufferedReader(is);
+            is = new InputStreamReader(url.openStream(), "UTF-8");
+            reader = new BufferedReader(is);
             awsConfig.setIamRole(reader.readLine());
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new InvalidConfigurationException("Invalid Aws Configuration");
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+            if (reader != null) {
+                reader.close();
+            }
         }
     }
 
