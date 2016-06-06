@@ -87,14 +87,12 @@ public final class StreamUtil {
         } catch (IOException e) {
             throw reThrow(e);
         }
-        long start = System.currentTimeMillis();
         try {
             result(jetApplication.execute());
             context.getStreamListeners().forEach(Runnable::run);
         } finally {
             result(jetApplication.finalizeApplication());
         }
-        System.out.println("TimeTaken=" + (System.currentTimeMillis() - start));
     }
 
     public static <E_OUT> Distributed.Function<Tuple, E_OUT> defaultFromTupleMapper() {

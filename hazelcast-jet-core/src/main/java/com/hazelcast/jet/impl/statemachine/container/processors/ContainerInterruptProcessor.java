@@ -18,17 +18,20 @@ package com.hazelcast.jet.impl.statemachine.container.processors;
 
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.logging.ILogger;
 
 public class ContainerInterruptProcessor implements ContainerPayLoadProcessor<Throwable> {
     private final ProcessingContainer container;
+    private final ILogger logger;
 
     public ContainerInterruptProcessor(ProcessingContainer container) {
         this.container = container;
+        this.logger = container.getNodeEngine().getLogger(getClass());
     }
 
     @Override
     public void process(Throwable error) throws Exception {
-        System.out.println("ContainerInterruptProcessor.process");
+        logger.fine("ContainerInterruptProcessor.process");
         this.container.interrupt(error);
     }
 }

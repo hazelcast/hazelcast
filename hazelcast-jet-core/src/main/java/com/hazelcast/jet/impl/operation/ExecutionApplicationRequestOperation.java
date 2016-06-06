@@ -51,7 +51,7 @@ public class ExecutionApplicationRequestOperation extends AbstractJetApplication
         ApplicationContext applicationContext = resolveApplicationContext();
         ApplicationMaster applicationMaster = applicationContext.getApplicationMaster();
 
-        System.out.println("ExecutionApplicationRequestOperation.run " + applicationContext.getName());
+        getLogger().fine("ExecutionApplicationRequestOperation.run " + applicationContext.getName());
 
         Future<ApplicationMasterResponse> future = applicationMaster.handleContainerRequest(new ExecuteApplicationRequest());
 
@@ -81,7 +81,7 @@ public class ExecutionApplicationRequestOperation extends AbstractJetApplication
                 throw new TimeoutException("Timeout while waiting for result. Application has been interrupted");
             }
 
-            System.out.println("ExecutionApplicationRequestOperation.run.finished");
+            getLogger().fine("ExecutionApplicationRequestOperation.run.finished");
 
             if (result instanceof Throwable) {
                 throw JetUtil.reThrow((Throwable) result);

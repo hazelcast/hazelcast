@@ -34,6 +34,7 @@ import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 
 import java.lang.reflect.Constructor;
@@ -53,7 +54,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
     private final ClassLoader applicationClassLoader;
     private final ApplicationMaster applicationMaster;
     private final ApplicationContext applicationContext;
-
+    private final ILogger logger;
 
     private final IFunction<Vertex, ProcessingContainer> containerProcessingCreator =
             new IFunction<Vertex, ProcessingContainer>() {
@@ -85,32 +86,32 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
         this.applicationContext = applicationMaster.getApplicationContext();
         this.applicationClassLoader = this.applicationContext.getLocalizationStorage().getClassLoader();
         this.tupleFactory = new DefaultJetTupleFactory();
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
     public void process(DAG dag) throws Exception {
         checkNotNull(dag);
 
+
+        logger.fine("Processing DAG " + dag.getName());
+
         //Process dag and container's chain building
         Iterator<Vertex> iterator = dag.getTopologicalVertexIterator();
 
         Map<Vertex, ProcessingContainer> vertex2ContainerMap = new HashMap<Vertex, ProcessingContainer>(dag.getVertices().size());
 
-        System.out.println("process1");
-
         List<ProcessingContainer> roots = new ArrayList<ProcessingContainer>();
-
-        System.out.println("process2");
 
         while (iterator.hasNext()) {
             Vertex vertex = iterator.next();
 
-            System.out.println("vertex=" + vertex.getName());
+            logger.fine("Processing vertex=" + vertex.getName() + " for DAG " + dag.getName());
 
             List<Edge> edges = vertex.getInputEdges();
             ProcessingContainer next = this.containerProcessingCreator.apply(vertex);
 
-            System.out.println("vertex=" + vertex.getName() + " out");
+            logger.fine("Processed vertex=" + vertex.getName() + " for DAG " + dag.getName());
 
             vertex2ContainerMap.put(vertex, next);
 
@@ -122,30 +123,24 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
                 }
             }
         }
-        System.out.println("process3");
+
+        logger.fine("Processed vertices for DAG " + dag.getName());
 
         JetApplicationConfig jetApplicationConfig = this.applicationContext.getJetApplicationConfig();
-
         long secondsToAwait =
                 jetApplicationConfig.getJetSecondsToAwait();
-
-        System.out.println("process4");
 
         for (ProcessingContainer container : roots) {
             this.applicationMaster.addFollower(container);
         }
 
-        System.out.println("process5");
-
         this.applicationMaster.deployNetworkEngine();
 
-        System.out.println("process6");
+        logger.fine("Deployed network engine for DAG " + dag.getName());
 
         for (ProcessingContainer container : this.applicationMaster.containers()) {
             container.handleContainerRequest(new ContainerStartRequest()).get(secondsToAwait, TimeUnit.SECONDS);
         }
-
-        System.out.println("process7");
     }
 
     private ProcessingContainer join(ProcessingContainer container, Edge edge, ProcessingContainer nextContainer) {

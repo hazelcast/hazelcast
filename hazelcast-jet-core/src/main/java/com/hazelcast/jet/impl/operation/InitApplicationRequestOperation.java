@@ -45,7 +45,7 @@ public class InitApplicationRequestOperation extends AbstractJetApplicationReque
     public void run() throws Exception {
         resolveApplicationContext();
         initializePartitions(this.getNodeEngine());
-        System.out.println("InitApplicationRequestOperation");
+        getLogger().fine("InitApplicationRequestOperation");
     }
 
     private void initializePartitions(NodeEngine nodeEngine) {
