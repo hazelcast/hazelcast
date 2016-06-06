@@ -35,7 +35,6 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.ConnectionType.MEMBER;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
@@ -77,7 +76,7 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
         metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "].in");
     }
 
-    @Probe(name = "idleTimeMs", level = DEBUG)
+    @Probe(name = "idleTimeMs")
     private long idleTimeMs() {
         return Math.max(currentTimeMillis() - lastReadTime, 0);
     }
