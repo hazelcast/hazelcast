@@ -105,6 +105,14 @@
         <developerConnection>scm:git:git@github.com:hazelcast/hazelcast.git</developerConnection>
         <url>https://github.com/hazelcast/hazelcast/</url>
     </scm>
+    
+    <developers>
+        <developer>
+            <id>toktarev</id>
+            <name>Alexander Toktarev</name>
+            <email>toktarev@hazelcast.com</email>
+        </developer>
+    </developers>
 
     <issueManagement>
         <system>Github</system>
