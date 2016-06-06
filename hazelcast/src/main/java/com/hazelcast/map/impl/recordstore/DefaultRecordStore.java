@@ -384,7 +384,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (!backup) {
                 saveIndex(record, null);
             }
-            evictEntries();
+            evictEntries(key);
         }
         return record;
     }

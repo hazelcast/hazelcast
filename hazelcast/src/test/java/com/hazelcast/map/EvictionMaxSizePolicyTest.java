@@ -208,7 +208,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         }
     }
 
-    void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInBytes) {
+    static public void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInBytes) {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -254,7 +254,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         }
     }
 
-    void setMockRuntimeMemoryInfoAccessor(IMap map, final long totalMemoryMB, final long freeMemoryMB, final long maxMemoryMB) {
+    public static void setMockRuntimeMemoryInfoAccessor(IMap map, final long totalMemoryMB, final long freeMemoryMB, final long maxMemoryMB) {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();

@@ -317,7 +317,12 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     R getRecordOrNull(Data key);
 
-    void evictEntries();
+    /**
+     * Evicts entries from this record-store.
+     *
+     * @param excludedKey this key has lowest priority to be selected for eviction
+     */
+    void evictEntries(Data excludedKey);
 
     /**
      * Returns <code>true</code> if eviction is allowed on this record-store, otherwise <code>false</code>

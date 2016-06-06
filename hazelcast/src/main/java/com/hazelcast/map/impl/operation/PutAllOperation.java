@@ -113,7 +113,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
             backupRecordInfos.add(replicationInfo);
         }
 
-        evict();
+        evict(dataKey);
         if (hasInvalidation) {
             invalidationKeys.add(dataKey);
         }

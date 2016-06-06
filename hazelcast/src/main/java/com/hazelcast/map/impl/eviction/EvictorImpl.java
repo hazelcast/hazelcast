@@ -46,20 +46,26 @@ public class EvictorImpl implements Evictor {
     }
 
     @Override
-    public void evict(RecordStore recordStore) {
-        EntryView evictableEntry = selectEvictableEntry(recordStore);
+    public void evict(RecordStore recordStore, Data excludedKey) {
+        EntryView evictableEntry = selectEvictableEntry(recordStore, excludedKey);
         if (evictableEntry == null) {
             return;
         }
 
-        evictEntry(evictableEntry, recordStore);
+        evictEntry(recordStore, evictableEntry);
     }
 
-    private EntryView selectEvictableEntry(RecordStore recordStore) {
+    private EntryView selectEvictableEntry(RecordStore recordStore, Data excludedKey) {
         Iterable<EntryView> samples = getSamples(recordStore);
+        EntryView excluded = null;
         EntryView selected = null;
 
         for (EntryView candidate : samples) {
+            if (excludedKey != null && excluded == null && getDataKey(candidate).equals(excludedKey)) {
+                excluded = candidate;
+                continue;
+            }
+
             if (selected == null) {
                 selected = candidate;
             } else if (mapEvictionPolicy.compare(candidate, selected) < 0) {
@@ -67,10 +73,14 @@ public class EvictorImpl implements Evictor {
             }
         }
 
-        return selected;
+        return selected == null ? excluded : selected;
     }
 
-    private void evictEntry(EntryView selectedEntry, RecordStore recordStore) {
+    private Data getDataKey(EntryView candidate) {
+        return getRecordFromEntryView(candidate).getKey();
+    }
+
+    private void evictEntry(RecordStore recordStore, EntryView selectedEntry) {
         Record record = getRecordFromEntryView(selectedEntry);
         Data key = record.getKey();
 
