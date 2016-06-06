@@ -175,7 +175,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
     @Test
     public void testOperationTimeoutForLongRunningRemoteOperation() throws Exception {
-        int callTimeoutMillis = 1000;
+        int callTimeoutMillis = 3000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMillis);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
