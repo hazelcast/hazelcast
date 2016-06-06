@@ -53,9 +53,6 @@
         <timestamp>${maven.build.timestamp}</timestamp>
         <hazelcast.version>3.7-SNAPSHOT</hazelcast.version>
 
-        <hazelcast.distribution>Hazelcast</hazelcast.distribution>
-        <hazelcast.serialization.version>1</hazelcast.serialization.version>
-
         <!-- Not using 3.1 at the moment since it recompiles all classes every time -->
         <!-- https://jira.codehaus.org/browse/MCOMPILER-205 -->
         <!--<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>-->
@@ -63,10 +60,8 @@
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
-        <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
-        <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
@@ -95,6 +90,7 @@
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
     </properties>
 
     <licenses>
@@ -110,15 +106,6 @@
         <url>https://github.com/hazelcast/hazelcast/</url>
     </scm>
 
-    <developers>
-        <developer>
-            <id>toktarev</id>
-            <name>Alexander Toktarev</name>
-            <email>toktarev@hazelcast.com</email>
-        </developer>
-    </developers>
-
-
     <issueManagement>
         <system>Github</system>
         <url>https://github.com/hazelcast/hazelcast-jet/issues</url>
@@ -130,14 +117,12 @@
 
     <distributionManagement>
         <repository>
-            <id>release-repository</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <id>cloudbees-private-repository</id>
+            <url>dav:https://repository-hazelcast-l337.forge.cloudbees.com/release/</url>
         </repository>
         <snapshotRepository>
-            <id>snapshot-repository</id>
-            <name>Maven2 Snapshot Repository</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <uniqueVersion>false</uniqueVersion>
+            <id>cloudbees-private-repository</id>
+            <url>dav:https://repository-hazelcast-l337.forge.cloudbees.com/snapshot/</url>
         </snapshotRepository>
     </distributionManagement>
 
@@ -245,38 +230,38 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${maven.bundle.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                        <configuration>
-                            <instructions>
-                                <Import-Package>
-                                    !org.junit,
-                                    !com.hazelcast.*,
-                                    org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.*;resolution:=optional,
-                                    org.apache.logging.log4j;resolution:=optional,
-                                    org.apache.logging.log4j.*;resolution:=optional,
-                                    org.slf4j;resolution:=optional,
-                                    com.hazelcast.client;resolution:=optional,
-                                    com.hazelcast.hibernate;resolution:=optional,
-                                    *
-                                </Import-Package>
-                                <Fragment-Host>com.hazelcast</Fragment-Host>
-                                <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
-                            </instructions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>TODO: OSGi Support for JET -->
+                <!--<groupId>org.apache.felix</groupId>-->
+                <!--<artifactId>maven-bundle-plugin</artifactId>-->
+                <!--<version>${maven.bundle.plugin.version}</version>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>bundle-manifest</id>-->
+                        <!--<phase>process-classes</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>manifest</goal>-->
+                        <!--</goals>-->
+                        <!--<configuration>-->
+                            <!--<instructions>-->
+                                <!--<Import-Package>-->
+                                    <!--!org.junit,-->
+                                    <!--!com.hazelcast.*,-->
+                                    <!--org.apache.log4j;resolution:=optional,-->
+                                    <!--org.apache.log4j.*;resolution:=optional,-->
+                                    <!--org.apache.logging.log4j;resolution:=optional,-->
+                                    <!--org.apache.logging.log4j.*;resolution:=optional,-->
+                                    <!--org.slf4j;resolution:=optional,-->
+                                    <!--com.hazelcast.client;resolution:=optional,-->
+                                    <!--com.hazelcast.hibernate;resolution:=optional,-->
+                                    <!--*-->
+                                <!--</Import-Package>-->
+                                <!--<Fragment-Host>com.hazelcast</Fragment-Host>-->
+                                <!--&lt;!&ndash;<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>&ndash;&gt;-->
+                            <!--</instructions>-->
+                        <!--</configuration>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -291,7 +276,7 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        <!--<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>-->
                     </archive>
                 </configuration>
             </plugin>
@@ -345,6 +330,27 @@
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>${maven.sonar.plugin.version}</version>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.javadoc.plugin.version}</version>
+                <configuration>
+                    <maxmemory>1024</maxmemory>
+                    <additionalparam>-tag apiNote::a -tag implSpec:a</additionalparam>
+                    <excludePackageNames>
+                        *.impl:
+                    </excludePackageNames>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -381,7 +387,6 @@
             </build>
         </profile>
         <profile>
-            <!--out of action-->
             <id>checkstyle</id>
             <build>
                 <plugins>
@@ -415,7 +420,6 @@
             </build>
         </profile>
         <profile>
-            <!--out of action-->
             <id>findbugs</id>
             <build>
                 <plugins>
@@ -473,7 +477,7 @@
         <profile>
             <id>release</id>
             <properties>
-                <javadoc>true</javadoc>
+                <maven.javadoc.skip>false</maven.javadoc.skip>
             </properties>
             <build>
                 <plugins>
@@ -491,35 +495,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <configuration>
-                            <maxmemory>1024</maxmemory>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.3</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>release-repository</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -527,30 +502,8 @@
         <profile>
             <id>release-snapshot</id>
             <properties>
-                <javadoc>true</javadoc>
+                <maven.javadoc.skip>false</maven.javadoc.skip>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <excludePackageNames>
-                                *.impl
-                            </excludePackageNames>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 </project>

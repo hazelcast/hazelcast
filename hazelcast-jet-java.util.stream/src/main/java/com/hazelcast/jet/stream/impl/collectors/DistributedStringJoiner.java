@@ -34,7 +34,7 @@ import java.util.Objects;
  * {@code StringJoiner}.
  *
  * @apiNote <p>The String {@code "[George:Sally:Fred]"} may be constructed as follows:
- * <p>
+ *
  * <pre> {@code
  * StringJoiner sj = new StringJoiner(":", "[", "]");
  * sj.add("George").add("Sally").add("Fred");
@@ -44,7 +44,7 @@ import java.util.Objects;
  * A {@code StringJoiner} may be employed to create formatted output from a
  * {@link java.util.stream.Stream} using
  * {@link java.util.stream.Collectors#joining(CharSequence)}. For example:
- * <p>
+ *
  * <pre> {@code
  * List<Integer> numbers = Arrays.asList(1, 2, 3, 4);
  * String commaSeparatedNumbers = numbers.stream()
@@ -183,11 +183,11 @@ public final class DistributedStringJoiner implements Serializable {
      * Adds the contents of the given {@code StringJoiner} without prefix and
      * suffix as the next element if it is non-empty. If the given {@code
      * StringJoiner} is empty, the call has no effect.
-     * <p>
+     *
      * <p>A {@code StringJoiner} is empty if {@link #add(CharSequence) add()}
      * has never been called, and if {@code merge()} has never been called
      * with a non-empty {@code StringJoiner} argument.
-     * <p>
+     *
      * <p>If the other {@code StringJoiner} is using a different delimiter,
      * then elements from the other {@code StringJoiner} are concatenated with
      * that delimiter and the result is appended to this {@code StringJoiner}
