@@ -263,8 +263,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     @Override
-    public boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
+    public synchronized boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
         if (remoteEndPoint.equals(ioService.getThisAddress())) {
+            return false;
+        }
+
+        if (!connection.isAlive()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest(connection + " to " + remoteEndPoint + " is not registered since connection is not active.");
+            }
             return false;
         }
 
