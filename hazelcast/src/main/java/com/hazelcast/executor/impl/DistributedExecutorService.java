@@ -55,6 +55,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> RESPONSE_FLAG =
             AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
 
+    // package-local access to allow test to inspect the map's values
+    final ConcurrentMap<String, ExecutorConfig> executorConfigCache = new ConcurrentHashMap<String, ExecutorConfig>();
+
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
     private final ConcurrentMap<String, CallableProcessor> submittedTasks
@@ -69,6 +72,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             return new LocalExecutorStatsImpl();
         }
     };
+
     private ILogger logger;
 
     @Override
@@ -83,6 +87,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         shutdownExecutors.clear();
         submittedTasks.clear();
         statsMap.clear();
+        executorConfigCache.clear();
     }
 
     @Override
@@ -91,7 +96,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public void execute(String name, String uuid, Callable callable, Operation op) {
-        ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
+        ExecutorConfig cfg = getOrFindExecutorConfig(name);
         if (cfg.isStatisticsEnabled()) {
             startPending(name);
         }
@@ -130,6 +135,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public void shutdownExecutor(String name) {
         executionService.shutdownExecutor(name);
         shutdownExecutors.add(name);
+        executorConfigCache.remove(name);
     }
 
     public boolean isShutdown(String name) {
@@ -146,6 +152,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
         statsMap.remove(name);
+        executorConfigCache.remove(name);
     }
 
     LocalExecutorStatsImpl getLocalExecutorStats(String name) {
@@ -183,6 +190,23 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             executorStats.put(queueStat.getKey(), queueStat.getValue());
         }
         return executorStats;
+    }
+
+    /**
+     * Locate the {@code ExecutorConfig} in local {@link #executorConfigCache} or find it from {@link NodeEngine#getConfig()} and
+     * cache it locally.
+     * @param name
+     * @return
+     */
+    private ExecutorConfig getOrFindExecutorConfig(String name) {
+        ExecutorConfig cfg = executorConfigCache.get(name);
+        if (cfg != null) {
+            return cfg;
+        } else {
+            cfg = nodeEngine.getConfig().findExecutorConfig(name);
+            ExecutorConfig executorConfig = executorConfigCache.putIfAbsent(name, cfg);
+            return executorConfig == null ? cfg : executorConfig;
+        }
     }
 
     private final class CallableProcessor extends FutureTask implements Runnable {

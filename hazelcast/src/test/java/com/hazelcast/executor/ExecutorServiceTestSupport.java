@@ -45,8 +45,12 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
     }
 
     IExecutorService createSingleNodeExecutorService(String name, int poolSize) {
+        return createSingleNodeExecutorService(name, poolSize, true);
+    }
+
+    IExecutorService createSingleNodeExecutorService(String name, int poolSize, boolean statsEnabled) {
         final HazelcastInstance instance = createHazelcastInstance(
-                new Config().addExecutorConfig(new ExecutorConfig(name, poolSize)));
+                new Config().addExecutorConfig(new ExecutorConfig(name, poolSize).setStatisticsEnabled(statsEnabled)));
         return instance.getExecutorService(name);
     }
 
