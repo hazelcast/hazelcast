@@ -18,18 +18,13 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.application.localization.Chunk;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.permission.ActionConstants;
 
-import java.security.Permission;
-
-public class JetLocalizeMessageTask extends AbstractMessageTask<JetLocalizeCodec.RequestParameters> {
+public class JetLocalizeMessageTask extends JetMessageTask<JetLocalizeCodec.RequestParameters> {
     public JetLocalizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -44,40 +39,20 @@ public class JetLocalizeMessageTask extends AbstractMessageTask<JetLocalizeCodec
         return JetLocalizeCodec.encodeResponse(true);
     }
 
-    @Override
-    protected void processMessage() {
-        Chunk chunk = this.serializationService.toObject(this.parameters.chunk);
-
-        try {
-            new LocalizationChunkOperation(this.parameters.name, chunk, this.nodeEngine).run();
-            sendResponse(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
+    protected String getApplicationName() {
         return this.parameters.name;
+    }
+
+    @Override
+    protected JetOperation prepareOperation() {
+        Chunk chunk = this.serializationService.toObject(this.parameters.chunk);
+        return new LocalizationChunkOperation(getApplicationName(), chunk);
     }
 
     @Override
     public String getMethodName() {
         return "localize";
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
     }
 }

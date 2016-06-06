@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.hazelcast.JetService;
 
-public class DiscoveryOperation extends AbstractJetApplicationRequestOperation {
+public class DiscoveryOperation extends JetOperation {
 
     @Override
     public void run() throws Exception {

@@ -34,7 +34,7 @@ import static org.junit.Assert.fail;
 public abstract class JetStreamTestSupport extends HazelcastTestSupport {
 
     public static final int COUNT = 10000;
-    public static final int NODE_COUNT = 2;
+    public static final int NODE_COUNT = 4;
 
     protected static HazelcastInstance instance;
     protected static TestHazelcastFactory hazelcastInstanceFactory;

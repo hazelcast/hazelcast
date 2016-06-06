@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.container;
 
-import java.util.concurrent.Future;
+import com.hazelcast.core.ICompletableFuture;
 
 /**
  * Interface container's state-machine event handler;
@@ -32,5 +32,5 @@ public interface ContainerRequestHandler<E extends ContainerEvent, R extends Con
      * @param <P>   - type of request payload;
      * @return - awaiting future;
      */
-    <P> Future<R> handleContainerRequest(ContainerRequest<E, P> event);
+    <P> ICompletableFuture<R> handleContainerRequest(ContainerRequest<E, P> event);
 }

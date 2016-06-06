@@ -17,21 +17,21 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
-import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.impl.statemachine.StateMachineOutput;
+import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 
 public class RequestPayLoad<SI extends StateMachineEvent, SO extends StateMachineOutput> {
-    private final SettableFuture<SO> future;
+    private final BasicCompletableFuture<SO> future;
     private final Object payLoad;
     private final SI event;
 
-    public RequestPayLoad(SI event, Object payLoad) {
+    public RequestPayLoad(SI event, BasicCompletableFuture<SO> future, Object payLoad) {
         this.event = event;
         this.payLoad = payLoad;
-        this.future = SettableFuture.create();
+        this.future = future;
     }
 
-    public SettableFuture<SO> getFuture() {
+    public BasicCompletableFuture<SO> getFuture() {
         return future;
     }
 

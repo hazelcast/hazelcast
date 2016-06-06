@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.statemachine.ContainerStateMachine;
-import com.hazelcast.jet.impl.processor.context.DefaultContainerContext;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.processor.context.DefaultContainerContext;
+import com.hazelcast.jet.impl.statemachine.ContainerStateMachine;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Future;
 
 public abstract class AbstractContainer
         <SI extends ContainerEvent,
@@ -84,7 +84,7 @@ public abstract class AbstractContainer
     }
 
     @Override
-    public <P> Future<SO> handleContainerRequest(ContainerRequest<SI, P> request) {
+    public <P> ICompletableFuture<SO> handleContainerRequest(ContainerRequest<SI, P> request) {
         try {
             return this.stateMachine.handleRequest(request);
         } finally {

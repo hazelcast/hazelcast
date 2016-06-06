@@ -18,17 +18,12 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetAcceptLocalizationCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.permission.ActionConstants;
 
-import java.security.Permission;
-
-public class JetAcceptLocalizationMessageTask extends AbstractMessageTask<JetAcceptLocalizationCodec.RequestParameters> {
+public class JetAcceptLocalizationMessageTask extends JetMessageTask<JetAcceptLocalizationCodec.RequestParameters> {
     public JetAcceptLocalizationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -44,28 +39,13 @@ public class JetAcceptLocalizationMessageTask extends AbstractMessageTask<JetAcc
     }
 
     @Override
-    protected void processMessage() {
-        try {
-            new AcceptLocalizationOperation(this.parameters.name, this.nodeEngine).run();
-            sendResponse(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
+    protected String getApplicationName() {
         return this.parameters.name;
+    }
+
+    @Override
+    protected JetOperation prepareOperation() {
+        return new AcceptLocalizationOperation(getApplicationName());
     }
 
     @Override
@@ -73,8 +53,4 @@ public class JetAcceptLocalizationMessageTask extends AbstractMessageTask<JetAcc
         return "acceptLocalization";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
-    }
 }

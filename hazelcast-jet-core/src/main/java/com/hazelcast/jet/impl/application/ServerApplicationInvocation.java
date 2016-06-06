@@ -17,53 +17,34 @@
 package com.hazelcast.jet.impl.application;
 
 
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
-public class ServerApplicationInvocation<T> extends AbstractApplicationInvocation<Operation, T> {
-    private final JetService jetService;
+public class ServerApplicationInvocation<T> extends AbstractApplicationInvocation<JetOperation, T> {
     private final NodeEngine nodeEngine;
 
-    public ServerApplicationInvocation(Operation operation, Address address,
-                                       JetService jetService, NodeEngine nodeEngine) {
+    public ServerApplicationInvocation(JetOperation operation, Address address,
+                                       NodeEngine nodeEngine) {
         super(operation, address);
 
-        this.jetService = jetService;
         this.nodeEngine = nodeEngine;
     }
 
     @SuppressWarnings("unchecked")
-    protected T execute(Operation operation, Address address) {
-        ClusterService cs = this.nodeEngine.getClusterService();
-        OperationService os = this.nodeEngine.getOperationService();
-        boolean returnsResponse = operation.returnsResponse();
-
+    protected T execute(JetOperation operation, Address address) {
+        OperationService os = nodeEngine.getOperationService();
         try {
-            if (cs.getThisAddress().equals(address)) {
-                // Locally we can call the operation directly
-                operation.setNodeEngine(this.nodeEngine);
-                operation.setCallerUuid(this.nodeEngine.getLocalMember().getUuid());
-                operation.setService(this.jetService);
-                operation.run();
-            } else {
-                if (returnsResponse) {
-                    InvocationBuilder ib = os.createInvocationBuilder(JetService.SERVICE_NAME, operation, address);
-                    return (T) ib.invoke().get();
-                } else {
-                    os.send(operation, address);
-                    return null;
-                }
-            }
+            InvocationBuilder ib = os
+                    .createInvocationBuilder(JetService.SERVICE_NAME, operation, address);
+
+            return (T) ib.invoke().get();
         } catch (Throwable e) {
             throw JetUtil.reThrow(e);
         }
-
-        return (T) operation.getResponse();
     }
 }

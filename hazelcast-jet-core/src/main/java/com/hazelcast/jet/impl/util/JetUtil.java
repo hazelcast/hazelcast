@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.config.JetClientConfig;
@@ -217,6 +218,17 @@ public final class JetUtil {
         }
 
         return jetApplicationConfig;
+    }
+
+    public static JetApplicationConfig resolveJetApplicationConfig(NodeEngine nodeEngine, String applicationName) {
+        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+        ApplicationContext applicationContext
+                = service.getApplicationManager().getApplicationContext(applicationName);
+        if (applicationContext == null) {
+            return JetUtil.resolveJetDefaultApplicationConfig(nodeEngine);
+        } else {
+            return applicationContext.getJetApplicationConfig();
+        }
     }
 
     public static JetApplicationConfig resolveJetServerApplicationConfig(final NodeEngine nodeEngine,

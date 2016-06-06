@@ -18,20 +18,20 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetInitCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.operation.InitApplicationRequestOperation;
 import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.impl.operation.InitApplicationRequestOperation;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.permission.ActionConstants;
 
-import java.security.Permission;
-
-public class JetInitMessageTask extends AbstractMessageTask<JetInitCodec.RequestParameters> {
+public class JetInitMessageTask extends JetMessageTask<JetInitCodec.RequestParameters> {
     public JetInitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected String getApplicationName() {
+        return this.parameters.name;
     }
 
     @Override
@@ -45,29 +45,11 @@ public class JetInitMessageTask extends AbstractMessageTask<JetInitCodec.Request
     }
 
     @Override
-    protected void processMessage() {
-        try {
-            JetApplicationConfig config = this.nodeEngine.getSerializationService().toObject(this.parameters.config);
-            new InitApplicationRequestOperation(getDistributedObjectName(), this.nodeEngine, config).run();
-            sendResponse(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return this.parameters.name;
+    protected JetOperation prepareOperation() {
+        JetApplicationConfig config = this.nodeEngine.getSerializationService().toObject(this.parameters.config);
+        InitApplicationRequestOperation operation =
+                new InitApplicationRequestOperation(getDistributedObjectName(), config);
+        return operation;
     }
 
     @Override
@@ -75,8 +57,4 @@ public class JetInitMessageTask extends AbstractMessageTask<JetInitCodec.Request
         return "init";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
-    }
 }

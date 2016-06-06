@@ -16,39 +16,30 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.application.localization.Chunk;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.application.localization.Chunk;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class LocalizationChunkOperation extends AbstractJetApplicationRequestOperation {
+public class LocalizationChunkOperation extends JetOperation {
     private Chunk chunk;
 
+    @SuppressWarnings("unused")
     public LocalizationChunkOperation() {
 
     }
 
     public LocalizationChunkOperation(String name,
                                       Chunk chunk) {
-        this(name, chunk, null);
-    }
-
-    public LocalizationChunkOperation(String name,
-                                      Chunk chunk,
-                                      NodeEngineImpl nodeEngine) {
         super(name);
         this.chunk = chunk;
-        setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
     }
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = resolveApplicationContext();
+        ApplicationContext applicationContext = getApplicationContext();
         applicationContext.getLocalizationStorage().receiveFileChunk(this.chunk);
     }
 

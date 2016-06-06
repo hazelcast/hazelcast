@@ -2,20 +2,23 @@ package com.hazelcast.jet.internal.impl.statemachine;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.application.DefaultExecutorContext;
+import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
+import com.hazelcast.jet.impl.statemachine.InvalidEventException;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationResponse;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
-import com.hazelcast.jet.impl.application.DefaultExecutorContext;
-import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineImpl;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineRequest;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +46,7 @@ import static com.hazelcast.jet.impl.statemachine.application.ApplicationEvent.S
 import static com.hazelcast.jet.impl.statemachine.application.ApplicationEvent.SUBMIT_SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +70,7 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
         assertEquals(ApplicationState.NEW, stateMachine.currentState());
     }
 
-    @Test(expected = ExecutionException.class)
+    @Test(expected = InvalidEventException.class)
     public void testInvalidTransition_throwsException() throws Exception {
         processRequest(getRequest(INTERRUPTION_FAILURE));
     }
@@ -605,6 +608,7 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
         private StateMachineTaskExecutorImpl executor;
         private ApplicationStateMachineImpl stateMachine;
 
+
         public StateMachineTaskExecutorImpl getExecutor() {
             return executor;
         }
@@ -617,12 +621,20 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
             StateMachineRequestProcessor requestProcessor = mock(StateMachineRequestProcessor.class);
             HazelcastInstance instance = mock(HazelcastInstance.class);
             when(instance.getName()).thenReturn(randomName());
+
+            ExecutionService executionService = mock(ExecutionService.class);
+            when(executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR))
+                    .thenReturn(mock(ManagedExecutorService.class));
+
             NodeEngine nodeEngine = mock(NodeEngine.class);
             when(nodeEngine.getHazelcastInstance()).thenReturn(instance);
-            when(nodeEngine.getLogger(anyString())).thenReturn(mock(ILogger.class));
+            when(nodeEngine.getLogger(any(Class.class))).thenReturn(mock(ILogger.class));
+            when(nodeEngine.getExecutionService()).thenReturn(executionService);
+
             ApplicationContext context = mock(ApplicationContext.class);
             DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
             when(context.getExecutorContext()).thenReturn(executorContext);
+            when(context.getNodeEngine()).thenReturn(nodeEngine);
             executor = new StateMachineTaskExecutorImpl(randomName(), 1, 1, nodeEngine);
             when(executorContext.getApplicationStateMachineExecutor()).thenReturn(executor);
             stateMachine = new ApplicationStateMachineImpl(randomName(), requestProcessor, nodeEngine, context);

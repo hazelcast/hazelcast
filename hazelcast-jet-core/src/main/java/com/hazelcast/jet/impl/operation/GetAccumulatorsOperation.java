@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class GetAccumulatorsOperation extends AbstractJetApplicationRequestOperation {
+public class GetAccumulatorsOperation extends JetOperation {
 
+    @SuppressWarnings("unused")
     public GetAccumulatorsOperation() {
     }
 
@@ -29,15 +28,9 @@ public class GetAccumulatorsOperation extends AbstractJetApplicationRequestOpera
         super(name);
     }
 
-    public GetAccumulatorsOperation(String name, NodeEngineImpl nodeEngine) {
-        super(name);
-        setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
-    }
-
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = resolveApplicationContext();
+        ApplicationContext applicationContext = getApplicationContext();
         this.result = applicationContext.getAccumulators();
     }
 }

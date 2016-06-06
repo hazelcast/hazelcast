@@ -17,13 +17,14 @@
 package com.hazelcast.jet.impl.application;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.util.JetThreadFactory;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.util.JetThreadFactory;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
@@ -62,13 +63,14 @@ public class ApplicationProxyImpl extends AbstractDistributedObject<JetService> 
 
         this.applicationClusterService = new ServerApplicationClusterService(
                 name, executorService,
-                nodeEngine, jetService
+                nodeEngine
         );
     }
 
     @Override
     public void init(JetApplicationConfig config) {
-        this.applicationClusterService.initApplication(config, this.applicationStateManager);
+        JetApplicationConfig resolvedConfig = JetUtil.resolveJetServerApplicationConfig(getNodeEngine(), config, name);
+        this.applicationClusterService.initApplication(resolvedConfig, this.applicationStateManager);
     }
 
     @Override

@@ -18,20 +18,20 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetEventCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.operation.ApplicationEventOperation;
+import com.hazelcast.jet.impl.operation.JetOperation;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.permission.ActionConstants;
 
-import java.security.Permission;
-
-public class JetEventMessageTask extends AbstractMessageTask<JetEventCodec.RequestParameters> {
+public class JetEventMessageTask extends JetMessageTask<JetEventCodec.RequestParameters> {
     public JetEventMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected String getApplicationName() {
+        return this.parameters.name;
     }
 
     @Override
@@ -45,33 +45,12 @@ public class JetEventMessageTask extends AbstractMessageTask<JetEventCodec.Reque
     }
 
     @Override
-    protected void processMessage() {
+    protected JetOperation prepareOperation() {
         ApplicationEvent applicationEvent = this.serializationService.toObject(this.parameters.event);
-
-        try {
-            new ApplicationEventOperation(
-                    applicationEvent, this.parameters.name, this.nodeEngine
-            ).run();
-            sendResponse(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return this.parameters.name;
+        ApplicationEventOperation operation = new ApplicationEventOperation(
+                getApplicationName(), applicationEvent
+        );
+        return operation;
     }
 
     @Override
@@ -79,8 +58,4 @@ public class JetEventMessageTask extends AbstractMessageTask<JetEventCodec.Reque
         return "event";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
-    }
 }

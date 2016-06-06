@@ -168,7 +168,7 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
     }
 
     @Override
-    public ApplicationContext createOrGetApplicationContext(String name,
+    public ApplicationContext getOrCreateApplicationContext(String name,
                                                             JetApplicationConfig config) {
         this.threadLocal.set(config);
 

@@ -16,62 +16,46 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.InterruptApplicationRequest;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.JetApplicationConfig;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.InterruptApplicationRequest;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+public class InterruptExecutionOperation extends AsyncJetOperation {
 
-public class InterruptExecutionOperation extends AbstractJetApplicationRequestOperation {
+    @SuppressWarnings("unused")
     public InterruptExecutionOperation() {
     }
 
     public InterruptExecutionOperation(String name) {
-        this(name, null);
-    }
-
-    public InterruptExecutionOperation(String name, NodeEngineImpl nodeEngine) {
         super(name);
-        setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
     }
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = resolveApplicationContext();
+        ApplicationContext applicationContext = getApplicationContext();
 
         ApplicationMaster applicationMaster = applicationContext.getApplicationMaster();
-        Future<ApplicationMasterResponse> future = applicationMaster.handleContainerRequest(
+        ICompletableFuture<ApplicationMasterResponse> interruptFuture = applicationMaster.handleContainerRequest(
                 new InterruptApplicationRequest()
         );
 
-        JetApplicationConfig config = applicationContext.getJetApplicationConfig();
-        long secondsToAwait = config.getJetSecondsToAwait();
+        interruptFuture.andThen(new ContainerRequestCallback(this,
+                "Unable interrupt application's execution", () -> {
+            ICompletableFuture<Object> future = applicationMaster.getInterruptionMailBox();
+            future.andThen(new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object response) {
+                    sendResponse(response);
+                }
 
-        try {
-            ApplicationMasterResponse response = future.get(secondsToAwait, TimeUnit.SECONDS);
-
-            if (response != ApplicationMasterResponse.SUCCESS) {
-                throw new IllegalStateException("Unable interrupt application's execution");
-            }
-        } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
-        }
-
-        BlockingQueue<Object> mailBox = applicationMaster.getInterruptionMailBox();
-
-        if (mailBox != null) {
-            Object result = mailBox.poll(secondsToAwait, TimeUnit.SECONDS);
-            if ((result != null) && (result instanceof Throwable)) {
-                throw JetUtil.reThrow((Throwable) result);
-            }
-        }
+                @Override
+                public void onFailure(Throwable t) {
+                    sendResponse(t);
+                }
+            });
+        }));
     }
 }

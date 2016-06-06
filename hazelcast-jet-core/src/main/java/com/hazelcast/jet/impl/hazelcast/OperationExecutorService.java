@@ -18,16 +18,16 @@ package com.hazelcast.jet.impl.hazelcast;
 
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.impl.application.ApplicationInvocationService;
-import com.hazelcast.jet.impl.application.localization.Chunk;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
-import com.hazelcast.jet.impl.application.localization.ChunkIterator;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.impl.application.ApplicationStateManager;
-import com.hazelcast.jet.impl.application.LocalizationResource;
 import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.application.ApplicationInvocationService;
+import com.hazelcast.jet.impl.application.ApplicationStateManager;
+import com.hazelcast.jet.impl.application.LocalizationResource;
+import com.hazelcast.jet.impl.application.localization.Chunk;
+import com.hazelcast.jet.impl.application.localization.ChunkIterator;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
+import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public abstract class OperationExecutorService<PayLoad> implements ApplicationInvocationService<PayLoad> {
 
@@ -168,7 +167,7 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
 
         for (Future future : list) {
             try {
-                future.get(getSecondsToAwait(), TimeUnit.SECONDS);
+                future.get();
             } catch (Throwable e) {
                 errors.add(e);
             }

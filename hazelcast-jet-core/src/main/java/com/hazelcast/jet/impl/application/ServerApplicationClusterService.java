@@ -20,9 +20,8 @@ package com.hazelcast.jet.impl.application;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.impl.application.localization.Chunk;
 import com.hazelcast.jet.impl.hazelcast.InvocationFactory;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.hazelcast.AbstractApplicationClusterService;
 import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
 import com.hazelcast.jet.impl.operation.ApplicationEventOperation;
@@ -39,7 +38,6 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 
 import java.util.Map;
 import java.util.Set;
@@ -47,21 +45,18 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 
 
-public class ServerApplicationClusterService extends AbstractApplicationClusterService<Operation> {
+public class ServerApplicationClusterService extends AbstractApplicationClusterService<JetOperation> {
     private final NodeEngine nodeEngine;
-    private final JetService jetService;
 
     public ServerApplicationClusterService(String name,
                                            ExecutorService executorService,
-                                           NodeEngine nodeEngine,
-                                           JetService jetService) {
+                                           NodeEngine nodeEngine) {
         super(name, executorService);
 
         this.nodeEngine = nodeEngine;
-        this.jetService = jetService;
     }
 
-    public Operation createInitApplicationInvoker(JetApplicationConfig config) {
+    public JetOperation createInitApplicationInvoker(JetApplicationConfig config) {
         return new InitApplicationRequestOperation(
                 this.name,
                 config
@@ -69,55 +64,52 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
     }
 
     @Override
-    public Operation createFinalizationInvoker() {
+    public JetOperation createFinalizationInvoker() {
         return new FinalizationApplicationRequestOperation(
                 this.name
         );
     }
 
     @Override
-    public Operation createInterruptInvoker() {
+    public JetOperation createInterruptInvoker() {
         return new InterruptExecutionOperation(
                 this.name
         );
     }
 
     @Override
-    public Operation createExecutionInvoker() {
+    public JetOperation createExecutionInvoker() {
         return new ExecutionApplicationRequestOperation(
                 this.name
         );
     }
 
     @Override
-    public Operation createAccumulatorsInvoker() {
+    public JetOperation createAccumulatorsInvoker() {
         return new GetAccumulatorsOperation(
                 this.name
         );
     }
 
     @Override
-    public Operation createSubmitInvoker(DAG dag) {
+    public JetOperation createSubmitInvoker(DAG dag) {
         return new SubmitApplicationRequestOperation(
-                this.name,
-                dag
-        );
+                this.name, dag);
     }
 
     @Override
-    public Operation createLocalizationInvoker(Chunk chunk) {
+    public JetOperation createLocalizationInvoker(Chunk chunk) {
         return new LocalizationChunkOperation(this.name, chunk);
     }
 
     @Override
-    public Operation createAcceptedLocalizationInvoker() {
+    public JetOperation createAcceptedLocalizationInvoker() {
         return new AcceptLocalizationOperation(this.name);
     }
 
-    public Operation createEventInvoker(ApplicationEvent applicationEvent) {
+    public JetOperation createEventInvoker(ApplicationEvent applicationEvent) {
         return new ApplicationEventOperation(
-                applicationEvent,
-                this.name
+                this.name, applicationEvent
         );
     }
 
@@ -128,16 +120,15 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
 
     @Override
     protected JetApplicationConfig getJetApplicationConfig() {
-        return JetUtil.resolveJetServerApplicationConfig(this.nodeEngine, this.jetApplicationConfig, name);
+        return jetApplicationConfig;
     }
 
     @Override
     public <T> Callable<T> createInvocation(Member member,
-                                            InvocationFactory<Operation> factory) {
+                                            InvocationFactory<JetOperation> factory) {
         return new ServerApplicationInvocation<T>(
                 factory.payLoad(),
                 member.getAddress(),
-                this.jetService,
                 this.nodeEngine
         );
     }
