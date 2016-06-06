@@ -305,9 +305,7 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     }
 
     /**
-     * Indicates if this step in the pipeline is ordered
-     *
-     * @return
+     * @return if this step in the pipeline is ordered
      */
     @Override
     public boolean isOrdered() {

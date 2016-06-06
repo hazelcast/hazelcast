@@ -21,8 +21,8 @@ import com.hazelcast.jet.dag.Vertex;
 /**
  * Represents abstract factory to construct JET user-level container processors;
  * Note: each object which will be constructed by factory will be assigned to the separate container task;
- * <p/>
- * So if for example it return always the same instance of the ContainerProcessor - the same instance object
+ *
+ * <p>So if for example it return always the same instance of the ContainerProcessor - the same instance object
  * can be executed from different threads. It can be useful in some cases;
  *
  * @param <I> - type of the input objects;
