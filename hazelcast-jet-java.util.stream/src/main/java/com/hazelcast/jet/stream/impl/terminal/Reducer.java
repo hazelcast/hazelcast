@@ -17,11 +17,10 @@
 package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -53,7 +52,7 @@ public class Reducer {
     public <T, U> U reduce(Pipeline<T> upstream, U identity,
                            BiFunction<U, ? super T, U> accumulator,
                            BinaryOperator<U> combiner) {
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Vertex accumulatorVertex = buildMappingAccumulator(dag, upstream, identity, accumulator);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner);
 
@@ -81,7 +80,7 @@ public class Reducer {
     public <T> Optional<T> reduce(Pipeline<T> upstream,
                                   BinaryOperator<T> operator) {
 
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, Optional.empty());
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, operator);
         return this.<T>execute(dag, combinerVertex);
@@ -89,7 +88,7 @@ public class Reducer {
 
     public <T> T reduce(Pipeline<T> upstream,
                         T identity, BinaryOperator<T> accumulator) {
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, Optional.of(identity));
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, accumulator);
         return this.<T>execute(dag, combinerVertex).get();

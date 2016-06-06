@@ -1,11 +1,10 @@
 package com.hazelcast.jet.internal.impl.dag;
 
-import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
-import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
@@ -21,14 +20,14 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class EdgeImplTest {
+public class EdgeTest {
 
     @Test
     public void testEdgeName() throws Exception {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
         String name = "edge";
-        EdgeImpl edge = new EdgeImpl(name, v1, v2);
+        Edge edge = new Edge(name, v1, v2);
         assertEquals(name, edge.getName());
     }
 
@@ -36,7 +35,7 @@ public class EdgeImplTest {
     public void testEdgeInputOutputVertexes() throws Exception {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
-        EdgeImpl edge = new EdgeImpl("edge", v1, v2);
+        Edge edge = new Edge("edge", v1, v2);
         assertEquals(v1, edge.getInputVertex());
         assertEquals(v2, edge.getOutputVertex());
     }
@@ -45,7 +44,7 @@ public class EdgeImplTest {
     public void testDefaultStrategies() throws Exception {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
-        EdgeImpl edge = new EdgeImpl("edge", v1, v2);
+        Edge edge = new Edge("edge", v1, v2);
         assertEquals(ByReferenceDataTransferringStrategy.INSTANCE, edge.getDataTransferringStrategy());
         assertEquals(DefaultHashingStrategy.INSTANCE, edge.getHashingStrategy());
         assertEquals(StringPartitioningStrategy.INSTANCE, edge.getPartitioningStrategy());
@@ -58,7 +57,7 @@ public class EdgeImplTest {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
         IListBasedShufflingStrategy shufflingStrategy = new IListBasedShufflingStrategy("test");
-        Edge edge = new EdgeImpl.EdgeBuilder("edge", v1, v2)
+        Edge edge = new Edge.EdgeBuilder("edge", v1, v2)
                 .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
                 .hashingStrategy(DefaultHashingStrategy.INSTANCE)
                 .partitioningStrategy(StringAndPartitionAwarePartitioningStrategy.INSTANCE)
@@ -78,7 +77,7 @@ public class EdgeImplTest {
     public void testEdgeBuilder_multipleCallToBuild_throwsException() throws Exception {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
-        EdgeImpl.EdgeBuilder edgeBuilder = new EdgeImpl.EdgeBuilder("edge", v1, v2);
+        Edge.EdgeBuilder edgeBuilder = new Edge.EdgeBuilder("edge", v1, v2);
         edgeBuilder.build();
         edgeBuilder.build();
     }

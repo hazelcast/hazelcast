@@ -4,7 +4,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
-import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.impl.dag.tap.sink.HazelcastListPartitionWriter;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
@@ -58,7 +58,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
         vertex2.addSinkMap(sinkMap.getName());
 
         addVertices(dag, vertex1, vertex2);
-        addEdges(dag, new EdgeImpl("", vertex1, vertex2));
+        addEdges(dag, new Edge("", vertex1, vertex2));
 
         System.out.println("Application running");
 
@@ -185,7 +185,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             addEdges(
                     dag,
-                    new EdgeImpl.EdgeBuilder("edge", vertex1, vertex2).
+                    new Edge.EdgeBuilder("edge", vertex1, vertex2).
                             shuffling(true).
                             shufflingStrategy(
                                     new IListBasedShufflingStrategy(

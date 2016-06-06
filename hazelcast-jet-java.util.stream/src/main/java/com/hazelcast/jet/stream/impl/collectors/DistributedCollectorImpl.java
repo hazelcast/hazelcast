@@ -17,11 +17,10 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -170,7 +169,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     @Override
     public R collect(StreamContext context, Pipeline<? extends T> upstream) {
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier(), accumulator());
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner(), finisher);
 

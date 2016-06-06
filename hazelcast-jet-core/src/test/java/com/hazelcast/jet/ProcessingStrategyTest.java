@@ -3,8 +3,8 @@ package com.hazelcast.jet;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.impl.counters.LongCounter;
-import com.hazelcast.jet.dag.EdgeImpl;
 import com.hazelcast.jet.processors.CounterProcessor;
 import com.hazelcast.jet.processors.DummyProcessor;
 import com.hazelcast.jet.container.CounterKey;
@@ -80,7 +80,7 @@ public class ProcessingStrategyTest extends JetBaseTest {
 
         addEdges(
                 dag,
-                new EdgeImpl.EdgeBuilder("edge", vertex1, vertex2).
+                new Edge.EdgeBuilder("edge", vertex1, vertex2).
                         processingStrategy(processingStrategy)
                         .build()
         );

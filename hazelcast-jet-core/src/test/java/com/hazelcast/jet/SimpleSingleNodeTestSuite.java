@@ -8,14 +8,13 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.impl.counters.LongCounter;
-import com.hazelcast.jet.dag.DAGImpl;
-import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.processors.*;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
@@ -82,7 +81,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         Vertex consumer = createVertex("consumer", DummyProcessor.Factory.class, taskCount);
         consumer.addSinkList(sinkList.getName());
         addVertices(dag, root, consumer);
-        addEdges(dag, new EdgeImpl("", root, consumer));
+        addEdges(dag, new Edge("", root, consumer));
         executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
         try {
@@ -108,7 +107,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             vertex2.addSinkMap("target");
 
             addVertices(dag, vertex1, vertex2);
-            addEdges(dag, new EdgeImpl("edge", vertex1, vertex2));
+            addEdges(dag, new Edge("edge", vertex1, vertex2));
 
             VerySlowProcessorOnlyForInterruptionTest.run = new CountDownLatch(1);
             VerySlowProcessorOnlyForInterruptionTest.set = false;
@@ -177,11 +176,11 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             addVertices(dag, root, vertex11, vertex12, vertex21, vertex22);
 
-            addEdges(dag, new EdgeImpl("edge1", root, vertex11));
-            addEdges(dag, new EdgeImpl("edge2", root, vertex21));
+            addEdges(dag, new Edge("edge1", root, vertex11));
+            addEdges(dag, new Edge("edge2", root, vertex21));
 
-            addEdges(dag, new EdgeImpl("edge3", vertex11, vertex12));
-            addEdges(dag, new EdgeImpl("edge4", vertex21, vertex22));
+            addEdges(dag, new Edge("edge3", vertex11, vertex12));
+            addEdges(dag, new Edge("edge4", vertex21, vertex22));
 
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
@@ -226,7 +225,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
                     Vertex vertex = createVertex("v_" + b + "_" + i, DummyProcessor.Factory.class);
                     addVertices(dag, vertex);
 
-                    addEdges(dag, new EdgeImpl("e_" + b + "_" + i, last, vertex));
+                    addEdges(dag, new Edge("e_" + b + "_" + i, last, vertex));
 
                     last = vertex;
 
@@ -271,7 +270,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
     }
 
     private DAG createMixingDag(int idx, String applicationName) {
-        DAG dag = new DAGImpl("dag-" + idx);
+        DAG dag = new DAG("dag-" + idx);
 
         Vertex vertex1 = createVertex("mod1", DummyProcessor.Factory.class, 1);
         Vertex vertex2 = createVertex("mod2", DummyProcessor.Factory.class, 1);
@@ -281,7 +280,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
         dag.addVertex(vertex1);
         dag.addVertex(vertex2);
-        dag.addEdge(new EdgeImpl("edge", vertex1, vertex2));
+        dag.addEdge(new Edge("edge", vertex1, vertex2));
         return dag;
     }
 
@@ -403,8 +402,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             String sinkFile = touchFile("result.wordCountFileSortedTest");
             vertex3.addSinkFile(sinkFile);
 
-            addEdges(dag, new EdgeImpl("edge1", vertex1, vertex2));
-            addEdges(dag, new EdgeImpl("edge2", vertex2, vertex3));
+            addEdges(dag, new Edge("edge1", vertex1, vertex2));
+            addEdges(dag, new Edge("edge2", vertex2, vertex3));
 
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
@@ -438,7 +437,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             addEdges(
                     dag,
-                    new EdgeImpl.EdgeBuilder(
+                    new Edge.EdgeBuilder(
                             "edge",
                             vertex1,
                             vertex2
@@ -494,7 +493,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             vertex1.addSourceMap("wordtest.wordCountMapTest");
             vertex2.addSinkMap("wordresult.wordCountMapTest");
-            addEdges(dag, new EdgeImpl("edge", vertex1, vertex2));
+            addEdges(dag, new Edge("edge", vertex1, vertex2));
 
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 

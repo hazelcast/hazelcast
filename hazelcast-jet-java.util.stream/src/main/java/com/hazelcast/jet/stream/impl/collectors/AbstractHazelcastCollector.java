@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.tap.SinkTap;
@@ -32,7 +32,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
     @Override
     public R collect(StreamContext context, Pipeline<? extends T> upstream) {
         R target = getTarget(context.getHazelcastInstance());
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag, null, toTupleMapper());
         vertex.addSinkTap(getSinkTap());
         executeApplication(context, dag);

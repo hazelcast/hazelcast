@@ -34,14 +34,6 @@ public abstract class SinkTap implements Tap {
     public abstract DataWriter[] getWriters(NodeEngine nodeEngine,
                                             ContainerDescriptor containerDescriptor);
 
-    public boolean isSource() {
-        return false;
-    }
-
-    public boolean isSink() {
-        return true;
-    }
-
     public abstract SinkTapWriteStrategy getTapStrategy();
 
     public abstract SinkOutputStream getSinkOutputStream();
