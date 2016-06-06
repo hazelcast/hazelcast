@@ -417,7 +417,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             EventServiceSegment existingSegment = segments.putIfAbsent(service, newSegment);
             if (existingSegment == null) {
                 segment = newSegment;
-                nodeEngine.getMetricsRegistry().scanAndRegister(newSegment, "event." + service);
+                nodeEngine.getMetricsRegistry().scanAndRegister(newSegment, "event.[" + service + "]");
             } else {
                 segment = existingSegment;
             }
