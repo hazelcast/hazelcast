@@ -64,7 +64,7 @@ public class SharedBalancedExecutorProcessor
     protected void onTaskDeactivation() {
         setBalanced(false);
         this.taskExecutor.onTaskDeactivation();
-        System.out.println("this.taskExecutor.onTaskDeactivation();="
+        logger.fine("this.taskExecutor.onTaskDeactivation();="
                 + this.taskExecutor.getTaskCount() + " idx=" + this
         );
     }

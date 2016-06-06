@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.impl.dag.tap.sink;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.dag.tap.SinkOutputStream;
 import com.hazelcast.jet.dag.tap.SinkTap;
 import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.File;
-import java.io.Writer;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
 
 public class FileOutputStream implements SinkOutputStream {
     private static final long serialVersionUID = -396575576353368113L;
@@ -45,8 +45,6 @@ public class FileOutputStream implements SinkOutputStream {
     @Override
     public void open() {
         if (this.closed) {
-            System.out.println("Trying fileWriterCreated");
-
             if (this.tap.getTapStrategy() == SinkTapWriteStrategy.CLEAR_AND_REPLACE) {
                 File file = new File(this.name);
 
@@ -63,8 +61,6 @@ public class FileOutputStream implements SinkOutputStream {
             } catch (IOException e) {
                 throw JetUtil.reThrow(e);
             }
-
-            System.out.println("FileWriterCreated");
 
             this.closed = false;
         }

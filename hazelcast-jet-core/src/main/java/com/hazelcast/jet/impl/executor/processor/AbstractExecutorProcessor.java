@@ -133,7 +133,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
             this.workingTaskCount.incrementAndGet();
 
             if (task instanceof DefaultContainerTask) {
-                System.out.println("Incoming=" + task.getClass() + " size=" + this.tasks.size()
+                logger.fine("Incoming=" + task.getClass() + " size=" + this.tasks.size()
                                 + " idx=" + this + " wtc=" + this.workingTaskCount.get()
                 );
             }
@@ -158,7 +158,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
                 onTaskDeactivation();
 
                 if (task instanceof DefaultContainerTask) {
-                    System.out.println(
+                    logger.fine(
                             "Task removed " + tasks.size() + " this.workingTaskCount="
                                     + this.workingTaskCount.get() + " " + this
                     );
@@ -195,7 +195,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
 
                         if (tasks.size() == 0) {
                             if (this.tasks.size() > 0) {
-                                System.out.println(
+                                logger.fine(
                                         "size=" + this.tasks.size()
                                 );
                             }

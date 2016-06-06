@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.Level;
 import org.junit.AfterClass;
 
 public abstract class JetBaseTest extends HazelcastTestSupport {
@@ -46,6 +47,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
 
     static {
         System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
+        setLogLevel(Level.DEBUG);
     }
 
     public static void initCluster(int membersCount) {
