@@ -147,9 +147,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public void evictEntries() {
+    public void evictEntries(Data excludedKey) {
         if (shouldEvict()) {
-            mapContainer.getEvictor().evict(this);
+            mapContainer.getEvictor().evict(this, excludedKey);
         }
     }
 

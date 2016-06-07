@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.serialization.Data;
 
 import static java.lang.Integer.getInteger;
 
@@ -30,7 +31,7 @@ public interface Evictor {
 
     Evictor NULL_EVICTOR = new Evictor() {
         @Override
-        public void evict(RecordStore recordStore) {
+        public void evict(RecordStore recordStore, Data excludedKey) {
 
         }
 
@@ -49,9 +50,10 @@ public interface Evictor {
     /**
      * Evict supplied record-store.
      *
-     * @param recordStore the recordStore
+     * @param recordStore     the recordStore
+     * @param excludedKey this key has lowest priority to be selected for eviction and it is nullable.
      */
-    void evict(RecordStore recordStore);
+    void evict(RecordStore recordStore, Data excludedKey);
 
     /**
      * Check whether the supplied record-store needs eviction.

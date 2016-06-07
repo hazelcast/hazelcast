@@ -84,7 +84,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
 
             entryAddedOrUpdated(entry, key, value, now);
 
-            evict();
+            evict(key);
         }
     }
 

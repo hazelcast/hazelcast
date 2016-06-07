@@ -27,6 +27,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -48,11 +49,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.RANDOM;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
+import static com.hazelcast.map.EvictionMaxSizePolicyTest.setMockRuntimeMemoryInfoAccessor;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1026,6 +1030,74 @@ public class EvictionTest extends HazelcastTestSupport {
         int size = map.size();
         String message = "map-size should be smaller than max-size but found [map-size = %d and max-size = %d]";
         assertTrue(format(message, size, maxSize), size <= maxSize);
+    }
+
+    @Test
+    public void testLastAddedKey_notEvicted() throws Exception {
+        Config config = getConfig();
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.getMapConfig("test").setEvictionPolicy(LFU).getMaxSizeConfig().setSize(1).setMaxSizePolicy(PER_PARTITION);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap("test");
+
+        final AtomicReference evictedKey = new AtomicReference(null);
+        map.addEntryListener(new EntryEvictedListener() {
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                evictedKey.set(event.getKey());
+            }
+        }, false);
+
+        map.put(1, 1);
+        map.put(2, 1);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals("Eviction impl. cannot evict latest added key 2", 1, evictedKey.get());
+            }
+        });
+    }
+
+    /**
+     * Eviction of last added key can only be triggered with one of heap based max-size-policies.
+     */
+    @Test
+    public void testLastAddedKey_canBeEvicted_whenFreeHeapNeeded() {
+        Config config = new Config();// don't use getConfig(), this test is OSS specific.
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        config.getMapConfig("test").setEvictionPolicy(LFU).getMaxSizeConfig().setSize(90).setMaxSizePolicy(FREE_HEAP_PERCENTAGE);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap("test");
+
+        final AtomicReference evictedKey = new AtomicReference(null);
+        map.addEntryListener(new EntryEvictedListener() {
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                evictedKey.set(event.getKey());
+            }
+        }, false);
+
+        // 1. Make available free-heap-percentage 10. availableFree = maxMemoryMB - (totalMemoryMB - freeMemoryMB)
+        // free-heap-percentage = availableFree/maxMemoryMB;
+        int totalMemoryMB = 90;
+        int freeMemoryMB = 0;
+        int maxMemoryMB = 100;
+        setMockRuntimeMemoryInfoAccessor(map, totalMemoryMB, freeMemoryMB, maxMemoryMB);
+
+        // 2. This `put` should trigger eviction because we used 90% heap already.
+        // And max used-heap-percentage was set 10% in map-config.
+        map.put(1, 1);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals("Eviction impl. should evict latest added key when heap based max-size-policy is used",
+                        1, evictedKey.get());
+            }
+        });
     }
 }
 

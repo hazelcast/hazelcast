@@ -83,7 +83,7 @@ public final class PutBackupOperation extends MutatingKeyBasedMapOperation
     @Override
     public void afterRun() throws Exception {
         if (recordInfo != null) {
-            evict();
+            evict(dataKey);
         }
         if (!disableWanReplicationEvent) {
             publishWANReplicationEventBackup(mapServiceContext, mapEventPublisher);

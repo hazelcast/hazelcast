@@ -124,10 +124,10 @@ public abstract class MapOperation extends AbstractNamedOperation {
         nearCacheProvider.getNearCacheInvalidator().clear(name, owner, getCallerUuid());
     }
 
-    protected void evict() {
+    protected void evict(Data excludedKey) {
         assert recordStore != null : "Record-store cannot be null";
 
-        recordStore.evictEntries();
+        recordStore.evictEntries(excludedKey);
     }
 
     private RecordStore getRecordStoreOrNull() {

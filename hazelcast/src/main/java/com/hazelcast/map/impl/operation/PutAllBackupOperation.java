@@ -63,7 +63,7 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
                 mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
 
-            evict();
+            evict(dataKey);
         }
     }
 
