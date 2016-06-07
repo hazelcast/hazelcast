@@ -38,6 +38,12 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
+import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
+import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
+import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
+import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
+import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
+import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.logging.ILogger;
@@ -172,6 +178,13 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public void start() {
+        RuntimeMetricSet.register(metricsRegistry);
+        GarbageCollectionMetricSet.register(metricsRegistry);
+        OperatingSystemMetricSet.register(metricsRegistry);
+        ThreadMetricSet.register(metricsRegistry);
+        ClassLoadingMetricSet.register(metricsRegistry);
+        FileMetricSet.register(metricsRegistry);
+
         metricsRegistry.collectMetrics(operationService);
         metricsRegistry.collectMetrics(proxyService);
         metricsRegistry.collectMetrics(eventService);

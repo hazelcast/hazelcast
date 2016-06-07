@@ -29,6 +29,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ThreadMetricSet.register(metricsRegistry);
     }
 
     @Test

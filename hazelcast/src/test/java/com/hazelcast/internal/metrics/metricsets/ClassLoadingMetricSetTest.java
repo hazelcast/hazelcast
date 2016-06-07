@@ -29,6 +29,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ClassLoadingMetricSet.register(metricsRegistry);
     }
 
     @Test

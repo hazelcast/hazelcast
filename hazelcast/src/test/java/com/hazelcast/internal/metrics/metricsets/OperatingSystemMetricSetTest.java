@@ -33,6 +33,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        OperatingSystemMetricSet.register(metricsRegistry);
     }
 
     @Test
