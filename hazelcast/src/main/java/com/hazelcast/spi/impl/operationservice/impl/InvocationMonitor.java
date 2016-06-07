@@ -74,6 +74,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     private static final long ON_MEMBER_LEFT_DELAY_MILLIS = 1111;
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
+    private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
 
     private final NodeEngineImpl nodeEngine;
     private final InternalSerializationService serializationService;
@@ -93,6 +94,8 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     @Probe
     private final SwCounter heartbeatPacketsSend = newSwCounter();
     @Probe
+    private final SwCounter delayedExecutionCount = newSwCounter();
+    @Probe
     private final long backupTimeoutMillis;
     @Probe
     private final long invocationTimeoutMillis;
@@ -105,7 +108,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     InvocationMonitor(NodeEngineImpl nodeEngine,
                       Address thisAddress,
                       HazelcastThreadGroup threadGroup,
-                      HazelcastProperties hazelcastProperties,
+                      HazelcastProperties properties,
                       InvocationRegistry invocationRegistry,
                       ILogger logger,
                       InternalSerializationService serializationService,
@@ -116,9 +119,9 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         this.serviceManager = serviceManager;
         this.invocationRegistry = invocationRegistry;
         this.logger = logger;
-        this.backupTimeoutMillis = backupTimeoutMillis(hazelcastProperties);
-        this.invocationTimeoutMillis = invocationTimeoutMillis(hazelcastProperties);
-        this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(hazelcastProperties);
+        this.backupTimeoutMillis = backupTimeoutMillis(properties);
+        this.invocationTimeoutMillis = invocationTimeoutMillis(properties);
+        this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(properties);
         this.scheduler = newScheduler(threadGroup);
     }
 
@@ -132,14 +135,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         return new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
-                Thread thread = new InvocationMonitorThread(r, threadGroup);
-                thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-                    @Override
-                    public void uncaughtException(Thread t, Throwable e) {
-                        logger.severe(e);
-                    }
-                });
-                return thread;
+                return new InvocationMonitorThread(r, threadGroup);
             }
         });
     }
@@ -163,14 +159,14 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         return backupTimeoutMillis;
     }
 
-    private long heartbeatBroadcastPeriodMillis(HazelcastProperties groupProperties) {
+    private long heartbeatBroadcastPeriodMillis(HazelcastProperties properties) {
         // The heartbeat period is configured to be 1/4 of the call timeout. So with default settings, every 15 seconds,
         // every member in the cluster, will notify every other member in the cluster about all calls that are pending.
         // This is done quite efficiently; imagine at any given moment one node has 1000 concurrent calls pending on another
         // node; then every 15 seconds an 8 KByte packet is send to the other member.
         // Another advantage is that multiple heartbeat timeouts are allowed to get lost; without leading to premature
         // abortion of the invocation.
-        int callTimeoutMs = groupProperties.getInteger(OPERATION_CALL_TIMEOUT_MILLIS);
+        int callTimeoutMs = properties.getInteger(OPERATION_CALL_TIMEOUT_MILLIS);
         long periodMs = Math.max(SECONDS.toMillis(1), callTimeoutMs / HEARTBEAT_CALL_TIMEOUT_RATIO);
 
         if (logger.isFinestEnabled()) {
@@ -191,8 +187,14 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     public void start() {
-        scheduler.scheduleAtFixedRate(new MonitorInvocationsTask(), 0, invocationScanPeriodMillis, MILLISECONDS);
-        scheduler.scheduleAtFixedRate(new BroadcastOperationHeartbeatsTask(), 0, heartbeatBroadcastPeriodMillis, MILLISECONDS);
+        MonitorInvocationsTask monitorInvocationsTask = new MonitorInvocationsTask(invocationScanPeriodMillis);
+        scheduler.scheduleAtFixedRate(
+                monitorInvocationsTask, 0, monitorInvocationsTask.periodMillis, MILLISECONDS);
+
+        BroadcastOperationHeartbeatsTask broadcastOperationHeartbeatsTask
+                = new BroadcastOperationHeartbeatsTask(heartbeatBroadcastPeriodMillis);
+        scheduler.scheduleAtFixedRate(
+                broadcastOperationHeartbeatsTask, 0, broadcastOperationHeartbeatsTask.periodMillis, MILLISECONDS);
     }
 
     public void shutdown() {
@@ -212,6 +214,50 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         return heartbeat == null ? 0 : heartbeat.get();
     }
 
+    private abstract class MonitorTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                run0();
+            } catch (Throwable t) {
+                inspectOutOfMemoryError(t);
+                logger.severe(t);
+            }
+        }
+
+        protected abstract void run0();
+    }
+
+    abstract class FixedRateMonitorTask implements Runnable {
+        final long periodMillis;
+        private long expectedNextMillis = System.currentTimeMillis();
+
+        FixedRateMonitorTask(long periodMillis) {
+            this.periodMillis = periodMillis;
+        }
+
+        @Override
+        public void run() {
+            long currentTimeMillis = System.currentTimeMillis();
+
+            try {
+                if (expectedNextMillis + MAX_DELAY_MILLIS < currentTimeMillis) {
+                    logger.warning(getClass().getSimpleName() + " delayed " + (currentTimeMillis - expectedNextMillis) + " ms");
+                    delayedExecutionCount.inc();
+                }
+
+                run0();
+            } catch (Throwable t) {
+                // we want to catch the exception; if we don't and the executor runs into it, it will abort the task.
+                inspectOutOfMemoryError(t);
+                logger.severe(t);
+            } finally {
+                expectedNextMillis = currentTimeMillis + periodMillis;
+            }
+        }
+
+        protected abstract void run0();
+    }
 
     /**
      * The MonitorTask iterates over all pending invocations and sees what needs to be done. Currently its tasks are:
@@ -221,9 +267,13 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
      *
      * In the future additional checks can be added here like checking if a retry is needed etc.
      */
-    private final class MonitorInvocationsTask implements Runnable {
+    private final class MonitorInvocationsTask extends FixedRateMonitorTask {
+        private MonitorInvocationsTask(long periodMillis) {
+            super(periodMillis);
+        }
+
         @Override
-        public void run() {
+        public void run0() {
             if (logger.isFinestEnabled()) {
                 logger.finest("Scanning all invocations");
             }
@@ -313,7 +363,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         }
     }
 
-    private final class OnMemberLeftTask implements Runnable {
+    private final class OnMemberLeftTask extends MonitorTask {
         private final MemberImpl leftMember;
 
         private OnMemberLeftTask(MemberImpl leftMember) {
@@ -321,7 +371,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         }
 
         @Override
-        public void run() {
+        public void run0() {
             lastHeartbeatPerMember.remove(leftMember.getAddress());
 
             for (Invocation invocation : invocationRegistry) {
@@ -342,7 +392,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         }
     }
 
-    private final class ProcessOperationHeartbeatsTask implements Runnable {
+    private final class ProcessOperationHeartbeatsTask extends MonitorTask {
         // either a packet or a long-array.
         private Object callIds;
 
@@ -351,7 +401,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         }
 
         @Override
-        public void run() {
+        public void run0() {
             heartbeatPacketsReceived.inc();
             long timeMillis = Clock.currentTimeMillis();
 
@@ -384,11 +434,15 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         }
     }
 
-    private final class BroadcastOperationHeartbeatsTask implements Runnable {
+    private final class BroadcastOperationHeartbeatsTask extends FixedRateMonitorTask {
         private final LiveOperations liveOperations = new LiveOperations(thisAddress);
 
+        private BroadcastOperationHeartbeatsTask(long periodMillis) {
+            super(periodMillis);
+        }
+
         @Override
-        public void run() {
+        public void run0() {
             LiveOperations result = populate();
             Set<Address> addresses = result.addresses();
 
