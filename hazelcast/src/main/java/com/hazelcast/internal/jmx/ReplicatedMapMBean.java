@@ -148,9 +148,9 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
     }
 
     @ManagedAnnotation("config")
-    @ManagedDescription("MapConfig")
+    @ManagedDescription("ReplicatedMapConfig")
     public String getConfig() {
-        return service.instance.getConfig().findMapConfig(managedObject.getName()).toString();
+        return service.instance.getConfig().findReplicatedMapConfig(managedObject.getName()).toString();
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
