@@ -10,7 +10,6 @@ to the full descriptions of the issues at https://github.com/hazelcast/hazelcast
 - Hazelcast CLI with Scripting: A command line interface that supports scripting. You can automate cluster operations such as start, stop, and force start using shell scripting. Please refer to Hazelcast CLI plugin page.
 - Hazelcast for OpenShift: Hazelcast members on OpenShift can discover each other.
 - Alignment of WAN Replication Clusters: This feature provides a mechanism to align or realign distributed objects in the clusters connected through WAN. WAN replication mirrors changes from a map or cache in one cluster to another. It was maintaining the alignment but was not attaining. Now when the receiving cluster is empty and the sending cluster is not, objects are aligned. And if changes have been dropped for any reason, realignment is attained.
-- Fault Tolerant Executor Service: An executor task (Runnable or Callable) stores the intermediate state. In the event of failover, computation continues on another member.
 
 2. Enhancements
 
