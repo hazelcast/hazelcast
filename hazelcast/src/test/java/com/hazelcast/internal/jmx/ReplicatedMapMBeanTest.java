@@ -51,7 +51,7 @@ public class ReplicatedMapMBeanTest extends HazelcastTestSupport {
     public void testConfig() throws Exception {
         String config = getStringAttribute("config");
 
-        assertTrue("configuration string should start with 'MapConfig{'", config.startsWith("MapConfig{"));
+        assertTrue("configuration string should start with 'ReplicatedMapConfig{'", config.startsWith("ReplicatedMapConfig{"));
     }
 
     @Test

@@ -303,4 +303,16 @@ public class ReplicatedMapConfig {
     }
 
 
+    @Override
+    public String toString() {
+        return "ReplicatedMapConfig{"
+                + "name='" + name + '\''
+                + "', inMemoryFormat=" + inMemoryFormat + '\''
+                + ", concurrencyLevel=" + concurrencyLevel
+                + ", replicationDelayMillis=" + replicationDelayMillis
+                + ", asyncFillup=" + asyncFillup
+                + ", statisticsEnabled=" + statisticsEnabled
+                + ", mergePolicy='" + mergePolicy + '\''
+                + '}';
+    }
 }
