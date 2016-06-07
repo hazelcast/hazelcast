@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -88,6 +89,10 @@ public class StoreWorker implements Runnable {
         List<DelayedEntry> backupsList = null;
 
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            if (currentThread().isInterrupted()) {
+                break;
+            }
+
             RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
             if (!hasEntryInWriteBehindQueue(recordStore)) {
                 continue;

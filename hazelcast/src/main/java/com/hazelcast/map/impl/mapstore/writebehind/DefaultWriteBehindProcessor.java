@@ -28,9 +28,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static java.lang.Thread.currentThread;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Processes store operations.
@@ -363,6 +364,9 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         for (; k < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION; k++) {
             try {
                 result = task.run();
+            } catch (InterruptedException ex) {
+                currentThread().interrupt();
+                break;
             } catch (Exception ex) {
                 exception = ex;
             }
@@ -420,9 +424,9 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
 
     private void sleepSeconds(long secs) {
         try {
-            TimeUnit.SECONDS.sleep(secs);
+            SECONDS.sleep(secs);
         } catch (InterruptedException e) {
-            logger.warning(e);
+            currentThread().interrupt();
         }
     }
 
