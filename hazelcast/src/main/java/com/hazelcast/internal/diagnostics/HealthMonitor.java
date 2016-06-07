@@ -126,6 +126,8 @@ public class HealthMonitor {
         public void run() {
             try {
                 while (node.getState() == NodeState.ACTIVE) {
+                    healthMetrics.update();
+
                     switch (monitorLevel) {
                         case NOISY:
                             if (healthMetrics.exceedsThreshold()) {
@@ -217,8 +219,6 @@ public class HealthMonitor {
                 = metricRegistry.newLongGauge("runtime.maxMemory");
         final LongGauge runtimeFreeMemory
                 = metricRegistry.newLongGauge("runtime.freeMemory");
-        final LongGauge runtimeAvailableMemory
-                = metricRegistry.newLongGauge("runtime.availableMemory");
         final LongGauge runtimeTotalMemory
                 = metricRegistry.newLongGauge("runtime.totalMemory");
         final LongGauge runtimeUsedMemory
@@ -274,8 +274,8 @@ public class HealthMonitor {
         private double memoryUsedOfMaxPercentage;
 
         public void update() {
-            memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read() / runtimeTotalMemory.read();
-            memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read() / runtimeMaxMemory.read();
+            memoryUsedOfTotalPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeTotalMemory.read();
+            memoryUsedOfMaxPercentage = (PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read()) / runtimeMaxMemory.read();
         }
 
         boolean exceedsThreshold() {
@@ -303,6 +303,7 @@ public class HealthMonitor {
         }
 
         public String render() {
+            update();
             sb.setLength(0);
             renderProcessors();
             renderPhysicalMemory();
@@ -380,9 +381,7 @@ public class HealthMonitor {
                     .append(numberToUnit(runtimeUsedMemory.read())).append(", ");
             sb.append("heap.memory.free=")
                     .append(numberToUnit(runtimeFreeMemory.read())).append(", ");
-            sb.append("heap.memory.available=")
-                    .append(numberToUnit(runtimeAvailableMemory.read())).append(", ");
-            sb.append("heap.memory.total=")
+             sb.append("heap.memory.total=")
                     .append(numberToUnit(runtimeTotalMemory.read())).append(", ");
             sb.append("heap.memory.max=")
                     .append(numberToUnit(runtimeMaxMemory.read())).append(", ");
