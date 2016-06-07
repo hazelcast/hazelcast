@@ -33,7 +33,7 @@ import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.util.concurrent.BlockingQueue;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
@@ -139,7 +139,7 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
             } catch (InterruptedException e) {
                 ignore(e);
             } catch (Throwable t) {
-                inspectOutputMemoryError(t);
+                inspectOutOfMemoryError(t);
                 logger.severe(t);
             }
         }
@@ -150,7 +150,7 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
                 try {
                     responsePacketHandler.handle(response);
                 } catch (Throwable e) {
-                    inspectOutputMemoryError(e);
+                    inspectOutOfMemoryError(e);
                     logger.severe("Failed to process response: " + response + " on response thread:" + getName(), e);
                 }
             }

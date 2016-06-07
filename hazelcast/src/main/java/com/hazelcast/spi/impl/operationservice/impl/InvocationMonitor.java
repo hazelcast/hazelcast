@@ -49,7 +49,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Packet.FLAG_OP;
@@ -255,7 +255,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
                         backupTimeouts++;
                     }
                 } catch (Throwable t) {
-                    inspectOutputMemoryError(t);
+                    inspectOutOfMemoryError(t);
                     logger.severe("Failed to check invocation:" + inv, t);
                 }
             }

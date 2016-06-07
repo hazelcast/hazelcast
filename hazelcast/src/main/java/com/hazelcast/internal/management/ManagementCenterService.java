@@ -75,7 +75,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -306,7 +306,7 @@ public class ManagementCenterService {
                     sleep();
                 }
             } catch (Throwable throwable) {
-                inspectOutputMemoryError(throwable);
+                inspectOutOfMemoryError(throwable);
                 if (!(throwable instanceof InterruptedException)) {
                     logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
                     shutdown();
@@ -346,7 +346,7 @@ public class ManagementCenterService {
                     sleepIfPossible(endMs - startMs);
                 }
             } catch (Throwable throwable) {
-                inspectOutputMemoryError(throwable);
+                inspectOutOfMemoryError(throwable);
                 if (!(throwable instanceof InterruptedException)) {
                     logger.warning("Exception occurred while calculating stats", throwable);
                 }
@@ -479,7 +479,7 @@ public class ManagementCenterService {
                 }
             } catch (Throwable throwable) {
                 if (!(throwable instanceof InterruptedException)) {
-                    inspectOutputMemoryError(throwable);
+                    inspectOutOfMemoryError(throwable);
                     logger.warning("Problem on Hazelcast Management Center Service while polling for a task.", throwable);
                 }
             }

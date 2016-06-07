@@ -31,7 +31,7 @@ import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
@@ -102,7 +102,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
                 process(task);
             }
         } catch (Throwable t) {
-            inspectOutputMemoryError(t);
+            inspectOutOfMemoryError(t);
             logger.severe(t);
         } finally {
             nodeExtension.onThreadStop(this);
@@ -136,7 +136,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
             completedTotalCount.inc();
         } catch (Throwable t) {
             errorCount.inc();
-            inspectOutputMemoryError(t);
+            inspectOutOfMemoryError(t);
             logger.severe("Failed to process packet: " + task + " on " + getName(), t);
         } finally {
             currentRunner = null;

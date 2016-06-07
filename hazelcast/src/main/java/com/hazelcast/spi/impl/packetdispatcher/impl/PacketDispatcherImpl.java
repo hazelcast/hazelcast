@@ -21,7 +21,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.nio.Packet.FLAG_BIND;
 import static com.hazelcast.nio.Packet.FLAG_EVENT;
 import static com.hazelcast.nio.Packet.FLAG_OP;
@@ -73,7 +73,7 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
                 logger.severe("Unknown packet type! Header: " + packet.getFlags());
             }
         } catch (Throwable t) {
-            inspectOutputMemoryError(t);
+            inspectOutOfMemoryError(t);
             logger.severe("Failed to process:" + packet, t);
         }
     }
