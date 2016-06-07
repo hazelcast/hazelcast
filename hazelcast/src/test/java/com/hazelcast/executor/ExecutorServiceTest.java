@@ -60,6 +60,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.ExecutorConfig.DEFAULT_POOL_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -920,11 +921,40 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testExecutorServiceStats() throws InterruptedException, ExecutionException {
-        final IExecutorService executorService = createSingleNodeExecutorService("testExecutorServiceStats");
         final int k = 10;
-        LatchRunnable.latch = new CountDownLatch(k);
+        LocalExecutorStats stats = executeTasksForStats("testExecutorServiceStats", k, true);
 
-        for (int i = 0; i < k; i++) {
+        assertEquals(k + 1, stats.getStartedTaskCount());
+        assertEquals(k, stats.getCompletedTaskCount());
+        assertEquals(0, stats.getPendingTaskCount());
+        assertEquals(1, stats.getCancelledTaskCount());
+    }
+
+    @Test
+    public void testExecutorServiceStats_whenStatsAreDisabled() throws InterruptedException, ExecutionException {
+        LocalExecutorStats stats = executeTasksForStats("testExecutorServiceStats_whenStatsDisabled", 10, false);
+
+        assertEquals(0, stats.getStartedTaskCount());
+        assertEquals(0, stats.getCompletedTaskCount());
+        assertEquals(0, stats.getPendingTaskCount());
+        assertEquals(0, stats.getCancelledTaskCount());
+    }
+
+    /**
+     * Executes {@code tasksToExecute}+1 tasks, allowing {@code tasksToExecute} to complete and cancelling 1.
+     * @param executorName
+     * @param tasksToExecute
+     * @param statsEnabled
+     * @return
+     * @throws InterruptedException
+     * @throws ExecutionException
+     */
+    private LocalExecutorStats executeTasksForStats(String executorName, int tasksToExecute, boolean statsEnabled)
+            throws InterruptedException, ExecutionException {
+        final IExecutorService executorService = createSingleNodeExecutorService(executorName, DEFAULT_POOL_SIZE, statsEnabled);
+        LatchRunnable.latch = new CountDownLatch(tasksToExecute);
+
+        for (int i = 0; i < tasksToExecute; i++) {
             executorService.execute(new LatchRunnable());
         }
         assertOpenEventually(LatchRunnable.latch);
@@ -937,11 +967,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         } catch (CancellationException e) {
         }
 
-        final LocalExecutorStats stats = executorService.getLocalExecutorStats();
-        assertEquals(k + 1, stats.getStartedTaskCount());
-        assertEquals(k, stats.getCompletedTaskCount());
-        assertEquals(0, stats.getPendingTaskCount());
-        assertEquals(1, stats.getCancelledTaskCount());
+        return executorService.getLocalExecutorStats();
     }
 
     static class LatchRunnable implements Runnable, Serializable {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor.impl;
 
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
@@ -54,6 +55,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> RESPONSE_FLAG =
             AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
 
+    // package-local access to allow test to inspect the map's values
+    final ConcurrentMap<String, ExecutorConfig> executorConfigCache = new ConcurrentHashMap<String, ExecutorConfig>();
+
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
     private final ConcurrentMap<String, CallableProcessor> submittedTasks
@@ -68,6 +72,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             return new LocalExecutorStatsImpl();
         }
     };
+
     private ILogger logger;
 
     @Override
@@ -82,6 +87,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         shutdownExecutors.clear();
         submittedTasks.clear();
         statsMap.clear();
+        executorConfigCache.clear();
     }
 
     @Override
@@ -90,8 +96,11 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     public void execute(String name, String uuid, Callable callable, Operation op) {
-        startPending(name);
-        CallableProcessor processor = new CallableProcessor(name, uuid, callable, op);
+        ExecutorConfig cfg = getOrFindExecutorConfig(name);
+        if (cfg.isStatisticsEnabled()) {
+            startPending(name);
+        }
+        CallableProcessor processor = new CallableProcessor(name, uuid, callable, op, cfg.isStatisticsEnabled());
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
@@ -99,7 +108,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         try {
             executionService.execute(name, processor);
         } catch (RejectedExecutionException e) {
-            rejectExecution(name);
+            if (cfg.isStatisticsEnabled()) {
+                rejectExecution(name);
+            }
             logger.warning("While executing " + callable + " on Executor[" + name + "]", e);
             if (uuid != null) {
                 submittedTasks.remove(uuid);
@@ -112,7 +123,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         CallableProcessor processor = submittedTasks.remove(uuid);
         if (processor != null && processor.cancel(interrupt)) {
             if (processor.sendResponse(new CancellationException())) {
-                getLocalExecutorStats(processor.name).cancelExecution();
+                if (processor.isStatisticsEnabled()) {
+                    getLocalExecutorStats(processor.name).cancelExecution();
+                }
                 return true;
             }
         }
@@ -122,6 +135,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public void shutdownExecutor(String name) {
         executionService.shutdownExecutor(name);
         shutdownExecutors.add(name);
+        executorConfigCache.remove(name);
     }
 
     public boolean isShutdown(String name) {
@@ -138,6 +152,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
         statsMap.remove(name);
+        executorConfigCache.remove(name);
     }
 
     LocalExecutorStatsImpl getLocalExecutorStats(String name) {
@@ -177,6 +192,23 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         return executorStats;
     }
 
+    /**
+     * Locate the {@code ExecutorConfig} in local {@link #executorConfigCache} or find it from {@link NodeEngine#getConfig()} and
+     * cache it locally.
+     * @param name
+     * @return
+     */
+    private ExecutorConfig getOrFindExecutorConfig(String name) {
+        ExecutorConfig cfg = executorConfigCache.get(name);
+        if (cfg != null) {
+            return cfg;
+        } else {
+            cfg = nodeEngine.getConfig().findExecutorConfig(name);
+            ExecutorConfig executorConfig = executorConfigCache.putIfAbsent(name, cfg);
+            return executorConfig == null ? cfg : executorConfig;
+        }
+    }
+
     private final class CallableProcessor extends FutureTask implements Runnable {
         //is being used through the RESPONSE_FLAG. Can't be private due to reflection constraint.
         volatile Boolean responseFlag = Boolean.FALSE;
@@ -186,20 +218,24 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         private final Operation op;
         private final String callableToString;
         private final long creationTime = Clock.currentTimeMillis();
+        private final boolean statisticsEnabled;
 
-        private CallableProcessor(String name, String uuid, Callable callable, Operation op) {
+        private CallableProcessor(String name, String uuid, Callable callable, Operation op, boolean statisticsEnabled) {
             //noinspection unchecked
             super(callable);
             this.name = name;
             this.uuid = uuid;
             this.callableToString = String.valueOf(callable);
             this.op = op;
+            this.statisticsEnabled = statisticsEnabled;
         }
 
         @Override
         public void run() {
             long start = Clock.currentTimeMillis();
-            startExecution(name, start - creationTime);
+            if (statisticsEnabled) {
+                startExecution(name, start - creationTime);
+            }
             Object result = null;
             try {
                 super.run();
@@ -215,7 +251,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 }
                 if (!isCancelled()) {
                     sendResponse(result);
-                    finishExecution(name, Clock.currentTimeMillis() - start);
+                    if (statisticsEnabled) {
+                        finishExecution(name, Clock.currentTimeMillis() - start);
+                    }
                 }
             }
         }
@@ -233,6 +271,10 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             }
 
             return false;
+        }
+
+        boolean isStatisticsEnabled() {
+            return statisticsEnabled;
         }
     }
 }
