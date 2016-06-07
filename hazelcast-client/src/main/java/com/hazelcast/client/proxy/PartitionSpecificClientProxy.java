@@ -22,6 +22,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -38,7 +39,8 @@ abstract class PartitionSpecificClientProxy extends ClientProxy {
 
     @Override
     protected void onInitialize() {
-        partitionId = getContext().getPartitionService().getPartitionId(name);
+        String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
+        partitionId = getContext().getPartitionService().getPartitionId(partitionKey);
     }
 
     protected ClientMessage invokeOnPartition(ClientMessage req) {
