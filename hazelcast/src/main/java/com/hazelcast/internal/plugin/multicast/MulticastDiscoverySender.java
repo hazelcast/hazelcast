@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.MulticastSocket;
 
 public class MulticastDiscoverySender implements Runnable {
@@ -34,12 +35,17 @@ public class MulticastDiscoverySender implements Runnable {
     MulticastMemberInfo multicastMemberInfo;
     DatagramPacket datagramPacket;
     ILogger logger;
+    String group;
+    int port;
     private boolean stop;
 
-    public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket, ILogger logger)
+    public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket,
+                                    ILogger logger, String group, int port)
             throws IOException {
         this.multicastSocket = multicastSocket;
         this.logger = logger;
+        this.group = group;
+        this.port = port;
         if (discoveryNode != null) {
             Address address = discoveryNode.getPublicAddress();
             multicastMemberInfo = new MulticastMemberInfo(address.getHost(), address.getPort());
@@ -54,7 +60,7 @@ public class MulticastDiscoverySender implements Runnable {
         out.writeObject(multicastMemberInfo);
         byte[] yourBytes = bos.toByteArray();
         datagramPacket = new DatagramPacket(yourBytes, yourBytes.length,
-                multicastSocket.getInetAddress(), multicastSocket.getPort());
+                InetAddress.getByName(group), port);
     }
 
     @Override
