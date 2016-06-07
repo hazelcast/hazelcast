@@ -47,11 +47,10 @@ public class WanReplicationConfig {
     }
 
     public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
-        if (wanPublisherConfigs == null
-                || wanPublisherConfigs.isEmpty()) {
-            throw new InvalidConfigurationException("WanReplicationConfig must have at least one WanPublisherConfig.");
+        if (wanPublisherConfigs != null
+                && !wanPublisherConfigs.isEmpty()) {
+            this.wanPublisherConfigs = wanPublisherConfigs;
         }
-        this.wanPublisherConfigs = wanPublisherConfigs;
     }
 
     public List<WanPublisherConfig> getWanPublisherConfigs() {
