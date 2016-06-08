@@ -28,8 +28,6 @@ import static java.lang.String.format;
  * or when there is a member attribute change via {@link Member#setBooleanAttribute(String, boolean)}
  * and similar methods.
  *
- * Warning: If the event is triggered by a member attribute change then {@link #members} is <code>null</code>!
- *
  * @see MembershipListener
  */
 @SuppressFBWarnings("SE_BAD_FIELD")
@@ -79,6 +77,8 @@ public class MembershipEvent extends EventObject {
      * you cannot get a deterministic view of the members. This method solves that problem.
      * <p/>
      * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
+     *
+     * Warning: If the event is triggered by a member attribute change then {@link #members} is empty.
      *
      * @return the members at the moment after this event.
      */
