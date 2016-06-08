@@ -75,6 +75,9 @@
                     </hz:properties>
                 </hz:wan-consumer>
             </hz:wan-replication>
+            <hz:wan-replication name="testWan2">
+                <hz:wan-consumer implementation="wanConsumer"/>
+            </hz:wan-replication>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:outbound-ports>
                     <hz:ports>35000-35100</hz:ports>
@@ -455,5 +458,6 @@
     <bean id="dummyDiscoveryStrategyFactory" class="com.hazelcast.spring.DummyDiscoveryStrategyFactory"/>
     <bean id="dummyDiscoveryServiceProvider" class="com.hazelcast.spring.DummyDiscoveryServiceProvider"/>
     <bean id="dummyService" class="com.hazelcast.spring.MyService"/>
+    <bean id="wanConsumer" class="com.hazelcast.spring.DummyWanConsumer"/>
 
 </beans>

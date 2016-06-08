@@ -94,6 +94,7 @@ import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
@@ -129,7 +130,7 @@ import static org.junit.Assert.fail;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullConfig-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class TestFullApplicationContext {
+public class TestFullApplicationContext extends HazelcastTestSupport {
 
     private Config config;
 
@@ -636,6 +637,12 @@ public class TestFullApplicationContext {
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());
         Map<String, Comparable> consumerProps = consumerConfig.getProperties();
         assertEquals("prop.consumer", consumerProps.get("custom.prop.consumer"));
+
+        WanReplicationConfig config2 = config.getWanReplicationConfig("testWan2");
+        WanConsumerConfig consumerConfig2 = config2.getWanConsumerConfig();
+        consumerConfig2.setProperties(consumerProps);
+        assertInstanceOf(DummyWanConsumer.class, consumerConfig2.getImplementation());
+        assertEquals("prop.consumer", consumerConfig2.getProperties().get("custom.prop.consumer"));
     }
 
     @Test
