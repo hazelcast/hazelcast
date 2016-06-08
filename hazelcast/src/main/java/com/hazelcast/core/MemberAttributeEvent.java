@@ -27,6 +27,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
+import static java.util.Collections.EMPTY_SET;
 
 @SuppressFBWarnings("SE_BAD_FIELD")
 public class MemberAttributeEvent extends MembershipEvent implements DataSerializable {
@@ -37,12 +38,12 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
     private Member member;
 
     public MemberAttributeEvent() {
-        super(null, null, MEMBER_ATTRIBUTE_CHANGED, null);
+        super(null, null, MEMBER_ATTRIBUTE_CHANGED, EMPTY_SET);
     }
 
     public MemberAttributeEvent(Cluster cluster, Member member, MemberAttributeOperationType operationType,
                                 String key, Object value) {
-        super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, null);
+        super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, EMPTY_SET);
         this.member = member;
         this.operationType = operationType;
         this.key = key;
