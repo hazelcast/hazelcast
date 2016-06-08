@@ -35,6 +35,14 @@ public interface Storage<K, R> {
 
     R get(K key);
 
+    /**
+     * Gives the same result as {@link #get(Object)}, but with the additional constraint
+     * that the supplied key must not just be equal to, but be exactly the same key blob (at the
+     * same memory address) as the one stored. The implementation of this method is only needed
+     * for the HD memory-based implementations.
+     */
+    R getIfSameKey(K key);
+
     void removeRecord(R record);
 
     boolean containsKey(K key);
