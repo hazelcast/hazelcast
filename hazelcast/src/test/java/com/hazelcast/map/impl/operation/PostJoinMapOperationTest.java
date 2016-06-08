@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -200,6 +201,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/8257
     public void testPostJoinMapOperation_mapWithIndex() {
         TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
 

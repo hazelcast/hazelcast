@@ -18,6 +18,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -115,6 +116,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/5499
     public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
