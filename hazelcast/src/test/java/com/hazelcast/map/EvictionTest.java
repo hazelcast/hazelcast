@@ -179,16 +179,21 @@ public class EvictionTest extends HazelcastTestSupport {
     */
     @Test
     public void testIssue585SetWithoutTTL() throws InterruptedException {
-        IMap<String, String> map = createSimpleMap();
+        final IMap<String, String> map = createSimpleMap();
 
-        String key = "key";
+        final String key = "key";
 
         map.set(key, "value", 1, TimeUnit.SECONDS);
         // this `set` operation should not affect existing ttl.
         // so "key" should be expired after 1 seconds.
         map.set(key, "value2");
 
-        assertSizeEventually(0, map, 300);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull("Key should be expired after 1 seconds", map.get(key));
+            }
+        });
     }
 
     /*
