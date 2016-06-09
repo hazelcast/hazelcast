@@ -80,12 +80,6 @@ public class ClientReadHandler
         eventCount.inc();
 
         lastHandle = Clock.currentTimeMillis();
-        if (!connection.isAlive()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("We are being asked to read, but connection is not live so we won't");
-            }
-            return;
-        }
 
         int readBytes = socketChannel.read(buffer);
         if (readBytes <= 0) {

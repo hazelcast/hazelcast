@@ -22,6 +22,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 
+import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @see IOThreadingModel
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class TcpIpConnection implements Connection {
 
     private final SocketChannelWrapper socketChannel;
@@ -157,10 +159,6 @@ public final class TcpIpConnection implements Connection {
         return connectionId;
     }
 
-    Object getConnectionAddress() {
-        return (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
-    }
-
     public Object getMetricsId() {
         Socket socket = socketChannel.socket();
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
@@ -230,6 +228,8 @@ public final class TcpIpConnection implements Connection {
         this.closeCause = cause;
         this.closeReason = reason;
 
+        logClose();
+
         try {
             if (socketChannel != null && socketChannel.isOpen()) {
                 socketReader.close();
@@ -240,21 +240,35 @@ public final class TcpIpConnection implements Connection {
             logger.warning(e);
         }
 
-        Object connAddress = getConnectionAddress();
-        String message = "Connection [" + connAddress + "] lost. Reason: ";
-        if (closeReason != null) {
-            message = closeReason;
-        } else if (cause == null) {
-            message += "Socket explicitly closed";
-        } else {
-            message += cause.getClass().getName() + "[" + cause.getMessage() + "]";
-        }
-
-        logger.info(message);
         connectionManager.onClose(this);
         connectionManager.getIoService().onDisconnect(endPoint, cause);
         if (cause != null && monitor != null) {
             monitor.onError(cause);
+        }
+    }
+
+    private void logClose() {
+        String message = toString() + " closed. Reason: ";
+        if (closeReason != null) {
+            message += closeReason;
+        } else if (closeCause != null) {
+            message += closeCause.getClass().getName() + "[" + closeCause.getMessage() + "]";
+        } else {
+            message += "Socket explicitly closed";
+        }
+
+        if (connectionManager.getIoService().isActive()) {
+            if (closeCause == null || closeCause instanceof EOFException) {
+                logger.info(message);
+            } else {
+                logger.warning(message, closeCause);
+            }
+        } else {
+            if (closeCause == null) {
+                logger.finest(message);
+            } else {
+                logger.finest(message, closeCause);
+            }
         }
     }
 

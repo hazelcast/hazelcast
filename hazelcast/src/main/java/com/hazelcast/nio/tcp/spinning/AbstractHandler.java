@@ -17,14 +17,11 @@
 package com.hazelcast.nio.tcp.spinning;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
 import java.io.EOFException;
-import java.io.IOException;
-import java.util.logging.Level;
 
 public abstract class AbstractHandler {
 
@@ -45,31 +42,10 @@ public abstract class AbstractHandler {
             connectionManager.getIoService().onOutOfMemory((OutOfMemoryError) e);
         }
 
-        connection.close("Closing connection due to exception in " + getClass().getSimpleName(), e);
-
-        ConnectionType connectionType = connection.getType();
-        if (connectionType.isClient() && !connectionType.isBinary()) {
-            return;
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append(Thread.currentThread().getName());
-        sb.append(" Closing socket to endpoint ");
-        sb.append(connection.getEndPoint());
-        sb.append(", Cause:").append(e);
-        Level level = getLevel(e);
-
-        if (e instanceof IOException) {
-            logger.log(level, sb.toString());
+        if (e instanceof EOFException) {
+            connection.close("Connection closed by the other side", e);
         } else {
-            logger.log(level, sb.toString(), e);
-        }
-    }
-
-    private Level getLevel(Throwable e) {
-        if (ioService.isActive()) {
-            return e instanceof EOFException ? Level.INFO : Level.WARNING;
-        } else {
-            return Level.FINEST;
+            connection.close("Exception in " + getClass().getSimpleName(), e);
         }
     }
 }

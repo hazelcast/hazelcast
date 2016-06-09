@@ -137,11 +137,6 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
         // the connection is going to be closed anyway.
         lastReadTime = currentTimeMillis();
 
-        if (!connection.isAlive()) {
-            logger.finest("We are being asked to read, but connection is not live so we won't");
-            return;
-        }
-
         if (readHandler == null) {
             initReadHandler();
             if (readHandler == null) {
