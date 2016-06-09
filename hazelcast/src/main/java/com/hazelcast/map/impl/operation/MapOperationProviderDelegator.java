@@ -23,7 +23,6 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
-
 import java.util.List;
 import java.util.Set;
 
@@ -233,4 +232,15 @@ public abstract class MapOperationProviderDelegator implements MapOperationProvi
     public MapOperation createLoadMapOperation(String name, boolean replaceExistingValues) {
         return getDelegate().createLoadMapOperation(name, replaceExistingValues);
     }
+
+    @Override
+    public MapOperation createFetchKeysOperation(String name, int lastTableIndex, int fetchSize) {
+        return getDelegate().createFetchKeysOperation(name, lastTableIndex, fetchSize);
+    }
+
+    @Override
+    public MapOperation createFetchEntriesOperation(String name, int lastTableIndex, int fetchSize) {
+        return getDelegate().createFetchEntriesOperation(name, lastTableIndex, fetchSize);
+    }
+
 }

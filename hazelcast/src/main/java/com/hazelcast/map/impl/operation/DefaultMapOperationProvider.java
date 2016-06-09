@@ -233,4 +233,15 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
         return new PutFromLoadAllOperation(name, keyValueSequence);
     }
+
+    @Override
+    public MapOperation createFetchKeysOperation(String name, int lastTableIndex, int fetchSize) {
+        return new MapFetchKeysOperation(name, lastTableIndex, fetchSize);
+    }
+
+    @Override
+    public MapOperation createFetchEntriesOperation(String name, int lastTableIndex, int fetchSize) {
+        return new MapFetchEntriesOperation(name, lastTableIndex, fetchSize);
+    }
+
 }
