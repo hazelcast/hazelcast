@@ -102,12 +102,12 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig()
-                    .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, new PortableFactory() {
-                        public Portable create(int classId) {
-                            return new NamedPortable();
-                        }
+                .addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID, new PortableFactory() {
+                    public Portable create(int classId) {
+                        return new NamedPortable();
+                    }
 
-                    });
+                });
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
@@ -291,7 +291,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertNull(future.get());
         assertEquals("value1", map.get("key"));
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertNull(map.get("key"));
     }
 
