@@ -18,18 +18,16 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheContext;
-import com.hazelcast.cache.impl.CacheEntryIterationResult;
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
-import java.util.AbstractMap;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class CacheRecordHashMap
         extends SampleableConcurrentHashMap<Data, CacheRecord>
@@ -172,28 +170,15 @@ public class CacheRecordHashMap
     }
 
     @Override
-    public CacheKeyIterationResult fetchKeys(int nextTableIndex, int size) {
-        List<Data> keys = new ArrayList<Data>(size);
-        int tableIndex = fetchKeys(nextTableIndex, size, keys);
-        return new CacheKeyIterationResult(keys, tableIndex);
-    }
-
-    @Override
-    public CacheEntryIterationResult fetchEntries(int nextTableIndex, int size) {
-        List<Map.Entry<Data, CacheRecord>> entries = new ArrayList<Map.Entry<Data, CacheRecord>>(size);
-        int newTableIndex = fetchEntries(nextTableIndex, size, entries);
-        List<Map.Entry<Data, Data>> entriesData = new ArrayList<Map.Entry<Data, Data>>(entries.size());
-        for (Map.Entry<Data, CacheRecord> entry : entries) {
-            CacheRecord record = entry.getValue();
-            Data dataValue = serializationService.toData(record.getValue());
-            entriesData.add(new AbstractMap.SimpleEntry<Data, Data>(entry.getKey(), dataValue));
-        }
-        return new CacheEntryIterationResult(entriesData, newTableIndex);
+    public CacheKeyIteratorResult fetchNext(int nextTableIndex, int size) {
+        List<Data> keys = new ArrayList<Data>();
+        int tableIndex = fetch(nextTableIndex, size, keys);
+        return new CacheKeyIteratorResult(keys, tableIndex);
     }
 
     @Override
     public <C extends EvictionCandidate<Data, CacheRecord>> int evict(Iterable<C> evictionCandidates,
-                                                                      EvictionListener<Data, CacheRecord> evictionListener) {
+            EvictionListener<Data, CacheRecord> evictionListener) {
         if (evictionCandidates == null) {
             return 0;
         }

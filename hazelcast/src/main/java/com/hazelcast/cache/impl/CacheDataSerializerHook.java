@@ -26,7 +26,6 @@ import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
-import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
@@ -113,10 +112,8 @@ public final class CacheDataSerializerHook
     public static final short MERGE = 38;
     public static final short INVALIDATION_MESSAGE = 39;
     public static final short BATCH_INVALIDATION_MESSAGE = 40;
-    public static final short ENTRY_ITERATOR = 41;
-    public static final short ENTRY_ITERATION_RESULT = 42;
 
-    private static final int LEN = 43;
+    private static final int LEN = 41;
 
     public int getFactoryId() {
         return F_ID;
@@ -227,7 +224,7 @@ public final class CacheDataSerializerHook
         };
         constructors[KEY_ITERATION_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheKeyIterationResult();
+                return new CacheKeyIteratorResult();
             }
         };
         constructors[ENTRY_PROCESSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -325,16 +322,6 @@ public final class CacheDataSerializerHook
         constructors[BATCH_INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheBatchInvalidationMessage();
-            }
-        };
-        constructors[ENTRY_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheEntryIteratorOperation();
-            }
-        };
-        constructors[ENTRY_ITERATION_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheEntryIterationResult();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

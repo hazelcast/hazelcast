@@ -43,14 +43,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -60,6 +53,14 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
@@ -328,9 +329,9 @@ public class ClientCacheProxy<K, V>
         }
         CacheEventListenerAdaptor<K, V> adaptor =
                 new CacheEventListenerAdaptor<K, V>(this,
-                        cacheEntryListenerConfiguration,
-                        clientContext.getSerializationService(),
-                        clientContext.getHazelcastInstance());
+                                                    cacheEntryListenerConfiguration,
+                                                    clientContext.getSerializationService(),
+                                                    clientContext.getHazelcastInstance());
         EventHandler handler = createHandler(adaptor);
         String regId = clientContext.getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
         if (regId != null) {
@@ -405,18 +406,13 @@ public class ClientCacheProxy<K, V>
     @Override
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
-        return new ClientClusterWideIterator<K, V>(this, clientContext, false);
+        return new ClientClusterWideIterator<K, V>(this, clientContext);
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator(int fetchSize) {
         ensureOpen();
-        return new ClientClusterWideIterator<K, V>(this, clientContext, fetchSize, false);
-    }
-
-    public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
-        ensureOpen();
-        return new ClientCachePartitionIterator<K, V>(this, clientContext, fetchSize, partitionId, prefetchValues);
+        return new ClientClusterWideIterator<K, V>(this, clientContext, fetchSize);
     }
 
     @Override

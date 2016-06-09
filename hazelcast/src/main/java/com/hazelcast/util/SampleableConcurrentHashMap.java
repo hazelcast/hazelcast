@@ -17,12 +17,12 @@
 package com.hazelcast.util;
 
 import com.hazelcast.internal.eviction.Expirable;
-import java.util.AbstractMap;
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
 
@@ -53,7 +53,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     }
 
     public SampleableConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
-                                       ReferenceType keyType, ReferenceType valueType, EnumSet<Option> options) {
+            ReferenceType keyType, ReferenceType valueType, EnumSet<Option> options) {
         super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
     }
 
@@ -67,7 +67,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
      *
      * @return the next index (checkpoint) for later fetches
      */
-    public int fetchKeys(int tableIndex, int size, List<K> keys) {
+    public int fetch(int tableIndex, int size, List<Data> keys) {
         final long now = Clock.currentTimeMillis();
         final Segment<K, V> segment = segments[0];
         final HashEntry<K, V>[] currentTable = segment.table;
@@ -84,44 +84,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
                 if (nextEntry.key() != null) {
                     final V value = nextEntry.value();
                     if (isValidForFetching(value, now)) {
-                        keys.add(nextEntry.key());
-                        counter++;
-                    }
-                }
-                nextEntry = nextEntry.next;
-            }
-        }
-        return nextTableIndex;
-    }
-
-    /**
-     * Fetches entries from given <code>tableIndex</code> as <code>size</code>
-     * and puts them into <code>entries</code> list.
-     *
-     * @param tableIndex           Index (checkpoint) for starting point of fetch operation
-     * @param size                 Count of how many entries will be fetched
-     * @param entries              List that fetched entries will be put into
-     * @return the next index (checkpoint) for later fetches
-     */
-    public int fetchEntries(int tableIndex, int size, List<Map.Entry<K, V>> entries) {
-        final long now = Clock.currentTimeMillis();
-        final Segment<K, V> segment = segments[0];
-        final HashEntry<K, V>[] currentTable = segment.table;
-        int nextTableIndex;
-        if (tableIndex >= 0 && tableIndex < segment.table.length) {
-            nextTableIndex = tableIndex;
-        } else {
-            nextTableIndex = currentTable.length - 1;
-        }
-        int counter = 0;
-        while (nextTableIndex >= 0 && counter < size) {
-            HashEntry<K, V> nextEntry = currentTable[nextTableIndex--];
-            while (nextEntry != null) {
-                if (nextEntry.key() != null) {
-                    final V value = nextEntry.value();
-                    if (isValidForFetching(value, now)) {
-                        K key = nextEntry.key();
-                        entries.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+                        keys.add((Data) nextEntry.key());
                         counter++;
                     }
                 }
@@ -193,6 +156,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
      * Gets and returns samples as <code>sampleCount</code>.
      *
      * @param sampleCount Count of samples
+     *
      * @return the sampled {@link SamplingEntry} list
      */
     public <E extends SamplingEntry> Iterable<E> getRandomSamples(int sampleCount) {

@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheKeyIterationResult;
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +31,7 @@ import java.io.IOException;
  * Initializes and grabs a number of keys defined by <code>size</code> parameter from the
  * {@link com.hazelcast.cache.impl.ICacheRecordStore} with the last table index.
  * </p>
- * @see com.hazelcast.cache.impl.ICacheRecordStore#fetchKeys(int, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#iterator(int, int)
  */
 public class CacheKeyIteratorOperation
         extends AbstractCacheOperation
@@ -57,7 +57,7 @@ public class CacheKeyIteratorOperation
     @Override
     public void run()
             throws Exception {
-        final CacheKeyIterationResult iterator = this.cache.fetchKeys(tableIndex, size);
+        final CacheKeyIteratorResult iterator = this.cache.iterator(tableIndex, size);
         response = iterator;
     }
 

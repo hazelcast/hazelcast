@@ -28,7 +28,6 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.iterator.MapPartitionIterator;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultCollection;
@@ -56,10 +55,10 @@ import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -789,10 +788,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw (Throwable) returnObj;
         }
         return returnObj;
-    }
-
-    public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
-        return new MapPartitionIterator<K, V>(this, fetchSize, partitionId, prefetchValues);
     }
 
     @Override

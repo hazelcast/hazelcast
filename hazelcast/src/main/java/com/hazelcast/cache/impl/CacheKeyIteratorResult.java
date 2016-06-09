@@ -20,30 +20,30 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
- * <p>Response data object returned by {@link com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation }.</p>
- * This result wrapper is used in {@link AbstractClusterWideIterator}'s subclasses to return a collection of entries
+ * <p>Response data object returned by {@link com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation }.</p>
+ * This result wrapper is used in {@link AbstractClusterWideIterator}'s subclasses to return a collection of keys
  * and the last tableIndex processed.
  *
  * @see AbstractClusterWideIterator
- * @see com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation
+ * @see com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation
  */
-public class CacheEntryIterationResult implements IdentifiedDataSerializable {
+public class CacheKeyIteratorResult
+        implements IdentifiedDataSerializable {
 
     private int tableIndex;
-    private List<Map.Entry<Data, Data>> entries;
+    private List<Data> keys;
 
-    public CacheEntryIterationResult() {
+    public CacheKeyIteratorResult() {
     }
 
-    public CacheEntryIterationResult(List<Map.Entry<Data, Data>> entries, int tableIndex) {
-        this.entries = entries;
+    public CacheKeyIteratorResult(List<Data> keys, int tableIndex) {
+        this.keys = keys;
         this.tableIndex = tableIndex;
     }
 
@@ -51,8 +51,8 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
         return tableIndex;
     }
 
-    public List<Map.Entry<Data, Data>> getEntries() {
-        return entries;
+    public List<Data> getKeys() {
+        return keys;
     }
 
     @Override
@@ -62,19 +62,19 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
 
     @Override
     public int getId() {
-        return CacheDataSerializerHook.ENTRY_ITERATION_RESULT;
+        return CacheDataSerializerHook.KEY_ITERATION_RESULT;
     }
 
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeInt(tableIndex);
-        int size = entries.size();
+        int size = keys.size();
         out.writeInt(size);
-        for (Map.Entry<Data, Data> entry : entries) {
-            out.writeData(entry.getKey());
-            out.writeData(entry.getValue());
+        for (Data o : keys) {
+            out.writeData(o);
         }
+
     }
 
     @Override
@@ -82,21 +82,23 @@ public class CacheEntryIterationResult implements IdentifiedDataSerializable {
             throws IOException {
         tableIndex = in.readInt();
         int size = in.readInt();
-        entries = new ArrayList<Map.Entry<Data, Data>>(size);
+        keys = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data key = in.readData();
-            Data value = in.readData();
-            entries.add(new AbstractMap.SimpleEntry<Data, Data>(key, value));
+            Data data = in.readData();
+            keys.add(data);
         }
     }
 
     @Override
     public String toString() {
-        return "CacheEntryIteratorResult{tableIndex=" + tableIndex + '}';
+        return "CacheKeyIteratorResult{tableIndex=" + tableIndex + '}';
     }
 
     public int getCount() {
-        return entries != null ? entries.size() : 0;
+        return keys != null ? keys.size() : 0;
     }
 
+    public Data getKey(int index) {
+        return keys != null ? keys.get(index) : null;
+    }
 }

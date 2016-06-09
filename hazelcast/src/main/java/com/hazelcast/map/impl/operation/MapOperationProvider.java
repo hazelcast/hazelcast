@@ -23,6 +23,7 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
+
 import java.util.List;
 import java.util.Set;
 
@@ -90,9 +91,6 @@ public interface MapOperationProvider {
 
     MapOperation createLoadMapOperation(String name, boolean replaceExistingValues);
 
-    MapOperation createFetchKeysOperation(String name, int lastTableIndex, int fetchSize);
-
-    MapOperation createFetchEntriesOperation(String name, int lastTableIndex, int fetchSize);
 
     OperationFactory createPartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor);
 

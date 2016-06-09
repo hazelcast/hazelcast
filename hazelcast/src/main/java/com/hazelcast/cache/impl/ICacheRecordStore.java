@@ -41,7 +41,6 @@ import java.util.Set;
  *
  * @see com.hazelcast.cache.impl.CacheRecordStore
  */
-@SuppressWarnings("checkstyle:methodcount")
 public interface ICacheRecordStore {
 
     int UNIT_PERCENTAGE = 100;
@@ -385,17 +384,9 @@ public interface ICacheRecordStore {
      * Starting from the provided table index, a set of keys are returned with a maximum size of <code>size</code>
      * @param tableIndex initial table index.
      * @param size maximum key set size.
-     * @return {@link CacheKeyIterationResult} which wraps keys and last tableIndex.
+     * @return {@link CacheKeyIteratorResult} which wraps keys and last tableIndex.
      */
-    CacheKeyIterationResult fetchKeys(int tableIndex, int size);
-
-    /**
-     * Starting from the provided table index, a set of entries are returned with a maximum size of <code>size</code>
-     * @param tableIndex initial table index.
-     * @param size maximum entry set size.
-     * @return {@link CacheEntryIterationResult} which wraps entries and last tableIndex.
-     */
-    CacheEntryIterationResult fetchEntries(int tableIndex, int size);
+    CacheKeyIteratorResult iterator(int tableIndex, int size);
 
     /**
      * Invokes an {@link EntryProcessor} against the {@link javax.cache.Cache.Entry} specified by

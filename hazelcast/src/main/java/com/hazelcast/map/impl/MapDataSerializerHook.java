@@ -19,8 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
-import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
@@ -56,10 +54,8 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVICT_BACKUP = 11;
     public static final int CONTAINS_KEY = 12;
     public static final int PUT_ALL_PER_MEMBER = 13;
-    public static final int KEYS_WITH_CURSOR = 14;
-    public static final int ENTRIES_WITH_CURSOR = 15;
 
-    private static final int LEN = ENTRIES_WITH_CURSOR + 1;
+    private static final int LEN = PUT_ALL_PER_MEMBER + 1;
 
     @Override
     public int getFactoryId() {
@@ -138,16 +134,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_ALL_PER_MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutAllPerMemberOperation();
-            }
-        };
-        constructors[KEYS_WITH_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapKeysWithCursor();
-            }
-        };
-        constructors[ENTRIES_WITH_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEntriesWithCursor();
             }
         };
 
