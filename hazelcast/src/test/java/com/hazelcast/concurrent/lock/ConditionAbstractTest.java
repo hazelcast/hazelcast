@@ -6,6 +6,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;

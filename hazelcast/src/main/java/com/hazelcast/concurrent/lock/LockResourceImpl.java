@@ -191,7 +191,18 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         }
     }
 
-    public void signal(String conditionId, int maxSignalCount) {
+    /**
+     * Signal a waiter.
+     *
+     * We need to pass objectName because the name in {#objectName} is unrealible.
+     *
+     * @param conditionId
+     * @param maxSignalCount
+     * @param objectName
+     *
+     * @see InternalLockNamespace
+     */
+    public void signal(String conditionId, int maxSignalCount, String objectName) {
         if (waiters == null) {
             return;
         }
@@ -206,7 +217,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         if (waiters == null) {
             return;
         }
-        String objectName = lockStore.getNamespace().getObjectName();
         Iterator<WaitersInfo.ConditionWaiter> iterator = waiters.iterator();
         for (int i = 0; iterator.hasNext() && i < maxSignalCount; i++) {
             WaitersInfo.ConditionWaiter waiter = iterator.next();
