@@ -24,12 +24,13 @@
     </properties>
 
     <network>
+        <port>6001</port>
         <join>
             <multicast enabled="false"/>
             <tcp-ip enabled="false" />
             <aws enabled="false"/>
             <discovery-strategies>
-                <discovery-strategy enabled="true" class="com.hazelcast.multicast.MulticastDiscoveryStrategy">
+                <discovery-strategy enabled="true" class="com.hazelcast.internal.plugin.multicast.MulticastDiscoveryStrategy">
                 </discovery-strategy>
             </discovery-strategies>
         </join>

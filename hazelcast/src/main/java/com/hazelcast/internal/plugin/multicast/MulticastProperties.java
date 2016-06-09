@@ -22,6 +22,7 @@ import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
 
+import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
@@ -30,7 +31,7 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 public final class MulticastProperties {
 
 
-    public static final PropertyDefinition PORT = property("port", STRING);
+    public static final PropertyDefinition PORT = property("port", INTEGER);
     /**
      * Property used to define zones for node filtering
      */

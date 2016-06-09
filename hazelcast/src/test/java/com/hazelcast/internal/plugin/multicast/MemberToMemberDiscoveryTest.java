@@ -21,6 +21,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -46,6 +47,8 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
 
     @Test
     public void formClusterWithTwoMembersTest() throws InterruptedException {
+        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
+        System.setProperty("java.net.preferIPv4Stack", "true");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         instances = factory.newInstances(config);
         assertClusterSizeEventually(2, instances[0]);

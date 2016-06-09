@@ -24,6 +24,7 @@ import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import java.util.Map;
 public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private static final int DATA_OUTPUT_BUFFER_SIZE = 64 * 1024;
-    private static final int DEFAULT_MULTICAST_PORT = 64 * 54327;
+    private static final int DEFAULT_MULTICAST_PORT = 54327;
     private static final int SOCKET_TIME_TO_LIVE = 255;
     private static final int SOCKET_TIMEOUT = 3000;
     private static final String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
@@ -56,15 +57,18 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
     private void initializeMulticastSocket() {
         try {
             int port = getOrDefault(MulticastProperties.PORT, DEFAULT_MULTICAST_PORT);
+            MulticastProperties.PortValueValidator validator = new MulticastProperties.PortValueValidator();
+            validator.validate(port);
             String group = getOrDefault(MulticastProperties.GROUP, DEFAULT_MULTICAST_GROUP);
-            multicastSocket = new MulticastSocket(port);
+            multicastSocket = new MulticastSocket(null);
+            multicastSocket.bind(new InetSocketAddress(port));
             multicastSocket.setReuseAddress(true);
             multicastSocket.setTimeToLive(SOCKET_TIME_TO_LIVE);
             multicastSocket.setReceiveBufferSize(DATA_OUTPUT_BUFFER_SIZE);
             multicastSocket.setSendBufferSize(DATA_OUTPUT_BUFFER_SIZE);
             multicastSocket.setSoTimeout(SOCKET_TIMEOUT);
             multicastSocket.joinGroup(InetAddress.getByName(group));
-            multicastDiscoverySender = new MulticastDiscoverySender(discoveryNode, multicastSocket, logger);
+            multicastDiscoverySender = new MulticastDiscoverySender(discoveryNode, multicastSocket, logger, group, port);
             multicastDiscoveryReceiver = new MulticastDiscoveryReceiver(multicastSocket, logger);
             if (discoveryNode != null) {
                 isClient = false;
