@@ -24,11 +24,16 @@ import java.util.Set;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class LiteMemberJoinTest {
+
+    private final String name = randomString();
+
+    private final String pw = randomString();
 
     @Before
     @After
@@ -57,8 +62,8 @@ public class LiteMemberJoinTest {
     }
 
     private void test_liteMemberBecomesMaster(final ConfigCreator configCreator) {
-        final HazelcastInstance liteMaster = Hazelcast.newHazelcastInstance(configCreator.create(true));
-        final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(false));
+        final HazelcastInstance liteMaster = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, true));
+        final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
 
         assertTrue(getNode(liteMaster).isMaster());
         assertClusterSizeEventually(2, liteMaster);
@@ -79,8 +84,8 @@ public class LiteMemberJoinTest {
     }
 
     private void test_liteMemberJoinsToCluster(final ConfigCreator configCreator) {
-        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(false));
-        Hazelcast.newHazelcastInstance(configCreator.create(true));
+        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
+        Hazelcast.newHazelcastInstance(configCreator.create(name, pw, true));
 
         final Set<Member> members = master.getCluster().getMembers();
         assertLiteMemberExcluding(members, master);
@@ -97,9 +102,9 @@ public class LiteMemberJoinTest {
     }
 
     private void test_liteMemberBecomesVisibleTo2ndNode(final ConfigCreator configCreator) {
-        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(false));
-        final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(false));
-        Hazelcast.newHazelcastInstance(configCreator.create(true));
+        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
+        final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
+        Hazelcast.newHazelcastInstance(configCreator.create(name, pw, true));
 
         assertClusterSizeEventually(3, other);
 
@@ -118,9 +123,9 @@ public class LiteMemberJoinTest {
     }
 
     private void test_liteMemberBecomesVisibleTo3rdNode(final ConfigCreator configCreator) {
-        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(false));
-        Hazelcast.newHazelcastInstance(configCreator.create(true));
-        final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(false));
+        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
+        Hazelcast.newHazelcastInstance(configCreator.create(name, pw, true));
+        final HazelcastInstance other = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
 
         final Set<Member> members = other.getCluster().getMembers();
         assertLiteMemberExcluding(members, master, other);
@@ -137,8 +142,8 @@ public class LiteMemberJoinTest {
     }
 
     private void test_liteMemberReconnects(final ConfigCreator configCreator) {
-        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(false));
-        final HazelcastInstance liteInstance = Hazelcast.newHazelcastInstance(configCreator.create(true));
+        final HazelcastInstance master = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, false));
+        final HazelcastInstance liteInstance = Hazelcast.newHazelcastInstance(configCreator.create(name, pw, true));
 
         closeConnectionBetween(master, liteInstance);
 
@@ -179,8 +184,11 @@ public class LiteMemberJoinTest {
 
         TCP_CONFIG_CREATOR {
             @Override
-            public Config create(boolean liteMember) {
+            public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
+                config.getGroupConfig().setName(name);
+                config.getGroupConfig().setPassword(pw);
+
                 config.setLiteMember(liteMember);
 
                 NetworkConfig networkConfig = config.getNetworkConfig();
@@ -196,8 +204,11 @@ public class LiteMemberJoinTest {
 
         MULTICAST_CONFIG_CREATOR {
             @Override
-            public Config create(boolean liteMember) {
+            public Config create(String name, String pw, boolean liteMember) {
                 Config config = new Config();
+                config.getGroupConfig().setName(name);
+                config.getGroupConfig().setPassword(pw);
+
                 config.setLiteMember(liteMember);
 
                 NetworkConfig networkConfig = config.getNetworkConfig();
@@ -209,7 +220,7 @@ public class LiteMemberJoinTest {
             }
         };
 
-        public abstract Config create(boolean liteMember);
+        public abstract Config create(String name, String pw, boolean liteMember);
 
     }
 
