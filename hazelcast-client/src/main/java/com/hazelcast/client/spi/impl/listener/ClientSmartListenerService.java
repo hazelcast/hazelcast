@@ -165,7 +165,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                     try {
                         invoke(registrationKey, member.getAddress());
                     } catch (Exception e) {
-                        logger.warning("Listener " + registrationKey + " can not added to new member " + member);
+                        logger.warning("Listener " + registrationKey + " can not added to new member " + member + ". Reason:" + e);
                     }
                 }
             }
@@ -181,7 +181,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 members.remove(member);
                 for (Map<Address, ClientEventRegistration> registrationMap : registrations.values()) {
                     ClientEventRegistration registration = registrationMap.remove(member.getAddress());
-                    removeEventHandler(registration.getCallId());
+                    if (null != registration) {
+                        removeEventHandler(registration.getCallId());
+                    }
                 }
             }
         });
