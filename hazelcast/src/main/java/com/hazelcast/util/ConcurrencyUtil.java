@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Utility methods to getOrPutSynchronized and getOrPutIfAbsent in a thread safe way
@@ -94,6 +95,18 @@ public final class ConcurrencyUtil {
             V current = map.putIfAbsent(key, value);
             value = current == null ? value : current;
         }
+        return value;
+    }
+
+    public static <V, A> V getOrSetIfAbsent(AtomicReference<V> reference, ConstructorFunction<A, V> func, A argument) {
+        V value;
+        do {
+            value = reference.get();
+            if (value != null) {
+                return value;
+            }
+            value = func.createNew(argument);
+        } while (!reference.compareAndSet(null, value));
         return value;
     }
 

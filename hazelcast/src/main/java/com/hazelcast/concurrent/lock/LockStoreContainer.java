@@ -25,10 +25,12 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class LockStoreContainer {
 
@@ -37,6 +39,8 @@ public final class LockStoreContainer {
 
     private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores =
             new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
+    private final AtomicReference<LockStoreImpl> internalLockStore = new AtomicReference<LockStoreImpl>();
+
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor =
             new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
                 public LockStoreImpl createNew(ObjectNamespace namespace) {
@@ -61,6 +65,13 @@ public final class LockStoreContainer {
     }
 
     void clearLockStore(ObjectNamespace namespace) {
+        if (isInternalNamespace(namespace)) {
+            LockStoreImpl lockStore = internalLockStore.getAndSet(null);
+            if (lockStore != null) {
+                lockStore.clear();
+            }
+            return;
+        }
         LockStoreImpl lockStore = lockStores.remove(namespace);
         if (lockStore != null) {
             lockStore.clear();
@@ -68,15 +79,31 @@ public final class LockStoreContainer {
     }
 
     LockStoreImpl getOrCreateLockStore(ObjectNamespace namespace) {
+        if (isInternalNamespace(namespace)) {
+            return ConcurrencyUtil.getOrSetIfAbsent(internalLockStore, lockStoreConstructor, namespace);
+        }
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 
+    private boolean isInternalNamespace(ObjectNamespace namespace) {
+        return namespace.getClass().equals(InternalLockNamespace.class);
+    }
+
     LockStoreImpl getLockStore(ObjectNamespace namespace) {
+        if (isInternalNamespace(namespace)) {
+            return internalLockStore.get();
+        }
         return lockStores.get(namespace);
     }
 
     public Collection<LockStoreImpl> getLockStores() {
-        return Collections.unmodifiableCollection(lockStores.values());
+        LockStoreImpl currentInternalLockStore = internalLockStore.get();
+        if (currentInternalLockStore == null) {
+            return Collections.unmodifiableCollection(lockStores.values());
+        }
+        ArrayList<LockStoreImpl> combinedStores = new ArrayList<LockStoreImpl>(lockStores.values());
+        combinedStores.add(currentInternalLockStore);
+        return combinedStores;
     }
 
     void clear() {
@@ -84,17 +111,28 @@ public final class LockStoreContainer {
             lockStore.clear();
         }
         lockStores.clear();
+        LockStoreImpl store = internalLockStore.getAndSet(null);
+        if (store != null) {
+            store.clear();
+        }
+
     }
 
     int getPartitionId() {
         return partitionId;
     }
 
-    public void put(LockStoreImpl ls) {
-        ls.setLockService(lockService);
-        EntryTaskScheduler entryTaskScheduler = createScheduler(ls.getNamespace());
-        ls.setEntryTaskScheduler(entryTaskScheduler);
-        lockStores.put(ls.getNamespace(), ls);
+    public void put(LockStoreImpl lockStore) {
+        lockStore.setLockService(lockService);
+        ObjectNamespace namespace = lockStore.getNamespace();
+        EntryTaskScheduler entryTaskScheduler = createScheduler(lockStore.getNamespace());
+        lockStore.setEntryTaskScheduler(entryTaskScheduler);
+        if (isInternalNamespace(namespace)) {
+            internalLockStore.set(lockStore);
+        } else {
+            lockStores.put(lockStore.getNamespace(), lockStore);
+        }
+
     }
 
     private EntryTaskScheduler createScheduler(ObjectNamespace namespace) {

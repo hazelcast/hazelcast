@@ -61,13 +61,17 @@ public final class InternalLockNamespace implements ObjectNamespace {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        //todo: we don't include the name in the equals?
+        InternalLockNamespace that = (InternalLockNamespace) o;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
         return true;
     }
 
     @Override
     public int hashCode() {
-        //todo: we don't include the name in the hash?
-        return getServiceName().hashCode();
+        int result = getServiceName().hashCode();
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        return result;
     }
 }
