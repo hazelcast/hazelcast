@@ -657,7 +657,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             while (remaining > 0 && nextTableIndex > 0) {
                 int size = (remaining > fetchSize ? fetchSize : remaining);
                 List<Data> keys = new ArrayList<Data>(size);
-                nextTableIndex = map.fetchKeys(nextTableIndex, size, keys);
+                nextTableIndex = map.fetch(nextTableIndex, size, keys);
                 remaining -= keys.size();
                 total += keys.size();
             }

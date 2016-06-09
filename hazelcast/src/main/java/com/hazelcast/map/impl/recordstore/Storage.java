@@ -18,9 +18,6 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.SizeEstimator;
 
-import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
-import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
-import com.hazelcast.spi.serialization.SerializationService;
 import java.util.Collection;
 
 /**
@@ -73,9 +70,4 @@ public interface Storage<K, R> {
      * @return sampled entries.
      */
     Iterable<LazyEntryViewFromRecord> getRandomSamples(int sampleCount);
-
-    MapKeysWithCursor fetchKeys(int tableIndex, int size);
-
-    MapEntriesWithCursor fetchEntries(int tableIndex, int size, SerializationService serializationService);
-
 }

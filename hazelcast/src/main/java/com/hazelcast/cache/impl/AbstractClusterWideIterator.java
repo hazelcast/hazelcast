@@ -18,34 +18,33 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.nio.serialization.Data;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+
 import javax.cache.Cache;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * {@link AbstractClusterWideIterator} provides the core iterator functionality shared by its descendants.
- * <p>
- * <p>Hazelcast cluster is made of partitions which holds a slice of all clusters data. Partition count
+ *
+ *<p>Hazelcast cluster is made of partitions which holds a slice of all clusters data. Partition count
  * never increase or decrease in a cluster. In order to implement an iterator over a partitioned data, we use
  * the following parameters.
- * <ul>
- * <li>To iterate over partitioned data, we use partitionId as the first parameter of this iterator.</li>
- * <li>Each partition may have a lot of entries, so we use a second parameter to track the iteration of the
+ *<ul>
+ *<li>To iterate over partitioned data, we use partitionId as the first parameter of this iterator.</li>
+ *<li>Each partition may have a lot of entries, so we use a second parameter to track the iteration of the
  * partition.</li>
- * </ul>
- * </p>
+ *</ul>
+ *</p>
  * <p>
- * Iteration steps:
+ *Iteration steps:
  * <ul>
- * <li>fetching fixed sized of keys from the current partition defined by partitionId.</li>
- * <li>iteration on fetched keys.</li>
- * <li>get value of each key with {@link #next()} when method is called.</li>
- * <li>when fetched keys are all used by calling {@link #next()}, more keys are fetched from the cluster.</li>
+ *     <li>fetching fixed sized of keys from the current partition defined by partitionId.</li>
+ *     <li>iteration on fetched keys.</li>
+ *     <li>get value of each key with {@link #next()} when method is called.</li>
+ *     <li>when fetched keys are all used by calling {@link #next()}, more keys are fetched from the cluster.</li>
  * </ul>
  * This implementation iterates over partitions and for each partition it iterates over the internal map using the
- * internal table index of the map {@link com.hazelcast.util.SampleableConcurrentHashMap}.
+ *     internal table index of the map {@link com.hazelcast.util.SampleableConcurrentHashMap}.
  * </p>
  * <p>
  * <h2>Fetching data from cluster:</h2>
@@ -69,9 +68,9 @@ import javax.cache.Cache;
  *
  * @param <K> the type of key.
  * @param <V> the type of value.
- * @see com.hazelcast.cache.impl.CacheRecordStore#fetchKeys(int tableIndex, int size)
+ * @see com.hazelcast.cache.impl.CacheRecordStore#iterator(int tableIndex, int size)
  * @see com.hazelcast.cache.impl.ClusterWideIterator
- * @see CacheKeyIterationResult
+ * @see com.hazelcast.cache.impl.CacheKeyIteratorResult
  */
 public abstract class AbstractClusterWideIterator<K, V>
         implements Iterator<Cache.Entry<K, V>> {
@@ -80,36 +79,27 @@ public abstract class AbstractClusterWideIterator<K, V>
 
     protected ICache<K, V> cache;
 
-    protected List result;
+    protected CacheKeyIteratorResult result;
     protected final int partitionCount;
     protected int partitionIndex = -1;
 
-    /**
-     * The table is segment table of hash map, which is an array that stores the actual records.
-     * This field is used to mark where the latest entry is read.
-     * <p>
-     * The iteration will start from highest index available to the table.
-     * It will be converted to array size on the server side.
-     */
-    protected int lastTableIndex = Integer.MAX_VALUE;
+    protected int lastTableIndex;
 
     protected final int fetchSize;
-    protected boolean prefetchValues;
 
     protected int index;
     protected int currentIndex = -1;
 
-    public AbstractClusterWideIterator(ICache<K, V> cache, int partitionCount, int fetchSize, boolean prefetchValues) {
+    public AbstractClusterWideIterator(ICache<K, V> cache, int partitionCount, int fetchSize) {
         this.cache = cache;
         this.partitionCount = partitionCount;
         this.fetchSize = fetchSize;
-        this.prefetchValues = prefetchValues;
     }
 
     @Override
     public boolean hasNext() {
         ensureOpen();
-        if (result != null && index < result.size()) {
+        if (result != null && index < result.getCount()) {
             return true;
         }
         return advance();
@@ -120,9 +110,9 @@ public abstract class AbstractClusterWideIterator<K, V>
         while (hasNext()) {
             currentIndex = index;
             index++;
-            final Data keyData = getKey(currentIndex);
+            final Data keyData = result.getKey(currentIndex);
             final K key = toObject(keyData);
-            final V value = getValue(currentIndex, key);
+            final V value = cache.get(key);
             // Value might be removed or evicted
             if (value != null) {
                 return new CacheEntry<K, V>(key, value);
@@ -137,7 +127,7 @@ public abstract class AbstractClusterWideIterator<K, V>
         if (result == null || currentIndex < 0) {
             throw new IllegalStateException("Iterator.next() must be called before remove()!");
         }
-        Data keyData = getKey(currentIndex);
+        Data keyData = result.getKey(currentIndex);
         final K key = toObject(keyData);
         cache.remove(key);
         currentIndex = -1;
@@ -145,7 +135,7 @@ public abstract class AbstractClusterWideIterator<K, V>
 
     protected boolean advance() {
         while (partitionIndex < getPartitionCount()) {
-            if (result == null || result.size() < fetchSize || lastTableIndex < 0) {
+            if (result == null || result.getCount() < fetchSize || lastTableIndex < 0) {
                 partitionIndex++;
                 lastTableIndex = Integer.MAX_VALUE;
                 result = null;
@@ -154,39 +144,14 @@ public abstract class AbstractClusterWideIterator<K, V>
                 }
             }
             result = fetch();
-            if (result != null && result.size() > 0) {
+            if (result != null && result.getCount() > 0) {
                 index = 0;
+                lastTableIndex = result.getTableIndex();
                 return true;
             }
         }
         return false;
     }
-
-
-    private Data getKey(int index) {
-        if (result != null) {
-            if (prefetchValues) {
-                Map.Entry<Data, Data> entry = (Map.Entry<Data, Data>) result.get(index);
-                return entry.getKey();
-            } else {
-                return (Data) result.get(index);
-            }
-        }
-        return null;
-    }
-
-    private V getValue(int index, K key) {
-        if (result != null) {
-            if (prefetchValues) {
-                Map.Entry<Data, Data> entry = (Map.Entry<Data, Data>) result.get(index);
-                return (V) toObject(entry.getValue());
-            } else {
-                return cache.get(key);
-            }
-        }
-        return null;
-    }
-
 
     protected void ensureOpen() {
         if (cache.isClosed()) {
@@ -194,17 +159,11 @@ public abstract class AbstractClusterWideIterator<K, V>
         }
     }
 
-    protected void setLastTableIndex(List response, int lastTableIndex) {
-        if (response != null && response.size() > 0) {
-            this.lastTableIndex = lastTableIndex;
-        }
-    }
-
     protected int getPartitionCount() {
         return partitionCount;
     }
 
-    protected abstract List fetch();
+    protected abstract CacheKeyIteratorResult fetch();
 
     protected abstract Data toData(Object obj);
 

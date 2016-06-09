@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.cache.impl.operation.CacheEntryIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheGetAndRemoveOperation;
@@ -109,11 +108,6 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     @Override
     public Operation createKeyIteratorOperation(int lastTableIndex, int fetchSize) {
         return new CacheKeyIteratorOperation(nameWithPrefix, lastTableIndex, fetchSize);
-    }
-
-    @Override
-    public Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize) {
-        return new CacheEntryIteratorOperation(nameWithPrefix, lastTableIndex, fetchSize);
     }
 
     @Override
