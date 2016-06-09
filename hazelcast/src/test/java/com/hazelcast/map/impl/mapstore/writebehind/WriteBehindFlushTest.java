@@ -179,7 +179,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         return config;
     }
 
-    protected void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {
+    public static void assertWriteBehindQueuesEmpty(final String mapName, final List<HazelcastInstance> nodes) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

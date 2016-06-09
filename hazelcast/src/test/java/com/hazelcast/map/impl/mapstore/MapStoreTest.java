@@ -35,7 +35,6 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.map.impl.mapstore.MapStoreWriteBehindTest.RecordingMapStore;
 import com.hazelcast.map.impl.mapstore.writebehind.MapStoreWithCounter;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -53,6 +52,7 @@ import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,6 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -924,33 +925,26 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     @Test(timeout = 120000)
     public void testMapStoreWriteRemoveOrder() {
-        final String mapName = randomMapName("testMapStoreWriteDeleteOrder");
-        final int numIterations = 10;
-        final int writeDelaySeconds = 3;
-        // create map store implementation
-        final RecordingMapStore store = new RecordingMapStore(0, 1);
-        // create hazelcast config
-        final Config config = newConfig(mapName, store, writeDelaySeconds);
-        // start hazelcast instance
-        final HazelcastInstance hzInstance = createHazelcastInstance(config);
-        // loop over num iterations
-        final IMap<String, String> map = hzInstance.getMap(mapName);
-        for (int k = 0; k < numIterations; k++) {
-            String key = String.valueOf(k + 10); // 2 digits for sorting in output
-            String value = "v:" + key;
-            // add entry
-            map.put(key, value);
-            // sleep 300ms
-            sleepMillis(1);
-            // remove entry
+        String mapName = randomMapName("testMapStoreWriteDeleteOrder");
+        final SimpleMapStore store = new SimpleMapStore();
+        Config config = newConfig(mapName, store, 3);
+        HazelcastInstance hzInstance = createHazelcastInstance(config);
+
+        IMap map = hzInstance.getMap(mapName);
+
+        for (int key = 0; key < 10; key++) {
+            map.put(key, key);
+            sleepMillis(10);
             map.remove(key);
         }
-        // wait for store to finish
-        store.awaitStores();
-        // wait for remove to finish
-        store.awaitRemoves();
 
-        assertEquals(0, store.getStore().size());
+        assertWriteBehindQueuesEmpty(mapName, Arrays.asList(hzInstance));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, store.store.size());
+            }
+        });
     }
 
     @Test
