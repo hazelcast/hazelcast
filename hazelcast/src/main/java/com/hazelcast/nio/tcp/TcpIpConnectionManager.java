@@ -263,8 +263,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     @Override
-    public boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
+    public synchronized boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
         if (remoteEndPoint.equals(ioService.getThisAddress())) {
+            return false;
+        }
+
+        if (!connection.isAlive()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest(connection + " to " + remoteEndPoint + " is not registered since connection is not active.");
+            }
             return false;
         }
 
@@ -464,9 +471,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private void startAcceptorThread() {
         if (acceptorThread != null) {
             logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
-            acceptorThread.shutdown();
-            metricsRegistry.deregister(acceptorThread);
-            acceptorThread = null;
+            shutdownAcceptorThread();
         }
 
         acceptorThread = new SocketAcceptorThread(
@@ -486,9 +491,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         live = false;
         logger.finest("Stopping ConnectionManager");
 
-        if (acceptorThread != null) {
-            acceptorThread.shutdown();
-        }
+        shutdownAcceptorThread();
 
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
             closeResource(socketChannel);
@@ -521,12 +524,18 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public synchronized void shutdown() {
-        if (acceptorThread != null) {
-            acceptorThread.shutdown();
-        }
+        shutdownAcceptorThread();
         closeServerSocket();
         stop();
         connectionListeners.clear();
+    }
+
+    private void shutdownAcceptorThread() {
+        if (acceptorThread != null) {
+            acceptorThread.shutdown();
+            metricsRegistry.deregister(acceptorThread);
+            acceptorThread = null;
+        }
     }
 
     private void closeServerSocket() {

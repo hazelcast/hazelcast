@@ -151,7 +151,12 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void onDisconnect(final Address endpoint) {
+    public void onDisconnect(final Address endpoint, Throwable cause) {
+        if (cause == null) {
+            // connection is closed explicitly. we should not attempt to reconnect
+            return;
+        }
+
         if (node.clusterService.getMember(endpoint) != null) {
             nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new ReconnectionTask(endpoint));
         }

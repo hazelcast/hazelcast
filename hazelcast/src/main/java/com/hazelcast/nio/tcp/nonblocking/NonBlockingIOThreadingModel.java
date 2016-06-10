@@ -208,12 +208,20 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
     @Override
     public SocketWriter newSocketWriter(TcpIpConnection connection) {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreads.length);
-        return new NonBlockingSocketWriter(connection, outputThreads[index], metricsRegistry);
+        NonBlockingIOThread outputThread = outputThreads[index];
+        if (outputThread == null) {
+            throw new IllegalStateException("IO thread is closed!");
+        }
+        return new NonBlockingSocketWriter(connection, outputThread, metricsRegistry);
     }
 
     @Override
     public SocketReader newSocketReader(TcpIpConnection connection) {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreads.length);
-        return new NonBlockingSocketReader(connection, inputThreads[index], metricsRegistry);
+        NonBlockingIOThread inputThread = inputThreads[index];
+        if (inputThread == null) {
+            throw new IllegalStateException("IO thread is closed!");
+        }
+        return new NonBlockingSocketReader(connection, inputThread, metricsRegistry);
     }
 }

@@ -231,7 +231,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public void onDisconnect(Address endpoint) {
+    public void onDisconnect(Address endpoint, Throwable cause) {
 
     }
 

@@ -119,7 +119,7 @@ public interface IOService {
      */
     int getBalancerIntervalSeconds();
 
-    void onDisconnect(Address endpoint);
+    void onDisconnect(Address endpoint, Throwable cause);
 
     boolean isClient();
 
