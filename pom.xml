@@ -31,7 +31,6 @@
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-hadoop</module>
         <module>hazelcast-jet-java.util.stream</module>
-        <module>hazelcast-jet-batching</module>
         <module>hazelcast-jet-io</module>
     </modules>
 
