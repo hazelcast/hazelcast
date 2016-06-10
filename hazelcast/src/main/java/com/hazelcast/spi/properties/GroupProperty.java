@@ -50,6 +50,7 @@ public final class GroupProperty {
      * <p/>
      * This validation-token will be checked before member join the cluster.
      */
+    @Deprecated
     public static final HazelcastProperty APPLICATION_VALIDATION_TOKEN
             = new HazelcastProperty("hazelcast.application.validation.token");
 
