@@ -1,4 +1,4 @@
-package com.hazelcast.map;
+package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
