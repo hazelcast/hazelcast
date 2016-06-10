@@ -116,6 +116,17 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
     @Before
     public void setup() throws Exception {
         ContainerContext cc = CONTAINER_CONTEXT_MAP.get(getClass());
+
+        // if configuration is changed, we need to stop containers and cc should equals to null
+        if (cc != null) {
+            if (!cc.serverXml1.equals(serverXml1) || !cc.serverXml2.equals(serverXml2)) {
+                cc.server1.stop();
+                cc.server2.stop();
+                cc = null;
+            }
+        }
+
+
         // If container is not exist yet or
         // Hazelcast instance is not active (because of such as server shutdown)
         if (cc == null) {
