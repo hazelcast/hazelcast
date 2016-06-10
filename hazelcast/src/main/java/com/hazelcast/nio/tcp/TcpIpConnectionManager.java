@@ -471,9 +471,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private void startAcceptorThread() {
         if (acceptorThread != null) {
             logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
-            acceptorThread.shutdown();
-            metricsRegistry.deregister(acceptorThread);
-            acceptorThread = null;
+            shutdownAcceptorThread();
         }
 
         acceptorThread = new SocketAcceptorThread(
@@ -493,9 +491,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         live = false;
         logger.finest("Stopping ConnectionManager");
 
-        if (acceptorThread != null) {
-            acceptorThread.shutdown();
-        }
+        shutdownAcceptorThread();
 
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
             closeResource(socketChannel);
@@ -528,12 +524,18 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public synchronized void shutdown() {
-        if (acceptorThread != null) {
-            acceptorThread.shutdown();
-        }
+        shutdownAcceptorThread();
         closeServerSocket();
         stop();
         connectionListeners.clear();
+    }
+
+    private void shutdownAcceptorThread() {
+        if (acceptorThread != null) {
+            acceptorThread.shutdown();
+            metricsRegistry.deregister(acceptorThread);
+            acceptorThread = null;
+        }
     }
 
     private void closeServerSocket() {
