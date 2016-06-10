@@ -63,8 +63,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public boolean containsKey(Object key) {
         checkTransactionState();
-        Data keyData = getService().getMapServiceContext().toData(key, partitionStrategy);
+        checkNotNull(key, "key can't be null");
 
+        Data keyData = getService().getMapServiceContext().toData(key, partitionStrategy);
         TxnValueWrapper valueWrapper = txMap.get(keyData);
         if (valueWrapper != null) {
             return (valueWrapper.type != Type.REMOVED);
@@ -99,6 +100,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public Object get(Object key) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
@@ -113,6 +116,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public Object getForUpdate(Object key) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
@@ -133,37 +138,42 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+        checkNotNull(value, "value can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         Object valueBeforeTxn = toObjectIfNeeded(putInternal(keyData, mapServiceContext.toData(value), ttl, timeUnit));
 
         TxnValueWrapper currentValue = txMap.get(keyData);
-        if (value != null) {
-            Type type = valueBeforeTxn == null ? Type.NEW : Type.UPDATED;
-            TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
-            txMap.put(keyData, wrapper);
-        }
+        Type type = valueBeforeTxn == null ? Type.NEW : Type.UPDATED;
+        TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
+        txMap.put(keyData, wrapper);
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
 
     @Override
     public void set(Object key, Object value) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+        checkNotNull(value, "value can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
         Data dataBeforeTxn = putInternal(keyData, mapServiceContext.toData(value), -1, MILLISECONDS);
-        if (value != null) {
-            Type type = dataBeforeTxn == null ? Type.NEW : Type.UPDATED;
-            TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
-            txMap.put(keyData, wrapper);
-        }
+        Type type = dataBeforeTxn == null ? Type.NEW : Type.UPDATED;
+        TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
+        txMap.put(keyData, wrapper);
     }
 
     @Override
     public Object putIfAbsent(Object key, Object value) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+        checkNotNull(value, "value can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
@@ -190,6 +200,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public Object replace(Object key, Object value) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+        checkNotNull(value, "value can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
@@ -215,6 +228,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public boolean replace(Object key, Object oldValue, Object newValue) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+        checkNotNull(oldValue, "oldValue can't be null");
+        checkNotNull(newValue, "newValue can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
@@ -241,6 +258,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public boolean remove(Object key, Object value) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+        checkNotNull(value, "value can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
@@ -260,6 +280,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public Object remove(Object key) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
@@ -275,6 +297,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public void delete(Object key) {
         checkTransactionState();
+        checkNotNull(key, "key can't be null");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
 
