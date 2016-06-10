@@ -47,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -952,12 +954,20 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     private LocalExecutorStats executeTasksForStats(String executorName, int tasksToExecute, boolean statsEnabled)
             throws InterruptedException, ExecutionException {
         final IExecutorService executorService = createSingleNodeExecutorService(executorName, DEFAULT_POOL_SIZE, statsEnabled);
-        LatchRunnable.latch = new CountDownLatch(tasksToExecute);
+        final BlockingQueue<Future> taskQueue = new ArrayBlockingQueue(tasksToExecute);
+        final CountDownLatch latch = new CountDownLatch(tasksToExecute);
 
         for (int i = 0; i < tasksToExecute; i++) {
-            executorService.execute(new LatchRunnable());
+            Future f = executorService.submit(new EmptyRunnable());
+            taskQueue.offer(f);
         }
-        assertOpenEventually(LatchRunnable.latch);
+        // await completion and countdown for each completed task
+        for (int i = 0; i < tasksToExecute; i++) {
+            Future f = taskQueue.take();
+            f.get();
+            latch.countDown();
+        }
+        assertOpenEventually(latch);
 
         final Future<Boolean> f = executorService.submit(new SleepingTask(10));
         Thread.sleep(1000);
@@ -968,22 +978,6 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         return executorService.getLocalExecutorStats();
-    }
-
-    static class LatchRunnable implements Runnable, Serializable {
-
-        static CountDownLatch latch;
-        final int executionTime = 200;
-
-        @Override
-        public void run() {
-            try {
-                Thread.sleep(executionTime);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            latch.countDown();
-        }
     }
 
     @Test
