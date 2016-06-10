@@ -22,6 +22,30 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
+/**
+ * A specialization of {@link ObjectNamespace} intended to be used by ILock proxies.
+ *
+ * It intentionally <b>does not</b> use {@link #name} field in <code>equals()</code>
+ * and <code>hashcode()</code> methods. This is a hack to share a single instance of
+ * {@link LockStore} for all ILocks proxies (per partition).
+ *
+ * Discussion:
+ *
+ * If we included the name in equals()/hashcode() methods then each ILock would create
+ * its own {@link LockStoreImpl}. Each <code>LockStoreImpl</code> contains additional
+ * mapping key -&gt; LockResource. However ILock proxies always use a single key only
+ * thus creating a <code>LockStoreImpl</code> for each ILock would introduce an unnecessary
+ * indirection and memory waster. Also each LockStoreImpl is maintaining its own
+ * scheduler for lock eviction purposes, etc.
+ *
+ * I originally wanted to remove the <code>name</code> field and use a constant,
+ * but it has side-effects - for example when a ILock proxy is destroyed then you
+ * want to destroy all pending {@link com.hazelcast.spi.BlockingOperation}
+ *
+ * @see LockStoreContainer#getOrCreateLockStore(ObjectNamespace)
+ * @see com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl#cancelWaitingOps(String, Object, Throwable)
+ *
+ */
 public final class InternalLockNamespace implements ObjectNamespace {
 
     private String name;
@@ -61,13 +85,13 @@ public final class InternalLockNamespace implements ObjectNamespace {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        //todo: we don't include the name in the equals?
+        //warning: this intentionally does not use name field see class-level JavaDoc above
         return true;
     }
 
     @Override
     public int hashCode() {
-        //todo: we don't include the name in the hash?
+        //warning: this intentionally does not use name field see class-level JavaDoc above
         return getServiceName().hashCode();
     }
 }

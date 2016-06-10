@@ -45,7 +45,8 @@ abstract class BaseSignalOperation extends AbstractLockOperation {
 
         LockStoreImpl lockStore = getLockStore();
         int signalCount = all ? Integer.MAX_VALUE : 1;
-        lockStore.signal(key, conditionId, signalCount);
+
+        lockStore.signal(key, conditionId, signalCount, namespace.getObjectName());
     }
 
     @Override

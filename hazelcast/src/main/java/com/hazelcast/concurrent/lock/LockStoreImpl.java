@@ -46,6 +46,10 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
             };
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
+
+    // warning: the namespace field is unreliable if this LockStoreImpl was created for ILock proxy
+    // ObjectNameSpace.getObjectName() can give you a wrong name because LockStoreImpl instances
+    // are shared for ILock proxies. see InternalLockNamespace for details.
     private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
@@ -276,9 +280,9 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         lock.removeAwait(conditionId, caller, threadId);
     }
 
-    public void signal(Data key, String conditionId, int maxSignalCount) {
+    public void signal(Data key, String conditionId, int maxSignalCount, String objectName) {
         LockResourceImpl lock = getLock(key);
-        lock.signal(conditionId, maxSignalCount);
+        lock.signal(conditionId, maxSignalCount, objectName);
     }
 
     public WaitNotifyKey getNotifiedKey(Data key) {
