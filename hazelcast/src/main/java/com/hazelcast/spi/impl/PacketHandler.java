@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Packet;
 
 /**
  * The {@link PacketHandler} is responsible for handling packets.

@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DurableExecutorDisposeResultCode
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.durableexecutor.impl.operations.DisposeResultOperation;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.internal.connection.Connection;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;

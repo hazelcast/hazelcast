@@ -20,10 +20,10 @@ package com.hazelcast.test.mocknetwork;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.OutboundFrame;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.internal.connection.Connection;
+import com.hazelcast.internal.connection.ConnectionType;
+import com.hazelcast.internal.connection.OutboundFrame;
+import com.hazelcast.internal.connection.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 

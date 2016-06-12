@@ -19,12 +19,12 @@ package com.hazelcast.instance;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
-import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.internal.connection.IOService;
+import com.hazelcast.internal.connection.MemberSocketInterceptor;
+import com.hazelcast.internal.connection.tcp.ReadHandler;
+import com.hazelcast.internal.connection.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.internal.connection.tcp.TcpIpConnection;
+import com.hazelcast.internal.connection.tcp.WriteHandler;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.annotation.PrivateApi;
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.internal.connection.ssl.SSLContextFactory;
 
 import javax.net.ssl.SSLContext;
 import java.util.Properties;

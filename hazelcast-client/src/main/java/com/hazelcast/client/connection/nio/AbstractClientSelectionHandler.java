@@ -21,9 +21,9 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
+import com.hazelcast.internal.connection.tcp.SocketChannelWrapper;
+import com.hazelcast.internal.connection.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.internal.connection.tcp.nonblocking.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 

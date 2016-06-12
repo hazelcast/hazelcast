@@ -22,7 +22,7 @@
     </group>
     <network>
         <ssl enabled="true">
-            <factory-class-name>com.hazelcast.nio.ssl.BasicSSLContextFactory</factory-class-name>
+            <factory-class-name>com.hazelcast.internal.connection.ssl.BasicSSLContextFactory</factory-class-name>
         </ssl>
         <socket-options>
             <buffer-size>32</buffer-size>

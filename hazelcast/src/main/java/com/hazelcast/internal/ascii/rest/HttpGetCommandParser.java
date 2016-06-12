@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
-import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.internal.connection.ascii.TextReadHandler;
 
 import java.util.StringTokenizer;
 
