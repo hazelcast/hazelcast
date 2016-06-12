@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
@@ -33,6 +34,7 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
  *
  * @since 3.6
  */
+@PrivateApi
 public enum NodeState {
 
     /**
