@@ -44,6 +44,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -433,6 +434,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/8137
     public void testTcpIp_ClusterMerge_when_split_not_detected_by_master() throws InterruptedException {
         testClusterMerge_when_split_not_detected_by_master(false);
     }
@@ -688,6 +690,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/8137
     public void testClusterMerge_when_split_not_detected_by_slave() throws InterruptedException {
         Config config = new Config();
         String groupName = generateRandomString(10);
@@ -760,6 +763,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
 
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/8137
     public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() throws InterruptedException {
         Config config = new Config();
         String groupName = generateRandomString(10);
