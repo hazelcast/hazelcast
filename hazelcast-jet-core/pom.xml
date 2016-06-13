@@ -25,7 +25,7 @@
     <url>http://www.hazelcast.com/</url>
 
     <parent>
-        <groupId>com.hazelcast</groupId>
+        <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-root</artifactId>
         <version>0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -59,7 +59,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.hazelcast</groupId>
+            <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet-io</artifactId>
             <version>${project.version}</version>
         </dependency>
