@@ -25,9 +25,11 @@ public class TomcatServer implements ServletContainer {
 
     @Override
     public void stop() throws Exception {
-        tomcat.stop();
-        tomcat.destroy();
-        running = false;
+        if (running) {
+            tomcat.stop();
+            tomcat.destroy();
+            running = false;
+        }
     }
 
     @Override
