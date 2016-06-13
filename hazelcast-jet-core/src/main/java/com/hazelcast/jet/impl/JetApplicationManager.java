@@ -39,7 +39,7 @@ public interface JetApplicationManager {
 
     Collection<ApplicationContext> getApplicationContexts();
 
-    ApplicationContext createOrGetApplicationContext(String name, JetApplicationConfig config);
+    ApplicationContext getOrCreateApplicationContext(String name, JetApplicationConfig config);
 
     NodeEngine getNodeEngine();
 }

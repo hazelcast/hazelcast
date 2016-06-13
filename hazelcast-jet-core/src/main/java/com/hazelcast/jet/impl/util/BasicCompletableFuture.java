@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.operation;
+package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
 
-public class AcceptLocalizationOperation extends JetOperation {
-    @SuppressWarnings("unused")
-    public AcceptLocalizationOperation() {
-
-    }
-
-    public AcceptLocalizationOperation(String name) {
-        super(name);
+public class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
+    public BasicCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
+        super(nodeEngine, logger);
     }
 
     @Override
-    public void run() throws Exception {
-        ApplicationContext applicationContext = getApplicationContext();
-        applicationContext.getLocalizationStorage().accept();
+    public void setResult(Object result) {
+        super.setResult(result);
     }
+
 }

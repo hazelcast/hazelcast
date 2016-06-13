@@ -40,7 +40,7 @@ public class JetThreadFactory implements ThreadFactory {
         Thread workerThread = new Thread(
                 group,
                 r,
-                this.hzName + "-" + this.name + "-" + THREAD_COUNTER.incrementAndGet()
+                this.hzName + ".jet." + this.name + "." + THREAD_COUNTER.incrementAndGet()
         );
 
         workerThread.setDaemon(true);

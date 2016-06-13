@@ -16,70 +16,71 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.FinalizeApplicationRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.JetApplicationConfig;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+public class FinalizationApplicationRequestOperation extends AsyncJetOperation {
 
-public class FinalizationApplicationRequestOperation extends AbstractJetApplicationRequestOperation {
+    @SuppressWarnings("unused")
     public FinalizationApplicationRequestOperation() {
-        super();
+
     }
 
     public FinalizationApplicationRequestOperation(String name) {
-        this(name, null);
-    }
-
-    public FinalizationApplicationRequestOperation(String name, NodeEngineImpl nodeEngine) {
         super(name);
-        setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
     }
 
-    private void destroyApplication(ApplicationContext applicationContext) throws Exception {
+    private void destroyApplication(ApplicationContext applicationContext) {
         try {
             shutDownExecutors(applicationContext);
+        } catch (Exception e) {
+            throw JetUtil.reThrow(e);
         } finally {
             try {
                 applicationContext.getLocalizationStorage().cleanUp();
             } finally {
                 JetService jetService = getService();
                 JetApplicationManager jetApplicationManager = jetService.getApplicationManager();
-                jetApplicationManager.destroyApplication(getName());
+                jetApplicationManager.destroyApplication(getApplicationName());
             }
         }
     }
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = resolveApplicationContext();
+        ApplicationContext applicationContext = getApplicationContext();
         ApplicationMaster applicationMaster = applicationContext.getApplicationMaster();
-        Future<ApplicationMasterResponse> future =
+        ICompletableFuture<ApplicationMasterResponse> future =
                 applicationMaster.handleContainerRequest(new FinalizeApplicationRequest());
 
-        JetApplicationConfig config = applicationContext.getJetApplicationConfig();
-
-        long secondsToAwait = config.getJetSecondsToAwait();
-
-        try {
-            ApplicationMasterResponse response = future.get(secondsToAwait, TimeUnit.SECONDS);
-
-            if (response != ApplicationMasterResponse.SUCCESS) {
-                throw new IllegalStateException("Unable to finalize application");
+        future.andThen(new ExecutionCallback<ApplicationMasterResponse>() {
+            @Override
+            public void onResponse(ApplicationMasterResponse response) {
+                if (!response.isSuccess()) {
+                    sendResponse(new IllegalStateException("Unable to finalize application."));
+                    return;
+                }
+                try {
+                    destroyApplication(applicationContext);
+                } catch (Exception e) {
+                    sendResponse(e);
+                    return;
+                }
+                sendResponse(true);
             }
-        } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
-        } finally {
-            destroyApplication(applicationContext);
-        }
+
+            @Override
+            public void onFailure(Throwable t) {
+                sendResponse(t);
+            }
+        });
     }
 
     private void shutDownExecutors(ApplicationContext applicationContext) throws Exception {

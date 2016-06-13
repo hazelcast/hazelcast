@@ -18,30 +18,29 @@ package com.hazelcast.jet.impl.application;
 
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.jet.impl.data.io.JetTupleDataType;
-import com.hazelcast.jet.impl.JetApplicationManager;
-import com.hazelcast.jet.io.impl.IOContextImpl;
-import com.hazelcast.jet.io.IOContext;
-import com.hazelcast.jet.impl.application.localization.LocalizationStorage;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
-import com.hazelcast.jet.impl.data.io.SocketReader;
-import com.hazelcast.jet.impl.data.io.SocketWriter;
-import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineFactory;
-import com.hazelcast.jet.impl.application.localization.LocalizationStorageFactory;
-import com.hazelcast.jet.impl.container.ApplicationMasterImpl;
-import com.hazelcast.jet.impl.container.DefaultDiscoveryService;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineImpl;
-import com.hazelcast.jet.impl.statemachine.application.DefaultApplicationStateMachineRequestProcessor;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.application.ApplicationListener;
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.JetApplicationManager;
+import com.hazelcast.jet.impl.application.localization.LocalizationStorage;
+import com.hazelcast.jet.impl.application.localization.LocalizationStorageFactory;
+import com.hazelcast.jet.impl.container.ApplicationMasterImpl;
+import com.hazelcast.jet.impl.container.DefaultDiscoveryService;
+import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.data.io.JetTupleDataType;
+import com.hazelcast.jet.impl.data.io.SocketReader;
+import com.hazelcast.jet.impl.data.io.SocketWriter;
+import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineFactory;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineImpl;
+import com.hazelcast.jet.impl.statemachine.application.DefaultApplicationStateMachineRequestProcessor;
+import com.hazelcast.jet.io.IOContext;
+import com.hazelcast.jet.io.impl.IOContextImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
@@ -118,11 +117,7 @@ public class ApplicationContextImpl implements ApplicationContext {
         this.owner = new AtomicReference<Address>();
         this.containerIdGenerator = new AtomicInteger(0);
 
-        this.jetApplicationConfig = JetUtil.resolveJetServerApplicationConfig(
-                nodeEngine,
-                jetApplicationConfig,
-                name
-        );
+        this.jetApplicationConfig = jetApplicationConfig;
 
         this.executorContext = new DefaultExecutorContext(
                 this.name,

@@ -16,80 +16,52 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.config.JetApplicationConfig;
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.InterruptApplicationRequest;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
 
 
-public class ExecutionApplicationRequestOperation extends AbstractJetApplicationRequestOperation {
+public class ExecutionApplicationRequestOperation extends AsyncJetOperation {
+
+    @SuppressWarnings("unused")
     public ExecutionApplicationRequestOperation() {
     }
 
     public ExecutionApplicationRequestOperation(String name) {
-        this(name, null);
-    }
-
-    public ExecutionApplicationRequestOperation(String name, NodeEngineImpl nodeEngine) {
         super(name);
-        this.setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
     }
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = resolveApplicationContext();
+
+        ApplicationContext applicationContext = getApplicationContext();
         ApplicationMaster applicationMaster = applicationContext.getApplicationMaster();
 
         getLogger().fine("ExecutionApplicationRequestOperation.run " + applicationContext.getName());
 
-        Future<ApplicationMasterResponse> future = applicationMaster.handleContainerRequest(new ExecuteApplicationRequest());
-
-        JetApplicationConfig config = applicationContext.getJetApplicationConfig();
-
-        long secondsToAwait = config.getJetSecondsToAwait();
+        ICompletableFuture<ApplicationMasterResponse> future = applicationMaster
+                .handleContainerRequest(new ExecuteApplicationRequest());
 
         //Waiting for until all containers started
-        ApplicationMasterResponse response = future.get(secondsToAwait, TimeUnit.SECONDS);
+        future.andThen(new ContainerRequestCallback(this, "Unable to start containers", () -> {
 
-        if (response != ApplicationMasterResponse.SUCCESS) {
-            throw new IllegalStateException("Unable to start containers");
-        }
+            //Waiting for execution completion
+            final ICompletableFuture<Object> mailboxFuture = applicationMaster.getExecutionMailBox();
+            mailboxFuture.andThen(new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object o) {
+                    sendResponse(o);
+                }
 
-        //Waiting for execution completion
-        BlockingQueue<Object> mailBox = applicationMaster.getExecutionMailBox();
+                @Override
+                public void onFailure(Throwable throwable) {
 
-        if (mailBox != null) {
-            Object result = mailBox.poll(secondsToAwait, TimeUnit.SECONDS);
-
-            if (result == null) {
-                applicationMaster.handleContainerRequest(
-                        new InterruptApplicationRequest()
-                ).
-                        get(secondsToAwait, TimeUnit.SECONDS);
-
-                throw new TimeoutException("Timeout while waiting for result. Application has been interrupted");
-            }
-
-            getLogger().fine("ExecutionApplicationRequestOperation.run.finished");
-
-            if (result instanceof Throwable) {
-                throw JetUtil.reThrow((Throwable) result);
-            }
-
-            if (response != ApplicationMasterResponse.SUCCESS) {
-                throw new IllegalStateException("Unable to startProcessors application");
-            }
-        }
+                    sendResponse(throwable);
+                }
+            });
+        }));
     }
 }

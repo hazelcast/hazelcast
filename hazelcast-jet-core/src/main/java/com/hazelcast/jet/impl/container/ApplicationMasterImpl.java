@@ -17,27 +17,30 @@
 package com.hazelcast.jet.impl.container;
 
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.impl.application.ApplicationException;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
+import com.hazelcast.jet.CombinedJetException;
+import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.application.ApplicationException;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterStateMachineFactory;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ApplicationMasterPayLoadFactory;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
+import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.CombinedJetException;
-import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -45,8 +48,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -71,10 +72,12 @@ public class ApplicationMasterImpl extends
     private final AtomicInteger containerCounter = new AtomicInteger(0);
 
     private final AtomicInteger networkTaskCounter = new AtomicInteger(0);
-    private final AtomicReference<BlockingQueue<Object>> executionMailBox =
-            new AtomicReference<BlockingQueue<Object>>(null);
-    private final AtomicReference<BlockingQueue<Object>> interruptionFutureHolder =
-            new AtomicReference<BlockingQueue<Object>>(null);
+    private final AtomicReference<BasicCompletableFuture<Object>> executionMailBox =
+            new AtomicReference<BasicCompletableFuture<Object>>(null);
+    private final AtomicReference<BasicCompletableFuture<Object>> interruptionFutureHolder =
+            new AtomicReference<BasicCompletableFuture<Object>>(null);
+
+    private final ILogger logger;
     private final DiscoveryService discoveryService;
     private volatile boolean interrupted;
     private volatile Throwable interruptionError;
@@ -89,6 +92,7 @@ public class ApplicationMasterImpl extends
         this.discoveryService = discoveryService;
         this.applicationNameBytes = getNodeEngine().getSerializationService()
                 .toData(applicationContext.getName()).toByteArray();
+        this.logger = getNodeEngine().getLogger(ApplicationMaster.class);
     }
 
     @Override
@@ -157,7 +161,7 @@ public class ApplicationMasterImpl extends
                 );
             } finally {
                 if (this.interruptionFutureHolder.get() != null) {
-                    this.interruptionFutureHolder.get().offer(true);
+                    this.interruptionFutureHolder.get().setResult(true);
                 }
             }
         } finally {
@@ -178,21 +182,21 @@ public class ApplicationMasterImpl extends
         this.interruptionError = null;
         this.containerCounter.set(0);
         this.networkTaskCounter.set(0);
-        this.executionMailBox.set(new ArrayBlockingQueue<Object>(1));
+        this.executionMailBox.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
     }
 
     @Override
     public void registerInterruption() {
-        this.interruptionFutureHolder.set(new ArrayBlockingQueue<Object>(1));
+        this.interruptionFutureHolder.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
     }
 
     @Override
-    public BlockingQueue<Object> getExecutionMailBox() {
+    public ICompletableFuture<Object> getExecutionMailBox() {
         return this.executionMailBox.get();
     }
 
     @Override
-    public BlockingQueue<Object> getInterruptionMailBox() {
+    public ICompletableFuture<Object> getInterruptionMailBox() {
         return this.interruptionFutureHolder.get();
     }
 
@@ -207,10 +211,10 @@ public class ApplicationMasterImpl extends
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void addToMailBox(Object object) {
-        BlockingQueue<Object> executionMailBox = this.executionMailBox.get();
+        BasicCompletableFuture<Object> executionMailBox = this.executionMailBox.get();
 
         if (executionMailBox != null) {
-            executionMailBox.offer(object);
+            executionMailBox.setResult(object);
         }
     }
 

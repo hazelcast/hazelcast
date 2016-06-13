@@ -132,8 +132,8 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
             this.tasks.add(task);
             this.workingTaskCount.incrementAndGet();
 
-            if (task instanceof DefaultContainerTask) {
-                logger.fine("Incoming=" + task.getClass() + " size=" + this.tasks.size()
+            if (logger.isFinestEnabled() && task instanceof DefaultContainerTask) {
+                logger.finest("Incoming=" + task.getClass() + " size=" + this.tasks.size()
                                 + " idx=" + this + " wtc=" + this.workingTaskCount.get()
                 );
             }

@@ -16,39 +16,56 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.impl.JetApplicationManager;
+import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class InitApplicationRequestOperation extends AbstractJetApplicationRequestOperation {
+import java.io.IOException;
+
+public class InitApplicationRequestOperation extends JetOperation {
+    private JetApplicationConfig config;
+
+    @SuppressWarnings("unused")
     public InitApplicationRequestOperation() {
     }
 
-    public InitApplicationRequestOperation(String name) {
-        this(name, null, null);
-    }
-
-    public InitApplicationRequestOperation(String name, JetApplicationConfig config) {
-        this(name, null, config);
-    }
-
     public InitApplicationRequestOperation(String name,
-                                           NodeEngineImpl nodeEngine,
                                            JetApplicationConfig config) {
-        super(name, config);
-        setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
+        super(name);
+        this.config = config;
     }
 
     @Override
     public void run() throws Exception {
-        resolveApplicationContext();
-        initializePartitions(this.getNodeEngine());
+        initializeApplicationContext();
+        initializePartitions(getNodeEngine());
         getLogger().fine("InitApplicationRequestOperation");
     }
 
     private void initializePartitions(NodeEngine nodeEngine) {
         nodeEngine.getPartitionService().getMemberPartitionsMap();
+    }
+
+    private void initializeApplicationContext() throws JetException {
+        JetApplicationManager jetApplicationManager = getApplicationManager();
+        ApplicationContext applicationContext =
+                jetApplicationManager.getOrCreateApplicationContext(this.name, this.config);
+        validateApplicationContext(applicationContext);
+    }
+
+    @Override
+    public void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(config);
+    }
+
+    @Override
+    public void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        this.config = in.readObject();
     }
 }

@@ -18,20 +18,14 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetAccumulatorsCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.operation.GetAccumulatorsOperation;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.spi.Operation;
-
-import java.security.Permission;
 
 
-public class JetGetAccumulatorsMessageTask extends AbstractMessageTask<JetGetAccumulatorsCodec.RequestParameters> {
+public class JetGetAccumulatorsMessageTask extends JetMessageTask<JetGetAccumulatorsCodec.RequestParameters> {
     public JetGetAccumulatorsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -48,32 +42,15 @@ public class JetGetAccumulatorsMessageTask extends AbstractMessageTask<JetGetAcc
     }
 
     @Override
-    protected void processMessage() {
-        try {
-            Operation operation = new GetAccumulatorsOperation(
-                    this.parameters.name, this.nodeEngine
-            );
-
-            operation.run();
-            sendResponse(operation.getResponse());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
+    protected String getApplicationName() {
         return this.parameters.name;
+    }
+
+    @Override
+    protected JetOperation prepareOperation() {
+        return new GetAccumulatorsOperation(
+                getApplicationName()
+        );
     }
 
     @Override
@@ -81,8 +58,4 @@ public class JetGetAccumulatorsMessageTask extends AbstractMessageTask<JetGetAcc
         return "getAccumulators";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
-    }
 }

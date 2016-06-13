@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.impl.statemachine;
 
-import java.util.concurrent.Future;
+import com.hazelcast.core.ICompletableFuture;
 
 /**
  * Represents abstract state-machine;
- *
+ * <p>
  * State-machines are used to provide consistency of main JET's objects and operations;
- *
+ * <p>
  * All main operations under main objects are performed via state-machine's transition;
- *
+ * <p>
  * For example if we ned to start container it will work like:
- *
+ * <p>
  * <pre>
  *      START__EVENT -&gt;
  *      CONTAINER_STATE_MACHINE
@@ -34,7 +34,7 @@ import java.util.concurrent.Future;
  *              -&gt; transition to the next state
  *              -&gt; output
  * </pre>
- *
+ * <p>
  * Transition matrix lets to prevent appearance of inconsistent state, for example
  * execution of the application before DAG has been submit;
  *
@@ -63,6 +63,6 @@ public interface StateMachine
      * @param <P>     - type of the payLoad;
      * @return - awaiting future with results of transition;
      */
-    <P> Future<Output> handleRequest(StateMachineRequest<Input, P> request);
+    <P> ICompletableFuture<Output> handleRequest(StateMachineRequest<Input, P> request);
 }
 

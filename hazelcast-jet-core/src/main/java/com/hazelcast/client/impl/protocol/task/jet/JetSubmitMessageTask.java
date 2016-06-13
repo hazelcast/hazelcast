@@ -18,18 +18,13 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.operation.SubmitApplicationRequestOperation;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.operation.JetOperation;
+import com.hazelcast.jet.impl.operation.SubmitApplicationRequestOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.permission.ActionConstants;
 
-import java.security.Permission;
-
-public class JetSubmitMessageTask extends AbstractMessageTask<JetSubmitCodec.RequestParameters> {
+public class JetSubmitMessageTask extends JetMessageTask<JetSubmitCodec.RequestParameters> {
     public JetSubmitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -45,40 +40,18 @@ public class JetSubmitMessageTask extends AbstractMessageTask<JetSubmitCodec.Req
     }
 
     @Override
-    protected void processMessage() {
-        try {
-            DAG dag = this.serializationService.toObject(this.parameters.dag);
-            new SubmitApplicationRequestOperation(
-                    getDistributedObjectName(), dag, this.nodeEngine
-            ).run();
-            sendResponse(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
+    protected String getApplicationName() {
         return this.parameters.name;
+    }
+
+    @Override
+    protected JetOperation prepareOperation() {
+        DAG dag = this.serializationService.toObject(this.parameters.dag);
+        return new SubmitApplicationRequestOperation(getApplicationName(), dag);
     }
 
     @Override
     public String getMethodName() {
         return "submit";
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
     }
 }

@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,21 +27,16 @@ import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
 
-public abstract class AbstractJetApplicationRequestOperation extends AbstractOperation {
+public abstract class JetOperation extends AbstractOperation {
+
     protected String name;
     protected Object result = true;
-    protected JetApplicationConfig config;
 
-    protected AbstractJetApplicationRequestOperation() {
+    protected JetOperation() {
     }
 
-    protected AbstractJetApplicationRequestOperation(String name) {
-        this(name, null);
-    }
-
-    protected AbstractJetApplicationRequestOperation(String name, JetApplicationConfig config) {
+    protected JetOperation(String name) {
         this.name = name;
-        this.config = config;
     }
 
     @Override
@@ -51,34 +45,43 @@ public abstract class AbstractJetApplicationRequestOperation extends AbstractOpe
     }
 
     @Override
-    public void run() throws Exception {
-
-    }
-
-    @Override
     public void afterRun() throws Exception {
 
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
-    public String getName() {
+    public String getApplicationName() {
         return this.name;
     }
 
-    protected ApplicationContext resolveApplicationContext() throws JetException {
-        JetService jetService = getService();
-        Address applicationOwner = getCallerAddress();
+    @Override
+    public Object getResponse() {
+        return this.result;
+    }
 
-        if (applicationOwner == null) {
-            applicationOwner = getNodeEngine().getThisAddress();
+    protected ApplicationContext getApplicationContext() {
+        JetApplicationManager jetApplicationManager = getApplicationManager();
+        ApplicationContext applicationContext = jetApplicationManager.getApplicationContext(getApplicationName());
+
+        if (applicationContext == null) {
+            throw new JetException("No application context found for applicationId=" + getApplicationName());
         }
 
-        JetApplicationManager jetApplicationManager = jetService.getApplicationManager();
-        ApplicationContext applicationContext = jetApplicationManager.createOrGetApplicationContext(this.name, this.config);
+        validateApplicationContext(applicationContext);
+        return applicationContext;
+    }
 
+    protected JetApplicationManager getApplicationManager() {
+        JetService service = getService();
+        return service.getApplicationManager();
+    }
+
+    protected void validateApplicationContext(ApplicationContext applicationContext) {
+        Address applicationOwner = getApplicationOwner();
         if (!applicationContext.validateOwner(applicationOwner)) {
             throw new JetException(
                     "Invalid applicationOwner for applicationId "
@@ -87,12 +90,15 @@ public abstract class AbstractJetApplicationRequestOperation extends AbstractOpe
                             + " current=" + applicationContext.getOwner()
             );
         }
-
-        return applicationContext;
     }
 
-    public Object getResponse() {
-        return this.result;
+    protected Address getApplicationOwner() {
+        Address address = getCallerAddress();
+
+        if (address == null) {
+            return getNodeEngine().getThisAddress();
+        }
+        return address;
     }
 
     @Override

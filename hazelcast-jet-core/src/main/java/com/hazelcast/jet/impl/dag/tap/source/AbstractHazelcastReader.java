@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
-import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;

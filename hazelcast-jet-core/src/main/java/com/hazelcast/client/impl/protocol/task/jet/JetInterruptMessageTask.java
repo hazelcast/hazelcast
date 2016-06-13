@@ -18,18 +18,13 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetInterruptCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.operation.InterruptExecutionOperation;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.permission.ActionConstants;
-
-import java.security.Permission;
 
 public class JetInterruptMessageTask
-        extends AbstractMessageTask<JetInterruptCodec.RequestParameters> {
+        extends JetMessageTask<JetInterruptCodec.RequestParameters> {
     public JetInterruptMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -45,37 +40,17 @@ public class JetInterruptMessageTask
     }
 
     @Override
-    protected void processMessage() {
-        try {
-            new InterruptExecutionOperation(getDistributedObjectName(), this.nodeEngine).run();
-            sendResponse(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
+    protected String getApplicationName() {
         return this.parameters.name;
+    }
+
+    @Override
+    protected JetOperation prepareOperation() {
+        return new InterruptExecutionOperation(getApplicationName());
     }
 
     @Override
     public String getMethodName() {
         return "interrupt";
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
     }
 }

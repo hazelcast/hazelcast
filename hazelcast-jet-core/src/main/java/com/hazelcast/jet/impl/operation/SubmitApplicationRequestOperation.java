@@ -16,76 +16,56 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionPlanBuilderRequest;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionPlanBuilderRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionPlanReadyRequest;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.JetApplicationConfig;
-import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 
-public class SubmitApplicationRequestOperation extends AbstractJetApplicationRequestOperation {
+public class SubmitApplicationRequestOperation extends AsyncJetOperation {
     private DAG dag;
 
+    @SuppressWarnings("unused")
     public SubmitApplicationRequestOperation() {
-        super();
     }
 
     public SubmitApplicationRequestOperation(String name, DAG dag) {
-        this(name, dag, null);
-    }
-
-    public SubmitApplicationRequestOperation(String name, DAG dag, NodeEngineImpl nodeEngine) {
         super(name);
         this.dag = dag;
-        setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
     public void run() throws Exception {
-        ApplicationContext applicationContext = resolveApplicationContext();
+        ApplicationContext applicationContext = getApplicationContext();
         this.dag.validate();
 
         ApplicationMaster applicationMaster = applicationContext.getApplicationMaster();
 
-        Future<ApplicationMasterResponse> future = applicationMaster.handleContainerRequest(
-                new ExecutionPlanBuilderRequest(this.dag)
-        );
+        ICompletableFuture<ApplicationMasterResponse> builderFuture =
+                applicationMaster.handleContainerRequest(new ExecutionPlanBuilderRequest(this.dag));
 
-        JetApplicationConfig config = applicationContext.getJetApplicationConfig();
-        long secondsToAwait = config.getJetSecondsToAwait();
+        builderFuture.andThen(new ContainerRequestCallback(this, "Unable to submit DAG", () -> {
+            ICompletableFuture<ApplicationMasterResponse> readyFuture
+                    = applicationMaster.handleContainerRequest(new ExecutionPlanReadyRequest());
 
-        try {
-            ApplicationMasterResponse response = future.get(secondsToAwait, TimeUnit.SECONDS);
-
-            if (response != ApplicationMasterResponse.SUCCESS) {
-                throw new IllegalStateException("Unable to submit dag");
-            }
-
-            response =
-                    applicationMaster.handleContainerRequest(new ExecutionPlanReadyRequest()).
-                            get(secondsToAwait, TimeUnit.SECONDS);
-
-            applicationMaster.setDag(this.dag);
-
-            if (response != ApplicationMasterResponse.SUCCESS) {
-                throw new IllegalStateException("Unable to submit dag");
-            }
-        } catch (Throwable e) {
-            getLogger().warning(e.getMessage(), e);
-            throw JetUtil.reThrow(e);
-        }
+            readyFuture.andThen(new ContainerRequestCallback(SubmitApplicationRequestOperation.this,
+                    "Unable to submit DAG", () -> {
+                applicationMaster.setDag(dag);
+                sendResponse(true);
+            }));
+        }));
     }
 
     @Override

@@ -18,18 +18,13 @@ package com.hazelcast.client.impl.protocol.task.jet;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteCodec;
-import com.hazelcast.client.impl.protocol.permission.JetPermission;
-import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.operation.ExecutionApplicationRequestOperation;
+import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.permission.ActionConstants;
-
-import java.security.Permission;
 
 public class JetExecuteMessageTask
-        extends AbstractMessageTask<JetExecuteCodec.RequestParameters> {
+        extends JetMessageTask<JetExecuteCodec.RequestParameters> {
     public JetExecuteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -45,27 +40,12 @@ public class JetExecuteMessageTask
     }
 
     @Override
-    protected void processMessage() {
-        try {
-            new ExecutionApplicationRequestOperation(this.parameters.name, this.nodeEngine).run();
-            sendResponse(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    protected JetOperation prepareOperation() {
+        return new ExecutionApplicationRequestOperation(getApplicationName());
     }
 
     @Override
-    public String getServiceName() {
-        return JetService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new JetPermission(this.parameters.name, ActionConstants.ACTION_ALL);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
+    protected String getApplicationName() {
         return this.parameters.name;
     }
 
@@ -74,8 +54,4 @@ public class JetExecuteMessageTask
         return "execute";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[0];
-    }
 }

@@ -16,20 +16,21 @@
 
 package com.hazelcast.jet.impl.statemachine;
 
-import com.hazelcast.jet.impl.container.task.AbstractTask;
-import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.container.RequestPayLoad;
+import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.executor.TaskExecutor;
-import com.hazelcast.jet.impl.container.RequestPayLoad;
-import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public abstract class AbstractStateMachineImpl
@@ -56,12 +57,10 @@ public abstract class AbstractStateMachineImpl
         this.processor = processor;
         this.applicationContext = applicationContext;
         this.stateTransitionMatrix = stateTransitionMatrix;
+        this.logger = Logger.getLogger(StateMachine.class);
 
         if (nodeEngine != null) {
-            this.logger = nodeEngine.getLogger(getClass());
             getExecutor().addTask(new EventsProcessor(this.eventsQueue));
-        } else {
-            this.logger = null;
         }
     }
 
@@ -74,9 +73,11 @@ public abstract class AbstractStateMachineImpl
         return state;
     }
 
-    public <P> Future<Output> handleRequest(StateMachineRequest<Input, P> request) {
+    public <P> ICompletableFuture<Output> handleRequest(StateMachineRequest<Input, P> request) {
+        BasicCompletableFuture<Output> future
+                = new BasicCompletableFuture<>(applicationContext.getNodeEngine(), logger);
         RequestPayLoad<Input, Output> payLoad =
-                new RequestPayLoad<Input, Output>(request.getContainerEvent(), request.getPayLoad());
+                new RequestPayLoad<Input, Output>(request.getContainerEvent(), future, request.getPayLoad());
 
         if (!this.eventsQueue.offer(payLoad)) {
             throw new JetException("Can't add request to the stateMachine " + name);
@@ -114,13 +115,13 @@ public abstract class AbstractStateMachineImpl
                 }
 
                 Input event = requestHolder.getEvent();
-                SettableFuture<Output> future = requestHolder.getFuture();
+                BasicCompletableFuture<Output> future = requestHolder.getFuture();
 
                 try {
                     Map<Input, State> transmissions = stateTransitionMatrix.get(state);
 
                     if (transmissions == null) {
-                        future.setException(new InvalidEventException(event, state, name));
+                        future.setResult(new InvalidEventException(event, state, name));
                         return true;
                     }
 
@@ -131,21 +132,24 @@ public abstract class AbstractStateMachineImpl
                             processor.processRequest(requestHolder.getEvent(), requestHolder.getPayLoad());
                         }
 
+                        if (logger.isFineEnabled()) {
+                            logger.fine("Transitioned from state=" + state + " to=" + nextState + " on event " + event);
+                        }
                         state = nextState;
                         output = output(event, nextState);
-                        future.set(output);
+                        future.setResult(output);
                     } else {
                         output = output(event, null);
                         Throwable error = new InvalidEventException(event, state, name);
                         logger.warning(error.getMessage(), error);
-                        future.setException(error);
+                        future.setResult(error);
                     }
                 } catch (Throwable e) {
                     if (logger != null) {
                         logger.warning(e.getMessage(), e);
                     }
 
-                    future.setException(e);
+                    future.setResult(e);
                 }
 
                 return true;

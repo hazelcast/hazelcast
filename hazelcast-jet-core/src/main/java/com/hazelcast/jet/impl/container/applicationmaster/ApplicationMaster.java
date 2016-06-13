@@ -17,18 +17,18 @@
 package com.hazelcast.jet.impl.container.applicationmaster;
 
 
-import com.hazelcast.jet.impl.container.Container;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.impl.container.Container;
+import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.nio.Address;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * Interface for JET application master
@@ -72,13 +72,13 @@ public interface ApplicationMaster extends Container<ApplicationMasterEvent, App
      * @return - mailBox which is used to signal that application's;
      * execution has been completed;
      */
-    BlockingQueue<Object> getExecutionMailBox();
+    ICompletableFuture<Object> getExecutionMailBox();
 
     /**
      * @return - mailBox which is used to signal that application's;
      * interruption has been completed;
      */
-    BlockingQueue<Object> getInterruptionMailBox();
+    ICompletableFuture<Object> getInterruptionMailBox();
 
     /**
      * @param vertex the vertex to get the container for

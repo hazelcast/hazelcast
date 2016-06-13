@@ -16,21 +16,23 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.application.ApplicationContext;
+public abstract class AsyncJetOperation extends JetOperation {
 
-public class AcceptLocalizationOperation extends JetOperation {
-    @SuppressWarnings("unused")
-    public AcceptLocalizationOperation() {
-
+    protected AsyncJetOperation() {
+        super();
     }
 
-    public AcceptLocalizationOperation(String name) {
+    protected AsyncJetOperation(String name) {
         super(name);
     }
 
     @Override
-    public void run() throws Exception {
-        ApplicationContext applicationContext = getApplicationContext();
-        applicationContext.getLocalizationStorage().accept();
+    public Object getResponse() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 }

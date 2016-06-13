@@ -16,44 +16,34 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
+import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineRequest;
-import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 
-public class ApplicationEventOperation extends AbstractJetApplicationRequestOperation {
+public class ApplicationEventOperation extends JetOperation {
     private ApplicationEvent applicationEvent;
 
+    @SuppressWarnings("unused")
     public ApplicationEventOperation() {
     }
 
-    public ApplicationEventOperation(ApplicationEvent applicationEvent,
-                                     String name) {
-        this(applicationEvent, name, null);
-    }
-
-    public ApplicationEventOperation(ApplicationEvent applicationEvent,
-                                     String name,
-                                     NodeEngineImpl nodeEngine) {
+    public ApplicationEventOperation(String name, ApplicationEvent applicationEvent) {
         super(name);
         this.applicationEvent = applicationEvent;
-        setNodeEngine(nodeEngine);
-        setServiceName(JetService.SERVICE_NAME);
     }
 
     @Override
     public void run() throws Exception {
-        ApplicationContext context = resolveApplicationContext();
+        ApplicationContext context = getApplicationContext();
 
         synchronized (context) {
             ApplicationStateMachine applicationStateMachine =
