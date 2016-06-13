@@ -23,6 +23,7 @@ import com.hazelcast.spi.annotation.Beta;
  * so it can be used in the reactive programming model approach.
  *
  * @since 3.2
+ * @deprecated since 3.7. The methods will be directly integrated into the {@link IAtomicReference}.
  */
 @Beta
 public interface AsyncAtomicReference<E> extends IAtomicReference<E> {
