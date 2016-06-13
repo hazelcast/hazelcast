@@ -122,6 +122,8 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             if (!cc.serverXml1.equals(serverXml1) || !cc.serverXml2.equals(serverXml2)) {
                 cc.server1.stop();
                 cc.server2.stop();
+                cc.server1 = null;
+                cc.server2 = null;
                 cc = null;
             }
         }
