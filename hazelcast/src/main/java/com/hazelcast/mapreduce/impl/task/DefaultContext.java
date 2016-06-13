@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.core.IFunction;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+
 /**
  * This is the internal default implementation of a map reduce context mappers emit values to. It controls the emitted
  * values to be combined using either the set {@link com.hazelcast.mapreduce.Combiner} or by utilizing the internal
@@ -66,6 +68,8 @@ public class DefaultContext<KeyIn, ValueIn>
     private volatile int collected;
 
     private volatile int partitionId;
+
+    private volatile InternalSerializationService serializationService;
 
     protected DefaultContext(CombinerFactory<KeyIn, ValueIn, ?> combinerFactory, MapCombineTask mapCombineTask) {
         this.mapCombineTask = mapCombineTask;
@@ -111,7 +115,15 @@ public class DefaultContext<KeyIn, ValueIn>
     }
 
     public Combiner<ValueIn, ?> getOrCreateCombiner(KeyIn key) {
-        return combiners.applyIfAbsent(key , combinerFunction);
+        return combiners.applyIfAbsent(key, combinerFunction);
+    }
+
+    public void setSerializationService(InternalSerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
+
+    public InternalSerializationService getSerializationService() {
+        return serializationService;
     }
 
     /**

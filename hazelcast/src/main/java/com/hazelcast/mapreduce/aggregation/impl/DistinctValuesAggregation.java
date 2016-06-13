@@ -24,6 +24,7 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.aggregation.Supplier;
+import com.hazelcast.mapreduce.impl.task.DefaultContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -199,6 +200,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
             int mappingKey = key();
             entry.setKey(key);
             entry.setValue(value);
+            entry.setSerializationService(((DefaultContext) context).getSerializationService());
             DistinctType valueOut = supplier.apply(entry);
             if (valueOut != null) {
                 context.emit(mappingKey, valueOut);

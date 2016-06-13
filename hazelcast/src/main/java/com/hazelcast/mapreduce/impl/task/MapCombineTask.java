@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.LifecycleMapper;
 import com.hazelcast.mapreduce.Mapper;
@@ -35,6 +36,7 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -74,6 +76,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     private final KeyValueSource<KeyIn, ValueIn> keyValueSource;
     private final MapReduceService mapReduceService;
     private final IPartitionService partitionService;
+    private final SerializationService serializationService;
     private final JobSupervisor supervisor;
     private final NodeEngine nodeEngine;
     private final String name;
@@ -91,6 +94,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         this.chunkSize = configuration.getChunkSize();
         this.nodeEngine = configuration.getNodeEngine();
         this.partitionService = nodeEngine.getPartitionService();
+        this.serializationService = nodeEngine.getSerializationService();
         this.mapReduceService = supervisor.getMapReduceService();
         this.keyValueSource = configuration.getKeyValueSource();
     }
@@ -126,6 +130,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
             throws Exception {
 
         context.setPartitionId(partitionId);
+        context.setSerializationService((InternalSerializationService) serializationService);
 
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).initialize(context);
