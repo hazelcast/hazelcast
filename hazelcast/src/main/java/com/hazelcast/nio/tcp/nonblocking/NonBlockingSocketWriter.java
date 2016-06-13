@@ -78,7 +78,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
     private WriteHandler writeHandler;
     private volatile long lastWriteTime;
 
-    private boolean shutdown;
     // this field will be accessed by the NonBlockingIOThread or
     // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
     // This prevents running into an NonBlockingIOThread that is migrating.
@@ -312,10 +311,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         eventCount.inc();
         lastWriteTime = currentTimeMillis();
 
-        if (shutdown) {
-            return;
-        }
-
         if (writeHandler == null) {
             logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             createWriterHandler(CLUSTER);
@@ -351,8 +346,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
     /**
      * Writes to content of the outputBuffer to the socket.
-     *
-     * @throws Exception
      */
     private void writeOutputBufferToSocket() throws IOException {
         // So there is data for writing, so lets prepare the buffer for writing and then write it to the socketChannel.
@@ -465,7 +458,7 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         // Else you get a lot of ugly WriteHandler.this.newOwner is ...
         private final NonBlockingIOThread theNewOwner;
 
-        public StartMigrationTask(NonBlockingIOThread theNewOwner) {
+        StartMigrationTask(NonBlockingIOThread theNewOwner) {
             this.theNewOwner = theNewOwner;
         }
 
@@ -487,7 +480,6 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
 
         @Override
         public void run() {
-            shutdown = true;
             try {
                 socketChannel.closeOutbound();
             } catch (IOException e) {
