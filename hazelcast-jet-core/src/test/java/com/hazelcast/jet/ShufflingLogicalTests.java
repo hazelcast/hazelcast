@@ -18,12 +18,11 @@ package com.hazelcast.jet;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
-import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.CombinerProcessor;
 import com.hazelcast.jet.processors.CountProcessor;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
@@ -63,7 +62,7 @@ public class ShufflingLogicalTests extends JetBaseTest {
             Vertex combiner = createVertex("combiner", CombinerProcessor.Factory.class, 1);
             addVertices(dag, counter, combiner);
 
-            Edge edge = new EdgeImpl.EdgeBuilder("edge", counter, combiner)
+            Edge edge = new Edge.EdgeBuilder("edge", counter, combiner)
                     .shuffling(true)
                     .shufflingStrategy(new IListBasedShufflingStrategy(targetList.getName()))
                     .build();

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.impl.Pipeline;
@@ -53,7 +53,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
     @Override
     public IMap<K, V> collect(StreamContext context, Pipeline<? extends T> upstream) {
         IMap<K, V> target = getTarget(context.getHazelcastInstance());
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag, null, toTupleMapper());
 
         Vertex merger = vertexBuilder(MergeProcessor.Factory.class)

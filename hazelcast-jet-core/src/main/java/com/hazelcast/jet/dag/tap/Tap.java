@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet.dag.tap;
 
-import com.hazelcast.jet.dag.DagElement;
+
+import java.io.Serializable;
 
 /**
  * Represents interface for the abstract tap;
@@ -32,7 +33,7 @@ import com.hazelcast.jet.dag.DagElement;
  *     .....
  * </pre>
  */
-public interface Tap extends DagElement {
+public interface Tap extends Serializable {
     /**
      * @return - name of the tap;
      */
@@ -42,14 +43,4 @@ public interface Tap extends DagElement {
      * @return - type of the tap;
      */
     TapType getType();
-
-    /**
-     * @return true - if it is source tap, else - otherwise;
-     */
-    boolean isSource();
-
-    /**
-     * @return true - if it is sink tap, else - otherwise;
-     */
-    boolean isSink();
 }

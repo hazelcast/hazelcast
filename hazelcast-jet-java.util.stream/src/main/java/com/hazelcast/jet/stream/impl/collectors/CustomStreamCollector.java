@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -43,7 +43,7 @@ public class CustomStreamCollector<T, R> extends AbstractCollector<T, R, R> {
 
     @Override
     public R collect(StreamContext context, Pipeline<? extends T> upstream) {
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier, accumulator);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner, null);
 

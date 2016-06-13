@@ -1,9 +1,8 @@
 package com.hazelcast.jet.internal.impl.dag;
 
-import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.processors.DummyProcessor;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.tap.SinkOutputStream;
 import com.hazelcast.jet.dag.tap.SinkTap;
@@ -31,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class VertexImplTest {
+public class VertexTest {
 
     @Test
     public void testVertexNameAndProcessorFactory() throws Exception {
@@ -47,7 +46,7 @@ public class VertexImplTest {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex input = createVertex("input", DummyProcessor.Factory.class);
 
-        EdgeImpl edge = new EdgeImpl("e1", input, v1);
+        Edge edge = new Edge("e1", input, v1);
         v1.addInputVertex(input, edge);
 
         List<Vertex> inputVertices = v1.getInputVertices();
@@ -63,7 +62,7 @@ public class VertexImplTest {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex output = createVertex("output", DummyProcessor.Factory.class);
 
-        EdgeImpl edge = new EdgeImpl("e1", v1, output);
+        Edge edge = new Edge("e1", v1, output);
         v1.addOutputVertex(output, edge);
 
         List<Vertex> outputVertices = v1.getOutputVertices();
@@ -80,7 +79,7 @@ public class VertexImplTest {
         Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
         Vertex output = createVertex("output", DummyProcessor.Factory.class);
 
-        Edge edge = new EdgeImpl.EdgeBuilder("edge", v1, output)
+        Edge edge = new Edge.EdgeBuilder("edge", v1, output)
                 .shuffling(true)
                 .build();
         v1.addOutputVertex(output, edge);

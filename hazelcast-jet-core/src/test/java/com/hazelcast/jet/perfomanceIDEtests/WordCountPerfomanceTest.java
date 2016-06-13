@@ -3,7 +3,7 @@ package com.hazelcast.jet.perfomanceIDEtests;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.base.JetBaseTest;
-import com.hazelcast.jet.dag.EdgeImpl;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.strategy.HashingStrategy;
@@ -44,7 +44,7 @@ public class WordCountPerfomanceTest extends JetBaseTest {
             vertex2.addSinkFile(sinkFile);
             addEdges(
                     dag,
-                    new EdgeImpl.EdgeBuilder(
+                    new Edge.EdgeBuilder(
                             "edge",
                             vertex1,
                             vertex2

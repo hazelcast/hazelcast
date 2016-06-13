@@ -6,11 +6,9 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.application.Application;
-import com.hazelcast.jet.dag.DAGImpl;
-import com.hazelcast.jet.dag.VertexImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.config.JetApplicationConfig;
-import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
@@ -78,7 +76,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     }
 
     public static Vertex createVertex(String name, Class processorClass, int taskCount) {
-        return new VertexImpl(
+        return new Vertex(
                 name,
                 ProcessorDescriptor.
                         builder(processorClass).
@@ -121,7 +119,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     }
 
     protected DAG createDAG(String dagName) {
-        return new DAGImpl(dagName);
+        return new DAG(dagName);
     }
 
     protected void fillMap(String source, HazelcastInstance instance, int CNT) throws Exception {

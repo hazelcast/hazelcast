@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.DAGImpl;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
@@ -43,7 +43,7 @@ public class Matcher {
     }
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
-        DAGImpl dag = new DAGImpl();
+        DAG dag = new DAG();
         Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         Vertex vertex = vertexBuilder(AnyMatchProcessor.Factory.class)
                 .addToDAG(dag)
@@ -72,7 +72,7 @@ public class Matcher {
         return false;
     }
 
-    private IList<Boolean> execute(DAGImpl dag, Vertex vertex) {
+    private IList<Boolean> execute(DAG dag, Vertex vertex) {
         IList<Boolean> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
         vertex.addSinkList(list.getName());
         executeApplication(context, dag);

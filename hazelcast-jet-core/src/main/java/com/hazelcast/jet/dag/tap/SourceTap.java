@@ -37,11 +37,4 @@ public abstract class SourceTap implements Tap {
                                             Vertex vertex,
                                             JetTupleFactory tupleFactory);
 
-    public boolean isSource() {
-        return true;
-    }
-
-    public boolean isSink() {
-        return false;
-    }
 }
