@@ -54,6 +54,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.StringUtil;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
@@ -134,8 +135,8 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
-        return delegatedInstance.getCache(name);
+    public <T extends Closeable & ICache> T getCache(String name) {
+        return delegatedInstance.<T>getCache(name);
     }
 
     @Override
