@@ -18,7 +18,6 @@ package com.hazelcast.security.permission;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -26,31 +25,23 @@ import java.security.Permission;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MapPermissionTest extends AbstractPermissionTest {
+public class CachePermissionTest extends AbstractPermissionTest {
 
     @Override
     protected String[] getActions() {
         return new String[] {
-                "put",
-                "read",
-                "remove",
-                "listen",
-                "lock",
-                "index",
-                "intercept",
-                "create",
-                "destroy"
+            "put",
+            "read",
+            "remove",
+            "listen",
+            "create",
+            "destroy"
         };
     }
 
     @Override
     protected Permission createPermission(String name, String... actions) {
-        return new MapPermission(name, actions);
-    }
-
-    @Test
-    public void willReturnFalseForNoPermOnIndex() {
-        new CheckPermission().of("index").against("read", "create", "put", "intercept").expect(false).run();
+        return new CachePermission(name, actions);
     }
 
 }

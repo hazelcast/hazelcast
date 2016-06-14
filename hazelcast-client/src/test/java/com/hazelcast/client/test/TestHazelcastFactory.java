@@ -64,7 +64,9 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
         try {
-            Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
+            if (tccl == ClassLoader.getSystemClassLoader()) {
+                Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
+            }
             ClientConnectionManagerFactory clientConnectionManagerFactory =
                     clientRegistry.createClientServiceFactory(createAddress("127.0.0.1", clientPorts.incrementAndGet()));
             AddressProvider testAddressProvider = createAddressProvider(config);
