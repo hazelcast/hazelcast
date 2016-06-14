@@ -48,11 +48,6 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_BlockingTest extends HazelcastTestSupport {
 
-    @Before
-    public void setup() {
-        setLoggingLog4j();
-    }
-
     // ============================ hearbeat timeout =============================================================================
     //
     // ===========================================================================================================================
