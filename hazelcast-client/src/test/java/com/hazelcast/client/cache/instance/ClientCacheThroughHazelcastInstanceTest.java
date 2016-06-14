@@ -46,9 +46,15 @@ public class ClientCacheThroughHazelcastInstanceTest extends CacheThroughHazelca
         instanceFactory = new TestHazelcastFactory();
         ownerInstance = instanceFactory.newHazelcastInstance(config);
         if (config.getClassLoader() != null) {
-            ClientConfig clientConfig = new ClientConfig();
-            clientConfig.setClassLoader(config.getClassLoader());
-            return instanceFactory.newHazelcastClient(clientConfig);
+            final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+            try {
+                ClientConfig clientConfig = new ClientConfig();
+                clientConfig.setClassLoader(config.getClassLoader());
+                Thread.currentThread().setContextClassLoader(config.getClassLoader());
+                return instanceFactory.newHazelcastClient(clientConfig);
+            } finally {
+                Thread.currentThread().setContextClassLoader(tccl);
+            }
         } else {
             return instanceFactory.newHazelcastClient();
         }

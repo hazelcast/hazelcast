@@ -1,5 +1,6 @@
 package com.hazelcast.security.permission;
 
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -41,6 +42,14 @@ public class ActionConstantsTest {
 
         assertNotNull(permission);
         assertTrue(permission instanceof MapPermission);
+    }
+
+    @Test
+    public void getPermission_Cache() {
+        Permission permission = ActionConstants.getPermission("foo", ICacheService.SERVICE_NAME);
+
+        assertNotNull(permission);
+        assertTrue(permission instanceof CachePermission);
     }
 
     @Test
