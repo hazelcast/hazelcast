@@ -18,8 +18,6 @@ package com.hazelcast.jet.impl.actor.shuffling;
 
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.strategy.DataTransferringStrategy;
 
 public class ShufflingProducer implements ObjectProducer {
     private final ObjectProducer objectProducer;
@@ -36,16 +34,6 @@ public class ShufflingProducer implements ObjectProducer {
     @Override
     public int lastProducedCount() {
         return this.objectProducer.lastProducedCount();
-    }
-
-    @Override
-    public boolean isShuffled() {
-        return true;
-    }
-
-    @Override
-    public Vertex getVertex() {
-        return objectProducer.getVertex();
     }
 
     @Override
@@ -66,11 +54,6 @@ public class ShufflingProducer implements ObjectProducer {
     @Override
     public void close() {
         objectProducer.close();
-    }
-
-    @Override
-    public DataTransferringStrategy getDataTransferringStrategy() {
-        return objectProducer.getDataTransferringStrategy();
     }
 
     @Override

@@ -5,6 +5,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.tap.ListSink;
+import com.hazelcast.jet.dag.tap.ListSource;
+import com.hazelcast.jet.dag.tap.MapSink;
+import com.hazelcast.jet.dag.tap.MapSource;
 import com.hazelcast.jet.impl.dag.tap.sink.HazelcastListPartitionWriter;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.DummyProcessor;
@@ -53,9 +57,9 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
         Vertex vertex1 = createVertex("vertex1", DummyProcessor.Factory.class);
         Vertex vertex2 = createVertex("vertex2", DummyProcessor.Factory.class);
 
-        vertex1.addSourceMap(sourceMap.getName());
-        vertex1.addSinkList(sinkList.getName());
-        vertex2.addSinkMap(sinkMap.getName());
+        vertex1.addSource(new MapSource(sourceMap.getName()));
+        vertex1.addSink(new ListSink(sinkList.getName()));
+        vertex2.addSink(new MapSink(sinkMap.getName()));
 
         addVertices(dag, vertex1, vertex2);
         addEdges(dag, new Edge("", vertex1, vertex2));
@@ -85,8 +89,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
             Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class);
 
             addVertices(dag, vertex);
-            vertex.addSourceMap("source.simpleListTest");
-            vertex.addSinkList("target.simpleListTest");
+            vertex.addSource(new MapSource("source.simpleListTest"));
+            vertex.addSink(new ListSink("target.simpleListTest"));
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
             assertEquals(CNT, targetList.size());
         } finally {
@@ -98,7 +102,6 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
 
     @Test
-    @Repeat(500)
     public void simpleList2ListTest() throws Exception {
         Application application = createApplication("simpleList2ListTest");
 
@@ -116,8 +119,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class, 1);
             addVertices(dag, vertex);
-            vertex.addSourceList(sourceList.getName());
-            vertex.addSinkList(targetList.getName());
+            vertex.addSource(new ListSource(sourceList.getName()));
+            vertex.addSink(new ListSink(targetList.getName()));
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
             assertEquals(CNT, targetList.size());
         } finally {
@@ -126,7 +129,6 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(500)
     public void simpleArrayEmitTest() throws Exception {
         Application application = createApplication("simpleArrayEmitTest");
 
@@ -143,8 +145,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class, 1);
             addVertices(dag, vertex);
-            vertex.addSourceList(sourceList.getName());
-            vertex.addSinkList(targetList.getName());
+            vertex.addSource(new ListSource(sourceList.getName()));
+            vertex.addSink(new ListSink(targetList.getName()));
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 
             for (int i = 0; i < CNT; i++) {
@@ -156,7 +158,6 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(100)
     public void shufflingListBadShufflingListName1() throws Exception {
         shufflingListTest(1, "target.shufflingListTest", "prefix0");
         shufflingListTest(1, null, "prefix1");
@@ -180,8 +181,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             addVertices(dag, vertex1, vertex2);
 
-            vertex1.addSourceMap(sourceMap.getName());
-            vertex2.addSinkList(targetList.getName());
+            vertex1.addSource(new MapSource(sourceMap.getName()));
+            vertex2.addSink(new ListSink(targetList.getName()));
 
             addEdges(
                     dag,
@@ -225,7 +226,6 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(500)
     public void mapReverserTest() throws Exception {
         System.out.println(System.nanoTime() + " --> mapReverserTest");
         Application application = createApplication("mapReverserTest");
@@ -239,8 +239,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             Vertex vertex = createVertex("reverser", ReverseProcessor.Factory.class, 1);
 
-            vertex.addSourceMap("source.mapReverserTest");
-            vertex.addSinkMap("target.mapReverserTest");
+            vertex.addSource(new MapSource("source.mapReverserTest"));
+            vertex.addSink(new MapSink("target.mapReverserTest"));
 
             addVertices(dag, vertex);
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);

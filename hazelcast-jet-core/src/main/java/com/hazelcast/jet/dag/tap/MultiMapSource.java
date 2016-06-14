@@ -16,33 +16,23 @@
 
 package com.hazelcast.jet.dag.tap;
 
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.dag.tap.source.HazelcastMultiMapPartitionReader;
 
-import java.io.Serializable;
+public class MultiMapSource extends MapSource {
+    public MultiMapSource(String name) {
+        super(name);
+    }
 
-/**
- * Represents abstract source tap;
- */
-public interface SourceTap extends Serializable {
+    public MultiMapSource(MultiMap multiMap) {
+        super(multiMap.getName());
+    }
 
-    /**
-     * @return - name of the tap;
-     */
-    String getName();
-
-    /**
-     * Array of the input readers;
-     *
-     * @param containerDescriptor - descriptor of the corresponding container;
-     * @param vertex              - corresponding vertex;
-     * @param tupleFactory        - factory for the tuple creation;
-     * @return - list of the input readers;
-     */
-    DataReader[] getReaders(ContainerDescriptor containerDescriptor,
-                            Vertex vertex,
-                            JetTupleFactory tupleFactory);
-
+    @Override
+    protected DataReader getReader(ContainerDescriptor containerDescriptor, JetTupleFactory tupleFactory, int partitionId) {
+        return new HazelcastMultiMapPartitionReader(containerDescriptor, getName(), partitionId, tupleFactory);
+    }
 }

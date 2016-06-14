@@ -19,6 +19,8 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.tap.ListSink;
+import com.hazelcast.jet.dag.tap.ListSource;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.processors.CombinerProcessor;
 import com.hazelcast.jet.processors.CountProcessor;
@@ -42,7 +44,6 @@ public class ShufflingLogicalTests extends JetBaseTest {
     }
 
     @Test
-    @Repeat(100)
     public void counterCombinerListTest() throws Exception {
         Application application = createApplication("counterCombinerListTest");
 
@@ -69,8 +70,8 @@ public class ShufflingLogicalTests extends JetBaseTest {
 
             addEdges(dag, edge);
 
-            counter.addSourceList(sourceList.getName());
-            combiner.addSinkList(targetList.getName());
+            counter.addSource(new ListSource(sourceList.getName()));
+            combiner.addSink(new ListSink(targetList.getName()));
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
             assertEquals(1, targetList.size());
             System.out.println("targetList.get(0)=" + targetList.get(0));

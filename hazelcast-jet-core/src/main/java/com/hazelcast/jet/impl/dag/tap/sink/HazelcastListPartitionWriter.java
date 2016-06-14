@@ -24,7 +24,6 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
@@ -43,12 +42,9 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
     private final CalculationStrategy calculationStrategy;
 
     public HazelcastListPartitionWriter(ContainerDescriptor containerDescriptor,
-                                        SinkTapWriteStrategy sinkTapWriteStrategy,
                                         String name) {
         super(containerDescriptor,
-                getPartitionId(name, containerDescriptor.getNodeEngine()),
-                sinkTapWriteStrategy
-        );
+                getPartitionId(name, containerDescriptor.getNodeEngine()));
         this.name = name;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         ListService service = nodeEngine.getService(ListService.SERVICE_NAME);
@@ -95,9 +91,7 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
 
     @Override
     protected void onOpen() {
-        if (getSinkTapWriteStrategy() == SinkTapWriteStrategy.CLEAR_AND_REPLACE) {
-            this.listContainer.clear();
-        }
+
     }
 
     @Override

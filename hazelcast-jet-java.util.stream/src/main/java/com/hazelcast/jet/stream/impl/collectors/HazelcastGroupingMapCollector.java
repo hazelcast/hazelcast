@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.tap.MapSink;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.dag.Vertex;
@@ -83,7 +84,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                 .processingStrategy(ProcessingStrategy.PARTITIONING)
                 .build();
 
-        combiner.addSinkMap(mapName);
+        combiner.addSink(new MapSink(mapName));
         executeApplication(context, dag);
         return target;
     }

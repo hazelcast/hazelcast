@@ -16,15 +16,14 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
-import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.data.tuple.JetTupleConvertor;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -75,14 +74,12 @@ public class HazelcastMultiMapPartitionReader<K, V> extends AbstractHazelcastRea
     public HazelcastMultiMapPartitionReader(ContainerDescriptor containerDescriptor,
                                             String name,
                                             int partitionId,
-                                            JetTupleFactory tupleFactory,
-                                            Vertex vertex) {
+                                            JetTupleFactory tupleFactory) {
         super(
                 containerDescriptor,
                 name,
                 partitionId,
                 tupleFactory,
-                vertex,
                 ByReferenceDataTransferringStrategy.INSTANCE
         );
 

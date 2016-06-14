@@ -41,7 +41,7 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
                     .taskCount(isOrdered() ? 1 : DEFAULT_TASK_COUNT)
                     .build();
         }
-        downstreamVertex.addSourceTap(getSourceTap());
+        downstreamVertex.addSource(getSourceTap());
         return downstreamVertex;
     }
 }

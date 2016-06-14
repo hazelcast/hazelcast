@@ -35,7 +35,7 @@ public class DataFileReader extends AbstractHazelcastReader<String> {
                           long start,
                           long end
     ) {
-        super(containerDescriptor, name, partitionId, tupleFactory, vertex, ByReferenceDataTransferringStrategy.INSTANCE);
+        super(containerDescriptor, name, partitionId, tupleFactory, ByReferenceDataTransferringStrategy.INSTANCE);
         this.end = end;
         this.start = start;
     }

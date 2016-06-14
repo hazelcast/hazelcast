@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.tap.ListSink;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
@@ -74,7 +75,7 @@ public class Matcher {
 
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
         IList<Boolean> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
-        vertex.addSinkList(list.getName());
+        vertex.addSink(new ListSink(list));
         executeApplication(context, dag);
         return list;
     }

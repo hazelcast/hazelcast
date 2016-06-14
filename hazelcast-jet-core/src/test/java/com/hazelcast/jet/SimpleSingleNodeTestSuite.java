@@ -14,6 +14,12 @@ import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.dag.tap.FileSink;
+import com.hazelcast.jet.dag.tap.FileSource;
+import com.hazelcast.jet.dag.tap.ListSink;
+import com.hazelcast.jet.dag.tap.ListSource;
+import com.hazelcast.jet.dag.tap.MapSink;
+import com.hazelcast.jet.dag.tap.MapSource;
 import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.processors.CounterProcessor;
 import com.hazelcast.jet.processors.DummyEmittingProcessor;
@@ -62,7 +68,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         int taskCount = 2;
 
         Vertex root = createVertex("root", DummyEmittingProcessor.Factory.class, taskCount);
-        root.addSourceList(sourceList.getName());
+        root.addSource(new ListSource(sourceList.getName()));
 
         dag.addVertex(root);
 
@@ -83,9 +89,9 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         int taskCount = 4;
 
         Vertex root = createVertex("root", DummyEmittingProcessor.Factory.class, taskCount);
-        root.addSourceList(sourceList.getName());
+        root.addSource(new ListSource(sourceList.getName()));
         Vertex consumer = createVertex("consumer", DummyProcessor.Factory.class, taskCount);
-        consumer.addSinkList(sinkList.getName());
+        consumer.addSink(new ListSink(sinkList.getName()));
         addVertices(dag, root, consumer);
         addEdges(dag, new Edge("", root, consumer));
         executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
@@ -98,7 +104,6 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
     }
 
     @Test
-    @Repeat(10)
     public void interruptionTest() throws Exception {
         final Application application = createApplication("interruptionTest");
         try {
@@ -109,8 +114,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             Vertex vertex1 = createVertex("dummy1", VerySlowProcessorOnlyForInterruptionTest.Factory.class);
             Vertex vertex2 = createVertex("dummy2", VerySlowProcessorOnlyForInterruptionTest.Factory.class);
 
-            vertex1.addSourceMap("source.interruptionTest");
-            vertex2.addSinkMap("target");
+            vertex1.addSource(new MapSource("source.interruptionTest"));
+            vertex2.addSink(new MapSink("target"));
 
             addVertices(dag, vertex1, vertex2);
             addEdges(dag, new Edge("edge", vertex1, vertex2));
@@ -176,9 +181,9 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             Vertex vertex12 = createVertex("v12", DummyProcessor.Factory.class);
             Vertex vertex22 = createVertex("v22", DummyProcessor.Factory.class);
 
-            root.addSourceMap("sourceMap.complexGraphTest");
-            vertex12.addSinkMap("sinkMap1.complexGraphTest");
-            vertex22.addSinkMap("sinkMap2.complexGraphTest");
+            root.addSource(new MapSource("sourceMap.complexGraphTest"));
+            vertex12.addSink(new MapSink("sinkMap1.complexGraphTest"));
+            vertex22.addSink(new MapSink("sinkMap2.complexGraphTest"));
 
             addVertices(dag, root, vertex11, vertex12, vertex21, vertex22);
 
@@ -223,7 +228,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             Vertex root = createVertex("root", DummyProcessor.Factory.class);
             addVertices(dag, root);
 
-            root.addSourceMap("sourceMap.giantGraphTest");
+            root.addSource(new MapSource("sourceMap.giantGraphTest"));
 
             for (int b = 1; b <= branchCount; b++) {
                 Vertex last = root;
@@ -236,7 +241,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
                     last = vertex;
 
                     if (i == vertexCount) {
-                        vertex.addSinkMap("sinkMap.giantGraphTest" + b);
+                        vertex.addSink(new MapSink("sinkMap.giantGraphTest" + b));
                     }
                 }
             }
@@ -281,8 +286,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         Vertex vertex1 = createVertex("mod1", DummyProcessor.Factory.class, 1);
         Vertex vertex2 = createVertex("mod2", DummyProcessor.Factory.class, 1);
 
-        vertex1.addSourceMap("source." + applicationName);
-        vertex2.addSinkMap("target" + idx + "." + applicationName);
+        vertex1.addSource(new MapSource("source." + applicationName));
+        vertex2.addSink(new MapSink("target" + idx + "." + applicationName));
 
         dag.addVertex(vertex1);
         dag.addVertex(vertex2);
@@ -373,8 +378,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             fillMap("source." + testName, SERVER, CNT);
 
             Vertex vertex = createVertex("mod1", CounterProcessor.CounterProcessorFactory.class);
-            vertex.addSourceMap("source." + testName);
-            vertex.addSinkMap("target." + testName);
+            vertex.addSource(new MapSource("source." + testName));
+            vertex.addSink(new MapSink("target." + testName));
             addVertices(dag, vertex);
 
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
@@ -404,9 +409,9 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             addVertices(dag, vertex1, vertex2, vertex3);
 
-            vertex1.addSourceFile(sourceFile);
+            vertex1.addSource(new FileSource(sourceFile));
             String sinkFile = touchFile("result.wordCountFileSortedTest");
-            vertex3.addSinkFile(sinkFile);
+            vertex3.addSink(new FileSink(sinkFile));
 
             addEdges(dag, new Edge("edge1", vertex1, vertex2));
             addEdges(dag, new Edge("edge2", vertex2, vertex3));
@@ -438,8 +443,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             String sinkFile = touchFile("result.wordCountFileTest");
 
-            vertex1.addSourceFile(sourceFile);
-            vertex2.addSinkFile(sinkFile);
+            vertex1.addSource(new FileSource(sourceFile));
+            vertex2.addSink(new FileSink(sinkFile));
 
             addEdges(
                     dag,
@@ -471,7 +476,6 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             assertEquals(CNT, fileLinesCount(sinkFile));
         } finally {
             application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
-            ;
         }
     }
 
@@ -497,8 +501,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             addVertices(dag, vertex1, vertex2);
 
-            vertex1.addSourceMap("wordtest.wordCountMapTest");
-            vertex2.addSinkMap("wordresult.wordCountMapTest");
+            vertex1.addSource(new MapSource("wordtest.wordCountMapTest"));
+            vertex2.addSink(new MapSink("wordresult.wordCountMapTest"));
             addEdges(dag, new Edge("edge", vertex1, vertex2));
 
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
@@ -510,7 +514,6 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
                 SERVER.getMap("wordtest.wordCountMapTest").clear();
             } finally {
                 application.finalizeApplication().get(TIME_TO_AWAIT, TimeUnit.SECONDS);
-                ;
             }
 
         }

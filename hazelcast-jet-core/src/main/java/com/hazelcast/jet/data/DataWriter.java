@@ -18,16 +18,11 @@ package com.hazelcast.jet.data;
 
 import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.Shuffler;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 
 /**
  * Represents abstract writer to some sink;
  */
 public interface DataWriter extends ObjectConsumer, Shuffler {
-    /**
-     * @return - strategy to write;
-     */
-    SinkTapWriteStrategy getSinkTapWriteStrategy();
 
     /**
      * @return - true if write is partition-aware, else otherwise;

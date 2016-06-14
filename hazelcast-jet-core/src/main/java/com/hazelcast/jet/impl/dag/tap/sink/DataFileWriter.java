@@ -17,26 +17,23 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.application.ApplicationListener;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.tap.SinkOutputStream;
-import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
+import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 public class DataFileWriter extends AbstractHazelcastWriter {
-    private final SinkOutputStream sinkOutputStream;
+    private final FileOutputStream fileOutputStream;
 
     private boolean closed = true;
 
     public DataFileWriter(ContainerDescriptor containerDescriptor,
                           int partitionID,
-                          SinkTap tap) {
-        super(containerDescriptor, partitionID, SinkTapWriteStrategy.CLEAR_AND_REPLACE);
-        this.sinkOutputStream = tap.getSinkOutputStream();
+                          FileOutputStream fileOutputStream) {
+        super(containerDescriptor, partitionID);
+        this.fileOutputStream = fileOutputStream;
 
         containerDescriptor.registerApplicationListener(new ApplicationListener() {
             @Override
@@ -67,21 +64,21 @@ public class DataFileWriter extends AbstractHazelcastWriter {
         }
 
         if (sb.length() > 0) {
-            this.sinkOutputStream.write(sb.toString());
-            this.sinkOutputStream.flush();
+            this.fileOutputStream.write(sb.toString());
+            this.fileOutputStream.flush();
         }
     }
 
     private void checkFileOpen() {
         if (this.closed) {
-            this.sinkOutputStream.open();
+            this.fileOutputStream.open();
             this.closed = false;
         }
     }
 
     private void closeFile() {
         if (!this.closed) {
-            this.sinkOutputStream.close();
+            this.fileOutputStream.close();
             this.closed = true;
         }
     }

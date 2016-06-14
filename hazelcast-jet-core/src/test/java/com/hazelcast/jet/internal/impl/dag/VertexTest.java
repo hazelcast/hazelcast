@@ -1,17 +1,14 @@
 package com.hazelcast.jet.internal.impl.dag;
 
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.processors.DummyProcessor;
 import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.dag.tap.SinkOutputStream;
 import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.dag.tap.SourceTap;
-import com.hazelcast.jet.dag.tap.TapType;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.processors.DummyProcessor;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -19,11 +16,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.base.JetBaseTest.createVertex;
-import static com.hazelcast.jet.dag.tap.SinkTapWriteStrategy.APPEND;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -95,25 +90,7 @@ public class VertexTest {
 
     @Test
     public void testVertexSources() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-
-        ArrayList<String> sources = new ArrayList<String>();
-
-        String sourceFileName = "sourceFileName";
-        v1.addSourceFile(sourceFileName);
-        sources.add(sourceFileName);
-
-        String sourceListName = "sourceListName";
-        v1.addSourceList(sourceListName);
-        sources.add(sourceListName);
-
-        String sourceMapName = "sourceMapName";
-        v1.addSourceMap(sourceMapName);
-        sources.add(sourceMapName);
-
-        String sourceMultiMapName = "sourceMultiMapName";
-        v1.addSourceMultiMap(sourceMultiMapName);
-        sources.add(sourceMultiMapName);
+        Vertex vertex = createVertex("vertex", DummyProcessor.Factory.class);
 
         final String sourceTapName = "sourceTapName";
         SourceTap sourceTap = new SourceTap() {
@@ -126,61 +103,16 @@ public class VertexTest {
             public String getName() {
                 return sourceTapName;
             }
-
-            @Override
-            public TapType getType() {
-                return null;
-            }
         };
-        v1.addSourceTap(sourceTap);
-        sources.add(sourceTapName);
+        vertex.addSource(sourceTap);
 
-        List<SourceTap> sourcesFromVertex = v1.getSources();
-        assertEquals(5, sourcesFromVertex.size());
-        for (SourceTap source : sourcesFromVertex) {
-            String name = source.getName();
-            assertTrue("Vertex should contain the source : " + name, sources.contains(name));
-        }
+        assertEquals(1, vertex.getSources().size());
+        assertEquals(sourceTap, vertex.getSources().get(0));
     }
 
     @Test
     public void testVertexSinks() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-
-        ArrayList<String> sinks = new ArrayList<String>();
-
-        String sinkFileName = "sinkFileName";
-        v1.addSinkFile(sinkFileName);
-        sinks.add(sinkFileName);
-
-        String sinkFileWithWriterStrategyName = "sinkFileWithWriterStrategyName";
-        v1.addSinkFile(sinkFileWithWriterStrategyName, APPEND);
-        sinks.add(sinkFileWithWriterStrategyName);
-
-        String sinkListName = "sinkListName";
-        v1.addSinkList(sinkListName);
-        sinks.add(sinkListName);
-
-        String sinkListWithWriterStrategyName = "sinkListWithWriterStrategyName";
-        v1.addSinkList(sinkListWithWriterStrategyName, APPEND);
-        sinks.add(sinkListWithWriterStrategyName);
-
-        String sinkMapName = "sinkMapName";
-        v1.addSinkMap(sinkMapName);
-        sinks.add(sinkMapName);
-
-        String sinkMapWithWriterStrategyName = "sinkMapWithWriterStrategyName";
-        v1.addSinkMap(sinkMapWithWriterStrategyName, APPEND);
-        sinks.add(sinkMapWithWriterStrategyName);
-
-        String sinkMultiMapName = "sinkMultiMapName";
-        v1.addSinkMultiMap(sinkMultiMapName);
-        sinks.add(sinkMultiMapName);
-
-        String sinkMultiMapWithWriterStrategyName = "sinkMultiMapWithWriterStrategyName";
-        v1.addSinkMultiMap(sinkMultiMapWithWriterStrategyName, APPEND);
-        sinks.add(sinkMultiMapWithWriterStrategyName);
-
+        Vertex vertex = createVertex("vertex", DummyProcessor.Factory.class);
 
         final String sinkTapName = "sinkTapWithWriterStrategyName";
         SinkTap sinkTap = new SinkTap() {
@@ -190,37 +122,18 @@ public class VertexTest {
             }
 
             @Override
-            public SinkTapWriteStrategy getTapStrategy() {
-                return APPEND;
-            }
-
-            @Override
-            public SinkOutputStream getSinkOutputStream() {
-                return null;
+            public boolean isPartitioned() {
+                return false;
             }
 
             @Override
             public String getName() {
                 return sinkTapName;
             }
-
-            @Override
-            public TapType getType() {
-                return null;
-            }
         };
-        v1.addSinkTap(sinkTap);
-        sinks.add(sinkTapName);
+        vertex.addSink(sinkTap);
 
-        List<SinkTap> sinksFromVertex = v1.getSinks();
-        assertEquals(9, sinksFromVertex.size());
-        for (SinkTap sink : sinksFromVertex) {
-            String name = sink.getName();
-            SinkTapWriteStrategy tapStrategy = sink.getTapStrategy();
-            assertTrue("Vertex should contain the sink : " + name, sinks.contains(name));
-            if (name.contains("WithWriterStrategy")) {
-                assertEquals(APPEND, tapStrategy);
-            }
-        }
+        assertEquals(1, vertex.getSinks().size());
+        assertEquals(sinkTap, vertex.getSinks().get(0));
     }
 }

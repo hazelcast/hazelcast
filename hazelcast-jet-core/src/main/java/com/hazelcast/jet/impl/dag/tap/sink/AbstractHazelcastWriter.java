@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
@@ -55,7 +54,7 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     private final int partitionId;
     private final NodeEngine nodeEngine;
     private final int awaitInSecondsTime;
-    private final SinkTapWriteStrategy sinkTapWriteStrategy;
+
     private final ShufflingStrategy shufflingStrategy;
     private final PartitionSpecificRunnable partitionSpecificRunnable = new PartitionSpecificRunnable() {
         @Override
@@ -93,11 +92,9 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     private boolean isClosed;
 
     protected AbstractHazelcastWriter(ContainerDescriptor containerDescriptor,
-                                      int partitionId,
-                                      SinkTapWriteStrategy sinkTapWriteStrategy) {
+                                      int partitionId) {
         checkNotNull(containerDescriptor);
         this.partitionId = partitionId;
-        this.sinkTapWriteStrategy = sinkTapWriteStrategy;
         this.nodeEngine = containerDescriptor.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
         this.containerDescriptor = containerDescriptor;
@@ -233,11 +230,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     }
 
     @Override
-    public SinkTapWriteStrategy getSinkTapWriteStrategy() {
-        return this.sinkTapWriteStrategy;
-    }
-
-    @Override
     public ShufflingStrategy getShufflingStrategy() {
         return this.shufflingStrategy;
     }
@@ -246,4 +238,6 @@ public abstract class AbstractHazelcastWriter implements DataWriter {
     public HashingStrategy getHashingStrategy() {
         return DefaultHashingStrategy.INSTANCE;
     }
+
+
 }

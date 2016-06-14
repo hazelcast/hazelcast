@@ -18,20 +18,17 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.config.JetApplicationConfig;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -104,11 +101,6 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
         this.closed = true;
         this.finalized = true;
         this.ringBufferActor.close();
-    }
-
-    @Override
-    public DataTransferringStrategy getDataTransferringStrategy() {
-        return ByReferenceDataTransferringStrategy.INSTANCE;
     }
 
     @Override
@@ -195,18 +187,8 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
     }
 
     @Override
-    public boolean isShuffled() {
-        return true;
-    }
-
-    @Override
-    public Vertex getVertex() {
-        return containerContext.getVertex();
-    }
-
-    @Override
     public String getName() {
-        return getVertex().getName();
+        return containerContext.getVertex().getName();
     }
 
     @Override

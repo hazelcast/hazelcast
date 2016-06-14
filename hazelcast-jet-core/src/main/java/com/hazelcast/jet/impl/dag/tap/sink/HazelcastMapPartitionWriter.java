@@ -23,7 +23,6 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.map.impl.MapContainer;
@@ -41,9 +40,8 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
 
     public HazelcastMapPartitionWriter(ContainerDescriptor containerDescriptor,
                                        int partitionId,
-                                       SinkTapWriteStrategy sinkTapWriteStrategy,
                                        String name) {
-        super(containerDescriptor, partitionId, sinkTapWriteStrategy);
+        super(containerDescriptor, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = service.getMapServiceContext();

@@ -26,7 +26,6 @@ import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.io.ObjectWriterFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -49,7 +48,7 @@ public class ShufflingSender extends AbstractHazelcastWriter {
     public ShufflingSender(ContainerContext containerContext,
                            int taskID,
                            ContainerTask containerTask, Address address) {
-        super(containerContext, -1, SinkTapWriteStrategy.CLEAR_AND_REPLACE);
+        super(containerContext, -1);
 
         this.taskID = taskID;
         this.address = address;

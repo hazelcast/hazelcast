@@ -3,6 +3,8 @@ package com.hazelcast.jet.internal.impl.dag;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.tap.FileSink;
+import com.hazelcast.jet.dag.tap.FileSource;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
@@ -89,7 +91,7 @@ public class DAGTest {
         Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
         Vertex output = createVertex("output", DummyProcessor.Factory.class);
         vertex.addOutputVertex(output, new Edge("e1", vertex, output));
-        vertex.addSinkFile("output");
+        vertex.addSink(new FileSink("output"));
         dag.addVertex(vertex);
         dag.addVertex(output);
         dag.validate();
@@ -101,7 +103,7 @@ public class DAGTest {
         Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
         Vertex input = createVertex("input", DummyProcessor.Factory.class);
         vertex.addInputVertex(input, new Edge("e1", input, vertex));
-        vertex.addSourceFile("input");
+        vertex.addSource(new FileSource("input"));
         dag.addVertex(vertex);
         dag.addVertex(input);
         dag.validate();
@@ -112,7 +114,7 @@ public class DAGTest {
     public void test_validate_same_source_and_vertex_name_throws_exception() throws Exception {
         DAG dag = new DAG();
         Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
-        vertex.addSourceFile("v1");
+        vertex.addSource(new FileSource("v1"));
         dag.addVertex(vertex);
         dag.validate();
     }
@@ -121,7 +123,7 @@ public class DAGTest {
     public void test_validate_same_sink_and_vertex_name_throws_exception() throws Exception {
         DAG dag = new DAG();
         Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
-        vertex.addSinkFile("v1");
+        vertex.addSink(new FileSink("v1"));
         dag.addVertex(vertex);
         dag.validate();
     }

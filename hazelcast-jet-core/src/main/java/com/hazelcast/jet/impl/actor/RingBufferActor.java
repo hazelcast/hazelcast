@@ -17,6 +17,11 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.application.ApplicationListener;
+import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithReferenceStrategy;
 import com.hazelcast.jet.impl.actor.ringbuffer.RingBufferWithValueStrategy;
 import com.hazelcast.jet.impl.application.ApplicationContext;
@@ -24,12 +29,6 @@ import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.JetApplicationConfig;
-import com.hazelcast.jet.dag.Edge;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -230,13 +229,8 @@ public class RingBufferActor implements ObjectActor {
     }
 
     @Override
-    public Vertex getVertex() {
-        return this.vertex;
-    }
-
-    @Override
     public String getName() {
-        return getVertex().getName();
+        return this.vertex.getName();
     }
 
     @Override
@@ -253,11 +247,6 @@ public class RingBufferActor implements ObjectActor {
     @Override
     public void close() {
         this.isClosed = true;
-    }
-
-    @Override
-    public DataTransferringStrategy getDataTransferringStrategy() {
-        return edge == null ? ByReferenceDataTransferringStrategy.INSTANCE : edge.getDataTransferringStrategy();
     }
 
     @Override

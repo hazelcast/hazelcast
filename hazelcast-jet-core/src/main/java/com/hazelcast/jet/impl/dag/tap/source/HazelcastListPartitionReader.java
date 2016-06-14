@@ -19,22 +19,21 @@ package com.hazelcast.jet.impl.dag.tap.source;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
-import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
-import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.data.tuple.JetTupleConvertor;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
+import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
+import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.List;
@@ -55,13 +54,11 @@ public class HazelcastListPartitionReader<K, V> extends AbstractHazelcastReader<
 
     public HazelcastListPartitionReader(ContainerDescriptor containerDescriptor,
                                         String name,
-                                        JetTupleFactory tupleFactory,
-                                        Vertex vertex) {
+                                        JetTupleFactory tupleFactory) {
         super(containerDescriptor,
                 name,
                 getPartitionId(containerDescriptor.getNodeEngine(), name),
                 tupleFactory,
-                vertex,
                 ByReferenceDataTransferringStrategy.INSTANCE
         );
         this.calculationStrategy = new CalculationStrategyImpl(
