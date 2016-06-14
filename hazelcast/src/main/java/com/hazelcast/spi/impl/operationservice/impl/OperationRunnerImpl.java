@@ -43,7 +43,6 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
-import com.hazelcast.spi.exception.ResponseNotSentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
@@ -345,7 +344,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
 
         operation.logError(e);
 
-        if (e instanceof ResponseNotSentException || !operation.returnsResponse()) {
+        if (!operation.returnsResponse()) {
             return;
         }
 

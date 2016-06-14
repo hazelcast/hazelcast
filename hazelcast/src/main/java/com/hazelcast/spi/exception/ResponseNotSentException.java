@@ -24,6 +24,8 @@ import com.hazelcast.core.HazelcastException;
  * <p/>
  * This can happen when connection to target member is dropped for any reason,
  * either a short network disconnection or target member leaves the cluster.
+ *
+ * @deprecated since 3.7. This exception isn't used anymore
  */
 public class ResponseNotSentException extends HazelcastException {
 
