@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.aggregation.impl;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.aggregation.Supplier;
+import com.hazelcast.mapreduce.impl.task.DefaultContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -52,6 +53,7 @@ class SupplierConsumingMapper<Key, ValueIn, ValueOut>
     public void map(Key key, ValueIn value, Context<Key, ValueOut> context) {
         entry.setKey(key);
         entry.setValue(value);
+        entry.setSerializationService(((DefaultContext) context).getSerializationService());
         ValueOut valueOut = supplier.apply(entry);
         if (valueOut != null) {
             context.emit(key, valueOut);
