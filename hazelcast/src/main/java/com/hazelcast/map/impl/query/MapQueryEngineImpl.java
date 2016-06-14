@@ -219,7 +219,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
                 = new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
 
         for (Integer partitionId : partitions) {
-            QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId);
+            // Making sure not to use a predicate in a multi-threaded context
+            Predicate predicateCopy = serializationService.copy(predicate);
+            QueryPartitionCallable task = new QueryPartitionCallable(name, predicateCopy, partitionId);
             Future<Collection<QueryableEntry>> future = executor.submit(task);
             futures.add(future);
         }
@@ -242,7 +244,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         List<Future<Collection<QueryableEntry>>> futures =
                 new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
         for (Integer partitionId : partitions) {
-            QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId);
+            // Making sure not to use a predicate in a multi-threaded context
+            PagingPredicate predicateCopy = serializationService.copy(predicate);
+            QueryPartitionCallable task = new QueryPartitionCallable(name, predicateCopy, partitionId);
             Future<Collection<QueryableEntry>> future = executor.submit(task);
             futures.add(future);
         }

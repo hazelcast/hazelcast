@@ -21,7 +21,9 @@ import java.util.Map;
 
 /**
  * Predicate instance must be thread-safe.
- * {@link #apply(java.util.Map.Entry)} is called by multiple threads concurrently.
+ * {@link #apply(java.util.Map.Entry)} may be called by multiple threads concurrently.
+ * <p>
+ * In order to guarantee thread-safety user-specified instance of a Predicate is deep-copied.
  *
  * @param <K>
  * @param <V>

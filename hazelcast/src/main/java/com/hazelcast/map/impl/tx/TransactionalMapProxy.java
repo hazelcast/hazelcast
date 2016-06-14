@@ -32,7 +32,6 @@ import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.IterationType;
 
@@ -336,9 +335,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
-        SerializationService serializationService = getNodeEngine().getSerializationService();
+        InternalSerializationService serializationService = (InternalSerializationService)
+                getNodeEngine().getSerializationService();
 
-        QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
+        QueryResult result = queryEngine.invokeQueryAllPartitions(name, serializationService.copy(predicate), IterationType.KEY);
         Set<Object> queryResult = new QueryResultCollection(serializationService, IterationType.KEY, false, true, result);
 
         // TODO: Can't we just use the original set?
@@ -382,9 +382,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine(name);
-        SerializationService serializationService = getNodeEngine().getSerializationService();
+        InternalSerializationService serializationService = (InternalSerializationService)
+                getNodeEngine().getSerializationService();
 
-        QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
+        QueryResult result = queryEngine.invokeQueryAllPartitions(name, serializationService.copy(predicate),
+                IterationType.ENTRY);
         QueryResultCollection<Map.Entry> queryResult
                 = new QueryResultCollection<Map.Entry>(serializationService, IterationType.ENTRY, false, true, result);
 

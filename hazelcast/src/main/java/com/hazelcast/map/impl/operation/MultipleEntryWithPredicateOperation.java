@@ -56,7 +56,8 @@ public class MultipleEntryWithPredicateOperation extends MultipleEntryOperation 
         }
 
         MultipleEntryWithPredicateBackupOperation backupOperation
-                = new MultipleEntryWithPredicateBackupOperation(name, keys, backupProcessor, predicate);
+                = new MultipleEntryWithPredicateBackupOperation(name, keys, backupProcessor,
+                getSerializationService().copy(predicate));
         backupOperation.setWanEventList(wanEventList);
 
         return backupOperation;

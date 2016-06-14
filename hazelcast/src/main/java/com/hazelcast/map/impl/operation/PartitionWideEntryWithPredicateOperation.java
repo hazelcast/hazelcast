@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
@@ -47,7 +48,9 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
         PartitionWideEntryWithPredicateBackupOperation backupOperation = null;
         if (backupProcessor != null) {
-            backupOperation = new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+            InternalSerializationService serializationService = getSerializationService();
+            backupOperation = new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor,
+                    serializationService.copy(predicate));
             backupOperation.setWanEventList(wanEventList);
         }
         return backupOperation;

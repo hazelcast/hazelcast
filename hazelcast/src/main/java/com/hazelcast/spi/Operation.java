@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -134,13 +135,13 @@ public abstract class Operation implements DataSerializable {
 
     /**
      * Returns the id of the partition that this Operation will be executed upon.
-     *
+     * <p>
      * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition: for example,
      * a map.get('foo'). If it is smaller than 0, than it means that it isn't bound to a particular partition.
-     *
+     * <p>
      * The partitionId should never be equal or larger than the total number of partitions. For example, if there are 271
      * partitions, the maximum partitionId is 270.
-     *
+     * <p>
      * The partitionId is used by the OperationService to figure out which member owns a specific partition, and to send
      * the operation to that member.
      *
@@ -181,7 +182,7 @@ public abstract class Operation implements DataSerializable {
 
     /**
      * Gets the callId of this Operation.
-     *
+     * <p>
      * The callId is used to associate the invocation of an Operation on a remote system, with the response from the execution
      * of that operation.
      *
@@ -224,6 +225,10 @@ public abstract class Operation implements DataSerializable {
 
     public final NodeEngine getNodeEngine() {
         return nodeEngine;
+    }
+
+    protected final InternalSerializationService getSerializationService() {
+        return (InternalSerializationService) getNodeEngine().getSerializationService();
     }
 
     public final Operation setNodeEngine(NodeEngine nodeEngine) {
@@ -292,7 +297,7 @@ public abstract class Operation implements DataSerializable {
 
     /**
      * Gets the time in milliseconds since this invocation started.
-     *
+     * <p>
      * For more information, see {@link ClusterClock#getClusterTime()}.
      *
      * @return the time of the invocation start.
@@ -529,7 +534,7 @@ public abstract class Operation implements DataSerializable {
      * A template method allows for additional information to be passed into the {@link #toString()} method. So an Operation
      * subclass can override this method and add additional debugging content. The default implementation does nothing so
      * one is not forced to provide an empty implementation.
-     *
+     * <p>
      * It is a good practice always to call the super.toString(stringBuffer) when implementing this method to make sure
      * that the super class can inject content if needed.
      *

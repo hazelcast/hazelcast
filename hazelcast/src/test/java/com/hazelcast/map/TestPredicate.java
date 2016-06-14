@@ -26,21 +26,19 @@ import java.util.Set;
 public class TestPredicate implements IndexAwarePredicate<String, TempData> {
 
     private String value;
-    private boolean filtered;
-    private int applied;
 
     public TestPredicate(String value) {
         this.value = value;
     }
 
     public boolean apply(Map.Entry<String, TempData> mapEntry) {
-        applied++;
+        TestPredicateState.counter++;
         TempData data = (TempData) mapEntry.getValue();
         return data.getAttr1().equals(value);
     }
 
     public Set<QueryableEntry<String, TempData>> filter(QueryContext queryContext) {
-        filtered = true;
+        TestPredicateState.filtered = true;
         return (Set) queryContext.getIndex("attr1").getRecords(value);
     }
 
@@ -49,11 +47,18 @@ public class TestPredicate implements IndexAwarePredicate<String, TempData> {
     }
 
     public boolean isFilteredAndAppliedOnlyOnce() {
-        return filtered && applied == 1;
+        return TestPredicateState.filtered && TestPredicateState.counter == 1;
     }
 
     public int getApplied() {
-        return applied;
+        return TestPredicateState.counter;
+    }
+
+    // predicates are cloned for thread-safety thus their state is not modified
+    // for test purposes, we store the state in the static context, since the predicate is used once
+    private static class TestPredicateState {
+        public static int counter = 0;
+        public static boolean filtered = false;
     }
 
 }

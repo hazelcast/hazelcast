@@ -130,13 +130,12 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         }
     }
 
-    // if it locates an index on Person.age, increments isIndexedInvoked
-    public class AgePredicate implements IndexAwarePredicate {
-        private final AtomicInteger isIndexedInvocationCounter;
+    public static class AgePredicateState {
+        static AtomicInteger isIndexedInvocationCounter = new AtomicInteger();
+    }
 
-        public AgePredicate(AtomicInteger atomicInteger) {
-            this.isIndexedInvocationCounter = atomicInteger;
-        }
+    // if it locates an index on Person.age, increments isIndexedInvoked
+    public static class AgePredicate implements IndexAwarePredicate {
 
         @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
@@ -153,7 +152,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         public boolean isIndexed(QueryContext queryContext) {
             Index ix = queryContext.getIndex("age");
             if (ix != null) {
-                isIndexedInvocationCounter.incrementAndGet();
+                AgePredicateState.isIndexedInvocationCounter.incrementAndGet();
                 return true;
             }
             else {
@@ -236,9 +235,8 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
             }
         }
 
-        final AtomicInteger invocationCounter = new AtomicInteger(0);
-        Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate(invocationCounter));
-        assertEquals("isIndexed should have located an index", 1, invocationCounter.get());
+        Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate());
+        assertEquals("isIndexed should have located an index", 1, AgePredicateState.isIndexedInvocationCounter.get());
         assertEquals("index should return 1 match", 1, personsWithAgePredicate.size());
 
         hzFactory.terminate(hz2);

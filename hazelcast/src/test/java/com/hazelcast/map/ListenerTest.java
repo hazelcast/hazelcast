@@ -51,6 +51,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +72,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ListenerTest extends HazelcastTestSupport {
+public class ListenerTest extends HazelcastTestSupport implements Serializable {
 
     private final AtomicInteger globalCount = new AtomicInteger();
     private final AtomicInteger localCount = new AtomicInteger();

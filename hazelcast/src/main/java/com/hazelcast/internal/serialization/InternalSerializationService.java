@@ -60,4 +60,16 @@ public interface InternalSerializationService extends SerializationService, Disp
     ByteOrder getByteOrder();
 
     byte getVersion();
+
+    /**
+     * Serializes and Deserializes an object to provide a deep-copy through serialization.
+     * <p/>
+     * If this method is called with null, null is returned.
+     *
+     * @param obj the object to serialize & deserialize.
+     * @return the copied object.
+     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException when (de)serialization fails.
+     */
+    <T> T copy(T obj);
+
 }
