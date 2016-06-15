@@ -33,6 +33,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 
@@ -339,15 +341,6 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * @deprecated Use & override {@link #onInvocationException(Throwable)} instead.
-     */
-    @Deprecated
-    public ExceptionAction onException(Throwable throwable) {
-        return (throwable instanceof RetryableException)
-                ? ExceptionAction.RETRY_INVOCATION : ExceptionAction.THROW_EXCEPTION;
-    }
-
-    /**
      * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown
      * during an invocation. Invocation process will continue, retry
      * or fail according to returned <tt>ExceptionAction</tt> result.
@@ -358,7 +351,7 @@ public abstract class Operation implements DataSerializable {
      * @return <tt>ExceptionAction</tt>
      */
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return onException(throwable);
+        return throwable instanceof RetryableException ? RETRY_INVOCATION : THROW_EXCEPTION;
     }
 
     public String getCallerUuid() {
