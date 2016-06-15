@@ -57,11 +57,11 @@ public abstract class JetStreamTestSupport extends HazelcastTestSupport {
     }
 
     protected static <K,V> IStreamMap<K,V> getMap(HazelcastInstance instance) {
-        return IStreamMap.streamMap(instance, instance.getMap(randomName()));
+        return IStreamMap.streamMap(instance.getMap(randomName()));
     }
 
     protected static <E> IStreamList<E> getList(HazelcastInstance instance) {
-        return IStreamList.streamList(instance, instance.getList(randomName()));
+        return IStreamList.streamList(instance.getList(randomName()));
     }
 
     protected static int fillMap(IMap<String, Integer> map) {

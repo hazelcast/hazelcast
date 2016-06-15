@@ -16,10 +16,16 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.impl.ListDecorator;
+import com.hazelcast.jet.stream.impl.StreamUtil;
 
+/**
+ *
+ * @param <E> the type of elements in this list
+ *
+ * @see IList
+ */
 public interface IStreamList<E> extends IList<E> {
 
     @Override
@@ -28,7 +34,7 @@ public interface IStreamList<E> extends IList<E> {
     @Override
     DistributedStream<E> parallelStream();
 
-    static <E> IStreamList<E> streamList(HazelcastInstance instance, IList<E> list) {
-        return new ListDecorator<>(list, instance);
+    static <E> IStreamList<E> streamList(IList<E> list) {
+        return new ListDecorator<>(list, StreamUtil.getHazelcastInstance(list));
     }
 }

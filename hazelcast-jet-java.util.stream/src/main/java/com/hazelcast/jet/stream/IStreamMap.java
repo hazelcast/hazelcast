@@ -16,15 +16,20 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.impl.MapDecorator;
+import com.hazelcast.jet.stream.impl.StreamUtil;
 
+/**
+ *
+ * @param <K> the type of keys maintained by this map
+ * @param <V> the type of mapped values
+ */
 public interface IStreamMap<K, V> extends IMap<K, V> {
 
     DistributedStream<Entry<K, V>> stream();
 
-    static <K, V> IStreamMap<K, V> streamMap(HazelcastInstance instance, IMap<K, V> map) {
-        return new MapDecorator<>(map, instance);
+    static <K, V> IStreamMap<K, V> streamMap(IMap<K, V> map) {
+        return new MapDecorator<>(map, StreamUtil.getHazelcastInstance(map));
     }
 }

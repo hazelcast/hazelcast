@@ -16,20 +16,27 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.application.Application;
-import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.io.tuple.Tuple;
+import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -165,6 +172,22 @@ public final class StreamUtil {
             }
             return vertex;
         }
+    }
+
+    public static HazelcastInstance getHazelcastInstance(DistributedObject object) {
+        if (object instanceof AbstractDistributedObject) {
+            return ((AbstractDistributedObject) object).getNodeEngine().getHazelcastInstance();
+        } else if (object instanceof ClientProxy) {
+            try {
+                Method method = ClientProxy.class.getDeclaredMethod("getContext");
+                method.setAccessible(true);
+                ClientContext context = (ClientContext) method.invoke(object);
+                return context.getHazelcastInstance();
+            } catch (Exception e) {
+                throw JetUtil.reThrow(e);
+            }
+        }
+        throw new IllegalArgumentException(object + " is not of a known proxy type");
     }
 
     public static class EdgeBuilder extends Edge.EdgeBuilder {
