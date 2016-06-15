@@ -68,6 +68,10 @@ public class TestServlet extends HttpServlet {
         } else if (req.getRequestURI().endsWith("remove")) {
             session.removeAttribute("key");
             resp.getWriter().write("true");
+        } else if (req.getRequestURI().endsWith("remove_put")) {
+            session.setAttribute("key", "value");
+            session.removeAttribute("key");
+            resp.getWriter().write("true");
         } else if (req.getRequestURI().endsWith("removeValue")) {
             session.removeValue("key");
             resp.getWriter().write("true");

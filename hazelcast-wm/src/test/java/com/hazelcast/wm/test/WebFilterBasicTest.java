@@ -111,6 +111,13 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
     }
 
     @Test(timeout = 20000)
+    public void test_getAttributeNames_AfterGetAttribute() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        executeRequest("remove_put", serverPort1, cookieStore);
+        assertEquals("", executeRequest("names", serverPort1, cookieStore));
+    }
+
+    @Test(timeout = 20000)
     public void test_invalidateSession() throws Exception {
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
