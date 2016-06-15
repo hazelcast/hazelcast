@@ -34,17 +34,33 @@ import static org.junit.Assert.assertEquals;
 public class ClientTest extends JetStreamTestSupport {
 
     @Test
-    public void testStreamFromClient() throws Exception {
+    public void testStreamMapFromClient() throws Exception {
         HazelcastInstance client = hazelcastInstanceFactory.newHazelcastClient();
 
         IMap<String, Integer> map = client.getMap(randomName());
-        IStreamMap<String, Integer> streamMap = IStreamMap.streamMap(client, map);
+        IStreamMap<String, Integer> streamMap = IStreamMap.streamMap(map);
 
         fillMap(streamMap);
 
         IList<Integer> list = streamMap
                 .stream()
                 .map(Map.Entry::getValue)
+                .collect(DistributedCollectors.toIList());
+
+        assertEquals(COUNT, list.size());
+    }
+
+    @Test
+    public void testStreamListFromClient() throws Exception {
+        HazelcastInstance client = hazelcastInstanceFactory.newHazelcastClient();
+
+        IList<Integer> list = client.getList(randomName());
+        IStreamList<Integer> streamList = IStreamList.streamList(list);
+
+        fillList(list);
+
+        IList<Integer> collected = streamList
+                .stream()
                 .collect(DistributedCollectors.toIList());
 
         assertEquals(COUNT, list.size());
