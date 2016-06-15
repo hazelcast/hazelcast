@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.dag.tap.source;
 
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
@@ -100,7 +99,6 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
     private Object[] buffer;
     private final String name;
     private boolean markClosed;
-    private final Vertex vertex;
     private final int chunkSize;
     private final int partitionId;
     private final int awaitSecondsTime;
@@ -114,11 +112,9 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
                                    String name,
                                    int partitionId,
                                    JetTupleFactory tupleFactory,
-                                   Vertex vertex,
                                    DataTransferringStrategy dataTransferringStrategy
     ) {
         this.name = name;
-        this.vertex = vertex;
         this.partitionId = partitionId;
         this.tupleFactory = tupleFactory;
         this.containerDescriptor = containerDescriptor;
@@ -137,11 +133,6 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
                 this.buffer[i] = this.dataTransferringStrategy.newInstance();
             }
         }
-    }
-
-    @Override
-    public boolean hasNext() {
-        return this.iterator != null && iterator.hasNext();
     }
 
     @Override
@@ -173,14 +164,6 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
         }
     }
 
-    private void checkFuture() {
-        try {
-            future.get();
-        } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
-        }
-    }
-
     @Override
     public int lastProducedCount() {
         return this.lastProducedCount;
@@ -197,8 +180,41 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
     }
 
     @Override
-    public boolean isShuffled() {
-        return true;
+    public Object[] produce() {
+        return readFromPartitionThread() ? doReadFromPartitionThread() : readFromCurrentThread();
+    }
+
+    @Override
+    public void handleProducerCompleted() {
+        for (ProducerCompletionHandler handler : this.completionHandlers) {
+            handler.onComplete(this);
+        }
+    }
+
+    @Override
+    public String getName() {
+        return this.name;
+    }
+
+    /**
+     * @return - true if data read process will be in Hazelcast partition-thread; false-otherwise;
+     */
+    protected abstract boolean readFromPartitionThread();
+
+    protected int getPartitionId() {
+        return partitionId;
+    }
+
+    private boolean hasNext() {
+        return this.iterator != null && iterator.hasNext();
+    }
+
+    private void checkFuture() {
+        try {
+            future.get();
+        } catch (Throwable e) {
+            throw JetUtil.reThrow(e);
+        }
     }
 
     private void pushReadRequest() {
@@ -207,7 +223,6 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
         this.internalOperationService.execute(this.partitionSpecificRunnable);
     }
 
-    @SuppressWarnings("unchecked")
     private Object[] readFromCurrentThread() {
         if (this.markClosed) {
             if (this.closed) {
@@ -231,10 +246,11 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
             this.position++;
 
             if (value != null) {
-                if (getDataTransferringStrategy().byReference()) {
+                if (this.dataTransferringStrategy.byReference()) {
                     this.buffer[idx++] = value;
                 } else {
-                    getDataTransferringStrategy().copy(value, this.buffer[idx++]);
+                    //noinspection unchecked
+                    this.dataTransferringStrategy.copy(value, this.buffer[idx++]);
                 }
             }
             hashNext = hasNext();
@@ -310,47 +326,5 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
             pushReadRequest();
             return null;
         }
-    }
-
-    @Override
-    public Object[] read() {
-        return readFromCurrentThread();
-    }
-
-    @Override
-    public Object[] produce() {
-        return readFromPartitionThread() ? doReadFromPartitionThread() : readFromCurrentThread();
-    }
-
-    @Override
-    public long position() {
-        return this.position;
-    }
-
-    @Override
-    public Vertex getVertex() {
-        return this.vertex;
-    }
-
-    @Override
-    public int getPartitionId() {
-        return this.partitionId;
-    }
-
-    @Override
-    public void handleProducerCompleted() {
-        for (ProducerCompletionHandler handler : this.completionHandlers) {
-            handler.onComplete(this);
-        }
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
-    }
-
-    @Override
-    public DataTransferringStrategy getDataTransferringStrategy() {
-        return this.dataTransferringStrategy;
     }
 }

@@ -34,7 +34,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
         R target = getTarget(context.getHazelcastInstance());
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag, null, toTupleMapper());
-        vertex.addSinkTap(getSinkTap());
+        vertex.addSink(getSinkTap());
         executeApplication(context, dag);
         return target;
     }

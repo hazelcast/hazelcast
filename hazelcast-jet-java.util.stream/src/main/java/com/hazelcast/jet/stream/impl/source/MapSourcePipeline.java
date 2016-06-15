@@ -17,10 +17,9 @@
 package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.dag.tap.HazelcastSourceTap;
+import com.hazelcast.jet.dag.tap.MapSource;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.dag.tap.SourceTap;
-import com.hazelcast.jet.dag.tap.TapType;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -40,7 +39,7 @@ public class MapSourcePipeline<K, V> extends AbstractSourcePipeline<Map.Entry<K,
 
     @Override
     public SourceTap getSourceTap() {
-        return new HazelcastSourceTap(map.getName(), TapType.HAZELCAST_MAP);
+        return new MapSource(map.getName());
     }
 
     @Override

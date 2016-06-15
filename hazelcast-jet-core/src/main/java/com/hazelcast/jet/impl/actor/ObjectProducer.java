@@ -17,8 +17,6 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.jet.impl.data.CompletionAwareProducer;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.strategy.DataTransferringStrategy;
 
 /**
  * This is an abstract interface for each producer in the system
@@ -29,16 +27,6 @@ public interface ObjectProducer extends Producer<Object[]>, CompletionAwareProdu
      * @return last produced object's count
      */
     int lastProducedCount();
-
-    /**
-     * @return true if producer supports shuffling, false otherwise
-     */
-    boolean isShuffled();
-
-    /**
-     * @return corresponding vertex
-     */
-    Vertex getVertex();
 
     /**
      * @return producer's name
@@ -60,8 +48,4 @@ public interface ObjectProducer extends Producer<Object[]>, CompletionAwareProdu
      */
     void close();
 
-    /**
-     * @return data transferring strategy
-     */
-    DataTransferringStrategy getDataTransferringStrategy();
 }

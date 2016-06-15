@@ -262,7 +262,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         Map<Integer, List<ObjectConsumer>> map = this.partitionedWriters.get(calculationStrategy);
 
         if (map == null) {
-            map = new HashMap<Integer, List<ObjectConsumer>>();
+            map = new HashMap<>();
             this.partitionedWriters.put(calculationStrategy, map);
         }
 
@@ -294,7 +294,7 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
         List<ObjectConsumer> partitionOwnerWriters = map.get(partitionId);
 
         if (partitionOwnerWriters == null) {
-            partitionOwnerWriters = new ArrayList<ObjectConsumer>();
+            partitionOwnerWriters = new ArrayList<>();
             map.put(partitionId, partitionOwnerWriters);
         }
 

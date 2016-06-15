@@ -19,6 +19,7 @@ package com.hazelcast.jet.stream.impl.collectors;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.dag.tap.MapSink;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -79,7 +80,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
                 .processingStrategy(ProcessingStrategy.PARTITIONING)
                 .build();
 
-        combiner.addSinkMap(mapName);
+        combiner.addSink(new MapSink(mapName));
         executeApplication(context, dag);
         return target;
     }

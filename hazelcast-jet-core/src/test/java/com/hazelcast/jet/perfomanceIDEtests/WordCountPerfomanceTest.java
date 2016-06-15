@@ -6,6 +6,8 @@ import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.application.Application;
+import com.hazelcast.jet.dag.tap.FileSink;
+import com.hazelcast.jet.dag.tap.FileSource;
 import com.hazelcast.jet.strategy.HashingStrategy;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.processors.WordCounterProcessor;
@@ -39,9 +41,9 @@ public class WordCountPerfomanceTest extends JetBaseTest {
         try {
             DAG dag = createDAG();
             addVertices(dag, vertex1, vertex2);
-            vertex1.addSourceFile(sourceFile);
+            vertex1.addSource(new FileSource(sourceFile));
             String sinkFile = touchFile("perfomance.wordCountFileTest.result");
-            vertex2.addSinkFile(sinkFile);
+            vertex2.addSink(new FileSink(sinkFile));
             addEdges(
                     dag,
                     new Edge.EdgeBuilder(

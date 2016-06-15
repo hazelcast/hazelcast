@@ -4,6 +4,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.tap.ListSource;
 import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.processors.CounterProcessor;
 import com.hazelcast.jet.processors.DummyProcessor;
@@ -76,7 +77,7 @@ public class ProcessingStrategyTest extends JetBaseTest {
 
         addVertices(dag, vertex1, vertex2);
 
-        vertex1.addSourceList(applicationName);
+        vertex1.addSource(new ListSource(applicationName));
 
         addEdges(
                 dag,

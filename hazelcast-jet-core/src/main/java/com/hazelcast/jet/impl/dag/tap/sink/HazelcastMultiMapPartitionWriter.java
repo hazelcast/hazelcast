@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.dag.tap.sink;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -35,9 +34,8 @@ public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
 
     public HazelcastMultiMapPartitionWriter(ContainerDescriptor containerDescriptor,
                                             int partitionId,
-                                            SinkTapWriteStrategy sinkTapWriteStrategy,
                                             String name) {
-        super(containerDescriptor, partitionId, sinkTapWriteStrategy);
+        super(containerDescriptor, partitionId);
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerDescriptor.getNodeEngine();
         MultiMapService service = nodeEngine.getService(MultiMapService.SERVICE_NAME);
         this.container = service.getOrCreateCollectionContainer(getPartitionId(), name);

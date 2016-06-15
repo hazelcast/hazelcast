@@ -16,31 +16,24 @@
 
 package com.hazelcast.jet.dag.tap;
 
-import java.io.Serializable;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.jet.container.ContainerDescriptor;
+import com.hazelcast.jet.data.DataWriter;
+import com.hazelcast.jet.impl.dag.tap.sink.HazelcastMultiMapPartitionWriter;
 
-/**
- * OutputStream interface for the sink taps;
- */
-public interface SinkOutputStream extends Serializable {
-    /**
-     * Open stream;
-     */
-    void open();
+public class MultiMapSink extends MapSink {
 
-    /**
-     * Writes to the stream;
-     *
-     * @param s - string to write;
-     */
-    void write(String s);
+    public MultiMapSink(String name) {
+        super(name);
+    }
 
-    /**
-     * Flushes stream;
-     */
-    void flush();
+    public MultiMapSink(MultiMap multiMap) {
+        super(multiMap.getName());
+    }
 
-    /**
-     * Closes stream;
-     */
-    void close();
+    @Override
+    protected DataWriter getPartitionWriter(ContainerDescriptor containerDescriptor, int partitionId) {
+        return new HazelcastMultiMapPartitionWriter(containerDescriptor, partitionId, getName());
+    }
+
 }

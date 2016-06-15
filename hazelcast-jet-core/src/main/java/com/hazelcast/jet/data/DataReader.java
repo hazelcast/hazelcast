@@ -22,40 +22,5 @@ import com.hazelcast.jet.impl.actor.ObjectProducer;
  * Represents abstract reader from some source with data;
  */
 public interface DataReader extends ObjectProducer {
-    /**
-     * @return - if there is next objects to read, false - otherwise;
-     */
-    boolean hasNext();
 
-    /**
-     * @return - current reader's position;
-     */
-    long position();
-
-    /**
-     * @return - true if data read process will be in Hazelcast partition-thread; false-otherwise;
-     */
-    boolean readFromPartitionThread();
-
-    /**
-     * Read next chunk of objects;
-     * It performs read always from current thread;
-     *
-     * @return - corresponding chunk of objects;
-     */
-    Object[] read();
-
-    /**
-     * Read next chunk of objects;
-     *
-     * It will take into account result of {@link #readFromPartitionThread() readFromPartitionThread} method;
-     *
-     * @return corresponding chunk of objects;
-     */
-    Object[] produce();
-
-    /**
-     * @return - reader's partition id;
-     */
-    int getPartitionId();
 }

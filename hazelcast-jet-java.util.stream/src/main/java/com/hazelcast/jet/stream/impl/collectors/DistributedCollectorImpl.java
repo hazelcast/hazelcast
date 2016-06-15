@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.dag.tap.ListSink;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
 import com.hazelcast.jet.io.tuple.Tuple;
@@ -77,7 +78,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         IList<R> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
-        combiner.addSinkList(list.getName());
+        combiner.addSink(new ListSink(list));
 
         executeApplication(context, dag);
         R result = list.get(0);

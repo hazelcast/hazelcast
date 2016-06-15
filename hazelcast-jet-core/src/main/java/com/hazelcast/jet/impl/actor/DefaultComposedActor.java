@@ -17,17 +17,16 @@
 package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
-import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
-import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.strategy.CalculationStrategy;
-import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.strategy.HashingStrategy;
+import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
-import com.hazelcast.jet.strategy.DataTransferringStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -198,13 +197,8 @@ public class DefaultComposedActor implements ComposedActor {
     }
 
     @Override
-    public Vertex getVertex() {
-        return this.vertex;
-    }
-
-    @Override
     public String getName() {
-        return getVertex().getName();
+        return this.vertex.getName();
     }
 
     @Override
@@ -230,11 +224,6 @@ public class DefaultComposedActor implements ComposedActor {
         for (ObjectActor actor : this.consumers) {
             actor.close();
         }
-    }
-
-    @Override
-    public DataTransferringStrategy getDataTransferringStrategy() {
-        return this.edge.getDataTransferringStrategy();
     }
 
     @Override

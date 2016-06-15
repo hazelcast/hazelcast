@@ -18,28 +18,34 @@ package com.hazelcast.jet.dag.tap;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
+import com.hazelcast.jet.impl.dag.tap.sink.DataFileWriter;
+import com.hazelcast.jet.impl.dag.tap.sink.FileOutputStream;
 import com.hazelcast.spi.NodeEngine;
 
-import java.io.Serializable;
+public class FileSink implements SinkTap {
 
-/**
- * Abstract class which represents any sink tap;
- */
-public interface SinkTap extends Serializable {
-    /**
-     * Return writers for the corresponding tap;
-     *
-     * @param nodeEngine          - Hazelcast nodeEngine;
-     * @param containerDescriptor - descriptor of the container;
-     * @return - list of the data writers;
-     */
-    DataWriter[] getWriters(NodeEngine nodeEngine,
-                            ContainerDescriptor containerDescriptor);
+    private final String filename;
+    private final FileOutputStream fileOutputStream;
 
-    boolean isPartitioned();
+    public FileSink(String filename) {
+        this.filename = filename;
+        this.fileOutputStream = new FileOutputStream(filename);
+    }
 
-    /**
-     * @return - name of the tap;
-     */
-    String getName();
+    @Override
+    public DataWriter[] getWriters(NodeEngine nodeEngine, ContainerDescriptor containerDescriptor) {
+        return new DataWriter[] {
+                new DataFileWriter(containerDescriptor, 0, fileOutputStream),
+        };
+    }
+
+    @Override
+    public boolean isPartitioned() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return filename;
+    }
 }

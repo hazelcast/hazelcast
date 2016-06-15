@@ -17,9 +17,8 @@
 package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.dag.tap.HazelcastSourceTap;
+import com.hazelcast.jet.dag.tap.ListSource;
 import com.hazelcast.jet.dag.tap.SourceTap;
-import com.hazelcast.jet.dag.tap.TapType;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
@@ -36,7 +35,7 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
 
     @Override
     public SourceTap getSourceTap() {
-        return new HazelcastSourceTap(list.getName(), TapType.HAZELCAST_LIST);
+        return new ListSource(list.getName());
     }
 
     @Override

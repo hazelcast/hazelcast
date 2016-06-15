@@ -16,12 +16,8 @@
 
 package com.hazelcast.jet.dag;
 
-import com.hazelcast.jet.dag.tap.HazelcastSinkTap;
-import com.hazelcast.jet.dag.tap.HazelcastSourceTap;
 import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.dag.tap.SourceTap;
-import com.hazelcast.jet.dag.tap.TapType;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 
 import java.io.Serializable;
@@ -66,7 +62,7 @@ public class Vertex implements Serializable {
      *
      * @param sourceTap - corresponding source tap;
      */
-    public void addSourceTap(SourceTap sourceTap) {
+    public void addSource(SourceTap sourceTap) {
         this.sources.add(sourceTap);
     }
 
@@ -75,124 +71,8 @@ public class Vertex implements Serializable {
      *
      * @param sinkTap - corresponding sink tap;
      */
-    public void addSinkTap(SinkTap sinkTap) {
+    public void addSink(SinkTap sinkTap) {
         this.sinks.add(sinkTap);
-    }
-
-    /**
-     * Add Hazelcast IList object as source tap;
-     *
-     * @param name -  name of the corresponding Hazelcast Ilist;
-     */
-    public void addSourceList(String name) {
-        this.sources.add(new HazelcastSourceTap(name, TapType.HAZELCAST_LIST));
-    }
-
-    /**
-     * Add Hazelcast IMap object as source tap;
-     *
-     * @param name -  name of the corresponding Hazelcast IMap;
-     */
-    public void addSourceMap(String name) {
-        this.sources.add(new HazelcastSourceTap(name, TapType.HAZELCAST_MAP));
-    }
-
-    /**
-     * Add Hazelcast IMultiMap object as source tap;
-     *
-     * @param name -  name of the corresponding Hazelcast MultiMap;
-     */
-    public void addSourceMultiMap(String name) {
-        this.sources.add(new HazelcastSourceTap(name, TapType.HAZELCAST_MULTIMAP));
-    }
-
-    /**
-     * Add Hazelcast IList as sink tap with
-     * {@link SinkTapWriteStrategy#CLEAR_AND_REPLACE} sink strategy;
-     *
-     * @param name -  name of the corresponding Hazelcast Ilist;
-     */
-    public void addSinkList(String name) {
-        this.sinks.add(new HazelcastSinkTap(name, TapType.HAZELCAST_LIST));
-    }
-
-    /**
-     * Add Hazelcast IList object as sink tap;
-     *
-     * @param name                 -  name of the corresponding Hazelcast Ilist;
-     * @param sinkTapWriteStrategy - corresponding write strategy;
-     */
-    public void addSinkList(String name, SinkTapWriteStrategy sinkTapWriteStrategy) {
-        this.sinks.add(new HazelcastSinkTap(name, TapType.HAZELCAST_LIST, sinkTapWriteStrategy));
-    }
-
-    /**
-     * Add Hazelcast IMap as sink tap with
-     * {@link SinkTapWriteStrategy#CLEAR_AND_REPLACE} sink strategy;
-     *
-     * @param name -  name of the corresponding Hazelcast IMap;
-     */
-    public void addSinkMap(String name) {
-        this.sinks.add(new HazelcastSinkTap(name, TapType.HAZELCAST_MAP));
-    }
-
-    /**
-     * Add Hazelcast IMap object as sink tap;
-     *
-     * @param name                 -  name of the corresponding Hazelcast IMap;
-     * @param sinkTapWriteStrategy - corresponding write strategy;
-     */
-    public void addSinkMap(String name, SinkTapWriteStrategy sinkTapWriteStrategy) {
-        this.sinks.add(new HazelcastSinkTap(name, TapType.HAZELCAST_MAP, sinkTapWriteStrategy));
-    }
-
-    /**
-     * Add Hazelcast MultiMap object as sink tap with
-     * {@link SinkTapWriteStrategy#CLEAR_AND_REPLACE} sink strategy;
-     *
-     * @param name -  name of the corresponding Hazelcast MultiMap;
-     */
-    public void addSinkMultiMap(String name) {
-        this.sinks.add(new HazelcastSinkTap(name, TapType.HAZELCAST_MULTIMAP));
-    }
-
-    /**
-     * Add Hazelcast MultiMap object as sink tap;
-     *
-     * @param name                 - name of the multiMap;
-     * @param sinkTapWriteStrategy - corresponding write strategy;
-     */
-    public void addSinkMultiMap(String name, SinkTapWriteStrategy sinkTapWriteStrategy) {
-        this.sinks.add(new HazelcastSinkTap(name, TapType.HAZELCAST_MULTIMAP, sinkTapWriteStrategy));
-    }
-
-    /**
-     * Add simple file on disk like source tap;
-     *
-     * @param name - path to the file;
-     */
-    public void addSourceFile(String name) {
-        this.sources.add(new HazelcastSourceTap(name, TapType.FILE));
-    }
-
-    /**
-     * Add simple file on disk like sink tap;
-     *
-     * @param name                 - path to the file;
-     * @param sinkTapWriteStrategy - sink tap writer strategy;
-     */
-    public void addSinkFile(String name, SinkTapWriteStrategy sinkTapWriteStrategy) {
-        sinks.add(new HazelcastSinkTap(name, TapType.FILE, sinkTapWriteStrategy));
-    }
-
-    /**
-     * Add simple file on disk like sink tap with
-     * {@link SinkTapWriteStrategy#CLEAR_AND_REPLACE} sink strategy;
-     *
-     * @param name - path to the file;
-     */
-    public void addSinkFile(String name) {
-        sinks.add(new HazelcastSinkTap(name, TapType.FILE));
     }
 
     /**

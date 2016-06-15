@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.actor.shuffling;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.strategy.ShufflingStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -29,11 +28,6 @@ public class ShufflingWriter extends ShufflingConsumer implements DataWriter {
     public ShufflingWriter(DataWriter dataWriter, NodeEngine nodeEngine, ContainerDescriptor containerDescriptor) {
         super(dataWriter, nodeEngine, containerDescriptor);
         this.dataWriter = dataWriter;
-    }
-
-    @Override
-    public SinkTapWriteStrategy getSinkTapWriteStrategy() {
-        return dataWriter.getSinkTapWriteStrategy();
     }
 
     @Override

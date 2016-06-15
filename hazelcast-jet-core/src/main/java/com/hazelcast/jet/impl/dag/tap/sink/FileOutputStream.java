@@ -17,40 +17,33 @@
 package com.hazelcast.jet.impl.dag.tap.sink;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.dag.tap.SinkOutputStream;
-import com.hazelcast.jet.dag.tap.SinkTap;
-import com.hazelcast.jet.dag.tap.SinkTapWriteStrategy;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
 
-public class FileOutputStream implements SinkOutputStream {
+public class FileOutputStream implements Serializable {
     private static final long serialVersionUID = -396575576353368113L;
 
-    private final SinkTap tap;
     private final String name;
 
     private boolean closed = true;
     private transient Writer fileWriter;
 
-    public FileOutputStream(String name, SinkTap tap) {
-        this.tap = tap;
+    public FileOutputStream(String name) {
         this.name = name;
     }
 
-    @Override
     public void open() {
-        if (this.closed) {
-            if (this.tap.getTapStrategy() == SinkTapWriteStrategy.CLEAR_AND_REPLACE) {
-                File file = new File(this.name);
+        if (closed) {
+            File file = new File(name);
 
-                if (file.exists()) {
-                    initFile(file);
-                }
+            if (file.exists()) {
+                initFile(file);
             }
 
             try {
@@ -76,7 +69,6 @@ public class FileOutputStream implements SinkOutputStream {
         }
     }
 
-    @Override
     public void write(String data) {
         try {
             this.fileWriter.write(data);
@@ -85,7 +77,6 @@ public class FileOutputStream implements SinkOutputStream {
         }
     }
 
-    @Override
     public void flush() {
         try {
             this.fileWriter.flush();
@@ -94,7 +85,6 @@ public class FileOutputStream implements SinkOutputStream {
         }
     }
 
-    @Override
     public void close() {
         if (!this.closed) {
             try {

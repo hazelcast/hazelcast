@@ -18,6 +18,8 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.base.JetBaseTest;
 import com.hazelcast.jet.dag.Edge;
+import com.hazelcast.jet.dag.tap.FileSink;
+import com.hazelcast.jet.dag.tap.FileSource;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processors.CombinerProcessor;
 import com.hazelcast.jet.processors.CountProcessor;
@@ -62,7 +64,6 @@ public class FileToFileTest extends JetBaseTest {
     }
 
     @Test
-    @Repeat(10)
     public void simpleFileToFileTest() throws Exception {
         Application application = createApplication("fileToFileTest");
         DAG dag = createDAG();
@@ -81,8 +82,8 @@ public class FileToFileTest extends JetBaseTest {
 
         addEdges(dag, edge);
 
-        counter.addSourceFile(input.getPath());
-        combiner.addSinkFile(output.getPath());
+        counter.addSource(new FileSource(input.getPath()));
+        combiner.addSink(new FileSink(output.getPath()));
         try {
             executeApplication(dag, application).get(TIME_TO_AWAIT, TimeUnit.SECONDS);
 

@@ -103,12 +103,12 @@
         <developerConnection>scm:git:git@github.com:hazelcast/hazelcast.git</developerConnection>
         <url>https://github.com/hazelcast/hazelcast/</url>
     </scm>
-    
+
     <developers>
         <developer>
-            <id>toktarev</id>
-            <name>Alexander Toktarev</name>
-            <email>toktarev@hazelcast.com</email>
+            <id>jet-team</id>
+            <name>Hazelcast Jet Team</name>
+            <email>jet@hazelcast.com</email>
         </developer>
     </developers>
 
@@ -301,7 +301,7 @@
                     <!--<perCoreThreadCount>true</perCoreThreadCount>-->
 
                     <argLine>
-                        -verbose:gc -Xmx8G
+                        -Xmx8G
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
@@ -371,7 +371,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -Xmx4G -verbose:GC
+                                -Xmx4G
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=log4j
@@ -453,7 +453,7 @@
             <id>test-coverage</id>
             <properties>
                 <argLine>
-                    -verbose:gc -Xmx8G
+                    -Xmx8G
                     -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
