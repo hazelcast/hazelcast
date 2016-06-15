@@ -72,8 +72,8 @@ public class ProcessingStrategyTest extends JetBaseTest {
         DAG dag = createDAG(applicationName);
 
         insertToList(applicationName, count);
-        Vertex vertex1 = createVertex("Dummy", DummyProcessor.Factory.class);
-        Vertex vertex2 = createVertex("Counter", CounterProcessor.CounterProcessorFactory.class, taskCount);
+        Vertex vertex1 = createVertex("Dummy", DummyProcessor.class);
+        Vertex vertex2 = createVertex("Counter", CounterProcessor.class, taskCount);
 
         addVertices(dag, vertex1, vertex2);
 

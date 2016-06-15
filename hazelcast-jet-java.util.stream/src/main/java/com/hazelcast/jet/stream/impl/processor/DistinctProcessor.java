@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -68,16 +67,4 @@ public class DistinctProcessor<T> extends AbstractStreamProcessor<T, T> {
         this.map.clear();
     }
 
-    public static class Factory<T> extends AbstractStreamProcessor.Factory<T, T> {
-
-        public Factory(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper) {
-            super(inputMapper, outputMapper);
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, T> inputMapper,
-                                                                Function<T, Tuple> outputMapper) {
-            return new DistinctProcessor<>(inputMapper, outputMapper);
-        }
-    }
 }

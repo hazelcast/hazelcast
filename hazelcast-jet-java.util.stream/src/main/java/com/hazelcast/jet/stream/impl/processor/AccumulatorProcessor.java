@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -59,25 +58,5 @@ public class AccumulatorProcessor<IN, OUT> extends AbstractStreamProcessor<IN, O
     protected boolean finalize(ConsumerOutputStream<OUT> outputStream, int chunkSize) throws Exception {
         outputStream.consume(result);
         return true;
-    }
-
-    public static class Factory<IN, OUT> extends AbstractStreamProcessor.Factory<IN, OUT> {
-
-        private final BiFunction<OUT, IN, OUT> accumulator;
-        private final OUT identity;
-
-        public Factory(Function<Tuple, IN> inputMapper,
-                       Function<OUT, Tuple> outputMapper,
-                       BiFunction<OUT, IN, OUT> accumulator, OUT identity) {
-            super(inputMapper, outputMapper);
-            this.accumulator = accumulator;
-            this.identity = identity;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, IN> inputMapper,
-                                                                Function<OUT, Tuple> outputMapper) {
-            return new AccumulatorProcessor<>(inputMapper, outputMapper, accumulator, identity);
-        }
     }
 }

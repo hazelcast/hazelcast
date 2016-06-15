@@ -19,17 +19,10 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
-public class ReverseProcessor implements TupleContainerProcessor<Integer, String, String, Integer> {
-    @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-
-    }
-
+public class ReverseProcessor implements ContainerProcessor<Tuple<Integer, String>, Tuple<String, Integer>> {
     @Override
     public boolean process(ProducerInputStream<Tuple<Integer, String>> inputStream,
                            ConsumerOutputStream<Tuple<String, Integer>> outputStream,
@@ -44,22 +37,5 @@ public class ReverseProcessor implements TupleContainerProcessor<Integer, String
         }
 
         return true;
-    }
-
-    @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<String, Integer>> outputStream,
-                                     ProcessorContext processorContext) {
-        return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory implements TupleContainerProcessorFactory {
-        public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new ReverseProcessor();
-        }
     }
 }

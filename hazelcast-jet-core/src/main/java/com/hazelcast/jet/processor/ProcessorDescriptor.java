@@ -29,50 +29,50 @@ import static com.hazelcast.util.Preconditions.checkFalse;
 public abstract class ProcessorDescriptor implements Serializable {
     private int taskCount = 1;
 
-    public static ProcessorDescriptor create(Class<? extends ContainerProcessorFactory> clazz, Object... args) {
+    public static ProcessorDescriptor create(Class<? extends ContainerProcessor> clazz, Object... args) {
         return new DefaultProcessorDescriptor(clazz, args);
     }
 
     /**
-     * Creates builder to construct instance of ProcessorDescriptor;
+     * Creates builder to construct instance of ProcessorDescriptor
      *
-     * @param clazz - class of the corresponding ContainerProcessorFactory;
+     * @param clazz - class of the corresponding ContainerProcessor
      * @return - corresponding builder;
      */
-    public static Builder builder(Class<? extends ContainerProcessorFactory> clazz) {
+    public static Builder builder(Class<? extends ContainerProcessor> clazz) {
         return new Builder(clazz);
     }
 
     /**
-     * Creates builder to construct instance of ProcessorDescriptor;
+     * Creates builder to construct instance of ProcessorDescriptor
      *
-     * @param clazz - class of the corresponding ContainerProcessorFactory
-     * @param args - arguments to be passed to the factory constructor
-     * @return - corresponding builder;
+     * @param clazz - class of the corresponding ContainerProcessor
+     * @param args - arguments to be passed to the processor constructor
+     * @return - corresponding builder
      */
-    public static Builder builder(Class<? extends ContainerProcessorFactory> clazz, Object... args) {
+    public static Builder builder(Class<? extends ContainerProcessor> clazz, Object... args) {
         return new Builder(clazz, args);
     }
 
     /**
-     * @return - task count in the corresponding vertex-container;
+     * @return - task count in the corresponding vertex-container
      */
     public int getTaskCount() {
         return this.taskCount;
     }
 
     /**
-     * @return - arguments which will be passed to construct ContainerProcessor by the corresponding factory;
+     * @return - arguments which will be passed to construct ContainerProcessor
      */
-    public abstract Object[] getFactoryArgs();
+    public abstract Object[] getArgs();
 
     /**
-     * @return - class of the corresponding factory to construct ContainerProcessor;
+     * @return - class of the corresponding ContainerProcessor
      */
-    public abstract String getContainerProcessorFactoryClazz();
+    public abstract String getContainerProcessorClazz();
 
     /**
-     * Builder class to construct ProcessorDescriptor instances;
+     * Builder class to construct ProcessorDescriptor instances
      */
     public static class Builder {
         private static final String MESSAGE = "ProcessorDescriptor has  already been built";
@@ -80,12 +80,12 @@ public abstract class ProcessorDescriptor implements Serializable {
         private final ProcessorDescriptor processorDescriptor;
         private boolean build;
 
-        public Builder(Class<? extends ContainerProcessorFactory> clazz, Object... args) {
+        public Builder(Class<? extends ContainerProcessor> clazz, Object... args) {
             processorDescriptor = ProcessorDescriptor.create(clazz, args);
         }
 
         /**
-         * Define amount of tasks inside the corresponding container;
+         * Define amount of tasks inside the corresponding container
          *
          * @param taskCount - amount of task;
          * @return - builder itself;
@@ -97,9 +97,9 @@ public abstract class ProcessorDescriptor implements Serializable {
         }
 
         /**
-         * Construct and return ProcessorDescriptor object;
+         * Construct and return ProcessorDescriptor object
          *
-         * @return - corresponding ProcessorDescriptor;
+         * @return - corresponding ProcessorDescriptor
          */
         public ProcessorDescriptor build() {
             checkFalse(build, MESSAGE);

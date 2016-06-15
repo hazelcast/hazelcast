@@ -54,7 +54,7 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
 
         //This vertex is necessary to convert the input to format suitable for list
-        Vertex vertex = vertexBuilder(PassthroughProcessor.Factory.class)
+        Vertex vertex = vertexBuilder(PassthroughProcessor.class)
                 .addToDAG(dag)
                 .args(defaultFromTupleMapper(), toTupleMapper)
                 .taskCount(taskCount)

@@ -19,9 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
@@ -38,11 +36,6 @@ public class MergeProcessor<K, V> implements ContainerProcessor<Tuple<K, V>, Tup
 
     public MergeProcessor(BinaryOperator<V> merger) {
         this.merger = merger;
-    }
-
-    @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-
     }
 
     @Override
@@ -88,24 +81,5 @@ public class MergeProcessor<K, V> implements ContainerProcessor<Tuple<K, V>, Tup
             }
         }
         return finalized;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory<K, V> implements ContainerProcessorFactory<Tuple<K, V>, Tuple<K, V>> {
-
-        private final BinaryOperator<V> merger;
-
-        public Factory(BinaryOperator<V> merger) {
-            this.merger = merger;
-        }
-
-        @Override
-        public ContainerProcessor<Tuple<K, V>, Tuple<K, V>> getProcessor(Vertex vertex) {
-            return new MergeProcessor<>(merger);
-        }
     }
 }

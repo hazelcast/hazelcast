@@ -51,7 +51,9 @@ public interface ContainerProcessor<I, O> extends Serializable {
      *
      * @param processorContext - context of processor;
      */
-    void beforeProcessing(ProcessorContext processorContext);
+    default void beforeProcessing(ProcessorContext processorContext) {
+
+    }
 
     /**
      * Performs next iteration of execution;
@@ -63,11 +65,13 @@ public interface ContainerProcessor<I, O> extends Serializable {
      * @return - true - if next chunk should be read, false if next iteration will be with the same inputStream;
      * @throws Exception if any exception
      */
-    boolean process(ProducerInputStream<I> inputStream,
+    default boolean process(ProducerInputStream<I> inputStream,
                     ConsumerOutputStream<O> outputStream,
                     String sourceName,
                     ProcessorContext processorContext
-    ) throws Exception;
+    ) throws Exception {
+        return true;
+    }
 
     /**
      * Will be invoked on finalization phase;
@@ -77,8 +81,10 @@ public interface ContainerProcessor<I, O> extends Serializable {
      * @return - true if finalization is finished, false if this method should be invoked again;
      * @throws Exception if any exception
      */
-    boolean finalizeProcessor(ConsumerOutputStream<O> outputStream,
-                              ProcessorContext processorContext) throws Exception;
+    default boolean finalizeProcessor(ConsumerOutputStream<O> outputStream,
+                              ProcessorContext processorContext) throws Exception {
+        return true;
+    }
 
     /**
      * Will be invoked strictly  after last invocation of the corresponding task, strictly
@@ -86,5 +92,7 @@ public interface ContainerProcessor<I, O> extends Serializable {
      *
      * @param processorContext - context of processor;
      */
-    void afterProcessing(ProcessorContext processorContext);
+    default void afterProcessing(ProcessorContext processorContext) {
+
+    }
 }

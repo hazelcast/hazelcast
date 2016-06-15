@@ -17,22 +17,22 @@
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.DataChannel;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
-import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.impl.container.DefaultDataChannel;
-import com.hazelcast.jet.impl.container.DefaultProcessingContainer;
-import com.hazelcast.jet.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.DataChannel;
+import com.hazelcast.jet.impl.container.DefaultDataChannel;
+import com.hazelcast.jet.impl.container.DefaultProcessingContainer;
+import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
@@ -45,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -61,10 +62,10 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
                 @Override
                 public ProcessingContainer apply(Vertex vertex) {
                     ProcessorDescriptor descriptor = vertex.getDescriptor();
-                    String className = descriptor.getContainerProcessorFactoryClazz();
-                    Object[] args = descriptor.getFactoryArgs();
+                    String className = descriptor.getContainerProcessorClazz();
+                    Object[] args = descriptor.getArgs();
 
-                    ContainerProcessorFactory processorFactory = containerProcessorFactory(className, args);
+                    Supplier<ContainerProcessor> processorFactory = containerProcessorFactory(className, args);
 
                     ProcessingContainer container = new DefaultProcessingContainer(
                             vertex,
@@ -164,53 +165,59 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
     }
 
     @SuppressWarnings("unchecked")
-    private ContainerProcessorFactory containerProcessorFactory(String className, Object... args) {
+    private Supplier<ContainerProcessor> containerProcessorFactory(String className, Object... args) {
         try {
-            Class<ContainerProcessorFactory> clazz =
-                    (Class<ContainerProcessorFactory>) Class.forName(
-                            className,
-                            true,
-                            this.applicationClassLoader
-                    );
-
-            int i = 0;
-            Class[] argsClasses = new Class[args.length];
-
-            for (Object obj : args) {
-                if (obj != null) {
-                    argsClasses[i++] = obj.getClass();
+            Constructor<ContainerProcessor> resultConstructor = getConstructor(className, args);
+            return () -> {
+                try {
+                    return resultConstructor.newInstance(args);
+                } catch (Exception e) {
+                    throw JetUtil.reThrow(e);
                 }
-            }
-
-            Constructor<ContainerProcessorFactory> resultConstructor = null;
-
-            for (Constructor constructor : clazz.getConstructors()) {
-                if (constructor.getParameterTypes().length == argsClasses.length) {
-                    boolean valid = true;
-                    for (int idx = 0; idx < argsClasses.length; idx++) {
-                        Class argsClass = argsClasses[idx];
-                        if (argsClass != null && !constructor.getParameterTypes()[idx].isAssignableFrom(argsClass)) {
-                            valid = false;
-                            break;
-                        }
-                    }
-
-                    if (valid) {
-                        resultConstructor = constructor;
-                    }
-                }
-            }
-
-            if (resultConstructor == null) {
-                throw new IllegalStateException("No constructor with arguments"
-                        + Arrays.toString(argsClasses)
-                        + " className=" + className
-                );
-            }
-
-            return resultConstructor.newInstance(args);
+            };
         } catch (Throwable e) {
             throw JetUtil.reThrow(e);
         }
+    }
+
+    private Constructor<ContainerProcessor> getConstructor(String className, Object[] args) throws ClassNotFoundException {
+        Class<ContainerProcessor> clazz =
+                (Class<ContainerProcessor>) Class.forName(
+                        className,
+                        true,
+                        this.applicationClassLoader
+                );
+
+        int i = 0;
+        Class[] argsClasses = new Class[args.length];
+
+        for (Object obj : args) {
+            if (obj != null) {
+                argsClasses[i++] = obj.getClass();
+            }
+        }
+
+        for (Constructor constructor : clazz.getConstructors()) {
+            if (constructor.getParameterTypes().length == argsClasses.length) {
+                boolean valid = true;
+                Class[] parameterTypes = constructor.getParameterTypes();
+                for (int idx = 0; idx < argsClasses.length; idx++) {
+                    Class argsClass = argsClasses[idx];
+                    if ((argsClass != null) && !parameterTypes[idx].isAssignableFrom(argsClass)) {
+                        valid = false;
+                        break;
+                    }
+                }
+
+                if (valid) {
+                    return (Constructor<ContainerProcessor>) constructor;
+                }
+            }
+        }
+
+        throw new IllegalStateException("No constructor with arguments"
+                + Arrays.toString(argsClasses)
+                + " className=" + className
+        );
     }
 }

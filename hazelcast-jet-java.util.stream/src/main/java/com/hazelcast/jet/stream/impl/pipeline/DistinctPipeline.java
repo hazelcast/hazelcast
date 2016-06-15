@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.jet.stream.Distributed;
@@ -43,7 +43,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
 
         if (upstream.isOrdered()) {
-            Vertex distinct = vertexBuilder(DistinctProcessor.Factory.class)
+            Vertex distinct = vertexBuilder(DistinctProcessor.class)
                     .addToDAG(dag)
                     .args(fromTupleMapper, keyMapper)
                     .taskCount(1)
@@ -58,7 +58,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             return distinct;
         }
 
-        Vertex distinct = vertexBuilder(DistinctProcessor.Factory.class)
+        Vertex distinct = vertexBuilder(DistinctProcessor.class)
                 .addToDAG(dag)
                 .args(fromTupleMapper, keyMapper)
                 .build();
@@ -72,7 +72,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
                     .build();
         }
 
-        Vertex combiner = vertexBuilder(DistinctProcessor.Factory.class)
+        Vertex combiner = vertexBuilder(DistinctProcessor.class)
                 .addToDAG(dag)
                 .args(defaultFromTupleMapper(), toTupleMapper)
                 .build();

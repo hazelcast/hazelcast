@@ -50,7 +50,7 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
         Distributed.Function<Tuple, ?> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
 
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
-        Vertex vertex = vertexBuilder(TransformProcessor.Factory.class)
+        Vertex vertex = vertexBuilder(TransformProcessor.class)
                 .name("transform")
                 .addToDAG(dag)
                 .args(fromTupleMapper, toTupleMapper, operations)

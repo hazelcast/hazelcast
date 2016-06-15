@@ -71,8 +71,8 @@ public class FileToFileTest extends JetBaseTest {
         File input = createInputFile();
         File output = File.createTempFile("output", ".txt");
 
-        Vertex counter = createVertex("counter", CountProcessor.Factory.class, 1);
-        Vertex combiner = createVertex("combiner", CombinerProcessor.Factory.class, 1);
+        Vertex counter = createVertex("counter", CountProcessor.class, 1);
+        Vertex combiner = createVertex("combiner", CombinerProcessor.class, 1);
         addVertices(dag, counter, combiner);
 
         Edge edge = new Edge.EdgeBuilder("edge", counter, combiner)

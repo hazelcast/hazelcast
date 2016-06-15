@@ -49,7 +49,7 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple> toTupleMapper) {
         boolean isFirstVertex = upstream instanceof SourcePipeline;
         Distributed.Function<Tuple, T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
-        Vertex vertex = vertexBuilder(SortProcessor.Factory.class)
+        Vertex vertex = vertexBuilder(SortProcessor.class)
                 .name("sorter")
                 .addToDAG(dag)
                 .args(fromTupleMapper, toTupleMapper, comparator)
@@ -58,7 +58,7 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
         Vertex previous;
         if (isFirstVertex) {
-            Vertex passthrough = vertexBuilder(EmptyProcessor.Factory.class)
+            Vertex passthrough = vertexBuilder(EmptyProcessor.class)
                     .name("passthrough")
                     .addToDAG(dag)
                     .build();

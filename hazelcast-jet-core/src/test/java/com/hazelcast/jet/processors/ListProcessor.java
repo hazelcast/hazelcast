@@ -19,16 +19,14 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ListProcessor implements TupleContainerProcessor<Integer, String, Integer, String> {
+public class ListProcessor implements ContainerProcessor<Tuple<Integer, String>, Tuple<Integer, String>> {
     public static final AtomicInteger DEBUG_COUNTER = new AtomicInteger(0);
     public static final AtomicInteger DEBUG_COUNTER1 = new AtomicInteger(0);
     private final Map<Integer, Tuple<Integer, String>> list = new HashMap<Integer, Tuple<Integer, String>>();
@@ -71,11 +69,5 @@ public class ListProcessor implements TupleContainerProcessor<Integer, String, I
     @Override
     public void afterProcessing(ProcessorContext processorContext) {
         list.clear();
-    }
-
-    public static class Factory implements TupleContainerProcessorFactory {
-        public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new ListProcessor();
-        }
     }
 }

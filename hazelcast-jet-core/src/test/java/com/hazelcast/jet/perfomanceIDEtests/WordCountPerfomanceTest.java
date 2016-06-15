@@ -35,8 +35,8 @@ public class WordCountPerfomanceTest extends JetBaseTest {
         int CNT = 1024 * 1024 * 10;
         String fileName = "file";
         String sourceFile = createDataFile(CNT, fileName);
-        Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.Factory.class);
-        Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.Factory.class);
+        Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.class);
+        Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.class);
         Application application = createApplication();
         try {
             DAG dag = createDAG();

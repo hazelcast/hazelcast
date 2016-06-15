@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.function.Function;
 
@@ -29,7 +28,7 @@ public class SkipProcessor<T> extends AbstractStreamProcessor<T, T> {
     private final long skip;
     private long index;
 
-    public SkipProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, long skip) {
+    public SkipProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, Long skip) {
         super(inputMapper, outputMapper);
         this.skip = skip;
     }
@@ -43,28 +42,12 @@ public class SkipProcessor<T> extends AbstractStreamProcessor<T, T> {
     protected boolean process(ProducerInputStream<T> inputStream,
                               ConsumerOutputStream<T> outputStream) throws Exception {
         for (T input : inputStream) {
-           if (index >= skip) {
-               outputStream.consume(input);
-           } else {
-               index++;
-           }
+            if (index >= skip) {
+                outputStream.consume(input);
+            } else {
+                index++;
+            }
         }
         return true;
-    }
-
-    public static class Factory<T> extends AbstractStreamProcessor.Factory<T, T> {
-
-        private final long skip;
-
-        public Factory(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, Long skip) {
-            super(inputMapper, outputMapper);
-            this.skip = skip;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, T> inputMapper,
-                                                                Function<T, Tuple> outputMapper) {
-            return new SkipProcessor<>(inputMapper, outputMapper, skip);
-        }
     }
 }

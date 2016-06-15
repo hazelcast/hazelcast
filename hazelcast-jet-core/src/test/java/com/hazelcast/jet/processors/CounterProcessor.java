@@ -1,12 +1,10 @@
 package com.hazelcast.jet.processors;
 
+import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.impl.counters.LongCounter;
-import com.hazelcast.jet.container.CounterKey;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 public class CounterProcessor implements ContainerProcessor<Object, Object> {
@@ -26,17 +24,6 @@ public class CounterProcessor implements ContainerProcessor<Object, Object> {
                            ProcessorContext processorContext) throws Exception {
         this.longCounter.add(inputStream.size());
         return true;
-    }
-
-    @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Object> outputStream,
-                                     ProcessorContext processorContext) throws Exception {
-        return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
     }
 
     private static class StringCounterKey implements CounterKey {
@@ -59,13 +46,6 @@ public class CounterProcessor implements ContainerProcessor<Object, Object> {
         @Override
         public int hashCode() {
             return counter.hashCode();
-        }
-    }
-
-    public static class CounterProcessorFactory implements ContainerProcessorFactory {
-        @Override
-        public ContainerProcessor getProcessor(Vertex vertex) {
-            return new CounterProcessor();
         }
     }
 }

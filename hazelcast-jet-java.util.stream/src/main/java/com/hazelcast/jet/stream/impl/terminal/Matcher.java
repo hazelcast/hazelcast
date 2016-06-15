@@ -46,7 +46,7 @@ public class Matcher {
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
         Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
-        Vertex vertex = vertexBuilder(AnyMatchProcessor.Factory.class)
+        Vertex vertex = vertexBuilder(AnyMatchProcessor.class)
                 .addToDAG(dag)
                 .args(fromTupleMapper, toTupleMapper(), predicate)
                 .build();

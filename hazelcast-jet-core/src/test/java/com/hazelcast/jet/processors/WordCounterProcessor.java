@@ -19,10 +19,8 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.HashMap;
@@ -30,7 +28,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WordCounterProcessor implements ContainerProcessor<String, JetTuple<String, Integer>> {
+public class WordCounterProcessor implements ContainerProcessor<String, Tuple<String, Integer>> {
 
 
     private static final AtomicInteger taskCounter = new AtomicInteger(0);
@@ -50,7 +48,7 @@ public class WordCounterProcessor implements ContainerProcessor<String, JetTuple
 
     @Override
     public boolean process(ProducerInputStream<String> inputStream,
-                           ConsumerOutputStream<JetTuple<String, Integer>> outputStream,
+                           ConsumerOutputStream<Tuple<String, Integer>> outputStream,
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
         for (String word : inputStream) {
@@ -67,7 +65,7 @@ public class WordCounterProcessor implements ContainerProcessor<String, JetTuple
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<JetTuple<String, Integer>> outputStream,
+    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<String, Integer>> outputStream,
                                      ProcessorContext processorContext) throws Exception {
         boolean finalized = false;
 
@@ -82,7 +80,7 @@ public class WordCounterProcessor implements ContainerProcessor<String, JetTuple
             while (this.finalizationIterator.hasNext()) {
                 String word = (String) this.finalizationIterator.next();
 
-                outputStream.consume(new JetTuple2<String, Integer>(word, this.cache.get(word)));
+                outputStream.consume(new JetTuple2<>(word, this.cache.get(word)));
 
                 if (idx == chunkSize - 1) {
                     break;
@@ -102,19 +100,8 @@ public class WordCounterProcessor implements ContainerProcessor<String, JetTuple
         return finalized;
     }
 
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
     private void clearCaches() {
         this.cache.clear();
     }
 
-    public static class Factory implements ContainerProcessorFactory {
-        @Override
-        public ContainerProcessor getProcessor(Vertex vertex) {
-            return new WordCounterProcessor();
-        }
-    }
 }

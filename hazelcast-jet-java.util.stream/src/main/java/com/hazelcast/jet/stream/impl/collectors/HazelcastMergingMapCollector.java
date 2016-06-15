@@ -57,7 +57,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag, null, toTupleMapper());
 
-        Vertex merger = vertexBuilder(MergeProcessor.Factory.class)
+        Vertex merger = vertexBuilder(MergeProcessor.class)
                 .name("accumulator")
                 .addToDAG(dag)
                 .args(mergeFunction)
@@ -68,7 +68,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
                 .processingStrategy(ProcessingStrategy.PARTITIONING)
                 .build();
 
-        Vertex combiner = vertexBuilder(MergeProcessor.Factory.class)
+        Vertex combiner = vertexBuilder(MergeProcessor.class)
                 .name("merger")
                 .addToDAG(dag)
                 .args(mergeFunction)

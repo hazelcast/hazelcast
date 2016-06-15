@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -65,25 +64,4 @@ public class AnyMatchProcessor<T> extends AbstractStreamProcessor<T, Boolean> {
         outputStream.consume(match);
         return true;
     }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-    }
-
-    public static class Factory<T> extends AbstractStreamProcessor.Factory<T, Boolean> {
-
-        private final Predicate<T> predicate;
-
-        public Factory(Function<Tuple, T> inputMapper, Function<Boolean, Tuple> outputMapper, Predicate<T> predicate) {
-            super(inputMapper, outputMapper);
-            this.predicate = predicate;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, T> inputMapper,
-                                                                Function<Boolean, Tuple> outputMapper) {
-            return new AnyMatchProcessor<>(inputMapper, outputMapper, predicate);
-        }
-    }
-
 }

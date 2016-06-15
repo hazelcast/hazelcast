@@ -62,7 +62,7 @@ public class Reducer {
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                      BinaryOperator<T> combiner) {
-        Vertex combinerVertex = vertexBuilder(CombinerProcessor.Factory.class)
+        Vertex combinerVertex = vertexBuilder(CombinerProcessor.class)
                 .addToDAG(dag)
                 .args(defaultFromTupleMapper(), toTupleMapper())
                 .args(combiner, Distributed.Function.<T>identity())
@@ -115,7 +115,7 @@ public class Reducer {
                                                   BiFunction<U, ? super T, U> accumulator) {
 
         Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
-        Vertex accumulatorVertex = vertexBuilder(AccumulatorProcessor.Factory.class)
+        Vertex accumulatorVertex = vertexBuilder(AccumulatorProcessor.class)
                 .addToDAG(dag)
                 .args(fromTupleMapper, toTupleMapper())
                 .args(accumulator, identity)
@@ -151,12 +151,12 @@ public class Reducer {
                                             Optional<T> identity,
                                             Function<Tuple, ? extends T> fromTupleMapper) {
         if (identity.isPresent()) {
-            return vertexBuilder(AccumulatorProcessor.Factory.class)
+            return vertexBuilder(AccumulatorProcessor.class)
                     .args(fromTupleMapper, toTupleMapper())
                     .args(accumulator, identity.get())
                     .build();
         } else {
-            return vertexBuilder(CombinerProcessor.Factory.class)
+            return vertexBuilder(CombinerProcessor.class)
                     .args(fromTupleMapper, toTupleMapper())
                     .args(accumulator, Distributed.Function.<T>identity())
                     .build();

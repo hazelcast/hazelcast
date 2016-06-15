@@ -19,8 +19,6 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.logging.ILogger;
@@ -63,10 +61,6 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tu
                                      ProcessorContext processorContext) throws Exception {
         mappingOutputStream.setOutputStream(outputStream);
         return finalize(mappingOutputStream, processorContext.getConfig().getChunkSize());
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
     }
 
     protected abstract boolean process(ProducerInputStream<IN> inputStream,
@@ -146,26 +140,5 @@ abstract class AbstractStreamProcessor<IN, OUT> implements ContainerProcessor<Tu
         public boolean consume(OUT object) throws Exception {
             return outputStream.consume(outputMapper.apply(object));
         }
-    }
-
-    public abstract static class Factory<IN, OUT> implements ContainerProcessorFactory<Tuple, Tuple> {
-
-        private final Function<Tuple, IN> inputMapper;
-        private final Function<OUT, Tuple> outputMapper;
-
-        public Factory(Function<Tuple, IN> inputMapper,
-                       Function<OUT, Tuple> outputMapper) {
-
-            this.inputMapper = inputMapper;
-            this.outputMapper = outputMapper;
-        }
-
-        @Override
-        public ContainerProcessor<Tuple, Tuple> getProcessor(Vertex vertex) {
-            return getProcessor(inputMapper, outputMapper);
-        }
-
-        protected abstract ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, IN> inputMapper,
-                                                                         Function<OUT, Tuple> outputMapper);
     }
 }

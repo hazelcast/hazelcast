@@ -59,8 +59,8 @@ public class ShufflingLogicalTests extends JetBaseTest {
                 sourceList.add(i);
             }
 
-            Vertex counter = createVertex("counter", CountProcessor.Factory.class, 1);
-            Vertex combiner = createVertex("combiner", CombinerProcessor.Factory.class, 1);
+            Vertex counter = createVertex("counter", CountProcessor.class, 1);
+            Vertex combiner = createVertex("combiner", CombinerProcessor.class, 1);
             addVertices(dag, counter, combiner);
 
             Edge edge = new Edge.EdgeBuilder("edge", counter, combiner)

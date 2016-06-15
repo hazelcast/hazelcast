@@ -2,26 +2,11 @@ package com.hazelcast.jet.processors;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
-import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
-public class DummyEmittingProcessor implements TupleContainerProcessor<Integer, String, Integer, String> {
-    @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-
-    }
-
-    @Override
-    public boolean process(ProducerInputStream inputStream,
-                           ConsumerOutputStream outputStream,
-                           String sourceName,
-                           ProcessorContext processorContext) throws Exception {
-        return true;
-    }
+public class DummyEmittingProcessor implements ContainerProcessor<Tuple<Integer, String>, Tuple<Integer, String>> {
 
     @Override
     public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Integer, String>> outputStream,
@@ -29,17 +14,6 @@ public class DummyEmittingProcessor implements TupleContainerProcessor<Integer, 
         System.out.println("finalize");
         outputStream.consume(new JetTuple2<>(0, "empty"));
         return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory implements TupleContainerProcessorFactory {
-        public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new DummyEmittingProcessor();
-        }
     }
 }
 

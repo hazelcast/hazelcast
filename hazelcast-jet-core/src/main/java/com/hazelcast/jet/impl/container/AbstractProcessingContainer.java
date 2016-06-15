@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
 import com.hazelcast.jet.impl.container.task.TaskProcessorFactory;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.impl.statemachine.ProcessingContainerStateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public abstract class AbstractProcessingContainer extends
@@ -99,12 +100,12 @@ public abstract class AbstractProcessingContainer extends
 
     private final EventProcessorFactory eventProcessorFactory;
 
-    private final ContainerProcessorFactory containerProcessorFactory;
+    private final Supplier<ContainerProcessor> containerProcessorFactory;
 
     private final AtomicInteger taskIdGenerator = new AtomicInteger(0);
 
     public AbstractProcessingContainer(Vertex vertex,
-                                       ContainerProcessorFactory containerProcessorFactory,
+                                       Supplier<ContainerProcessor> containerProcessorFactory,
                                        NodeEngine nodeEngine,
                                        ApplicationContext applicationContext,
                                        JetTupleFactory tupleFactory) {
@@ -187,7 +188,7 @@ public abstract class AbstractProcessingContainer extends
     }
 
     @Override
-    public final ContainerProcessorFactory getContainerProcessorFactory() {
+    public final Supplier<ContainerProcessor> getContainerProcessorFactory() {
         return this.containerProcessorFactory;
     }
 

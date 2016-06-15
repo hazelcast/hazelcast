@@ -20,12 +20,10 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
-public class CombinerProcessor implements TupleContainerProcessor<Long, Integer, Long, Integer> {
+public class CombinerProcessor implements ContainerProcessor<Tuple<Long, Integer>, Tuple<Long, Integer>> {
 
     Integer result = null;
 
@@ -57,16 +55,5 @@ public class CombinerProcessor implements TupleContainerProcessor<Long, Integer,
             outputStream.consume(new JetTuple2<>(0L, result));
         }
         return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory implements TupleContainerProcessorFactory {
-        public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new CombinerProcessor();
-        }
     }
 }

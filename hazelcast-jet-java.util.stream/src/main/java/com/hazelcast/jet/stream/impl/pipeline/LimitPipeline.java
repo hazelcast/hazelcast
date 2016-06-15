@@ -41,7 +41,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     @Override
     public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple> toTupleMapper) {
-        Vertex first = vertexBuilder(LimitProcessor.Factory.class)
+        Vertex first = vertexBuilder(LimitProcessor.class)
                 .addToDAG(dag)
                 .args(getTupleMapper(upstream, defaultFromTupleMapper()), toTupleMapper(), limit)
                 .taskCount(1)
@@ -59,7 +59,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             return first;
         }
 
-        Vertex second = vertexBuilder(LimitProcessor.Factory.class)
+        Vertex second = vertexBuilder(LimitProcessor.class)
                 .addToDAG(dag)
                 .args(defaultFromTupleMapper(), toTupleMapper, limit)
                 .taskCount(1)

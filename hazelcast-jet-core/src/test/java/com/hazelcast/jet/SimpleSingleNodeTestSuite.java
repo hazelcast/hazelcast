@@ -67,7 +67,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
         IList<String> sourceList = SERVER.getList("sourceList");
         int taskCount = 2;
 
-        Vertex root = createVertex("root", DummyEmittingProcessor.Factory.class, taskCount);
+        Vertex root = createVertex("root", DummyEmittingProcessor.class, taskCount);
         root.addSource(new ListSource(sourceList.getName()));
 
         dag.addVertex(root);
@@ -88,9 +88,9 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
         int taskCount = 4;
 
-        Vertex root = createVertex("root", DummyEmittingProcessor.Factory.class, taskCount);
+        Vertex root = createVertex("root", DummyEmittingProcessor.class, taskCount);
         root.addSource(new ListSource(sourceList.getName()));
-        Vertex consumer = createVertex("consumer", DummyProcessor.Factory.class, taskCount);
+        Vertex consumer = createVertex("consumer", DummyProcessor.class, taskCount);
         consumer.addSink(new ListSink(sinkList.getName()));
         addVertices(dag, root, consumer);
         addEdges(dag, new Edge("", root, consumer));
@@ -111,8 +111,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             fillMap("source.interruptionTest", SERVER, 100_00);
 
-            Vertex vertex1 = createVertex("dummy1", VerySlowProcessorOnlyForInterruptionTest.Factory.class);
-            Vertex vertex2 = createVertex("dummy2", VerySlowProcessorOnlyForInterruptionTest.Factory.class);
+            Vertex vertex1 = createVertex("dummy1", VerySlowProcessorOnlyForInterruptionTest.class);
+            Vertex vertex2 = createVertex("dummy2", VerySlowProcessorOnlyForInterruptionTest.class);
 
             vertex1.addSource(new MapSource("source.interruptionTest"));
             vertex2.addSink(new MapSink("target"));
@@ -175,11 +175,11 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             assertEquals(CNT, SERVER.getMap("sourceMap.complexGraphTest").size());
 
-            Vertex root = createVertex("root", DummyProcessor.Factory.class);
-            Vertex vertex11 = createVertex("v11", DummyProcessor.Factory.class);
-            Vertex vertex21 = createVertex("v21", DummyProcessor.Factory.class);
-            Vertex vertex12 = createVertex("v12", DummyProcessor.Factory.class);
-            Vertex vertex22 = createVertex("v22", DummyProcessor.Factory.class);
+            Vertex root = createVertex("root", DummyProcessor.class);
+            Vertex vertex11 = createVertex("v11", DummyProcessor.class);
+            Vertex vertex21 = createVertex("v21", DummyProcessor.class);
+            Vertex vertex12 = createVertex("v12", DummyProcessor.class);
+            Vertex vertex22 = createVertex("v22", DummyProcessor.class);
 
             root.addSource(new MapSource("sourceMap.complexGraphTest"));
             vertex12.addSink(new MapSink("sinkMap1.complexGraphTest"));
@@ -225,7 +225,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
                 sinks.add(SERVER.<Integer, String>getMap("sinkMap.giantGraphTest" + i));
             }
 
-            Vertex root = createVertex("root", DummyProcessor.Factory.class);
+            Vertex root = createVertex("root", DummyProcessor.class);
             addVertices(dag, root);
 
             root.addSource(new MapSource("sourceMap.giantGraphTest"));
@@ -233,7 +233,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             for (int b = 1; b <= branchCount; b++) {
                 Vertex last = root;
                 for (int i = 1; i <= vertexCount; i++) {
-                    Vertex vertex = createVertex("v_" + b + "_" + i, DummyProcessor.Factory.class);
+                    Vertex vertex = createVertex("v_" + b + "_" + i, DummyProcessor.class);
                     addVertices(dag, vertex);
 
                     addEdges(dag, new Edge("e_" + b + "_" + i, last, vertex));
@@ -283,8 +283,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
     private DAG createMixingDag(int idx, String applicationName) {
         DAG dag = new DAG("dag-" + idx);
 
-        Vertex vertex1 = createVertex("mod1", DummyProcessor.Factory.class, 1);
-        Vertex vertex2 = createVertex("mod2", DummyProcessor.Factory.class, 1);
+        Vertex vertex1 = createVertex("mod1", DummyProcessor.class, 1);
+        Vertex vertex2 = createVertex("mod2", DummyProcessor.class, 1);
 
         vertex1.addSource(new MapSource("source." + applicationName));
         vertex2.addSink(new MapSink("target" + idx + "." + applicationName));
@@ -377,7 +377,7 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             fillMap("source." + testName, SERVER, CNT);
 
-            Vertex vertex = createVertex("mod1", CounterProcessor.CounterProcessorFactory.class);
+            Vertex vertex = createVertex("mod1", CounterProcessor.class);
             vertex.addSource(new MapSource("source." + testName));
             vertex.addSink(new MapSink("target." + testName));
             addVertices(dag, vertex);
@@ -403,9 +403,9 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             String fileName = "file.wordCountFileSortedTest";
             String sourceFile = createDataFile(CNT, fileName);
 
-            Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.Factory.class);
-            Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.Factory.class);
-            Vertex vertex3 = createVertex("wordSorter", WordSorterProcessor.Factory.class, 1);
+            Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.class);
+            Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.class);
+            Vertex vertex3 = createVertex("wordSorter", WordSorterProcessor.class, 1);
 
             addVertices(dag, vertex1, vertex2, vertex3);
 
@@ -436,8 +436,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
             String fileName = "file.wordCountFileTest";
             String sourceFile = createDataFile(CNT, fileName);
 
-            Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.Factory.class);
-            Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.Factory.class);
+            Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.class);
+            Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.class);
 
             addVertices(dag, vertex1, vertex2);
 
@@ -496,8 +496,8 @@ public class SimpleSingleNodeTestSuite extends JetBaseTest {
 
             fillMapWithDataFromFile(SERVER, "wordtest.wordCountMapTest", fileName);
 
-            Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.Factory.class);
-            Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.Factory.class);
+            Vertex vertex1 = createVertex("wordGenerator", WordGeneratorProcessor.class);
+            Vertex vertex2 = createVertex("wordCounter", WordCounterProcessor.class);
 
             addVertices(dag, vertex1, vertex2);
 

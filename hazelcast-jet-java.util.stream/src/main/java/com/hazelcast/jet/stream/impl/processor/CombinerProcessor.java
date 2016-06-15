@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -65,26 +64,5 @@ public class CombinerProcessor<T, R> extends AbstractStreamProcessor<T, R> {
             outputStream.consume(finisher.apply(result));
         }
         return true;
-    }
-
-    public static class Factory<T, R> extends AbstractStreamProcessor.Factory<T, R> {
-
-        private final BinaryOperator<T> combiner;
-        private final Function<T, R> finisher;
-
-        public Factory(Function<Tuple, T> inputMapper,
-                       Function<R, Tuple> outputMapper,
-                       BinaryOperator<T> combiner,
-                       Function<T, R> finisher) {
-            super(inputMapper, outputMapper);
-            this.combiner = combiner;
-            this.finisher = finisher;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, T> inputMapper,
-                                                                Function<R, Tuple> outputMapper) {
-            return new CombinerProcessor<>(inputMapper, outputMapper, combiner, finisher);
-        }
     }
 }

@@ -43,7 +43,7 @@ public class UnorderedPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             return upstream.buildDAG(dag, downstreamVertex, toTupleMapper);
         }
 
-        Vertex unordered = vertexBuilder(PassthroughProcessor.Factory.class)
+        Vertex unordered = vertexBuilder(PassthroughProcessor.class)
                 .name("unordered")
                 .addToDAG(dag)
                 .args(defaultFromTupleMapper(), toTupleMapper)
