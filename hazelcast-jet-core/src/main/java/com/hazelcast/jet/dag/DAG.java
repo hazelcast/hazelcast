@@ -35,9 +35,9 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * Direct acyclic graph representation;
+ * <p>Direct acyclic graph representation
  *
- * DAG describes topology of calculation flow;
+ * <p>DAG describes topology of calculation flow
  *
  * <pre>
  *
@@ -45,7 +45,7 @@ import java.util.Stack;
  *                            -&gt; Vertex4
  * </pre>
  *
- * Data will be passed from vertex to vertex
+ * <p>Data will be passed from vertex to vertex
  */
 public class DAG implements DataSerializable {
     private String name;
@@ -55,17 +55,25 @@ public class DAG implements DataSerializable {
     private transient volatile boolean validated;
     private transient Stack<Vertex> topologicalVertexStack = new Stack<Vertex>();
 
+    /**
+     * Empty constructor
+     */
     public DAG() {
 
     }
 
+    /**
+     * Create a DAG with a given name
+     *
+     * @param name name of the DAG
+     */
     public DAG(String name) {
         this.name = name;
     }
 
     /**
-     * @param vertex - vertex of the DAG;
-     * @return - DAG itself;
+     * @param vertex vertex to add to the DAG
+     * @return the DAG
      */
     public DAG addVertex(Vertex vertex) {
         if (this.vertices.containsKey(vertex.getName())) {
@@ -78,47 +86,47 @@ public class DAG implements DataSerializable {
     }
 
     /**
-     * Return vertex with corresponding name;
+     * Return vertex with corresponding name
      *
-     * @param vertexName - name of the vertex;
-     * @return - corresponding vertex;
+     * @param vertexName name of the vertex
+     * @return corresponding vertex
      */
     public Vertex getVertex(String vertexName) {
         return vertices.get(vertexName);
     }
 
     /**
-     * @return - collections of DAG's vertices;
+     * @return collections of DAG's vertices
      */
     public Collection<Vertex> getVertices() {
         return this.vertices.values();
     }
 
     /**
-     * @return - name of the DAG;
+     * @return name of the DAG
      */
     public String getName() {
         return this.name;
     }
 
     /**
-     * @param vertex - some vertex;
-     * @return - true if DAG contains vertex, false - otherwise;
+     * @param vertex some vertex
+     * @return true if DAG contains vertex, false otherwise
      */
     public boolean containsVertex(Vertex vertex) {
         return vertices.containsKey(vertex.getName());
     }
 
     /**
-     * @param edge - some edge;
-     * @return - true if DAG contains edge, false - otherwise;
+     * @param edge some edge
+     * @return true if DAG contains edge, false otherwise
      */
     public boolean containsEdge(Edge edge) {
         return edges.contains(edge);
     }
 
     /**
-     * @return - iterator over DAG's vertices on accordance with DAG's topology;
+     * @return iterator over DAG's vertices on accordance with DAG's topology
      */
     public Iterator<Vertex> getTopologicalVertexIterator() {
         if (!this.validated) {
@@ -131,7 +139,7 @@ public class DAG implements DataSerializable {
     }
 
     /**
-     * @return - iterator over DAG's vertices on accordance with DAG's reverted topology;
+     * @return iterator over DAG's vertices on accordance with DAG's reverted topology
      */
     public Iterator<Vertex> getRevertedTopologicalVertexIterator() {
         if (!this.validated) {
@@ -150,14 +158,14 @@ public class DAG implements DataSerializable {
     }
 
     /**
-     * Validate DAG's consistency;
+     * <p>Validate DAG's consistency
      *
-     * It checks:
+     * <p>It checks:
      *
      * <pre>
-     *      -   duplicate of vertices names;
-     *      -   duplicate of edges names;
-     *      -   absence of loops on DAG;
+     *        duplicate of vertices names
+     *        duplicate of edges names
+     *        absence of loops on DAG
      * </pre>
      *
      * @throws IllegalStateException if DAG validation fails
@@ -352,10 +360,10 @@ public class DAG implements DataSerializable {
     }
 
     /**
-     * Add edge to dag;
+     * Add edge to dag
      *
-     * @param edge - corresponding edge;
-     * @return -  DAG itself;
+     * @param edge corresponding edge
+     * @return DAG itself
      */
     public DAG addEdge(Edge edge) {
         if (!vertices.containsValue(edge.getInputVertex())) {

@@ -19,9 +19,9 @@ package com.hazelcast.jet.counters;
 import java.io.Serializable;
 
 /**
- * Accumulator with the similar of the input and output types;
+ * Accumulator with the similar of the input and output types
  *
- * @param <T> - type of the accumulator;
+ * @param <T> type of the accumulator
  */
 public interface SimpleAccumulator<T extends Serializable> extends Accumulator<T, T> {
 }

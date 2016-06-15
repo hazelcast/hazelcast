@@ -65,6 +65,7 @@ public class TransformProcessor extends AbstractStreamProcessor<Object, Object> 
                     while (iterator.hasNext()) {
                         processInputs(iterator.next(), outputStream, i + 1);
                     }
+                    stream.close();
                     return;
                 default:
                     throw new JetException("Unknown case: " + operation.getType());

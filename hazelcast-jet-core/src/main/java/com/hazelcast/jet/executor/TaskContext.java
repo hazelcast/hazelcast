@@ -25,54 +25,54 @@ import com.hazelcast.jet.io.ObjectWriterFactory;
 import java.io.Serializable;
 
 /**
- * Represents task context;
- * Holds task's information;
+ * Represents task context
+ * Holds task's information
  */
 public interface TaskContext {
     /**
-     * @return - general number of task in the current container;
+     * @return general number of task in the current container
      */
     int getTaskCount();
 
     /**
-     * @return - number of the current task inside the container;
+     * @return number of the current task inside the container
      */
     int getTaskNumber();
 
     /**
-     * Accumulator for the statistics gathering;
+     * Accumulator for the statistics gathering
      *
-     * @param counterKey - key of the accumulator;
-     * @param <V>        - type of the accumulator's input value;
-     * @param <R>        - type of the accumulator's output value;
-     * @return corresponding accumulator;
+     * @param counterKey key of the accumulator
+     * @param <V>        type of the accumulator's input value
+     * @param <R>        type of the accumulator's output value
+     * @return corresponding accumulator
      */
     <V, R extends Serializable> Accumulator<V, R> getAccumulator(CounterKey counterKey);
 
     /**
-     * Set new accumulator assigned to corresponding counterKey;
+     * Set new accumulator assigned to corresponding counterKey
      *
-     * @param counterKey  - key to be assigned;
-     * @param accumulator - corresponding accumulator;
-     * @param <V>         - type of the accumulator's input value;
-     * @param <R>         - type of the accumulator's output value;
+     * @param counterKey  key to be assigned
+     * @param accumulator corresponding accumulator
+     * @param <V>         type of the accumulator's input value
+     * @param <R>         type of the accumulator's output value
      */
     <V, R extends Serializable> void setAccumulator(CounterKey counterKey, Accumulator<V, R> accumulator);
 
     /**
-     * Register dataType for serialization purposes;
+     * Register dataType for serialization purposes
      *
-     * @param dataType - corresponding dataType;
+     * @param dataType corresponding dataType
      */
     void registerDataType(DataType dataType);
 
     /**
-     * @return - factory to create objectReaders;
+     * @return factory to create objectReaders
      */
     ObjectReaderFactory getObjectReaderFactory();
 
     /**
-     * @return - factory to create objectWriters;
+     * @return factory to create objectWriters
      */
     ObjectWriterFactory getObjectWriterFactory();
 }

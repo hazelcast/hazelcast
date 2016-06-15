@@ -25,7 +25,7 @@ import java.util.Properties;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * Config for JET application;
+ * Config for JET application
  */
 public class JetApplicationConfig implements Serializable {
     /**

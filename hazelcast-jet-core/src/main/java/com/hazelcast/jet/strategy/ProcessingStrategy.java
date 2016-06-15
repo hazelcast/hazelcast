@@ -20,15 +20,15 @@ import java.io.Serializable;
 
 /**
  * Strategy which determines how data should be passed
- * from one JET container to another;
+ * from one JET container to another
  */
 public enum ProcessingStrategy implements Serializable {
     /**
-     * Next chunk will be passed to the next task one by one;
+     * Next chunk will be passed to the next task one by one
      */
     ROUND_ROBIN,
     /**
-     * Data will be passed to all accessible vertices of next container;
+     * Data will be passed to all accessible vertices of next container
      */
     BROADCAST,
     /**

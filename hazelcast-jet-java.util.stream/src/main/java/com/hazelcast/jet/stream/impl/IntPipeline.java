@@ -23,10 +23,10 @@ import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
+import com.hazelcast.jet.stream.impl.distributed.IntSummaryStatistics;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
-import java.util.IntSummaryStatistics;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -188,9 +188,9 @@ public class IntPipeline implements DistributedIntStream {
     }
 
     @Override
-    public IntSummaryStatistics summaryStatistics() {
-        return collect(Distributed.IntSummaryStatistics::new, Distributed.IntSummaryStatistics::accept,
-                Distributed.IntSummaryStatistics::combine);
+    public java.util.IntSummaryStatistics summaryStatistics() {
+        return collect(IntSummaryStatistics::new, IntSummaryStatistics::accept,
+                IntSummaryStatistics::combine);
     }
 
     @Override

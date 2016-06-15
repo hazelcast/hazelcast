@@ -29,108 +29,108 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.Serializable;
 
 /**
- * Interface which describe container's internal entries and let's manage container-level structures;
+ * Interface which describe container's internal entries and let's manage container-level structures
  */
 public interface ContainerDescriptor {
     /**
-     * @return - Hazelcast nodeEngine;
+     * @return Hazelcast nodeEngine
      */
     NodeEngine getNodeEngine();
 
     /**
-     * @return - name of the application;
+     * @return name of the application
      */
     String getApplicationName();
 
     /**
-     * @return - id of the container;
+     * @return id of the container
      */
     int getID();
 
     /**
-     * @return - vertex in DAG which represents corresponding container;
+     * @return vertex in DAG which represents corresponding container
      */
     Vertex getVertex();
 
     /**
-     * @return - DAG of JET-application;
+     * @return DAG of JET-application
      */
     DAG getDAG();
 
     /**
-     * @return - factory to construct tuples;
+     * @return factory to construct tuples
      */
     JetTupleFactory getTupleFactory();
 
     /**
-     * @return - application of JET-config;
+     * @return application of JET-config
      */
     JetApplicationConfig getConfig();
 
     /**
-     * Performs registration of container listener;
+     * Performs registration of container listener
      *
-     * @param vertexName        - name of the DAG-vertex;
-     * @param containerListener - list of the container;
+     * @param vertexName        name of the DAG-vertex
+     * @param containerListener list of the container
      */
     void registerContainerListener(String vertexName,
                                    ContainerListener containerListener);
 
     /**
-     * Performs registration of application listener;
+     * Performs registration of application listener
      *
-     * @param applicationListener - corresponding application listener;
+     * @param applicationListener corresponding application listener
      */
     void registerApplicationListener(ApplicationListener applicationListener);
 
     /**
-     * Set-up application variable;
+     * Set-up application variable
      *
-     * @param variableName - name of the variable;
-     * @param variable     - corresponding variable;
-     * @param <T>          - type of the variable;
+     * @param variableName name of the variable
+     * @param variable     corresponding variable
+     * @param <T>          type of the variable
      */
     <T> void putApplicationVariable(String variableName, T variable);
 
     /**
-     * Return variable registered on application-level;
+     * Return variable registered on application-level
      *
-     * @param variableName - name of the variable;
-     * @param <T>          - type of the variable;
-     * @return - variable;
+     * @param variableName name of the variable
+     * @param <T>          type of the variable
+     * @return variable
      */
     <T> T getApplicationVariable(String variableName);
 
     /**
-     * @param variableName - name of the application;
+     * @param variableName name of the application
      */
     void cleanApplicationVariable(String variableName);
 
     /**
-     * @return - factory to construct serialization-reader factories;
+     * @return factory to construct serialization-reader factories
      */
     ObjectReaderFactory getObjectReaderFactory();
 
     /**
-     * @return - factory to construct serialization-writer factories;
+     * @return factory to construct serialization-writer factories
      */
     ObjectWriterFactory getObjectWriterFactory();
 
     /**
-     * Return accumulator to collect statistics;
+     * Return accumulator to collect statistics
      *
-     * @param counterKey - key which represents counter;
-     * @param <V>        - input accumulator type;
-     * @param <R>        - output accumulator type;
-     * @return - accumulator;
+     * @param counterKey key which represents counter
+     * @param <V>        input accumulator type
+     * @param <R>        output accumulator type
+     * @return accumulator
      */
     <V, R extends Serializable> Accumulator<V, R> getAccumulator(CounterKey counterKey);
 
     /**
-     * @param counterKey  - key which represents corresponding accumulator;
-     * @param accumulator - corresponding accumulator object;
-     * @param <V>         - input accumulator type;
-     * @param <R>         - output accumulator type;
+     * @param counterKey  key which represents corresponding accumulator
+     * @param accumulator corresponding accumulator object
+     * @param <V>         input accumulator type
+     * @param <R>         output accumulator type
      */
     <V, R extends Serializable> void setAccumulator(CounterKey counterKey, Accumulator<V, R> accumulator);
 }

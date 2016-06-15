@@ -19,7 +19,7 @@ package com.hazelcast.jet.strategy;
 import com.hazelcast.core.PartitioningStrategy;
 
 /**
- * Represents abstract calculation strategy;
+ * Represents abstract calculation strategy
  *
  * It wraps 2 notions:
  * <pre>
@@ -33,20 +33,20 @@ import com.hazelcast.core.PartitioningStrategy;
  */
 public interface CalculationStrategy {
     /**
-     * @return corresponding partitioningStrategy;
+     * @return corresponding partitioningStrategy
      */
     PartitioningStrategy getPartitioningStrategy();
 
     /**
-     * @return corresponding hashingStrategy;
+     * @return corresponding hashingStrategy
      */
     HashingStrategy getHashingStrategy();
 
     /**
-     * Calculates hash of the corresponding object;
+     * Calculates hash of the corresponding object
      *
-     * @param object - object for hash calculation;
-     * @return - corresponding hash;
+     * @param object object for hash calculation
+     * @return corresponding hash
      */
     int hash(Object object);
 }

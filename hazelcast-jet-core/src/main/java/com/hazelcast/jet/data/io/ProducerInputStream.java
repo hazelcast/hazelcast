@@ -19,28 +19,28 @@ package com.hazelcast.jet.data.io;
 import java.util.Iterator;
 
 /**
- * Represents abstract inputStream to read objects;
+ * Represents abstract inputStream to read objects
  *
- * @param <T> - type of objects;
+ * @param <T> type of objects
  */
 public interface ProducerInputStream<T> extends Iterable<T> {
     /**
-     * Return object with corresponding index;
+     * Return object with corresponding index
      *
-     * @param idx - index;
-     * @return - object;
+     * @param idx index
+     * @return object
      */
     T get(int idx);
 
     /**
-     * @return - size of the inputStream;
+     * @return size of the inputStream
      */
     int size();
 
     /**
-     * Creates and return iterator over objects in inputStream;
+     * Creates and return iterator over objects in inputStream
      *
-     * @return - iterator over inputStream;
+     * @return iterator over inputStream
      */
     Iterator<T> iterator();
 }

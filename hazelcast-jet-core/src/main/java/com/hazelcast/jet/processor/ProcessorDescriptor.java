@@ -23,12 +23,18 @@ import java.io.Serializable;
 import static com.hazelcast.util.Preconditions.checkFalse;
 
 /**
- * Descriptor with vertex properties;
- * Used inside vertex construction;
+ * Descriptor with vertex properties
+ * Used inside vertex construction
  */
 public abstract class ProcessorDescriptor implements Serializable {
     private int taskCount = 1;
 
+    /**
+     * Create a new descriptor with given Processor class and arguments
+     * @param clazz class for the processor
+     * @param args arguments for the processor
+     * @return the constructed descriptor
+     */
     public static ProcessorDescriptor create(Class<? extends ContainerProcessor> clazz, Object... args) {
         return new DefaultProcessorDescriptor(clazz, args);
     }
@@ -36,8 +42,8 @@ public abstract class ProcessorDescriptor implements Serializable {
     /**
      * Creates builder to construct instance of ProcessorDescriptor
      *
-     * @param clazz - class of the corresponding ContainerProcessor
-     * @return - corresponding builder;
+     * @param clazz class of the corresponding ContainerProcessor
+     * @return corresponding builder
      */
     public static Builder builder(Class<? extends ContainerProcessor> clazz) {
         return new Builder(clazz);
@@ -46,28 +52,28 @@ public abstract class ProcessorDescriptor implements Serializable {
     /**
      * Creates builder to construct instance of ProcessorDescriptor
      *
-     * @param clazz - class of the corresponding ContainerProcessor
-     * @param args - arguments to be passed to the processor constructor
-     * @return - corresponding builder
+     * @param clazz class of the corresponding ContainerProcessor
+     * @param args arguments to be passed to the processor constructor
+     * @return corresponding builder
      */
     public static Builder builder(Class<? extends ContainerProcessor> clazz, Object... args) {
         return new Builder(clazz, args);
     }
 
     /**
-     * @return - task count in the corresponding vertex-container
+     * @return task count in the corresponding vertex-container
      */
     public int getTaskCount() {
         return this.taskCount;
     }
 
     /**
-     * @return - arguments which will be passed to construct ContainerProcessor
+     * @return arguments which will be passed to construct ContainerProcessor
      */
     public abstract Object[] getArgs();
 
     /**
-     * @return - class of the corresponding ContainerProcessor
+     * @return class of the corresponding ContainerProcessor
      */
     public abstract String getContainerProcessorClazz();
 
@@ -80,6 +86,11 @@ public abstract class ProcessorDescriptor implements Serializable {
         private final ProcessorDescriptor processorDescriptor;
         private boolean build;
 
+        /**
+         * Constructs a new builder with given class and arguments
+         * @param clazz the class of the processor to use
+         * @param args the arguments for the processor
+         */
         public Builder(Class<? extends ContainerProcessor> clazz, Object... args) {
             processorDescriptor = ProcessorDescriptor.create(clazz, args);
         }
@@ -87,8 +98,8 @@ public abstract class ProcessorDescriptor implements Serializable {
         /**
          * Define amount of tasks inside the corresponding container
          *
-         * @param taskCount - amount of task;
-         * @return - builder itself;
+         * @param taskCount amount of task
+         * @return builder itself
          */
         public Builder withTaskCount(int taskCount) {
             checkFalse(build, MESSAGE);
@@ -99,7 +110,7 @@ public abstract class ProcessorDescriptor implements Serializable {
         /**
          * Construct and return ProcessorDescriptor object
          *
-         * @return - corresponding ProcessorDescriptor
+         * @return corresponding ProcessorDescriptor
          */
         public ProcessorDescriptor build() {
             checkFalse(build, MESSAGE);

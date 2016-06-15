@@ -20,7 +20,7 @@ package com.hazelcast.jet.container;
 import com.hazelcast.jet.executor.TaskContext;
 
 /**
- * Represents context of processing container;
+ * Represents context of processing container
  */
 public interface ProcessorContext extends ContainerDescriptor, TaskContext {
 }

@@ -23,21 +23,21 @@ import java.io.Serializable;
 
 /**
  * Strategy which determines Hazelcast's nodes addresses where data should be sent
- * during shuffling process between vertices;
+ * during shuffling process between vertices
  *
  * For example:
  * <pre>
  *     IListBasedShufflingStrategy
  *
- *     will sent all to data to the node which holds corresponding Hazelcast IList data;
+ *     will sent all to data to the node which holds corresponding Hazelcast IList data
  * </pre>
  */
 public interface ShufflingStrategy extends Serializable {
     /**
-     * List of the address;
+     * List of the address
      *
-     * @param containerDescriptor - descriptor of container;
-     * @return - list address where data should be sent;
+     * @param containerDescriptor descriptor of container
+     * @return list address where data should be sent
      */
     Address[] getShufflingAddress(ContainerDescriptor containerDescriptor);
 }

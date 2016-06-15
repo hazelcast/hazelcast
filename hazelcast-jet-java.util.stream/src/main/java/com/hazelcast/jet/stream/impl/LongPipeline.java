@@ -23,11 +23,11 @@ import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
+import com.hazelcast.jet.stream.impl.distributed.LongSummaryStatistics;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
 import java.util.Iterator;
-import java.util.LongSummaryStatistics;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
@@ -188,9 +188,9 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public LongSummaryStatistics summaryStatistics() {
-        return collect(Distributed.LongSummaryStatistics::new, Distributed.LongSummaryStatistics::accept,
-                Distributed.LongSummaryStatistics::combine);
+    public java.util.LongSummaryStatistics summaryStatistics() {
+        return collect(LongSummaryStatistics::new, LongSummaryStatistics::accept,
+                LongSummaryStatistics::combine);
     }
 
     @Override

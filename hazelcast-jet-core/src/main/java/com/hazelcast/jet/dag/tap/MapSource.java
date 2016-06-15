@@ -26,14 +26,27 @@ import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.util.List;
 
+/**
+ * A source which uses a Hazelcast {@code IMap} as the input.
+ */
 public class MapSource implements SourceTap {
 
     private final String name;
 
+    /**
+     * Constructs a source with the given map name.
+     *
+     * @param name of the map to use as the input
+     */
     public MapSource(String name) {
         this.name = name;
     }
 
+    /**
+     * Constructs a source with the given map.
+     *
+     * @param map the map instance to be used as the input
+     */
     public MapSource(IMap map) {
         this(map.getName());
     }

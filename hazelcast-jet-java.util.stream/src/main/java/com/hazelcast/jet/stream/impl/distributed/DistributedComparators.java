@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream;
+package com.hazelcast.jet.stream.impl.distributed;
 
+import com.hazelcast.jet.stream.Distributed;
+
+/**
+ *
+ */
 public final class DistributedComparators {
 
     public static final Distributed.Comparator<Comparable<Object>> NATURAL_ORDER_COMPARATOR = new NaturalOrderComparator();

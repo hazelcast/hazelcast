@@ -23,23 +23,27 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.Serializable;
 
 /**
- * Abstract class which represents any sink tap;
+ * Abstract class which represents any sink tap
  */
 public interface SinkTap extends Serializable {
     /**
-     * Return writers for the corresponding tap;
+     * Return writers for the corresponding tap
      *
-     * @param nodeEngine          - Hazelcast nodeEngine;
-     * @param containerDescriptor - descriptor of the container;
-     * @return - list of the data writers;
+     * @param nodeEngine          Hazelcast nodeEngine
+     * @param containerDescriptor descriptor of the container
+     * @return list of the data writers
      */
     DataWriter[] getWriters(NodeEngine nodeEngine,
                             ContainerDescriptor containerDescriptor);
 
+    /**
+     * Returns <tt>true</tt>if sink is partitioned.
+     * @return <tt>true</tt>if sink is partitioned
+     */
     boolean isPartitioned();
 
     /**
-     * @return - name of the tap;
+     * @return name of the tap
      */
     String getName();
 }

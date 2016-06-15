@@ -28,15 +28,33 @@ import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
+/**
+ * Jet Tuple implementation
+ *
+ * @param <K> type of keys
+ * @param <V> type of value
+ */
 public class JetTuple2<K, V> extends Tuple2<K, V> implements JetTuple<K, V> {
     private int partitionId;
     private final CalculationStrategy calculationStrategy;
 
+    /**
+     * Constructs a tuple with the given key and value
+     * @param key the key
+     * @param value the value
+     */
     public JetTuple2(K key, V value) {
         this(key, value, -1, null);
     }
 
-    JetTuple2(K key,
+    /**
+     * Constructs a tuple with the given key, value, partition id and calculation strategy
+     * @param key the key
+     * @param value the value
+     * @param partitionId the partition id
+     * @param calculationStrategy the calculation strategy
+     */
+    public JetTuple2(K key,
               V value,
               int partitionId,
               CalculationStrategy calculationStrategy) {

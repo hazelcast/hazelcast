@@ -22,11 +22,18 @@ import com.hazelcast.jet.impl.dag.tap.sink.DataFileWriter;
 import com.hazelcast.jet.impl.dag.tap.sink.FileOutputStream;
 import com.hazelcast.spi.NodeEngine;
 
+/**
+ *  A sink which uses a file as output.
+ */
 public class FileSink implements SinkTap {
 
     private final String filename;
     private final FileOutputStream fileOutputStream;
 
+    /**
+     * Constructs a sink with the given filename
+     * @param filename the output filename
+     */
     public FileSink(String filename) {
         this.filename = filename;
         this.fileOutputStream = new FileOutputStream(filename);

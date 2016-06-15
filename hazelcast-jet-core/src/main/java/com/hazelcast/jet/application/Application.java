@@ -37,8 +37,8 @@ public interface Application {
     /**
      * Submit dag to the cluster
      *
-     * @param dag     - Direct acyclic graph, which describes calculation flow
-     * @param classes - Classes which will be used during calculation process
+     * @param dag     Direct acyclic graph, which describes calculation flow
+     * @param classes Classes which will be used during calculation process
      * @throws IOException if application could not be submitted
      */
     void submit(DAG dag, Class... classes) throws IOException;
@@ -47,7 +47,7 @@ public interface Application {
     /**
      * Add classes to the calculation's classLoader
      *
-     * @param classes - classes, which will be used during calculation
+     * @param classes classes, which will be used during calculation
      * @throws IOException if resource could not be added
      */
     void addResource(Class... classes) throws IOException;
@@ -55,7 +55,7 @@ public interface Application {
     /**
      * Add all bytecode for url to the calculation classLoader
      *
-     * @param url - source url with classes
+     * @param url source url with classes
      * @throws IOException if resource could not be added
      */
     void addResource(URL url) throws IOException;
@@ -63,9 +63,9 @@ public interface Application {
     /**
      * Add all bytecode for url to the calculation classLoader
      *
-     * @param inputStream              - source inputStream with bytecode
-     * @param name                     - name of the source
-     * @param localizationResourceType - type of data stored in inputStream (JAR,CLASS,DATA)
+     * @param inputStream              source inputStream with bytecode
+     * @param name                     name of the source
+     * @param localizationResourceType type of data stored in inputStream (JAR,CLASS,DATA)
      * @throws IOException if resource could not be added
      */
     void addResource(InputStream inputStream, String name, LocalizationResourceType localizationResourceType) throws IOException;
@@ -76,7 +76,7 @@ public interface Application {
     void clearResources();
 
     /**
-     * @return - state for the application's state-machine
+     * @return state for the application's state-machine
      */
     ApplicationState getApplicationState();
 

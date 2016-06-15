@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "deprecation"})
 public class ListDecorator<E> implements IStreamList<E> {
 
     private final IList<E> list;
@@ -192,6 +192,6 @@ public class ListDecorator<E> implements IStreamList<E> {
 
     @Override
     public DistributedStream<E> parallelStream() {
-        return stream();
+        return stream().unordered();
     }
 }

@@ -22,15 +22,19 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 
 /**
- * Shuffling strategy based on IList internal logic;
+ * Shuffling strategy based on IList internal logic
  * <p>
- * All data of Hazelcast list are stored on exactly one node;
+ * All data of Hazelcast list are stored on exactly one node
  * <p>
- * Using this shuffling strategy all JET-data will be sent to this IList's node;
+ * Using this shuffling strategy all JET-data will be sent to this IList's node
  */
 public class IListBasedShufflingStrategy implements ShufflingStrategy {
     private final String listName;
 
+    /**
+     * Constructs a new strategy with a given list name
+     * @param listName name of the list to shuffle the data to
+     */
     public IListBasedShufflingStrategy(String listName) {
         this.listName = listName;
     }

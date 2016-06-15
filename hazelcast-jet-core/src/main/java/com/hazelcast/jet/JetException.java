@@ -17,9 +17,13 @@
 package com.hazelcast.jet;
 
 /**
- * General Jet-exception;
+ * General Jet-exception
  */
 public class JetException extends RuntimeException {
+    /**
+     * Constructs an exception with a given message
+     * @param message exception message
+     */
     public JetException(String message) {
         super(message);
     }

@@ -19,32 +19,32 @@ package com.hazelcast.jet.data.io;
 import com.hazelcast.jet.impl.actor.Consumer;
 
 /**
- * Represents abstract output-stream to consume data chunk of data-stream;
+ * Represents abstract output-stream to consume data chunk of data-stream
  *
- * @param <T> - type of consumed objects;
+ * @param <T> type of consumed objects
  */
 public interface ConsumerOutputStream<T> extends Consumer<T> {
     /**
-     * Consumes all objects from inputStream;
+     * Consumes all objects from inputStream
      *
-     * @param inputStream - corresponding inputStream;
+     * @param inputStream corresponding inputStream
      * @throws Exception if any exception
      */
     void consumeStream(ProducerInputStream<T> inputStream) throws Exception;
 
     /**
-     * Consumes chunk of objects with size - actualSize;
+     * Consumes chunk of objects with size actualSize
      *
-     * @param chunk      - chunk of objects;
-     * @param actualSize - number of objects to consume;
+     * @param chunk      chunk of objects
+     * @param actualSize number of objects to consume
      */
     void consumeChunk(T[] chunk, int actualSize);
 
     /**
-     * Consumes one object;
+     * Consumes one object
      *
-     * @param object - object to consume;
-     * @return - always true for this type of consumer;
+     * @param object object to consume
+     * @return always true for this type of consumer
      * @throws Exception if any exception
      */
     boolean consume(T object) throws Exception;

@@ -24,22 +24,22 @@ import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import java.io.Serializable;
 
 /**
- * Represents abstract source tap;
+ * Represents abstract source tap
  */
 public interface SourceTap extends Serializable {
 
     /**
-     * @return - name of the tap;
+     * @return name of the tap
      */
     String getName();
 
     /**
-     * Array of the input readers;
+     * Array of the input readers
      *
-     * @param containerDescriptor - descriptor of the corresponding container;
-     * @param vertex              - corresponding vertex;
-     * @param tupleFactory        - factory for the tuple creation;
-     * @return - list of the input readers;
+     * @param containerDescriptor descriptor of the corresponding container
+     * @param vertex              corresponding vertex
+     * @param tupleFactory        factory for the tuple creation
+     * @return list of the input readers
      */
     DataReader[] getReaders(ContainerDescriptor containerDescriptor,
                             Vertex vertex,

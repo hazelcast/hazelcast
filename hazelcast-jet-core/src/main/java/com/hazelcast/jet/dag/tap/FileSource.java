@@ -25,10 +25,18 @@ import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.File;
 
+/**
+ * A source which uses a file as the input.
+ */
 public class FileSource implements SourceTap {
 
     private final String name;
 
+    /**
+     * Constructs a source with the given filename
+     *
+     * @param name name of the file to read
+     */
     public FileSource(String name) {
         this.name = name;
     }
