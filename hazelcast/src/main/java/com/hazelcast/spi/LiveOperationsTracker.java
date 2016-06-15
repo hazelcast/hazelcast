@@ -27,9 +27,9 @@ package com.hazelcast.spi;
 public interface LiveOperationsTracker {
 
     /**
-     * Populate the LifeOperations
+     * Populate the LiveOperations
      *
-     * @param result the result.
+     * @param liveOperations the LiveOperations to populate.
      */
-    void populate(LiveOperations result);
+    void populate(LiveOperations liveOperations);
 }
