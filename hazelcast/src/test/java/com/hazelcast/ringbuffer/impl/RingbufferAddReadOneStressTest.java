@@ -42,7 +42,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
     @Test
     public void whenLongTTLAndSmallBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
-                .setCapacity(1000)
+                .setCapacity(3 * 1000)
                 .setTimeToLiveSeconds(30);
         test(ringbufferConfig);
     }
