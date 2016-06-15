@@ -228,7 +228,7 @@ public abstract class Operation implements DataSerializable {
         if (service == null) {
             // one might have overridden getServiceName() method...
             final String name = serviceName != null ? serviceName : getServiceName();
-            service = ((NodeEngineImpl) nodeEngine).getService(name);
+            service = nodeEngine.getService(name);
         }
         return (T) service;
     }
