@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.exception.ResponseNotSentException;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -50,8 +49,8 @@ final class RemoteInvocationResponseHandler implements OperationResponseHandler 
         }
 
         if (!operationService.send(response, operation.getCallerAddress())) {
-            throw new ResponseNotSentException("Cannot send response: " + obj + " to " + conn.getEndPoint()
-                    + ". Op: " + operation);
+            operationService.logger.warning("Cannot send response: " + obj + " to " + conn.getEndPoint()
+                    + ". " + operation);
         }
     }
 
