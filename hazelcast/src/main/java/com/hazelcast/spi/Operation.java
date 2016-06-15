@@ -300,8 +300,9 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the call timeout in milliseconds. For example, if a call should be executed within 60 seconds orotherwise it should be
-     * aborted, then the call-timeout is 60000 milliseconds.
+     * Gets the call timeout in milliseconds. For example, if a call should start execution within 60 seconds otherwise
+     * it should be aborted, then the call-timeout is 60000 milliseconds. Once an operation starts execution and runs for a
+     * long period (e.g. 5 minutes with an IExecutorService execute operation), then the call timeout isn't relevant any longer.
      *
      * For more information about the default value, see
      * {@link GroupProperty#OPERATION_CALL_TIMEOUT_MILLIS}
