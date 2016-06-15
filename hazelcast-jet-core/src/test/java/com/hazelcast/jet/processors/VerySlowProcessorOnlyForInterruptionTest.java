@@ -22,21 +22,15 @@ import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
 
 
-public class VerySlowProcessorOnlyForInterruptionTest implements TupleContainerProcessor<Object, Object, Object, Object> {
+public class VerySlowProcessorOnlyForInterruptionTest implements ContainerProcessor<Tuple<Object, Object>, Tuple<Object, Object>> {
     public static volatile CountDownLatch run;
     public static volatile boolean set;
-
-    @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-
-    }
 
     @Override
     public boolean process(ProducerInputStream<Tuple<Object, Object>> inputStream,
@@ -54,22 +48,5 @@ public class VerySlowProcessorOnlyForInterruptionTest implements TupleContainerP
         }
 
         return true;
-    }
-
-    @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Object, Object>> outputStream,
-                                     ProcessorContext processorContext) throws Exception {
-        return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory implements TupleContainerProcessorFactory {
-        public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new VerySlowProcessorOnlyForInterruptionTest();
-        }
     }
 }

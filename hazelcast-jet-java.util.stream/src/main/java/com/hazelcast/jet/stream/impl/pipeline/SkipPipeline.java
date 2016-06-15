@@ -43,7 +43,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     @Override
     public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Tuple> toTupleMapper) {
-        Vertex vertex = vertexBuilder(SkipProcessor.Factory.class)
+        Vertex vertex = vertexBuilder(SkipProcessor.class)
                 .name("skip")
                 .addToDAG(dag)
                 .args(defaultFromTupleMapper(), toTupleMapper, skip)
@@ -71,7 +71,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous;
         if (upstream instanceof SourcePipeline) {
             SourcePipeline<T> upstream = (SourcePipeline<T>) this.upstream;
-            Vertex passthrough = vertexBuilder(PassthroughProcessor.Factory.class)
+            Vertex passthrough = vertexBuilder(PassthroughProcessor.class)
                     .name("passthrough")
                     .addToDAG(dag)
                     .args(upstream.fromTupleMapper(), toTupleMapper())

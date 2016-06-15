@@ -19,13 +19,11 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
-public class CountProcessor implements ContainerProcessor<Object, JetTuple<Long, Integer>> {
+public class CountProcessor implements ContainerProcessor<Object, Tuple<Long, Integer>> {
     private int result = 0;
 
     @Override
@@ -35,7 +33,7 @@ public class CountProcessor implements ContainerProcessor<Object, JetTuple<Long,
 
     @Override
     public boolean process(ProducerInputStream<Object> inputStream,
-                           ConsumerOutputStream<JetTuple<Long, Integer>> outputStream,
+                           ConsumerOutputStream<Tuple<Long, Integer>> outputStream,
                            String sourceName,
                            ProcessorContext processorContext) throws Exception {
         result += inputStream.size();
@@ -43,21 +41,10 @@ public class CountProcessor implements ContainerProcessor<Object, JetTuple<Long,
     }
 
     @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<JetTuple<Long, Integer>> outputStream,
+    public boolean finalizeProcessor(ConsumerOutputStream<Tuple<Long, Integer>> outputStream,
                                      ProcessorContext processorContext) throws Exception {
         System.out.println("result=" + result + " " + processorContext.getNodeEngine().getLocalMember());
         outputStream.consume(new JetTuple2<>(0L, result));
         return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory implements ContainerProcessorFactory {
-        public ContainerProcessor getProcessor(Vertex vertex) {
-            return new CountProcessor();
-        }
     }
 }

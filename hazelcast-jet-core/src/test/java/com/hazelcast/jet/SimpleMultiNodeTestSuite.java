@@ -54,8 +54,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
         DAG dag = createDAG();
 
-        Vertex vertex1 = createVertex("vertex1", DummyProcessor.Factory.class);
-        Vertex vertex2 = createVertex("vertex2", DummyProcessor.Factory.class);
+        Vertex vertex1 = createVertex("vertex1", DummyProcessor.class);
+        Vertex vertex2 = createVertex("vertex2", DummyProcessor.class);
 
         vertex1.addSource(new MapSource(sourceMap.getName()));
         vertex1.addSink(new ListSink(sinkList.getName()));
@@ -86,7 +86,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             fillMap("source.simpleListTest", SERVER, CNT);
 
-            Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class);
+            Vertex vertex = createVertex("Dummy", DummyProcessor.class);
 
             addVertices(dag, vertex);
             vertex.addSource(new MapSource("source.simpleListTest"));
@@ -117,7 +117,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
                 sourceList.add(i);
             }
 
-            Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class, 1);
+            Vertex vertex = createVertex("Dummy", DummyProcessor.class, 1);
             addVertices(dag, vertex);
             vertex.addSource(new ListSource(sourceList.getName()));
             vertex.addSink(new ListSink(targetList.getName()));
@@ -143,7 +143,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
                 sourceList.add(new Integer[]{i});
             }
 
-            Vertex vertex = createVertex("Dummy", DummyProcessor.Factory.class, 1);
+            Vertex vertex = createVertex("Dummy", DummyProcessor.class, 1);
             addVertices(dag, vertex);
             vertex.addSource(new ListSource(sourceList.getName()));
             vertex.addSink(new ListSink(targetList.getName()));
@@ -176,8 +176,8 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
 
             fillMap(sourceMap.getName(), SERVER, cnt);
 
-            Vertex vertex1 = createVertex("MapReader", DummyProcessorForShufflingList.Factory.class);
-            Vertex vertex2 = createVertex("Sorter", ListProcessor.Factory.class, 1);
+            Vertex vertex1 = createVertex("MapReader", DummyProcessorForShufflingList.class);
+            Vertex vertex2 = createVertex("Sorter", ListProcessor.class, 1);
 
             addVertices(dag, vertex1, vertex2);
 
@@ -237,7 +237,7 @@ public class SimpleMultiNodeTestSuite extends JetBaseTest {
             int CNT = 100;
             fillMap("source.mapReverserTest", SERVER, CNT);
 
-            Vertex vertex = createVertex("reverser", ReverseProcessor.Factory.class, 1);
+            Vertex vertex = createVertex("reverser", ReverseProcessor.class, 1);
 
             vertex.addSource(new MapSource("source.mapReverserTest"));
             vertex.addSink(new MapSink("target.mapReverserTest"));

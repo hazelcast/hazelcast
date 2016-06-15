@@ -90,7 +90,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
                                           BiConsumer<R, ? super T> accumulator) {
         Distributed.Function<Tuple, ? extends T> fromTupleMapper = getTupleMapper(upstream, defaultFromTupleMapper());
         int taskCount = upstream.isOrdered() ? 1 : DEFAULT_TASK_COUNT;
-        Vertex accumulatorVertex = vertexBuilder(CollectorAccumulatorProcessor.Factory.class)
+        Vertex accumulatorVertex = vertexBuilder(CollectorAccumulatorProcessor.class)
                 .addToDAG(dag)
                 .name("accumulator")
                 .taskCount(taskCount)
@@ -131,9 +131,9 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     private static Class getCombinerClass(Object combiner) {
         if (combiner instanceof BiConsumer) {
-            return CollectorCombinerProcessor.Factory.class;
+            return CollectorCombinerProcessor.class;
         } else if (combiner instanceof BinaryOperator) {
-            return CombinerProcessor.Factory.class;
+            return CombinerProcessor.class;
         } else {
             throw new IllegalArgumentException("combiner is of type " + combiner.getClass());
         }

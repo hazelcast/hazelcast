@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +30,7 @@ import java.util.function.Function;
 
 public class SortProcessor<T> extends AbstractStreamProcessor<T, T> {
 
-    private final List<T> list ;
+    private final List<T> list;
     private final Comparator<T> comparator;
     private Iterator<T> iterator;
 
@@ -71,21 +70,5 @@ public class SortProcessor<T> extends AbstractStreamProcessor<T, T> {
     public void afterProcessing(ProcessorContext processorContext) {
         this.iterator = null;
         this.list.clear();
-    }
-
-    public static class Factory<T> extends AbstractStreamProcessor.Factory<T, T> {
-
-        private final Comparator<T> comparator;
-
-        public Factory(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, Comparator<T> comparator) {
-            super(inputMapper, outputMapper);
-            this.comparator = comparator;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, T> inputMapper,
-                                                                Function<T, Tuple> outputMapper) {
-            return new SortProcessor<>(inputMapper, outputMapper, comparator);
-        }
     }
 }

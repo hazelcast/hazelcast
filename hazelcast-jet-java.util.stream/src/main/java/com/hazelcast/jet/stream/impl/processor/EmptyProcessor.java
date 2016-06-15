@@ -19,38 +19,15 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
 public class EmptyProcessor implements ContainerProcessor<Tuple, Tuple> {
-    @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-
-    }
 
     @Override
     public boolean process(ProducerInputStream<Tuple> inputStream, ConsumerOutputStream<Tuple> outputStream,
                            String sourceName, ProcessorContext processorContext) throws Exception {
         outputStream.consumeStream(inputStream);
         return true;
-    }
-
-    @Override
-    public boolean finalizeProcessor(ConsumerOutputStream<Tuple> outputStream,
-                                     ProcessorContext processorContext) throws Exception {
-        return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory implements ContainerProcessorFactory<Tuple, Tuple> {
-        public ContainerProcessor<Tuple, Tuple> getProcessor(Vertex vertex) {
-            return new EmptyProcessor();
-        }
     }
 }

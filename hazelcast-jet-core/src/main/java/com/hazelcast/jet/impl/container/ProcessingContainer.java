@@ -19,12 +19,13 @@ package com.hazelcast.jet.impl.container;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.impl.container.task.TaskEvent;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Represents abstract processing container;
@@ -34,7 +35,7 @@ public interface ProcessingContainer
     /**
      * @return - user-level container processing factory;
      */
-    ContainerProcessorFactory getContainerProcessorFactory();
+    Supplier<ContainerProcessor> getContainerProcessorFactory();
 
     /**
      * @return - list of the input channels;

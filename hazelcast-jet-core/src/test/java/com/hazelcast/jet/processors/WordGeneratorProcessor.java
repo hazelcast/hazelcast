@@ -19,8 +19,6 @@ package com.hazelcast.jet.processors;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
@@ -110,17 +108,5 @@ public class WordGeneratorProcessor implements ContainerProcessor<Object, String
 
         this.stringTokenizer = null;
         return true;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory implements ContainerProcessorFactory<Object, String> {
-        @Override
-        public ContainerProcessor<Object, String> getProcessor(Vertex vertex) {
-            return new WordGeneratorProcessor();
-        }
     }
 }

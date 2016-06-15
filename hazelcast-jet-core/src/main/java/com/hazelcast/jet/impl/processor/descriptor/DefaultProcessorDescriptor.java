@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.processor.descriptor;
 
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -25,18 +25,18 @@ public class DefaultProcessorDescriptor extends ProcessorDescriptor {
     private final String clazz;
     private final Object[] args;
 
-    public DefaultProcessorDescriptor(Class<? extends ContainerProcessorFactory> clazz, Object[] args) {
+    public DefaultProcessorDescriptor(Class<? extends ContainerProcessor> clazz, Object[] args) {
         this.args = args;
         this.clazz = clazz.getName();
     }
 
     @Override
-    public Object[] getFactoryArgs() {
+    public Object[] getArgs() {
         return this.args;
     }
 
     @Override
-    public String getContainerProcessorFactoryClazz() {
+    public String getContainerProcessorClazz() {
         return this.clazz;
     }
 }

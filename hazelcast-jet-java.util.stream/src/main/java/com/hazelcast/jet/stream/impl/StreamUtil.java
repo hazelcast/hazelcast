@@ -17,12 +17,12 @@
 package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.application.Application;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -110,7 +110,7 @@ public final class StreamUtil {
         return new EdgeBuilder(randomName(), from, to);
     }
 
-    public static VertexBuilder vertexBuilder(Class<? extends ContainerProcessorFactory> clazz) {
+    public static VertexBuilder vertexBuilder(Class<? extends ContainerProcessor> clazz) {
         return new VertexBuilder(clazz);
     }
 
@@ -123,13 +123,13 @@ public final class StreamUtil {
 
     public static class VertexBuilder {
 
-        private final Class<? extends ContainerProcessorFactory> clazz;
+        private final Class<? extends ContainerProcessor> clazz;
         private final List<Object> args = new ArrayList<>();
         private Integer taskCount;
         private String name;
         private DAG dag;
 
-        public VertexBuilder(Class<? extends ContainerProcessorFactory> clazz) {
+        public VertexBuilder(Class<? extends ContainerProcessor> clazz) {
             this.clazz = clazz;
         }
 

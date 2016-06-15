@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -32,7 +31,8 @@ public class CollectorCombinerProcessor<T> extends AbstractStreamProcessor<T, T>
 
     public CollectorCombinerProcessor(Function<Tuple, T> inputMapper,
                                       Function<T, Tuple> outputMapper,
-                                      BiConsumer<T, T> combiner) {
+                                      BiConsumer<T, T> combiner,
+                                      Function ignored) {
         super(inputMapper, outputMapper);
         this.combiner = combiner;
     }
@@ -61,24 +61,5 @@ public class CollectorCombinerProcessor<T> extends AbstractStreamProcessor<T, T>
             outputStream.consume(result);
         }
         return true;
-    }
-
-    public static class Factory<T> extends AbstractStreamProcessor.Factory<T, T> {
-
-        private final BiConsumer<T, T> combiner;
-
-        public Factory(Function<Tuple, T> inputMapper,
-                       Function<T, Tuple> outputMapper,
-                       BiConsumer<T, T> combiner,
-                       Function ignoredFinisher) {
-            super(inputMapper, outputMapper);
-            this.combiner = combiner;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, T> inputMapper,
-                                                                Function<T, Tuple> outputMapper) {
-            return new CollectorCombinerProcessor<>(inputMapper, outputMapper, combiner);
-        }
     }
 }

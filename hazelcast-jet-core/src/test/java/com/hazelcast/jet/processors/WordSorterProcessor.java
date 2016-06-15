@@ -20,17 +20,15 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessor;
-import com.hazelcast.jet.processor.tuple.TupleContainerProcessorFactory;
+import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
 
-public class WordSorterProcessor implements TupleContainerProcessor<String, Integer, String, Integer> {
+public class WordSorterProcessor implements ContainerProcessor<Tuple<String, Integer>, Tuple<String, Integer>> {
     private Map<String, Integer> sortedMap;
     private Iterator<Map.Entry<String, Integer>> iterator;
 
@@ -84,12 +82,5 @@ public class WordSorterProcessor implements TupleContainerProcessor<String, Inte
     @Override
     public void afterProcessing(ProcessorContext processorContext) {
 
-    }
-
-    public static class Factory implements TupleContainerProcessorFactory {
-        @Override
-        public TupleContainerProcessor getProcessor(Vertex vertex) {
-            return new WordSorterProcessor();
-        }
     }
 }

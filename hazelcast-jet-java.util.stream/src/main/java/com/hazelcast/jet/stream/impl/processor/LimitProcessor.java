@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 
 import java.util.Iterator;
 import java.util.function.Function;
@@ -30,7 +29,7 @@ public class LimitProcessor<T> extends AbstractStreamProcessor<T, T> {
     private final long limit;
     private long index;
 
-    public LimitProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, long limit) {
+    public LimitProcessor(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, Long limit) {
         super(inputMapper, outputMapper);
         this.limit = limit;
     }
@@ -53,22 +52,6 @@ public class LimitProcessor<T> extends AbstractStreamProcessor<T, T> {
             outputStream.consume(iterator.next());
         }
         return true;
-    }
-
-    public static class Factory<T> extends AbstractStreamProcessor.Factory<T, T> {
-
-        private final long limit;
-
-        public Factory(Function<Tuple, T> inputMapper, Function<T, Tuple> outputMapper, Long limit) {
-            super(inputMapper, outputMapper);
-            this.limit = limit;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, T> inputMapper,
-                                                                Function<T, Tuple> outputMapper) {
-            return new LimitProcessor<>(inputMapper, outputMapper, limit);
-        }
     }
 }
 

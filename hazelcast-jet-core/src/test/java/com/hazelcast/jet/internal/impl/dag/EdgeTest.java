@@ -24,8 +24,8 @@ public class EdgeTest {
 
     @Test
     public void testEdgeName() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         String name = "edge";
         Edge edge = new Edge(name, v1, v2);
         assertEquals(name, edge.getName());
@@ -33,8 +33,8 @@ public class EdgeTest {
 
     @Test
     public void testEdgeInputOutputVertexes() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         Edge edge = new Edge("edge", v1, v2);
         assertEquals(v1, edge.getInputVertex());
         assertEquals(v2, edge.getOutputVertex());
@@ -42,8 +42,8 @@ public class EdgeTest {
 
     @Test
     public void testDefaultStrategies() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         Edge edge = new Edge("edge", v1, v2);
         assertEquals(ByReferenceDataTransferringStrategy.INSTANCE, edge.getDataTransferringStrategy());
         assertEquals(DefaultHashingStrategy.INSTANCE, edge.getHashingStrategy());
@@ -54,8 +54,8 @@ public class EdgeTest {
 
     @Test
     public void testEdgeBuilder() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         IListBasedShufflingStrategy shufflingStrategy = new IListBasedShufflingStrategy("test");
         Edge edge = new Edge.EdgeBuilder("edge", v1, v2)
                 .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
@@ -75,8 +75,8 @@ public class EdgeTest {
 
     @Test(expected = IllegalStateException.class)
     public void testEdgeBuilder_multipleCallToBuild_throwsException() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         Edge.EdgeBuilder edgeBuilder = new Edge.EdgeBuilder("edge", v1, v2);
         edgeBuilder.build();
         edgeBuilder.build();

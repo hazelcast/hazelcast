@@ -38,7 +38,7 @@ public class DAGTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_add_same_vertex_multiple_times_throws_exception() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
         dag.addVertex(v1);
         dag.addVertex(v1);
     }
@@ -46,7 +46,7 @@ public class DAGTest {
     @Test
     public void test_dag_should_contains_vertex() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
         dag.addVertex(v1);
         assertTrue("DAG should contain the added vertex", dag.containsVertex(v1));
     }
@@ -54,7 +54,7 @@ public class DAGTest {
     @Test
     public void test_empty_dag_should_not_contain_vertex() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
         assertFalse("DAG should not contain any vertex", dag.containsVertex(v1));
     }
 
@@ -67,8 +67,8 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void test_validate_cyclic_graph_throws_exception() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         dag.addVertex(v1);
         dag.addVertex(v2);
         dag.addEdge(new Edge("e1", v1, v2));
@@ -79,7 +79,7 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void test_validate_self_cycle_on_vertex_throws_exception() throws Exception {
         DAG dag = new DAG();
-        Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex vertex = createVertex("v1", DummyProcessor.class);
         dag.addVertex(vertex);
         dag.addEdge(new Edge("e1", vertex, vertex));
         dag.validate();
@@ -88,8 +88,8 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void test_validate_same_output_and_vertex_name_throws_exception() throws Exception {
         DAG dag = new DAG();
-        Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex output = createVertex("output", DummyProcessor.Factory.class);
+        Vertex vertex = createVertex("v1", DummyProcessor.class);
+        Vertex output = createVertex("output", DummyProcessor.class);
         vertex.addOutputVertex(output, new Edge("e1", vertex, output));
         vertex.addSink(new FileSink("output"));
         dag.addVertex(vertex);
@@ -100,8 +100,8 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void test_validate_same_input_and_vertex_name_throws_exception() throws Exception {
         DAG dag = new DAG();
-        Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex input = createVertex("input", DummyProcessor.Factory.class);
+        Vertex vertex = createVertex("v1", DummyProcessor.class);
+        Vertex input = createVertex("input", DummyProcessor.class);
         vertex.addInputVertex(input, new Edge("e1", input, vertex));
         vertex.addSource(new FileSource("input"));
         dag.addVertex(vertex);
@@ -113,7 +113,7 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void test_validate_same_source_and_vertex_name_throws_exception() throws Exception {
         DAG dag = new DAG();
-        Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex vertex = createVertex("v1", DummyProcessor.class);
         vertex.addSource(new FileSource("v1"));
         dag.addVertex(vertex);
         dag.validate();
@@ -122,7 +122,7 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void test_validate_same_sink_and_vertex_name_throws_exception() throws Exception {
         DAG dag = new DAG();
-        Vertex vertex = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex vertex = createVertex("v1", DummyProcessor.class);
         vertex.addSink(new FileSink("v1"));
         dag.addVertex(vertex);
         dag.validate();
@@ -132,7 +132,7 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void testGetTopologicalVertexIterator_throwsException_whenRemoveIsCalled() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
         dag.addVertex(v1);
         dag.validate();
         Iterator<Vertex> iterator = dag.getTopologicalVertexIterator();
@@ -149,9 +149,9 @@ public class DAGTest {
     @Test
     public void testGetTopologicalVertexIterator() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
-        Vertex v3 = createVertex("v3", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v3 = createVertex("v3", DummyProcessor.class);
 
         dag.addVertex(v1);
         dag.addVertex(v2);
@@ -190,7 +190,7 @@ public class DAGTest {
     @Test(expected = IllegalStateException.class)
     public void testGetRevertedTopologicalVertexIterator_throwsException_whenRemoveIsCalled() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
         dag.addVertex(v1);
         dag.validate();
         Iterator<Vertex> iterator = dag.getRevertedTopologicalVertexIterator();
@@ -200,9 +200,9 @@ public class DAGTest {
     @Test
     public void testGetRevertedTopologicalVertexIterator() throws Exception {
         DAG dag = new DAG();
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
-        Vertex v3 = createVertex("v3", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v3 = createVertex("v3", DummyProcessor.class);
 
         dag.addVertex(v1);
         dag.addVertex(v2);
@@ -234,9 +234,9 @@ public class DAGTest {
     @Test
     public void testDAG_Serialization_Deserialization() throws Exception {
         DAG dag = new DAG("dag");
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
-        Vertex v3 = createVertex("v3", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v3 = createVertex("v3", DummyProcessor.class);
 
         Edge e1 = new Edge.EdgeBuilder("e1", v1, v2)
                 .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
@@ -277,9 +277,9 @@ public class DAGTest {
     @Test
     public void testDAG_GetVertices() throws Exception {
         DAG dag = new DAG("dag");
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
-        Vertex v3 = createVertex("v3", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v3 = createVertex("v3", DummyProcessor.class);
 
         dag.addVertex(v1);
         dag.addVertex(v2);
@@ -296,8 +296,8 @@ public class DAGTest {
     @Test(expected = IllegalArgumentException.class)
     public void testDAG_addEdgeMultipleTimes_throwsException() throws Exception {
         DAG dag = new DAG("dag");
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         Edge e1 = new Edge("e1", v1, v2);
         dag.addVertex(v1);
         dag.addVertex(v2);
@@ -309,8 +309,8 @@ public class DAGTest {
     @Test(expected = IllegalArgumentException.class)
     public void testDAG_addEdge_withoutCorrespondingInput_throwsException() throws Exception {
         DAG dag = new DAG("dag");
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         Edge e1 = new Edge("e1", v1, v2);
         dag.addVertex(v2);
 
@@ -321,8 +321,8 @@ public class DAGTest {
     @Test(expected = IllegalArgumentException.class)
     public void testDAG_addEdge_withoutCorrespondingOutput_throwsException() throws Exception {
         DAG dag = new DAG("dag");
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex v2 = createVertex("v2", DummyProcessor.class);
         Edge e1 = new Edge("e1", v1, v2);
         dag.addVertex(v1);
         dag.addEdge(e1);

@@ -19,9 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
 import com.hazelcast.jet.data.tuple.JetTuple2;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
@@ -39,11 +37,6 @@ public class GroupingAccumulatorProcessor<K, V, A, R> implements ContainerProces
     public GroupingAccumulatorProcessor(Collector<V, A, R> collector) {
 
         this.collector = collector;
-    }
-
-    @Override
-    public void beforeProcessing(ProcessorContext processorContext) {
-
     }
 
     @Override
@@ -90,25 +83,5 @@ public class GroupingAccumulatorProcessor<K, V, A, R> implements ContainerProces
             }
         }
         return finalized;
-    }
-
-    @Override
-    public void afterProcessing(ProcessorContext processorContext) {
-
-    }
-
-    public static class Factory<K, V, A, R> implements ContainerProcessorFactory<Tuple<K, V>, Tuple<K, A>> {
-
-
-        private final Collector<V, A, R> collector;
-
-        public Factory(Collector<V, A, R> collector) {
-            this.collector = collector;
-        }
-
-        @Override
-        public ContainerProcessor<Tuple<K, V>, Tuple<K, A>> getProcessor(Vertex vertex) {
-            return new GroupingAccumulatorProcessor<>(collector);
-        }
     }
 }

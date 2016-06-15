@@ -30,16 +30,16 @@ public class VertexTest {
     @Test
     public void testVertexNameAndProcessorFactory() throws Exception {
         String name = "v1";
-        Class<DummyProcessor.Factory> factoryClass = DummyProcessor.Factory.class;
-        Vertex v1 = createVertex(name, factoryClass);
+        Class<DummyProcessor> procesorClass = DummyProcessor.class;
+        Vertex v1 = createVertex(name, procesorClass);
         assertEquals(name, v1.getName());
-        assertEquals(factoryClass.getName(), v1.getDescriptor().getContainerProcessorFactoryClazz());
+        assertEquals(procesorClass.getName(), v1.getDescriptor().getContainerProcessorClazz());
     }
 
     @Test
     public void testVertexInput() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex input = createVertex("input", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex input = createVertex("input", DummyProcessor.class);
 
         Edge edge = new Edge("e1", input, v1);
         v1.addInputVertex(input, edge);
@@ -54,8 +54,8 @@ public class VertexTest {
 
     @Test
     public void testVertexOutput() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex output = createVertex("output", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex output = createVertex("output", DummyProcessor.class);
 
         Edge edge = new Edge("e1", v1, output);
         v1.addOutputVertex(output, edge);
@@ -71,8 +71,8 @@ public class VertexTest {
 
     @Test
     public void testVertexOutputShuffler() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
-        Vertex output = createVertex("output", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
+        Vertex output = createVertex("output", DummyProcessor.class);
 
         Edge edge = new Edge.EdgeBuilder("edge", v1, output)
                 .shuffling(true)
@@ -84,13 +84,13 @@ public class VertexTest {
 
     @Test
     public void testEmptyVertexHasNotOutputShuffler() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.Factory.class);
+        Vertex v1 = createVertex("v1", DummyProcessor.class);
         assertFalse(v1.hasOutputShuffler());
     }
 
     @Test
     public void testVertexSources() throws Exception {
-        Vertex vertex = createVertex("vertex", DummyProcessor.Factory.class);
+        Vertex vertex = createVertex("vertex", DummyProcessor.class);
 
         final String sourceTapName = "sourceTapName";
         SourceTap sourceTap = new SourceTap() {
@@ -112,7 +112,7 @@ public class VertexTest {
 
     @Test
     public void testVertexSinks() throws Exception {
-        Vertex vertex = createVertex("vertex", DummyProcessor.Factory.class);
+        Vertex vertex = createVertex("vertex", DummyProcessor.class);
 
         final String sinkTapName = "sinkTapWithWriterStrategyName";
         SinkTap sinkTap = new SinkTap() {

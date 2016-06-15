@@ -60,7 +60,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
     public IMap<K, D> collect(StreamContext context, Pipeline<? extends T> upstream) {
         IMap<K, D> target = context.getHazelcastInstance().getMap(mapName);
         DAG dag = new DAG();
-        Vertex merger = vertexBuilder(GroupingAccumulatorProcessor.Factory.class)
+        Vertex merger = vertexBuilder(GroupingAccumulatorProcessor.class)
                 .addToDAG(dag)
                 .args(collector)
                 .build();
@@ -73,7 +73,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                     .build();
         }
 
-        Vertex combiner = vertexBuilder(GroupingCombinerProcessor.Factory.class)
+        Vertex combiner = vertexBuilder(GroupingCombinerProcessor.class)
                 .addToDAG(dag)
                 .args(collector)
                 .build();

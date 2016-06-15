@@ -16,11 +16,10 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.io.tuple.Tuple;
-import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
 import java.util.Iterator;
@@ -32,24 +31,6 @@ import java.util.stream.Stream;
 public class TransformProcessor extends AbstractStreamProcessor<Object, Object> {
 
     private final TransformOperation[] operations;
-
-    public static class Factory extends AbstractStreamProcessor.Factory<Object, Object> {
-
-        private final List<TransformOperation> operations;
-
-        public Factory(Function<Tuple, Object> inputMapper, Function<Object, Tuple> outputMapper,
-                       List<TransformOperation> operations) {
-            super(inputMapper, outputMapper);
-            this.operations = operations;
-        }
-
-        @Override
-        protected ContainerProcessor<Tuple, Tuple> getProcessor(Function<Tuple, Object> inputMapper,
-                                                                Function<Object, Tuple> outputMapper) {
-            return new TransformProcessor(inputMapper, outputMapper, operations);
-        }
-    }
-
 
     public TransformProcessor(Function<Tuple, Object> inputMapper, Function<Object, Tuple> outputMapper,
                               List<TransformOperation> operations) {

@@ -17,29 +17,28 @@
 package com.hazelcast.jet.impl.container.task;
 
 
-import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.actor.ComposedActor;
-import com.hazelcast.jet.impl.actor.ObjectConsumer;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
-import com.hazelcast.jet.impl.container.ContainerContext;
-import com.hazelcast.jet.impl.container.ContainerTask;
-import com.hazelcast.jet.impl.container.DataChannel;
-import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.actor.DefaultComposedActor;
-import com.hazelcast.jet.impl.container.DefaultProcessorContext;
-import com.hazelcast.jet.impl.actor.ObjectActor;
 import com.hazelcast.jet.container.ProcessorContext;
-import com.hazelcast.jet.impl.executor.Payload;
-import com.hazelcast.jet.processor.ContainerProcessorFactory;
-import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
-import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.executor.TaskContext;
+import com.hazelcast.jet.impl.actor.ComposedActor;
+import com.hazelcast.jet.impl.actor.DefaultComposedActor;
+import com.hazelcast.jet.impl.actor.ObjectActor;
+import com.hazelcast.jet.impl.actor.ObjectConsumer;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
+import com.hazelcast.jet.impl.actor.RingBufferActor;
+import com.hazelcast.jet.impl.actor.shuffling.ShufflingActor;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
+import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
+import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.container.ContainerContext;
+import com.hazelcast.jet.impl.container.ContainerTask;
+import com.hazelcast.jet.impl.container.DataChannel;
+import com.hazelcast.jet.impl.container.DefaultProcessorContext;
+import com.hazelcast.jet.impl.container.ProcessingContainer;
+import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -53,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class DefaultContainerTask extends AbstractTask
@@ -107,8 +107,8 @@ public class DefaultContainerTask extends AbstractTask
         this.containerContext = container.getContainerContext();
         this.applicationContext = container.getApplicationContext();
         this.nodeEngine = container.getApplicationContext().getNodeEngine();
-        ContainerProcessorFactory processorFactory = container.getContainerProcessorFactory();
-        this.processor = processorFactory == null ? null : processorFactory.getProcessor(vertex);
+        Supplier<ContainerProcessor> processorFactory = container.getContainerProcessorFactory();
+        this.processor = processorFactory == null ? null : processorFactory.get();
         this.processorContext = new DefaultProcessorContext(taskContext, this.containerContext);
         this.logger = nodeEngine.getLogger(getClass());
     }
