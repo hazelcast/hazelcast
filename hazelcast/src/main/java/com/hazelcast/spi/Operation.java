@@ -91,17 +91,23 @@ public abstract class Operation implements DataSerializable {
     }
 
     // runs before wait-support
-    public abstract void beforeRun() throws Exception;
+    public void beforeRun() throws Exception {
+    }
 
     // runs after wait-support, supposed to do actual operation
     public abstract void run() throws Exception;
 
     // runs after backups, before wait-notify
-    public abstract void afterRun() throws Exception;
+    public void afterRun() throws Exception {
+    }
 
-    public abstract boolean returnsResponse();
+    public boolean returnsResponse() {
+        return true;
+    }
 
-    public abstract Object getResponse();
+    public Object getResponse() {
+        return null;
+    }
 
     // Gets the actual service name without looking at overriding methods. This method only exists for testing purposes.
     String getRawServiceName() {
@@ -284,7 +290,7 @@ public abstract class Operation implements DataSerializable {
         operationResponseHandler.sendResponse(this, value);
     }
 
-     /**
+    /**
      * Gets the time in milliseconds since this invocation started.
      *
      * For more information, see {@link ClusterClock#getClusterTime()}.
@@ -513,9 +519,11 @@ public abstract class Operation implements DataSerializable {
         readInternal(in);
     }
 
-    protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    }
 
-    protected abstract void readInternal(ObjectDataInput in) throws IOException;
+    protected void readInternal(ObjectDataInput in) throws IOException {
+    }
 
     /**
      * A template method allows for additional information to be passed into the {@link #toString()} method. So an Operation

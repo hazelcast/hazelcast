@@ -16,40 +16,12 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
-
 /**
  * Abstract {@link com.hazelcast.spi.Operation} implementation with some basic methods
  * implemented.
+ *
+ * @deprecated since 3.7. Use {@link Operation} directly.
  */
 public abstract class AbstractOperation extends Operation {
 
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-    }
 }
