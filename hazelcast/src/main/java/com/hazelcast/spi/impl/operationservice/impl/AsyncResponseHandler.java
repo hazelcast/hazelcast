@@ -64,7 +64,7 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
     private static final long IDLE_MIN_PARK_NS = NANOSECONDS.toNanos(1);
     private static final long IDLE_MAX_PARK_NS = MICROSECONDS.toNanos(100);
 
-    private final ResponseThread responseThread;
+    final ResponseThread responseThread;
     private final ILogger logger;
 
     AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler,
@@ -117,7 +117,7 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
      * The ResponseThread needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
-    private final class ResponseThread extends Thread implements OperationHostileThread {
+    final class ResponseThread extends Thread implements OperationHostileThread {
 
         private final BlockingQueue<Packet> responseQueue;
         private final PacketHandler responsePacketHandler;
@@ -151,7 +151,7 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
                     responsePacketHandler.handle(response);
                 } catch (Throwable e) {
                     inspectOutOfMemoryError(e);
-                    logger.severe("Failed to process response: " + response + " on response thread:" + getName(), e);
+                    logger.severe("Failed to process response: " + response + " on:" + getName(), e);
                 }
             }
         }

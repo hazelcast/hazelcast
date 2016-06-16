@@ -2,8 +2,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.logging.ILogger;
@@ -51,9 +49,8 @@ public class AsyncResponseHandlerTest extends HazelcastTestSupport {
 
     @Test
     public void whenNoProblemPacket() throws Exception {
-        final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)));
-        packet.setFlag(FLAG_OP);
-        packet.setFlag(FLAG_RESPONSE);
+        final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)))
+                .setFlag(FLAG_OP|FLAG_RESPONSE);
         asyncHandler.handle(packet);
 
         assertTrueEventually(new AssertTask() {
@@ -66,13 +63,11 @@ public class AsyncResponseHandlerTest extends HazelcastTestSupport {
 
     @Test
     public void whenPacketThrowsException() throws Exception {
-        final Packet badPacket = new Packet(serializationService.toBytes(new NormalResponse("bad", 1, 0, false)));
-        badPacket.setFlag(FLAG_OP);
-        badPacket.setFlag(FLAG_RESPONSE);
+        final Packet badPacket = new Packet(serializationService.toBytes(new NormalResponse("bad", 1, 0, false)))
+                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
 
-        final Packet goodPacket = new Packet(serializationService.toBytes(new NormalResponse("good", 1, 0, false)));
-        goodPacket.setFlag(FLAG_OP);
-        goodPacket.setFlag(FLAG_RESPONSE);
+        final Packet goodPacket = new Packet(serializationService.toBytes(new NormalResponse("good", 1, 0, false)))
+                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
 
         doThrow(new ExpectedRuntimeException()).when(responsePacketHandler).handle(badPacket);
 
@@ -88,13 +83,15 @@ public class AsyncResponseHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/7864
-    public void whenShutdown() {
+    public void whenShutdown() throws InterruptedException {
         asyncHandler.shutdown();
 
-        final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)));
-        packet.setFlag(FLAG_OP);
-        packet.setFlag(FLAG_RESPONSE);
+        // we need to wait for the responseThread to die first.
+        assertJoinable(asyncHandler.responseThread);
+
+        final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)))
+                .setAllFlags(FLAG_OP|FLAG_RESPONSE);
+
         asyncHandler.handle(packet);
 
         assertTrueFiveSeconds(new AssertTask() {
