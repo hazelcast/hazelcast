@@ -79,17 +79,17 @@ public class BinaryCompatibilityFileGenerator {
             serializerConfig.setImplementation(new CustomStreamSerializer()).setTypeClass(CustomStreamSerializable.class);
             config.addSerializerConfig(serializerConfig);
         }
+        config.setByteOrder(byteOrder);
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(ReferenceObjects.PORTABLE_FACTORY_ID, ReferenceObjects.INNER_PORTABLE_CLASS_ID)
                         .addIntField("i").addFloatField("f").build();
 
         return new DefaultSerializationServiceBuilder()
+                .setConfig(config)
                 .setVersion(VERSION)
-                .setByteOrder(byteOrder)
                 .addPortableFactory(ReferenceObjects.PORTABLE_FACTORY_ID, new APortableFactory())
                 .addDataSerializableFactory(ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID,
                         new ADataSerializableFactory())
-                .setConfig(config)
                 .addClassDefinition(classDefinition)
                 .build();
     }
