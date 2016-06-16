@@ -15,14 +15,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>hazelcast-jet</name>
-    <artifactId>hazelcast-jet-core</artifactId>
-    <packaging>jar</packaging>
-    <version>0.1-SNAPSHOT</version>
-    <description>Hazelcast Jet Data Processor</description>
-    <url>http://www.hazelcast.com/</url>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
@@ -30,22 +24,38 @@
         <version>0.1-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <main.basedir>${project.parent.basedir}</main.basedir>
-    </properties>
+    <name>hazelcast-jet-all</name>
+    <artifactId>hazelcast-jet</artifactId>
+    <packaging>jar</packaging>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
+                        <phase>package</phase>
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>shade</goal>
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <createSourcesJar>true</createSourcesJar>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.javadoc.plugin.version}</version>
+                <configuration>
+                    <includeDependencySources>true</includeDependencySources>
+                    <includeTransitiveDependencySources>true</includeTransitiveDependencySources>
+                    <dependencySourceIncludes>
+                        <dependencySourceInclude>com.hazelcast.jet</dependencySourceInclude>
+                    </dependencySourceIncludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -53,31 +63,13 @@
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-io</artifactId>
-            <version>${project.version}</version>
+            <artifactId>hazelcast-jet-java.util.stream</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
             <scope>provided</scope>
-        </dependency>
-
-        <!--TEST DEPENDENCIES-->
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <scope>test</scope>
-            <version>${hazelcast.version}</version>
-            <classifier>tests</classifier>
-        </dependency>
-
-
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
-            <scope>test</scope>
-            <version>${hazelcast.version}</version>
-            <classifier>tests</classifier>
         </dependency>
     </dependencies>
 </project>
