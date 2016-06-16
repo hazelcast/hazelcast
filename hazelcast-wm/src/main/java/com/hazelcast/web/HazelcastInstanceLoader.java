@@ -80,9 +80,10 @@ final class HazelcastInstanceLoader {
                 throw new InvalidConfigurationException("session-ttl-seconds cannot be used with client/server mode.");
             }
             boolean isSticky = Boolean.valueOf(properties.getProperty(STICKY_SESSION_CONFIG));
-            return createClientInstance(sessionService, configUrl, isSticky);
+            return createClientInstance(sessionService, instanceName, configUrl, isSticky);
         }
         Config config = getServerConfig(mapName, configUrl, sessionTTLConfig);
+
         return createHazelcastInstance(sessionService, instanceName, config);
     }
 
@@ -126,7 +127,7 @@ final class HazelcastInstanceLoader {
     }
 
     private static HazelcastInstance createClientInstance(ClusteredSessionService sessionService,
-                                                          URL configUrl, boolean isSticky) throws ServletException {
+                                                          String instanceName, URL configUrl, boolean isSticky) throws ServletException {
         LOGGER.warning("Creating HazelcastClient for session replication...");
         LOGGER.warning("make sure this client has access to an already running cluster...");
         ClientConfig clientConfig;
@@ -144,6 +145,9 @@ final class HazelcastInstanceLoader {
         }
         ListenerConfig listenerConfig = new ListenerConfig(new ClientLifecycleListener(sessionService));
         clientConfig.addListenerConfig(listenerConfig);
+        if (!isEmpty(instanceName)) {
+            clientConfig.setInstanceName(instanceName);
+        }
         return HazelcastClient.newHazelcastClient(clientConfig);
     }
 
