@@ -81,6 +81,16 @@ public final class CacheEnvironment {
      */
     public static final String EXPLICIT_VERSION_CHECK = "hibernate.cache.hazelcast.explicit_version_check";
 
+    /**
+     * Property to configure the Hazelcast operation timeout
+     */
+    public static final String HAZELCAST_OPERATION_TIMEOUT = "hazelcast.operation.call.timeout.millis";
+
+    /**
+     * Property to configure Hazelcast Shutdown Hook
+     */
+    public static final String HAZELCAST_SHUTDOWN_HOOK_ENABLED = "hazelcast.shutdownhook.enabled";
+
     // milliseconds
     private static final int MAXIMUM_LOCK_TIMEOUT = 10000;
 
