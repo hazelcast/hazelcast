@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -39,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
@@ -74,20 +73,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         return eventService.hasEventRegistration(SERVICE_NAME, name);
     }
 
-    /**
-     * Nullify old value if in memory format is object and operation is not removal
-     * since old and new value in fired event {@link com.hazelcast.core.EntryEvent}
-     * may be same due to the object in memory format.
-     */
-    protected Object nullifyOldValueIfNecessary(Object oldValue, EntryEventType eventType) {
-        final MapConfig mapConfig = mapContainer.getMapConfig();
-        final InMemoryFormat format = mapConfig.getInMemoryFormat();
-        if (format == InMemoryFormat.OBJECT && eventType != EntryEventType.REMOVED) {
-            return null;
-        } else {
-            return oldValue;
-        }
-    }
 
     protected LocalMapStatsImpl getLocalMapStats() {
         LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
@@ -104,7 +89,7 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
             }
             final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
             if (mapEntrySimple.isModified()) {
-                return EntryEventType.UPDATED;
+                return UPDATED;
             }
         }
         // return null for read only operations.
@@ -200,7 +185,6 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
 
     protected void publishEntryEvent(Data key, Object value, Object oldValue, EntryEventType eventType) {
         if (hasRegisteredListenerForThisMap()) {
-            oldValue = nullifyOldValueIfNecessary(oldValue, eventType);
             mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, key, oldValue, value);
         }
     }
@@ -215,7 +199,7 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
                 final Data dataValueAsData = toData(value);
                 final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-                wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
+                wanEventList.add(new WanEventWrapper(key, value, UPDATED));
             }
         }
     }

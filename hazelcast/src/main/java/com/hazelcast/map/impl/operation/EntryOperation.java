@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
@@ -59,7 +57,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private EntryProcessor entryProcessor;
     private EntryEventType eventType;
     private Object response;
-    private transient Object dataValue;
+    private transient Object value;
 
     public EntryOperation() {
     }
@@ -103,10 +101,10 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         if (eventType == null) {
             return;
         }
-        mapServiceContext.interceptAfterPut(name, dataValue);
+        mapServiceContext.interceptAfterPut(name, value);
         if (isPostProcessing(recordStore)) {
             Record record = recordStore.getRecord(dataKey);
-            dataValue = record.getValue();
+            value = record.getValue();
         }
         invalidateNearCache(dataKey);
         publishEntryEvent();
@@ -132,7 +130,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public boolean shouldBackup() {
-        return mapContainer.getBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
+        return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override
@@ -183,8 +181,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
      * Only difference between add and update is event type to be published.
      */
     private void entryAddedOrUpdated(Map.Entry entry, long now) {
-        dataValue = entry.getValue();
-        recordStore.set(dataKey, dataValue, DEFAULT_TTL);
+        value = entry.getValue();
+        recordStore.set(dataKey, value, DEFAULT_TTL);
 
         getLocalMapStats().incrementPuts(getLatencyFrom(now));
 
@@ -213,23 +211,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return eventService.hasEventRegistration(SERVICE_NAME, name);
     }
 
-    /**
-     * Nullify old value if in memory format is object and operation is not removal
-     * since old and new value in fired event {@link com.hazelcast.core.EntryEvent}
-     * may be same due to the object in memory format.
-     */
-    private void nullifyOldValueIfNecessary() {
-        final MapConfig mapConfig = mapContainer.getMapConfig();
-        final InMemoryFormat format = mapConfig.getInMemoryFormat();
-        if (format == InMemoryFormat.OBJECT && eventType != REMOVED) {
-            oldValue = null;
-        }
-    }
-
     private void publishEntryEvent() {
         if (hasRegisteredListenerForThisMap()) {
-            nullifyOldValueIfNecessary();
-            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, dataValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, oldValue, value);
         }
     }
 
@@ -246,8 +230,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         } else {
             final Record record = recordStore.getRecord(key);
             if (record != null) {
-                dataValue = toData(dataValue);
-                final EntryView entryView = createSimpleEntryView(key, dataValue, record);
+                value = toData(value);
+                final EntryView entryView = createSimpleEntryView(key, value, record);
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
