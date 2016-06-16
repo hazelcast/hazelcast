@@ -37,7 +37,7 @@ public class MulticastDiscoverySender implements Runnable {
     ILogger logger;
     String group;
     int port;
-    private boolean stop;
+    private volatile boolean stop;
 
     public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket,
                                     ILogger logger, String group, int port)
