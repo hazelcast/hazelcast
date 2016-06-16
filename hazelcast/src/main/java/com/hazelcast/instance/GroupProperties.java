@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.internal.diagnostics.Diagnostics;
-import com.hazelcast.spi.properties.GroupProperty;
+
 
 /**
  * Container for configured Hazelcast properties.
