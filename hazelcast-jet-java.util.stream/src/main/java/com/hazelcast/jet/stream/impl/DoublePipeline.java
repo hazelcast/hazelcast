@@ -23,7 +23,7 @@ import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.stream.impl.distributed.DoubleSummaryStatistics;
+import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
@@ -188,8 +188,8 @@ public class DoublePipeline implements DistributedDoubleStream {
 
     @Override
     public java.util.DoubleSummaryStatistics summaryStatistics() {
-        return collect(DoubleSummaryStatistics::new, DoubleSummaryStatistics::accept,
-                DoubleSummaryStatistics::combine);
+        return collect(DistributedDoubleSummaryStatistics::new, DistributedDoubleSummaryStatistics::accept,
+                DistributedDoubleSummaryStatistics::combine);
     }
 
     @Override

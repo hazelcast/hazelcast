@@ -18,15 +18,15 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.stream.impl.distributed.DoubleSummaryStatistics;
-import com.hazelcast.jet.stream.impl.distributed.IntSummaryStatistics;
+import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
+import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
 import com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.collectors.DistributedStringJoiner;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastGroupingMapCollector;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastListCollector;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastMapCollector;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastMergingMapCollector;
-import com.hazelcast.jet.stream.impl.distributed.LongSummaryStatistics;
+import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
 
 import java.io.Serializable;
 import java.util.AbstractMap;
@@ -35,11 +35,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.DoubleSummaryStatistics;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IntSummaryStatistics;
 import java.util.Iterator;
 import java.util.List;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -917,7 +920,7 @@ public abstract class DistributedCollectors {
     Distributed.Collector<T, ?, IntSummaryStatistics>
     summarizingInt(Distributed.ToIntFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
-                IntSummaryStatistics::new,
+                DistributedIntSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsInt(t)),
                 (l, r) -> {
                     l.combine(r);
@@ -941,7 +944,7 @@ public abstract class DistributedCollectors {
     Distributed.Collector<T, ?, LongSummaryStatistics>
     summarizingLong(Distributed.ToLongFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
-                LongSummaryStatistics::new,
+                DistributedLongSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsLong(t)),
                 (l, r) -> {
                     l.combine(r);
@@ -965,7 +968,7 @@ public abstract class DistributedCollectors {
     Distributed.Collector<T, ?, DoubleSummaryStatistics>
     summarizingDouble(Distributed.ToDoubleFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
-                DoubleSummaryStatistics::new,
+                DistributedDoubleSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsDouble(t)),
                 (l, r) -> {
                     l.combine(r);

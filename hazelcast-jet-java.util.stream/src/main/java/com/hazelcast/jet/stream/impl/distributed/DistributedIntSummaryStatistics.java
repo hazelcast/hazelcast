@@ -25,24 +25,24 @@ import java.io.IOException;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.setPrivateField;
 
-public class DoubleSummaryStatistics extends java.util.DoubleSummaryStatistics implements DataSerializable {
+public class DistributedIntSummaryStatistics extends java.util.IntSummaryStatistics implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(this.getCount());
-        out.writeDouble(this.getSum());
-        out.writeDouble(this.getMin());
-        out.writeDouble(this.getMax());
+        out.writeLong(this.getSum());
+        out.writeInt(this.getMin());
+        out.writeInt(this.getMax());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         try {
-            Class<?> clazz = java.util.DoubleSummaryStatistics.class;
+            Class<?> clazz = java.util.IntSummaryStatistics.class;
             setPrivateField(this, clazz, "count", in.readLong());
-            setPrivateField(this, clazz, "sum", in.readDouble());
-            setPrivateField(this, clazz, "min", in.readDouble());
-            setPrivateField(this, clazz, "max", in.readDouble());
+            setPrivateField(this, clazz, "sum", in.readLong());
+            setPrivateField(this, clazz, "min", in.readInt());
+            setPrivateField(this, clazz, "max", in.readInt());
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw StreamUtil.reThrow(e);
         }
