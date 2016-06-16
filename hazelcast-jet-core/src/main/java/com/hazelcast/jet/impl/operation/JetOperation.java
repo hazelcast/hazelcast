@@ -23,11 +23,11 @@ import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public abstract class JetOperation extends AbstractOperation {
+public abstract class JetOperation extends Operation {
 
     protected String name;
     protected Object result = true;

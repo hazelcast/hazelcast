@@ -28,7 +28,7 @@ import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import java.io.Serializable;
 
 /**
- * Represents abstract edge of DAG;
+ * Represents an edge between two vertices in a DAG
  */
 public class Edge implements Serializable {
     private Vertex to;
@@ -42,20 +42,27 @@ public class Edge implements Serializable {
     private PartitioningStrategy partitioningStrategy;
     private DataTransferringStrategy dataTransferringStrategy;
 
+    /**
+     * Creates an edge between two vertices.
+     *
+     * @param name name of the edge
+     * @param from the origin vertex
+     * @param to the destination vertex
+     */
     public Edge(String name,
                 Vertex from,
                 Vertex to) {
         this(name, from, to, false);
     }
 
-    public Edge(String name,
+    private Edge(String name,
                 Vertex from,
                 Vertex to,
                 boolean shuffled) {
         this(name, from, to, shuffled, null, null, null, null, null);
     }
 
-    public Edge(String name,
+    private Edge(String name,
                 Vertex from,
                 Vertex to,
                 boolean shuffled,
@@ -80,65 +87,65 @@ public class Edge implements Serializable {
     }
 
     /**
-     * @return - output vertex of edge;
+     * @return output vertex of edge
      */
     public Vertex getOutputVertex() {
         return this.to;
     }
 
     /**
-     * @return - true if edge will take into account cluster;
-     * false - if data through edge's channel will be passed only
-     * locally without shuffling;
+     * @return true if edge will take into account cluster
+     * false if data through edge's channel will be passed only
+     * locally without shuffling
      */
     public boolean isShuffled() {
         return this.shuffled;
     }
 
     /**
-     * @return - name of the edge;
+     * @return name of the edge
      */
     public String getName() {
         return this.name;
     }
 
     /**
-     * @return - input vertex of edge;
+     * @return input vertex of edge
      */
     public Vertex getInputVertex() {
         return this.from;
     }
 
     /**
-     * @return - Edge's shuffling strategy;
+     * @return Edge's shuffling strategy
      */
     public ShufflingStrategy getShufflingStrategy() {
         return this.shufflingStrategy;
     }
 
     /**
-     * @return - Edge's processing strategy;
+     * @return Edge's processing strategy
      */
     public ProcessingStrategy getProcessingStrategy() {
         return this.processingStrategy;
     }
 
     /**
-     * @return - Edge's partitioning strategy;
+     * @return Edge's partitioning strategy
      */
     public PartitioningStrategy getPartitioningStrategy() {
         return this.partitioningStrategy;
     }
 
     /**
-     * @return - Edge's hashing strategy;
+     * @return Edge's hashing strategy
      */
     public HashingStrategy getHashingStrategy() {
         return this.hashingStrategy;
     }
 
     /**
-     * @return - Edge's data-transferring strategy;
+     * @return Edge's data-transferring strategy
      */
     public DataTransferringStrategy getDataTransferringStrategy() {
         return this.dataTransferringStrategy;
@@ -251,46 +258,90 @@ public class Edge implements Serializable {
                 + '}';
     }
 
+    /**
+     * A builder class for Edge
+     */
     public static class EdgeBuilder {
         private final Edge edge;
         private boolean build;
 
+        /**
+         * Creates a builder for an edge between two vertices.
+         *
+         * @param name name of the edge
+         * @param from the origin vertex
+         * @param to the destination vertex
+         */
         public EdgeBuilder(String name,
                            Vertex from,
                            Vertex to) {
             this.edge = new Edge(name, from, to);
         }
 
+        /**
+         * Set if the edge is shuffled
+         * @param shuffled true, if the edge is shuffled, false otherwise.
+         * @return the builder
+         */
         public EdgeBuilder shuffling(boolean shuffled) {
             this.edge.shuffled = shuffled;
             return this;
         }
 
+        /**
+         * Set the shuffling strategy on the edge
+         * @param shufflingStrategy the shuffling strategy to set
+         * @return the builder
+         */
         public EdgeBuilder shufflingStrategy(ShufflingStrategy shufflingStrategy) {
             this.edge.shufflingStrategy = shufflingStrategy;
             return this;
         }
 
+        /**
+         * Set the processing strategy for the edge
+         * @param processingStrategy the processing strategy to set
+         * @return the builder
+         */
         public EdgeBuilder processingStrategy(ProcessingStrategy processingStrategy) {
             this.edge.processingStrategy = processingStrategy;
             return this;
         }
 
+        /**
+         * Set the partitioning strategy for the edge
+         * @param partitioningStrategy the partitioning strategy to set
+         * @return the builder
+         */
         public EdgeBuilder partitioningStrategy(PartitioningStrategy partitioningStrategy) {
             this.edge.partitioningStrategy = partitioningStrategy;
             return this;
         }
 
+        /**
+         * Set the hashing strategy for the edge
+         * @param hashingStrategy the hashing strategy to set
+         * @return the builder
+         */
         public EdgeBuilder hashingStrategy(HashingStrategy hashingStrategy) {
             this.edge.hashingStrategy = hashingStrategy;
             return this;
         }
 
+        /**
+         * Set the data transferring strategy for the edge
+         * @param dataTransferringStrategy the data transferring strategy to set
+         * @return the builder
+         */
         public EdgeBuilder dataTransferringStrategy(DataTransferringStrategy dataTransferringStrategy) {
             this.edge.dataTransferringStrategy = dataTransferringStrategy;
             return this;
         }
 
+        /**
+         * Build and return the edge
+         * @return the built edge
+         */
         public Edge build() {
             if (this.build) {
                 throw new IllegalStateException("Edge has been already built");

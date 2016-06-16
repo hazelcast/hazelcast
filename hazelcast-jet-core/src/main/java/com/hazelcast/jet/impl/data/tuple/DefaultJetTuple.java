@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.data.tuple;
+package com.hazelcast.jet.impl.data.tuple;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.io.tuple.DefaultTuple;
 import com.hazelcast.jet.strategy.CalculationStrategy;

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.data.tuple;
 
 import com.hazelcast.jet.data.tuple.JetTuple;
-import com.hazelcast.jet.data.tuple.JetTupleConvertor;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Iterator;

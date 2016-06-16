@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.JetApplicationConfig;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.data.tuple.DefaultJetTupleFactory;
+import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;

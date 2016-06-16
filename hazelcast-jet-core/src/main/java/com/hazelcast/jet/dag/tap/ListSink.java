@@ -23,13 +23,26 @@ import com.hazelcast.jet.impl.actor.shuffling.ShufflingWriter;
 import com.hazelcast.jet.impl.dag.tap.sink.HazelcastListPartitionWriter;
 import com.hazelcast.spi.NodeEngine;
 
+/**
+ * A sink which uses a Hazelcast {@code IList} as output.
+ */
 public class ListSink implements SinkTap {
     private final String name;
 
+    /**
+     * Constructs a sink with the given list name.
+     *
+     * @param name of the list to use as the output
+     */
     public ListSink(String name) {
         this.name = name;
     }
 
+    /**
+     * Constructs a sink with the given list instance.
+     *
+     * @param list the list instance to be used as the output
+     */
     public ListSink(IList list) {
         this(list.getName());
     }

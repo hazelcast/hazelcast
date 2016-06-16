@@ -19,7 +19,7 @@ package com.hazelcast.jet.container;
 import java.io.Serializable;
 
 /**
- * Interface which represents key of the accumulators;
+ * Interface which represents key of the accumulators
  */
 public interface CounterKey extends Serializable {
 }

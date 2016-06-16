@@ -20,47 +20,47 @@ import com.hazelcast.jet.io.tuple.TupleFactory;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 
 /**
- * Factory to create jet-tuple;
+ * Factory to create jet-tuple
  */
 public interface JetTupleFactory extends TupleFactory {
 
     /**
-     * Will create tuple with 1-element key part and 1-element value part;
+     * Will create tuple with 1-element key part and 1-element value part
      *
-     * @param k                   - value of the key part;
-     * @param v                   - value of the value part;
-     * @param partitionId         - partitionId;
-     * @param calculationStrategy - calculation strategy to be used inside the tuple hash calculation;
-     * @param <K>                 - type of the key part;
-     * @param <V>                 - value of the key part;
-     * @return - constructed tuple;
+     * @param k                   value of the key part
+     * @param v                   value of the value part
+     * @param partitionId         partitionId
+     * @param calculationStrategy calculation strategy to be used inside the tuple hash calculation
+     * @param <K>                 type of the key part
+     * @param <V>                 value of the key part
+     * @return constructed tuple
      */
     <K, V> JetTuple<K, V> tuple(K k, V v, int partitionId, CalculationStrategy calculationStrategy);
 
 
     /**
-     * Will create tuple with 1-element key part and multi-element value part;
+     * Will create tuple with 1-element key part and multi-element value part
      *
-     * @param k                   - value of the key part;
-     * @param v-                  value of the value part;
-     * @param <K>                 - type of the key part;
-     * @param <V>                 - value of the key part;
-     * @param partitionId         - partitionId of the data in key part;
-     * @param calculationStrategy - calculation strategy to be used inside the tuple hash calculation;
-     * @return - constructed tuple;
+     * @param k                   value of the key part
+     * @param v                   value of the value part
+     * @param <K>                 type of the key part
+     * @param <V>                 value of the key part
+     * @param partitionId         partitionId of the data in key part
+     * @param calculationStrategy calculation strategy to be used inside the tuple hash calculation
+     * @return constructed tuple
      */
     <K, V> JetTuple<K, V> tuple(K k, V[] v, int partitionId, CalculationStrategy calculationStrategy);
 
     /**
-     * Will create tuple with multi-element key part and multi-element value part;
+     * Will create tuple with multi-element key part and multi-element value part
      *
-     * @param k                   - value of the key part;
-     * @param v-                  value of the value part;
-     * @param <K>                 - type of the key part;
-     * @param <V>                 - value of the key part;
-     * @param partitionId         - partitionId of the data in key part;
-     * @param calculationStrategy - calculation strategy to be used inside the tuple hash calculation;
-     * @return - constructed tuple;
+     * @param k                   value of the key part
+     * @param v                   value of the value part
+     * @param <K>                 type of the key part
+     * @param <V>                 value of the key part
+     * @param partitionId         partitionId of the data in key part
+     * @param calculationStrategy calculation strategy to be used inside the tuple hash calculation
+     * @return constructed tuple
      */
     <K, V> JetTuple<K, V> tuple(K[] k, V[] v, int partitionId, CalculationStrategy calculationStrategy);
 }

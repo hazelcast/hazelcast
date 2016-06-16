@@ -21,14 +21,30 @@ import com.hazelcast.jet.stream.impl.MapDecorator;
 import com.hazelcast.jet.stream.impl.StreamUtil;
 
 /**
+ * A decorator for {@link IMap} for supporting distributed {@link java.util.stream.Stream}
+ * implementation.
  *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
 public interface IStreamMap<K, V> extends IMap<K, V> {
 
+    /**
+     * Returns a parallel and distributed {@code Stream} with this list as its source.
+     *
+     * @return a parallel {@code Stream} over the elements in this collection
+     * @since 1.8
+     */
     DistributedStream<Entry<K, V>> stream();
 
+    /**
+     * Returns an {@link IMap} with {@link DistributedStream} support.
+     *
+     * @param map the Hazelcast map to decorate
+     * @param <K> the type of keys maintained by this map
+     * @param <V> the type of mapped values
+     * @return Returns an {@link IMap} with {@link DistributedStream} support.
+     */
     static <K, V> IStreamMap<K, V> streamMap(IMap<K, V> map) {
         return new MapDecorator<>(map, StreamUtil.getHazelcastInstance(map));
     }

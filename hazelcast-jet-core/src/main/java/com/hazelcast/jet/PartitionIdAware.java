@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 /**
- * Something which knows about partitionId;
+ * Something which knows about partitionId
  *
  * Examples:
  *
@@ -26,5 +26,10 @@ package com.hazelcast.jet;
  * </pre>
  */
 public interface PartitionIdAware {
+
+    /**
+     * Returns the partition id for the object
+     * @return the partition id for the object
+     */
     int getPartitionId();
 }

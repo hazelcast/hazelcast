@@ -19,7 +19,7 @@ package com.hazelcast.jet.container;
 import com.hazelcast.jet.impl.container.ContainerListenerCaller;
 
 /**
- * Listener which will be invoked on change of container's state;
+ * Listener which will be invoked on change of container's state
  */
 public interface ContainerListener {
     /**
@@ -53,17 +53,17 @@ public interface ContainerListener {
     };
 
     /**
-     * Will be invoked when container has been executed;
+     * Will be invoked when container has been executed
      */
     void onContainerExecuted();
 
     /**
-     * Will be invoked when container has been interrupted;
+     * Will be invoked when container has been interrupted
      */
     void onContainerExecutionInterrupted();
 
     /**
-     * Will be invoked on container's execution failure;
+     * Will be invoked on container's execution failure
      *
      * @param error the error that was encountered during container execution
      */

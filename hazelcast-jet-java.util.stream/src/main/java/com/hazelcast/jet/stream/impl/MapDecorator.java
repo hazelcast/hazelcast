@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "deprecation"})
 public class MapDecorator<K, V> implements IStreamMap<K, V> {
 
     private final IMap<K, V> map;

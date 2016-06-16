@@ -16,7 +16,6 @@
 package com.hazelcast.jet.stream.benchmark;
 
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.JetStreamTestSupport;
@@ -27,9 +26,6 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.mapreduce.aggregation.Aggregations;
-import com.hazelcast.mapreduce.aggregation.PropertyExtractor;
-import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -44,8 +40,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)

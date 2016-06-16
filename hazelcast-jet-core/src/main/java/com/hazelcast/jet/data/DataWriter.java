@@ -20,12 +20,12 @@ import com.hazelcast.jet.impl.actor.ObjectConsumer;
 import com.hazelcast.jet.impl.actor.Shuffler;
 
 /**
- * Represents abstract writer to some sink;
+ * Represents abstract writer to some sink
  */
 public interface DataWriter extends ObjectConsumer, Shuffler {
 
     /**
-     * @return - true if write is partition-aware, else otherwise;
+     * @return true if write is partition-aware, else otherwise
      *
      * Examples of partition-aware writers:
      * <pre>
@@ -37,12 +37,12 @@ public interface DataWriter extends ObjectConsumer, Shuffler {
     boolean isPartitioned();
 
     /**
-     * @return - writer's partition id
+     * @return writer's partition id
      */
     int getPartitionId();
 
     /**
-     * @return - true if writer has been closed, false - otherwise;
+     * @return true if writer has been closed, false - otherwise
      */
     boolean isClosed();
 }

@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.dag.tap.source;
 
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.tuple.JetTuple;
-import com.hazelcast.jet.data.tuple.JetTupleConvertor;
+import com.hazelcast.jet.impl.data.tuple.JetTupleConvertor;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.data.tuple.JetTupleIterator;

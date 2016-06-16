@@ -26,13 +26,26 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.List;
 
+/**
+ * A sink which uses a Hazelcast {@code IMap} as output.
+ */
 public class MapSink implements SinkTap {
     private final String name;
 
+    /**
+     * Constructs a sink with the given map name.
+     *
+     * @param name of the map to use as the output
+     */
     public MapSink(String name) {
         this.name = name;
     }
 
+    /**
+     * Constructs a sink with the given list instance.
+     *
+     * @param map the map instance to be used as the output
+     */
     public MapSink(IMap map) {
         this(map.getName());
     }

@@ -22,11 +22,25 @@ import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.dag.tap.source.HazelcastMultiMapPartitionReader;
 
+/**
+ * A source which uses a Hazelcast {@code MultiMap} as the input.
+ */
 public class MultiMapSource extends MapSource {
+
+    /**
+     * Constructs a source with the given multimap name.
+     *
+     * @param name of the multimap to use as the input
+     */
     public MultiMapSource(String name) {
         super(name);
     }
 
+    /**
+     * Constructs a source with the given multimap.
+     *
+     * @param multiMap the multimap instance to be used as the input
+     */
     public MultiMapSource(MultiMap multiMap) {
         super(multiMap.getName());
     }

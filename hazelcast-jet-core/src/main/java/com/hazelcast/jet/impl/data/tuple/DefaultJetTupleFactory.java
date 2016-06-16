@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.data.tuple;
+package com.hazelcast.jet.impl.data.tuple;
 
+import com.hazelcast.jet.data.tuple.JetTuple;
+import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 
 public class DefaultJetTupleFactory implements JetTupleFactory {

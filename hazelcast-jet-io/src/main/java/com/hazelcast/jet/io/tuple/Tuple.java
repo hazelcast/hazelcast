@@ -19,63 +19,63 @@ package com.hazelcast.jet.io.tuple;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * Represents abstract tuple of data;
+ * Represents abstract tuple of data
  *
- * @param <K> - type of keys;
- * @param <V> - type of value;
+ * @param <K> type of keys
+ * @param <V> type of value
  */
 public interface Tuple<K, V> extends DataSerializable {
     /**
-     * Return key-object with specified index;
+     * Return key-object with specified index
      *
-     * @param index - specified index;
-     * @return - corresponding key-object;
+     * @param index specified index
+     * @return corresponding key-object
      */
     K getKey(int index);
 
     /**
-     * Return size-object with specified index;
+     * Return size-object with specified index
      *
-     * @param index - specified index;
-     * @return - corresponding size-object;
+     * @param index specified index
+     * @return corresponding size-object
      */
     V getValue(int index);
 
     /**
-     * @return - number of elements in tuple's key part;
+     * @return number of elements in tuple's key part
      */
     int keySize();
 
     /**
-     * @return - number of elements in tuple's value part;
+     * @return number of elements in tuple's value part
      */
     int valueSize();
 
     /**
-     * Set key object to the corresponding position of tuple;
+     * Set key object to the corresponding position of tuple
      *
-     * @param index - index of key-array to be affected;
-     * @param key   - value of key;
+     * @param index index of key-array to be affected
+     * @param key   value of key
      */
     void setKey(int index, K key);
 
     /**
-     * Set value object to the corresponding position of tuple;
+     * Set value object to the corresponding position of tuple
      *
-     * @param index - index of key-array to be affected;
-     * @param value - corresponding value to be set;
+     * @param index index of key-array to be affected
+     * @param value corresponding value to be set
      */
     void setValue(int index, V value);
 
     /**
-     * @return - clone of key's part array.
-     * Data will not be cloned;
+     * @return clone of key's part array.
+     * Data will not be cloned
      */
     K[] cloneKeys();
 
     /**
-     * @return - clone of value's part array.
-     * Data will not be cloned;
+     * @return clone of value's part array.
+     * Data will not be cloned
      */
     V[] cloneValues();
 }

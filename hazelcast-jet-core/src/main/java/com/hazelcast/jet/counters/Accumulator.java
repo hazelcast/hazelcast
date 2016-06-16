@@ -21,8 +21,8 @@ import java.io.Serializable;
 /**
  * Represents accumulator;
  *
- * @param <V> - type of the input value;
- * @param <R> - type of the output value;
+ * @param <V> type of the input value
+ * @param <R> type of the output value
  */
 public interface Accumulator<V, R extends Serializable> extends Serializable, Cloneable {
     /**

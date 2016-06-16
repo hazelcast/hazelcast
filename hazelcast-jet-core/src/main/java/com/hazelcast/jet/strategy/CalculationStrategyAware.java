@@ -17,7 +17,7 @@
 package com.hazelcast.jet.strategy;
 
 /**
- * Represents something which can be configured with CalculationStrategy;
+ * Represents something which can be configured with CalculationStrategy
  * Examples:
  * <pre>
  *     Tuple
@@ -25,7 +25,7 @@ package com.hazelcast.jet.strategy;
  */
 public interface CalculationStrategyAware {
     /**
-     * @return - corresponding CalculationStrategy;
+     * @return corresponding CalculationStrategy
      */
     CalculationStrategy getCalculationStrategy();
 }

@@ -21,12 +21,25 @@ import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.impl.dag.tap.sink.HazelcastMultiMapPartitionWriter;
 
+/**
+ * A sink which uses a Hazelcast {@code MultiMap} as output.
+ */
 public class MultiMapSink extends MapSink {
 
+    /**
+     * Constructs a sink with the given multimap name.
+     *
+     * @param name of the map to use as the output
+     */
     public MultiMapSink(String name) {
         super(name);
     }
 
+    /**
+     * Constructs a sink with the given multimap instance.
+     *
+     * @param multiMap the multimap instance to be used as the output
+     */
     public MultiMapSink(MultiMap multiMap) {
         super(multiMap.getName());
     }

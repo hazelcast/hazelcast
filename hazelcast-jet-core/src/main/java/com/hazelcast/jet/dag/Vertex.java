@@ -28,7 +28,7 @@ import java.util.List;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Represents vertex of the Direct Acyclic Graph;
+ * Represents vertex of the Direct Acyclic Graph
  */
 public class Vertex implements Serializable {
     private String name;
@@ -41,6 +41,11 @@ public class Vertex implements Serializable {
     private List<SourceTap> sources = new ArrayList<SourceTap>();
     private List<Vertex> outputVertices = new ArrayList<Vertex>();
 
+    /**
+     * Constructs a new vertex with given name and processor descriptor
+     * @param name name of the vertex
+     * @param descriptor processor information for this vertex.
+     */
     public Vertex(String name,
                       ProcessorDescriptor descriptor) {
         checkNotNull(descriptor);
@@ -51,35 +56,35 @@ public class Vertex implements Serializable {
     }
 
     /**
-     * @return - name of the vertex;
+     * @return name of the vertex
      */
     public String getName() {
         return this.name;
     }
 
     /**
-     * Add abstract source tap object to the vertex;
+     * Add abstract source tap object to the vertex
      *
-     * @param sourceTap - corresponding source tap;
+     * @param sourceTap corresponding source tap
      */
     public void addSource(SourceTap sourceTap) {
         this.sources.add(sourceTap);
     }
 
     /**
-     * Add abstract sink tap object to the vertex;
+     * Add abstract sink tap object to the vertex
      *
-     * @param sinkTap - corresponding sink tap;
+     * @param sinkTap corresponding sink tap
      */
     public void addSink(SinkTap sinkTap) {
         this.sinks.add(sinkTap);
     }
 
     /**
-     * Add outputVertex as  output vertex for the corresponding edge and this vertex;
+     * Add outputVertex as  output vertex for the corresponding edge and this vertex
      *
-     * @param outputVertex - next output vertex;
-     * @param edge         - corresponding edge;
+     * @param outputVertex next output vertex
+     * @param edge         corresponding edge
      */
     public void addOutputVertex(Vertex outputVertex, Edge edge) {
         this.outputVertices.add(outputVertex);
@@ -87,10 +92,10 @@ public class Vertex implements Serializable {
     }
 
     /**
-     * Add inputVertex as inout  vertex for the corresponding edge and this vertex;
+     * Add inputVertex as inout  vertex for the corresponding edge and this vertex
      *
-     * @param inputVertex - previous inout vertex;
-     * @param edge        - corresponding edge;
+     * @param inputVertex previous inout vertex
+     * @param edge        corresponding edge
      */
     public void addInputVertex(Vertex inputVertex, Edge edge) {
         this.inputVertices.add(inputVertex);
@@ -98,57 +103,57 @@ public class Vertex implements Serializable {
     }
 
     /**
-     * @return - list of the input edges;
+     * @return list of the input edges
      */
     public List<Edge> getInputEdges() {
         return Collections.unmodifiableList(this.inputEdges);
     }
 
     /**
-     * @return - list of the output edges;
+     * @return list of the output edges
      */
     public List<Edge> getOutputEdges() {
         return Collections.unmodifiableList(this.outputEdges);
     }
 
     /**
-     * @return - list of the input vertices;
+     * @return list of the input vertices
      */
     public List<Vertex> getInputVertices() {
         return Collections.unmodifiableList(this.inputVertices);
     }
 
     /**
-     * @return - list of the output vertices;
+     * @return list of the output vertices
      */
     public List<Vertex> getOutputVertices() {
         return Collections.unmodifiableList(this.outputVertices);
     }
 
     /**
-     * @return - list of the input source taps;
+     * @return list of the input source taps
      */
     public List<SourceTap> getSources() {
         return Collections.unmodifiableList(this.sources);
     }
 
     /**
-     * @return - list of the output sink taps;
+     * @return list of the output sink taps
      */
     public List<SinkTap> getSinks() {
         return Collections.unmodifiableList(this.sinks);
     }
 
     /**
-     * @return - processor descriptor of vertex;
+     * @return processor descriptor of vertex
      */
     public ProcessorDescriptor getDescriptor() {
         return this.descriptor;
     }
 
     /**
-     * @return - true if vertex has at least one output edge which will represent distributed
-     * channel for shuffling data between cluster nodes;
+     * @return true if vertex has at least one output edge which will represent distributed
+     * channel for shuffling data between cluster nodes
      */
     public boolean hasOutputShuffler() {
         for (Edge edge : this.outputEdges) {

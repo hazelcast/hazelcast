@@ -22,24 +22,42 @@ import java.util.List;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Collects exception from different nodes;
+ * Collects exception from different nodes
  */
 public class CombinedJetException extends RuntimeException {
     private final List<Throwable> errors;
 
+    /**
+     * Create a combined JetException with multiple errors
+     * @param errors list of errors
+     */
     public CombinedJetException(List<Throwable> errors) {
         checkNotNull(errors);
         this.errors = errors;
     }
 
+    /**
+     * Returns combined list of errors
+     *
+     * @return combined list of errors
+     */
     public List<Throwable> getErrors() {
         return errors;
     }
 
+    /**
+     * Return first exception or null if there are no exceptions
+     *
+     * @return first exception or null if there are no exceptions
+     */
     public Throwable getCause() {
         return errors.size() > 0 ? errors.get(0) : null;
     }
 
+    /**
+     * Print stack trace of all the exceptions
+     * @param s {@code PrintStream} to write exceptions to
+     */
     public void printStackTrace(PrintStream s) {
         for (Throwable error : errors) {
             s.println("====== Exception ============");

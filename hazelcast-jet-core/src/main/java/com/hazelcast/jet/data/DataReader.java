@@ -19,7 +19,7 @@ package com.hazelcast.jet.data;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 
 /**
- * Represents abstract reader from some source with data;
+ * Represents abstract reader from some source with data
  */
 public interface DataReader extends ObjectProducer {
 

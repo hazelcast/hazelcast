@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.data.tuple;
+package com.hazelcast.jet.impl.data.tuple;
 
 
+import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**

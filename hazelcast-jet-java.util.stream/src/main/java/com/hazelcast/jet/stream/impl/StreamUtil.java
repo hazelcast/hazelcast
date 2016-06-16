@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -100,6 +101,7 @@ public final class StreamUtil {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <E_OUT> Distributed.Function<Tuple, E_OUT> defaultFromTupleMapper() {
         return tuple -> (E_OUT) tuple.getValue(0);
     }
@@ -146,9 +148,7 @@ public final class StreamUtil {
         }
 
         public VertexBuilder args(Object... args) {
-            for (Object arg : args) {
-                this.args.add(arg);
-            }
+            Collections.addAll(this.args, args);
             return this;
         }
 

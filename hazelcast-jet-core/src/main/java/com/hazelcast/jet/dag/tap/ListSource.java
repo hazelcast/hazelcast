@@ -24,14 +24,27 @@ import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.dag.tap.source.HazelcastListPartitionReader;
 import com.hazelcast.jet.impl.util.JetUtil;
 
+/**
+ * A source which uses a Hazelcast {@code IList} as the input.
+ */
 public class ListSource implements SourceTap {
 
     private final String name;
 
+    /**
+     * Constructs a source with the given list name.
+     *
+     * @param name of the list to use as the input
+     */
     public ListSource(String name) {
         this.name = name;
     }
 
+    /**
+     * Constructs a source with the given list.
+     *
+     * @param list the list instance to be used as the input
+     */
     public ListSource(IList list) {
         this(list.getName());
     }

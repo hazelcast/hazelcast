@@ -97,7 +97,7 @@ public abstract class JetStreamTestSupport extends HazelcastTestSupport {
     }
 
     protected static <T> List<T> sortedList(IList<T> list) {
-        T[] array = (T[])new Object[list.size()];
+        @SuppressWarnings("unchecked") T[] array = (T[])new Object[list.size()];
         list.toArray(array);
         Arrays.sort(array);
         return Arrays.asList(array);

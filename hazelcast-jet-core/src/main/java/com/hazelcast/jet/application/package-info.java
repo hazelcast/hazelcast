@@ -15,7 +15,7 @@
  */
 
 /**
- * Provides JET API to work with application-level JET objects;
+ * Provides JET API to work with application-level JET objects
  */
 
 package com.hazelcast.jet.application;

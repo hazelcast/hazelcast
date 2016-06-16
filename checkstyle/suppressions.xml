@@ -9,9 +9,6 @@
     <!-- Suppress strict duplicate code checking -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
-    <!-- Exclude Clover instrumented sources -->
-    <suppress checks="" files="/src-instrumented/"/>
-
     <!-- Suppress all auto-generated stuff checks-->
     <suppress checks="" files="com/hazelcast/client/impl/protocol/codec/*.*"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/JetMessageTaskFactoryProvider"/>
@@ -22,9 +19,19 @@
     <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/PaddedLong"/>
     <suppress checks="IllegalImport" files="com/hazelcast/jet/impl/actor/ringbuffer/UnsafeUtil"/>
 
-    <!-- Temporary suppress javaDocs (will be implemented in future)-->
-    <suppress checks="JavadocPackage" files="\.java"/>
-    <suppress checks="JavadocMethod" files="\.java"/>
-    <suppress checks="JavadocType" files="\.java"/>
-    <suppress checks="JavadocVariable" files="\.java"/>
+    <suppress checks="JavadocPackage" files="/impl"/>
+    <suppress checks="JavadocMethod" files="/impl"/>
+    <suppress checks="JavadocType" files="/impl"/>
+    <suppress checks="JavadocVariable" files="/impl"/>
+
+    <!-- skip javadocs for hazelcast-jet-io -->
+    <suppress checks="JavadocPackage" files="com.hazelcast.jet.io"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.jet.io"/>
+    <suppress checks="JavadocType" files="com.hazelcast.jet.io"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.jet.io"/>
+
+    <!-- temporarily disable checks for jet config -->
+    <suppress checks="JavadocMethod" files="Jet.*Config\.java"/>
+
+    <suppress checks="FileLength" files="com/hazelcast/jet/stream/Distributed.java" />
 </suppressions>

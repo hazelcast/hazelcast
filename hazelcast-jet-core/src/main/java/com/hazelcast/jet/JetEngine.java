@@ -24,6 +24,9 @@ import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.config.JetApplicationConfig;
 
+/**
+ * Utility class for creating new Jet Applications
+ */
 public final class JetEngine {
     private JetEngine() {
     }
@@ -32,11 +35,24 @@ public final class JetEngine {
         JetUtil.checkApplicationName(applicationName);
     }
 
+    /**
+     * Create a new application given a Hazelcast instance and name
+     * @param hazelcastInstance Hazelcast instance to use
+     * @param applicationName name of the application
+     * @return a new Jet Application
+     */
     public static Application getJetApplication(HazelcastInstance hazelcastInstance,
                                                 String applicationName) {
         return getJetApplication(hazelcastInstance, applicationName, null);
     }
 
+    /**
+     * Create a new application given a Hazelcast instance, name and application configuration
+     * @param hazelcastInstance Hazelcast instance to use
+     * @param applicationName name of the application
+     * @param jetApplicationConfig configuration for the application
+     * @return a new Jet Application
+     */
     public static Application getJetApplication(HazelcastInstance hazelcastInstance,
                                                 String applicationName,
                                                 JetApplicationConfig jetApplicationConfig) {
