@@ -19,7 +19,6 @@ package com.hazelcast.hibernate;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.Logger;
 
 /**
@@ -56,7 +55,7 @@ public final class HazelcastTimestamper {
         String maxOpTimeoutProp = null;
         try {
             Config config = instance.getConfig();
-            maxOpTimeoutProp = config.getProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
+            maxOpTimeoutProp = config.getProperty(CacheEnvironment.HAZELCAST_OPERATION_TIMEOUT);
         } catch (UnsupportedOperationException e) {
             // HazelcastInstance is instance of HazelcastClient.
             Logger.getLogger(HazelcastTimestamper.class).finest(e);
