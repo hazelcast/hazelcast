@@ -17,3 +17,4 @@ performance*.log
 .attach_pid*
 */src/test/resources/data/file*
 */src/test/resources/data/result*
+dependency-reduced-pom.xml
