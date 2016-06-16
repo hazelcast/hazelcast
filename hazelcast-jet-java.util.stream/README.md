@@ -8,14 +8,14 @@ You can initialize a [Stream](https://docs.oracle.com/javase/8/docs/api/java/uti
 ```java
 HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 IMap<String, Integer> map = instance.getMap<String, Integer>("map");
-IStreamMap<String, Integer> streamMap = IStreamMap.streamMap(instance, map);
+IStreamMap<String, Integer> streamMap = IStreamMap.streamMap(map);
 streamMap.stream()...
 ```
 or
 
 ```java
 IList<Integer> list = instance.getList("list");
-IStreamList<Integer> streamList = IStreamList.streamList(instance, list);
+IStreamList<Integer> streamList = IStreamList.streamList(list);
 streamList.stream()...
 ```
 
@@ -25,7 +25,7 @@ streamList.stream()...
 
 ```java
 IMap<String, Integer> map = instance.getMap("salaries");
-IStreamMap<Integer, String> streamMap = IStreamMap.streamMap(instance, map);
+IStreamMap<Integer, String> streamMap = IStreamMap.streamMap(map);
 long total = streamMap.stream().mapToLong(Map.Entry::getValue).sum();
 ```
 
