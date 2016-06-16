@@ -69,6 +69,7 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -537,6 +538,23 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
     }
 
+
+    // ========================= remove =====================
+
+    @Test
+    public void testRemoveIfSame() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        TransactionContext context = instance.newTransactionContext(options);
+        context.beginTransaction();
+
+        TransactionalMap<String, String> map = context.getMap("map");
+
+        map.put("key-0", "value");
+
+        assertTrue(map.remove("key-0", "value"));
+        context.commitTransaction();
+    }
 
     @Test
     public void testTxnRemove() throws TransactionException {

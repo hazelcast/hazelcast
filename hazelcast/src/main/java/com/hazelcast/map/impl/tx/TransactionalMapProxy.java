@@ -29,8 +29,8 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.IterationType;
@@ -245,15 +245,26 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
 
         TxnValueWrapper wrapper = txMap.get(keyData);
-        if (wrapper != null && !isEquals(wrapper.value, value)) {
+        //Wrapper is null which means this entry is not touched by transaction
+        if (wrapper == null) {
+            boolean removed = removeIfSameInternal(keyData, value);
+            if (removed) {
+                txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
+            }
+            return removed;
+        }
+        // wrapper type is REMOVED which means entry is already removed inside the transaction
+        if (wrapper.type == Type.REMOVED) {
             return false;
         }
-
-        boolean removed = removeIfSameInternal(keyData, value);
-        if (removed) {
-            txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
+        // wrapper value is not equal to passed value
+        if (!isEquals(wrapper.value, value)) {
+            return false;
         }
-        return removed;
+        // wrapper value is equal to passed value, we call removeInternal just to add delete log
+        removeInternal(keyData);
+        txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
+        return true;
     }
 
     @Override
