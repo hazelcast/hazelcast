@@ -16,87 +16,63 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationEvent.MigrationStatus;
-import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.COMPLETED;
-import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
-import static com.hazelcast.internal.partition.InternalPartitionService.MIGRATION_EVENT_TOPIC;
-import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
-import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.core.MigrationEvent.MigrationStatus.FAILED;
 
 // Runs locally when the node becomes owner of a partition
 //
 // Finds the replica indices that are on the sync-waiting state. Those indices represents the lost backups of the partition.
 // Therefore, it publishes InternalPartitionLostEvent objects to notify related services. It also updates the version for the
 // lost replicas to the first available version value after the lost backups, or 0 if N/A
-public final class PromoteFromBackupOperation
-        extends AbstractOperation
-        implements PartitionAwareOperation, MigrationCycleOperation {
+final class FinalizePromotionOperation extends AbstractPromotionOperation {
 
-    // this is the replica index of the partition owner before the promotion.
-    private final int currentReplicaIndex;
-
+    private final boolean success;
     private ILogger logger;
 
-    public PromoteFromBackupOperation(int currentReplicaIndex) {
-        this.currentReplicaIndex = currentReplicaIndex;
+    FinalizePromotionOperation(int currentReplicaIndex, boolean success) {
+        super(currentReplicaIndex);
+        this.success = success;
     }
 
-    void initLogger() {
+    private void initLogger() {
         logger = getLogger();
     }
 
     @Override
-    public void beforeRun()
-            throws Exception {
+    public void beforeRun() throws Exception {
         initLogger();
-        sendMigrationEvent(STARTED);
     }
 
     @Override
-    public void run()
-            throws Exception {
-        shiftUpReplicaVersions();
-        migrateServices();
+    public void run() throws Exception {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Running finalize promotion for " + getPartitionMigrationEvent() + ", result: " + success);
+        }
+
+        if (success) {
+            shiftUpReplicaVersions();
+            commitServices();
+        } else {
+            rollbackServices();
+        }
     }
 
     @Override
-    public void afterRun()
-            throws Exception {
-        sendMigrationEvent(COMPLETED);
-    }
-
-    private void sendMigrationEvent(final MigrationStatus status) {
-        final int partitionId = getPartitionId();
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Member localMember = nodeEngine.getLocalMember();
-        final MigrationEvent event = new MigrationEvent(partitionId, null, localMember, status);
-
-        final EventService eventService = nodeEngine.getEventService();
-        final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, MIGRATION_EVENT_TOPIC);
-        eventService.publishEvent(SERVICE_NAME, registrations, event, partitionId);
+    public void afterRun() throws Exception {
+        clearPartitionMigratingFlag();
+        MigrationEvent.MigrationStatus status = success ? COMPLETED : FAILED;
+        sendMigrationEvent(status);
     }
 
     private void shiftUpReplicaVersions() {
@@ -130,22 +106,24 @@ public final class PromoteFromBackupOperation
         }
     }
 
-    private void migrateServices() {
-        try {
-            sendToAllMigrationAwareServices(new PartitionMigrationEvent(DESTINATION, getPartitionId(), currentReplicaIndex, 0));
-        } finally {
-            clearPartitionMigratingFlag();
+    private void commitServices() {
+        PartitionMigrationEvent event = getPartitionMigrationEvent();
+        for (MigrationAwareService service : getMigrationAwareServices()) {
+            try {
+                service.commitMigration(event);
+            } catch (Throwable e) {
+                logger.warning("While promoting partitionId=" + getPartitionId(), e);
+            }
         }
     }
 
-    private void sendToAllMigrationAwareServices(PartitionMigrationEvent event) {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+    private void rollbackServices() {
+        PartitionMigrationEvent event = getPartitionMigrationEvent();
+        for (MigrationAwareService service : getMigrationAwareServices()) {
             try {
-                service.beforeMigration(event);
-                service.commitMigration(event);
+                service.rollbackMigration(event);
             } catch (Throwable e) {
-                getLogger().warning("While promoting partitionId=" + getPartitionId(), e);
+                logger.warning("While promoting partitionId=" + getPartitionId(), e);
             }
         }
     }
@@ -156,27 +134,4 @@ public final class PromoteFromBackupOperation
         final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(getPartitionId());
         partition.setMigrating(false);
     }
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
-    public boolean validatesTarget() {
-        return false;
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
 }
