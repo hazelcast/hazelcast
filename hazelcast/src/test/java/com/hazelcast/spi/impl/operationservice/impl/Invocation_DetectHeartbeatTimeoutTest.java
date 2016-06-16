@@ -88,15 +88,15 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
     @Test
     public void whenCallTimeoutExpired_ButOperationHeartbeatHasNot() {
         Config config = new Config();
-        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "5000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);
 
         OperationService opService = getOperationService(local);
-        Operation operation = new SlowOperation(SECONDS.toMillis(60));
-        InvocationFuture f = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
+        InvocationFuture f = (InvocationFuture) opService.invokeOnPartition(new SlowOperation(SECONDS.toMillis(60))
+                .setPartitionId(getPartitionId(remote)));
 
         assertDetectHeartbeatTimeoutEventually(f.invocation, NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED);
     }
