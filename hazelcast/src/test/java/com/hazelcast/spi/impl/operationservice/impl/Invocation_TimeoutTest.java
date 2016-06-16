@@ -298,7 +298,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
     @Test
     public void sync_whenCallTimeout_thenOperationTimeoutException() throws Exception {
-        long callTimeoutMs = 5000;
+        long callTimeoutMs = 10000;
         Config config = new Config().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMs);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -308,9 +308,9 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         OperationService opService = getOperationService(local);
 
         int partitionId = getPartitionId(remote);
-        opService.invokeOnPartition(null, new SlowOperation(callTimeoutMs * 2), partitionId);
+        opService.invokeOnPartition(new SlowOperation(callTimeoutMs * 2).setPartitionId(partitionId));
 
-        Future f = opService.invokeOnPartition(null, new DummyOperation(), partitionId);
+        Future f = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
 
         try {
             f.get(3 * callTimeoutMs, MILLISECONDS);
@@ -324,7 +324,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
     @Test
     public void async_whenCallTimeout_thenOperationTimeoutException() throws Exception {
-        long callTimeoutMs = 5000;
+        long callTimeoutMs = 10000;
         Config config = new Config().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeoutMs);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
@@ -334,9 +334,9 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         OperationService opService = getOperationService(local);
 
         int partitionId = getPartitionId(remote);
-        opService.invokeOnPartition(null, new SlowOperation(callTimeoutMs * 2), partitionId);
+        opService.invokeOnPartition(new SlowOperation(callTimeoutMs * 2).setPartitionId(partitionId));
 
-        ICompletableFuture f = opService.invokeOnPartition(null, new DummyOperation(), partitionId);
+        ICompletableFuture f = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
 
         ExecutionCallback callback = mock(ExecutionCallback.class);
         f.andThen(callback);
