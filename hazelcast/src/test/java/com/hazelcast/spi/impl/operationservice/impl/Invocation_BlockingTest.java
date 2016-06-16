@@ -269,7 +269,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
      */
     @Test
     public void sync_whenManyGettersAndLotsOfWaiting() throws Exception {
-        int callTimeout = 5000;
+        int callTimeout = 10000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
