@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.application;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
@@ -87,7 +87,7 @@ public class ApplicationContextImpl implements ApplicationContext {
     private final ApplicationMaster applicationMaster;
     private final LocalizationStorage localizationStorage;
     private final Map<Address, Address> hzToAddressMapping;
-    private final JetApplicationConfig jetApplicationConfig;
+    private final ApplicationConfig applicationConfig;
     private final ApplicationStateMachine applicationStateMachine;
     private final Map<String, Object> applicationVariables = new ConcurrentHashMap<String, Object>();
     private final List<ApplicationListener> applicationListeners = new CopyOnWriteArrayList<ApplicationListener>();
@@ -109,7 +109,7 @@ public class ApplicationContextImpl implements ApplicationContext {
     public ApplicationContextImpl(String name,
                                   NodeEngine nodeEngine,
                                   Address localJetAddress,
-                                  JetApplicationConfig jetApplicationConfig,
+                                  ApplicationConfig applicationConfig,
                                   JetApplicationManager jetApplicationManager) {
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -117,11 +117,11 @@ public class ApplicationContextImpl implements ApplicationContext {
         this.owner = new AtomicReference<Address>();
         this.containerIdGenerator = new AtomicInteger(0);
 
-        this.jetApplicationConfig = jetApplicationConfig;
+        this.applicationConfig = applicationConfig;
 
         this.executorContext = new DefaultExecutorContext(
                 this.name,
-                this.jetApplicationConfig,
+                this.applicationConfig,
                 nodeEngine,
                 jetApplicationManager.getNetworkExecutor(),
                 jetApplicationManager.getProcessingExecutor()
@@ -196,9 +196,8 @@ public class ApplicationContextImpl implements ApplicationContext {
         return nodeEngine;
     }
 
-    @Override
-    public JetApplicationConfig getJetApplicationConfig() {
-        return this.jetApplicationConfig;
+    public ApplicationConfig getApplicationConfig() {
+        return this.applicationConfig;
     }
 
     @Override

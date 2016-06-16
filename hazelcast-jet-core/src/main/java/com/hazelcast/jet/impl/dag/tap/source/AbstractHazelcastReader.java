@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
@@ -122,8 +122,8 @@ public abstract class AbstractHazelcastReader<V> implements DataReader {
         this.logger = nodeEngine.getLogger(getClass());
         this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
         this.internalOperationService = (InternalOperationService) this.nodeEngine.getOperationService();
-        JetApplicationConfig config = containerDescriptor.getConfig();
-        this.awaitSecondsTime = config.getJetSecondsToAwait();
+        ApplicationConfig config = containerDescriptor.getConfig();
+        this.awaitSecondsTime = config.getSecondsToAwait();
         this.chunkSize = config.getChunkSize();
         this.buffer = new Object[this.chunkSize];
         this.dataTransferringStrategy = dataTransferringStrategy;

@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.hazelcast;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.CombinedJetException;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.application.ApplicationInvocationService;
 import com.hazelcast.jet.impl.application.ApplicationStateManager;
@@ -39,7 +39,7 @@ import java.util.concurrent.Future;
 
 public abstract class OperationExecutorService<PayLoad> implements ApplicationInvocationService<PayLoad> {
 
-    protected JetApplicationConfig jetApplicationConfig;
+    protected ApplicationConfig applicationConfig;
 
     private final ExecutorService executorService;
 
@@ -47,9 +47,9 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
         this.executorService = executorService;
     }
 
-    protected OperationExecutor createInitiationApplicationExecutor(final JetApplicationConfig config,
+    protected OperationExecutor createInitiationApplicationExecutor(final ApplicationConfig config,
                                                                     ApplicationStateManager applicationStateManager) {
-        this.jetApplicationConfig = config;
+        this.applicationConfig = config;
 
         return new OperationExecutor(
                 null,
@@ -198,14 +198,14 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
         throw JetUtil.reThrow(e);
     }
 
-    protected abstract JetApplicationConfig getJetApplicationConfig();
+    protected abstract ApplicationConfig getApplicationConfig();
 
     protected int getSecondsToAwait() {
-        return getJetApplicationConfig().getJetSecondsToAwait();
+        return getApplicationConfig().getSecondsToAwait();
     }
 
     protected int getLocalizationChunkSize() {
-        return getJetApplicationConfig().getChunkSize();
+        return getApplicationConfig().getChunkSize();
     }
 
     private void executeApplicationLocalization(final Set<LocalizationResource> localizedResources) {

@@ -30,8 +30,5 @@
     <suppress checks="JavadocType" files="com.hazelcast.jet.io"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.jet.io"/>
 
-    <!-- temporarily disable checks for jet config -->
-    <suppress checks="JavadocMethod" files="Jet.*Config\.java"/>
-
     <suppress checks="FileLength" files="com/hazelcast/jet/stream/Distributed.java" />
 </suppressions>

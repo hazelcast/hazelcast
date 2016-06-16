@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.application;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
 import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
 import com.hazelcast.jet.impl.executor.SharedApplicationExecutor;
@@ -26,7 +27,7 @@ import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
@@ -51,7 +52,7 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
 
     private final SharedApplicationExecutor processingExecutor;
 
-    private final ThreadLocal<JetApplicationConfig> threadLocal = new ThreadLocal<JetApplicationConfig>();
+    private final ThreadLocal<ApplicationConfig> threadLocal = new ThreadLocal<ApplicationConfig>();
 
     private final IConcurrentMap<String, ApplicationContext> applicationContexts =
             new SampleableConcurrentHashMap<String, ApplicationContext>(16);
@@ -69,37 +70,36 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
         }
     };
     private final ILogger logger;
+    private final JetConfig config;
 
     public JetApplicationManagerImpl(final NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = this.getNodeEngine().getLogger(JetApplicationManager.class);
+        this.config = JetUtil.resolveDefaultJetConfig(nodeEngine);
 
         try {
             String host = nodeEngine.getLocalMember().getAddress().getHost();
             this.serverSocketChannel = bindSocketChannel(host);
             this.localJetAddress = new Address(host, this.serverSocketChannel.socket().getLocalPort());
 
-            JetApplicationConfig defaultJetConfig =
-                    JetUtil.resolveJetDefaultApplicationConfig(nodeEngine);
-
             this.networkExecutor = new SharedBalancedExecutorImpl(
                     "network-reader-writer",
-                    defaultJetConfig.getIoThreadCount(),
-                    defaultJetConfig.getJetSecondsToAwait(),
+                    config.getIoThreadCount(),
+                    config.getShutdownTimeoutSeconds(),
                     nodeEngine
             );
 
             this.processingExecutor = new SharedBalancedExecutorImpl(
                     "application_executor",
-                    defaultJetConfig.getMaxProcessingThreads(),
-                    defaultJetConfig.getJetSecondsToAwait(),
+                    config.getProcessingThreadCount(),
+                    config.getShutdownTimeoutSeconds(),
                     nodeEngine
             );
 
             this.acceptorExecutor = new SharedBalancedExecutorImpl(
                     "network-acceptor",
                     1,
-                    defaultJetConfig.getJetSecondsToAwait(),
+                    config.getShutdownTimeoutSeconds(),
                     nodeEngine
             );
 
@@ -147,7 +147,7 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
 
     private ServerSocketChannel bindSocketChannel(String host) {
         try {
-            int port = JetApplicationConfig.DEFAULT_PORT;
+            int port = config.getPort();
             while (port <= MAX_PORT) {
                 logger.info("Trying to bind " + host + ":" + port);
                 ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
@@ -158,7 +158,11 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
                     return serverSocketChannel;
                 } catch (java.nio.channels.AlreadyBoundException | java.net.BindException e) {
                     serverSocketChannel.close();
-                    port += JetApplicationConfig.PORT_AUTO_INCREMENT;
+                    if (!config.getNetworkConfig().isPortAutoIncrement()) {
+                        break;
+                    } else {
+                        port++;
+                    }
                 }
             }
             throw new RuntimeException("Jet was not able to bind to any port");
@@ -169,7 +173,7 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
 
     @Override
     public ApplicationContext getOrCreateApplicationContext(String name,
-                                                            JetApplicationConfig config) {
+                                                            ApplicationConfig config) {
         this.threadLocal.set(config);
 
         try {

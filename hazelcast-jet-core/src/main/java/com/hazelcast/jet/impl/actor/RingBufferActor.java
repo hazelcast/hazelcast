@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.actor;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.io.ProducerInputStream;
@@ -77,10 +77,10 @@ public class RingBufferActor implements ObjectActor {
         this.edge = edge;
         this.sourceTask = sourceTask;
         this.vertex = vertex;
-        JetApplicationConfig jetApplicationConfig = applicationContext.getJetApplicationConfig();
-        int objectChunkSize = jetApplicationConfig.getChunkSize();
+        ApplicationConfig applicationConfig = applicationContext.getApplicationConfig();
+        int objectChunkSize = applicationConfig.getChunkSize();
         this.producerChunk = new Object[objectChunkSize];
-        int containerQueueSize = jetApplicationConfig.getContainerQueueSize();
+        int ringbufferSize = applicationConfig.getRingbufferSize();
         this.flushBuffer = new DefaultObjectIOStream<Object>(new Object[objectChunkSize]);
         this.completionHandlers = new CopyOnWriteArrayList<ProducerCompletionHandler>();
         boolean byReference = edge == null || edge.getDataTransferringStrategy().byReference();
@@ -88,12 +88,12 @@ public class RingBufferActor implements ObjectActor {
         this.ringBuffer = byReference
                 ?
                 new RingBufferWithReferenceStrategy<Object>(
-                        containerQueueSize,
+                        ringbufferSize,
                         nodeEngine.getLogger(RingBufferActor.class)
                 )
                 :
                 new RingBufferWithValueStrategy<Object>(
-                        containerQueueSize,
+                        ringbufferSize,
                         edge.getDataTransferringStrategy()
                 );
 

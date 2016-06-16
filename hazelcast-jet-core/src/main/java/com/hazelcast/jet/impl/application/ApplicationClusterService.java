@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.application;
 
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -35,7 +35,7 @@ public interface ApplicationClusterService {
      * @param config                  -   application's config
      * @param applicationStateManager -
      */
-    void initApplication(JetApplicationConfig config,
+    void initApplication(ApplicationConfig config,
                          ApplicationStateManager applicationStateManager
     );
 

@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.executor.Payload;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
@@ -85,7 +85,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
         if (this.socketChannel != null) {
             if (this.receiveBuffer == null) {
                 this.receiveBuffer = ByteBuffer.allocateDirect(
-                        JetApplicationConfig.DEFAULT_TCP_BUFFER_SIZE
+                        ApplicationConfig.DEFAULT_TCP_BUFFER_SIZE
                 ).order(ByteOrder.BIG_ENDIAN);
             }
 
@@ -113,7 +113,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                 &&
                 (System.currentTimeMillis() - this.lastConnectionsTimeChecking
                         >=
-                        JetApplicationConfig.DEFAULT_CONNECTIONS_CHECKING_INTERVAL_MS)
+                        ApplicationConfig.DEFAULT_CONNECTIONS_CHECKING_INTERVAL_MS)
                 ) {
             checkSocketChannels();
             this.lastConnectionsTimeChecking = System.currentTimeMillis();
@@ -134,7 +134,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
                         &&
                         (System.currentTimeMillis() - networkTask.lastTimeStamp()
                                 >
-                                JetApplicationConfig.DEFAULT_CONNECTIONS_SILENCE_TIMEOUT_MS)) {
+                                ApplicationConfig.DEFAULT_CONNECTIONS_SILENCE_TIMEOUT_MS)) {
                     networkTask.closeSocket();
                 }
             }

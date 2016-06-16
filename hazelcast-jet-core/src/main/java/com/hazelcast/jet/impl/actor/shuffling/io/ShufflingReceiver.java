@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.impl.actor.Consumer;
 import com.hazelcast.jet.impl.actor.ObjectProducer;
 import com.hazelcast.jet.impl.actor.ProducerCompletionHandler;
@@ -66,8 +66,8 @@ public class ShufflingReceiver implements ObjectProducer, Consumer<JetPacket> {
         this.containerContext = containerContext;
         NodeEngineImpl nodeEngine = (NodeEngineImpl) containerContext.getNodeEngine();
         ApplicationContext applicationContext = containerContext.getApplicationContext();
-        JetApplicationConfig jetApplicationConfig = applicationContext.getJetApplicationConfig();
-        int chunkSize = jetApplicationConfig.getChunkSize();
+        ApplicationConfig applicationConfig = applicationContext.getApplicationConfig();
+        int chunkSize = applicationConfig.getChunkSize();
 
         this.ringBufferActor = new RingBufferActor(
                 nodeEngine,

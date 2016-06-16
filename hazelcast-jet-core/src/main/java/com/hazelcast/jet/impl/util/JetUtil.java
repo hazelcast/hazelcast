@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.ByteArrayOutputStream;
@@ -201,46 +201,39 @@ public final class JetUtil {
         );
     }
 
-    private static boolean isEmptyConfig(final JetApplicationConfig jetApplicationConfig) {
-        return (jetApplicationConfig == null) || (jetApplicationConfig.getName() == null);
+    public static JetConfig resolveDefaultJetConfig(final NodeEngine nodeEngine) {
+        if (nodeEngine.getConfig() instanceof JetConfig) {
+            return ((JetConfig) nodeEngine.getConfig());
+        }
+        return new JetConfig();
     }
 
-    public static JetApplicationConfig resolveJetDefaultApplicationConfig(final NodeEngine nodeEngine) {
-        JetApplicationConfig jetApplicationConfig = null;
-
-        if (isJetConfig(nodeEngine.getConfig())) {
-            jetApplicationConfig =
-                    ((JetConfig) nodeEngine.getConfig()).getJetApplicationConfig(JetService.SERVICE_NAME);
-        }
-
-        if (isEmptyConfig(jetApplicationConfig)) {
-            jetApplicationConfig = new JetApplicationConfig();
-        }
-
-        return jetApplicationConfig;
-    }
-
-    public static JetApplicationConfig resolveJetApplicationConfig(NodeEngine nodeEngine, String applicationName) {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        ApplicationContext applicationContext
-                = service.getApplicationManager().getApplicationContext(applicationName);
+    public static ApplicationConfig resolveApplicationConfig(NodeEngine nodeEngine, String applicationName) {
+        ApplicationContext applicationContext = getApplicationContext(nodeEngine, applicationName);
         if (applicationContext == null) {
-            return JetUtil.resolveJetDefaultApplicationConfig(nodeEngine);
+            if (nodeEngine.getConfig() instanceof JetConfig) {
+                JetConfig config = (JetConfig) nodeEngine.getConfig();
+                return config.getApplicationConfig(applicationName);
+            }
+            return new ApplicationConfig();
         } else {
-            return applicationContext.getJetApplicationConfig();
+            return applicationContext.getApplicationConfig();
         }
     }
 
-    public static JetApplicationConfig resolveJetServerApplicationConfig(final NodeEngine nodeEngine,
-                                                                         final JetApplicationConfig jetApplicationConfig,
-                                                                         final String name) {
-        return resolveJetApplicationConfig(nodeEngine.getConfig(), jetApplicationConfig, name);
+    public static ApplicationConfig resolveApplicationConfig(final HazelcastClientInstanceImpl client,
+                                                             final String name) {
+        if (client.getClientConfig() instanceof JetClientConfig) {
+            JetClientConfig clientConfig = (JetClientConfig) client.getClientConfig();
+            return clientConfig.getApplicationConfig(name);
+        }
+        return new ApplicationConfig();
     }
 
-    public static JetApplicationConfig resolveJetClientApplicationConfig(final HazelcastClientInstanceImpl client,
-                                                                         final JetApplicationConfig jetApplicationConfig,
-                                                                         final String name) {
-        return resolveJetApplicationConfig(client.getClientConfig(), jetApplicationConfig, name);
+    public static ApplicationContext getApplicationContext(NodeEngine nodeEngine, String applicationName) {
+        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+        return service.getApplicationManager()
+                .getApplicationContext(applicationName);
     }
 
     public static List<Integer> getLocalPartitions(final NodeEngine nodeEngine) {
@@ -249,33 +242,5 @@ public final class JetUtil {
 
     public static boolean isPartitionLocal(final NodeEngine nodeEngine, int partitionId) {
         return nodeEngine.getPartitionService().getPartition(partitionId).isLocal();
-    }
-
-    private static <T> JetApplicationConfig resolveJetApplicationConfig(final T hazelcastConfig,
-                                                                        final JetApplicationConfig jetApplicationConfig,
-                                                                        final String name) {
-        JetApplicationConfig resultConfig = jetApplicationConfig;
-
-        if (isEmptyConfig(resultConfig)) {
-            if (isJetConfig(hazelcastConfig)) {
-                resultConfig = ((JetConfig) hazelcastConfig).getJetApplicationConfig(name);
-            } else if (isJetClientConfig(hazelcastConfig)) {
-                resultConfig = ((JetClientConfig) hazelcastConfig).getJetApplicationConfig(name);
-            }
-        }
-
-        if (isEmptyConfig(resultConfig)) {
-            resultConfig = new JetApplicationConfig(name);
-        }
-
-        return resultConfig;
-    }
-
-    private static boolean isJetClientConfig(final Object hazelcastConfig) {
-        return ((hazelcastConfig != null) && (hazelcastConfig instanceof JetClientConfig));
-    }
-
-    private static boolean isJetConfig(final Object hazelcastConfig) {
-        return ((hazelcastConfig != null) && (hazelcastConfig instanceof JetConfig));
     }
 }

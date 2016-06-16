@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -62,8 +62,8 @@ public class ProducerTaskProcessor implements TaskProcessor {
         this.processor = processor;
         this.processorContext = processorContext;
         this.containerContext = containerContext;
-        JetApplicationConfig jetApplicationConfig = containerContext.getApplicationContext().getJetApplicationConfig();
-        int tupleChunkSize = jetApplicationConfig.getChunkSize();
+        ApplicationConfig applicationConfig = containerContext.getApplicationContext().getApplicationConfig();
+        int tupleChunkSize = applicationConfig.getChunkSize();
         this.objectInputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
         this.tupleOutputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
     }

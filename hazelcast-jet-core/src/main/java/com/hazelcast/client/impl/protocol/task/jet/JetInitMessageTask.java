@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetInitCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.impl.operation.InitApplicationRequestOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
@@ -46,7 +46,7 @@ public class JetInitMessageTask extends JetMessageTask<JetInitCodec.RequestParam
 
     @Override
     protected JetOperation prepareOperation() {
-        JetApplicationConfig config = this.nodeEngine.getSerializationService().toObject(this.parameters.config);
+        ApplicationConfig config = this.nodeEngine.getSerializationService().toObject(this.parameters.config);
         InitApplicationRequestOperation operation =
                 new InitApplicationRequestOperation(getDistributedObjectName(), config);
         return operation;

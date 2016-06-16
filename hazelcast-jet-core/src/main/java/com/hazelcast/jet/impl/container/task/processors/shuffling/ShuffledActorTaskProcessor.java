@@ -64,7 +64,7 @@ public class ShuffledActorTaskProcessor extends ActorTaskProcessor {
             receivers.add(receiver);
         }
 
-        int chunkSize = containerContext.getApplicationContext().getJetApplicationConfig().getChunkSize();
+        int chunkSize = containerContext.getApplicationContext().getApplicationConfig().getChunkSize();
         this.receivedTupleStream = new DefaultObjectIOStream<Object>(new Object[chunkSize]);
         this.receivers = receivers.toArray(new ObjectProducer[receivers.size()]);
     }

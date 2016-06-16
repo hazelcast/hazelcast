@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.application.Initable;
 import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 
 /**
  * Utility class for creating new Jet Applications
@@ -50,12 +50,12 @@ public final class JetEngine {
      * Create a new application given a Hazelcast instance, name and application configuration
      * @param hazelcastInstance Hazelcast instance to use
      * @param applicationName name of the application
-     * @param jetApplicationConfig configuration for the application
+     * @param applicationConfig configuration for the application
      * @return a new Jet Application
      */
     public static Application getJetApplication(HazelcastInstance hazelcastInstance,
                                                 String applicationName,
-                                                JetApplicationConfig jetApplicationConfig) {
+                                                ApplicationConfig applicationConfig) {
         checkApplicationName(applicationName);
 
         Application application = hazelcastInstance.getDistributedObject(
@@ -64,7 +64,7 @@ public final class JetEngine {
         );
 
         if (application.getApplicationState() == ApplicationState.NEW) {
-            ((Initable) application).init(jetApplicationConfig);
+            ((Initable) application).init(applicationConfig);
         }
 
         return application;

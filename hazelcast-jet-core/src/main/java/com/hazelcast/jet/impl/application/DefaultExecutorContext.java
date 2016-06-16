@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.executor.TaskExecutor;
 import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
 import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
@@ -39,13 +39,13 @@ public class DefaultExecutorContext implements ExecutorContext {
 
     public DefaultExecutorContext(
             String name,
-            JetApplicationConfig jetApplicationConfig,
+            ApplicationConfig applicationConfig,
             NodeEngine nodeEngine,
             SharedApplicationExecutor networkExecutor,
             SharedApplicationExecutor processingExecutor) {
         this.networkExecutor = networkExecutor;
         this.processingExecutor = processingExecutor;
-        int awaitingTimeOut = jetApplicationConfig.getJetSecondsToAwait();
+        int awaitingTimeOut = applicationConfig.getSecondsToAwait();
 
         this.networkTaskContext = new DefaultApplicationTaskContext(new ArrayList<Task>());
         this.applicationTaskContext = new DefaultApplicationTaskContext(new ArrayList<Task>());

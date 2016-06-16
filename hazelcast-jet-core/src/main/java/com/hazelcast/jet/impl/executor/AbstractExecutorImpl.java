@@ -29,19 +29,14 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 
 public abstract class AbstractExecutorImpl<T extends WorkingProcessor>
         implements AbstractExecutor {
+
     protected final ILogger logger;
-
-    protected final String name;
-
     protected final T[] processors;
 
-    protected final Thread[] workers;
-
-    protected final int awaitingTimeOut;
-
-    protected final NodeEngine nodeEngine;
-
-    protected final ThreadFactory threadFactory;
+    private final String name;
+    private final Thread[] workers;
+    private final int awaitingTimeOut;
+    private final ThreadFactory threadFactory;
 
     protected AbstractExecutorImpl(String name,
                                    int threadNum,
@@ -65,7 +60,6 @@ public abstract class AbstractExecutorImpl<T extends WorkingProcessor>
         }
 
         this.name = name;
-        this.nodeEngine = nodeEngine;
     }
 
     protected Thread worker(Runnable processor) {

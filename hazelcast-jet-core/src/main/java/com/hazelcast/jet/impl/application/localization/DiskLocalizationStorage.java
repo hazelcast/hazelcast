@@ -39,7 +39,7 @@ public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
     public DiskLocalizationStorage(ApplicationContext applicationContext,
                                    String applicationName
     ) {
-        super(applicationContext.getJetApplicationConfig());
+        super(applicationContext.getApplicationConfig());
 
         this.logger = applicationContext.getNodeEngine().getLogger(getClass());
 
@@ -61,7 +61,7 @@ public class DiskLocalizationStorage extends AbstractLocalizationStorage<File> {
             postFix = String.valueOf(cnt);
             cnt++;
 
-            int max = this.jetConfig.getDefaultApplicationDirectoryCreationAttemptsCount();
+            int max = this.jetConfig.getApplicationDirectoryCreationAttemptsCount();
 
             if (cnt > max) {
                 throw new JetException(

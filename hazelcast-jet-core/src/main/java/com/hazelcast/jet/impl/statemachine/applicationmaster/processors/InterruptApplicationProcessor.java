@@ -30,7 +30,7 @@ public class InterruptApplicationProcessor implements ContainerPayLoadProcessor<
 
     public InterruptApplicationProcessor(ApplicationMaster applicationMaster) {
         this.applicationMaster = applicationMaster;
-        this.secondToAwait = this.applicationMaster.getApplicationContext().getJetApplicationConfig().getJetSecondsToAwait();
+        this.secondToAwait = this.applicationMaster.getApplicationContext().getApplicationConfig().getSecondsToAwait();
     }
 
     @Override

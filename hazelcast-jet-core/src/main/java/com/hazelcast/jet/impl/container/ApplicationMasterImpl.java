@@ -130,7 +130,7 @@ public class ApplicationMasterImpl extends
             } else {
                 try {
                     handleContainerRequest(new ExecutionCompletedRequest()).get(
-                            getApplicationContext().getJetApplicationConfig().getJetSecondsToAwait(),
+                            getApplicationContext().getApplicationConfig().getSecondsToAwait(),
                             TimeUnit.SECONDS
                     );
                 } finally {
@@ -156,7 +156,7 @@ public class ApplicationMasterImpl extends
         try {
             try {
                 handleContainerRequest(new ExecutionInterruptedRequest()).get(
-                        getApplicationContext().getJetApplicationConfig().getJetSecondsToAwait(),
+                        getApplicationContext().getApplicationConfig().getSecondsToAwait(),
                         TimeUnit.SECONDS
                 );
             } finally {

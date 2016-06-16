@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.executor.SharedApplicationExecutor;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
@@ -39,7 +39,7 @@ public interface JetApplicationManager {
 
     Collection<ApplicationContext> getApplicationContexts();
 
-    ApplicationContext getOrCreateApplicationContext(String name, JetApplicationConfig config);
+    ApplicationContext getOrCreateApplicationContext(String name, ApplicationConfig config);
 
     NodeEngine getNodeEngine();
 }

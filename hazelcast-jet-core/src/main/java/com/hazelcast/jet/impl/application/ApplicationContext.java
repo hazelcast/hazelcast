@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
 import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
@@ -88,7 +88,7 @@ public interface ApplicationContext {
     /**
      * @return - application's config;
      */
-    JetApplicationConfig getJetApplicationConfig();
+    ApplicationConfig getApplicationConfig();
 
     /**
      * @return - application's state machine;
