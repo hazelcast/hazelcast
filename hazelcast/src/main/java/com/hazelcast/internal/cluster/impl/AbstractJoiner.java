@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -35,7 +36,9 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.FutureUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -47,6 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public abstract class AbstractJoiner implements Joiner {
 
@@ -55,6 +59,7 @@ public abstract class AbstractJoiner implements Joiner {
     private static final long SPLIT_BRAIN_CONN_TIMEOUT = 5000;
     private static final long SPLIT_BRAIN_SLEEP_TIME = 10;
     private static final int SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS = 10;
+    private static final int SPLIT_BRAIN_MERGE_TIMEOUT_SECONDS = 30;
 
     protected final Config config;
     protected final Node node;
@@ -70,6 +75,17 @@ public abstract class AbstractJoiner implements Joiner {
 
     private final long mergeNextRunDelayMs;
     private volatile Address targetAddress;
+
+    private final FutureUtil.ExceptionHandler splitBrainMergeExceptionHandler = new FutureUtil.ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable instanceof MemberLeftException) {
+                return;
+            }
+            logger.warning("Problem while waiting for merge operation result", throwable);
+        }
+    };
+
 
     public AbstractJoiner(Node node) {
         this.node = node;
@@ -329,12 +345,17 @@ public abstract class AbstractJoiner implements Joiner {
 
         OperationService operationService = node.nodeEngine.getOperationService();
         Collection<Member> memberList = clusterService.getMembers();
+        Collection<Future> futures = new ArrayList<Future>(memberList.size());
         for (Member member : memberList) {
             if (!member.localMember()) {
                 Operation op = new MergeClustersOperation(targetAddress);
-                operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, member.getAddress());
+                Future<Object> future =
+                        operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, member.getAddress());
+                futures.add(future);
             }
         }
+
+        waitWithDeadline(futures, SPLIT_BRAIN_MERGE_TIMEOUT_SECONDS, TimeUnit.SECONDS, splitBrainMergeExceptionHandler);
 
         Operation mergeClustersOperation = new MergeClustersOperation(targetAddress);
         mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(clusterService)
