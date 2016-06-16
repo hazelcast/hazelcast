@@ -24,13 +24,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.NodeIOService;
 
 import java.nio.channels.ServerSocketChannel;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
 
-    private final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    private final Set<Address> blockedAddresses = new HashSet<Address>();
 
     public FirewallingTcpIpConnectionManager(
             LoggingService loggingService,
@@ -42,7 +41,7 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
     }
 
     @Override
-    public Connection getOrConnect(Address address, boolean silent) {
+    public synchronized Connection getOrConnect(Address address, boolean silent) {
         Connection connection = getConnection(address);
         if (connection != null) {
             return connection;
@@ -55,11 +54,11 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
         return super.getOrConnect(address, silent);
     }
 
-    public void block(Address address) {
+    public synchronized void block(Address address) {
         blockedAddresses.add(address);
     }
 
-    public void unblock(Address address) {
+    public synchronized void unblock(Address address) {
         blockedAddresses.remove(address);
         Connection connection = getConnection(address);
         if (connection instanceof DroppingConnection) {
