@@ -47,6 +47,7 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
     public void testWriteBehindQueues_flushed_onNodeShutdown() throws Exception {
         int nodeCount = 3;
         String mapName = randomName();
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -71,7 +72,10 @@ public class WriteBehindFlushTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(1000, mapStore.countStore.get());
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(i, mapStore.store.get(i));
+                }
+
             }
         });
     }
