@@ -14,32 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.plugin.multicast;
+package com.hazelcast.spi.discovery.multicast;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
-import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
 
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
- * Defines the name and default value for Multicast Plugin properties
+ * Defines the name and default value for Multicast Discovery Strategy.
  */
 public final class MulticastProperties {
 
-
+    /**
+     * Property used to define multicast port.
+     */
     public static final PropertyDefinition PORT = property("port", INTEGER);
+
     /**
      * Property used to define zones for node filtering
      */
     public static final PropertyDefinition GROUP = property("group", STRING);
-
-
-    private static final int MIN_PORT = 0;
-    private static final int MAX_PORT = 65535;
 
     private MulticastProperties() {
     }
@@ -52,20 +50,4 @@ public final class MulticastProperties {
                                                ValueValidator valueValidator) {
         return new SimplePropertyDefinition(key, true, typeConverter, valueValidator);
     }
-
-    /**
-     * Validator for valid network ports
-     */
-    protected static class PortValueValidator implements ValueValidator<Integer> {
-
-        public void validate(Integer value) throws ValidationException {
-            if (value < MIN_PORT) {
-                throw new ValidationException("hz-port number must be greater 0");
-            }
-            if (value > MAX_PORT) {
-                throw new ValidationException("hz-port number must be less or equal to 65535");
-            }
-        }
-    }
-
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.plugin.multicast;
+package com.hazelcast.spi.discovery.multicast.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -31,12 +31,12 @@ import java.net.MulticastSocket;
 public class MulticastDiscoverySender implements Runnable {
 
     private static final int SLEEP_DURATION = 2000;
-    MulticastSocket multicastSocket;
-    MulticastMemberInfo multicastMemberInfo;
-    DatagramPacket datagramPacket;
-    ILogger logger;
-    String group;
-    int port;
+    private MulticastSocket multicastSocket;
+    private MulticastMemberInfo multicastMemberInfo;
+    private DatagramPacket datagramPacket;
+    private ILogger logger;
+    private String group;
+    private int port;
     private volatile boolean stop;
 
     public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket,
@@ -83,7 +83,7 @@ public class MulticastDiscoverySender implements Runnable {
         multicastSocket.send(datagramPacket);
     }
 
-    void stop() {
+    public void stop() {
         stop = true;
     }
 }

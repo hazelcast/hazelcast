@@ -25,7 +25,7 @@
 
     <network>
         <discovery-strategies>
-            <discovery-strategy enabled="true" class="com.hazelcast.internal.plugin.multicast.MulticastDiscoveryStrategy">
+            <discovery-strategy enabled="true" class="com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy">
             </discovery-strategy>
         </discovery-strategies>
     </network>

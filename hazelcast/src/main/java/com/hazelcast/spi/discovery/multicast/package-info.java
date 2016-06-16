@@ -14,26 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.plugin.multicast;
-
-import java.io.Serializable;
-
-
-public class MulticastMemberInfo implements Serializable {
-
-    private String host;
-    private int port;
-
-    public MulticastMemberInfo(String host, int port) {
-        this.host = host;
-        this.port = port;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public String getHost() {
-        return host;
-    }
-}
+/**
+ * Contains the hazelcast multicast plugin classes
+ */
+package com.hazelcast.spi.discovery.multicast;

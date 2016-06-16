@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.plugin.multicast;
+package com.hazelcast.spi.discovery.multicast;
 
+import com.hazelcast.config.properties.ValidationException;
+import com.hazelcast.config.properties.ValueValidator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.discovery.multicast.impl.MulticastDiscoveryReceiver;
+import com.hazelcast.spi.discovery.multicast.impl.MulticastDiscoverySender;
+import com.hazelcast.spi.discovery.multicast.impl.MulticastMemberInfo;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
 import java.net.InetAddress;
@@ -31,7 +36,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-
+/**
+ * The multicast {@link com.hazelcast.spi.discovery.DiscoveryStrategy}.
+ */
 public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private static final int DATA_OUTPUT_BUFFER_SIZE = 64 * 1024;
@@ -57,7 +64,7 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
     private void initializeMulticastSocket() {
         try {
             int port = getOrDefault(MulticastProperties.PORT, DEFAULT_MULTICAST_PORT);
-            MulticastProperties.PortValueValidator validator = new MulticastProperties.PortValueValidator();
+            PortValueValidator validator = new PortValueValidator();
             validator.validate(port);
             String group = getOrDefault(MulticastProperties.GROUP, DEFAULT_MULTICAST_GROUP);
             multicastSocket = new MulticastSocket(null);
@@ -76,7 +83,6 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
         } catch (Exception e) {
             logger.finest(e.getMessage());
         }
-
     }
 
     @Override
@@ -122,4 +128,20 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
         return new HashMap<String, Object>();
     }
 
+    /**
+     * Validator for valid network ports
+     */
+    private static class PortValueValidator implements ValueValidator<Integer> {
+        private static final int MIN_PORT = 0;
+        private static final int MAX_PORT = 65535;
+
+        public void validate(Integer value) throws ValidationException {
+            if (value < MIN_PORT) {
+                throw new ValidationException("hz-port number must be greater 0");
+            }
+            if (value > MAX_PORT) {
+                throw new ValidationException("hz-port number must be less or equal to 65535");
+            }
+        }
+    }
 }
