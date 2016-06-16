@@ -135,7 +135,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
     // ====================================================================
     @Test
     public void sync_whenOperationTimeout() {
-        int callTimeout = 1000;
+        int callTimeout = 5000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -146,20 +146,21 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(local);
 
         String key = generateKeyOwnedBy(remote);
+        InternalLockNamespace namespace = new InternalLockNamespace(key);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
 
         // first we lock the lock by another thread.
         InternalOperationService opService = nodeEngine.getOperationService();
         int otherThreadId = 2;
         opService.invokeOnPartition(
-                new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), otherThreadId, -1, -1)
+                new LockOperation(namespace, nodeEngine.toData(key), otherThreadId, -1, -1)
                         .setPartitionId(partitionId))
                 .join();
 
         // then we execute a lock operation that won't be executed because lock is already acquired
         // we are going to do some waiting (3x calltimeout)
         int threadId = 1;
-        Operation op = new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), threadId, -1, 3 * callTimeout)
+        Operation op = new LockOperation(namespace, nodeEngine.toData(key), threadId, -1, 3 * callTimeout)
                 .setPartitionId(partitionId);
         final InternalCompletableFuture<Object> future = opService.invokeOnPartition(op);
 
