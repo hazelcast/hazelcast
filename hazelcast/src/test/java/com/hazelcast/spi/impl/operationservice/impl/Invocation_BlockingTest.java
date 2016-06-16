@@ -334,7 +334,7 @@ public class Invocation_BlockingTest extends HazelcastTestSupport {
      */
     @Test
     public void async_whenMultipleAndThenOnSameFuture() throws Exception {
-        int callTimeout = 1000;
+        int callTimeout = 5000;
         Config config = new Config().setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
