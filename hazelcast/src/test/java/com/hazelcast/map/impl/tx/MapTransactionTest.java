@@ -604,6 +604,21 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     // ========================= remove =====================
 
+    @Test
+    public void testRemoveIfSame() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = createHazelcastInstance();
+
+        TransactionContext context = instance.newTransactionContext(options);
+        context.beginTransaction();
+
+        TransactionalMap<String, String> map = context.getMap("map");
+
+        map.put("key-0", "value");
+
+        assertTrue(map.remove("key-0", "value"));
+        context.commitTransaction();
+    }
+
     @Test(expected = NullPointerException.class)
     public void testRemove_whenNullKey() throws TransactionException {
         final HazelcastInstance hz = createHazelcastInstance();
