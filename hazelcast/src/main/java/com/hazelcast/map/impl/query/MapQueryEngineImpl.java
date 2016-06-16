@@ -126,7 +126,8 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         // This would be the point where a query-plan should be added. It should determine if a full table scan
         // or an index should be used.
-        QueryResult result = tryQueryUsingIndexes(predicate, initialPartitions, mapContainer, iterationType);
+        QueryResult result = tryQueryUsingIndexes(predicate, initialPartitions, mapContainer, iterationType,
+                initialPartitionStateVersion);
         if (result == null) {
             result = queryUsingFullTableScan(mapName, predicate, initialPartitions, iterationType);
         }
@@ -141,9 +142,13 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     protected QueryResult tryQueryUsingIndexes(Predicate predicate, Collection<Integer> partitions, MapContainer mapContainer,
-                                               IterationType iterationType) {
+                                               IterationType iterationType, int initialPartitionStateVersion) {
 
-        if (partitionService.hasOnGoingMigrationLocal()) {
+        // if a migration is in progress, do not attempt to use an index as they may have not been created yet.
+        // MapService.getMigrationsInFlight() returns the number of currently executing migrations (for which
+        // beforeMigration has been executed but commit/rollback is not yet executed).
+        // This is a temporary fix for 3.7, the actual issue will be addressed with an additional migration hook in 3.8.
+        if (mapServiceContext.getService().getOwnerMigrationsInFlight() > 0) {
             return null;
         }
 
@@ -153,6 +158,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         }
 
         QueryResult result = newQueryResult(partitions.size(), iterationType);
+        // if partition state version has changed in the meanwhile, this means migrations were executed and we may
+        // return stale data, so we should rather return null and let the query run with a full table scan
+        if (initialPartitionStateVersion != partitionService.getPartitionStateVersion()) {
+            return null;
+        }
         result.addAll(entries);
         return result;
     }
