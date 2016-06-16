@@ -1,1 +1,1 @@
-com.hazelcast.internal.plugin.multicast.MulticastDiscoveryStrategyFactory
+com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategyFactory

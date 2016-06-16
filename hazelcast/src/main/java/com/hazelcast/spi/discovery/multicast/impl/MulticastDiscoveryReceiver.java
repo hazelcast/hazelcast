@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.plugin.multicast;
+package com.hazelcast.spi.discovery.multicast.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
@@ -27,10 +27,10 @@ import java.net.MulticastSocket;
 public class MulticastDiscoveryReceiver {
 
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
-    MulticastSocket multicastSocket;
-    DatagramPacket datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
-    ILogger logger;
 
+    private final MulticastSocket multicastSocket;
+    private final DatagramPacket datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
+    private final ILogger logger;
 
     public MulticastDiscoveryReceiver(MulticastSocket multicastSocket, ILogger logger) {
         this.multicastSocket = multicastSocket;
@@ -51,7 +51,9 @@ public class MulticastDiscoveryReceiver {
             multicastMemberInfo = (MulticastMemberInfo) o;
             return multicastMemberInfo;
         } catch (Exception e) {
-            logger.finest("Couldn't get member info from multicast channel " + e.getMessage());
+            if (logger.isFinestEnabled()) {
+                logger.finest("Couldn't get member info from multicast channel " + e.getMessage());
+            }
         } finally {
             IOUtil.closeResource(bis);
             IOUtil.closeResource(in);

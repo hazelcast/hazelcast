@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.plugin.multicast;
+package com.hazelcast.spi.discovery.multicast;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
@@ -25,6 +25,9 @@ import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * TODO:
+ */
 public class MulticastDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
     @Override
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
