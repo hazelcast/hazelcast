@@ -25,24 +25,24 @@ import java.io.IOException;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.setPrivateField;
 
-public class IntSummaryStatistics extends java.util.IntSummaryStatistics implements DataSerializable {
+public class DistributedLongSummaryStatistics extends java.util.LongSummaryStatistics implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(this.getCount());
         out.writeLong(this.getSum());
-        out.writeInt(this.getMin());
-        out.writeInt(this.getMax());
+        out.writeLong(this.getMin());
+        out.writeLong(this.getMax());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         try {
-            Class<?> clazz = java.util.IntSummaryStatistics.class;
+            Class<?> clazz = java.util.LongSummaryStatistics.class;
             setPrivateField(this, clazz, "count", in.readLong());
             setPrivateField(this, clazz, "sum", in.readLong());
-            setPrivateField(this, clazz, "min", in.readInt());
-            setPrivateField(this, clazz, "max", in.readInt());
+            setPrivateField(this, clazz, "min", in.readLong());
+            setPrivateField(this, clazz, "max", in.readLong());
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw StreamUtil.reThrow(e);
         }

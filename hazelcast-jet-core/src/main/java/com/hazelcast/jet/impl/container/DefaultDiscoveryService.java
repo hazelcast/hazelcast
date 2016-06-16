@@ -18,12 +18,12 @@ package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.container.task.nio.DefaultSocketReader;
+import com.hazelcast.jet.impl.container.task.nio.DefaultSocketWriter;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.hazelcast.JetService;
-import com.hazelcast.jet.impl.container.task.nio.DefaultSocketReader;
-import com.hazelcast.jet.impl.container.task.nio.DefaultSocketWriter;
 import com.hazelcast.jet.impl.operation.DiscoveryOperation;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
@@ -123,14 +123,10 @@ public class DefaultDiscoveryService implements DiscoveryService {
             this.applicationContext.getExecutorContext().getNetworkTaskContext().addTask(task);
         }
 
-        if (this.socketReaders.size() > 0) {
-            for (Address readAddress : this.socketReaders.keySet()) {
-                for (Address writeAddress : this.socketWriters.keySet()) {
-                    this.socketReaders.get(readAddress).assignWriter(
-                            writeAddress,
-                            this.socketWriters.get(writeAddress)
-                    );
-                }
+        for (Map.Entry<Address, SocketReader> readerEntry : this.socketReaders.entrySet()) {
+            for (Map.Entry<Address, SocketWriter> writerEntry : this.socketWriters.entrySet()) {
+                SocketReader reader = readerEntry.getValue();
+                reader.assignWriter(writerEntry.getKey(), writerEntry.getValue());
             }
         }
     }

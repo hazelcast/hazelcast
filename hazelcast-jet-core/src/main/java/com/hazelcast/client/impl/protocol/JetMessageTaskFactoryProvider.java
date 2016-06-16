@@ -21,6 +21,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider {
     private final MessageTaskFactory[] factories = new MessageTaskFactory[Short.MAX_VALUE];
@@ -148,9 +149,8 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
 //endregion​
     }
 
-    @SuppressWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
     @Override
     public MessageTaskFactory[] getFactories() {
-        return factories;
+        return factories.clone();
     }
 }
