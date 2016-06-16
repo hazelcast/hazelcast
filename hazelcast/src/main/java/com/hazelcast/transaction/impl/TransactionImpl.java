@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -27,15 +28,18 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.impl.operations.CreateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.PurgeTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.ReplicateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
@@ -72,6 +76,7 @@ public class TransactionImpl implements Transaction {
 
     private final ExceptionHandler rollbackExceptionHandler;
     private final ExceptionHandler rollbackTxExceptionHandler;
+    private final ExceptionHandler replicationTxExceptionHandler;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final NodeEngine nodeEngine;
     private final String txnId;
@@ -79,10 +84,9 @@ public class TransactionImpl implements Transaction {
     private final TransactionType transactionType;
     private final boolean checkThreadAccess;
     private final ILogger logger;
-    private Long threadId;
-
     private final String txOwnerUuid;
     private final TransactionLog transactionLog;
+    private Long threadId;
     private long timeoutMillis;
     private State state = NO_TXN;
     private long startTime;
@@ -110,6 +114,7 @@ public class TransactionImpl implements Transaction {
         this.logger = nodeEngine.getLogger(getClass());
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", WARNING);
         this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", WARNING);
+        this.replicationTxExceptionHandler = createReplicationTxExceptionHandler(logger);
         this.originatedFromClient = originatedFromClient;
     }
 
@@ -132,6 +137,7 @@ public class TransactionImpl implements Transaction {
         this.logger = nodeEngine.getLogger(getClass());
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", WARNING);
         this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", WARNING);
+        this.replicationTxExceptionHandler = createReplicationTxExceptionHandler(logger);
     }
 
     @Override
@@ -238,10 +244,10 @@ public class TransactionImpl implements Transaction {
 
     /**
      * Checks if this Transaction needs to be prepared.
-     *
+     * <p>
      * Preparing a transaction costs time since the backup log potentially needs to be copied and
      * each logrecord needs to prepare its content (e.g. by acquiring locks). This takes time.
-     *
+     * <p>
      * If a transaction is local or if there is 1 or 0 items in the transaction log, instead of
      * preparing, we are just going to try to commit. If the lock is still acquired, the write
      * succeeds, and if the lock isn't acquired, the write fails; the same effect as a prepare
@@ -342,13 +348,13 @@ public class TransactionImpl implements Transaction {
                 futures.add(f);
             }
         }
-        waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+        waitWithDeadline(futures, timeoutMillis, MILLISECONDS, replicationTxExceptionHandler);
     }
 
     /**
      * Some data-structures like the Transaction List rely on (empty) backup logs to be created before any change on the
      * data-structure is made. That is why when such a data-structure is loaded, it should the creation.
-     *
+     * <p>
      * Not every data-structure, e.g. the Transactional Map, relies on it and in some cases can even skip it.
      */
     public void ensureBackupLogsExist() {
@@ -382,22 +388,7 @@ public class TransactionImpl implements Transaction {
             }
         }
 
-        for (Future future : futures) {
-            try {
-                future.get(timeoutMillis, MILLISECONDS);
-            } catch (MemberLeftException e) {
-                nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
-            } catch (Throwable e) {
-                if (e instanceof ExecutionException) {
-                    e = e.getCause() != null ? e.getCause() : e;
-                }
-                if (e instanceof TargetNotMemberException) {
-                    nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
-                } else {
-                    RETHROW_TRANSACTION_EXCEPTION.handleException(e);
-                }
-            }
-        }
+        waitWithDeadline(futures, timeoutMillis, MILLISECONDS, replicationTxExceptionHandler);
     }
 
     private void rollbackBackupLogs() {
@@ -467,5 +458,28 @@ public class TransactionImpl implements Transaction {
                 + ", txType=" + transactionType
                 + ", timeoutMillis=" + timeoutMillis
                 + '}';
+    }
+
+    static ExceptionHandler createReplicationTxExceptionHandler(final ILogger logger) {
+        return new ExceptionHandler() {
+            @Override
+            public void handleException(Throwable throwable) {
+                if (throwable instanceof TimeoutException) {
+                    throw new TransactionTimedOutException(throwable);
+                }
+                if (throwable instanceof MemberLeftException) {
+                    logger.warning("Member left while replicating tx begin: " + throwable);
+                    return;
+                }
+                if (throwable instanceof ExecutionException) {
+                    Throwable cause = throwable.getCause();
+                    if (cause instanceof TargetNotMemberException || cause instanceof HazelcastInstanceNotActiveException) {
+                        logger.warning("Member left while replicating tx begin: " + cause);
+                        return;
+                    }
+                }
+                throw ExceptionUtil.rethrow(throwable);
+            }
+        };
     }
 }

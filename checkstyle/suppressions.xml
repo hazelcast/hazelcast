@@ -287,6 +287,7 @@
     <suppress checks="JavadocType" files="com/hazelcast/transaction/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/transaction/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/transaction/"/>
+    <suppress checks="MethodCount" files="com/hazelcast/transaction/impl/TransactionImpl"/>
 
     <!-- Security -->
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/security/permission/ActionConstants"/>
