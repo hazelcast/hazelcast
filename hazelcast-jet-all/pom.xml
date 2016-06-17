@@ -74,5 +74,10 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>
