@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.application;
 
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 
 /**
  * Interface to init something;
@@ -27,5 +27,5 @@ public interface Initable {
      *
      * @param config - JET application config;
      */
-    void init(JetApplicationConfig config);
+    void init(ApplicationConfig config);
 }

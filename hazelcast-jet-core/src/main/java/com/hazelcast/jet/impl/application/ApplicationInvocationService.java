@@ -20,7 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jet.impl.hazelcast.InvocationFactory;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.application.localization.Chunk;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -82,7 +82,7 @@ public interface ApplicationInvocationService<PayLoad> {
      * @param config - application config
      * @return - invoker to init application
      */
-    PayLoad createInitApplicationInvoker(JetApplicationConfig config);
+    PayLoad createInitApplicationInvoker(ApplicationConfig config);
 
     /**
      * Creates invocation to be called on the corresponding member;

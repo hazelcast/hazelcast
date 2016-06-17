@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
@@ -49,8 +49,8 @@ public class ApplicationEventOperation extends JetOperation {
             ApplicationStateMachine applicationStateMachine =
                     context.getApplicationStateMachine();
 
-            JetApplicationConfig config = context.getJetApplicationConfig();
-            long secondsToAwait = config.getJetSecondsToAwait();
+            ApplicationConfig config = context.getApplicationConfig();
+            long secondsToAwait = config.getSecondsToAwait();
 
             Future future = applicationStateMachine.handleRequest(
                     new ApplicationStateMachineRequest(this.applicationEvent)

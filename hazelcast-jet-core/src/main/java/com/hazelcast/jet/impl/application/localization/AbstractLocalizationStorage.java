@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.application.localization;
 import com.hazelcast.jet.impl.application.LocalizationResourceDescriptor;
 import com.hazelcast.jet.impl.application.localization.classloader.ApplicationClassLoader;
 import com.hazelcast.jet.impl.application.localization.classloader.ResourceStream;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -30,13 +30,13 @@ import java.util.Map;
 public abstract class AbstractLocalizationStorage<S> implements LocalizationStorage {
     protected final Map<LocalizationResourceDescriptor, S> resources = new LinkedHashMap<LocalizationResourceDescriptor, S>();
 
-    protected final JetApplicationConfig jetConfig;
+    protected final ApplicationConfig jetConfig;
 
     private ClassLoader classLoader;
 
     private volatile boolean accepted;
 
-    public AbstractLocalizationStorage(JetApplicationConfig config) {
+    public AbstractLocalizationStorage(ApplicationConfig config) {
         this.jetConfig = config;
     }
 
@@ -63,7 +63,7 @@ public abstract class AbstractLocalizationStorage<S> implements LocalizationStor
         this.resources.put(descriptor, resource);
     }
 
-    public JetApplicationConfig getConfig() {
+    public ApplicationConfig getConfig() {
         return this.jetConfig;
     }
 

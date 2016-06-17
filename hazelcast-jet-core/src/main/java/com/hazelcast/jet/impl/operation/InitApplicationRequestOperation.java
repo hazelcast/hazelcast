@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,14 +27,14 @@ import com.hazelcast.spi.NodeEngine;
 import java.io.IOException;
 
 public class InitApplicationRequestOperation extends JetOperation {
-    private JetApplicationConfig config;
+    private ApplicationConfig config;
 
     @SuppressWarnings("unused")
     public InitApplicationRequestOperation() {
     }
 
     public InitApplicationRequestOperation(String name,
-                                           JetApplicationConfig config) {
+                                           ApplicationConfig config) {
         super(name);
         this.config = config;
     }

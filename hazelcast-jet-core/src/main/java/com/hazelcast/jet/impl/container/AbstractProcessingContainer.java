@@ -131,7 +131,7 @@ public abstract class AbstractProcessingContainer extends
         this.sourcesProducers = new ArrayList<ObjectProducer>();
         this.containerProcessorFactory = containerProcessorFactory;
         this.containerTasks = new ContainerTask[this.tasksCount];
-        this.awaitSecondsTimeOut = getApplicationContext().getJetApplicationConfig().getJetSecondsToAwait();
+        this.awaitSecondsTimeOut = getApplicationContext().getApplicationConfig().getSecondsToAwait();
         AtomicInteger readyForFinalizationTasksCounter = new AtomicInteger(0);
         readyForFinalizationTasksCounter.set(this.tasksCount);
 

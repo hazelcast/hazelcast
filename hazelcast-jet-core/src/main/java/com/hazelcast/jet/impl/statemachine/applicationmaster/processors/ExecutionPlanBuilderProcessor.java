@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
@@ -127,9 +127,9 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
 
         logger.fine("Processed vertices for DAG " + dag.getName());
 
-        JetApplicationConfig jetApplicationConfig = this.applicationContext.getJetApplicationConfig();
+        ApplicationConfig applicationConfig = this.applicationContext.getApplicationConfig();
         long secondsToAwait =
-                jetApplicationConfig.getJetSecondsToAwait();
+                applicationConfig.getSecondsToAwait();
 
         for (ProcessingContainer container : roots) {
             this.applicationMaster.addFollower(container);

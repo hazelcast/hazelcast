@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.processor.context;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.application.ApplicationListener;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ContainerListener;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
@@ -92,8 +92,8 @@ public class DefaultContainerContext implements ContainerContext {
     }
 
     @Override
-    public JetApplicationConfig getConfig() {
-        return this.applicationContext.getJetApplicationConfig();
+    public ApplicationConfig getConfig() {
+        return this.applicationContext.getApplicationConfig();
     }
 
     @Override

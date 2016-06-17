@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.application.ApplicationClusterService;
 import com.hazelcast.jet.impl.application.ApplicationStateManager;
 import com.hazelcast.jet.impl.application.LocalizationResource;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -49,7 +49,7 @@ public abstract class AbstractApplicationClusterService<PayLoad>
     }
 
     @Override
-    public void initApplication(JetApplicationConfig config,
+    public void initApplication(ApplicationConfig config,
                                 ApplicationStateManager applicationStateManager) {
         createInitiationApplicationExecutor(config, applicationStateManager).run();
     }

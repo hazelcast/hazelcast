@@ -59,7 +59,7 @@ public class DefaultSocketWriter
 
         this.inetSocketAddress = new InetSocketAddress(jetAddress.getHost(), jetAddress.getPort());
 
-        this.sendByteBuffer = ByteBuffer.allocateDirect(applicationContext.getJetApplicationConfig().getDefaultTCPBufferSize())
+        this.sendByteBuffer = ByteBuffer.allocateDirect(applicationContext.getApplicationConfig().getTcpBufferSize())
                 .order(ByteOrder.BIG_ENDIAN);
 
         this.applicationContext = applicationContext;

@@ -29,7 +29,7 @@ import com.hazelcast.client.impl.protocol.codec.JetInterruptCodec;
 import com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -37,7 +37,6 @@ import com.hazelcast.jet.impl.application.localization.Chunk;
 import com.hazelcast.jet.impl.hazelcast.AbstractApplicationClusterService;
 import com.hazelcast.jet.impl.hazelcast.InvocationFactory;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
@@ -59,11 +58,11 @@ public class ClientApplicationClusterService
     }
 
     @Override
-    public ClientMessage createInitApplicationInvoker(JetApplicationConfig config) {
+    public ClientMessage createInitApplicationInvoker(ApplicationConfig config) {
         return JetInitCodec.encodeRequest(
                 this.name,
                 this.client.getSerializationService().toData(
-                        config == null ? new JetApplicationConfig() : config
+                        config == null ? new ApplicationConfig() : config
                 )
         );
     }
@@ -121,12 +120,12 @@ public class ClientApplicationClusterService
 
     @Override
     public Set<Member> getMembers() {
-        return this.client.getCluster().getMembers();
+        return client.getCluster().getMembers();
     }
 
     @Override
-    protected JetApplicationConfig getJetApplicationConfig() {
-        return JetUtil.resolveJetClientApplicationConfig(this.client, this.jetApplicationConfig, name);
+    protected ApplicationConfig getApplicationConfig() {
+        return applicationConfig;
     }
 
     @Override

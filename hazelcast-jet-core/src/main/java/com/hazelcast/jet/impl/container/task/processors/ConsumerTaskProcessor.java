@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -60,8 +60,8 @@ public class ConsumerTaskProcessor implements TaskProcessor {
         this.containerContext = containerContext;
         this.consumersProcessor = new ConsumersProcessor(consumers);
         this.tupleInputStream = new DefaultObjectIOStream<Object>(DUMMY_CHUNK);
-        JetApplicationConfig jetApplicationConfig = containerContext.getConfig();
-        int tupleChunkSize = jetApplicationConfig.getChunkSize();
+        ApplicationConfig applicationConfig = containerContext.getConfig();
+        int tupleChunkSize = applicationConfig.getChunkSize();
         this.tupleOutputStream = new DefaultObjectIOStream<Object>(new Object[tupleChunkSize]);
         reset();
     }

@@ -8,7 +8,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
@@ -35,7 +35,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     public static final int TIME_TO_AWAIT = 600;
     public static final String TEST_DATA_PATH = "test.data.path";
     private static final AtomicInteger APPLICATION_NAME_COUNTER = new AtomicInteger();
-    protected static JetApplicationConfig JETCONFIG;
+    protected static ApplicationConfig APPLICATION_CONFIG;
     protected static Config CONFIG;
     protected static HazelcastInstance SERVER;
     protected static HazelcastInstance CLIENT;
@@ -49,11 +49,9 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     }
 
     public static void initCluster(int membersCount) {
-        JETCONFIG = new JetApplicationConfig("testApplication");
-        JETCONFIG.setJetSecondsToAwait(100000);
-        JETCONFIG.setChunkSize(4000);
-        JETCONFIG.setMaxProcessingThreads(
-                Runtime.getRuntime().availableProcessors());
+        APPLICATION_CONFIG = new ApplicationConfig("testApplication");
+        APPLICATION_CONFIG.setSecondsToAwait(100000);
+        APPLICATION_CONFIG.setChunkSize(4000);
 
         System.setProperty(TEST_DATA_PATH, "src/test/resources/data/");
 
@@ -111,7 +109,7 @@ public abstract class JetBaseTest extends HazelcastTestSupport {
     }
 
     protected Application createApplication(String applicationName) {
-        return JetEngine.getJetApplication(SERVER, applicationName, JETCONFIG);
+        return JetEngine.getJetApplication(SERVER, applicationName, APPLICATION_CONFIG);
     }
 
     protected DAG createDAG() {

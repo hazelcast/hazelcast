@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.application;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -68,9 +68,11 @@ public class ApplicationProxyImpl extends AbstractDistributedObject<JetService> 
     }
 
     @Override
-    public void init(JetApplicationConfig config) {
-        JetApplicationConfig resolvedConfig = JetUtil.resolveJetServerApplicationConfig(getNodeEngine(), config, name);
-        this.applicationClusterService.initApplication(resolvedConfig, this.applicationStateManager);
+    public void init(ApplicationConfig config) {
+        if (config == null) {
+            config = JetUtil.resolveApplicationConfig(getNodeEngine(), name);
+        }
+        this.applicationClusterService.initApplication(config, this.applicationStateManager);
     }
 
     @Override

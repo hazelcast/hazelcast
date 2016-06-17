@@ -29,7 +29,7 @@ import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.PartitionIdAware;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.strategy.CalculationStrategy;
@@ -131,8 +131,8 @@ public class ShuffledConsumerTaskProcessor extends ConsumerTaskProcessor {
     }
 
     private int chunkSize(ContainerContext containerContext) {
-        JetApplicationConfig jetApplicationConfig = containerContext.getApplicationContext().getJetApplicationConfig();
-        return jetApplicationConfig.getChunkSize();
+        ApplicationConfig applicationConfig = containerContext.getApplicationContext().getApplicationConfig();
+        return applicationConfig.getChunkSize();
     }
 
     private void initMarkers() {

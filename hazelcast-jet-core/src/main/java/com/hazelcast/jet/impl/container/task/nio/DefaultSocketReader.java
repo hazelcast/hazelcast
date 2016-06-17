@@ -28,7 +28,7 @@ import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
@@ -65,7 +65,7 @@ public class DefaultSocketReader
         InternalSerializationService serializationService =
                 (InternalSerializationService) applicationContext.getNodeEngine().getSerializationService();
         this.applicationNameBytes = serializationService.toBytes(this.applicationContext.getName());
-        this.chunkSize = applicationContext.getJetApplicationConfig().getChunkSize();
+        this.chunkSize = applicationContext.getApplicationConfig().getChunkSize();
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }
 
@@ -74,7 +74,7 @@ public class DefaultSocketReader
         this.jetAddress = null;
         this.socketAssigned = true;
         this.applicationContext = null;
-        this.chunkSize = JetApplicationConfig.DEFAULT_CHUNK_SIZE;
+        this.chunkSize = ApplicationConfig.DEFAULT_CHUNK_SIZE;
         this.applicationNameBytes = null;
         this.buffer = new DefaultObjectIOStream<JetPacket>(new JetPacket[this.chunkSize]);
     }

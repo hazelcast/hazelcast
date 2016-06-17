@@ -42,7 +42,7 @@ public class ChunkedOutputStream extends OutputStream {
     public ChunkedOutputStream(RingBufferActor ringBufferActor, ContainerContext containerContext, int taskID) {
         this.taskID = taskID;
         this.ringBufferActor = ringBufferActor;
-        this.shufflingBytesSize = containerContext.getApplicationContext().getJetApplicationConfig().getShufflingBatchSizeBytes();
+        this.shufflingBytesSize = containerContext.getApplicationContext().getApplicationConfig().getShufflingBatchSizeBytes();
         this.buffer = new byte[BUFFER_OFFSET + this.shufflingBytesSize];
         String applicationName = containerContext.getApplicationContext().getName();
         NodeEngine nodeEngine = containerContext.getApplicationContext().getNodeEngine();

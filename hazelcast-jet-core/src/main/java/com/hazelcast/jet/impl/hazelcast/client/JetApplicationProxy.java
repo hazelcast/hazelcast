@@ -27,10 +27,11 @@ import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.application.ApplicationStateManager;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
 import com.hazelcast.jet.impl.application.LocalizationResource;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,7 +72,10 @@ public class JetApplicationProxy extends ClientProxy implements ApplicationProxy
     }
 
     @Override
-    public void init(JetApplicationConfig config) {
+    public void init(ApplicationConfig config) {
+        if (config == null) {
+            config = JetUtil.resolveApplicationConfig(getClient(), name);
+        }
         this.applicationClusterService.initApplication(config, this.applicationStateManager);
     }
 

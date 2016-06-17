@@ -32,7 +32,7 @@ import com.hazelcast.jet.impl.operation.InitApplicationRequestOperation;
 import com.hazelcast.jet.impl.operation.InterruptExecutionOperation;
 import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
 import com.hazelcast.jet.impl.operation.SubmitApplicationRequestOperation;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -56,7 +56,7 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
         this.nodeEngine = nodeEngine;
     }
 
-    public JetOperation createInitApplicationInvoker(JetApplicationConfig config) {
+    public JetOperation createInitApplicationInvoker(ApplicationConfig config) {
         return new InitApplicationRequestOperation(
                 this.name,
                 config
@@ -119,8 +119,8 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
     }
 
     @Override
-    protected JetApplicationConfig getJetApplicationConfig() {
-        return jetApplicationConfig;
+    protected ApplicationConfig getApplicationConfig() {
+        return applicationConfig;
     }
 
     @Override

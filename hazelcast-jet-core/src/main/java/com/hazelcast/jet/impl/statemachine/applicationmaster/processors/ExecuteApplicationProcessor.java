@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
-import com.hazelcast.jet.config.JetApplicationConfig;
+import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.dag.Vertex;
 
 import java.util.Iterator;
@@ -39,8 +39,8 @@ public class ExecuteApplicationProcessor implements ContainerPayLoadProcessor<Du
     public ExecuteApplicationProcessor(ApplicationMaster applicationMaster) {
         this.applicationMaster = applicationMaster;
         this.applicationContext = applicationMaster.getApplicationContext();
-        JetApplicationConfig config = this.applicationContext.getJetApplicationConfig();
-        this.secondsToAwait = config.getJetSecondsToAwait();
+        ApplicationConfig config = this.applicationContext.getApplicationConfig();
+        this.secondsToAwait = config.getSecondsToAwait();
         this.executorContext = this.applicationContext.getExecutorContext();
     }
 

@@ -17,23 +17,47 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Hazelcast-compatible config but with Jet extensions
+ * Extension of Hazelcast client configuration with Jet specific additions.
  */
 public class JetClientConfig extends ClientConfig {
-    private final JetConfigurator jetConfigurator;
 
+    private static final ILogger LOGGER = Logger.getLogger(JetClientConfig.class);
+    private final Map<String, ApplicationConfig> appConfigs = new ConcurrentHashMap<>();
+    private ConfigPatternMatcher matcher = new WildcardConfigPatternMatcher();
+
+    /**
+     * Constructs an empty config
+     */
     public JetClientConfig() {
-        this.jetConfigurator = new JetConfigurator();
     }
 
-    public JetApplicationConfig getJetApplicationConfig(String name) {
-        return this.jetConfigurator.getJetApplicationCofig(name);
+    /**
+     * Gets the configuration for a given application name
+     * @param name name of the application
+     * @return the configuration for the application
+     */
+    public ApplicationConfig getApplicationConfig(String name) {
+        return JetConfig.lookupConfig(matcher, LOGGER, appConfigs, name);
     }
 
-    public JetClientConfig addJetApplicationConfig(JetApplicationConfig jetApplicationConfig) {
-        this.jetConfigurator.addCustomServiceConfig(jetApplicationConfig);
+    /**
+     * Sets the configuration for a given application
+     *
+     * @param config name of the application
+     * @return the configuration for the application
+     */
+    public JetClientConfig addApplicationConfig(ApplicationConfig config) {
+        appConfigs.put(config.getName(), config);
         return this;
     }
+
 }
