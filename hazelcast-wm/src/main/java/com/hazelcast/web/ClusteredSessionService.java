@@ -19,13 +19,13 @@ package com.hazelcast.web;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;
@@ -47,6 +47,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.web.HazelcastInstanceLoader.*;
 
 
 /**
@@ -72,7 +74,6 @@ public class ClusteredSessionService {
 
     private final FilterConfig filterConfig;
     private final Properties properties;
-    private final String clusterMapName;
 
     private final Queue<AbstractMap.SimpleEntry<String, Boolean>> orphanSessions = new
             LinkedBlockingQueue<AbstractMap.SimpleEntry<String, Boolean>>();
@@ -86,17 +87,23 @@ public class ClusteredSessionService {
      *
      * @param filterConfig   the filter config
      * @param properties     the properties
-     * @param clusterMapName the cluster map name
      */
-    public ClusteredSessionService(FilterConfig filterConfig, Properties properties, String clusterMapName) {
+    public ClusteredSessionService(FilterConfig filterConfig, Properties properties) {
         this.filterConfig = filterConfig;
         this.properties = properties;
-        this.clusterMapName = clusterMapName;
         try {
             init();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
         }
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public FilterConfig getFilterConfig() {
+        return filterConfig;
     }
 
     public void setFailedConnection(boolean failedConnection) {
@@ -107,13 +114,13 @@ public class ClusteredSessionService {
         ensureInstance();
         es.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-            try {
-                ensureInstance();
-            } catch (Exception e) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Cannot connect hazelcast server", e);
+                try {
+                    ensureInstance();
+                } catch (Exception e) {
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Cannot connect hazelcast server", e);
+                    }
                 }
-            }
             }
         }, 2 * CLUSTER_CHECK_INTERVAL, CLUSTER_CHECK_INTERVAL, TimeUnit.SECONDS);
     }
@@ -140,8 +147,8 @@ public class ClusteredSessionService {
     private void reconnectHZInstance() throws ServletException {
         LOGGER.info("Retrying the connection!!");
         lastConnectionTry = System.currentTimeMillis();
-        hazelcastInstance = HazelcastInstanceLoader.createInstance(this, filterConfig, properties, clusterMapName);
-        clusterMap = hazelcastInstance.getMap(clusterMapName);
+        hazelcastInstance = createInstance(this);
+        clusterMap = hazelcastInstance.getMap(properties.getProperty(MAP_NAME));
         sss = (SerializationServiceSupport) hazelcastInstance;
         setFailedConnection(false);
         LOGGER.info("Successfully Connected!");
@@ -333,5 +340,3 @@ public class ClusteredSessionService {
         }
     }
 }
-
-
