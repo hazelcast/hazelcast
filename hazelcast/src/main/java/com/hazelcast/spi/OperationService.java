@@ -35,15 +35,31 @@ public interface OperationService {
      * Runs an operation in the calling thread.
      *
      * @param op the operation to execute in the calling thread
+     * @deprecated since 3.7. Use {@link #run(Operation)}
      */
     void runOperationOnCallingThread(Operation op);
+
+    /**
+     * Runs an operation in the calling thread.
+     *
+     * @param op the operation to execute in the calling thread
+     */
+    void run(Operation op);
+
+    /**
+     * Executes an operation in the operation executor pool.
+     *
+     * @param op the operation to execute in the operation executor pool.
+     * @deprecated since 3.7. Use {@link #execute(Operation)}.
+     */
+    void executeOperation(Operation op);
 
     /**
      * Executes an operation in the operation executor pool.
      *
      * @param op the operation to execute in the operation executor pool.
      */
-    void executeOperation(Operation op);
+    void execute(Operation op);
 
     <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
 
