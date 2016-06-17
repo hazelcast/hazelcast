@@ -20,14 +20,14 @@
     <name>hazelcast-jet</name>
     <artifactId>hazelcast-jet-core</artifactId>
     <packaging>jar</packaging>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2-SNAPSHOT</version>
     <description>Hazelcast Jet Data Processor</description>
     <url>http://www.hazelcast.com/</url>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-root</artifactId>
-        <version>0.1-SNAPSHOT</version>
+        <version>0.2-SNAPSHOT</version>
     </parent>
 
     <properties>
