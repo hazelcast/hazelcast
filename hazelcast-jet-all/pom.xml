@@ -43,6 +43,11 @@
                 </executions>
                 <configuration>
                     <createSourcesJar>true</createSourcesJar>
+                    <artifactSet>
+                        <excludes>
+                            <exclude>com.hazelcast:hazelcast:*</exclude>
+                        </excludes>
+                    </artifactSet>
                 </configuration>
             </plugin>
             <plugin>
@@ -67,8 +72,7 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
-            <scope>provided</scope>
+            <artifactId>hazelcast</artifactId>
         </dependency>
     </dependencies>
 </project>
