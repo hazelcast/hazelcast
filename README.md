@@ -14,13 +14,15 @@ See [Hazelcast Jet Code Samples](https://github.com/hazelcast/hazelcast-jet-code
 
 ### Documentation
 
-See documentation at [jet.hazelcast.org](http://jet.hazelcast.org/documentation/)
+See documentation at [jet.hazelcast.org](http://jet.hazelcast.org/)
+
+### Requirements
+
+Jet 0.1 is compatible with Hazelcast 3.7.x, and will work with both clients and members.
 
 ### Releases
 
-Download from [jet.hazelcast.org](http://jet.hazelcast.org/download/)
-
-Or use Maven snippet:
+Use Maven snippet:
 ```xml
 <dependency>
     <groupId>com.hazelcast.jet</groupId>

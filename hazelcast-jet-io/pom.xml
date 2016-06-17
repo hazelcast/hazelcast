@@ -37,8 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
-            <scope>provided</scope>
+            <artifactId>hazelcast</artifactId>
         </dependency>
 
         <!--TEST DEPENDENCIES-->
