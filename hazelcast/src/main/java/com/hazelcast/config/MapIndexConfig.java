@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.util.Preconditions.checkHasText;
 
 /**
@@ -24,6 +28,8 @@ import static com.hazelcast.util.Preconditions.checkHasText;
  * particular map entries.
  */
 public class MapIndexConfig {
+
+    private static final ILogger LOG = Logger.getLogger(MapIndexConfig.class);
 
     private String attribute;
     private boolean ordered;
@@ -78,7 +84,7 @@ public class MapIndexConfig {
      * @throws IllegalArgumentException if attribute is null or an empty string.
      */
     public MapIndexConfig setAttribute(String attribute) {
-        this.attribute = checkHasText(attribute, "Map index attribute must contain text");
+        this.attribute = validateIndexAttribute(attribute);
         return this;
     }
 
@@ -109,4 +115,23 @@ public class MapIndexConfig {
     public String toString() {
         return "MapIndexConfig{attribute='" + attribute + "', ordered=" + ordered + '}';
     }
+
+    /**
+     * Validates index attribute content
+     *
+     * @param attribute attribute to validate
+     * @return the attribute for fluent assignment
+     */
+    public static String validateIndexAttribute(String attribute) {
+        checkHasText(attribute, "Map index attribute must contain text");
+        String keyPrefix = KEY_ATTRIBUTE_NAME.value();
+        if (attribute.startsWith(keyPrefix) & attribute.length() > keyPrefix.length()) {
+            if (attribute.charAt(keyPrefix.length()) != '#') {
+                LOG.warning(KEY_ATTRIBUTE_NAME.value() + " used without a following '#' char in index attribute '"
+                        + attribute + "'. Don't you want to index a key?");
+            }
+        }
+        return attribute;
+    }
+
 }

@@ -105,6 +105,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
@@ -1097,9 +1098,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     public void addIndex(String attribute, boolean ordered) {
-        if (attribute == null) {
-            throw new IllegalArgumentException("Attribute name cannot be null");
-        }
+        validateIndexAttribute(attribute);
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
             operationService.invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
