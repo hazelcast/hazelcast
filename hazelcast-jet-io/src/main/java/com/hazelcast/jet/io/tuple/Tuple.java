@@ -19,63 +19,40 @@ package com.hazelcast.jet.io.tuple;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * Represents abstract tuple of data
+ * A record consisting (conceptually) of an array of keys and an array of values.
  *
- * @param <K> type of keys
- * @param <V> type of value
+ * @param <K> key type
+ * @param <V> value type
  */
 public interface Tuple<K, V> extends DataSerializable {
+
     /**
-     * Return key-object with specified index
-     *
-     * @param index specified index
-     * @return corresponding key-object
+     * Returns the key at the given index. May return {@code null}. Allowed range for the index
+     * is {@code 0 .. (keySize - 1)}.
      */
     K getKey(int index);
 
     /**
-     * Return size-object with specified index
-     *
-     * @param index specified index
-     * @return corresponding size-object
+     * Returns the value at the given index. May return {@code null}. Allowed range for the index
+     * is {@code 0 .. (valueSize - 1)}.
      */
     V getValue(int index);
 
-    /**
-     * @return number of elements in tuple's key part
-     */
+    /** Returns the size of the key array. */
     int keySize();
 
-    /**
-     * @return number of elements in tuple's value part
-     */
+    /** Returns the size of the value array. */
     int valueSize();
 
-    /**
-     * Set key object to the corresponding position of tuple
-     *
-     * @param index index of key-array to be affected
-     * @param key   value of key
-     */
+    /** Puts the given object into the given key slot. */
     void setKey(int index, K key);
 
-    /**
-     * Set value object to the corresponding position of tuple
-     *
-     * @param index index of key-array to be affected
-     * @param value corresponding value to be set
-     */
+    /** Puts the given object into the given value slot. */
     void setValue(int index, V value);
 
-    /**
-     * @return clone of key's part array.
-     * Data will not be cloned
-     */
+    /** Returns a shallow clone of the key array. */
     K[] cloneKeys();
 
-    /**
-     * @return clone of value's part array.
-     * Data will not be cloned
-     */
+    /** Returns a shallow clone of the value array. */
     V[] cloneValues();
 }
