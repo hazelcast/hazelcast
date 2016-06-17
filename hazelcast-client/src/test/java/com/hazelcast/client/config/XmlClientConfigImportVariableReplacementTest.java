@@ -138,10 +138,10 @@ public class XmlClientConfigImportVariableReplacementTest {
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_CLIENT_START_TAG +
-                "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config2.toURI().toURL() + "\"/>\n" +
                 "</hazelcast-client>";
         String config2Xml = HAZELCAST_CLIENT_START_TAG +
-                "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config1.toURI().toURL() + "\"/>\n" +
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -158,13 +158,13 @@ public class XmlClientConfigImportVariableReplacementTest {
         FileOutputStream os2 = new FileOutputStream(config2);
         FileOutputStream os3 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_CLIENT_START_TAG +
-                "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config2.toURI().toURL() + "\"/>\n" +
                 "</hazelcast-client>";
         String config2Xml = HAZELCAST_CLIENT_START_TAG +
-                "    <import resource=\"file://" + config3.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config3.toURI().toURL() + "\"/>\n" +
                 "</hazelcast-client>";
         String config3Xml = HAZELCAST_CLIENT_START_TAG +
-                "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config1.toURI().toURL() + "\"/>\n" +
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -177,7 +177,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
         String config1Xml = HAZELCAST_CLIENT_START_TAG +
-                "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"" + config1.toURI().toURL() + "\"/>\n" +
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os1, "");
         buildConfig(config1Xml);

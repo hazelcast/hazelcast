@@ -294,6 +294,11 @@ public class DiscoverySpiTest
                 map.put(key, value);
             }
         }
+
+        Field field = Class.forName("java.lang.ProcessEnvironment").getDeclaredField("theCaseInsensitiveEnvironment");
+        field.setAccessible(true);
+        Map map = (Map) field.get(Class.forName("java.lang.ProcessEnvironment"));
+        map.put(key, value);
     }
 
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(Address address, DiscoveryConfig config, DiscoveryMode mode) {
