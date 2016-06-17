@@ -115,4 +115,32 @@ public class DiscoveryConfig {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
     }
 
+    private static class DiscoveryConfigReadOnly
+            extends DiscoveryConfig {
+
+        DiscoveryConfigReadOnly(DiscoveryConfig discoveryConfig) {
+            super(discoveryConfig.getDiscoveryServiceProvider(), discoveryConfig.getNodeFilter(),
+                    discoveryConfig.getNodeFilterClass(), discoveryConfig.getDiscoveryStrategyConfigs());
+        }
+
+        @Override
+        public void setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+
+        @Override
+        public void setNodeFilter(NodeFilter nodeFilter) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+
+        @Override
+        public void setNodeFilterClass(String nodeFilterClass) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+
+        @Override
+        public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+    }
 }

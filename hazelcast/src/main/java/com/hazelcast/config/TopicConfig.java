@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -207,6 +208,7 @@ public class TopicConfig {
         return this;
     }
 
+    @Override
     public int hashCode() {
         return 31 * (name != null ? name.hashCode() : 0);
     }
@@ -216,6 +218,7 @@ public class TopicConfig {
      *
      * @return true if the object is equal to this topic, false otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -227,9 +230,58 @@ public class TopicConfig {
         return (this.name != null ? this.name.equals(other.name) : other.name == null);
     }
 
+    @Override
     public String toString() {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled
                 + ", multiThreadingEnabled=" + multiThreadingEnabled + ", statisticsEnabled="
                 + statisticsEnabled + "]";
+    }
+
+    private static class TopicConfigReadOnly extends TopicConfig {
+
+        TopicConfigReadOnly(TopicConfig config) {
+            super(config);
+        }
+
+        @Override
+        public List<ListenerConfig> getMessageListenerConfigs() {
+            List<ListenerConfig> messageListenerConfigs = super.getMessageListenerConfigs();
+            List<ListenerConfig> readOnlyMessageListenerConfigs
+                    = new ArrayList<ListenerConfig>(messageListenerConfigs.size());
+            for (ListenerConfig messageListenerConfig : messageListenerConfigs) {
+                readOnlyMessageListenerConfigs.add(messageListenerConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyMessageListenerConfigs);
+        }
+
+        @Override
+        public TopicConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setMultiThreadingEnabled(boolean multiThreadingEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        @Override
+        public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
     }
 }

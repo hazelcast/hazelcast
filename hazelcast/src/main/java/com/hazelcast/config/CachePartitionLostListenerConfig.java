@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 
 import java.io.Serializable;
+import java.util.EventListener;
 
 /**
  * Configuration for CachePartitionLostListener
@@ -83,5 +84,33 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
         result = 31 * result + (className != null ? className.hashCode() : 0);
         result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
         return result;
+    }
+
+    static class CachePartitionLostListenerConfigReadOnly
+            extends CachePartitionLostListenerConfig {
+
+        CachePartitionLostListenerConfigReadOnly(CachePartitionLostListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public CachePartitionLostListener getImplementation() {
+            return (CachePartitionLostListener) implementation;
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public CachePartitionLostListenerConfig setImplementation(CachePartitionLostListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
     }
 }

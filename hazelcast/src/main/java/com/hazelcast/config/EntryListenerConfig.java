@@ -239,4 +239,36 @@ public class EntryListenerConfig extends ListenerConfig {
         result = 31 * result + (includeValue ? 1 : 0);
         return result;
     }
+
+    private static class EntryListenerConfigReadOnly extends EntryListenerConfig {
+
+        EntryListenerConfigReadOnly(EntryListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public EntryListenerConfig setImplementation(EntryListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public EntryListenerConfig setLocal(boolean local) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public EntryListenerConfig setIncludeValue(boolean includeValue) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+    }
 }

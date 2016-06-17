@@ -175,4 +175,26 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
                 + ", size=" + size
                 + '}';
     }
+
+    /**
+     * Contains the configuration for a size of Map.
+     *
+     * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+     */
+    private static class MaxSizeConfigReadOnly extends MaxSizeConfig {
+
+        MaxSizeConfigReadOnly(MaxSizeConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MaxSizeConfig setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

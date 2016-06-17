@@ -118,11 +118,54 @@ public class QueueStoreConfig {
         return this;
     }
 
+    @Override
     public String toString() {
         return "QueueStoreConfig{"
                 + "enabled=" + enabled
                 + ", className='" + className + '\''
                 + ", properties=" + properties
                 + '}';
+    }
+
+    private static class QueueStoreConfigReadOnly extends QueueStoreConfig {
+
+        QueueStoreConfigReadOnly(QueueStoreConfig config) {
+            super(config);
+        }
+
+        @Override
+        public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QueueStoreConfig setEnabled(boolean enabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QueueStoreConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QueueStoreConfig setProperties(Properties properties) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QueueStoreConfig setProperty(String name, String value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QueueStoreConfig setFactoryClassName(String factoryClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QueueStoreConfig setFactoryImplementation(QueueStoreFactory factoryImplementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

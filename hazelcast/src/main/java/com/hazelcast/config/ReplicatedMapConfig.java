@@ -315,4 +315,51 @@ public class ReplicatedMapConfig {
                 + ", mergePolicy='" + mergePolicy + '\''
                 + '}';
     }
+
+    static class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
+
+        ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
+            super(replicatedMapConfig);
+        }
+
+        @Override
+        public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setAsyncFillup(boolean asyncFillup) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

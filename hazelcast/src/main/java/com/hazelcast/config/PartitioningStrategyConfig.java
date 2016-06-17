@@ -77,4 +77,26 @@ public class PartitioningStrategyConfig {
                 + ", partitionStrategy=" + partitionStrategy
                 + '}';
     }
+
+    /**
+     * Contains the configuration for strategy of partitioning
+     *
+     * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+     */
+    private static class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
+
+        PartitioningStrategyConfigReadOnly(PartitioningStrategyConfig config) {
+            super(config);
+        }
+
+        @Override
+        public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

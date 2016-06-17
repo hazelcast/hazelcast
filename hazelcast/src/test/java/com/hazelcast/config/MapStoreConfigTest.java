@@ -1,6 +1,5 @@
 package com.hazelcast.config;
 
-import com.hazelcast.core.MapStore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -8,8 +7,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
-import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE;
@@ -46,7 +43,7 @@ public class MapStoreConfigTest {
 
     @Test
     public void getAsReadOnly() {
-        MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
+        MapStoreConfig.MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
         assertEquals("some.class", readOnlyCfg.getClassName());
         assertEquals(cfgNonNullClassName, readOnlyCfg);
         // also test returning cached read only instance
