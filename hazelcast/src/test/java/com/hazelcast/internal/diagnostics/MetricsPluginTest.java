@@ -5,7 +5,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -53,14 +52,9 @@ public class MetricsPluginTest extends AbstractDiagnosticsPluginTest {
             }
         });
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                logWriter.clean();
-                plugin.run(logWriter);
-                assertContains("broken=java.lang.RuntimeException:error");
-            }
-        });
+        logWriter.clean();
+        plugin.run(logWriter);
+        assertContains("broken=java.lang.RuntimeException:error");
     }
 
     @Test
