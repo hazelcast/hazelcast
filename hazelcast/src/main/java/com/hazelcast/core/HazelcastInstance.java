@@ -29,6 +29,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
@@ -287,10 +288,14 @@ public interface HazelcastInstance {
 
     /**
      * <p>
-     * Returns the cache instance with the specified prefixed cache name.
+     * Returns the cache instance with the specified prefixed cache name. For example:
      * </p>
+     * <pre>
+     *     com.hazelcast.cache.ICache cache = hazelcastInstance.getCache("sessionCache");
+     * </pre>
      *
      * <p>
+     * This method returns an instance of {@link com.hazelcast.cache.ICache}.
      * Prefixed cache name is the name with URI and classloader prefixes if available.
      * There is no Hazelcast prefix (`/hz/`). For example, `myURI/foo`.
      *
@@ -312,10 +317,10 @@ public interface HazelcastInstance {
      *
      * @throws com.hazelcast.cache.CacheNotExistsException  if there is no configured or created cache
      *                                                      with the specified prefixed name
-     * @throws java.lang.IllegalStateException              if a valid (rather than `1.0.0-PFD` or `0.x` versions)
-     *                                                      JCache library is not exist at classpath
+     * @throws java.lang.IllegalStateException              if a valid (other than `1.0.0-PFD` or `0.x` versions)
+     *                                                      JCache library does not exist in the classpath
      */
-    <K, V> ICache<K, V> getCache(String name);
+    <T extends Closeable & ICache> T getCache(String name);
 
     /**
      * Returns all {@link DistributedObject}'s such as; queue, map, set, list, topic, lock, multimap.

@@ -143,6 +143,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -474,9 +475,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
+    public <T extends Closeable & ICache> T getCache(String name) {
         checkNotNull(name, "Retrieving a cache instance with a null name is not allowed!");
-        return getCacheByFullName(HazelcastCacheManager.CACHE_MANAGER_PREFIX + name);
+        return (T) getCacheByFullName(HazelcastCacheManager.CACHE_MANAGER_PREFIX + name);
     }
 
     public <K, V> ICache<K, V> getCacheByFullName(String fullName) {

@@ -20,6 +20,8 @@ import java.net.URI;
 
 /**
  * Utility class for various cache related operations to be used by our internal structure and end user.
+ *
+ * @since 3.7
  */
 public final class CacheUtil {
 
@@ -75,5 +77,43 @@ public final class CacheUtil {
         } else {
             return name;
         }
+    }
+
+    /**
+     * Convenience method to obtain the name of Hazelcast distributed object corresponding to the cache identified
+     * by the given arguments. The distributed object name returned by this method can be used to obtain the cache as
+     * a Hazelcast {@link ICache} as shown in this example:
+     * <pre>
+     *      HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+     *
+     *      // Obtain Cache via JSR-107 API
+     *      CachingProvider hazelcastCachingProvider = Caching.getCachingProvider(
+     *                  "com.hazelcast.cache.HazelcastCachingProvider",
+     *                  HazelcastCachingProvider.class.getClassLoader());
+     *      CacheManager cacheManager = hazelcastCachingProvider.getCacheManager();
+     *      Cache testCache = cacheManager.createCache("test", new MutableConfiguration&lt;String, String&gt;());
+     *
+     *      // URI and ClassLoader are null, since we created this cache with the default CacheManager,
+     *      // otherwise we should pass the owning CacheManager's URI & ClassLoader as arguments.
+     *      String distributedObjectName = CacheUtil.asDistributedObjectName("test", null, null);
+     *
+     *      // Obtain a reference to the backing ICache via HazelcastInstance.getDistributedObject.
+     *      // You may invoke this on any member of the cluster.
+     *      ICache&lt;String, String&gt; distributedObjectCache = (ICache) hz.getDistributedObject(
+     *                  ICacheService.SERVICE_NAME,
+     *                  distributedObjectName);
+     * </pre>
+     *
+     * @param cacheName   the simple name of the cache without any prefix
+     * @param uri         an implementation specific URI for the
+     *                    Hazelcast's {@link javax.cache.CacheManager} (null means use
+     *                    Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultURI()})
+     * @param classLoader the {@link ClassLoader}  to use for the
+     *                    Hazelcast's {@link javax.cache.CacheManager} (null means use
+     *                    Hazelcast's {@link javax.cache.spi.CachingProvider#getDefaultClassLoader()})
+     * @return the name of the {@link ICache} distributed object corresponding to given arguments.
+     */
+    public static String getDistributedObjectName(String cacheName, URI uri, ClassLoader classLoader) {
+        return HazelcastCacheManager.CACHE_MANAGER_PREFIX + getPrefixedCacheName(cacheName, uri, classLoader);
     }
 }

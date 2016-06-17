@@ -84,6 +84,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -299,7 +300,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
+    public <T extends Closeable & ICache> T getCache(String name) {
+        return (T) getCache1(name);
+    }
+
+    public <K, V> ICache<K, V> getCache1(String name) {
         checkNotNull(name, "Retrieving a cache instance with a null name is not allowed!");
         return getCacheByFullName(HazelcastCacheManager.CACHE_MANAGER_PREFIX + name);
     }

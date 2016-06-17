@@ -54,6 +54,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
@@ -192,8 +193,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
-        return getOriginal().getCache(name);
+    public <T extends Closeable & ICache> T getCache(String name) {
+        return getOriginal().<T>getCache(name);
     }
 
     @Override

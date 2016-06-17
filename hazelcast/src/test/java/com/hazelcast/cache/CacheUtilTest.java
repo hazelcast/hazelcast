@@ -1,35 +1,69 @@
 package com.hazelcast.cache;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collection;
 
 import static com.hazelcast.cache.CacheUtil.getPrefix;
 import static com.hazelcast.cache.CacheUtil.getPrefixedCacheName;
+import static com.hazelcast.cache.HazelcastCacheManager.CACHE_MANAGER_PREFIX;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheUtilTest extends HazelcastTestSupport {
 
-    private URI uri;
-    private ClassLoader classLoader;
+    private static final String CACHE_NAME = "MY-CACHE";
+    private static final String URI_SCOPE = "MY-SCOPE";
+    private static final String CLASSLOADER_SCOPE = "MY-CLASSLOADER";
 
-    @Before
-    public void setUp() throws Exception {
-        uri = new URI("MY-SCOPE");
-        classLoader = mock(ClassLoader.class);
-        when(classLoader.toString()).thenReturn("MY-CLASSLOADER");
+    @Parameter
+    public URI uri;
+
+    @Parameter(1)
+    public ClassLoader classLoader;
+
+    @Parameter(2)
+    public String expectedPrefix;
+
+    @Parameter(3)
+    public String expectedPrefixedCacheName;
+
+    @Parameter(4)
+    public String expectedDistributedObjectName;
+
+    // each entry is Object[] with
+    // {URI, ClassLoader, expected prefix, expected prefixed cache name, expected distributed object name}
+    @Parameters(name = "{index}: uri={0}, classLoader={1}")
+    public static Collection<Object[]> parameters() throws URISyntaxException {
+        final URI uri = new URI(URI_SCOPE);
+        final ClassLoader classLoader = mock(ClassLoader.class);
+        when(classLoader.toString()).thenReturn(CLASSLOADER_SCOPE);
+        return Arrays.asList(
+                new Object[] {null, null, null, CACHE_NAME, CACHE_MANAGER_PREFIX + CACHE_NAME},
+                new Object[] {uri, null, URI_SCOPE + "/", URI_SCOPE + "/" + CACHE_NAME,
+                              CACHE_MANAGER_PREFIX + URI_SCOPE + "/" + CACHE_NAME},
+                new Object[] {null, classLoader, CLASSLOADER_SCOPE + "/", CLASSLOADER_SCOPE + "/" + CACHE_NAME,
+                              CACHE_MANAGER_PREFIX + CLASSLOADER_SCOPE + "/" + CACHE_NAME},
+                new Object[] {uri, classLoader, URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/",
+                              URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/" + CACHE_NAME,
+                              CACHE_MANAGER_PREFIX + URI_SCOPE + "/" + CLASSLOADER_SCOPE + "/" + CACHE_NAME}
+        );
     }
 
     @Test
@@ -40,47 +74,19 @@ public class CacheUtilTest extends HazelcastTestSupport {
     @Test
     public void testGetPrefix() {
         String prefix = getPrefix(uri, classLoader);
-        assertEquals("MY-SCOPE/MY-CLASSLOADER/", prefix);
-    }
-
-    @Test
-    public void testGetPrefix_whenClassLoaderIsNull() {
-        String prefix = getPrefix(uri, null);
-        assertEquals("MY-SCOPE/", prefix);
-    }
-
-    @Test
-    public void testGetPrefix_whenUriIsNull() {
-        String prefix = getPrefix(null, classLoader);
-        assertEquals("MY-CLASSLOADER/", prefix);
-    }
-
-    @Test
-    public void testGetPrefix_whenUriAndClassLoaderAreNull() {
-        assertNull(getPrefix(null, null));
+        assertEquals(expectedPrefix, prefix);
     }
 
     @Test
     public void testGetPrefixedCacheName() {
-        String prefix = getPrefixedCacheName("MY-NAME", uri, classLoader);
-        assertEquals("MY-SCOPE/MY-CLASSLOADER/MY-NAME", prefix);
+        String prefix = getPrefixedCacheName(CACHE_NAME, uri, classLoader);
+        assertEquals(expectedPrefixedCacheName, prefix);
     }
 
     @Test
-    public void testGetPrefixedCacheName_whenClassLoaderIsNull() {
-        String prefix = getPrefixedCacheName("MY-NAME", uri, null);
-        assertEquals("MY-SCOPE/MY-NAME", prefix);
+    public void testGetDistributedObjectName() {
+        String distributedObjectName = CacheUtil.getDistributedObjectName(CACHE_NAME, uri, classLoader);
+        assertEquals(expectedDistributedObjectName, distributedObjectName);
     }
 
-    @Test
-    public void testGetPrefixedCacheName_whenUriIsNull() {
-        String prefix = getPrefixedCacheName("MY-NAME", null, classLoader);
-        assertEquals("MY-CLASSLOADER/MY-NAME", prefix);
-    }
-
-    @Test
-    public void testGetPrefixedCacheName_whenUriAndClassLoaderAreNull() {
-        String prefix = getPrefixedCacheName("MY-NAME", null, null);
-        assertEquals("MY-NAME", prefix);
-    }
 }
