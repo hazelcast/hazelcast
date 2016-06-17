@@ -43,7 +43,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-import static com.hazelcast.web.HazelcastInstanceLoader.*;
+import static com.hazelcast.web.HazelcastInstanceLoader.INSTANCE_NAME;
+import static com.hazelcast.web.HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION;
+import static com.hazelcast.web.HazelcastInstanceLoader.CONFIG_LOCATION;
+import static com.hazelcast.web.HazelcastInstanceLoader.STICKY_SESSION_CONFIG;
+import static com.hazelcast.web.HazelcastInstanceLoader.SESSION_TTL_CONFIG;
+import static com.hazelcast.web.HazelcastInstanceLoader.MAP_NAME;
+import static com.hazelcast.web.HazelcastInstanceLoader.USE_CLIENT;
 
 /**
  * Provides clustered sessions by backing session data with an {@link IMap}.

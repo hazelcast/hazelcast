@@ -129,7 +129,8 @@ final class HazelcastInstanceLoader {
     }
 
     private static HazelcastInstance createClientInstance(ClusteredSessionService sessionService,
-                                                          URL configUrl, String instanceName, boolean isSticky) throws ServletException {
+                                                          URL configUrl, String instanceName,
+                                                          boolean isSticky) throws ServletException {
         LOGGER.warning("Creating HazelcastClient for session replication...");
         LOGGER.warning("make sure this client has access to an already running cluster...");
         ClientConfig clientConfig;

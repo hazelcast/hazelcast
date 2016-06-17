@@ -19,13 +19,13 @@ package com.hazelcast.web;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;
@@ -48,7 +48,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.web.HazelcastInstanceLoader.*;
 
 
 /**
@@ -147,8 +146,8 @@ public class ClusteredSessionService {
     private void reconnectHZInstance() throws ServletException {
         LOGGER.info("Retrying the connection!!");
         lastConnectionTry = System.currentTimeMillis();
-        hazelcastInstance = createInstance(this);
-        clusterMap = hazelcastInstance.getMap(properties.getProperty(MAP_NAME));
+        hazelcastInstance = HazelcastInstanceLoader.createInstance(this);
+        clusterMap = hazelcastInstance.getMap(properties.getProperty(HazelcastInstanceLoader.MAP_NAME));
         sss = (SerializationServiceSupport) hazelcastInstance;
         setFailedConnection(false);
         LOGGER.info("Successfully Connected!");
