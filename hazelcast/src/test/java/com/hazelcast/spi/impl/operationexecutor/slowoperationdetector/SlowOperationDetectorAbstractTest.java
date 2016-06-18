@@ -256,17 +256,17 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    static abstract class CountDownLatchOperation extends AbstractOperation {
+    static abstract class JoinableOperation extends AbstractOperation {
 
-        private final CountDownLatch latch = new CountDownLatch(1);
+        private final CountDownLatch completedLatch = new CountDownLatch(1);
 
         void done() {
-            latch.countDown();
+            completedLatch.countDown();
         }
 
-        void await() {
+        void join() {
             try {
-                latch.await();
+                completedLatch.await();
             } catch (InterruptedException e) {
                 EmptyStatement.ignore(e);
             }
