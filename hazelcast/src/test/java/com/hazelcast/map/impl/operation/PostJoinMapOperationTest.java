@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -175,20 +174,22 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
 
     @Test
     public void testPostJoinMapOperation_mapWithInterceptor() {
+
         TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
 
+        // Given: A map with an interceptor on single-node Hazelcast
         HazelcastInstance hz1 = hzFactory.newHazelcastInstance();
         IMap<String, Person> map = hz1.getMap("map");
         map.put("foo", new Person("foo", 32));
         map.put("bar", new Person("bar", 35));
         map.addInterceptor(new FixedReturnInterceptor());
-
         assertEquals(RETURNED_FROM_INTERCEPTOR, map.get("foo"));
 
-        // new member joins cluster
+        // when: new member joins cluster
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance();
         waitAllForSafeState(hz1, hz2);
 
+        // then: values from map reference obtained from node 2 are returned by interceptor
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");
         assertEquals(RETURNED_FROM_INTERCEPTOR, mapOnNode2.get("whatever"));
 
@@ -200,24 +201,41 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         hzFactory.terminateAll();
     }
 
+    // This test is meant to verify that a query will be executed *with an index* on the joining node
+    // See also QueryIndexMigrationTest, which tests that results are as expected.
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/8257
-    public void testPostJoinMapOperation_mapWithIndex() {
+    public void testPostJoinMapOperation_mapWithIndex() throws InterruptedException {
         TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
 
+        // given: a map with index on a single-node HazelcastInstance
         HazelcastInstance hz1 = hzFactory.newHazelcastInstance();
         IMap<String, Person> map = hz1.getMap("map");
         map.put("foo", new Person("foo", 32));
         map.put("bar", new Person("bar", 70));
         map.addIndex("age", true);
 
+        // when: new node joins and original node is terminated
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance();
         waitAllForSafeState(hz1, hz2);
 
         hzFactory.terminate(hz1);
         waitAllForSafeState(hz1, hz2);
 
+        // then: once all migrations are committed, the query is executed *with* the index and
+        // returns the expected results.
         IMap<String, Person> mapOnNode2 = hz2.getMap("map");
+        MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
+        // Ensure MigrationAwareService.commitMigration has completed execution.
+        // There is a slim chance to observe mapService.getMigrationsInFlight()==0 while migration is still in progress,
+        // however for this to happen it would require that before & commit/rollback migration methods are executed in an
+        // interleaved fashion.
+        while (true) {
+            Thread.sleep(100);
+            if (mapService.getOwnerMigrationsInFlight() == 0) {
+                break;
+            }
+        }
+
         final AtomicInteger invocationCounter = new AtomicInteger(0);
         Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate(invocationCounter));
         assertEquals("isIndexed should have located an index", 1, invocationCounter.get());
@@ -230,6 +248,7 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
     public void testPostJoinMapOperation_whenMapHasNoData() {
         TestHazelcastInstanceFactory hzFactory = createHazelcastInstanceFactory(2);
 
+        // given: a single node HazelcastInstance with a map configured with index and interceptor
         HazelcastInstance hz1 = hzFactory.newHazelcastInstance();
         IMap<String, Person> map = hz1.getMap("map");
         map.addIndex("age", true);
@@ -237,10 +256,12 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
 
         assertEquals(RETURNED_FROM_INTERCEPTOR, map.get("foo"));
 
+        // when: another member joins the cluster
         HazelcastInstance hz2 = hzFactory.newHazelcastInstance();
         waitAllForSafeState(hz1, hz2);
+
+        // then: index & interceptor exist on internal MapContainer on node that joined the cluster
         MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
-        // verify index & interceptor exist on internal MapContainer
         MapContainer mapContainerOnNode2 = mapService.getMapServiceContext().getMapContainer("map");
         assertEquals(1,  mapContainerOnNode2.getIndexes().getIndexes().length);
         assertEquals(1,  mapContainerOnNode2.getInterceptorRegistry().getInterceptors().size());
