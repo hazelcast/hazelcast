@@ -133,13 +133,11 @@ public class TestCacheManager {
 
     public static class DummyBean implements IDummyBean {
 
-        @Cacheable("name")
         public String getName(int k) {
             Assert.fail("should not call this method!");
             return null;
         }
 
-        @Cacheable("city")
         public String getCity(int k) {
             Assert.fail("should not call this method!");
             return null;
@@ -147,7 +145,6 @@ public class TestCacheManager {
 
         final AtomicBoolean nullCall = new AtomicBoolean(false);
 
-        @Cacheable("null-map")
         public Object getNull() {
             if (nullCall.compareAndSet(false, true)) {
                 return null;
@@ -157,8 +154,7 @@ public class TestCacheManager {
         }
 
         final AtomicBoolean firstCall = new AtomicBoolean(false);
-
-        @Cacheable("map-with-ttl")
+        
         public String getNameWithTTL(){
             if (firstCall.compareAndSet(false, true)) {
                 return "ali";

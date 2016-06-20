@@ -29,7 +29,7 @@ public interface IDummyBean {
     @Cacheable("city")
     String getCity(int k);
 
-    @Cacheable("temp")
+    @Cacheable("null-map")
     Object getNull();
 
     @Cacheable("map-with-ttl")
