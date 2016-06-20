@@ -23,9 +23,8 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.nio.Address;
 import com.hazelcast.internal.partition.impl.MigrationManager;
-import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -37,6 +36,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -87,6 +87,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         }
 
         try {
+            executeBeforeMigrations();
             Collection<Operation> tasks = prepareMigrationOperations();
             long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
             invokeMigrationOperation(destination, replicaVersions, tasks);
@@ -172,6 +173,13 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     @Override
+    protected PartitionMigrationEvent getMigrationEvent() {
+        return new PartitionMigrationEvent(MigrationEndpoint.SOURCE,
+                migrationInfo.getPartitionId(), migrationInfo.getSourceCurrentReplicaIndex(),
+                migrationInfo.getSourceNewReplicaIndex());
+    }
+
+    @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
         if (throwable instanceof TargetNotMemberException) {
             return ExceptionAction.THROW_EXCEPTION;
@@ -184,10 +192,21 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         return returnResponse;
     }
 
-    public void handleMigrationResultFromTarget(Object result) {
+    private void handleMigrationResultFromTarget(Object result) {
         migrationInfo.doneProcessing();
         onMigrationComplete(Boolean.TRUE.equals(result));
         sendResponse(result);
+    }
+
+    @Override
+    void executeBeforeMigrations() throws Exception {
+        NodeEngine nodeEngine = getNodeEngine();
+        boolean ownerMigration = nodeEngine.getThisAddress().equals(migrationInfo.getSource());
+        if (!ownerMigration) {
+            return;
+        }
+
+        super.executeBeforeMigrations();
     }
 
     private Collection<Operation> prepareMigrationOperations() {
@@ -196,20 +215,9 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(),
                 migrationInfo.getDestinationNewReplicaIndex());
 
-        boolean ownerMigration = nodeEngine.getThisAddress().equals(migrationInfo.getSource());
-        PartitionMigrationEvent migrationEvent = null;
-        if (ownerMigration) {
-            migrationEvent = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId(),
-                    migrationInfo.getSourceCurrentReplicaIndex(), migrationInfo.getSourceNewReplicaIndex());
-        }
-
         Collection<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
-
-            if (ownerMigration) {
-                service.beforeMigration(migrationEvent);
-            }
 
             Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {

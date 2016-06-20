@@ -82,6 +82,39 @@ public class PartitionMigrationEvent extends EventObject {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PartitionMigrationEvent that = (PartitionMigrationEvent) o;
+
+        if (partitionId != that.partitionId) {
+            return false;
+        }
+        if (currentReplicaIndex != that.currentReplicaIndex) {
+            return false;
+        }
+        if (newReplicaIndex != that.newReplicaIndex) {
+            return false;
+        }
+        return migrationEndpoint == that.migrationEndpoint;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = migrationEndpoint.hashCode();
+        result = 31 * result + partitionId;
+        result = 31 * result + currentReplicaIndex;
+        result = 31 * result + newReplicaIndex;
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "PartitionMigrationEvent{"
                 + "migrationEndpoint=" + migrationEndpoint
