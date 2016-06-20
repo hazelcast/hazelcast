@@ -31,6 +31,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.EmptyStatement;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -44,6 +45,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -607,10 +609,9 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/6297
     public void testTakeInterruption() throws InterruptedException {
-        Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
+        Config config = new Config()
+                .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "10000");
 
         HazelcastInstance instance = createHazelcastInstance(config);
         final IQueue<Thread> queue = instance.getQueue(randomName());
@@ -633,10 +634,9 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/6297
     public void testPutInterruption() throws InterruptedException {
-        Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
+        Config config = new Config()
+                .setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "10000");
         config.getQueueConfig("default").setMaxSize(1);
 
         HazelcastInstance instance = createHazelcastInstance(config);
