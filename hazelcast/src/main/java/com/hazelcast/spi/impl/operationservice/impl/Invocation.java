@@ -314,7 +314,7 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
         // When a cluster is being merged into another one then local node is marked as not-joined and invocations are
         // notified with MemberLeftException.
         // We do not want to retry them before the node is joined again because partition table is stale at this point.
-        if (!context.node.joined() && !isJoinOperation(op)) {
+        if (!context.node.joined() && !isJoinOperation(op) && !(op instanceof AllowedDuringPassiveState)) {
             if (context.logger.isFinestEnabled()) {
                 context.logger.finest("Node is not joined. Re-scheduling " + this
                         + " to be executed in " + tryPauseMillis + " ms.");
