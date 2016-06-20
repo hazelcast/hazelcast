@@ -51,7 +51,6 @@ import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.ty
 public final class InboundResponseHandler implements PacketHandler, MetricsProvider {
 
     private final ILogger logger;
-    private final InternalSerializationService serializationService;
     private final InvocationRegistry invocationRegistry;
     private final NodeEngineImpl nodeEngine;
     @Probe(name = "responses[normal]", level = MANDATORY)
@@ -65,12 +64,8 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
     @Probe(name = "responses[missing]", level = MANDATORY)
     private final MwCounter responsesMissing = newMwCounter();
 
-    InboundResponseHandler(ILogger logger,
-                           InternalSerializationService serializationService,
-                           InvocationRegistry invocationRegistry,
-                           NodeEngineImpl nodeEngine) {
+    InboundResponseHandler(ILogger logger, InvocationRegistry invocationRegistry, NodeEngineImpl nodeEngine) {
         this.logger = logger;
-        this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;
         this.nodeEngine = nodeEngine;
     }

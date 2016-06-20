@@ -136,7 +136,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.logger = node.getLogger(OperationService.class);
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        this.backpressureRegulator = new BackpressureRegulator(node.getProperties(), logger);
+        this.backpressureRegulator = new BackpressureRegulator(
+                node.getProperties(), logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
@@ -145,16 +146,18 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.invocationRegistry = new InvocationRegistry(logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel);
 
         this.invocationMonitor = new InvocationMonitor(
-                nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(),
-                invocationRegistry, logger, (InternalSerializationService) nodeEngine.getSerializationService(),
-                nodeEngine.getServiceManager());
+                nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(), invocationRegistry,
+                node.getLogger(OperationServiceImpl.class), serializationService, nodeEngine.getServiceManager());
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.inboundResponseHandler = new InboundResponseHandler(
-                logger, node.getSerializationService(), invocationRegistry, nodeEngine);
+                logger, invocationRegistry, nodeEngine);
         this.asyncInboundResponseHandler = new AsyncInboundResponseHandler(
-                node.getHazelcastThreadGroup(), logger, inboundResponseHandler, node.getProperties());
+                node.getHazelcastThreadGroup(),
+                node.getLogger(AsyncInboundResponseHandler.class),
+                inboundResponseHandler,
+                node.getProperties());
 
         this.outboundResponseHandler = new OutboundResponseHandler(
                 nodeEngine.getLogger(OutboundResponseHandler.class), thisAddress, serializationService, node);
