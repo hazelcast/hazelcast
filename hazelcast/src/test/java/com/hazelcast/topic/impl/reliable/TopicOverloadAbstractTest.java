@@ -121,7 +121,6 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore("please see issues #6819")
     public void whenBlock_whenNoSpace() {
         for (int k = 0; k < ringbuffer.capacity(); k++) {
             topic.publish("old");
@@ -138,7 +137,7 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
             }
         });
 
-        // make sure it doesn't complete within 3 seconds. We have a 2 second error margin to prevent spurious test failures
+        // make sure it doesn't complete within 10 seconds. We have a 10s error margin to prevent spurious test failures
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -146,7 +145,7 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
                 assertEquals(tail, ringbuffer.tailSequence());
                 assertEquals(head, ringbuffer.headSequence());
             }
-        }, 3);
+        }, 10);
 
         assertCompletesEventually(f);
 
