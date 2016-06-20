@@ -102,10 +102,11 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     // and therefor the {@link OperationRunner#currentTask()} always returns null
     OperationRunnerImpl(
             OperationServiceImpl operationService,
-            int partitionId) {
+            int partitionId,
+            OutboundResponseHandler outboundResponseHandler) {
         super(partitionId);
         this.operationService = operationService;
-        this.outboundResponseHandler = operationService.outboundResponseHandler;
+        this.outboundResponseHandler = outboundResponseHandler;
         this.logger = operationService.logger;
         this.node = operationService.node;
         this.thisAddress = node.getThisAddress();

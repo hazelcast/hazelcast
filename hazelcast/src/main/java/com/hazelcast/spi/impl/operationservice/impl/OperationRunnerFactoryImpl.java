@@ -29,16 +29,18 @@ class OperationRunnerFactoryImpl implements OperationRunnerFactory {
 
     @Override
     public OperationRunner createAdHocRunner() {
-        return new OperationRunnerImpl(operationService, OperationRunnerImpl.AD_HOC_PARTITION_ID);
+        return new OperationRunnerImpl(
+                operationService, OperationRunnerImpl.AD_HOC_PARTITION_ID, operationService.outboundResponseHandler);
     }
 
     @Override
     public OperationRunner createPartitionRunner(int partitionId) {
-        return new OperationRunnerImpl(operationService, partitionId);
+        return new OperationRunnerImpl(operationService, partitionId, operationService.outboundResponseHandler);
     }
 
     @Override
     public OperationRunner createGenericRunner() {
-        return new OperationRunnerImpl(operationService, Operation.GENERIC_PARTITION_ID);
+        return new OperationRunnerImpl(
+                operationService, Operation.GENERIC_PARTITION_ID, operationService.outboundResponseHandler);
     }
 }

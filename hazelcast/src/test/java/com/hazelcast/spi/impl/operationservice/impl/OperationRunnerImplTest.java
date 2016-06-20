@@ -41,7 +41,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     private OperationServiceImpl operationService;
     private ClusterService clusterService;
     private OperationResponseHandler responseHandler;
-    private RemoteOperationResponseHandler remoteResponseHandler;
+    private OutboundResponseHandler remoteResponseHandler;
 
     @Before
     public void setup() {
@@ -50,7 +50,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         remote = cluster[1];
         operationService = (OperationServiceImpl) getOperationService(local);
         clusterService = getClusterService(local);
-        remoteResponseHandler = mock(RemoteOperationResponseHandler.class);
+        remoteResponseHandler = mock(OutboundResponseHandler.class);
         operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local), remoteResponseHandler);
         responseHandler = mock(OperationResponseHandler.class);
     }

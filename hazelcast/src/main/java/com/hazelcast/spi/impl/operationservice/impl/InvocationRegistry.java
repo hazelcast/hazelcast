@@ -160,7 +160,7 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
         return invocations.get(callId);
     }
 
-    public Invocation remove(long callId){
+    public Invocation remove(long callId) {
         return invocations.remove(callId);
     }
 

@@ -48,7 +48,7 @@ import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
  */
 //todo: we need to fix the magic numbers
 @SuppressWarnings("checkstyle:magicnumber")
-public abstract class Response implements IdentifiedDataSerializable{
+public abstract class Response implements IdentifiedDataSerializable {
     private static final boolean USE_BIG_ENDIAN = true;
 
     private static final int OFFSET_SERIALIZER_ID = HeapData.TYPE_OFFSET;
