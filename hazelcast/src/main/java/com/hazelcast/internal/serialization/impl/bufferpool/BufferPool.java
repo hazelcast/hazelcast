@@ -28,6 +28,8 @@ import com.hazelcast.nio.serialization.Data;
  */
 public interface BufferPool {
 
+    BufferObjectDataInput takeInputBuffer(byte[] data, int dataOffset);
+
     /**
      * Takes an BufferObjectDataOutput from the pool.
      *

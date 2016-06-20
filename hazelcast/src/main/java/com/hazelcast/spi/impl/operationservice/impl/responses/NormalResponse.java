@@ -81,7 +81,7 @@ public class NormalResponse extends Response {
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         // acks fit in a byte.
-        out.writeByte(backupAcks);
+        out.writeInt(backupAcks);
 
         final boolean isData = value instanceof Data;
         out.writeBoolean(isData);
@@ -95,7 +95,7 @@ public class NormalResponse extends Response {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        backupAcks = in.readByte();
+        backupAcks = in.readInt();
 
         final boolean isData = in.readBoolean();
         if (isData) {

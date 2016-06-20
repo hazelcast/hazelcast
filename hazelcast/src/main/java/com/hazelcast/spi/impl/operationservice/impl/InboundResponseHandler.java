@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -28,24 +27,29 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.BACKUP_ACK_RESPONSE;
+
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.ERROR_RESPONSE;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.backupAcks;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.callId;
+import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.typeId;
 
 /**
  * Responsible for handling responses for invocations. Based on the content of the response packet, it will lookup the
  * Invocation from the InvocationRegistry and notify the Invocation.
+ *
+ * The {@link InboundResponseHandler} will typically be called by the system that received and inbound response and
+ * needs to get it processed, e.g. the io-threads.
  */
-public final class ResponseHandler implements PacketHandler, MetricsProvider {
+public final class InboundResponseHandler implements PacketHandler, MetricsProvider {
 
     private final ILogger logger;
-    private final InternalSerializationService serializationService;
     private final InvocationRegistry invocationRegistry;
     private final NodeEngineImpl nodeEngine;
     @Probe(name = "responses[normal]", level = MANDATORY)
@@ -59,12 +63,8 @@ public final class ResponseHandler implements PacketHandler, MetricsProvider {
     @Probe(name = "responses[missing]", level = MANDATORY)
     private final MwCounter responsesMissing = newMwCounter();
 
-    ResponseHandler(ILogger logger,
-                    InternalSerializationService serializationService,
-                    InvocationRegistry invocationRegistry,
-                    NodeEngineImpl nodeEngine) {
+    InboundResponseHandler(ILogger logger, InvocationRegistry invocationRegistry, NodeEngineImpl nodeEngine) {
         this.logger = logger;
-        this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;
         this.nodeEngine = nodeEngine;
     }
@@ -76,28 +76,25 @@ public final class ResponseHandler implements PacketHandler, MetricsProvider {
 
     @Override
     public void handle(Packet packet) throws Exception {
-        Response response = serializationService.toObject(packet);
         Address sender = packet.getConn().getEndPoint();
+
+        byte[] bytes = packet.toByteArray();
         try {
-            if (response instanceof NormalResponse) {
-                NormalResponse normalResponse = (NormalResponse) response;
-                notifyNormalResponse(
-                        normalResponse.getCallId(),
-                        normalResponse.getValue(),
-                        normalResponse.getBackupAcks(),
-                        sender);
-            } else if (response instanceof BackupAckResponse) {
-                notifyBackupComplete(response.getCallId());
-            } else if (response instanceof CallTimeoutResponse) {
-                notifyCallTimeout(response.getCallId(), sender);
-            } else if (response instanceof ErrorResponse) {
-                ErrorResponse errorResponse = (ErrorResponse) response;
-                notifyErrorResponse(
-                        errorResponse.getCallId(),
-                        errorResponse.getCause(),
-                        sender);
-            } else {
-                logger.severe("Unrecognized response: " + response);
+            switch (typeId(bytes)) {
+                case NORMAL_RESPONSE:
+                    notifyNormalResponse(callId(bytes), packet, backupAcks(bytes), sender);
+                    break;
+                case BACKUP_ACK_RESPONSE:
+                    notifyBackupComplete(callId(bytes));
+                    break;
+                case ERROR_RESPONSE:
+                    notifyErrorResponse(callId(bytes), packet, sender);
+                    break;
+                case CALL_TIMEOUT_RESPONSE:
+                    notifyCallTimeout(callId(bytes), sender);
+                    break;
+                default:
+                    throw new IllegalStateException("Unrecognized response typeId:" + typeId(bytes));
             }
         } catch (Throwable e) {
             logger.severe("While processing response...", e);
@@ -143,6 +140,7 @@ public final class ResponseHandler implements PacketHandler, MetricsProvider {
 
     void notifyNormalResponse(long callId, Object value, int backupCount, Address sender) {
         responsesNormal.inc();
+
         Invocation invocation = invocationRegistry.get(callId);
 
         if (invocation == null) {

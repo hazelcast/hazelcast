@@ -44,7 +44,7 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * The AsyncResponsePacketHandler is a PacketHandler that asynchronously process operation-response packets.
+ * The AsyncResponsePacketHandler is a {@link PacketHandler} that asynchronously process operation-response packets.
  *
  * So when a response is received from a remote system, it is put in the responseQueue of the ResponseThread.
  * Then the ResponseThread takes it from this responseQueue and calls the {@link PacketHandler} for the
@@ -54,7 +54,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive currently.
  */
-public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
+public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvider {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -67,8 +67,10 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
     final ResponseThread responseThread;
     private final ILogger logger;
 
-    AsyncResponseHandler(HazelcastThreadGroup threadGroup, ILogger logger, PacketHandler responsePacketHandler,
-                         HazelcastProperties properties) {
+    AsyncInboundResponseHandler(HazelcastThreadGroup threadGroup,
+                                ILogger logger,
+                                PacketHandler responsePacketHandler,
+                                HazelcastProperties properties) {
         this.logger = logger;
         this.responseThread = new ResponseThread(threadGroup, responsePacketHandler, properties);
     }
@@ -117,7 +119,7 @@ public class AsyncResponseHandler implements PacketHandler, MetricsProvider {
      * The ResponseThread needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
      * is not going to schedule any operations on this task due to retry.
      */
-    final class ResponseThread extends Thread implements OperationHostileThread {
+    private final class ResponseThread extends Thread implements OperationHostileThread {
 
         private final BlockingQueue<Packet> responseQueue;
         private final PacketHandler responsePacketHandler;

@@ -27,12 +27,12 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
+public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private OperationServiceImpl operationService;
     private HazelcastInstance local;
-    private ResponseHandler responseHandler;
+    private InboundResponseHandler inboundResponseHandler;
 
     @Before
     public void setup() {
@@ -44,7 +44,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         operationService = getOperationServiceImpl(local);
         invocationRegistry = operationService.invocationRegistry;
-        responseHandler = operationService.getResponseHandler();
+        inboundResponseHandler = operationService.getInboundResponseHandler();
     }
 
     private Invocation newInvocation() {
@@ -67,7 +67,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         long callId = invocation.op.getCallId();
         Object value = "foo";
-        responseHandler.notifyNormalResponse(callId, value, 0, null);
+        inboundResponseHandler.notifyNormalResponse(callId, value, 0, null);
 
         assertEquals(value, invocation.future.join());
         assertInvocationDeregisteredEventually(callId);
@@ -80,7 +80,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.deregister(invocation);
 
-        responseHandler.notifyNormalResponse(callId, "foo", 0, null);
+        inboundResponseHandler.notifyNormalResponse(callId, "foo", 0, null);
 
         assertInvocationDeregisteredEventually(callId);
     }
@@ -92,11 +92,11 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         long callId = invocation.op.getCallId();
 
-        responseHandler.notifyBackupComplete(callId);
+        inboundResponseHandler.notifyBackupComplete(callId);
         assertSame(invocation, invocationRegistry.get(callId));
 
         Object value = "foo";
-        responseHandler.notifyNormalResponse(callId, value, 1, null);
+        inboundResponseHandler.notifyNormalResponse(callId, value, 1, null);
         assertInvocationDeregisteredEventually(callId);
 
         assertEquals(value, invocation.future.join());
@@ -112,7 +112,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         final long callId = invocation.op.getCallId();
 
         String result = "foo";
-        responseHandler.notifyNormalResponse(callId, result, 1, null);
+        inboundResponseHandler.notifyNormalResponse(callId, result, 1, null);
 
         assertEquals(result, invocation.future.get(1, TimeUnit.MINUTES));
         assertInvocationDeregisteredEventually(callId);
@@ -132,10 +132,10 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         long callId = invocation.op.getCallId();
         Object value = "foo";
-        responseHandler.notifyNormalResponse(callId, value, 1, null);
+        inboundResponseHandler.notifyNormalResponse(callId, value, 1, null);
         assertSame(invocation, invocationRegistry.get(callId));
 
-        responseHandler.notifyBackupComplete(callId);
+        inboundResponseHandler.notifyBackupComplete(callId);
         assertInvocationDeregisteredEventually(callId);
 
         assertEquals(value, invocation.future.join());
@@ -148,7 +148,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
         invocationRegistry.deregister(invocation);
 
-        responseHandler.notifyBackupComplete(callId);
+        inboundResponseHandler.notifyBackupComplete(callId);
         assertInvocationDeregisteredEventually(callId);
     }
 
@@ -160,7 +160,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
 
         long callId = invocation.op.getCallId();
-        responseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
+        inboundResponseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
 
         try {
             invocation.future.join();
@@ -178,7 +178,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.deregister(invocation);
 
-        responseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
+        inboundResponseHandler.notifyErrorResponse(callId, new ExpectedRuntimeException(), null);
 
         assertInvocationDeregisteredEventually(callId);
     }
@@ -191,7 +191,7 @@ public class ResponseHandler_NotifyTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
 
         long callId = invocation.op.getCallId();
-        responseHandler.notifyCallTimeout(callId, null);
+        inboundResponseHandler.notifyCallTimeout(callId, null);
 
         try {
             assertNull(invocation.future.join());

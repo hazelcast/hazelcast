@@ -235,7 +235,7 @@ final class OperationBackupHandler {
     }
 
     private Backup newBackup(BackupAwareOperation backupAwareOp, Object backupOp, long[] replicaVersions,
-            int replicaIndex, boolean respondBack) {
+                             int replicaIndex, boolean respondBack) {
         Operation op = (Operation) backupAwareOp;
         Backup backup;
         if (backupOp instanceof Operation) {

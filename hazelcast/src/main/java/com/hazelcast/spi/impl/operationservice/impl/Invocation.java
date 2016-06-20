@@ -358,7 +358,6 @@ public abstract class Invocation implements OperationResponseHandler, Runnable {
             NormalResponse normalResponse = (NormalResponse) response;
             notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupAcks());
         } else {
-            // there are no backups or the number of expected backups has returned; so signal the future that the result is ready
             complete(response);
         }
     }

@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -99,10 +100,14 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
         }
 
         Object value = unresolved;
-        if (deserialize && value instanceof Data) {
-            value = invocation.context.serializationService.toObject(value);
-            if (value == null) {
-                return null;
+        if (unresolved instanceof Data) {
+            if (deserialize) {
+                value = Response.deserializeValue(invocation.context.serializationService, (Data) unresolved);
+                if (value == null) {
+                    return null;
+                }
+            } else {
+                value = Response.getValueAsData(invocation.context.serializationService, (Data) unresolved);
             }
         }
 
