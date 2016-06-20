@@ -24,6 +24,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
 /**
  * @author mdogan 4/3/12
@@ -53,16 +54,47 @@ public class HazelcastCache implements Cache {
         if (key == null) {
             return null;
         }
-        final Object value = map.get(key);
+        final Object value = lookup(key);
         return value != null ? new SimpleValueWrapper(fromStoreValue(value)) : null;
     }
 
     public <T> T get(Object key, Class<T> type) {
-        Object value = fromStoreValue(this.map.get(key));
+        Object value = fromStoreValue(lookup(key));
         if (type != null && value != null && !type.isInstance(value)) {
             throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
         }
         return (T) value;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T get(Object key, Callable<T> valueLoader) {
+        Object value = lookup(key);
+        if (value != null) {
+            return (T) fromStoreValue(value);
+        } else {
+            this.map.lock(key);
+            try {
+                value = lookup(key);
+                if (value != null) {
+                    return (T) fromStoreValue(value);
+                } else {
+                    return loadValue(key, valueLoader);
+                }
+            } finally {
+                this.map.unlock(key);
+            }
+        }
+    }
+
+    private <T> T loadValue(Object key, Callable<T> valueLoader) {
+        T value;
+        try {
+            value = valueLoader.call();
+        } catch (Exception ex) {
+            throw new ValueRetrievalException(key, valueLoader, ex);
+        }
+        put(key, value);
+        return value;
     }
 
     @Override
@@ -101,6 +133,10 @@ public class HazelcastCache implements Cache {
     public ValueWrapper putIfAbsent(Object key, Object value) {
         Object result = map.putIfAbsent(key, toStoreValue(value));
         return result != null ? new SimpleValueWrapper(fromStoreValue(result)) : null;
+    }
+
+    private Object lookup(Object key) {
+        return this.map.get(key);
     }
 
     static final class NullDataSerializable implements DataSerializable {
