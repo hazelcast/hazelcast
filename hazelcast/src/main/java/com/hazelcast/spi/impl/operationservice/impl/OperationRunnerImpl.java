@@ -89,12 +89,11 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     private final Counter count;
     private final Address thisAddress;
     private final boolean staleReadOnMigrationEnabled;
+    private final OutboundResponseHandler outboundResponseHandler;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
     private InternalPartition internalPartition;
-
-    private final OperationResponseHandler remoteResponseHandler;
 
     // When partitionId >= 0, it is a partition specific
     // when partitionId = -1, it is generic
@@ -104,11 +103,11 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     OperationRunnerImpl(OperationServiceImpl operationService, int partitionId) {
         super(partitionId);
         this.operationService = operationService;
+        this.outboundResponseHandler = operationService.outboundResponseHandler;
         this.logger = operationService.logger;
         this.node = operationService.node;
         this.thisAddress = node.getThisAddress();
         this.nodeEngine = operationService.nodeEngine;
-        this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
         this.executedOperationsCount = operationService.completedOperationsCount;
         this.staleReadOnMigrationEnabled = !node.getProperties().getBoolean(DISABLE_STALE_READ_ON_PARTITION_MIGRATION);
 
@@ -397,7 +396,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet, node.getSerializationService());
-            operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
+            outboundResponseHandler.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {
@@ -408,7 +407,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     }
 
     private void setOperationResponseHandler(Operation op) {
-        OperationResponseHandler handler = remoteResponseHandler;
+        OperationResponseHandler handler = outboundResponseHandler;
         if (op.getCallId() == 0 || op.getCallId() == CALL_ID_LOCAL_SKIPPED) {
             if (op.returnsResponse()) {
                 throw new HazelcastException(

@@ -41,8 +41,11 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 /**
  * Responsible for handling responses for invocations. Based on the content of the response packet, it will lookup the
  * Invocation from the InvocationRegistry and notify the Invocation.
+ *
+ * The {@link InboundResponseHandler} will typically be called by the system that received and inbound response and
+ * needs to get it processed, e.g. the io-threads.
  */
-public final class ResponseHandler implements PacketHandler, MetricsProvider {
+public final class InboundResponseHandler implements PacketHandler, MetricsProvider {
 
     private final ILogger logger;
     private final InternalSerializationService serializationService;
@@ -59,10 +62,10 @@ public final class ResponseHandler implements PacketHandler, MetricsProvider {
     @Probe(name = "responses[missing]", level = MANDATORY)
     private final MwCounter responsesMissing = newMwCounter();
 
-    ResponseHandler(ILogger logger,
-                    InternalSerializationService serializationService,
-                    InvocationRegistry invocationRegistry,
-                    NodeEngineImpl nodeEngine) {
+    InboundResponseHandler(ILogger logger,
+                           InternalSerializationService serializationService,
+                           InvocationRegistry invocationRegistry,
+                           NodeEngineImpl nodeEngine) {
         this.logger = logger;
         this.serializationService = serializationService;
         this.invocationRegistry = invocationRegistry;
