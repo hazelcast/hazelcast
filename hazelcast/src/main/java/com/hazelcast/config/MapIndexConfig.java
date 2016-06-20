@@ -125,7 +125,7 @@ public class MapIndexConfig {
     public static String validateIndexAttribute(String attribute) {
         checkHasText(attribute, "Map index attribute must contain text");
         String keyPrefix = KEY_ATTRIBUTE_NAME.value();
-        if (attribute.startsWith(keyPrefix) & attribute.length() > keyPrefix.length()) {
+        if (attribute.startsWith(keyPrefix) && attribute.length() > keyPrefix.length()) {
             if (attribute.charAt(keyPrefix.length()) != '#') {
                 LOG.warning(KEY_ATTRIBUTE_NAME.value() + " used without a following '#' char in index attribute '"
                         + attribute + "'. Don't you want to index a key?");
