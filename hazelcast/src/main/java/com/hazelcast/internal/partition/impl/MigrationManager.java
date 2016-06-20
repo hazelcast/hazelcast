@@ -260,9 +260,6 @@ public class MigrationManager {
         return false;
     }
 
-    // suppressed intentionally since it is easier the follow the cases in one place.
-    // if this part gets more complicated, method can be divided into multiple methods
-    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     void scheduleActiveMigrationFinalization(final MigrationInfo migrationInfo) {
         partitionServiceLock.lock();
         try {
@@ -548,7 +545,7 @@ public class MigrationManager {
                 processNewPartitionState(newState);
 
                 if (ASSERTION_ENABLED) {
-                    migrationQueue.add(new AssertPartitionTableTask());
+                    migrationQueue.add(new AssertPartitionTableTask(partitionService.getMaxAllowedBackupCount()));
                 }
 
                 migrationQueue.add(new ProcessShutdownRequestsTask());
@@ -721,7 +718,13 @@ public class MigrationManager {
     }
 
     @SuppressWarnings({"checkstyle:npathcomplexity"})
-    private class AssertPartitionTableTask implements MigrationRunnable {
+    private final class AssertPartitionTableTask implements MigrationRunnable {
+
+        final int maxBackupCount;
+
+        private AssertPartitionTableTask(int maxBackupCount) {
+            this.maxBackupCount = maxBackupCount;
+        }
 
         @Override
         public void run() {
@@ -741,7 +744,6 @@ public class MigrationManager {
                 }
 
                 final InternalPartition[] partitions = partitionStateManager.getPartitions();
-                final int maxBackupCount = partitionService.getMaxAllowedBackupCount();
                 final Set<Address> replicas = new HashSet<Address>();
 
                 for (InternalPartition partition : partitions) {
