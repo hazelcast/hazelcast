@@ -18,12 +18,14 @@ package com.hazelcast.spi.discovery.multicast;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,6 +39,7 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
 
     Config config;
     HazelcastInstance[] instances;
+    TestHazelcastInstanceFactory factory;
 
     @Before
     public void setup() {
@@ -49,10 +52,22 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
     public void formClusterWithTwoMembersTest() throws InterruptedException {
         System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
         System.setProperty("java.net.preferIPv4Stack", "true");
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        factory = createHazelcastInstanceFactory(2);
         instances = factory.newInstances(config);
         assertClusterSizeEventually(2, instances[0]);
-        factory.shutdownAll();
     }
 
+    @Test(expected = ValidationException.class)
+    public void invalidPortPropertyTest() throws InterruptedException {
+        String xmlFileName = "hazelcast-multicast-plugin-invalid-port.xml";
+        InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
+        config = new XmlConfigBuilder(xmlResource).build();
+        factory = createHazelcastInstanceFactory(2);
+        instances = factory.newInstances(config);
+    }
+
+    @After
+    public void shutdown() {
+        factory.shutdownAll();
+    }
 }
