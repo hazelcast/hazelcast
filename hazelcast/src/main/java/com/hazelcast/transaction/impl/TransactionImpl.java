@@ -61,6 +61,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.waitUntilAllRespondedWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Boolean.TRUE;
@@ -235,7 +236,7 @@ public class TransactionImpl implements Transaction {
             createBackupLogs();
             state = PREPARING;
             List<Future> futures = transactionLog.prepare(nodeEngine);
-            waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+            waitUntilAllRespondedWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             state = PREPARED;
             replicateTxnLog();
         } catch (Throwable e) {

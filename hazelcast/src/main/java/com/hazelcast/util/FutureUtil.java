@@ -26,6 +26,7 @@ import com.hazelcast.transaction.TransactionTimedOutException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -91,6 +92,23 @@ public final class FutureUtil {
         }
     };
 
+    private static final class CollectAllExceptionHandler implements ExceptionHandler {
+
+        private List<Throwable> throwables;
+
+        private CollectAllExceptionHandler(int count) {
+            this.throwables = Collections.synchronizedList(new ArrayList<Throwable>(count));
+        }
+
+        @Override
+        public void handleException(Throwable throwable) {
+            throwables.add(throwable);
+        }
+
+        public List<Throwable> getThrowables() {
+            return throwables;
+        }
+    }
 
     /**
      * Handler for transaction specific rethrown of exceptions.
@@ -243,6 +261,19 @@ public final class FutureUtil {
     @PrivateApi
     public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit) {
         waitWithDeadline(futures, timeout, timeUnit, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
+    }
+
+    @PrivateApi
+    public static void waitUntilAllRespondedWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit,
+                                                         ExceptionHandler exceptionHandler) {
+        CollectAllExceptionHandler collector = new CollectAllExceptionHandler(futures.size());
+        waitWithDeadline(futures, timeout, timeUnit, collector);
+        final List<Throwable> throwables = collector.getThrowables();
+        synchronized (throwables) {
+            for (Throwable t : throwables) {
+                exceptionHandler.handleException(t);
+            }
+        }
     }
 
     @PrivateApi
