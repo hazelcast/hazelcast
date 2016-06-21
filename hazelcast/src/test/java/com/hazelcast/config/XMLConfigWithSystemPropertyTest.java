@@ -26,16 +26,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLDecoder;
 
+import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
+import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-// These tests manipulate system properties, therefore they must be run in serial mode.
+/**
+ * These tests manipulate system properties, therefore they must be run in serial mode.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class XMLConfigWithSystemPropertyTest {
@@ -59,24 +62,24 @@ public class XMLConfigWithSystemPropertyTest {
     }
 
     @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
-        File file = File.createTempFile("foo", "bar");
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void loadingThroughSystemProperty_nonExistingFile() throws Exception {
+        File file = createTempFile("foo", "bar");
         file.delete();
         System.setProperty("hazelcast.config", file.getAbsolutePath());
         new XmlConfigBuilder();
     }
 
     @Test
-    public void loadingThroughSystemProperty_existingFile() throws IOException {
-        String xml =
-                HAZELCAST_START_TAG +
-                        "    <group>\n" +
-                        "        <name>foobar</name>\n" +
-                        "        <password>dev-pass</password>\n" +
-                        "    </group>" +
-                        "</hazelcast>";
+    public void loadingThroughSystemProperty_existingFile() throws Exception {
+        String xml = HAZELCAST_START_TAG
+                + "    <group>\n"
+                + "        <name>foobar</name>\n"
+                + "        <password>dev-pass</password>\n"
+                + "    </group>"
+                + HAZELCAST_END_TAG;
 
-        File file = File.createTempFile("foo", "bar");
+        File file = createTempFile("foo", "bar");
         file.deleteOnExit();
         PrintWriter writer = new PrintWriter(file, "UTF-8");
         writer.println(xml);
@@ -90,13 +93,13 @@ public class XMLConfigWithSystemPropertyTest {
     }
 
     @Test(expected = HazelcastException.class)
-    public void loadingThroughSystemProperty_nonExistingClasspathResource() throws IOException {
+    public void loadingThroughSystemProperty_nonExistingClasspathResource() {
         System.setProperty("hazelcast.config", "classpath:idontexist");
         new XmlConfigBuilder();
     }
 
     @Test
-    public void loadingThroughSystemProperty_existingClasspathResource() throws IOException {
+    public void loadingThroughSystemProperty_existingClasspathResource() {
         System.setProperty("hazelcast.config", "classpath:test-hazelcast.xml");
 
         XmlConfigBuilder configBuilder = new XmlConfigBuilder();
