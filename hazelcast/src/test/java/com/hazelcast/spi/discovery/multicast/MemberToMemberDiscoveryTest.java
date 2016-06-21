@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,24 +36,29 @@ import java.io.InputStream;
 @Category(QuickTest.class)
 public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
 
-    Config config;
-    HazelcastInstance[] instances;
+    private Config config;
+    private TestHazelcastInstanceFactory factory;
 
     @Before
-    public void setup() {
+    public void setUp() {
         String xmlFileName = "hazelcast-multicast-plugin.xml";
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
         config = new XmlConfigBuilder(xmlResource).build();
+
+        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        factory = createHazelcastInstanceFactory(2);
+    }
+
+    @After
+    public void tearDown() {
+        factory.shutdownAll();
     }
 
     @Test
     public void formClusterWithTwoMembersTest() throws InterruptedException {
-        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        instances = factory.newInstances(config);
-        assertClusterSizeEventually(2, instances[0]);
-        factory.shutdownAll();
-    }
+        HazelcastInstance[] instances = factory.newInstances(config);
 
+        assertClusterSizeEventually(2, instances[0]);
+    }
 }

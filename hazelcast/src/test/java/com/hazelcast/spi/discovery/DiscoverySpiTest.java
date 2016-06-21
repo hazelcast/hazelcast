@@ -32,6 +32,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -84,8 +85,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class DiscoverySpiTest
-        extends HazelcastTestSupport {
+public class DiscoverySpiTest extends HazelcastTestSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(DiscoverySpiTest.class);
 
@@ -97,8 +97,7 @@ public class DiscoverySpiTest
 
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(1);
         try {
-            final HazelcastInstance hazelcastInstance1 = instanceFactory.newHazelcastInstance(config);
-
+            HazelcastInstance hazelcastInstance1 = instanceFactory.newHazelcastInstance(config);
             assertNotNull(hazelcastInstance1);
 
             Member localMember = hazelcastInstance1.getCluster().getLocalMember();
@@ -110,7 +109,6 @@ public class DiscoverySpiTest
             assertEquals(Double.MAX_VALUE, localMember.getDoubleAttribute("test-double"), 0);
             assertTrue(localMember.getBooleanAttribute("test-boolean"));
             assertEquals("TEST", localMember.getStringAttribute("test-string"));
-
         } finally {
             instanceFactory.shutdownAll();
         }
@@ -122,10 +120,12 @@ public class DiscoverySpiTest
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.7.xsd");
-        Schema schema = factory.newSchema(schemaResource);
+        assertNotNull(schemaResource);
 
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Source source = new StreamSource(xmlResource);
+
+        Schema schema = factory.newSchema(schemaResource);
         Validator validator = schema.newValidator();
         validator.validate(source);
     }
@@ -268,10 +268,12 @@ public class DiscoverySpiTest
     public void testSPIAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
         Config config = getDiscoverySPIConfig(xmlFileName);
-        // We create this instance in order to fully create Node
-        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        // we create this instance in order to fully create Node
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        Node node = TestUtil.getNode(hazelcastInstance);
+        assertNotNull(node);
 
-        MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
+        MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(node.getDiscoveryService());
         Collection<Member> members = createMembers();
         Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
 
@@ -282,6 +284,7 @@ public class DiscoverySpiTest
         hazelcastInstance.shutdown();
     }
 
+    @SuppressWarnings("unchecked")
     private static void setEnvironment(String key, String value) throws Exception {
         Class[] classes = Collections.class.getDeclaredClasses();
         Map<String, String> env = System.getenv();
@@ -289,8 +292,7 @@ public class DiscoverySpiTest
             if ("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
                 Field field = cl.getDeclaredField("m");
                 field.setAccessible(true);
-                Object obj = field.get(env);
-                Map<String, String> map = (Map<String, String>) obj;
+                Map<String, String> map = (Map<String, String>) field.get(env);
                 map.put(key, value);
             }
         }
@@ -304,7 +306,7 @@ public class DiscoverySpiTest
 
     private static class PropertyDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
-        public PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+        PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
             super(logger, properties);
         }
 
@@ -433,8 +435,8 @@ public class DiscoverySpiTest
         private final List<DiscoveryNode> discoveryNodes;
         private final DiscoveryNode discoveryNode;
 
-        public CollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
-                                           Map<String, Comparable> properties) {
+        CollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
+                                    Map<String, Comparable> properties) {
             super(logger, properties);
             this.discoveryNodes = discoveryNodes;
             this.discoveryNode = discoveryNode;
@@ -447,7 +449,8 @@ public class DiscoverySpiTest
             getLogger();
             getProperties();
         }
-        //Need to provide a custom impl
+
+        // need to provide a custom impl
         @Override
         public PartitionGroupStrategy getPartitionGroupStrategy() {
             return new SPIPartitionGroupStrategy();
@@ -504,8 +507,7 @@ public class DiscoverySpiTest
 
         private final DiscoveryNode discoveryNode;
 
-        public MetadataProvidingDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
-                                                  Map<String, Comparable> properties) {
+        MetadataProvidingDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
             super(logger, properties);
             this.discoveryNode = discoveryNode;
         }
@@ -535,7 +537,7 @@ public class DiscoverySpiTest
         }
     }
 
-    private static class SPIPartitionGroupStrategy implements PartitionGroupStrategy  {
+    private static class SPIPartitionGroupStrategy implements PartitionGroupStrategy {
 
         @Override
         public Iterable<MemberGroup> getMemberGroups() {
@@ -560,7 +562,7 @@ public class DiscoverySpiTest
         return members;
     }
 
-    private Config getDiscoverySPIConfig(String xmlFileName) {
+    private static Config getDiscoverySPIConfig(String xmlFileName) {
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
         config.getNetworkConfig().setPort(50001);
@@ -579,5 +581,4 @@ public class DiscoverySpiTest
         discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
         return config;
     }
-
 }

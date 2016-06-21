@@ -25,7 +25,7 @@ import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
- * Defines the name and default value for Multicast Discovery Strategy.
+ * Defines the name and default value for the Multicast Discovery Strategy.
  */
 public final class MulticastProperties {
 
@@ -35,7 +35,7 @@ public final class MulticastProperties {
     public static final PropertyDefinition PORT = property("port", INTEGER);
 
     /**
-     * Property used to define zones for node filtering
+     * Property used to define zones for node filtering.
      */
     public static final PropertyDefinition GROUP = property("group", STRING);
 
@@ -46,8 +46,7 @@ public final class MulticastProperties {
         return property(key, typeConverter, null);
     }
 
-    private static PropertyDefinition property(String key, PropertyTypeConverter typeConverter,
-                                               ValueValidator valueValidator) {
+    private static PropertyDefinition property(String key, PropertyTypeConverter typeConverter, ValueValidator valueValidator) {
         return new SimplePropertyDefinition(key, true, typeConverter, valueValidator);
     }
 }
