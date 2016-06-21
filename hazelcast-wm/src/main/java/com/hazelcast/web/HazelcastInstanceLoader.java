@@ -26,6 +26,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.UrlXmlConfig;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
@@ -52,6 +53,7 @@ final class HazelcastInstanceLoader {
     public static final String CLIENT_CONFIG_LOCATION = "client-config-location";
     public static final String STICKY_SESSION_CONFIG = "sticky-session";
     public static final String SESSION_TTL_CONFIG = "session-ttl-seconds";
+    public static final String MAP_NAME = "map-name";
 
     private static final String SESSION_TTL_DEFAULT_SECONDS = "1800";
 
@@ -60,9 +62,10 @@ final class HazelcastInstanceLoader {
     private HazelcastInstanceLoader() {
     }
 
-    public static HazelcastInstance createInstance(final ClusteredSessionService sessionService,
-                                                   final FilterConfig filterConfig, final Properties properties,
-                                                   final String mapName) throws ServletException {
+    public static HazelcastInstance createInstance(final ClusteredSessionService sessionService)
+            throws ServletException {
+
+        final Properties properties = sessionService.getProperties();
         final String instanceName = properties.getProperty(INSTANCE_NAME);
         final String configLocation = properties.getProperty(CONFIG_LOCATION);
         final String useClientProp = properties.getProperty(USE_CLIENT);
@@ -70,9 +73,9 @@ final class HazelcastInstanceLoader {
         final boolean useClient = !isEmpty(useClientProp) && Boolean.parseBoolean(useClientProp);
         URL configUrl = null;
         if (useClient && !isEmpty(clientConfigLocation)) {
-            configUrl = getConfigURL(filterConfig, clientConfigLocation);
+            configUrl = getConfigURL(sessionService.getFilterConfig(), clientConfigLocation);
         } else if (!isEmpty(configLocation)) {
-            configUrl = getConfigURL(filterConfig, configLocation);
+            configUrl = getConfigURL(sessionService.getFilterConfig(), configLocation);
         }
         String sessionTTLConfig = properties.getProperty(SESSION_TTL_CONFIG);
         if (useClient) {
@@ -80,9 +83,9 @@ final class HazelcastInstanceLoader {
                 throw new InvalidConfigurationException("session-ttl-seconds cannot be used with client/server mode.");
             }
             boolean isSticky = Boolean.valueOf(properties.getProperty(STICKY_SESSION_CONFIG));
-            return createClientInstance(sessionService, configUrl, isSticky);
+            return createClientInstance(sessionService, configUrl, instanceName, isSticky);
         }
-        Config config = getServerConfig(mapName, configUrl, sessionTTLConfig);
+        Config config = getServerConfig(properties.getProperty(MAP_NAME), configUrl, sessionTTLConfig);
         return createHazelcastInstance(sessionService, instanceName, config);
     }
 
@@ -126,7 +129,8 @@ final class HazelcastInstanceLoader {
     }
 
     private static HazelcastInstance createClientInstance(ClusteredSessionService sessionService,
-                                                          URL configUrl, boolean isSticky) throws ServletException {
+                                                          URL configUrl, String instanceName,
+                                                          boolean isSticky) throws ServletException {
         LOGGER.warning("Creating HazelcastClient for session replication...");
         LOGGER.warning("make sure this client has access to an already running cluster...");
         ClientConfig clientConfig;
@@ -144,6 +148,19 @@ final class HazelcastInstanceLoader {
         }
         ListenerConfig listenerConfig = new ListenerConfig(new ClientLifecycleListener(sessionService));
         clientConfig.addListenerConfig(listenerConfig);
+
+        if (!isEmpty(instanceName)) {
+            HazelcastInstance instance = HazelcastClient.getHazelcastClientByName(instanceName);
+            if (instance != null) {
+                return instance;
+            }
+            clientConfig.setInstanceName(instanceName);
+            try {
+                return HazelcastClient.newHazelcastClient(clientConfig);
+            } catch (DuplicateInstanceNameException e) {
+                return HazelcastClient.getHazelcastClientByName(instanceName);
+            }
+        }
         return HazelcastClient.newHazelcastClient(clientConfig);
     }
 

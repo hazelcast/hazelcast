@@ -49,6 +49,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 
+
 /**
  * ClusteredSessionService is a proxy class which delegates all
  * operations on distributed map to hazelcast cluster used for session
@@ -72,7 +73,6 @@ public class ClusteredSessionService {
 
     private final FilterConfig filterConfig;
     private final Properties properties;
-    private final String clusterMapName;
 
     private final Queue<AbstractMap.SimpleEntry<String, Boolean>> orphanSessions = new
             LinkedBlockingQueue<AbstractMap.SimpleEntry<String, Boolean>>();
@@ -86,17 +86,23 @@ public class ClusteredSessionService {
      *
      * @param filterConfig   the filter config
      * @param properties     the properties
-     * @param clusterMapName the cluster map name
      */
-    public ClusteredSessionService(FilterConfig filterConfig, Properties properties, String clusterMapName) {
+    public ClusteredSessionService(FilterConfig filterConfig, Properties properties) {
         this.filterConfig = filterConfig;
         this.properties = properties;
-        this.clusterMapName = clusterMapName;
         try {
             init();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
         }
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public FilterConfig getFilterConfig() {
+        return filterConfig;
     }
 
     public void setFailedConnection(boolean failedConnection) {
@@ -107,13 +113,13 @@ public class ClusteredSessionService {
         ensureInstance();
         es.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-            try {
-                ensureInstance();
-            } catch (Exception e) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.finest("Cannot connect hazelcast server", e);
+                try {
+                    ensureInstance();
+                } catch (Exception e) {
+                    if (LOGGER.isFinestEnabled()) {
+                        LOGGER.finest("Cannot connect hazelcast server", e);
+                    }
                 }
-            }
             }
         }, 2 * CLUSTER_CHECK_INTERVAL, CLUSTER_CHECK_INTERVAL, TimeUnit.SECONDS);
     }
@@ -140,8 +146,8 @@ public class ClusteredSessionService {
     private void reconnectHZInstance() throws ServletException {
         LOGGER.info("Retrying the connection!!");
         lastConnectionTry = System.currentTimeMillis();
-        hazelcastInstance = HazelcastInstanceLoader.createInstance(this, filterConfig, properties, clusterMapName);
-        clusterMap = hazelcastInstance.getMap(clusterMapName);
+        hazelcastInstance = HazelcastInstanceLoader.createInstance(this);
+        clusterMap = hazelcastInstance.getMap(properties.getProperty(HazelcastInstanceLoader.MAP_NAME));
         sss = (SerializationServiceSupport) hazelcastInstance;
         setFailedConnection(false);
         LOGGER.info("Successfully Connected!");
@@ -333,5 +339,3 @@ public class ClusteredSessionService {
         }
     }
 }
-
-
