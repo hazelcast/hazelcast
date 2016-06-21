@@ -104,7 +104,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
     OperationRunnerImpl(OperationServiceImpl operationService, int partitionId) {
         super(partitionId);
         this.operationService = operationService;
-        this.logger = operationService.logger;
+        this.logger = operationService.node.getLogger(OperationRunnerImpl.class);
         this.node = operationService.node;
         this.thisAddress = node.getThisAddress();
         this.nodeEngine = operationService.nodeEngine;

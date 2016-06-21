@@ -137,24 +137,28 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.logger = node.getLogger(OperationService.class);
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        this.backpressureRegulator = new BackpressureRegulator(node.getProperties(), logger);
+        this.backpressureRegulator = new BackpressureRegulator(
+                node.getProperties(), node.getLogger(BackpressureRegulator.class));
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
-        this.invocationRegistry = new InvocationRegistry(logger, backpressureRegulator.newCallIdSequence(), concurrencyLevel);
+        this.invocationRegistry = new InvocationRegistry(
+                node.getLogger(OperationServiceImpl.class),
+                backpressureRegulator.newCallIdSequence(), concurrencyLevel);
 
         this.invocationMonitor = new InvocationMonitor(
-                nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(),
-                invocationRegistry, logger, (InternalSerializationService) nodeEngine.getSerializationService(),
-                nodeEngine.getServiceManager());
+                nodeEngine, thisAddress, node.getHazelcastThreadGroup(), node.getProperties(), invocationRegistry,
+                node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
 
         this.operationBackupHandler = new OperationBackupHandler(this);
 
-        this.responseHandler = new ResponseHandler(logger, node.getSerializationService(), invocationRegistry, nodeEngine);
+        this.responseHandler = new ResponseHandler(
+                node.getLogger(ResponseHandler.class), node.getSerializationService(), invocationRegistry, nodeEngine);
         this.asyncResponseHandler = new AsyncResponseHandler(
-                node.getHazelcastThreadGroup(), logger, responseHandler, node.getProperties());
+                node.getHazelcastThreadGroup(), node.getLogger(AsyncResponseHandler.class),
+                responseHandler, node.getProperties());
 
         this.operationExecutor = new OperationExecutorImpl(
                 node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
