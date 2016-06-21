@@ -48,7 +48,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "        <import resource=\"\"/>\n" +
                 "   </network>" +
                 "</hazelcast>";
-        expectInvalid("<import> element can appear only in the top level of the XML");
+        expectInvalid();
         buildConfig(xml, null);
     }
 
@@ -58,7 +58,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "   <hazelcast>" +
                 "   </hazelcast>" +
                 "</hazelcast>";
-        expectInvalid("Invalid content was found starting with element");
+        expectInvalid();
         buildConfig(xml, null);
     }
 
@@ -150,7 +150,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "</hazelcast>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
-        expectInvalid("Cyclic loading of resource");
+        expectInvalid();
         buildConfig(config1Xml, null);
     }
 
@@ -166,7 +166,7 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(new FileOutputStream(config1), config1Xml);
         writeStringToStreamAndClose(new FileOutputStream(config2), config2Xml);
         writeStringToStreamAndClose(new FileOutputStream(config3), config3Xml);
-        expectInvalid("Cyclic loading of resource");
+        expectInvalid();
         buildConfig(config1Xml, null);
     }
 
@@ -177,7 +177,7 @@ public class XmlConfigImportVariableReplacementTest {
         String config1Xml = HAZELCAST_START_TAG +
                 "    <import resource='file:///" + config1.getAbsolutePath() + "'/>\n</hazelcast>";
         writeStringToStreamAndClose(os1, "");
-        expectInvalid("Premature end of file.");
+        expectInvalid();
         buildConfig(config1Xml, null);
     }
 
@@ -186,13 +186,13 @@ public class XmlConfigImportVariableReplacementTest {
         String xml = HAZELCAST_START_TAG +
                 "    <import resource=\"\"/>\n" +
                 "</hazelcast>";
-        expectInvalid("Failed to load resource:");
+        expectInvalid();
         buildConfig(xml, null);
     }
 
     @Test
     public void testImportNotExistingResourceThrowsException() throws Exception {
-        expectInvalid("Failed to load resource: notexisting.xml");
+        expectInvalid();
         String xml = HAZELCAST_START_TAG + "    <import resource=\"notexisting.xml\"/>\n</hazelcast>";
         buildConfig(xml, null);
     }
@@ -267,7 +267,8 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicateNetworkConfig() throws Exception {
-        expectDuplicateElementError("network");
+        expectInvalid();
+
         final String networkConfig =
                 "    <network>\n" +
                         "        <join>\n" +
@@ -280,7 +281,8 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicateGroupConfig() throws Exception {
-        expectDuplicateElementError("group");
+        expectInvalid();
+
         final String groupConfig =
                 "    <group>\n" +
                         "        <name>foobar</name>\n" +
@@ -291,14 +293,16 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicateLicenseKeyConfig() throws Exception {
-        expectDuplicateElementError("license-key");
+        expectInvalid();
+
         final String licenseConfig = "    <license-key>foo</license-key>";
         buildConfig(HAZELCAST_START_TAG + licenseConfig + licenseConfig + "</hazelcast>", null);
     }
 
     @Test
     public void testXmlDeniesDuplicatePropertiesConfig() throws Exception {
-        expectDuplicateElementError("properties");
+        expectInvalid();
+
         final String propertiesConfig =
                 "    <properties>\n" +
                         "        <property name='foo'>fooval</property>\n" +
@@ -308,7 +312,8 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicatePartitionGroupConfig() throws Exception {
-        expectDuplicateElementError("partition-group");
+        expectInvalid();
+
         final String partitionConfig =
                 "   <partition-group>\n" +
                         "      <member-group>\n" +
@@ -320,7 +325,8 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicateListenersConfig() throws Exception {
-        expectDuplicateElementError("listeners");
+        expectInvalid();
+
         final String listenersConfig =
                 "   <listeners>" +
                         "        <listener>foo</listener>\n\n" +
@@ -330,7 +336,8 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicateSerializationConfig() throws Exception {
-        expectDuplicateElementError("serialization");
+        expectInvalid();
+
         final String serializationConfig =
                 "       <serialization>\n" +
                         "        <portable-version>0</portable-version>\n" +
@@ -352,7 +359,8 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicateServicesConfig() throws Exception {
-        expectDuplicateElementError("services");
+        expectInvalid();
+
         final String servicesConfig =
                 "   <services>       " +
                         "       <service enabled=\"true\">\n" +
@@ -365,14 +373,15 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlDeniesDuplicateSecurityConfig() throws Exception {
-        expectDuplicateElementError("security");
+        expectInvalid();
+
         final String securityConfig = "   <security/>\n";
         buildConfig(HAZELCAST_START_TAG + securityConfig + securityConfig + "</hazelcast>", null);
     }
 
     @Test
     public void testXmlDeniesDuplicateMemberAttributesConfig() throws Exception {
-        expectDuplicateElementError("member-attributes");
+        expectInvalid();
         final String memberAttConfig =
                 "    <member-attributes>\n" +
                         "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
@@ -380,9 +389,6 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(HAZELCAST_START_TAG + memberAttConfig + memberAttConfig + "</hazelcast>", null);
     }
 
-    private void expectDuplicateElementError(String elName) {
-        expectInvalid("Duplicate '" + elName + "' definition found in XML configuration.");
-    }
 
     @Test
     public void testXmlVariableReplacementAsSubstring() throws Exception {
@@ -418,8 +424,8 @@ public class XmlConfigImportVariableReplacementTest {
         assertEquals(config.getProperty("prop2"), "value2");
     }
 
-    private void expectInvalid(String message) {
-        InvalidConfigurationTest.expectInvalid(rule, message);
+    private void expectInvalid() {
+        InvalidConfigurationTest.expectInvalid(rule);
     }
 
     private static File createConfigFile(String filename, String suffix) throws IOException {
