@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.cache.HazelcastCacheManager;
-import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClient;
@@ -47,7 +44,6 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
-import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
@@ -74,7 +70,6 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -127,7 +122,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
-import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -152,7 +146,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
@@ -184,6 +177,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final MetricsRegistryImpl metricsRegistry;
     private final Diagnostics diagnostics;
     private final SerializationService serializationService;
+    private final ClientICacheManager hazelcastCacheManager;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -226,6 +220,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         diagnostics = initDiagnostics(config);
 
         proxyManager.init(config);
+        hazelcastCacheManager = new ClientICacheManager(this);
     }
 
     private Diagnostics initDiagnostics(ClientConfig config) {
@@ -474,26 +469,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
-        checkNotNull(name, "Retrieving a cache instance with a null name is not allowed!");
-        return getCacheByFullName(HazelcastCacheManager.CACHE_MANAGER_PREFIX + name);
-    }
-
-    public <K, V> ICache<K, V> getCacheByFullName(String fullName) {
-        checkNotNull(fullName, "Retrieving a cache instance with a null name is not allowed!");
-        try {
-            return getDistributedObject(ICacheService.SERVICE_NAME, fullName);
-        } catch (ClientServiceNotFoundException e) {
-            // Cache support is not available at client side
-            throw new IllegalStateException("At client, " + ICacheService.CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE);
-        } catch (HazelcastException e) {
-            if (e.getCause() instanceof ServiceNotFoundException) {
-                // Cache support is not available at server side
-                throw new IllegalStateException("At server, " + ICacheService.CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE);
-            } else {
-                throw e;
-            }
-        }
+    public ClientICacheManager getCacheManager() {
+        return hazelcastCacheManager;
     }
 
     @Override

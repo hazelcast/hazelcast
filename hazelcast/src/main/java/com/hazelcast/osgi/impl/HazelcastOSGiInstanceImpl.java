@@ -16,7 +16,6 @@
 
 package com.hazelcast.osgi.impl;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.ClientService;
@@ -25,6 +24,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
@@ -134,8 +134,8 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
-        return delegatedInstance.getCache(name);
+    public ICacheManager getCacheManager() {
+        return delegatedInstance.getCacheManager();
     }
 
     @Override

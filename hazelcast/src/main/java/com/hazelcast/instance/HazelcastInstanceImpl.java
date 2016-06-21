@@ -16,9 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cache.HazelcastCacheManager;
-import com.hazelcast.cache.ICache;
-import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -34,7 +31,6 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
@@ -71,7 +67,6 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -112,6 +107,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     final HealthMonitor healthMonitor;
 
+    final HazelcastInstanceCacheManager hazelcastCacheManager;
+
     protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
             throws Exception {
         this.name = name;
@@ -139,6 +136,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
             initManagedContext(configuredManagedContext);
 
             this.healthMonitor = new HealthMonitor(node).start();
+            this.hazelcastCacheManager = new HazelcastInstanceCacheManager(this);
         } catch (Throwable e) {
             try {
                 // Terminate the node by terminating node engine,
@@ -299,22 +297,8 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
-        checkNotNull(name, "Retrieving a cache instance with a null name is not allowed!");
-        return getCacheByFullName(HazelcastCacheManager.CACHE_MANAGER_PREFIX + name);
-    }
-
-    public <K, V> ICache<K, V> getCacheByFullName(String fullName) {
-        checkNotNull(fullName, "Retrieving a cache instance with a null name is not allowed!");
-        try {
-            return getDistributedObject(ICacheService.SERVICE_NAME, fullName);
-        } catch (HazelcastException e) {
-            if (e.getCause() instanceof ServiceNotFoundException) {
-                throw new IllegalStateException(ICacheService.CACHE_SUPPORT_NOT_AVAILABLE_ERROR_MESSAGE);
-            } else {
-                throw e;
-            }
-        }
+    public HazelcastInstanceCacheManager getCacheManager() {
+        return hazelcastCacheManager;
     }
 
     @Override

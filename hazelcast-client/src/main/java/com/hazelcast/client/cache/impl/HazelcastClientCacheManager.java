@@ -112,7 +112,8 @@ public final class HazelcastClientCacheManager
         clientCacheProxyFactory.addCacheConfig(cacheConfig.getNameWithPrefix(), cacheConfig);
         try {
             ClientCacheProxy<K, V> clientCacheProxy =
-                    (ClientCacheProxy<K, V>) client.getCacheByFullName(cacheConfig.getNameWithPrefix());
+                    (ClientCacheProxy<K, V>) client.getCacheManager()
+                                                   .getCacheByFullName(cacheConfig.getNameWithPrefix());
             clientCacheProxy.setCacheManager(this);
             return clientCacheProxy;
         } catch (Throwable t) {
