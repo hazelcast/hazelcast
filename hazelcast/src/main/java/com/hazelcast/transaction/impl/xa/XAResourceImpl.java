@@ -17,16 +17,18 @@
 package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -48,6 +50,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.transaction.impl.xa.XAService.SERVICE_NAME;
@@ -59,18 +63,20 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public final class XAResourceImpl extends AbstractDistributedObject<XAService> implements HazelcastXAResource {
 
     private static final int DEFAULT_TIMEOUT_SECONDS = (int) MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
-    private static final ILogger LOGGER = Logger.getLogger(XAResourceImpl.class);
+
 
     private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
             = new ConcurrentHashMap<Xid, List<TransactionContext>>();
     private final String groupName;
     private final AtomicInteger timeoutInSeconds = new AtomicInteger(DEFAULT_TIMEOUT_SECONDS);
+    private final ILogger logger;
 
     public XAResourceImpl(NodeEngine nodeEngine, XAService service) {
         super(nodeEngine, service);
         GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
         groupName = groupConfig.getName();
+        logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
@@ -116,12 +122,12 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
     public void end(Xid xid, int flags) throws XAException {
         long threadId = currentThreadId();
         TransactionContext threadContext = threadContextMap.remove(threadId);
-        if (threadContext == null && LOGGER.isFinestEnabled()) {
-            LOGGER.finest("There is no TransactionContext for the current thread: " + threadId);
+        if (threadContext == null && logger.isFinestEnabled()) {
+            logger.finest("There is no TransactionContext for the current thread: " + threadId);
         }
         List<TransactionContext> contexts = xidContextMap.get(xid);
-        if (contexts == null && LOGGER.isFinestEnabled()) {
-            LOGGER.finest("There is no TransactionContexts for the given xid: " + xid);
+        if (contexts == null && logger.isFinestEnabled()) {
+            logger.finest("There is no TransactionContexts for the given xid: " + xid);
         }
     }
 
@@ -233,8 +239,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
         Collection<Member> memberList = clusterService.getMembers();
-        List<InternalCompletableFuture<SerializableList>> futureList
-                = new ArrayList<InternalCompletableFuture<SerializableList>>();
+        List<Future<SerializableList>> futureList = new ArrayList<Future<SerializableList>>();
         for (Member member : memberList) {
             if (member.localMember()) {
                 continue;
@@ -246,11 +251,25 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         }
         HashSet<SerializableXID> xids = new HashSet<SerializableXID>();
         xids.addAll(xaService.getPreparedXids());
-        for (InternalCompletableFuture<SerializableList> future : futureList) {
-            SerializableList xidSet = future.join();
-            for (Data xidData : xidSet) {
-                SerializableXID xid = nodeEngine.toObject(xidData);
-                xids.add(xid);
+
+        for (Future<SerializableList> future : futureList) {
+            try {
+                SerializableList xidSet = future.get();
+                for (Data xidData : xidSet) {
+                    SerializableXID xid = nodeEngine.toObject(xidData);
+                    xids.add(xid);
+                }
+            } catch (InterruptedException e) {
+                throw new XAException(XAException.XAER_RMERR);
+            } catch (MemberLeftException e) {
+                logger.warning("Member left while recovering", e);
+            } catch (ExecutionException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof HazelcastInstanceNotActiveException || cause instanceof TargetNotMemberException) {
+                    logger.warning("Member left while recovering", e);
+                } else {
+                    throw new XAException(XAException.XAER_RMERR);
+                }
             }
         }
         return xids.toArray(new SerializableXID[xids.size()]);
