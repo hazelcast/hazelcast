@@ -269,6 +269,7 @@ public final class FutureUtil {
         CollectAllExceptionHandler collector = new CollectAllExceptionHandler(futures.size());
         waitWithDeadline(futures, timeout, timeUnit, collector);
         final List<Throwable> throwables = collector.getThrowables();
+        // synchronized list does not provide thread-safety guarantee for iteration so we handle it ourselves.
         synchronized (throwables) {
             for (Throwable t : throwables) {
                 exceptionHandler.handleException(t);
