@@ -69,9 +69,19 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void evictionPolicyLRUSuccessfullyEvaluated() {
+    public void test_leastRecentlyAccessedEntry_isSelected_when_evictionPolicy_is_LRU() {
+        test_evictionPolicyLRU(false);
+    }
+
+    @Test
+    public void test_expiredEntry_hasMorePriority_than_leastRecentlyAccessedEntry_toBeEvicted_when_evictionPolicy_is_LRU() {
+        test_evictionPolicyLRU(true);
+    }
+
+    private void test_evictionPolicyLRU(boolean useExpiredEntry) {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
+        final int EXPECTED_EXPIRED_RECORD_VALUE = useExpiredEntry ? RECORD_COUNT / 4 : -1;
 
         EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
@@ -108,11 +118,15 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
                 // The record in the middle will be minimum access time.
                 // So, it will be selected for eviction
                 record.setAccessTime(baseTime - 1000);
+            } else if (i == EXPECTED_EXPIRED_RECORD_VALUE) {
+                record.setExpirationTime(System.currentTimeMillis());
             } else {
                 record.setAccessTime(creationTime + 1000);
             }
             records.add(new SimpleEvictionCandidate<Integer, CacheObjectRecord>(i, record));
         }
+
+        sleepAtLeastMillis(1);
 
         Iterable<EvictionCandidate<Integer, CacheObjectRecord>> evictedRecords =
                 evictionPolicyEvaluator.evaluate(records);
@@ -128,13 +142,27 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
 
         CacheObjectRecord evictedRecord = candidateEvictedRecord.getEvictable();
         assertNotNull(evictedRecord);
-        assertEquals(EXPECTED_EVICTED_RECORD_VALUE, evictedRecord.getValue());
+        if (useExpiredEntry) {
+            assertEquals(EXPECTED_EXPIRED_RECORD_VALUE, evictedRecord.getValue());
+        } else {
+            assertEquals(EXPECTED_EVICTED_RECORD_VALUE, evictedRecord.getValue());
+        }
     }
 
     @Test
-    public void evictionPolicyLFUSuccessfullyEvaluated() {
+    public void test_leastFrequentlyUsedEntry_isSelected_when_evictionPolicy_is_LFU() {
+        test_evictionPolicyLFU(false);
+    }
+
+    @Test
+    public void test_expiredEntry_hasMorePriority_than_leastFrequentlyUsedEntry_toBeEvicted_when_evictionPolicy_is_LFU() {
+        test_evictionPolicyLFU(true);
+    }
+
+    private void test_evictionPolicyLFU(boolean useExpiredEntry) {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
+        final int EXPECTED_EXPIRED_RECORD_VALUE = useExpiredEntry ? RECORD_COUNT / 4 : -1;
 
         EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
@@ -168,6 +196,8 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
                 // The record in the middle will be minimum access hit.
                 // So, it will be selected for eviction
                 record.setAccessHit(0);
+            }  else if (i == EXPECTED_EXPIRED_RECORD_VALUE) {
+                record.setExpirationTime(System.currentTimeMillis());
             } else {
                 record.setAccessHit(i + 1);
             }
@@ -188,7 +218,11 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
 
         CacheObjectRecord evictedRecord = candidateEvictedRecord.getEvictable();
         assertNotNull(evictedRecord);
-        assertEquals(EXPECTED_EVICTED_RECORD_VALUE, evictedRecord.getValue());
+        if (useExpiredEntry) {
+            assertEquals(EXPECTED_EXPIRED_RECORD_VALUE, evictedRecord.getValue());
+        } else {
+            assertEquals(EXPECTED_EVICTED_RECORD_VALUE, evictedRecord.getValue());
+        }
     }
 
 }

@@ -66,11 +66,11 @@ public class CacheEvictionConfig
     }
 
     @Override
-    public EvictionConfig getAsReadOnly() {
+    public CacheEvictionConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CacheEvictionConfigReadOnly(this);
         }
-        return readOnly;
+        return (CacheEvictionConfig) readOnly;
     }
 
     /**
