@@ -64,8 +64,6 @@ public class DefaultEvictionPolicyEvaluator<A, E extends Evictable>
             } else {
                 E evictable = currentEvictionCandidate.getEvictable();
 
-                assert evictable != null : "Evictable cannot be null!";
-
                 if (isExpired(now, evictable)) {
                     return returnEvictionCandidate(currentEvictionCandidate);
                 }
@@ -90,13 +88,14 @@ public class DefaultEvictionPolicyEvaluator<A, E extends Evictable>
     }
 
     private boolean isExpired(long now, Evictable evictable) {
+        boolean expired = false;
         // If evictable is also an expirable
         if (evictable instanceof Expirable) {
             Expirable expirable = (Expirable) evictable;
             // If there is an expired candidate, let's evict that one immediately
-            return expirable.isExpiredAt(now);
+            expired = expirable.isExpiredAt(now);
         }
-        return false;
+        return expired;
     }
 
 }
