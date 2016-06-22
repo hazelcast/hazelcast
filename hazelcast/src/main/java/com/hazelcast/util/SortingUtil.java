@@ -36,34 +36,6 @@ public final class SortingUtil {
     private SortingUtil() {
     }
 
-    public static boolean isSuitableForCompare(Comparator<Map.Entry> comparator,
-                                               IterationType iterationType,
-                                               Map.Entry entry) {
-        if (comparator != null) {
-            return true;
-        }
-        Object comparable;
-        switch (iterationType) {
-            case KEY:
-                comparable = entry.getKey();
-                break;
-            case VALUE:
-                comparable = entry.getValue();
-                break;
-            // Possibly ENTRY
-            default:
-                // If entry is comparable, we can compare them
-                if (entry instanceof Comparable) {
-                    comparable = entry;
-                } else {
-                    // Otherwise, comparing entries directly is not meaningful.
-                    // So keys can be used instead of entries.
-                    comparable = entry.getKey();
-                }
-        }
-        return comparable instanceof Comparable;
-    }
-
     public static int compare(Comparator<Map.Entry> comparator, IterationType iterationType,
                               Map.Entry entry1, Map.Entry entry2) {
         if (comparator != null) {
