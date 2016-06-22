@@ -94,8 +94,10 @@
     <suppress checks="MethodCount" files="com/hazelcast/osgi/impl/HazelcastOSGiInstanceImpl"/>
 
     <!-- Client -->
+    <suppress checks="MethodCount" files="com/hazelcast/client/cache/impl/ClientCacheProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientQueueProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientListProxy"/>
+    <suppress checks="ParameterNumber" files="com/hazelcast/client/proxy/ClientMapReduceProxy"/>
     <suppress checks="MethodCount|ClassFanOutComplexity" files="com/hazelcast/client/proxy/ClientMultiMapProxy"/>
     <suppress checks="FileLengthCheck|MethodCount|ClassFanOutComplexity" files="com/hazelcast/client/proxy/ClientMapProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
@@ -116,17 +118,13 @@
     <suppress checks="ClassFanOutComplexity|AnonInnerLength"
               files="com/hazelcast/client/connection/nio/ClientConnectionManagerImpl"/>
 
-    <!-- Client Protocol -->
-    <!-- Parameters classes are auto-generated -->
+    <!-- Client Protocol (auto-generated) -->
     <suppress checks="Header|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity|Whitespace|MethodParamPad"
               files="com/hazelcast/client/impl/protocol/DefaultMessageTaskFactoryProvider"/>
     <suppress checks="ExecutableStatementCount|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity"
               files="com/hazelcast/client/impl/protocol/ClientExceptionFactory.java"/>
-
-    <suppress checks="ParameterNumber" files="com/hazelcast/client/proxy/ClientMapReduceProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/ClientMessage"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/util/MessageFlyweight"/>
-    <suppress checks="MethodCount" files="com/hazelcast/client/cache/impl/ClientCacheProxy"/>
 
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com/hazelcast/monitor/"/>
@@ -154,7 +152,7 @@
     <suppress checks="MethodCount|NPathComplexity|MagicNumber" files="com/hazelcast/spi/Operation"/>
     <suppress checks="MethodCount|ClassFanOutComplexity" files="com/hazelcast/spi/impl/NodeEngineImpl"/>
     <suppress checks="ReturnCount" files="com/hazelcast/spi/impl/SpiPortableHook"/>
-    <!-- since this class needs to manage services, it knows about them, so it is fine to have lots of dependencies on these classes -->
+    <!-- since these classes need to manage services, it is fine to have lots of dependencies in them -->
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/spi/impl/servicemanager/impl/ServiceManager"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com/hazelcast/spi/impl/operationservice/impl/OperationServiceImpl"/>
@@ -192,7 +190,7 @@
     <!-- Topic -->
     <suppress checks="VisibilityModifier" files="com/hazelcast/topic/impl/TopicEvent"/>
 
-    <!-- Ascii -->
+    <!-- ASCII -->
     <suppress checks="MethodCount|ExecutableStatement|ClassDataAbstractionCoupling"
               files="com/hazelcast/internal/ascii/TextCommandServiceImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/internal/ascii/TextCommandServiceImpl"/>
@@ -328,7 +326,5 @@
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>
-
-    <suppress checks="" files="com.hazelcast.util.JVMUtil"/>
 
 </suppressions>

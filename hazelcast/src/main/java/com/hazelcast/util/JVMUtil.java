@@ -32,6 +32,10 @@ import static com.hazelcast.nio.UnsafeHelper.UNSAFE_AVAILABLE;
  */
 public final class JVMUtil {
 
+    /**
+     * Defines the costs for a reference in Bytes.
+     */
+    @SuppressWarnings("checkstyle:magicnumber")
     public static final int REFERENCE_COST_IN_BYTES = isCompressedOops() ? 4 : 8;
 
     private JVMUtil() {
