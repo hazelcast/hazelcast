@@ -18,7 +18,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,6 +35,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
@@ -116,9 +116,12 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/5499
     public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception {
+        final int maxCapacity = 1000;
+
         Config config = new Config();
+        config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
+
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
 
@@ -138,9 +141,9 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap map = client.getMap(MAP_NAME);
 
-        int maxCapacity = getMaxCapacity(server);
-        List<Future> futures = new ArrayList<Future>(maxCapacity * 2);
-        for (int i = 0; i < maxCapacity * 2; i++) {
+        int overflow = 100;
+        List<Future> futures = new ArrayList<Future>(maxCapacity + overflow);
+        for (int i = 0; i < maxCapacity + overflow; i++) {
             Future future = map.putAsync(i, i);
             futures.add(future);
         }
@@ -159,9 +162,13 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertEquals(map.size(), maxCapacity);
     }
 
-    @Test(expected = ReachedMaxSizeException.class)
+    @Test
     public void mapStore_OperationQueue_AtMaxCapacity_Test() throws Exception {
+        final int maxCapacity = 1000;
+
         Config config = new Config();
+        config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.getName(), String.valueOf(maxCapacity));
+
         MapConfig mapConfig = new MapConfig();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
 
@@ -182,12 +189,17 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
         final IMap map = client.getMap(MAP_NAME);
 
-        final int mapStoreQ_MaxCapacity = getMaxCapacity(server) + 1;
-        for (int i = 0; i < mapStoreQ_MaxCapacity; i++) {
+        for (int i = 0; i < maxCapacity; i++) {
             map.put(i, i);
         }
-    }
+        assertEquals(maxCapacity, map.size());
 
+        try {
+            map.put(maxCapacity, maxCapacity);
+            fail("Should not exceed max capacity");
+        } catch (ReachedMaxSizeException expected) {
+        }
+    }
 
     @Test
     public void destroyMap_configedWith_MapStore() throws Exception {
@@ -335,10 +347,6 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         public Set<Object> loadAllKeys() {
             return store.keySet();
         }
-    }
-
-    private int getMaxCapacity(HazelcastInstance instance) {
-        return getNode(instance).getProperties().getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
     }
 
     @Test
