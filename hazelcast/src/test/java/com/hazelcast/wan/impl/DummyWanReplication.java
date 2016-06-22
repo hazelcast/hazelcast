@@ -10,18 +10,16 @@ import com.hazelcast.wan.WanReplicationEvent;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class DummyWanReplication implements WanReplicationEndpoint {
+class DummyWanReplication implements WanReplicationEndpoint {
 
     Queue<WanReplicationEvent> eventQueue = new ConcurrentLinkedQueue<WanReplicationEvent>();
 
     @Override
     public void init(Node node, WanReplicationConfig wanReplicationConfig, WanPublisherConfig wanPublisherConfig) {
-
     }
 
     @Override
     public void shutdown() {
-
     }
 
     @Override
@@ -32,7 +30,6 @@ public class DummyWanReplication implements WanReplicationEndpoint {
 
     @Override
     public void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject) {
-        //NOP
     }
 
     @Override
@@ -42,11 +39,9 @@ public class DummyWanReplication implements WanReplicationEndpoint {
 
     @Override
     public void checkWanReplicationQueues() {
-
     }
 
-    public Queue<WanReplicationEvent> getEventQueue() {
+    Queue<WanReplicationEvent> getEventQueue() {
         return eventQueue;
     }
-
 }

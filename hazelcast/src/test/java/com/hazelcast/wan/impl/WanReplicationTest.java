@@ -6,6 +6,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
@@ -13,6 +14,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -23,95 +25,170 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationService;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Tests for WAN replication API
+ * Tests for WAN replication API.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class WanReplicationTest extends HazelcastTestSupport {
 
-    @Test
-    public void mapPutRemoveTest() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
-        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
-        IMap<Object, Object> map = instance1.getMap("dummy-wan-test-map");
+    private TestHazelcastInstanceFactory factory;
+    private HazelcastInstance instance1;
+    private HazelcastInstance instance2;
+    private IMap<Object, Object> map;
 
+    private DummyWanReplication impl1;
+    private DummyWanReplication impl2;
+
+    @Before
+    public void setUp() {
+        factory = createHazelcastInstanceFactory(2);
+    }
+
+    @After
+    public void tearDown() {
+        factory.terminateAll();
+    }
+
+    @Test
+    public void mapPutReplaceRemoveTest() {
+        initInstancesAndMap("wan-replication-test-put-replace-remove");
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
+            map.replace(i, i * 2);
             map.remove(i);
         }
 
-        DummyWanReplication impl1 = getWanReplicationImpl(instance1);
-        DummyWanReplication impl2 = getWanReplicationImpl(instance2);
+        assertTotalQueueSize(30);
+    }
 
-        //Number of total events should be 20. (10 put, 10 remove ops)
-        assertTotalQueueSize(20, impl1.getEventQueue(), impl2.getEventQueue());
+    @Test
+    public void mapSetReplaceRemoveIfSameTest() {
+        initInstancesAndMap("wan-replication-test-set-replace-remove-if-same");
+        for (int i = 0; i < 10; i++) {
+            map.set(i, i);
+            map.replace(i, i, i * 2);
+            map.remove(i, i * 2);
+        }
+
+        assertTotalQueueSize(30);
+    }
+
+    @Test
+    public void mapTryPutRemoveTest() {
+        initInstancesAndMap("wan-replication-test-try-put-remove");
+        for (int i = 0; i < 10; i++) {
+            assertTrue(map.tryPut(i, i, 10, TimeUnit.SECONDS));
+            assertTrue(map.tryRemove(i, 10, TimeUnit.SECONDS));
+        }
+
+        assertTotalQueueSize(20);
+    }
+
+    @Test
+    public void mapPutIfAbsentDeleteTest() {
+        initInstancesAndMap("wan-replication-test-put-if-absent-delete");
+        for (int i = 0; i < 10; i++) {
+            assertNull(map.putIfAbsent(i, i));
+            map.delete(i);
+        }
+
+        assertTotalQueueSize(20);
+    }
+
+    @Test
+    public void mapPutTransientTest() {
+        initInstancesAndMap("wan-replication-test-put-transient");
+        for (int i = 0; i < 10; i++) {
+            map.putTransient(i, i, 1, TimeUnit.SECONDS);
+        }
+
+        assertTotalQueueSize(10);
+    }
+
+    @Test
+    public void mapPutAllTest() {
+        Map<Object, Object> userMap = new HashMap<Object, Object>();
+        for (int i = 0; i < 10; i++) {
+            userMap.put(i, i);
+        }
+
+        initInstancesAndMap("wan-replication-test-put-all");
+        map.putAll(userMap);
+
+        assertTotalQueueSize(10);
     }
 
     @Test
     public void entryProcessorTest() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(getConfig());
-        HazelcastInstance instance2 = factory.newHazelcastInstance(getConfig());
-        IMap<Object, Object> map = instance1.getMap("dummy-wan-entryprocessor-test-map");
-
+        initInstancesAndMap("wan-replication-test-entry-processor");
         for (int i = 0; i < 10; i++) {
             map.put(i, i);
         }
 
-        DummyWanReplication impl1 = getWanReplicationImpl(instance1);
-        DummyWanReplication impl2 = getWanReplicationImpl(instance2);
-        assertTotalQueueSize(10, impl1.eventQueue, impl2.eventQueue);
+        assertTotalQueueSize(10);
 
-        //Clean event queues
+        // clean event queues
         impl1.eventQueue.clear();
         impl2.eventQueue.clear();
 
-        Set keySet = new HashSet();
+        InternalSerializationService serializationService = getSerializationService(instance1);
+        Set<Data> keySet = new HashSet<Data>();
         for (int i = 0; i < 10; i++) {
-            keySet.add(getSerializationService(instance1).toData(i));
+            keySet.add(serializationService.toData(i));
         }
 
-        //Multiple entry operations (update)
-        OperationFactory operationFactory
-                = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(), keySet, new UpdatingEntryProcessor());
+        // multiple entry operations (update)
+        OperationFactory operationFactory = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(), keySet,
+                new UpdatingEntryProcessor());
 
         InternalOperationService operationService = getOperationService(instance1);
         operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
 
-        //There should be 10 events since all entries should be processed
-        assertTotalQueueSize(10, impl1.eventQueue, impl2.eventQueue);
+        // there should be 10 events since all entries should be processed
+        assertTotalQueueSize(10);
 
-        //Multiple entry operations (remove)
-        OperationFactory deletingOperationFactory
-                = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(), keySet, new DeletingEntryProcessor());
+        // multiple entry operations (remove)
+        OperationFactory deletingOperationFactory = getOperationProvider(map).createMultipleEntryOperationFactory(map.getName(),
+                keySet, new DeletingEntryProcessor());
         operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, deletingOperationFactory);
 
-        //10 more event should be published
-        assertTotalQueueSize(20, impl1.eventQueue, impl2.eventQueue);
+        // 10 more event should be published
+        assertTotalQueueSize(20);
     }
 
     @Test
     public void programmaticImplCreationTest() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = getConfig();
-        WanPublisherConfig publisherConfig= config.getWanReplicationConfig("dummyWan").getWanPublisherConfigs().get(0);
+        WanPublisherConfig publisherConfig = config.getWanReplicationConfig("dummyWan").getWanPublisherConfigs().get(0);
         DummyWanReplication dummyWanReplication = new DummyWanReplication();
         publisherConfig.setImplementation(dummyWanReplication);
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        assertEquals(dummyWanReplication, getWanReplicationImpl(instance));
+        instance1 = factory.newHazelcastInstance(config);
+
+        assertEquals(dummyWanReplication, getWanReplicationImpl(instance1));
+    }
+
+    private void initInstancesAndMap(String name) {
+        instance1 = factory.newHazelcastInstance(getConfig());
+        instance2 = factory.newHazelcastInstance(getConfig());
+        map = instance1.getMap(name);
     }
 
     @Override
@@ -149,8 +226,14 @@ public class WanReplicationTest extends HazelcastTestSupport {
         return mapServiceContext.getMapOperationProvider(mapProxy.getName());
     }
 
-    private void assertTotalQueueSize(final int expectedQueueSize, final Queue<WanReplicationEvent> eventQueue1,
-                                      final Queue<WanReplicationEvent> eventQueue2) {
+    private void assertTotalQueueSize(final int expectedQueueSize) {
+        if (impl1 == null) {
+            impl1 = getWanReplicationImpl(instance1);
+            impl2 = getWanReplicationImpl(instance2);
+        }
+
+        final Queue<WanReplicationEvent> eventQueue1 = impl1.eventQueue;
+        final Queue<WanReplicationEvent> eventQueue2 = impl2.eventQueue;
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -159,8 +242,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         });
     }
 
-    private static class UpdatingEntryProcessor
-            implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
+    private static class UpdatingEntryProcessor implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
 
         @Override
         public Object process(Map.Entry<Object, Object> entry) {
@@ -179,8 +261,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DeletingEntryProcessor
-            implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
+    private static class DeletingEntryProcessor implements EntryProcessor<Object, Object>, EntryBackupProcessor<Object, Object> {
 
         @Override
         public Object process(Map.Entry<Object, Object> entry) {
@@ -199,4 +280,3 @@ public class WanReplicationTest extends HazelcastTestSupport {
         }
     }
 }
-
