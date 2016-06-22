@@ -16,7 +16,6 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
@@ -24,6 +23,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.ICountDownLatch;
@@ -192,8 +192,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
-    public <K, V> ICache<K, V> getCache(String name) {
-        return getOriginal().getCache(name);
+    public ICacheManager getCacheManager() {
+        return getOriginal().getCacheManager();
     }
 
     @Override

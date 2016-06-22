@@ -180,7 +180,8 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
-        CacheProxy<K, V> cacheProxy = (CacheProxy<K, V>) instance.getCacheByFullName(cacheConfig.getNameWithPrefix());
+        CacheProxy<K, V> cacheProxy = (CacheProxy<K, V>) instance.getCacheManager()
+                                                                 .getCacheByFullName(cacheConfig.getNameWithPrefix());
         cacheProxy.setCacheManager(this);
         return cacheProxy;
     }

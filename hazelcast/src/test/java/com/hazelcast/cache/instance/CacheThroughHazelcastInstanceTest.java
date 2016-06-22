@@ -48,7 +48,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
 
     private ICache retrieveCache(HazelcastInstance instance, String cacheName, boolean getCache) {
         return getCache
-                ? instance.getCache(cacheName)
+                ? instance.getCacheManager().getCache(cacheName)
                 : (ICache) instance.getDistributedObject(ICacheService.SERVICE_NAME,
                                                          HazelcastCacheManager.CACHE_MANAGER_PREFIX + cacheName);
     }
