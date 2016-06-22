@@ -84,8 +84,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
 
         if (nodeEngine.getNode().joined()) {
             ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Node is already joined... No need to finalize join...");
+            if (logger.isFineEnabled()) {
+                logger.fine("Node is already joined... No need to finalize join...");
             }
             return;
         }

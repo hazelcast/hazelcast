@@ -302,8 +302,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             node.setMasterAddress(null);
         }
 
-        if (logger.isFinestEnabled()) {
-            logger.finest(format("Old master: %s, new master: %s ", oldMasterAddress, node.getMasterAddress()));
+        if (logger.isFineEnabled()) {
+            logger.fine(format("Old master: %s, new master: %s ", oldMasterAddress, node.getMasterAddress()));
         }
 
         if (node.isMaster()) {
@@ -405,7 +405,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         if (currentMembersSize == newMembersSize) {
             Set<MemberInfo> currentMemberInfos = createMemberInfoSet(currentMembers.values());
             if (currentMemberInfos.containsAll(newMemberInfos)) {
-                logger.finest("Received a periodic member update, no need to process...");
+                logger.fine("Received a periodic member update, no need to process...");
             } else {
                 logger.warning("Received an inconsistent member update "
                         + "which contains new members and removes some of the current members! "
@@ -476,8 +476,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void connectionRemoved(Connection connection) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Removed connection " + connection.getEndPoint());
+        if (logger.isFineEnabled()) {
+            logger.fine("Removed connection " + connection.getEndPoint());
         }
         if (!node.joined()) {
             Address masterAddress = node.getMasterAddress();
@@ -495,8 +495,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         if (members == null || members.length == 0) {
             return;
         }
-        if (logger.isFinestEnabled()) {
-            logger.finest("Updating members " + Arrays.toString(members));
+        if (logger.isFineEnabled()) {
+            logger.fine("Updating members " + Arrays.toString(members));
         }
         lock.lock();
         try {
@@ -526,16 +526,16 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 setMembersRef(newMembers);
 
                 if (node.isMaster()) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(deadMember + " is dead, sending remove to all other members...");
+                    if (logger.isFineEnabled()) {
+                        logger.fine(deadMember + " is dead, sending remove to all other members...");
                     }
                     sendMemberRemoveOperation(deadMember);
                 }
 
                 final ClusterState clusterState = clusterStateManager.getState();
                 if (clusterState != ClusterState.ACTIVE) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
+                    if (logger.isFineEnabled()) {
+                        logger.fine(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
                     }
                     Map<Address, MemberImpl> membersRemovedInNotActiveState
                             = new LinkedHashMap<Address, MemberImpl>(membersRemovedInNotActiveStateRef.get());

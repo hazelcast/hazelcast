@@ -44,8 +44,8 @@ public class MasterClaimOperation extends AbstractOperation implements JoinOpera
             approvedAsMaster = false;
             logger.warning("This node requires MulticastJoin strategy!");
         }
-        if (logger.isFinestEnabled()) {
-            logger.finest("Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
+        if (logger.isFineEnabled()) {
+            logger.fine("Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
         }
     }
 

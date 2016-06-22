@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -138,8 +139,8 @@ public abstract class AbstractJoiner implements Joiner {
     private void postJoin() {
         blacklistedAddresses.clear();
 
-        if (logger.isFinestEnabled()) {
-            logger.finest("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
+        if (logger.isFineEnabled()) {
+            logger.fine("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         }
         if (node.getState() != NodeState.ACTIVE) {
             return;
@@ -163,7 +164,7 @@ public abstract class AbstractJoiner implements Joiner {
     private void ensureConnectionToAllMembers() {
         boolean allConnected = false;
         if (node.joined()) {
-            logger.finest("Waiting for all connections");
+            logger.fine("Waiting for all connections");
             int connectAllWaitSeconds = node.getProperties().getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
             while (checkCount++ < connectAllWaitSeconds && !allConnected) {
@@ -179,8 +180,8 @@ public abstract class AbstractJoiner implements Joiner {
                 for (Member member : members) {
                     if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
-                        if (logger.isFinestEnabled()) {
-                            logger.finest("Not-connected to " + member.getAddress());
+                        if (logger.isFineEnabled()) {
+                            logger.fine("Not-connected to " + member.getAddress());
                         }
                     }
                 }
@@ -210,19 +211,19 @@ public abstract class AbstractJoiner implements Joiner {
         try {
             boolean validJoinRequest = clusterJoinManager.validateJoinMessage(joinMessage);
             if (!validJoinRequest) {
-                logger.finest("Cannot process split brain merge message from " + joinMessage.getAddress()
+                logger.fine("Cannot process split brain merge message from " + joinMessage.getAddress()
                         + ", since join-message could not be validated.");
                 return false;
             }
         } catch (Exception e) {
-            logger.finest(e.getMessage());
+            logger.log(Level.FINE, "failure during validating join message", e);
             return false;
         }
 
         try {
             if (clusterService.getMember(joinMessage.getAddress()) != null) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Should not merge to " + joinMessage.getAddress()
+                if (logger.isFineEnabled()) {
+                    logger.fine("Should not merge to " + joinMessage.getAddress()
                             + ", because it is already member of this cluster.");
                 }
                 return false;
@@ -230,8 +231,8 @@ public abstract class AbstractJoiner implements Joiner {
 
             final ClusterState clusterState = clusterService.getClusterState();
             if (clusterState != ClusterState.ACTIVE) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Should not merge to " + joinMessage.getAddress() + ", because this cluster is in "
+                if (logger.isFineEnabled()) {
+                    logger.fine("Should not merge to " + joinMessage.getAddress() + ", because this cluster is in "
                             + clusterState + " state.");
                 }
                 return false;
@@ -264,8 +265,8 @@ public abstract class AbstractJoiner implements Joiner {
                 logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
                         + ", because : joinMessage.getDataMemberCount() > currentDataMemberCount ["
                         + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
-                if (logger.isFinestEnabled()) {
-                    logger.finest(joinMessage.toString());
+                if (logger.isFineEnabled()) {
+                    logger.fine(joinMessage.toString());
                 }
                 return true;
             } else if (targetDataMemberCount == currentDataMemberCount) {
@@ -274,8 +275,8 @@ public abstract class AbstractJoiner implements Joiner {
                     logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
                             + ", because : node.getThisAddress().hashCode() > joinMessage.address.hashCode() "
                             + ", this node member count: " + currentDataMemberCount);
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(joinMessage.toString());
+                    if (logger.isFineEnabled()) {
+                        logger.fine(joinMessage.toString());
                     }
                     return true;
                 } else {
@@ -295,8 +296,8 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected JoinMessage sendSplitBrainJoinMessage(Address target) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(node.getThisAddress() + " is connecting to " + target);
+        if (logger.isFineEnabled()) {
+            logger.fine(node.getThisAddress() + " is connecting to " + target);
         }
 
         Connection conn = node.connectionManager.getOrConnect(target, true);
@@ -323,7 +324,7 @@ public abstract class AbstractJoiner implements Joiner {
         try {
             return (JoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            logger.finest("Timeout during join check!", e);
+            logger.log(Level.FINE, "Timeout during join check!", e);
         } catch (Exception e) {
             logger.warning("Error during join check!", e);
         }

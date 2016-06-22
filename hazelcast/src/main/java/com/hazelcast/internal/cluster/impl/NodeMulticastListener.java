@@ -59,8 +59,8 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private void logDroppedMessage(Object msg) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Dropped: " + msg);
+        if (logger.isFineEnabled()) {
+            logger.fine("Dropped: " + msg);
         }
     }
 
@@ -118,8 +118,8 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private void logJoinMessageDropped(String masterHost) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(format(
+        if (logger.isFineEnabled()) {
+            logger.fine(format(
                     "JoinMessage from %s is dropped because its sender is not a trusted interface", masterHost));
         }
     }

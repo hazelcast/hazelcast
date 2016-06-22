@@ -44,8 +44,8 @@ public final class HeartbeatOperation extends AbstractClusterOperation
         MemberImpl member = service.getMember(getCallerAddress());
         if (member == null) {
             ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Heartbeat received from an unknown endpoint: " + getCallerAddress());
+            if (logger.isFineEnabled()) {
+                logger.fine("Heartbeat received from an unknown endpoint: " + getCallerAddress());
             }
             return;
         }

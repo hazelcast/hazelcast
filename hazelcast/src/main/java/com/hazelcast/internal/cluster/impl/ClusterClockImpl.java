@@ -50,8 +50,8 @@ public class ClusterClockImpl implements ClusterClock {
     }
 
     void setClusterTimeDiff(long diff) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Setting cluster time diff to " + diff + "ms.");
+        if (logger.isFineEnabled()) {
+            logger.fine("Setting cluster time diff to " + diff + "ms.");
         }
 
         if (abs(diff) > abs(maxClusterTimeDiff)) {
