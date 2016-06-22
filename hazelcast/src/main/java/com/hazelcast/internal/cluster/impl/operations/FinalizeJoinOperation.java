@@ -66,9 +66,12 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 ClusterState clusterState, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+                                 String clusterId, long clusterStartTime, ClusterState clusterState,
+                                 PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(members, masterTime, sendResponse);
         this.postJoinOp = postJoinOp;
+        this.clusterId = clusterId;
+        this.clusterStartTime = clusterStartTime;
         this.clusterState = clusterState;
         this.partitionRuntimeState = partitionRuntimeState;
     }
