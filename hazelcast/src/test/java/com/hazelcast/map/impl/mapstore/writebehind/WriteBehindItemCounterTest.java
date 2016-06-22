@@ -24,68 +24,65 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
     @Test
     public void testCounter_against_one_node_zero_backup() throws Exception {
         final int maxCapacityPerNode = 100;
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100)
                 .withWriteCoalescing(false)
-                .withWriteBehindQueueCapacity(maxCapacityPerNode);
+                .withWriteBehindQueueCapacity(maxCapacityPerNode)
+                .build();
 
-        final IMap<Object, Object> map = builder.build();
         populateMap(map, maxCapacityPerNode);
 
         assertEquals(maxCapacityPerNode, map.size());
     }
 
-
     @Test
     public void testCounter_against_many_nodes() throws Exception {
         final int maxCapacityPerNode = 100;
         final int nodeCount = 2;
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
                 .withNodeFactory(createHazelcastInstanceFactory(nodeCount))
                 .withBackupCount(0)
                 .withWriteCoalescing(false)
                 .withWriteBehindQueueCapacity(maxCapacityPerNode)
-                .withWriteDelaySeconds(100);
-        final IMap<Object, Object> map = builder.build();
-        // put slightly more number of entries which is higher than max write-behind queue capacity per node.
+                .withWriteDelaySeconds(100)
+                .build();
+
+        // put slightly more number of entries which is higher than max write-behind queue capacity per node
         populateMap(map, maxCapacityPerNode + 3);
 
         assertTrue(map.size() > maxCapacityPerNode);
     }
 
-
     @Test(expected = ReachedMaxSizeException.class)
     public void testCounter_whenMaxCapacityExceeded() throws Exception {
         final int maxCapacityPerNode = 100;
         final int nodeCount = 1;
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteCoalescing(false)
                 .withWriteBehindQueueCapacity(maxCapacityPerNode)
-                .withWriteDelaySeconds(100);
-        final IMap<Object, Object> map = builder.build();
+                .withWriteDelaySeconds(100)
+                .build();
 
-        // exceed max write-behind queue capacity per node.
+        // exceed max write-behind queue capacity per node
         populateMap(map, 2 * maxCapacityPerNode);
     }
 
-    private void populateMap(IMap map, int numberOfItems) {
+    private void populateMap(IMap<Integer, Integer> map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
             map.put(i, i);
         }
     }
-
-
 }

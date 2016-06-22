@@ -54,7 +54,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     @Test(expected = ReachedMaxSizeException.class)
     public void testWBQMaxSizeException() {
         final WriteBehindQueue<DelayedEntry> queue = createBoundedWBQ();
-        // put total 1001 items. Max allowed is 1000.
+        // put total 1001 items. Max allowed is 1000
         addEnd(1001, queue);
     }
 
@@ -65,7 +65,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         final WriteBehindQueue<DelayedEntry> queue2 = createBoundedWBQ(counter);
         final WriteBehindQueue<DelayedEntry> queue3 = createBoundedWBQ(counter);
         final WriteBehindQueue<DelayedEntry> queue4 = createBoundedWBQ(counter);
-        // put total 1001 items. Max allowed is 1000.
+        // put total 1001 items. Max allowed is 1000
         addEnd(10, queue1);
         addEnd(500, queue2);
         addEnd(400, queue3);
@@ -81,7 +81,6 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
         assertEquals(0, counter.intValue());
     }
-
 
     @Test
     public void testOffer_thenRemove_thenOffer() {
@@ -114,7 +113,6 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         assertEquals(0, queue.size());
     }
 
-
     @Test
     public void testClearFull() {
         final WriteBehindQueue<DelayedEntry> queue = createWBQ();
@@ -125,7 +123,6 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
         assertEquals(0, queue.size());
     }
-
 
     @Test
     public void testRemoveAll() {
@@ -138,12 +135,11 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         assertEquals(0, queue.size());
     }
 
-
     @Test
     public void testGet_onCoalescedWBQ_whenCount_smallerThanQueueSize() throws Exception {
         int queueSize = 100;
         int fetchNumberOfEntries = 10;
-        WriteBehindQueue wbq = createWBQ();
+        WriteBehindQueue<DelayedEntry> wbq = createWBQ();
 
         testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
     }
@@ -152,7 +148,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     public void testGet_onBoundedWBQ_whenCount_smallerThanQueueSize() throws Exception {
         int queueSize = 100;
         int fetchNumberOfEntries = 10;
-        WriteBehindQueue wbq = createBoundedWBQ();
+        WriteBehindQueue<DelayedEntry> wbq = createBoundedWBQ();
 
         testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
     }
@@ -161,7 +157,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     public void testGet_onCoalescedWBQ_whenCount_higherThanQueueSize() throws Exception {
         int queueSize = 100;
         int fetchNumberOfEntries = 10000;
-        WriteBehindQueue wbq = createWBQ();
+        WriteBehindQueue<DelayedEntry> wbq = createWBQ();
 
         testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
     }
@@ -170,7 +166,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
     public void testGet_onBoundedWBQ_whenCount_higherThanQueueSize() throws Exception {
         int queueSize = 100;
         int fetchNumberOfEntries = 10000;
-        WriteBehindQueue wbq = createBoundedWBQ();
+        WriteBehindQueue<DelayedEntry> wbq = createBoundedWBQ();
 
         testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
     }
@@ -212,18 +208,17 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         return list;
     }
 
-    private WriteBehindQueue createBoundedWBQ() {
+    private WriteBehindQueue<DelayedEntry> createBoundedWBQ() {
         final AtomicInteger counter = new AtomicInteger(0);
         return createBoundedWBQ(counter);
     }
 
-    private WriteBehindQueue createBoundedWBQ(AtomicInteger counter) {
+    private WriteBehindQueue<DelayedEntry> createBoundedWBQ(AtomicInteger counter) {
         final int maxSizePerNode = 1000;
         return createBoundedWriteBehindQueue(maxSizePerNode, counter);
     }
 
-    private WriteBehindQueue createWBQ() {
+    private WriteBehindQueue<DelayedEntry> createWBQ() {
         return createDefaultWriteBehindQueue();
     }
-
 }

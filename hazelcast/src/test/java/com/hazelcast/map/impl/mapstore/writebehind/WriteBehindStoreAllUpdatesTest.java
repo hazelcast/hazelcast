@@ -40,15 +40,15 @@ public class WriteBehindStoreAllUpdatesTest extends HazelcastTestSupport {
     @Test
     public void testAllUpdatesReflectedToMapStore() throws Exception {
         int nodeCount = 3;
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, String> mapStore = new MapStoreWithCounter<Integer, String>();
+        TestMapUsingMapStoreBuilder<Integer, String> builder = TestMapUsingMapStoreBuilder.<Integer, String>create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
                 .withNodeFactory(createHazelcastInstanceFactory(nodeCount))
                 .withBackupCount(0)
                 .withWriteCoalescing(false)
                 .withWriteDelaySeconds(3);
-        IMap<Object, Object> map = builder.build();
+        IMap<Integer, String> map = builder.build();
 
         for (int i = 0; i < 500; i++) {
             map.put(i, randomString());

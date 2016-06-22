@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -26,32 +28,31 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static WriteBehindQueue createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter) {
-        final WriteBehindQueue queue = createCyclicWriteBehindQueue();
-        final WriteBehindQueue boundedQueue = createBoundedWriteBehindQueue(maxCapacity, counter, queue);
+    public static WriteBehindQueue<DelayedEntry> createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter) {
+        final WriteBehindQueue<DelayedEntry> queue = createCyclicWriteBehindQueue();
+        final WriteBehindQueue<DelayedEntry> boundedQueue = createBoundedWriteBehindQueue(maxCapacity, counter, queue);
         return createSynchronizedWriteBehindQueue(boundedQueue);
     }
 
-    public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue() {
-        final WriteBehindQueue queue = createCoalescedWriteBehindQueue();
+    public static WriteBehindQueue<DelayedEntry> createDefaultWriteBehindQueue() {
+        final WriteBehindQueue<DelayedEntry> queue = createCoalescedWriteBehindQueue();
         return createSynchronizedWriteBehindQueue(queue);
     }
 
-    private static WriteBehindQueue createSynchronizedWriteBehindQueue(WriteBehindQueue queue) {
-        return new SynchronizedWriteBehindQueue(queue);
+    private static <T> WriteBehindQueue<T> createSynchronizedWriteBehindQueue(WriteBehindQueue<T> queue) {
+        return new SynchronizedWriteBehindQueue<T>(queue);
     }
 
-    private static WriteBehindQueue createCoalescedWriteBehindQueue() {
+    private static WriteBehindQueue<DelayedEntry> createCoalescedWriteBehindQueue() {
         return new CoalescedWriteBehindQueue();
     }
 
-    private static WriteBehindQueue createCyclicWriteBehindQueue() {
+    private static WriteBehindQueue<DelayedEntry> createCyclicWriteBehindQueue() {
         return new CyclicWriteBehindQueue();
     }
 
-    private static WriteBehindQueue createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter,
-                                                                  WriteBehindQueue queue) {
-        return new BoundedWriteBehindQueue(maxCapacity, counter, queue);
+    private static <T> WriteBehindQueue<T> createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter,
+                                                                  WriteBehindQueue<T> queue) {
+        return new BoundedWriteBehindQueue<T>(maxCapacity, counter, queue);
     }
-
 }

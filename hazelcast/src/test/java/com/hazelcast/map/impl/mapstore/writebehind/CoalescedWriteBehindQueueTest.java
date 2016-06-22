@@ -25,7 +25,6 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
     private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private CoalescedWriteBehindQueue queue = new CoalescedWriteBehindQueue();
 
-
     @Test
     public void test_addFirst() throws Exception {
         queue.addFirst(Collections.<DelayedEntry>singletonList(newEntry(1)));
@@ -76,7 +75,7 @@ public class CoalescedWriteBehindQueueTest extends HazelcastTestSupport {
         assertEquals(0, queue.size());
     }
 
-    protected DelayedEntry<Data, Object> newEntry(Object key) {
+    private DelayedEntry<Data, Object> newEntry(Object key) {
         return createWithoutValue(serializationService.toData(key));
     }
 }

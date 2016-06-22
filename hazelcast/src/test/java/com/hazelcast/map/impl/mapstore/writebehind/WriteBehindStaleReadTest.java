@@ -63,7 +63,6 @@ public class WriteBehindStaleReadTest extends HazelcastTestSupport {
 
         mapStore.waitForSecondStoreOperation.await();
         assertNull(mapStore.valueAfterMapGet.get());
-
     }
 
     private static Config createConfig(String mapName, WaitingMapStore mapStore) {
@@ -81,20 +80,20 @@ public class WriteBehindStaleReadTest extends HazelcastTestSupport {
         return config;
     }
 
-
     public static class WaitingMapStore<K, V> extends MapStoreAdapter<K, V> {
-        public Map<K, V> store;
-        public CountDownLatch waitAllWriteOperations;
-        public CountDownLatch waitForSecondStoreOperation;
+
         public IMap map;
-        public AtomicReference<Object> valueAfterMapGet = new AtomicReference<Object>();
+        public Map<K, V> store;
+
+        CountDownLatch waitAllWriteOperations;
+        CountDownLatch waitForSecondStoreOperation;
+        AtomicReference<Object> valueAfterMapGet = new AtomicReference<Object>();
 
         private AtomicInteger countAdd = new AtomicInteger();
 
         public WaitingMapStore() {
             store = new ConcurrentHashMap<K, V>();
         }
-
 
         @Override
         public void delete(final K key) {

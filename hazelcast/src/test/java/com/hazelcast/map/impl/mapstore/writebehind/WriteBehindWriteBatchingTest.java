@@ -18,8 +18,8 @@ public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
     @Test
     public void testWriteBatching() throws Exception {
         final int writeBatchSize = 8;
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -40,13 +40,11 @@ public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
                 assertTrue(numberOfBatchOperationsEqualWriteBatchSize >= expectedBatchOpCount);
             }
         }, 20);
-
     }
 
-    private void populateMap(IMap map, int numberOfItems) {
+    private void populateMap(IMap<Integer, Integer> map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
             map.put(i, i);
         }
     }
-
 }

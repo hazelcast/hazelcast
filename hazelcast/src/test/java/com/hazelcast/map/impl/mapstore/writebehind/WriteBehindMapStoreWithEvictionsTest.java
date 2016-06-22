@@ -29,8 +29,8 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -47,8 +47,8 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting_onSameKey() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -62,13 +62,13 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         map.evict(0);
         final int expectedLastValue = numberOfUpdates - 1;
 
-        assertFinalValueEquals(expectedLastValue, (Integer) map.get(0));
+        assertFinalValueEquals(expectedLastValue, map.get(0));
     }
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemove() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -88,8 +88,8 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_callEvictBeforePersisting_onSameKey_thenCallRemoveMultipleTimes() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -107,11 +107,10 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         assertNull(null, previousValue);
     }
 
-
     @Test
     public void evict_then_loadAll_onSameKey() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -128,18 +127,18 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
         map.evict(1);
 
-        final Set<Object> loadKeys = new HashSet<Object>();
+        final Set<Integer> loadKeys = new HashSet<Integer>();
         loadKeys.add(1);
 
         map.loadAll(loadKeys, true);
 
-        assertEquals(100, map.get(1));
+        assertEquals(100, map.get(1).intValue());
     }
 
     @Test
     public void evictAll_then_loadAll_onSameKey() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -156,20 +155,20 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
         map.evictAll();
 
-        final Set<Object> loadKeys = new HashSet<Object>();
+        final Set<Integer> loadKeys = new HashSet<Integer>();
         loadKeys.add(1);
 
         map.loadAll(loadKeys, true);
 
-        assertEquals(100, map.get(1));
+        assertEquals(100, map.get(1).intValue());
     }
 
     @Test
     public void testWriteBehindFlushPersistsAllRecords_afterShutdownAll() throws Exception {
         int nodeCount = 2;
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
                 .withNodeFactory(factory)
@@ -179,7 +178,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
                 .build();
         final int numberOfItems = 1000;
 
-        // add some expiration logic by setting a 10 seconds ttl to puts.
+        // add some expiration logic by setting a 10 seconds TTL to puts
         populateMap(map, numberOfItems, 10);
 
         factory.shutdownAll();
@@ -187,13 +186,12 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         assertEquals(numberOfItems, mapStore.countStore.get());
     }
 
-
     @Test
     public void testWriteBehind_shouldNotMakeDuplicateStoreOperationForAKey_uponEviction() throws Exception {
         final AtomicInteger storeCount = new AtomicInteger(0);
-        MapStore store = createSlowMapStore(storeCount);
+        MapStore<Integer, Integer> store = createSlowMapStore(storeCount);
 
-        IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(store)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -204,36 +202,35 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         map.put(1, 1);
         map.evict(1);
 
-        // give some time to process write-behind.
+        // give some time to process write-behind
         sleepSeconds(2);
 
         assertStoreCount(1, storeCount);
     }
 
-
     @Test
     public void testTransientlyPutKeysAreNotReachable_afterEviction() throws Exception {
         int numberOfItems = 1000;
-        IMap<Object, Object> map = createMapBackedByWriteBehindStore();
-        // 1. these puts are used to create write-behind-queues on partitions.
+        IMap<Integer, Integer> map = createMapBackedByWriteBehindStore();
+        // 1. these puts are used to create write-behind-queues on partitions
         for (int i = -1; i > -numberOfItems; i--) {
             map.put(i, i);
         }
-        // 2. put transient entries.
+        // 2. put transient entries
         for (int i = 0; i < numberOfItems; i++) {
             map.putTransient(i, i, 10, TimeUnit.SECONDS);
         }
-        // 3. evict all transient entries.
+        // 3. evict all transient entries
         for (int i = 0; i < numberOfItems; i++) {
             map.evict(i);
         }
-        // 4. expecting all transiently put entries are not reachable.
+        // 4. expecting all transiently put entries are not reachable
         assertEntriesRemoved(map, numberOfItems);
     }
 
-    private IMap<Object, Object> createMapBackedByWriteBehindStore() {
-        MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        return TestMapUsingMapStoreBuilder.create()
+    private IMap<Integer, Integer> createMapBackedByWriteBehindStore() {
+        MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        return TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -241,7 +238,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
                 .build();
     }
 
-    private void assertEntriesRemoved(IMap<Object, Object> map, int numberOfItems) {
+    private void assertEntriesRemoved(IMap<Integer, Integer> map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
             assertNull(i + " should not be in this map", map.get(i));
         }
@@ -256,7 +253,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         });
     }
 
-    private MapStore createSlowMapStore(final AtomicInteger storeCount) {
+    private MapStore<Integer, Integer> createSlowMapStore(final AtomicInteger storeCount) {
         return new MapStoreAdapter<Integer, Integer>() {
             @Override
             public void store(Integer key, Integer value) {
@@ -275,33 +272,31 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         }, 20);
     }
 
-
-    private void populateMap(IMap map, int numberOfItems) {
+    private void populateMap(IMap<Integer, Integer> map, int numberOfItems) {
         populateMap(map, numberOfItems, 0);
     }
 
-    private void populateMap(IMap map, int numberOfItems, int ttlSeconds) {
+    private void populateMap(IMap<Integer, Integer> map, int numberOfItems, int ttlSeconds) {
         for (int i = 0; i < numberOfItems; i++) {
             map.put(i, i, ttlSeconds, TimeUnit.SECONDS);
         }
     }
 
-    private void continuouslyUpdateKey(IMap map, int numberOfUpdates, int key) {
+    private void continuouslyUpdateKey(IMap<Integer, Integer> map, int numberOfUpdates, int key) {
         for (int i = 0; i < numberOfUpdates; i++) {
             map.put(key, i);
         }
     }
 
-    private void evictMap(IMap map, int numberOfItems) {
+    private void evictMap(IMap<Integer, Integer> map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
             map.evict(i);
         }
     }
 
-    private void assertFinalValueEqualsForEachEntry(IMap map, int numberOfItems) {
+    private void assertFinalValueEqualsForEachEntry(IMap<Integer, Integer> map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
-            assertFinalValueEquals(i, (Integer) map.get(i));
+            assertFinalValueEquals(i, map.get(i));
         }
     }
-
 }

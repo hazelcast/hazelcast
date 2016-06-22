@@ -11,14 +11,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
-    protected final Map<K, V> store = new ConcurrentHashMap();
+    protected final Map<K, V> store = new ConcurrentHashMap<K, V>();
 
     protected AtomicInteger countStore = new AtomicInteger(0);
     protected AtomicInteger countDelete = new AtomicInteger(0);
     protected AtomicInteger countLoad = new AtomicInteger(0);
     protected AtomicInteger batchCounter = new AtomicInteger(0);
     protected Map<Integer, Integer> batchOpCountMap = new ConcurrentHashMap<Integer, Integer>();
-
 
     public MapStoreWithCounter() {
     }
@@ -61,8 +60,8 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
 
     @Override
     public Map<K, V> loadAll(Collection<K> keys) {
-        Map result = new HashMap();
-        for (Object key : keys) {
+        Map<K, V> result = new HashMap<K, V>();
+        for (K key : keys) {
             final V v = store.get(key);
             if (v != null) {
                 result.put(key, v);
@@ -96,13 +95,12 @@ public class MapStoreWithCounter<K, V> implements MapStore<K, V> {
         return store.size();
     }
 
-
-    public int findNumberOfBatchsEqualWriteBatchSize(int writeBatchsize) {
+    public int findNumberOfBatchsEqualWriteBatchSize(int writeBatchSize) {
         int count = 0;
         final Map<Integer, Integer> batchOpCountMap = getBatchOpCountMap();
         final Collection<Integer> values = batchOpCountMap.values();
         for (Integer value : values) {
-            if (value == writeBatchsize) {
+            if (value == writeBatchSize) {
                 count++;
             }
         }

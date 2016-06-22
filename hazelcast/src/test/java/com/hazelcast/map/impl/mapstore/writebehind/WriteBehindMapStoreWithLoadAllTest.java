@@ -21,8 +21,8 @@ public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
 
     @Test
     public void testWriteBehind_loadAll() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -42,7 +42,7 @@ public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
         assertFinalValueEqualsForEachEntry(map, numberOfItems);
     }
 
-    private void populateMap(IMap map, int numberOfItems) {
+    private void populateMap(IMap<Integer, Integer> map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
             map.put(i, i);
         }
@@ -62,6 +62,4 @@ public class WriteBehindMapStoreWithLoadAllTest extends HazelcastTestSupport {
             assertFinalValueEquals(i, (Integer) map.get(i));
         }
     }
-
-
 }

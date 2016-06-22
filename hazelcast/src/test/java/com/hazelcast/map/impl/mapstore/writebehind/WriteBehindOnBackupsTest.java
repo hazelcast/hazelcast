@@ -25,7 +25,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -58,9 +57,9 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
     public void testBackupRemovesEntries_afterProcessingDelay() throws Exception {
         final int numberOfItems = 10;
         final String mapName = randomMapName();
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        TestMapUsingMapStoreBuilder<Object, Object> storeBuilder = TestMapUsingMapStoreBuilder.create();
-        final IMap<Object, Object> map = storeBuilder
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        TestMapUsingMapStoreBuilder<Integer, Integer> storeBuilder = TestMapUsingMapStoreBuilder.create();
+        final IMap<Integer, Integer> map = storeBuilder
                 .mapName(mapName)
                 .withMapStore(mapStore)
                 .withNodeCount(2)
@@ -79,9 +78,9 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
     @Test
     public void testPutTransientDoesNotStoreEntry_onBackupPartition() {
         String mapName = randomMapName();
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        TestMapUsingMapStoreBuilder<Object, Object> storeBuilder = TestMapUsingMapStoreBuilder.create();
-        final IMap<Object, Object> map = storeBuilder
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        TestMapUsingMapStoreBuilder<Integer, Integer> storeBuilder = TestMapUsingMapStoreBuilder.create();
+        final IMap<Integer, Integer> map = storeBuilder
                 .mapName(mapName)
                 .withMapStore(mapStore)
                 .withNodeCount(2)
@@ -103,7 +102,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
     @Category(SlowTest.class)
     public void testPutTransientDoesNotStoreEntry_onPromotedReplica() {
         String mapName = randomMapName();
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        final MapStoreWithCounter<String, Object> mapStore = new MapStoreWithCounter<String, Object>();
         TestMapUsingMapStoreBuilder<String, Object> storeBuilder = TestMapUsingMapStoreBuilder.create();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final IMap<String, Object> map = storeBuilder
@@ -139,8 +138,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
         Partition partition = partitionService.getPartition(key);
         Member owner = partition.getOwner();
 
-        for (int i = 0; i < nodes.length; i++) {
-            HazelcastInstance node = nodes[i];
+        for (HazelcastInstance node : nodes) {
             Member localMember = node.getCluster().getLocalMember();
             if (localMember.equals(owner)) {
                 return node;
@@ -167,7 +165,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
         assertTrueEventually(assertTask);
     }
 
-    private void populateMap(IMap map, int numberOfItems) {
+    private void populateMap(IMap<Integer, Integer> map, int numberOfItems) {
         for (int i = 0; i < numberOfItems; i++) {
             map.put(i, i);
         }
@@ -184,8 +182,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
             if (recordStore == null) {
                 continue;
             }
-            final MapDataStore<Data, Object> mapDataStore
-                    = recordStore.getMapDataStore();
+            final MapDataStore mapDataStore = recordStore.getMapDataStore();
             if (mapDataStore instanceof WriteBehindStore) {
                 size += ((WriteBehindStore) mapDataStore).getWriteBehindQueue().size();
             }

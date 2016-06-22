@@ -61,7 +61,6 @@ public class WriteBehindUponMigrationTest extends HazelcastTestSupport {
         assertNull(value);
     }
 
-
     private static Config createConfig(String mapName, MapStoreTest.SimpleMapStore store) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig

@@ -44,8 +44,8 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     @Test
     public void testStoreOperationDone_afterTemporaryMapStoreFailure() throws Exception {
-        final SelfHealingMapStore mapStore = new SelfHealingMapStore<Integer, Integer>();
-        final IMap map = TestMapUsingMapStoreBuilder.create()
+        final SelfHealingMapStore<Integer, Integer> mapStore = new SelfHealingMapStore<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -65,8 +65,8 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
     @Test
     public void testStoreOperationDone_afterTemporaryMapStoreFailure_whenNonWriteCoalescingModeOn() throws Exception {
-        final SelfHealingMapStore mapStore = new SelfHealingMapStore<Integer, Integer>();
-        final IMap map = TestMapUsingMapStoreBuilder.create()
+        final SelfHealingMapStore<Integer, Integer> mapStore = new SelfHealingMapStore<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -87,13 +87,10 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         });
     }
 
-
     static class SelfHealingMapStore<K, V> extends MapStoreAdapter<K, V> {
 
         private final ConcurrentMap<K, V> store = new ConcurrentHashMap<K, V>();
-
-        private final TemporarySuccessProducer temporarySuccessProducer
-                = new TemporarySuccessProducer(4);
+        private final TemporarySuccessProducer temporarySuccessProducer = new TemporarySuccessProducer(4);
 
         @Override
         public void store(K key, V value) {
@@ -116,12 +113,12 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
         private volatile long startMillis;
 
-        public TemporarySuccessProducer(long secondsPeriod) {
+        TemporarySuccessProducer(long secondsPeriod) {
             this.successGenerationPeriodInMillis = TimeUnit.SECONDS.toMillis(secondsPeriod);
             this.startMillis = Clock.currentTimeMillis();
         }
 
-        public void successOrException() {
+        void successOrException() {
             final long now = Clock.currentTimeMillis();
             final long elapsedTime = now - startMillis;
 
@@ -141,11 +138,10 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
     public void testOOMHandlerCalled_whenOOMEOccursDuringStoreOperations() throws Exception {
-        LeakyMapStore mapStore = new LeakyMapStore<Integer, Integer>();
-        IMap map = TestMapUsingMapStoreBuilder.create()
+        LeakyMapStore<Integer, Integer> mapStore = new LeakyMapStore<Integer, Integer>();
+        IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -161,12 +157,11 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
             }
         });
 
-        // trigger OOM exception creation in map-store call.
+        // trigger OOM exception creation in map-store call
         map.put(1, 2);
 
         assertOpenEventually("OutOfMemoryHandler should be called", OOMHandlerCalled);
     }
-
 
     /**
      * This map-store causes {@link OutOfMemoryError}.
@@ -178,6 +173,4 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
             throw new OutOfMemoryError("Error for testing map-store when OOM exception raised");
         }
     }
-
-
 }

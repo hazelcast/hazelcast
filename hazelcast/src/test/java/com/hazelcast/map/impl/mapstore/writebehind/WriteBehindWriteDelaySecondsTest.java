@@ -47,8 +47,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
         Config config = newMapStoredConfig(store, 20);
         HazelcastInstance instance = createHazelcastInstance(config);
 
-        IMap map = instance.getMap("default");
-
+        IMap<Integer, Integer> map = instance.getMap("default");
         int numberOfPuts = 2;
         for (int i = 0; i < numberOfPuts; i++) {
             map.put(i, i);
@@ -63,7 +62,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
         });
     }
 
-    protected Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
+    private Config newMapStoredConfig(MapStore store, int writeDelaySeconds) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
@@ -76,7 +75,6 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
         return config;
     }
 
-
     private static class TestMapStore extends MapStoreAdapter {
 
         private final AtomicInteger storeAll = new AtomicInteger();
@@ -86,26 +84,24 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
             storeAll.incrementAndGet();
         }
 
-        public int getStoreAllCount() {
+        int getStoreAllCount() {
             return storeAll.get();
         }
     }
-
 
     /**
      * Updates on same key should not shift store time.
      */
     @Test
     public void continuouslyUpdatedKey_shouldBeStored_inEveryWriteDelayTimeWindow() throws Exception {
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+        final MapStoreWithCounter<Integer, Integer> mapStore = new MapStoreWithCounter<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withWriteDelaySeconds(6)
                 .withPartitionCount(1)
                 .build();
-
 
         for (int i = 1; i <= 60; i++) {
             map.put(1, i);
@@ -117,7 +113,7 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
         // It should be bigger than 1.
 
         assertMinMaxStoreOperationsCount(2, mapStore);
-        final int countStore = mapStore.countStore.get();
+        mapStore.countStore.get();
     }
 
     private void assertMinMaxStoreOperationsCount(final int minimumExpectedStoreOperationCount,
