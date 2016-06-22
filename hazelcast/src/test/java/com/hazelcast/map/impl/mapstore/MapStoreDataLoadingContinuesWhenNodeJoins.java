@@ -30,8 +30,8 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,7 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -63,24 +62,17 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupport {
 
-    private static final ILogger logger = Logger.getLogger(MapStoreDataLoadingContinuesWhenNodeJoins.class);
+    private static final String MAP_NAME = "testMap";
+    private static final boolean SIMULATE_SECOND_NODE = true;
+    private static final int WRITE_DELAY_SECONDS = 5;
+    private static final int PRELOAD_SIZE = 1000;
+    private static final int MS_PER_LOAD = 300;
 
-    private static final String mapName = "testMap";
-
-    private static final int writeDelaySeconds = 5;
-
-    private static final int preloadSize = 1000;
-
-    private static final int msPerLoad = 300;
+    private static final ILogger LOGGER = Logger.getLogger(MapStoreDataLoadingContinuesWhenNodeJoins.class);
 
     private static final AtomicLong thread1Shutdown = new AtomicLong(-1L);
-
     private static final AtomicLong thread2Shutdown = new AtomicLong(-1L);
-
     private static final AtomicInteger mapSize = new AtomicInteger(-1);
-
-    private static final boolean simulateSecondNode = true;
-
 
     @Test(timeout = 600000)
     public void testNoDeadLockDuringJoin() throws Exception {
@@ -91,19 +83,19 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         // disable JMX to make sure lazy loading works asynchronously
         config.setProperty("hazelcast.jmx", "false");
         // get map config
-        MapConfig mapConfig = config.getMapConfig(mapName);
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
 
         // create shared map store implementation
         // - use slow loading (300ms per map entry)
         final CountDownLatch halfOfKeysAreLoaded = new CountDownLatch(1);
-        final InMemoryMapStore store = new InMemoryMapStore(msPerLoad, false, halfOfKeysAreLoaded);
-        store.preload(preloadSize);
+        final InMemoryMapStore store = new InMemoryMapStore(halfOfKeysAreLoaded, MS_PER_LOAD, false);
+        store.preload(PRELOAD_SIZE);
 
         // configure map store
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setInitialLoadMode(InitialLoadMode.LAZY);
-        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapStoreConfig.setWriteDelaySeconds(WRITE_DELAY_SECONDS);
         mapStoreConfig.setClassName(null);
         mapStoreConfig.setImplementation(store);
         mapConfig.setMapStoreConfig(mapStoreConfig);
@@ -124,7 +116,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 try {
                     // get map
                     // this will trigger loading the data
-                    IMap<String, String> map = hcInstance.getMap(mapName);
+                    IMap<String, String> map = hcInstance.getMap(MAP_NAME);
                     map.size();
                     node1FinishedLoading.countDown();
                 } finally {
@@ -143,10 +135,11 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
             public void run() {
                 HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
                 try {
-                    hcInstance.getMap(mapName);
-                    final int loadTimeMillis = msPerLoad * preloadSize;
+                    hcInstance.getMap(MAP_NAME);
+                    final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
                     node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
+                    EmptyStatement.ignore(e);
                 } finally {
                     thread2Shutdown.set(System.currentTimeMillis());
                     hcInstance.getLifecycleService().shutdown();
@@ -165,10 +158,8 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         }
     }
 
-
     @Test(timeout = 600000)
     public void testDataLoadedCorrectly() throws Exception {
-
         // create shared hazelcast config
         final Config config = new XmlConfigBuilder().build();
         config.setProperty("hazelcast.logging.type", "log4j");
@@ -176,19 +167,19 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         config.setProperty("hazelcast.jmx", "false");
 
         // get map config
-        MapConfig mapConfig = config.getMapConfig(mapName);
+        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
 
         // create shared map store implementation
         // - use slow loading (300ms per map entry)
         final CountDownLatch halfOfKeysAreLoaded = new CountDownLatch(1);
-        final InMemoryMapStore store = new InMemoryMapStore(300, false, halfOfKeysAreLoaded);
-        store.preload(preloadSize);
+        final InMemoryMapStore store = new InMemoryMapStore(halfOfKeysAreLoaded, 300, false);
+        store.preload(PRELOAD_SIZE);
 
         // configure map store
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setInitialLoadMode(InitialLoadMode.LAZY);
-        mapStoreConfig.setWriteDelaySeconds(writeDelaySeconds);
+        mapStoreConfig.setWriteDelaySeconds(WRITE_DELAY_SECONDS);
         mapStoreConfig.setClassName(null);
         mapStoreConfig.setImplementation(store);
         mapConfig.setMapStoreConfig(mapStoreConfig);
@@ -204,26 +195,26 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
             @Override
             public void run() {
-                HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
+                HazelcastInstance instance = factory.newHazelcastInstance(config);
                 // try-finally to stop hazelcast instance
                 node1Started.countDown();
                 try {
 
                     // get map
                     // this will trigger loading the data
-                    final IMap<String, String> map = hcInstance.getMap(mapName);
+                    final IMap<String, String> map = instance.getMap(MAP_NAME);
                     mapSize.set(map.size());
                     node1FinishedLoading.countDown();
                     assertTrueEventually(new AssertTask() {
                         @Override
                         public void run() throws Exception {
-                            assertEquals(preloadSize, map.size());
+                            assertEquals(PRELOAD_SIZE, map.size());
                         }
                     }, 5);
                     // -------------------------------------------------- {20s}
 
                 } finally {
-                    hcInstance.getLifecycleService().shutdown();
+                    instance.getLifecycleService().shutdown();
                 }
             }
         }, "Thread 1");
@@ -236,66 +227,51 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
             @Override
             public void run() {
-                HazelcastInstance hcInstance = factory.newHazelcastInstance(config);
+                HazelcastInstance instance = factory.newHazelcastInstance(config);
                 // try-finally to stop hazelcast instance
                 try {
                     // get map
-                    hcInstance.getMap(mapName);
-                    final int loadTimeMillis = msPerLoad * preloadSize;
+                    instance.getMap(MAP_NAME);
+                    final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
                     node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
+                    EmptyStatement.ignore(e);
                 } finally {
-                    hcInstance.getLifecycleService().shutdown();
+                    instance.getLifecycleService().shutdown();
                 }
             }
         }, "Thread 2");
-        if (simulateSecondNode) {
+        if (SIMULATE_SECOND_NODE) {
             thread2.start();
         }
 
         // join threads
         thread1.join();
-        if (simulateSecondNode) {
+        if (SIMULATE_SECOND_NODE) {
             thread2.join();
         }
     }
 
-
     public class InMemoryMapStore implements MapStore<String, String> {
 
-        // ----------------------------------------------------------------- config
-
-        private final int msPerLoad;
-
-        private final boolean sleepBeforeLoadAllKeys;
-
-        // ------------------------------------------------------------------ state
-
         private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
-
         private final AtomicInteger countLoadAllKeys = new AtomicInteger(0);
 
         private final CountDownLatch halfOfKeysAreLoaded;
+        private final int msPerLoad;
+        private final boolean sleepBeforeLoadAllKeys;
 
-        public InMemoryMapStore(int msPerLoad, boolean sleepBeforeLoadAllKeys, CountDownLatch halfOfKeysAreLoaded) {
+        InMemoryMapStore(CountDownLatch halfOfKeysAreLoaded, int msPerLoad, boolean sleepBeforeLoadAllKeys) {
+            this.halfOfKeysAreLoaded = halfOfKeysAreLoaded;
             this.msPerLoad = msPerLoad;
             this.sleepBeforeLoadAllKeys = sleepBeforeLoadAllKeys;
-            this.halfOfKeysAreLoaded = halfOfKeysAreLoaded;
         }
 
-        public void preload(int size) {
+        void preload(int size) {
             for (int i = 0; i < size; i++) {
                 store.put("k" + i, "v" + i);
             }
         }
-
-        // ---------------------------------------------------------------- getters
-
-        public int getCountLoadAllKeys() {
-            return countLoadAllKeys.get();
-        }
-
-        // ----------------------------------------------------- MapStore interface
 
         @Override
         public String load(String key) {
@@ -325,13 +301,11 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 }
                 count += 1;
             }
-
             return result;
         }
 
         @Override
         public Set<String> loadAllKeys() {
-
             // sleep 5s to highlight asynchronous behavior
             if (sleepBeforeLoadAllKeys) {
                 sleep(5000, true);
@@ -351,7 +325,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
         @Override
         public void storeAll(Map<String, String> map) {
-            TreeSet<String> setSorted = new TreeSet<String>(map.keySet());
             store.putAll(map);
         }
 
@@ -368,20 +341,12 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 store.remove(key);
             }
         }
-
     }
 
-    public void sleep(long ms, boolean log) {
-        try {
-            Thread.sleep(ms);
-            if (log) {
-                logger.info("Slept " + (ms / 1000) + "s.");
-            }
-        } catch (InterruptedException e) {
+    public void sleep(int ms, boolean log) {
+        sleepMillis(ms);
+        if (log) {
+            LOGGER.info("Slept " + TimeUnit.MILLISECONDS.toSeconds(ms) + "seconds.");
         }
     }
-
-
 }
-
-

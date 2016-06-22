@@ -155,5 +155,4 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         return cfg;
     }
-
 }

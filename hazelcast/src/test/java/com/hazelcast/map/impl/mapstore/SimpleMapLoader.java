@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class SimpleMapLoader implements MapLoader<Integer, Integer> {
+class SimpleMapLoader implements MapLoader<Integer, Integer> {
 
     final int size;
     final boolean slow;
@@ -49,5 +49,4 @@ public class SimpleMapLoader implements MapLoader<Integer, Integer> {
         }
         return keys;
     }
-
 }

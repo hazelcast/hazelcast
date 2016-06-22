@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CountingMapLoader extends SimpleMapLoader {
+class CountingMapLoader extends SimpleMapLoader {
 
     private AtomicInteger loadedValueCount = new AtomicInteger();
     private AtomicInteger loadAllKeysInvocations = new AtomicInteger();
@@ -61,7 +61,7 @@ public class CountingMapLoader extends SimpleMapLoader {
 
         private Iterator<T> iterator;
 
-        public CloseableIterator(Iterator<T> iterator) {
+        CloseableIterator(Iterator<T> iterator) {
             this.iterator = iterator;
         }
 
@@ -83,6 +83,5 @@ public class CountingMapLoader extends SimpleMapLoader {
         public void close() throws IOException {
             loadAllKeysClosed.set(true);
         }
-
     }
 }

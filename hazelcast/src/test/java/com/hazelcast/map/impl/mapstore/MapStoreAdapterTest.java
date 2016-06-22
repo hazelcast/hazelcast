@@ -41,7 +41,7 @@ public class MapStoreAdapterTest extends HazelcastTestSupport {
     @Test
     public void testStoreAll() {
         MockMapStoreAdapter adapter = new MockMapStoreAdapter();
-        Map map = new HashMap();
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
         map.put(1, 1);
         map.put(2, 2);
 
@@ -78,32 +78,32 @@ public class MapStoreAdapterTest extends HazelcastTestSupport {
         assertEquals(2, adapter.deleted.size());
     }
 
-    private class MockMapStoreAdapter extends MapStoreAdapter {
-        private List deleted;
-        private List stored;
-        private List loaded;
+    private class MockMapStoreAdapter extends MapStoreAdapter<Integer, Integer> {
+
+        private List<Object> deleted;
+        private List<Object> stored;
+        private List<Object> loaded;
 
         MockMapStoreAdapter() {
-            deleted = new LinkedList();
-            stored = new LinkedList();
-            loaded = new LinkedList();
+            deleted = new LinkedList<Object>();
+            stored = new LinkedList<Object>();
+            loaded = new LinkedList<Object>();
         }
 
-        public void delete(Object key) {
+        public void delete(Integer key) {
             deleted.add(key);
         }
 
-        public void store(Object key, Object value) {
+        public void store(Integer key, Integer value) {
             stored.add(new Object[]{key, value});
         }
 
-        public void load(Object key, Object value) {
+        public void load(Integer key, Integer value) {
             loaded.add(new Object[]{key, value});
         }
 
-        public Iterable loadAllKeys() {
+        public Iterable<Integer> loadAllKeys() {
             return super.loadAllKeys();
         }
-
     }
 }

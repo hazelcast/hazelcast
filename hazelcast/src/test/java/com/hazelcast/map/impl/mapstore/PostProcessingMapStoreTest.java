@@ -78,7 +78,6 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
             SampleObject o = map2.get(i);
             assertEquals(i + 1, o.version);
         }
-
     }
 
     @Test
@@ -119,7 +118,6 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         assertOpenEventually(latch);
     }
 
-
     @Test
     public void testEntryListenerIncludesTheProcessedValue_onEntryProcessor() {
         IMap<Integer, SampleObject> map = createInstanceAndGetMap();
@@ -138,17 +136,17 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         }, true);
         for (int i = 0; i < count; i++) {
             map.put(i, new SampleObject(i));
-            map.executeOnKey(i, new EntryProcessor() {
+            map.executeOnKey(i, new EntryProcessor<Integer, SampleObject>() {
                 @Override
-                public Object process(Map.Entry entry) {
-                    SampleObject value = (SampleObject) entry.getValue();
+                public Object process(Map.Entry<Integer, SampleObject> entry) {
+                    SampleObject value = entry.getValue();
                     value.version++;
                     entry.setValue(value);
                     return null;
                 }
 
                 @Override
-                public EntryBackupProcessor getBackupProcessor() {
+                public EntryBackupProcessor<Integer, SampleObject> getBackupProcessor() {
                     return null;
                 }
             });
@@ -167,7 +165,6 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
         warmUpPartitions(instance);
         return instance.getMap(name);
     }
-
 
     public static class IncrementerPostProcessingMapStore implements MapStore<Integer, SampleObject>, PostProcessingMapStore {
 
@@ -222,7 +219,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
 
         public int version;
 
-        public SampleObject(int version) {
+        SampleObject(int version) {
             this.version = version;
         }
     }

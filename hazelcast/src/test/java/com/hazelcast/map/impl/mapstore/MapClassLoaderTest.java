@@ -38,9 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertFalse;
 
-/**
- * @author sozal 7/17/14
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapClassLoaderTest extends HazelcastTestSupport {
@@ -161,7 +158,5 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
                 store.remove(key);
             }
         }
-
     }
-
 }

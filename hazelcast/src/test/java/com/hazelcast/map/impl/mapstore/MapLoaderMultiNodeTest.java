@@ -27,13 +27,14 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
 
-    protected static final int MAP_STORE_ENTRY_COUNT = 10000;
-    protected static final int BATCH_SIZE = 100;
-    protected static final int NODE_COUNT = 3;
+    private static final int MAP_STORE_ENTRY_COUNT = 10000;
+    private static final int BATCH_SIZE = 100;
+    private static final int NODE_COUNT = 3;
 
-    protected TestHazelcastInstanceFactory nodeFactory;
-    protected CountingMapLoader mapLoader;
-    protected final String mapName = getClass().getSimpleName();
+    private final String mapName = getClass().getSimpleName();
+
+    private TestHazelcastInstanceFactory nodeFactory;
+    private CountingMapLoader mapLoader;
 
     @Before
     public void setUp() throws Exception {

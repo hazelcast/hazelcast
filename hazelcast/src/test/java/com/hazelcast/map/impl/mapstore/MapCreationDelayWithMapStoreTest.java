@@ -23,6 +23,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +40,8 @@ public class MapCreationDelayWithMapStoreTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
     public void testMapCreation__notAffectedByUnresponsiveLoader() throws Exception {
-        final UnresponsiveLoader unresponsiveLoader = new UnresponsiveLoader<Integer, Integer>();
-        final IMap map = TestMapUsingMapStoreBuilder.create()
+        final UnresponsiveLoader<Integer, Integer> unresponsiveLoader = new UnresponsiveLoader<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(unresponsiveLoader)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -53,7 +54,6 @@ public class MapCreationDelayWithMapStoreTest extends HazelcastTestSupport {
         assertEquals(0, ownedEntryCount);
     }
 
-
     static class UnresponsiveLoader<K, V> extends MapStoreAdapter<K, V> {
 
         private final CountDownLatch unreleasedLatch = new CountDownLatch(1);
@@ -63,10 +63,9 @@ public class MapCreationDelayWithMapStoreTest extends HazelcastTestSupport {
             try {
                 unreleasedLatch.await();
             } catch (InterruptedException e) {
-                //ignore.
+                EmptyStatement.ignore(e);
             }
             return Collections.emptySet();
         }
-
     }
 }

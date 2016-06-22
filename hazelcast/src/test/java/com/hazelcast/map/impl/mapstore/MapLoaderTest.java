@@ -49,7 +49,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapLoaderTest extends HazelcastTestSupport {
@@ -79,7 +78,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertEquals(DummyMapLoader.SIZE, map.size());
     }
 
-
     private HazelcastInstance[] findOwnerAndReplicas(HazelcastInstance[] instances, String name) {
         Node node = getNode(instances[0]);
         InternalPartitionService partitionService = node.getPartitionService();
@@ -102,7 +100,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         throw new IllegalArgumentException();
     }
 
-    //https://github.com/hazelcast/hazelcast/issues/1770
+    // https://github.com/hazelcast/hazelcast/issues/1770
     @Test
     public void test1770() throws InterruptedException {
         Config config = getConfig();
@@ -112,21 +110,21 @@ public class MapLoaderTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig("foo");
 
         final AtomicBoolean loadAllCalled = new AtomicBoolean();
-        MapLoader mapLoader = new MapLoader() {
+        MapLoader<Object, Object> mapLoader = new MapLoader<Object, Object>() {
             @Override
             public Object load(Object key) {
                 return null;
             }
 
             @Override
-            public Map loadAll(Collection keys) {
+            public Map<Object, Object> loadAll(Collection keys) {
                 loadAllCalled.set(true);
-                return new HashMap();
+                return new HashMap<Object, Object>();
             }
 
             @Override
-            public Set loadAllKeys() {
-                return new HashSet(Arrays.asList(1));
+            public Set<Object> loadAllKeys() {
+                return new HashSet<Object>(Collections.singletonList(1));
             }
         };
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -135,7 +133,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        Map map = hz.getMap(mapConfig.getName());
+        hz.getMap(mapConfig.getName());
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
@@ -145,7 +143,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }, 10);
     }
 
-    //Ignored due to : https://github.com/hazelcast/hazelcast/issues/5035
+    // ignored due to: https://github.com/hazelcast/hazelcast/issues/5035
     @Ignore
     @Test
     public void testMapLoaderLoadUpdatingIndex() throws Exception {
@@ -164,7 +162,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }
 
         final SqlPredicate predicate = new SqlPredicate("name='My-5'");
-
         assertPredicateResultCorrect(map, predicate);
 
         map.destroy();
@@ -181,9 +178,9 @@ public class MapLoaderTest extends HazelcastTestSupport {
     public void testGetAll_putsLoadedItemsToIMap() throws Exception {
         Integer[] requestedKeys = {1, 2, 3};
         AtomicInteger loadedKeysCounter = new AtomicInteger(0);
-        MapStore mapStore = createMapLoader(loadedKeysCounter);
+        MapStore<Integer, Integer> mapStore = createMapLoader(loadedKeysCounter);
 
-        IMap map = TestMapUsingMapStoreBuilder.create()
+        IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
                 .withNodeFactory(createHazelcastInstanceFactory(1))
@@ -222,7 +219,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         assertEquals(1, map.size());
     }
 
-    private MapStore createMapLoader(final AtomicInteger loadAllCounter) {
+    private MapStore<Integer, Integer> createMapLoader(final AtomicInteger loadAllCounter) {
         return new MapStoreAdapter<Integer, Integer>() {
             @Override
             public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
@@ -317,6 +314,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
             implements MapLoader<Integer, SampleIndexableObject>, MapStoreFactory<Integer, SampleIndexableObject> {
 
         volatile boolean preloadValues = false;
+
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
         private Set<Integer> keys = new HashSet<Integer>();
         private AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
@@ -330,13 +328,17 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public SampleIndexableObject load(Integer key) {
-            if (!preloadValues) return null;
+            if (!preloadValues) {
+                return null;
+            }
             return values[key];
         }
 
         @Override
         public Map<Integer, SampleIndexableObject> loadAll(Collection<Integer> keys) {
-            if (!preloadValues) return Collections.emptyMap();
+            if (!preloadValues) {
+                return Collections.emptyMap();
+            }
             Map<Integer, SampleIndexableObject> data = new HashMap<Integer, SampleIndexableObject>();
             for (Integer key : keys) {
                 data.put(key, values[key]);
@@ -346,7 +348,9 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         @Override
         public Set<Integer> loadAllKeys() {
-            if (!preloadValues) return Collections.emptySet();
+            if (!preloadValues) {
+                return Collections.emptySet();
+            }
 
             loadAllKeysCallCount.incrementAndGet();
             return Collections.unmodifiableSet(keys);
@@ -359,13 +363,14 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     public static class SampleIndexableObject implements Serializable {
+
         String name;
         Integer value;
 
-        public SampleIndexableObject() {
+        SampleIndexableObject() {
         }
 
-        public SampleIndexableObject(String name, Integer value) {
+        SampleIndexableObject(String name, Integer value) {
             this.name = name;
             this.value = value;
         }
@@ -406,29 +411,27 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     private class NodeBuilder {
+
         private final int nodeCount;
         private final Config config;
         private final Random random = new Random();
         private final TestHazelcastInstanceFactory factory;
         private HazelcastInstance[] nodes;
 
-        public NodeBuilder(int nodeCount, Config config) {
+        NodeBuilder(int nodeCount, Config config) {
             this.nodeCount = nodeCount;
             this.config = config;
             this.factory = createHazelcastInstanceFactory(nodeCount);
         }
 
-        public NodeBuilder build() {
+        NodeBuilder build() {
             nodes = factory.newInstances(config);
             return this;
         }
 
-        public HazelcastInstance getRandomNode() {
+        HazelcastInstance getRandomNode() {
             final int nodeIndex = random.nextInt(nodeCount);
             return nodes[nodeIndex];
         }
     }
-
-    ;
 }
-

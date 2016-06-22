@@ -1,11 +1,11 @@
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -57,23 +57,22 @@ public class LoadAllTest extends AbstractMapStoreTest {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
-        final IMap<Object, Object> map = node.getMap(mapName);
+        final IMap<Integer, Integer> map = node.getMap(mapName);
         populateMap(map, 1000);
         map.evictAll();
-        final Set keysToLoad = selectKeysToLoad(100, 910);
+        final Set<Integer> keysToLoad = selectKeysToLoad(100, 910);
         map.loadAll(keysToLoad, true);
 
         assertEquals(810, map.size());
         assertRangeLoaded(map, 100, 910);
     }
 
-
     @Test
     public void load_allKeys() throws Exception {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
-        final IMap<Object, Object> map = node.getMap(mapName);
+        final IMap<Integer, Integer> map = node.getMap(mapName);
         final int itemCount = 1000;
         populateMap(map, itemCount);
         map.evictAll();
@@ -89,7 +88,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
 
         HazelcastInstance[] nodes = createHazelcastInstanceFactory(3).newInstances(config);
         HazelcastInstance node = nodes[0];
-        IMap<Object, Object> map = node.getMap(mapName);
+        IMap<Integer, Integer> map = node.getMap(mapName);
 
         int itemCount = 1000;
         populateMap(map, itemCount);
@@ -106,7 +105,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
 
         HazelcastInstance[] nodes = createHazelcastInstanceFactory(3).newInstances(config);
         HazelcastInstance node = nodes[0];
-        IMap<Object, Object> map = node.getMap(mapName);
+        IMap<Integer, Integer> map = node.getMap(mapName);
 
         int itemCount = 100;
         populateMap(map, itemCount);
@@ -116,7 +115,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
         map.loadAll(false);
 
         assertEquals(itemCount, map.size());
-        assertEquals(-1, map.get(0));
+        assertEquals(-1, map.get(0).intValue());
     }
 
     @Test
@@ -125,7 +124,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
         final Config config = createNewConfig(mapName);
 
         final HazelcastInstance node = createHazelcastInstance(config);
-        final IMap<Object, Object> map = node.getMap(mapName);
+        final IMap<Integer, Integer> map = node.getMap(mapName);
 
         final int itemCount = 1000;
         populateMap(map, itemCount);
@@ -140,14 +139,13 @@ public class LoadAllTest extends AbstractMapStoreTest {
         assertEquals(itemCount, map.size());
     }
 
-
     @Test
     public void load_allKeys_firesEvent() throws Exception {
         final int itemCount = 1000;
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final HazelcastInstance node = createHazelcastInstance(config);
-        final IMap<Object, Object> map = node.getMap(mapName);
+        final IMap<Integer, Integer> map = node.getMap(mapName);
         final CountDownLatch eventCounter = new CountDownLatch(itemCount);
         populateMap(map, itemCount);
         map.evictAll();
@@ -164,38 +162,37 @@ public class LoadAllTest extends AbstractMapStoreTest {
     public void load_givenKeys_withBackupNodes() throws Exception {
         final int itemCount = 10000;
         final int rangeStart = 1000;
-        // select an ordinary value.
+        // select an ordinary value
         final int rangeEnd = 9001;
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         final TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance node1 = instanceFactory.newHazelcastInstance(config);
         final HazelcastInstance node2 = instanceFactory.newHazelcastInstance(config);
-        final IMap<Object, Object> map1 = node1.getMap(mapName);
-        final IMap<Object, Object> map2 = node2.getMap(mapName);
+        final IMap<Integer, Integer> map1 = node1.getMap(mapName);
+        final IMap<Integer, Integer> map2 = node2.getMap(mapName);
         populateMap(map1, itemCount);
         map1.evictAll();
-        final Set keysToLoad = selectKeysToLoad(rangeStart, rangeEnd);
+        final Set<Integer> keysToLoad = selectKeysToLoad(rangeStart, rangeEnd);
         map1.loadAll(keysToLoad, true);
 
         assertEquals(rangeEnd - rangeStart, map1.size());
         assertRangeLoaded(map2, rangeStart, rangeEnd);
     }
 
-
     private Config createNewConfig(String mapName) {
         final SimpleStore simpleStore = new SimpleStore();
         return newConfig(mapName, simpleStore, 0);
     }
 
-    private static void populateMap(IMap map, int itemCount) {
+    private static void populateMap(IMap<Integer, Integer> map, int itemCount) {
         for (int i = 0; i < itemCount; i++) {
             map.put(i, i);
         }
     }
 
-    private static Set selectKeysToLoad(int rangeStart, int rangeEnd) {
-        final Set keysToLoad = new HashSet();
+    private static Set<Integer> selectKeysToLoad(int rangeStart, int rangeEnd) {
+        final Set<Integer> keysToLoad = new HashSet<Integer>();
         for (int i = rangeStart; i < rangeEnd; i++) {
             keysToLoad.add(i);
         }
@@ -209,7 +206,7 @@ public class LoadAllTest extends AbstractMapStoreTest {
     }
 
     private static void addListener(IMap map, final CountDownLatch counter) {
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
+        map.addEntryListener(new EntryAddedListener<Object, Object>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 counter.countDown();
@@ -217,71 +214,54 @@ public class LoadAllTest extends AbstractMapStoreTest {
         }, true);
     }
 
-    private static void updateListener(IMap map, final CountDownLatch counter) {
-        map.addEntryListener(new EntryAdapter<Object, Object>() {
-            @Override
-            public void entryUpdated(EntryEvent<Object, Object> event) {
-                counter.countDown();
-            }
-        }, true);
-    }
-
-    private static void evictRange(IMap map, int rangeStart, int rangeEnd) {
+    private static void evictRange(IMap<Integer, Integer> map, int rangeStart, int rangeEnd) {
         for (int i = rangeStart; i < rangeEnd; i++) {
             map.evict(i);
         }
     }
 
+    private static class SimpleStore implements MapStore<Integer, Integer> {
 
-    private static class SimpleStore implements MapStore {
-        private ConcurrentMap store = new ConcurrentHashMap();
+        private ConcurrentMap<Integer, Integer> store = new ConcurrentHashMap<Integer, Integer>();
 
         @Override
-        public void store(Object key, Object value) {
+        public void store(Integer key, Integer value) {
             store.put(key, value);
         }
 
         @Override
-        public void storeAll(Map map) {
-            final Set<Map.Entry> entrySet = map.entrySet();
-            for (Map.Entry entry : entrySet) {
-                final Object key = entry.getKey();
-                final Object value = entry.getValue();
-                store(key, value);
+        public void storeAll(Map<Integer, Integer> map) {
+            final Set<Map.Entry<Integer, Integer>> entrySet = map.entrySet();
+            for (Map.Entry<Integer, Integer> entry : entrySet) {
+                store(entry.getKey(), entry.getValue());
             }
-
         }
 
         @Override
-        public void delete(Object key) {
-
+        public void delete(Integer key) {
         }
 
         @Override
-        public void deleteAll(Collection keys) {
-
+        public void deleteAll(Collection<Integer> keys) {
         }
 
         @Override
-        public Object load(Object key) {
+        public Integer load(Integer key) {
             return store.get(key);
         }
 
         @Override
-        public Map loadAll(Collection keys) {
-            final Map map = new HashMap();
-            for (Object key : keys) {
-                final Object value = load(key);
-                map.put(key, value);
+        public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+            final Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+            for (Integer key : keys) {
+                map.put(key, load(key));
             }
             return map;
         }
 
         @Override
-        public Set loadAllKeys() {
+        public Set<Integer> loadAllKeys() {
             return store.keySet();
         }
     }
-
-
 }

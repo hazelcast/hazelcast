@@ -24,10 +24,10 @@ import static org.junit.Assert.assertTrue;
 public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
     @Test
-    public void testKeySetWithPredicate_checksMapStoreLoad() throws InterruptedException {
-        MapStoreTest.TestEventBasedMapStore testMapStore = new MapStoreTest.TestEventBasedMapStore();
+    public void testKeySetWithPredicate_checksMapStoreLoad() {
+        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>();
 
-        Map mapForStore = new HashMap();
+        Map<String, Integer> mapForStore = new HashMap<String, Integer>();
         mapForStore.put("key1", 17);
         mapForStore.put("key2", 37);
         mapForStore.put("key3", 47);
@@ -36,7 +36,6 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance instance = createHazelcastInstance(config);
         final IMap map = instance.getMap("default");
-
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -50,12 +49,11 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
         });
     }
 
-
     @Test
-    public void testValuesWithPredicate_checksMapStoreLoad() throws InterruptedException {
-        MapStoreTest.TestEventBasedMapStore testMapStore = new MapStoreTest.TestEventBasedMapStore();
+    public void testValuesWithPredicate_checksMapStoreLoad() {
+        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>();
 
-        Map mapForStore = new HashMap();
+        Map<String, Integer> mapForStore = new HashMap<String, Integer>();
         mapForStore.put("key1", 17);
         mapForStore.put("key2", 37);
         mapForStore.put("key3", 47);
@@ -75,14 +73,13 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
                 assertTrue(values.contains(47));
             }
         });
-
     }
 
     @Test
     public void testEntrySetWithPredicate_checksMapStoreLoad() throws InterruptedException {
-        MapStoreTest.TestEventBasedMapStore testMapStore = new MapStoreTest.TestEventBasedMapStore();
+        EventBasedMapStore<String, Integer> testMapStore = new EventBasedMapStore<String, Integer>();
 
-        Map mapForStore = new HashMap();
+        Map<String, Integer> mapForStore = new HashMap<String, Integer>();
         mapForStore.put("key1", 17);
         mapForStore.put("key2", 37);
         mapForStore.put("key3", 47);
@@ -90,15 +87,14 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
 
         Config config = newConfig(testMapStore, 0);
         HazelcastInstance instance = createHazelcastInstance(config);
-        final IMap map = instance.getMap("default");
+        final IMap<String, Integer> map = instance.getMap("default");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final Set<Map.Entry> entrySet = map.entrySet(Predicates.greaterThan("value", 1));
+                final Set<Map.Entry<String, Integer>> entrySet = map.entrySet(Predicates.greaterThan("value", 1));
                 assertEquals(3, entrySet.size());
             }
         });
-
     }
 }

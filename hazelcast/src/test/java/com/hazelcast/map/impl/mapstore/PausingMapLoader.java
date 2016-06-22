@@ -12,7 +12,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * MapLoader that pauses once while loading keys until resumed using {@link #resume()}
  **/
-public class PausingMapLoader<K, V> implements MapLoader<K, V> {
+class PausingMapLoader<K, V> implements MapLoader<K, V> {
 
     private MapLoader<K, V> delegate;
 
@@ -21,7 +21,7 @@ public class PausingMapLoader<K, V> implements MapLoader<K, V> {
     private CountDownLatch resumeLatch = new CountDownLatch(1);
     private CountDownLatch pauseLatch = new CountDownLatch(1);
 
-    public PausingMapLoader(MapLoader<K, V> delegate, int pauseAt) {
+    PausingMapLoader(MapLoader<K, V> delegate, int pauseAt) {
         this.delegate = delegate;
         this.pauseAt = pauseAt;
     }

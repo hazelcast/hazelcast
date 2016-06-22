@@ -30,15 +30,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-/**
- * @author enesakar 7/23/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class WriteBehindExceptionTest extends AbstractMapStoreTest {
 
-    final CountDownLatch latch1 = new CountDownLatch(1);
-    final CountDownLatch latch2 = new CountDownLatch(1);
+    private final CountDownLatch latch1 = new CountDownLatch(1);
+    private final CountDownLatch latch2 = new CountDownLatch(1);
 
     @Test
     public void testWriteBehindStoreWithException() throws InterruptedException {
@@ -78,10 +75,6 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
         MapStore() {
         }
 
-        MapStore(Map<Integer, String> store) {
-            super(store);
-        }
-
         public void storeAll(final Map<Integer, String> map) {
             latch1.countDown();
             for (Map.Entry<Integer, String> entry : map.entrySet()) {
@@ -113,5 +106,4 @@ public class WriteBehindExceptionTest extends AbstractMapStoreTest {
             super.store(key, value);
         }
     }
-
 }

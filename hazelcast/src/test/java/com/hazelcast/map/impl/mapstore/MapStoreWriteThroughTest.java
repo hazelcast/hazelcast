@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,9 +47,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author enesakar 1/21/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
@@ -59,9 +57,9 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         testMapStore.insert("1", "value1");
-        IMap map = h1.getMap("default");
+        IMap<String, String> map = instance.getMap("default");
         assertEquals(0, map.size());
         assertTrue(map.tryLock("1", 1, TimeUnit.SECONDS));
         assertEquals("value1", map.get("1"));
@@ -81,7 +79,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.assertAwait(1);
         assertEquals(1, testMapStore.getInitCount());
         assertEquals("default", testMapStore.getMapName());
-        assertEquals(TestUtil.getNode(h1), TestUtil.getNode(testMapStore.getHazelcastInstance()));
+        assertEquals(TestUtil.getNode(instance), TestUtil.getNode(testMapStore.getHazelcastInstance()));
     }
 
     @Test(timeout = 120000)
@@ -99,8 +97,8 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         mapConfig.setMinEvictionCheckMillis(0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap map = h1.getMap("default");
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        IMap<Integer, Employee> map = instance.getMap("default");
         final CountDownLatch countDownLatch = new CountDownLatch(size);
         map.addEntryListener(new EntryAdapter() {
             @Override
@@ -129,7 +127,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
-        HazelcastInstance h1 = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         Employee employee = new Employee("joe", 25, true, 100.00);
         Employee newEmployee = new Employee("ali", 26, true, 1000);
         testMapStore.insert("1", employee);
@@ -140,7 +138,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.insert("6", employee);
         testMapStore.insert("7", employee);
 
-        IMap map = h1.getMap("default");
+        IMap<String, Employee> map = instance.getMap("default");
         map.addIndex("name", false);
         assertEquals(0, map.size());
         assertEquals(employee, map.get("1"));
@@ -189,12 +187,12 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        nodeFactory.newHazelcastInstance(config);
         Employee employee = new Employee("joe", 25, true, 100.00);
         Employee employee2 = new Employee("jay", 35, false, 100.00);
         testMapStore.insert("1", employee);
-        IMap map = h1.getMap("default");
+        IMap<String, Employee> map = instance.getMap("default");
         map.addIndex("name", false);
         assertEquals(0, map.size());
         assertEquals(employee, map.get("1"));
@@ -220,8 +218,8 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
 
-        IMap map1 = h1.getMap("default");
-        IMap map2 = h2.getMap("default");
+        IMap<Integer, String> map1 = h1.getMap("default");
+        IMap<Integer, String> map2 = h2.getMap("default");
 
         for (int i = 0; i < items; i++) {
             map1.put(i, "value" + i);
@@ -243,25 +241,28 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.setFail(true, true);
         Config config = newConfig(testMapStore, 0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap map = h1.getMap("default");
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        IMap<String, String> map = instance.getMap("default");
         assertEquals(0, map.size());
         try {
             map.get("1");
             fail("should have thrown exception");
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
         }
         assertEquals(1, testMapStore.loads.get());
         try {
             map.get("1");
             fail("should have thrown exception");
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
         }
         assertEquals(2, testMapStore.loads.get());
         try {
             map.put("1", "value");
             fail("should have thrown exception");
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
         }
         assertEquals(0, testMapStore.stores.get());
         assertEquals(0, map.size());
@@ -273,16 +274,16 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
         testMapStore.setFail(true, false);
         Config config = newConfig(testMapStore, 0);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap map = h1.getMap("default");
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        IMap<String, String> map = instance.getMap("default");
         assertEquals(0, map.size());
 
         try {
             map.put("1", "value");
             fail("should have thrown exception");
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
         }
         assertEquals(0, map.size());
     }
-
 }

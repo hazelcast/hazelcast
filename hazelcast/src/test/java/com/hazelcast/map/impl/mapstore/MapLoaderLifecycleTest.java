@@ -54,7 +54,7 @@ public class MapLoaderLifecycleTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        IMap map = hz.getMap("map");
+        IMap<String, String> map = hz.getMap("map");
         // MapStore creation is deferred, so trigger map store creation by putting some data in the map
         map.put("a", "b");
 
@@ -66,7 +66,7 @@ public class MapLoaderLifecycleTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        IMap map = hz.getMap("map");
+        IMap<String, String> map = hz.getMap("map");
         // MapStore creation is deferred, so trigger map store creation by putting some data in the map
         map.put("a", "b");
 
