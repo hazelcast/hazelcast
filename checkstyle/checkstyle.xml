@@ -130,7 +130,9 @@
 
         <!-- Checks for imports                              -->
         <!-- See http://checkstyle.sf.net/config_import.html -->
-        <module name="AvoidStarImport"/>
+        <module name="AvoidStarImport">
+            <property name="excludes" value="java.awt,javax.swing"/>
+        </module>
         <!-- defaults to sun.* packages -->
         <module name="IllegalImport"/>
         <module name="RedundantImport"/>
@@ -230,8 +232,6 @@
             <property name="tokens" value="PARAMETER_DEF, METHOD_DEF"/>
         </module>
         <module name="InnerAssignment"/>
-        <!--obsolete module-->
-        <!--<module name="JUnitTestCase"/>-->
         <module name="ReturnCount">
             <property name="max" value="8"/>
         </module>
@@ -242,11 +242,6 @@
             <property name="max" value="2"/>
         </module>
         <module name="PackageDeclaration"/>
-        <!--obsolete module-->
-        <!--<module name="RedundantThrows">-->
-            <!--<property name="severity" value="warning"/>-->
-            <!--<property name="allowUnchecked" value="true"/>-->
-        <!--</module>-->
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
@@ -259,7 +254,6 @@
         </module>
         <module name="EqualsHashCode"/>
         <module name="IllegalInstantiation"/>
-        <module name="InnerAssignment"/>
         <module name="MissingSwitchDefault"/>
 
         <!-- Checks for class design                         -->
