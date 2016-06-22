@@ -239,7 +239,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     /**
      * Binding completes the connection and makes it available to be used with the ConnectionManager.
      */
-    private boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
+    private synchronized boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
         if (logger.isFinestEnabled()) {
             logger.finest("Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
@@ -264,47 +264,51 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public synchronized boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
-        if (remoteEndPoint.equals(ioService.getThisAddress())) {
-            return false;
-        }
-
-        if (!connection.isAlive()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(connection + " to " + remoteEndPoint + " is not registered since connection is not active.");
+        try {
+            if (remoteEndPoint.equals(ioService.getThisAddress())) {
+                return false;
             }
-            return false;
-        }
 
-        if (connection instanceof TcpIpConnection) {
-            TcpIpConnection tcpConnection = (TcpIpConnection) connection;
-            Address currentEndPoint = tcpConnection.getEndPoint();
-            if (currentEndPoint != null && !currentEndPoint.equals(remoteEndPoint)) {
-                throw new IllegalArgumentException(connection + " has already a different endpoint than: "
-                        + remoteEndPoint);
+            if (!connection.isAlive()) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest(connection + " to " + remoteEndPoint + " is not registered since connection is not active.");
+                }
+                return false;
             }
-            tcpConnection.setEndPoint(remoteEndPoint);
 
-            if (!connection.isClient()) {
-                TcpIpConnectionMonitor connectionMonitor = getConnectionMonitor(remoteEndPoint, true);
-                tcpConnection.setMonitor(connectionMonitor);
-            }
-        }
-        connectionsMap.put(remoteEndPoint, connection);
-        connectionsInProgress.remove(remoteEndPoint);
-        ioService.getEventService().executeEventCallback(new StripedRunnable() {
-            @Override
-            public void run() {
-                for (ConnectionListener listener : connectionListeners) {
-                    listener.connectionAdded(connection);
+            if (connection instanceof TcpIpConnection) {
+                TcpIpConnection tcpConnection = (TcpIpConnection) connection;
+                Address currentEndPoint = tcpConnection.getEndPoint();
+                if (currentEndPoint != null && !currentEndPoint.equals(remoteEndPoint)) {
+                    throw new IllegalArgumentException(connection + " has already a different endpoint than: "
+                            + remoteEndPoint);
+                }
+                tcpConnection.setEndPoint(remoteEndPoint);
+
+                if (!connection.isClient()) {
+                    TcpIpConnectionMonitor connectionMonitor = getConnectionMonitor(remoteEndPoint, true);
+                    tcpConnection.setMonitor(connectionMonitor);
                 }
             }
+            connectionsMap.put(remoteEndPoint, connection);
 
-            @Override
-            public int getKey() {
-                return remoteEndPoint.hashCode();
-            }
-        });
-        return true;
+            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                @Override
+                public void run() {
+                    for (ConnectionListener listener : connectionListeners) {
+                        listener.connectionAdded(connection);
+                    }
+                }
+
+                @Override
+                public int getKey() {
+                    return remoteEndPoint.hashCode();
+                }
+            });
+            return true;
+        } finally {
+            connectionsInProgress.remove(remoteEndPoint);
+        }
     }
 
     private boolean checkAlreadyConnected(TcpIpConnection connection, Address remoteEndPoint) {
@@ -343,25 +347,32 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return wrapper;
     }
 
-    TcpIpConnection newConnection(SocketChannelWrapper channel, Address endpoint) {
-        TcpIpConnection connection = new TcpIpConnection(
-                this,
-                connectionIdGen.incrementAndGet(),
-                channel,
-                ioThreadingModel);
+    synchronized TcpIpConnection newConnection(SocketChannelWrapper channel, Address endpoint) {
+        try {
+            if (!live) {
+                throw new IllegalStateException("connection manager is not live!");
+            }
 
-        connection.setEndPoint(endpoint);
-        activeConnections.add(connection);
-        acceptedSockets.remove(channel);
+            TcpIpConnection connection = new TcpIpConnection(
+                    this,
+                    connectionIdGen.incrementAndGet(),
+                    channel,
+                    ioThreadingModel);
 
-        connection.start();
-        ioThreadingModel.onConnectionAdded(connection);
+            connection.setEndPoint(endpoint);
+            activeConnections.add(connection);
 
-        logger.info("Established socket connection between "
-                + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
-        openedCount.inc();
+            connection.start();
+            ioThreadingModel.onConnectionAdded(connection);
 
-        return connection;
+            logger.info("Established socket connection between "
+                    + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
+            openedCount.inc();
+
+            return connection;
+        } finally {
+            acceptedSockets.remove(channel);
+        }
     }
 
     void failedConnection(Address address, Throwable t, boolean silent) {
