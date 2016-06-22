@@ -88,13 +88,23 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                     .setReplicaIndex(getReplicaIndex())
                     .setOperationResponseHandler(responseQueue)
                     .setServiceName(getServiceName())
-                    .setService(getService())
-                    .setCallerUuid(getCallerUuid());
+                    .setService(getService());
+
+            setCallerUuid(op);
             OperationAccessor.setCallerAddress(op, getCallerAddress());
             responses.put(partitionId, responseQueue);
             nodeEngine.getOperationService().executeOperation(op);
         }
         return responses;
+    }
+
+    private void setCallerUuid(Operation operation) {
+        // Clients callerUUID can be set already. See OperationFactoryWrapper usage.
+        if (operation.getCallerUuid() != null) {
+            return;
+        }
+
+        operation.setCallerUuid(getCallerUuid());
     }
 
     @Override
