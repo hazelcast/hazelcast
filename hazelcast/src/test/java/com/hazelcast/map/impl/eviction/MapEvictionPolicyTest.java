@@ -23,7 +23,9 @@ import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_PARTITION;
 import static com.hazelcast.map.impl.eviction.Evictor.SAMPLE_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.lang.String.format;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -70,6 +72,17 @@ public class MapEvictionPolicyTest extends HazelcastTestSupport {
 
         @Override
         public int compare(EntryView o1, EntryView o2) {
+            assertNotNull(o1);
+            assertNotNull(o2);
+
+            assertFalse(o1.equals(o2));
+
+            assertTrue(o1.hashCode() != 0);
+            assertTrue(o2.hashCode() != 0);
+
+            assertNotNull(o1.toString());
+            assertNotNull(o2.toString());
+
             Integer key = (Integer) o1.getKey();
             if (key % 2 != 0) {
                 return -1;
