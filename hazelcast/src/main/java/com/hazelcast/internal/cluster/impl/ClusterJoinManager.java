@@ -520,10 +520,11 @@ public class ClusterJoinManager {
                     calls.add(invokeClusterOperation(joinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : members) {
-                    if (!member.getAddress().equals(clusterService.getThisAddress())) {
-                        Operation infoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time, true);
-                        calls.add(invokeClusterOperation(infoUpdateOperation, member.getAddress()));
+                    if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
+                        continue;
                     }
+                    Operation infoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time, true);
+                    calls.add(invokeClusterOperation(infoUpdateOperation, member.getAddress()));
                 }
 
                 int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);

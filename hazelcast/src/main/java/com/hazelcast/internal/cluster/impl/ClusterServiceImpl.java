@@ -382,8 +382,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             setMembers(updatedMembers);
             sendMembershipEvents(currentMemberMap.values(), newMembers);
 
-            clusterHeartbeatManager.heartBeat();
             node.setJoined();
+            clusterHeartbeatManager.heartBeat();
             logger.info(membersString());
         } finally {
             lock.unlock();
