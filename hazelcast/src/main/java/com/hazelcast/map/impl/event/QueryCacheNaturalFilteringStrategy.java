@@ -22,10 +22,15 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.collection.Int2ObjectHashMap;
+
+import java.util.Collection;
+import java.util.Map;
 
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.EVICTED;
@@ -71,6 +76,9 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
  * </table>
  */
 public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrategy {
+
+    // Default capacity of event-type > EventData map.
+    private static final int EVENT_DATA_MAP_CAPACITY = 4;
 
     public QueryCacheNaturalFilteringStrategy(SerializationService serializationService, MapServiceContext mapServiceContext) {
         super(serializationService, mapServiceContext);
@@ -121,6 +129,16 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
         throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
 
+    @Override
+    public EntryEventDataCache getEntryEventDataCache() {
+        return new EntryEventDataPerEventTypeCache();
+    }
+
+    @Override
+    public String toString() {
+        return "QueryCacheNaturalFilteringStrategy";
+    }
+
     private int processQueryEventFilterWithAlternativeEventType(EventFilter filter, EntryEventType eventType,
                                                 Data dataKey, Object dataOldValue, Object dataValue, String mapNameOrNull) {
         if (eventType == UPDATED) {
@@ -151,6 +169,82 @@ public class QueryCacheNaturalFilteringStrategy extends AbstractFilteringStrateg
             }
             return evaluateQueryEventFilter(filter, dataKey, testValue, mapNameOrNull)
                     ? eventType.getType() : FILTER_DOES_NOT_MATCH;
+        }
+    }
+
+    // Caches EntryEventData per {eventType, includingValues}
+    private class EntryEventDataPerEventTypeCache implements EntryEventDataCache {
+        Map<Integer, EntryEventData> eventDataIncludingValues;
+        Map<Integer, EntryEventData> eventDataExcludingValues;
+        boolean empty = true;
+
+        @Override
+        public EntryEventData getOrCreateEventData(String mapName, Address caller, Data dataKey, Object newValue, Object oldValue,
+                                                   Object mergingValue, int eventType, boolean includingValues) {
+            if (includingValues) {
+                if (eventDataIncludingValues == null) {
+                    eventDataIncludingValues = new Int2ObjectHashMap<EntryEventData>(EVENT_DATA_MAP_CAPACITY);
+                }
+                return getOrCreateEventData(eventDataIncludingValues, mapName, caller, dataKey, newValue, oldValue, mergingValue,
+                        eventType);
+            } else {
+                if (eventDataExcludingValues == null) {
+                    eventDataExcludingValues = new Int2ObjectHashMap<EntryEventData>(EVENT_DATA_MAP_CAPACITY);
+                }
+                return getOrCreateEventData(eventDataExcludingValues, mapName, caller, dataKey, null, null, null,
+                        eventType);
+            }
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return empty;
+        }
+
+        @Override
+        public Collection<EntryEventData> eventDataIncludingValues() {
+            return eventDataIncludingValues == null ? null : eventDataIncludingValues.values();
+        }
+
+        @Override
+        public Collection<EntryEventData> eventDataExcludingValues() {
+            return eventDataExcludingValues == null ? null : eventDataExcludingValues.values();
+        }
+
+        /**
+         * If an {@code EntryEventData} is already mapped to the given {@code eventType} in {@code Map eventDataPerEventType},
+         * then return the mapped value, otherwise create the {@code EntryEventData}, put it in {@code Map eventDataPerEventType}
+         * and return it.
+         * @param eventDataPerEventType
+         * @param mapName
+         * @param caller
+         * @param dataKey
+         * @param newValue
+         * @param oldValue
+         * @param mergingValue
+         * @param eventType
+         * @return {@code EntryEventData} already cached in {@code Map eventDataPerEventType} for the given {@code eventType} or
+         *          if not already cached, a new {@code EntryEventData} object.
+         */
+        private EntryEventData getOrCreateEventData(Map<Integer, EntryEventData> eventDataPerEventType, String mapName,
+                                                    Address caller, Data dataKey, Object newValue, Object oldValue,
+                                                    Object mergingValue, int eventType) {
+
+            if (eventDataPerEventType.containsKey(eventType)) {
+                return eventDataPerEventType.get(eventType);
+            } else {
+                Data dataOldValue = oldValue == null ? null : mapServiceContext.toData(oldValue);
+                Data dataNewValue = newValue == null ? null : mapServiceContext.toData(newValue);
+                Data dataMergingValue = mergingValue == null ? null : mapServiceContext.toData(mergingValue);
+
+                EntryEventData entryEventData = new EntryEventData(getThisNodesAddress(), mapName, caller,
+                        dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
+                eventDataPerEventType.put(eventType, entryEventData);
+                if (empty) {
+                    empty = false;
+                }
+                return entryEventData;
+            }
         }
     }
 }

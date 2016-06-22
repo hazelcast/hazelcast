@@ -52,4 +52,10 @@ public interface FilteringStrategy {
      */
     int doFilter(EventFilter filter, Data dataKey, Object dataOldValue, Object dataValue, EntryEventType eventType,
                  String mapNameOrNull);
+
+    /**
+     *
+     * @return  a {@link EntryEventDataCache} implementation to be used with this filtering strategy
+     */
+    EntryEventDataCache getEntryEventDataCache();
 }

@@ -35,12 +35,16 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 public abstract class AbstractFilteringStrategy implements FilteringStrategy {
 
-    private final SerializationService serializationService;
-    private final MapServiceContext mapServiceContext;
+    protected final SerializationService serializationService;
+    protected final MapServiceContext mapServiceContext;
 
     public AbstractFilteringStrategy(SerializationService serializationService, MapServiceContext mapServiceContext) {
         this.serializationService = serializationService;
         this.mapServiceContext = mapServiceContext;
+    }
+
+    protected String getThisNodesAddress() {
+        return mapServiceContext.getNodeEngine().getThisAddress().toString();
     }
 
     protected boolean processEntryEventFilter(EventFilter filter, Data dataKey) {

@@ -22,10 +22,14 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.QueryEventFilter;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
+
+import java.util.Collection;
+import java.util.Collections;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.core.EntryEventType.EXPIRED;
@@ -74,6 +78,16 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
             throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
 
+    @Override
+    public EntryEventDataCache getEntryEventDataCache() {
+        return new DefaultEntryEventDataCache();
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultEntryEventFilteringStrategy";
+    }
+
     private boolean processQueryEventFilter(EventFilter filter, EntryEventType eventType,
                                             Data dataKey, Object dataOldValue, Object dataValue, String mapNameOrNull) {
         Object testValue;
@@ -84,5 +98,48 @@ public class DefaultEntryEventFilteringStrategy extends AbstractFilteringStrateg
         }
 
         return evaluateQueryEventFilter(filter, dataKey, testValue, mapNameOrNull);
+    }
+
+    private class DefaultEntryEventDataCache implements EntryEventDataCache {
+        EntryEventData eventDataIncludingValues;
+        EntryEventData eventDataExcludingValues;
+
+        @Override
+        public EntryEventData getOrCreateEventData(String mapName, Address caller, Data dataKey, Object newValue, Object oldValue,
+                Object mergingValue, int eventType, boolean includingValues) {
+
+            if (includingValues && eventDataIncludingValues != null) {
+                return eventDataIncludingValues;
+            } else if (!includingValues && eventDataExcludingValues != null) {
+                return eventDataExcludingValues;
+            } else {
+                EntryEventData entryEventData = new EntryEventData(getThisNodesAddress(), mapName, caller, dataKey,
+                        includingValues ? mapServiceContext.toData(newValue) : null,
+                        includingValues ? mapServiceContext.toData(oldValue) : null,
+                        includingValues ? mapServiceContext.toData(mergingValue) : null, eventType);
+
+                if (includingValues) {
+                    eventDataIncludingValues = entryEventData;
+                } else {
+                    eventDataExcludingValues = entryEventData;
+                }
+                return entryEventData;
+            }
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return eventDataIncludingValues == null && eventDataExcludingValues == null;
+        }
+
+        @Override
+        public Collection<EntryEventData> eventDataIncludingValues() {
+            return eventDataIncludingValues == null ? null : Collections.singleton(eventDataIncludingValues);
+        }
+
+        @Override
+        public Collection<EntryEventData> eventDataExcludingValues() {
+            return eventDataExcludingValues == null ? null : Collections.singleton(eventDataExcludingValues);
+        }
     }
 }
