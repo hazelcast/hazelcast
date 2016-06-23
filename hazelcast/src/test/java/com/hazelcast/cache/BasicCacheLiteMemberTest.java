@@ -95,13 +95,8 @@ public class BasicCacheLiteMemberTest
         testCacheCreation(liteCachingProvider, instanceCachingProvider);
     }
 
-    public void testPutFromLiteMember() {
-
-    }
-
     private void testCacheCreation(final HazelcastServerCachingProvider providerToCreate,
                                    final HazelcastServerCachingProvider providerToValidate) {
-
         CacheManager cacheManager = providerToCreate.getCacheManager();
         assertNotNull(cacheManager);
 
