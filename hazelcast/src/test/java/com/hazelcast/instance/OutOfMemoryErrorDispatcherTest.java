@@ -141,8 +141,8 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_DefaultOutOfMemoryHandler_artificial_oome() {
-        OutOfMemoryError oome = new OutOfMemoryError();
+    public void test_DefaultOutOfMemoryHandler_whenGcOverheadLimitExceeded() {
+        OutOfMemoryError oome = new OutOfMemoryError(DefaultOutOfMemoryHandler.GC_OVERHEAD_LIMIT_EXCEEDED);
 
         HazelcastInstance hz = mock(HazelcastInstance.class);
         OutOfMemoryErrorDispatcher.registerServer(hz);
@@ -152,7 +152,7 @@ public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
         OutOfMemoryErrorDispatcher.setServerHandler(handler);
 
         OutOfMemoryErrorDispatcher.onOutOfMemory(oome);
-        verify(handler, never()).onOutOfMemory(oome, new HazelcastInstance[]{hz});
+        verify(handler).onOutOfMemory(oome, new HazelcastInstance[]{hz});
     }
 
     @Test

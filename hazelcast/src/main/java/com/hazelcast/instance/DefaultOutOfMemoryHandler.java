@@ -46,7 +46,7 @@ public class DefaultOutOfMemoryHandler extends OutOfMemoryHandler {
 
     public static final String FREE_MAX_PERCENTAGE_PROP = "hazelcast.oome.handler.free_max.percentage";
 
-    private static final String GC_OVERHEAD_LIMIT_EXCEEDED = "GC overhead limit exceeded";
+    static final String GC_OVERHEAD_LIMIT_EXCEEDED = "GC overhead limit exceeded";
     private static final int HUNDRED_PERCENT = 100;
     private static final int FIFTY_PERCENT = 50;
     private static final long MAX_TOTAL_DELTA = MemoryUnit.MEGABYTES.toBytes(1);
