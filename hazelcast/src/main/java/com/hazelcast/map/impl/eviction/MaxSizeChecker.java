@@ -19,20 +19,27 @@ package com.hazelcast.map.impl.eviction;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MemoryInfoAccessor;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static com.hazelcast.memory.MemoryUnit.BYTES;
+import static java.lang.String.format;
+import static java.lang.System.getProperty;
 
 /**
  * Checks whether a specific threshold is exceeded or not
@@ -43,22 +50,43 @@ import java.util.List;
  */
 public class MaxSizeChecker {
 
-    private static final int ONE_HUNDRED_PERCENT = 100;
+    public static final String HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL = "hazelcast.memory.info.accessor.impl";
+
+    private static final double ONE_HUNDRED_PERCENT = 100D;
     private static final int EVICTION_START_THRESHOLD_PERCENTAGE = 95;
     private static final int ONE_KILOBYTE = 1024;
     private static final int ONE_MEGABYTE = ONE_KILOBYTE * ONE_KILOBYTE;
 
     private final MemoryInfoAccessor memoryInfoAccessor;
     private final MapServiceContext mapServiceContext;
-
+    private final ILogger logger;
 
     public MaxSizeChecker(MapServiceContext mapServiceContext) {
         this(new RuntimeMemoryInfoAccessor(), mapServiceContext);
     }
 
     public MaxSizeChecker(MemoryInfoAccessor memoryInfoAccessor, MapServiceContext mapServiceContext) {
-        this.memoryInfoAccessor = memoryInfoAccessor;
+        this.logger = mapServiceContext.getNodeEngine().getLogger(getClass());
+        this.memoryInfoAccessor = initMemoryInfoAccessor(memoryInfoAccessor);
         this.mapServiceContext = mapServiceContext;
+    }
+
+    private MemoryInfoAccessor initMemoryInfoAccessor(MemoryInfoAccessor given) {
+        MemoryInfoAccessor memoryInfoAccessor = given;
+        String memoryInfoAccessorImpl = getProperty(HAZELCAST_MEMORY_INFO_ACCESSOR_IMPL);
+        if (memoryInfoAccessorImpl != null) {
+            try {
+                memoryInfoAccessor = ClassLoaderUtil.newInstance(null, memoryInfoAccessorImpl);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Used memoryInfoAccessor=" + memoryInfoAccessor.getClass().getCanonicalName());
+        }
+
+        return memoryInfoAccessor;
     }
 
     public boolean checkEvictable(MapContainer mapContainer, int partitionId) {
@@ -155,15 +183,31 @@ public class MaxSizeChecker {
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final double maxSize = maxSizeConfig.getSize();
         final long maxMemory = getMaxMemory();
-        return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / maxMemory);
+        return maxSize < (ONE_HUNDRED_PERCENT * usedHeapSize / maxMemory);
     }
 
     private boolean isEvictableFreeHeapPercentage(final MapContainer mapContainer) {
-        final long currentFreeHeapSize = getAvailableMemory();
-        final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final double freeHeapPercentage = maxSizeConfig.getSize();
-        final long maxMemory = getMaxMemory();
-        return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / maxMemory);
+        MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
+
+        long totalMemory = getTotalMemory();
+        long freeMemory = getFreeMemory();
+        long maxMemory = getMaxMemory();
+        long availableMemory = freeMemory + (maxMemory - totalMemory);
+
+        double configuredPercentage = maxSizeConfig.getSize();
+        double actualPercentage = ONE_HUNDRED_PERCENT * availableMemory / maxMemory;
+
+        boolean evictable = configuredPercentage > actualPercentage;
+        if (evictable && logger.isFinestEnabled()) {
+            String msg = "runtime.max=%s, runtime.used=%s, configuredFree%%=%.2f, actualFree%%=%.2f";
+            logger.finest(format(msg, toMB(maxMemory), toMB(totalMemory - freeMemory), configuredPercentage, actualPercentage));
+        }
+
+        return evictable;
+    }
+
+    private static String toMB(long bytes) {
+        return BYTES.toMegaBytes(bytes) + "M";
     }
 
     private long getTotalMemory() {
