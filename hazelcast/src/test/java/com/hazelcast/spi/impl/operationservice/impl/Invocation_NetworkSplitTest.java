@@ -227,6 +227,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     }
 
     private static class FullSplitAction implements SplitAction {
+
         @Override
         public void run(final Node node1, final Node node2, final Node node3) {
             // Artificially create a network-split
@@ -247,6 +248,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     }
 
     private static class PartialSplitAction implements SplitAction {
+
         @Override
         public void run(final Node node1, final Node node2, final Node node3) {
             // Artificially create a partial network-split;
@@ -266,6 +268,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     }
 
     private static class HalfPartialSplitAction implements SplitAction {
+
         @Override
         public void run(final Node node1, final Node node2, final Node node3) {
             // Artificially create a partial network-split;

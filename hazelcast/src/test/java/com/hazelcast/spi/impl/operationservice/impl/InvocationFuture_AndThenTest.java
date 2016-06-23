@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
+
     private HazelcastInstance local;
     private InternalOperationService operationService;
 
@@ -38,7 +39,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
     public void whenNullCallback() {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         future.andThen(null);
     }
@@ -47,7 +48,7 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
     public void whenNullCallback2() {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
         future.andThen(null, mock(Executor.class));
     }
@@ -56,20 +57,20 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
     public void whenNullExecutor() {
         DummyOperation op = new DummyOperation(null);
 
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
 
-        future.andThen(mock(ExecutionCallback.class), null);
+        future.andThen(getExecutionCallbackMock(), null);
     }
 
-    // There is a bug: https://github.com/hazelcast/hazelcast/issues/5001
+    // there is a bug: https://github.com/hazelcast/hazelcast/issues/5001
     @Test
     public void whenNullResponse_thenCallbackExecuted() throws ExecutionException, InterruptedException {
         DummyOperation op = new DummyOperation(null);
-        final ExecutionCallback callback = mock(ExecutionCallback.class);
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+        final ExecutionCallback<Object> callback = getExecutionCallbackMock();
+        InternalCompletableFuture<Object> future = operationService.invokeOnTarget(null, op, getAddress(local));
         future.get();
 
-        // Callback can be completed immediately since a response (NULL_RESPONSE) has been already set.
+        // callback can be completed immediately, since a response (NULL_RESPONSE) has been already set
         future.andThen(callback);
 
         assertTrueEventually(new AssertTask() {
@@ -78,5 +79,10 @@ public class InvocationFuture_AndThenTest extends HazelcastTestSupport {
                 verify(callback, times(1)).onResponse(isNull());
             }
         });
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ExecutionCallback<Object> getExecutionCallbackMock() {
+        return mock(ExecutionCallback.class);
     }
 }

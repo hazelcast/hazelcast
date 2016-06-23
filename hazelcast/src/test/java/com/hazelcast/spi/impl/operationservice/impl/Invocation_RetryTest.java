@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -41,16 +40,16 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
 
         OperationService service = getOperationService(local);
         Operation op = new PartitionTargetOperation();
-        Future f = service.createInvocationBuilder(null, op, getPartitionId(remote))
+        Future future = service.createInvocationBuilder(null, op, getPartitionId(remote))
                 .setCallTimeout(30000)
                 .invoke();
         sleepSeconds(1);
 
         remote.shutdown();
 
-        //the get should work without a problem because the operation should be re-targeted at the newest owner
-        //for that given partition
-        f.get();
+        // future.get() should work without a problem because the operation should be re-targeted at the newest owner
+        // for the given partition
+        future.get();
     }
 
     @Test
@@ -63,16 +62,15 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         OperationService service = getOperationService(local);
         Operation op = new TargetOperation();
         Address address = new Address(remote.getCluster().getLocalMember().getSocketAddress());
-        Future f = service.createInvocationBuilder(null, op, address).invoke();
+        Future future = service.createInvocationBuilder(null, op, address).invoke();
         sleepSeconds(1);
 
         remote.getLifecycleService().terminate();
 
         try {
-            f.get();
+            future.get();
             fail();
-        } catch (MemberLeftException expected) {
-
+        } catch (MemberLeftException ignored) {
         }
     }
 
@@ -90,8 +88,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         NonResponsiveOperation op = new NonResponsiveOperation();
         op.setValidateTarget(false);
         op.setPartitionId(1);
-        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null
-                , op, remoteNodeEngine.getThisAddress());
+        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, remoteNodeEngine.getThisAddress());
         Field invocationField = InvocationFuture.class.getDeclaredField("invocation");
         invocationField.setAccessible(true);
         final Invocation invocation = (Invocation) invocationField.get(future);
@@ -111,7 +108,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     /**
      * Non-responsive operation.
      */
-    public static class NonResponsiveOperation extends AbstractOperation {
+    public static class NonResponsiveOperation extends Operation {
 
         @Override
         public void run() throws InterruptedException {
@@ -126,7 +123,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     /**
      * Operation send to a specific member.
      */
-    private static class TargetOperation extends AbstractOperation {
+    private static class TargetOperation extends Operation {
 
         @Override
         public void run() throws InterruptedException {
@@ -137,7 +134,7 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
     /**
      * Operation send to a specific target partition.
      */
-    private static class PartitionTargetOperation extends AbstractOperation implements PartitionAwareOperation {
+    private static class PartitionTargetOperation extends Operation implements PartitionAwareOperation {
 
         @Override
         public void run() throws InterruptedException {

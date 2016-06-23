@@ -40,7 +40,6 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         assertTrue(future.isDone());
     }
 
-
     @Test
     public void whenInterruptedResponse() {
         DummyOperation op = new GetLostPartitionOperation();
@@ -79,11 +78,10 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
         assertTrue(future.isDone());
     }
 
-
-    // Needed to have an invocation and this is the easiest way how to get one and do not bother with its result.
+    // needed to have an invocation and this is the easiest way how to get one and do not bother with its result
     private static class GetLostPartitionOperation extends DummyOperation {
         {
-            // we need to set the call-id to prevent running the operation on the calling-thread.
+            // we need to set the call-id to prevent running the operation on the calling-thread
             setPartitionId(1);
         }
 
@@ -92,5 +90,4 @@ public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
             Thread.sleep(5000);
         }
     }
-
 }

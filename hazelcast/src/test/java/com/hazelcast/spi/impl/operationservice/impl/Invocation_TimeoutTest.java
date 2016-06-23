@@ -39,34 +39,6 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
     private final static Object RESPONSE = "someresponse";
 
-    private void assertEventuallyFailsWithHeartbeatTimeout(final ExecutionCallback callback) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
-                verify(callback).onFailure(argument.capture());
-                Throwable cause = argument.getValue();
-                assertInstanceOf(OperationTimeoutException.class, cause);
-                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
-            }
-        });
-    }
-
-    private void assertEventuallyFailsWithCallTimeout(final ExecutionCallback callback) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
-                verify(callback).onFailure(argument.capture());
-
-                Throwable cause = argument.getValue();
-                assertInstanceOf(OperationTimeoutException.class, cause);
-                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-call-timeout"));
-            }
-        });
-    }
-
-
     /**
      * Tests if the get is called with a timeout, and the operation takes more time to execute then the timeout, that the call
      * fails with a TimeoutException.
@@ -80,19 +52,19 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         warmUpPartitions(local, remote);
 
         OperationService opService = getOperationService(local);
-        Future f = opService.invokeOnPartition(
+        Future future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(SECONDS.toMillis(10), RESPONSE),
                 getPartitionId(remote));
 
         try {
-            f.get(1, SECONDS);
+            future.get(1, SECONDS);
             fail();
-        } catch (TimeoutException expected) {
+        } catch (TimeoutException ignored) {
         }
 
         // so even though the previous get failed with a timeout, the future can still provide a valid result.
-        assertEquals(RESPONSE, f.get());
+        assertEquals(RESPONSE, future.get());
     }
 
     @Test
@@ -105,7 +77,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         warmUpPartitions(local, remote);
 
         OperationService opService = getOperationService(local);
-        final Future f = opService.invokeOnPartition(
+        final Future future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(callTimeout * 3, RESPONSE),
                 getPartitionId(remote));
@@ -115,7 +87,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
             futures.add(spawn(new Callable<Object>() {
                 @Override
                 public Object call() throws Exception {
-                    return f.get();
+                    return future.get();
                 }
             }));
         }
@@ -143,12 +115,12 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         OperationService opService = getOperationService(local);
 
-        Future f = opService.invokeOnPartition(
+        Future future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(6 * callTimeout, RESPONSE),
                 getPartitionId(remote));
 
-        Object result = f.get(120, SECONDS);
+        Object result = future.get(120, SECONDS);
         assertEquals(RESPONSE, result);
     }
 
@@ -162,13 +134,13 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         warmUpPartitions(local, remote);
 
         OperationService opService = getOperationService(local);
-        ICompletableFuture f = opService.invokeOnPartition(
+        ICompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
                 new SlowOperation(6 * callTimeout, RESPONSE),
                 getPartitionId(remote));
 
-        final ExecutionCallback callback = mock(ExecutionCallback.class);
-        f.andThen(callback);
+        final ExecutionCallback<Object> callback = getExecutionCallbackMock();
+        future.andThen(callback);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -197,13 +169,13 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         OperationService opService = getOperationService(local);
 
-        Future f = opService.invokeOnPartition(
+        Future future = opService.invokeOnPartition(
                 null,
                 new VoidOperation(),
                 getPartitionId(remote));
 
         try {
-            f.get(5 * callTimeoutMs, MILLISECONDS);
+            future.get(5 * callTimeoutMs, MILLISECONDS);
             fail();
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
@@ -223,13 +195,13 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         OperationService opService = getOperationService(local);
 
-        ICompletableFuture f = opService.invokeOnPartition(
+        ICompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
                 new VoidOperation(),
                 getPartitionId(remote));
 
-        ExecutionCallback callback = mock(ExecutionCallback.class);
-        f.andThen(callback);
+        ExecutionCallback<Object> callback = getExecutionCallbackMock();
+        future.andThen(callback);
 
         assertEventuallyFailsWithHeartbeatTimeout(callback);
     }
@@ -253,13 +225,13 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         OperationService opService = getOperationService(local);
 
-        Future f = opService.invokeOnPartition(
+        Future future = opService.invokeOnPartition(
                 null,
                 new VoidOperation(callTimeoutMs * 5),
                 getPartitionId(remote));
 
         try {
-            f.get(10 * callTimeoutMs, MILLISECONDS);
+            future.get(10 * callTimeoutMs, MILLISECONDS);
             fail();
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
@@ -279,17 +251,16 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
         OperationService opService = getOperationService(local);
 
-        ICompletableFuture f = opService.invokeOnPartition(
+        ICompletableFuture<Object> future = opService.invokeOnPartition(
                 null,
                 new VoidOperation(callTimeoutMs * 5),
                 getPartitionId(remote));
 
-        final ExecutionCallback callback = mock(ExecutionCallback.class);
-        f.andThen(callback);
+        final ExecutionCallback<Object> callback = getExecutionCallbackMock();
+        future.andThen(callback);
 
         assertEventuallyFailsWithHeartbeatTimeout(callback);
     }
-
 
     // ==================== operation call timeout ===============================================================================
     // This test verifies that an operation doesn't get executed after its timeout expires. This is done by
@@ -310,10 +281,10 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         int partitionId = getPartitionId(remote);
         opService.invokeOnPartition(new SlowOperation(callTimeoutMs * 2).setPartitionId(partitionId));
 
-        Future f = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
+        Future future = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
 
         try {
-            f.get(3 * callTimeoutMs, MILLISECONDS);
+            future.get(3 * callTimeoutMs, MILLISECONDS);
             fail();
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
@@ -336,11 +307,43 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         int partitionId = getPartitionId(remote);
         opService.invokeOnPartition(new SlowOperation(callTimeoutMs * 2).setPartitionId(partitionId));
 
-        ICompletableFuture f = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
+        ICompletableFuture<Object> future = opService.invokeOnPartition(new DummyOperation().setPartitionId(partitionId));
 
-        ExecutionCallback callback = mock(ExecutionCallback.class);
-        f.andThen(callback);
+        ExecutionCallback<Object> callback = getExecutionCallbackMock();
+        future.andThen(callback);
 
         assertEventuallyFailsWithCallTimeout(callback);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ExecutionCallback<Object> getExecutionCallbackMock() {
+        return mock(ExecutionCallback.class);
+    }
+
+    private static void assertEventuallyFailsWithHeartbeatTimeout(final ExecutionCallback callback) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
+                verify(callback).onFailure(argument.capture());
+                Throwable cause = argument.getValue();
+                assertInstanceOf(OperationTimeoutException.class, cause);
+                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
+            }
+        });
+    }
+
+    private static void assertEventuallyFailsWithCallTimeout(final ExecutionCallback callback) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                ArgumentCaptor<Throwable> argument = ArgumentCaptor.forClass(Throwable.class);
+                verify(callback).onFailure(argument.capture());
+
+                Throwable cause = argument.getValue();
+                assertInstanceOf(OperationTimeoutException.class, cause);
+                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-call-timeout"));
+            }
+        });
     }
 }

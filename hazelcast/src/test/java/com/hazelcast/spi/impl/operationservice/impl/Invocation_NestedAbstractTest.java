@@ -12,9 +12,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 import java.io.IOException;
 
-public abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
+abstract class Invocation_NestedAbstractTest extends HazelcastTestSupport {
 
-    protected static final int GENERIC_OPERATION = -1;
+    static final int GENERIC_OPERATION = -1;
 
     public static boolean mappedToSameThread(OperationService operationService, int partitionId1, int partitionId2) {
         OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;

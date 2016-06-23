@@ -6,7 +6,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -36,13 +35,12 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
 
-    private HazelcastInstance[] instances;
     private HazelcastInstance local;
     private HazelcastInstance remote;
 
     @Before
     public void setUp() {
-        instances = createHazelcastInstanceFactory(2).newInstances();
+        HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances();
         warmUpPartitions(instances);
         local = instances[0];
         remote = instances[1];
@@ -56,9 +54,9 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
         Operation op = new OperationWithResponse(response);
 
         OperationService service = getOperationService(local);
-        Future f = service.createInvocationBuilder(null, op, localNode.address).invoke();
-        Object instance1 = f.get();
-        Object instance2 = f.get();
+        Future future = service.createInvocationBuilder(null, op, localNode.address).invoke();
+        Object instance1 = future.get();
+        Object instance2 = future.get();
 
         assertNotNull(instance1);
         assertNotNull(instance2);
@@ -79,9 +77,9 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
         Address remoteAddress = getAddress(remote);
 
         OperationService operationService = getOperationService(local);
-        Future f = operationService.createInvocationBuilder(null, op, remoteAddress).invoke();
-        Object instance1 = f.get();
-        Object instance2 = f.get();
+        Future future = operationService.createInvocationBuilder(null, op, remoteAddress).invoke();
+        Object instance1 = future.get();
+        Object instance2 = future.get();
 
         assertNotNull(instance1);
         assertNotNull(instance2);
@@ -95,13 +93,14 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
     public static class DummyObject implements Serializable {
     }
 
-    public static class OperationWithResponse extends AbstractOperation {
+    public static class OperationWithResponse extends Operation {
+
         private Data response;
 
         public OperationWithResponse() {
         }
 
-        public OperationWithResponse(Data response) {
+        OperationWithResponse(Data response) {
             this.response = response;
         }
 
@@ -127,5 +126,4 @@ public class InvocationFuture_GetNewInstanceTest extends HazelcastTestSupport {
             response = in.readData();
         }
     }
-
 }

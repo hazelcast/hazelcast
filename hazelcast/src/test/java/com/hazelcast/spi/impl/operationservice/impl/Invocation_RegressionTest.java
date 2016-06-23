@@ -22,6 +22,7 @@ import java.util.concurrent.Future;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_RegressionTest extends HazelcastTestSupport {
+
     @Test(expected = ExecutionException.class, timeout = 120000)
     public void testIssue2509() throws Exception {
 
@@ -41,10 +42,10 @@ public class Invocation_RegressionTest extends HazelcastTestSupport {
 
         private UnDeserializable unDeserializable;
 
-        public Issue2509Runnable() {
+        Issue2509Runnable() {
         }
 
-        public Issue2509Runnable(UnDeserializable unDeserializable) {
+        Issue2509Runnable(UnDeserializable unDeserializable) {
             this.unDeserializable = unDeserializable;
         }
 
@@ -68,7 +69,7 @@ public class Invocation_RegressionTest extends HazelcastTestSupport {
 
         private int foo;
 
-        public UnDeserializable(int foo) {
+        UnDeserializable(int foo) {
             this.foo = foo;
         }
 
@@ -82,5 +83,4 @@ public class Invocation_RegressionTest extends HazelcastTestSupport {
             foo = in.readInt();
         }
     }
-
 }

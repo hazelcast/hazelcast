@@ -38,17 +38,17 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new VoidOperation();
-        InvocationFuture f = (InvocationFuture) opService.createInvocationBuilder(
+        InvocationFuture future = (InvocationFuture) opService.createInvocationBuilder(
                 null, operation, getPartitionId(remote))
                 .setCallTimeout(Long.MAX_VALUE)
                 .invoke();
 
-        Invocation invocation = f.invocation;
+        Invocation invocation = future.invocation;
 
         assertEquals(Long.MAX_VALUE, invocation.op.getCallTimeout());
         assertEquals(Long.MAX_VALUE, invocation.callTimeoutMillis);
         assertEquals(NO_TIMEOUT__CALL_TIMEOUT_DISABLED, invocation.detectTimeout(SECONDS.toMillis(1)));
-        assertFalse(f.isDone());
+        assertFalse(future.isDone());
     }
 
     @Test
@@ -59,14 +59,14 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new SlowOperation(SECONDS.toMillis(60));
-        InvocationFuture f = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
+        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
 
-        Invocation invocation = f.invocation;
+        Invocation invocation = future.invocation;
         invocation.pendingResponse = "foo";
         invocation.backupsAcksExpected = 1;
 
         assertEquals(NO_TIMEOUT__RESPONSE_AVAILABLE, invocation.detectTimeout(SECONDS.toMillis(1)));
-        assertFalse(f.isDone());
+        assertFalse(future.isDone());
     }
 
     @Test
@@ -77,12 +77,12 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new SlowOperation(SECONDS.toMillis(60));
-        InvocationFuture f = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
+        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
 
-        Invocation invocation = f.invocation;
+        Invocation invocation = future.invocation;
 
         assertEquals(NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED, invocation.detectTimeout(SECONDS.toMillis(1)));
-        assertFalse(f.isDone());
+        assertFalse(future.isDone());
     }
 
     @Test
@@ -95,10 +95,10 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
         HazelcastInstance remote = factory.newHazelcastInstance(config);
 
         OperationService opService = getOperationService(local);
-        InvocationFuture f = (InvocationFuture) opService.invokeOnPartition(new SlowOperation(SECONDS.toMillis(60))
+        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(new SlowOperation(SECONDS.toMillis(60))
                 .setPartitionId(getPartitionId(remote)));
 
-        assertDetectHeartbeatTimeoutEventually(f.invocation, NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED);
+        assertDetectHeartbeatTimeoutEventually(future.invocation, NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED);
     }
 
     /**
@@ -119,8 +119,8 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
 
         OperationService opService = getOperationService(local);
         Operation operation = new VoidOperation(SECONDS.toMillis(20));
-        InvocationFuture f = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
-        Invocation invocation = f.invocation;
+        InvocationFuture future = (InvocationFuture) opService.invokeOnPartition(null, operation, getPartitionId(remote));
+        Invocation invocation = future.invocation;
 
         assertDetectHeartbeatTimeoutEventually(invocation, NO_TIMEOUT__CALL_TIMEOUT_NOT_EXPIRED);
         assertDetectHeartbeatTimeoutEventually(invocation, NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED);

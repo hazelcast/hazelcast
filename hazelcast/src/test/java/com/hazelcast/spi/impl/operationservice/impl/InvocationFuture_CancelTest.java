@@ -2,7 +2,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -22,43 +21,43 @@ import static org.junit.Assert.assertFalse;
 @Category({QuickTest.class, ParallelTest.class})
 public class InvocationFuture_CancelTest extends HazelcastTestSupport {
 
-    private static int RESULT = 123;
-    private HazelcastInstance hz;
+    private static final int RESULT = 123;
+
     private InternalOperationService opService;
 
     @Before
     public void setup() {
-        hz = createHazelcastInstance();
+        HazelcastInstance hz = createHazelcastInstance();
         opService = getOperationService(hz);
     }
 
     @Test
     public void whenMayInterruptIfRunning_thenIgnore() throws Exception {
-        ICompletableFuture f = invoke();
+        ICompletableFuture future = invoke();
 
-        boolean result = f.cancel(false);
+        boolean result = future.cancel(false);
 
         assertFalse(result);
-        assertFalse(f.isCancelled());
-        assertFalse(f.isDone());
-        // we need to make sure that the future is still running.
-        assertEquals(RESULT, f.get());
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+        // we need to make sure that the future is still running
+        assertEquals(RESULT, future.get());
     }
 
     @Test
     public void whenMayNotInterruptIfRunning_thenIgnore() throws Exception {
-        ICompletableFuture f = invoke();
+        ICompletableFuture future = invoke();
 
-        boolean result = f.cancel(true);
+        boolean result = future.cancel(true);
 
         assertFalse(result);
-        assertFalse(f.isCancelled());
-        assertFalse(f.isDone());
-        assertEquals(RESULT, f.get());
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+        assertEquals(RESULT, future.get());
     }
 
     private InternalCompletableFuture invoke() {
-        Operation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 sleepMillis(1000);

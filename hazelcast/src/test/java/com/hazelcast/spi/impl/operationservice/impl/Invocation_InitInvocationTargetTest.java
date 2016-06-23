@@ -13,7 +13,8 @@ import org.junit.runner.RunWith;
 public class Invocation_InitInvocationTargetTest {
 
     @Test
-    @Ignore//todo: needs to be implemented.
+    @Ignore
     public void test() {
+        // TODO: needs to be implemented
     }
 }
