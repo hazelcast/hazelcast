@@ -33,7 +33,7 @@ public class IdGeneratorStressTest extends HazelcastTestSupport {
 
     private static final int THREAD_COUNT = 32;
 
-    private static final int NUMBER_OF_IDS_PER_THREAD = 400001;
+    private static final int NUMBER_OF_IDS_PER_THREAD = 40000;
 
     private static final int TOTAL_ID_GENERATED = THREAD_COUNT * NUMBER_OF_IDS_PER_THREAD;
 
