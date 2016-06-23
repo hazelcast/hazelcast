@@ -28,8 +28,7 @@ import java.io.IOException;
 /**
  * Default implementation of {@link QueryCacheEventData} which is sent to subscriber.
  */
-public class DefaultQueryCacheEventData
-        implements QueryCacheEventData {
+public class DefaultQueryCacheEventData implements QueryCacheEventData {
 
     private Object key;
     private Object value;
@@ -215,7 +214,6 @@ public class DefaultQueryCacheEventData
         }
         return serializationService != null ? serializationService.equals(that.serializationService)
                 : that.serializationService == null;
-
     }
 
     @Override

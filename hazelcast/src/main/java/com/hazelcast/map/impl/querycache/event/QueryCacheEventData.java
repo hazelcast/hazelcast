@@ -24,8 +24,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 /**
  * Event data contract which is sent to subscriber side.
  */
-public interface QueryCacheEventData
-        extends Sequenced, EventData {
+public interface QueryCacheEventData extends Sequenced, EventData {
 
     Object getKey();
 
@@ -40,5 +39,4 @@ public interface QueryCacheEventData
     long getCreationTime();
 
     void setSerializationService(SerializationService serializationService);
-
 }
