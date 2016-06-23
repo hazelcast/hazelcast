@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -29,6 +28,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -66,7 +66,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.predicateApplyCount;
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
@@ -139,7 +141,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Test
     public void testUpdate_Issue_1764() {
         Config cfg = getConfig();
-        cfg.getMapConfig("test").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("test").setInMemoryFormat(OBJECT);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
@@ -391,7 +393,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -407,7 +409,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger result = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(1);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -433,7 +435,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testNotExistingEntryProcessor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -446,7 +448,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessorAllKeys() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -471,7 +473,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testBackupMapEntryProcessorAllKeys() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
@@ -506,7 +508,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessorWithPredicate() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, SampleObjects.Employee> map = instance1.getMap("testMapEntryProcessor");
@@ -536,7 +538,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testBackups() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
@@ -563,7 +565,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testIssue825MapEntryProcessorDeleteSettingNull() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -648,7 +650,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessorEntryListeners() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
@@ -725,7 +727,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testIssue969() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessorEntryListeners");
         final AtomicInteger addCount = new AtomicInteger(0);
@@ -809,7 +811,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testIssue969MapEntryProcessorAllKeys() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -885,7 +887,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config cfg = getConfig();
         String map1 = "default";
         String map2 = "default-2";
-        cfg.getMapConfig(map1).setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig(map1).setInMemoryFormat(OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap(map1);
@@ -1097,7 +1099,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final int expectedSerializationCount = 0;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         Config cfg = getConfig();
-        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig(mapName).setInMemoryFormat(OBJECT);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, MyObject> map = instance.getMap(mapName);
         map.executeOnKey("key", new StoreOperation());
@@ -1112,7 +1114,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final int expectedDeserializationCount = 0;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         Config cfg = getConfig();
-        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig(mapName).setInMemoryFormat(OBJECT);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, MyObject> map = instance.getMap(mapName);
         map.executeOnKey("key", new StoreOperation());
@@ -1125,7 +1127,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void executionOrderTest() {
         String mapName = randomString();
         Config cfg = getConfig();
-        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig(mapName).setInMemoryFormat(OBJECT);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
@@ -1248,6 +1250,51 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         assertTrueEventually(task);
     }
+
+    @Test
+    public void test_old_and_new_value_in_event_not_reference_same_object_whenUpdated() throws Exception {
+        Config cfg = getConfig();
+        cfg.getMapConfig("test").setInMemoryFormat(OBJECT);
+
+        HazelcastInstance node = createHazelcastInstance(cfg);
+        IMap<String, int[]> map = node.getMap("test");
+
+        // Put entry.
+        map.put("array", new int[]{0});
+
+        final CountDownLatch waitEvent = new CountDownLatch(1);
+
+        final AtomicReference<int[]> value = new AtomicReference<int[]>();
+        final AtomicReference<int[]> oldValue = new AtomicReference<int[]>();
+
+        // Add listener.
+        map.addEntryListener(new EntryUpdatedListener<String, int[]>() {
+            @Override
+            public void entryUpdated(EntryEvent<String, int[]> event) {
+                value.set(event.getValue());
+                oldValue.set(event.getOldValue());
+
+                waitEvent.countDown();
+            }
+        }, true);
+
+        // Update entry.
+        map.executeOnKey("array", new AbstractEntryProcessor<String, int[]>() {
+            @Override
+            public Object process(Map.Entry<String, int[]> entry) {
+                int[] array = entry.getValue();
+                array[0] = 1;
+
+                entry.setValue(array);
+                return null;
+            }
+        });
+
+        assertOpenEventually(waitEvent);
+        assertFalse("Old value and updated value should not reference same object", value.get() == oldValue.get());
+
+    }
+
 
     public static class DeleterEP extends AbstractEntryProcessor {
 
