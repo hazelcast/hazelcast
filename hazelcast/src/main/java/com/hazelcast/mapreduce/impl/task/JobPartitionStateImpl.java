@@ -25,10 +25,9 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * This class holds information about the current processing state and the owner of a partition
+ * This class holds information about the current processing state and the owner of a partition.
  */
-public class JobPartitionStateImpl
-        implements JobPartitionState, DataSerializable {
+public class JobPartitionStateImpl implements JobPartitionState, DataSerializable {
 
     private Address address;
     private State state;
@@ -54,15 +53,13 @@ public class JobPartitionStateImpl
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(address);
         out.writeInt(state.ordinal());
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         address = in.readObject();
         state = JobPartitionState.State.byOrdinal(in.readInt());
     }
