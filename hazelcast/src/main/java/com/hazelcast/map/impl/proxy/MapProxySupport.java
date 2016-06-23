@@ -43,6 +43,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
@@ -65,7 +66,6 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.map.impl.PartitioningStrategyFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -85,6 +85,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
+import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.ThreadUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -765,13 +766,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             List<Future> futures = new ArrayList<Future>(getPutAllFutureSize(mapSize, useBatching, partitionCount));
 
             // init counters for batching
-            Long[] counterPerMember = null;
+            MutableLong[] counterPerMember = null;
             Address[] addresses = null;
             if (useBatching) {
-                counterPerMember = new Long[partitionCount];
+                counterPerMember = new MutableLong[partitionCount];
                 addresses = new Address[partitionCount];
                 for (Entry<Address, List<Integer>> addressListEntry : memberPartitionsMap.entrySet()) {
-                    Long counter = new Long(0);
+                    MutableLong counter = new MutableLong();
                     Address address = addressListEntry.getKey();
                     for (int partitionId : addressListEntry.getValue()) {
                         counterPerMember[partitionId] = counter;
@@ -797,7 +798,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 entries.add(keyData, toData(entry.getValue()));
 
                 if (useBatching) {
-                    long currentSize = ++counterPerMember[partitionId];
+                    long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
                         invokePutAllOperation(addresses[partitionId], partitions, futures, entriesPerPartition);
