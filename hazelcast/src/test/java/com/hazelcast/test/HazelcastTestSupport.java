@@ -41,7 +41,6 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
 import java.lang.reflect.Constructor;
@@ -71,6 +70,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -647,7 +647,7 @@ public abstract class HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
     public static <E> E assertInstanceOf(Class<E> clazz, Object object) {
-        Assert.assertNotNull(object);
+        assertNotNull(object);
         assertTrue(object + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(object.getClass()));
         return (E) object;
     }
@@ -657,7 +657,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertIterableEquals(Iterable iterable, Object... values) {
-        List actual = new ArrayList();
+        List<Object> actual = new ArrayList<Object>();
         for (Object object : iterable) {
             actual.add(object);
         }
@@ -961,7 +961,6 @@ public abstract class HazelcastTestSupport {
         throw lastException;
     }
 
-    public static void ignore(Throwable t) {
-        // NO-OP
+    public static void ignore(Throwable ignored) {
     }
 }
