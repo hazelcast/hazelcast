@@ -43,7 +43,7 @@ public class LockLockMessageTask
     protected Operation prepareOperation() {
         Data key = serializationService.toData(parameters.name);
         return new LockOperation(new InternalLockNamespace(parameters.name)
-                , key, parameters.threadId, parameters.leaseTime, -1);
+                , key, parameters.threadId, parameters.leaseTime, -1, parameters.referenceId);
     }
 
     @Override

@@ -36,6 +36,11 @@ public class LockOperation extends AbstractLockOperation implements BlockingOper
         super(namespace, key, threadId, leaseTime, timeout);
     }
 
+    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout, long referenceId) {
+        super(namespace, key, threadId, leaseTime, timeout);
+        setReferenceCallId(referenceId);
+    }
+
     @Override
     public void run() throws Exception {
         response = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);

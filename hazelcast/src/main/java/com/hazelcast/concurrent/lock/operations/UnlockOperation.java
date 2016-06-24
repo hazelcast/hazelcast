@@ -49,6 +49,12 @@ public class UnlockOperation extends AbstractLockOperation implements Notifier, 
         this.force = force;
     }
 
+    public UnlockOperation(ObjectNamespace namespace, Data key, long threadId, boolean force, long referenceId) {
+        super(namespace, key, threadId);
+        this.force = force;
+        this.setReferenceCallId(referenceId);
+    }
+
     @Override
     public void run() throws Exception {
         if (force) {

@@ -45,7 +45,7 @@ public class MultiMapUnlockMessageTask
     @Override
     protected Operation prepareOperation() {
         DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
-        return new UnlockOperation(namespace, parameters.key, parameters.threadId, false);
+        return new UnlockOperation(namespace, parameters.key, parameters.threadId, false, parameters.referenceId);
     }
 
     @Override
