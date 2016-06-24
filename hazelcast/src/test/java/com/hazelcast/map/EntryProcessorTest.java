@@ -29,6 +29,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -1248,6 +1249,39 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         assertTrueEventually(task);
     }
+
+
+    @Test
+    public void test_entryProcessorRuns_onAsyncBackup() {
+        Config config = getConfig();
+        config.getMapConfig("test").setBackupCount(0).setAsyncBackupCount(1);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+
+        IMap map = node1.getMap("test");
+        map.executeOnKey(1, new EntryCreate());
+
+
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long entryCountOnNode1 = getTotalOwnedAndBackupEntryCount(node1.getMap("test"));
+                long entryCountOnNode2 = getTotalOwnedAndBackupEntryCount(node2.getMap("test"));
+                assertEquals("EntryProcess should run on async backup and should create entry there",
+                        entryCountOnNode1, entryCountOnNode2);
+            }
+        };
+
+        assertTrueEventually(task);
+    }
+
+    private static long getTotalOwnedAndBackupEntryCount(IMap map) {
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        return localMapStats.getOwnedEntryCount() + localMapStats.getBackupEntryCount();
+    }
+
 
     public static class DeleterEP extends AbstractEntryProcessor {
 

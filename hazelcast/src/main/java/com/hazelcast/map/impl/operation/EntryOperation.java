@@ -132,7 +132,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public boolean shouldBackup() {
-        return mapContainer.getBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
+        return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override
