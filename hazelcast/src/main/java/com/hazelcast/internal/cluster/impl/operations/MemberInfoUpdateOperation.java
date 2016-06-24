@@ -19,11 +19,13 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -48,6 +50,18 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     public void run() throws Exception {
+        final ClusterServiceImpl clusterService = getService();
+        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+
+        if (!nodeEngine.getNode().joined()) {
+            ILogger logger = getLogger();
+            if (logger.isFineEnabled()) {
+                logger.fine("Ignoring member info update since not joined yet...");
+            }
+
+            return;
+        }
+
         processMemberUpdate();
     }
 

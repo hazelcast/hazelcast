@@ -160,8 +160,8 @@ public class ClusterHeartbeatManager {
 
     public void acceptMasterConfirmation(MemberImpl member, long timestamp) {
         if (member != null) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("MasterConfirmation has been received from " + member);
+            if (logger.isFineEnabled()) {
+                logger.fine("MasterConfirmation has been received from " + member);
             }
             long clusterTime = clusterClock.getClusterTime();
             if (clusterTime - timestamp > maxNoMasterConfirmationMillis / 2) {
@@ -266,8 +266,8 @@ public class ClusterHeartbeatManager {
             clusterService.removeAddress(member.getAddress(), reason);
             return true;
         }
-        if (logger.isFinestEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
-            logger.finest(format("Not receiving any heartbeats from %s since %s", member, timeToString(heartbeatTime)));
+        if (logger.isFineEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
+            logger.fine(format("Not receiving any heartbeats from %s since %s", member, timeToString(heartbeatTime)));
         }
         return false;
     }
@@ -371,8 +371,8 @@ public class ClusterHeartbeatManager {
         try {
             node.nodeEngine.getOperationService().send(new HeartbeatOperation(clusterClock.getClusterTime()), target);
         } catch (Exception e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(format("Error while sending heartbeat -> %s[%s]", e.getClass().getName(), e.getMessage()));
+            if (logger.isFineEnabled()) {
+                logger.fine(format("Error while sending heartbeat -> %s[%s]", e.getClass().getName(), e.getMessage()));
             }
         }
     }
@@ -398,16 +398,16 @@ public class ClusterHeartbeatManager {
         }
         Address masterAddress = node.getMasterAddress();
         if (masterAddress == null) {
-            logger.finest("Could not send MasterConfirmation, masterAddress is null!");
+            logger.fine("Could not send MasterConfirmation, masterAddress is null!");
             return;
         }
         MemberImpl masterMember = clusterService.getMember(masterAddress);
         if (masterMember == null) {
-            logger.finest("Could not send MasterConfirmation, masterMember is null!");
+            logger.fine("Could not send MasterConfirmation, masterMember is null!");
             return;
         }
-        if (logger.isFinestEnabled()) {
-            logger.finest("Sending MasterConfirmation to " + masterMember);
+        if (logger.isFineEnabled()) {
+            logger.fine("Sending MasterConfirmation to " + masterMember);
         }
         nodeEngine.getOperationService().send(new MasterConfirmationOperation(clusterClock.getClusterTime()),
                 masterAddress);

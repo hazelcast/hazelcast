@@ -66,9 +66,12 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 ClusterState clusterState, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+                                 String clusterId, long clusterStartTime, ClusterState clusterState,
+                                 PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(members, masterTime, sendResponse);
         this.postJoinOp = postJoinOp;
+        this.clusterId = clusterId;
+        this.clusterStartTime = clusterStartTime;
         this.clusterState = clusterState;
         this.partitionRuntimeState = partitionRuntimeState;
     }
@@ -84,8 +87,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
 
         if (nodeEngine.getNode().joined()) {
             ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Node is already joined... No need to finalize join...");
+            if (logger.isFineEnabled()) {
+                logger.fine("Node is already joined... No need to finalize join...");
             }
             return;
         }

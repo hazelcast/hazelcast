@@ -141,8 +141,8 @@ public class ClusterJoinManager {
         }
 
         if (joinInProgress) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(format("Join is in progress, cannot handle join request from %s at the moment", target));
+            if (logger.isFineEnabled()) {
+                logger.fine(format("Join is in progress, cannot handle join request from %s at the moment", target));
             }
             return;
         }
@@ -154,8 +154,8 @@ public class ClusterJoinManager {
         if (node.joined() && node.isRunning()) {
             return true;
         }
-        if (logger.isFinestEnabled()) {
-            logger.finest("Node is not ready to process join request...");
+        if (logger.isFineEnabled()) {
+            logger.fine("Node is not ready to process join request...");
         }
         return false;
     }
@@ -299,9 +299,9 @@ public class ClusterJoinManager {
 
     private void startJoinRequest(MemberInfo memberInfo) {
         long now = Clock.currentTimeMillis();
-        if (logger.isFinestEnabled()) {
+        if (logger.isFineEnabled()) {
             String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
-            logger.finest(format("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
+            logger.fine(format("Handling join from %s, joinInProgress: %b%s", memberInfo.getAddress(),
                     joinInProgress, timeToStart));
         }
 
@@ -335,8 +335,8 @@ public class ClusterJoinManager {
 
     public void handleMaster(Address masterAddress, Address callerAddress) {
         if (node.joined()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(format("Ignoring master response %s from %s, this node is already joined",
+            if (logger.isFineEnabled()) {
+                logger.fine(format("Ignoring master response %s from %s, this node is already joined",
                         masterAddress, callerAddress));
             }
             return;
@@ -344,7 +344,7 @@ public class ClusterJoinManager {
 
         if (node.getThisAddress().equals(masterAddress)) {
             if (node.isMaster()) {
-                logger.finest(format("Ignoring master response %s from %s, this node is already master",
+                logger.fine(format("Ignoring master response %s from %s, this node is already master",
                         masterAddress, callerAddress));
             } else {
                 node.setAsMaster();
@@ -358,8 +358,8 @@ public class ClusterJoinManager {
     private void handleMasterResponse(Address masterAddress, Address callerAddress) {
         clusterServiceLock.lock();
         try {
-            if (logger.isFinestEnabled()) {
-                logger.finest(format("Handling master response %s from %s", masterAddress, callerAddress));
+            if (logger.isFineEnabled()) {
+                logger.fine(format("Handling master response %s from %s", masterAddress, callerAddress));
             }
 
             Address currentMaster = node.getMasterAddress();
@@ -417,8 +417,8 @@ public class ClusterJoinManager {
                 sendMasterAnswer(joinMessage.getAddress());
             }
         } else {
-            if (logger.isFinestEnabled()) {
-                logger.finest(format("Received a master question from %s,"
+            if (logger.isFineEnabled()) {
+                logger.fine(format("Received a master question from %s,"
                         + " but this node is not master itself or doesn't have a master yet!", joinMessage.getAddress()));
             }
         }
@@ -443,8 +443,8 @@ public class ClusterJoinManager {
         Address target = member.getAddress();
         if (joinMessage.getUuid().equals(member.getUuid())) {
             if (node.isMaster()) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest(format("Ignoring join request, member already exists: %s", joinMessage));
+                if (logger.isFineEnabled()) {
+                    logger.fine(format("Ignoring join request, member already exists: %s", joinMessage));
                 }
 
                 // send members update back to node trying to join again...
@@ -454,8 +454,8 @@ public class ClusterJoinManager {
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
 
                 Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()),
-                        postJoinOp, clusterClock.getClusterTime(), clusterStateManager.getState(),
-                        partitionRuntimeState, false);
+                        postJoinOp, clusterClock.getClusterTime(), clusterService.getClusterId(),
+                        clusterClock.getClusterStartTime(), clusterStateManager.getState(), partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
             } else {
                 sendMasterAnswer(target);
@@ -486,7 +486,7 @@ public class ClusterJoinManager {
     }
 
     private void startJoin() {
-        logger.finest("Starting join...");
+        logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
             try {
@@ -520,10 +520,11 @@ public class ClusterJoinManager {
                     calls.add(invokeClusterOperation(joinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : members) {
-                    if (!member.getAddress().equals(clusterService.getThisAddress())) {
-                        Operation infoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time, true);
-                        calls.add(invokeClusterOperation(infoUpdateOperation, member.getAddress()));
+                    if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
+                        continue;
                     }
+                    Operation infoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time, true);
+                    calls.add(invokeClusterOperation(infoUpdateOperation, member.getAddress()));
                 }
 
                 int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);

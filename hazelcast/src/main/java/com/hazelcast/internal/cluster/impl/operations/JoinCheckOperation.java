@@ -63,12 +63,12 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
                 if (service.getClusterJoinManager().validateJoinMessage(request)) {
                     response = node.createSplitBrainJoinMessage();
                 }
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Returning " + response + " to " + getCallerAddress());
+                if (logger.isFineEnabled()) {
+                    logger.fine("Returning " + response + " to " + getCallerAddress());
                 }
             } catch (Exception e) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Could not validate split-brain join message! -> " + e.getMessage());
+                if (logger.isFineEnabled()) {
+                    logger.fine("Could not validate split-brain join message! -> " + e.getMessage());
                 }
             }
         }
