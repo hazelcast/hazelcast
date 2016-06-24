@@ -20,6 +20,7 @@ import java.util.List;
 
 import static java.lang.String.format;
 import static java.lang.reflect.Modifier.isAbstract;
+import static java.lang.reflect.Modifier.isPrivate;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -38,12 +39,16 @@ public class MapOperationProviderDelegatorTest extends HazelcastTestSupport {
 
     @Test
     public void testDelegator() throws Exception {
-        // invoke all methods of MapOperationProviderDelegator
         Method[] methods = MapOperationProviderDelegator.class.getDeclaredMethods();
+
+        // invoke all methods of MapOperationProviderDelegator
         for (Method method : methods) {
+            if (isAbstract(method.getModifiers()) || isPrivate(method.getModifiers())) {
+                continue;
+            }
+
             Object[] parameters = getParameters(method);
             try {
-                method.setAccessible(true);
                 method.invoke(delegator, parameters);
             } catch (Exception e) {
                 System.err.println(format("Could not invoke method %s: %s", method.getName(), e.getMessage()));
@@ -60,7 +65,7 @@ public class MapOperationProviderDelegatorTest extends HazelcastTestSupport {
 
         // verify that all methods have been called on the delegated MapOperationProvider
         for (Method method : methods) {
-            if (isAbstract(method.getModifiers())) {
+            if (isAbstract(method.getModifiers()) || isPrivate(method.getModifiers())) {
                 continue;
             }
             assertTrue(format("Method %s() should have been called", method.getName()), methodsCalled.contains(method.getName()));
