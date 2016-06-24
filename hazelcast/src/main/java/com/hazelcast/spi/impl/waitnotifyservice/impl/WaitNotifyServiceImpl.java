@@ -169,6 +169,19 @@ public class WaitNotifyServiceImpl implements WaitNotifyService, LiveOperationsT
         return count;
     }
 
+    // for testing purposes only
+    public int getTotalValidWaitingOperationCount() {
+        int count = 0;
+        for (Queue<WaitingOperation> queue : mapWaitingOps.values()) {
+            for (WaitingOperation waitingOperation : queue) {
+                if (waitingOperation.valid) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
     // invalidated waiting ops will removed from queue eventually by notifiers.
     public void onMemberLeft(MemberImpl leftMember) {
         invalidateWaitingOps(leftMember.getUuid());
