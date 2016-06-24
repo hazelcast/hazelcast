@@ -2,6 +2,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -24,7 +25,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapOperationProviderDelegatorTest {
+public class MapOperationProviderDelegatorTest extends HazelcastTestSupport {
 
     private MapOperationProvider operationProvider;
     private TestMapOperationProviderDelegator delegator;
@@ -41,7 +42,12 @@ public class MapOperationProviderDelegatorTest {
         Method[] methods = MapOperationProviderDelegator.class.getDeclaredMethods();
         for (Method method : methods) {
             Object[] parameters = getParameters(method);
-            method.invoke(delegator, parameters);
+            try {
+                method.setAccessible(true);
+                method.invoke(delegator, parameters);
+            } catch (Exception e) {
+                System.err.println(format("Could not invoke method %s: %s", method.getName(), e.getMessage()));
+            }
         }
 
         // get a list of all method invocations from Mockito
