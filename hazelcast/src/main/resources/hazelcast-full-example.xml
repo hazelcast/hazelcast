@@ -112,34 +112,33 @@ https://hazelcast.org/documentation/.
 	set to true, only the latest events (based on key) are selected and sent to the target cluster in a batch.
     
     The <wan-replication> element has the following sub-elements:
-    * <target-cluster>: 
-	Specifies the target cluster to which the events will be replicated. It has the group-name and
-	group-password attributes. These attributes correspond to the <name> and <password> sub-elements, 
-	respectively, defined in the target cluster's <group> element. Please see the <group> configuration 
+    * <wan-publisher>:
+	Specifies the target cluster to which the events will be replicated. It has the group-name attribute.
+	These attribute corresponds to the <name> sub-element
+    defined in the target cluster's <group> element. Please see the <group> configuration
 	description in this XML.
-    * <replication-impl>: 
+    * <class-name>:
 	Name of the class implementation for WAN Replication. This name can have two values:
     	- WanNoDelayReplication: 
 		Sends replication events to the target cluster as soon as they are generated.
     	- WanBatchReplication: 
 		Waits until a batch size is reached or a delay time is passed.
-		Please see the <batch-size> and <batch-max-delay-millis> configuration descriptions below.
-    * <end-points>: 
-	IP addresses of the target cluster members for which the WAN replication is implemented. You give these 
-	addresses using the <address> sub-elements.
-    * <batch-size>: 
-	This element is valid when you set <replication-impl> (the WAN Replication implementation) to 
+		Please see the `batch.size and batch.max.delay.millis configuration descriptions below.
+    * "endpoints":
+	Comma separated list of IP addresses of the target cluster members for which the WAN replication is implemented.
+    * "batch.size":
+	This element is valid when you set <class-name> (the WAN Replication implementation) to
 	`WanBatchReplication`. It changes the maximum size of events that are sent to the target cluster in a 
 	single batch. The batch of events is not sent until this size is reached. Its default value is 500.
-    * <batch-max-delay-millis>: 
-	This element is valid when you set <replication-impl> (the WAN Replication implementation) to 
-	`WanBatchReplication`. If the number of events generated does not reach the <batch-size>, they are sent to the 
+    * "batch.max.delay.millis":
+	This element is valid when you set <class-name> (the WAN Replication implementation) to
+	`WanBatchReplication`. If the number of events generated does not reach the "batch.size", they are sent to the
 	target cluster after a certain amount of time is passed. You can set this time in milliseconds using this 
 	element. Its default value is 1000 milliseconds.
-    * <response-timeout-millis>: 
+    * "response.timeout.millis":
 	After a replication event is sent to the target cluster, the source member waits for a confirmation 
 	that says the event has reached the target. If confirmation is not received for a period of 
-	<response-timeout-millis>, the event is resent to the target cluster. The default value is 60000 milliseconds.
+	`response.timeout.millis`, the event is resent to the target cluster. The default value is 60000 milliseconds.
     * <queue-capacity>: 
 	Size of the queue of events. Its default value is 10000. If you exceed this queue size, then the 
 	oldest, not yet replicated updates might get lost. Therefore, if you have a large rate of 
@@ -160,22 +159,21 @@ https://hazelcast.org/documentation/.
 		Guarantees that the event is both received and applied by the target cluster. 
 		It is more time consuming, but it is the best way if you have strong consistency requirements.
 -->        
-    <wan-replication name="my-wan-cluster-batch" snapshot-enabled="false">
-        <target-cluster group-name="nyc" group-password="nyc-pass">
-            <replication-impl>
-                com.hazelcast.enterprise.wan.replication.WanBatchReplication
-            </replication-impl>
-            <end-points>
-                <address>10.3.5.1:5701</address>
-                <address>10.3.5.2:5701</address>
-            </end-points>
-            <batch-size>1000</batch-size>
-            <batch-max-delay-millis>2</batch-max-delay-millis>
-            <response-timeout-millis>70000</response-timeout-millis>
+    <wan-replication name="my-wan-cluster-batch">
+        <wan-publisher group-name="nyc">
+            <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
             <queue-capacity>15000</queue-capacity>
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
-            <acknowledge-type>ACK_ON_OPERATION_COMPLETE</acknowledge-type>
-        </target-cluster>
+            <properties>
+                <property name="endpoints">10.3.5.1:5701,10.3.5.2:5701</property>
+                <property name="batch.size">1000</property>
+                <property name="batch.max.delay.millis">2000</property>
+                <property name="response.timeout.millis">60000</property>
+                <property name="ack.type">ACK_ON_OPERATION_COMPLETE</property>
+                <property name="snapshot.enabled">false</property>
+                <property name="group.password">nyc-pass</property>
+            </properties>
+        </wan-publisher>
     </wan-replication>
 <!--
     ===== HAZELCAST NETWORK CONFIGURATION =====
