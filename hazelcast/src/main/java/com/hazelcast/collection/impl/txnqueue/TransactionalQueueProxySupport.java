@@ -71,6 +71,7 @@ public abstract class TransactionalQueueProxySupport extends TransactionalDistri
     public boolean offerInternal(Data data, long timeout) {
         TxnReserveOfferOperation operation
                 = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
+        operation.setCallerUuid(tx.getOwnerUuid());
         try {
             Future<Long> f = invoke(operation);
             Long itemId = f.get();
@@ -95,6 +96,7 @@ public abstract class TransactionalQueueProxySupport extends TransactionalDistri
         QueueItem reservedOffer = offeredQueue.peek();
         long itemId = reservedOffer == null ? -1 : reservedOffer.getItemId();
         TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, itemId, tx.getTxnId());
+        operation.setCallerUuid(tx.getOwnerUuid());
         try {
             Future<QueueItem> f = invoke(operation);
             QueueItem item = f.get();
