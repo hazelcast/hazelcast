@@ -1,8 +1,23 @@
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.cache.impl.CacheEventData;
+import com.hazelcast.cache.impl.CacheEventDataImpl;
+import com.hazelcast.cache.impl.CacheEventType;
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.*;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
+import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
 
 import java.io.IOException;
 
@@ -13,8 +28,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.io.IOException;
 import java.io.DataInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.net.UnknownHostException;
+import javax.transaction.xa.Xid;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
@@ -27,7 +54,7 @@ public class ClientCompatibilityNullTest_1_0 {
     @org.junit.Test
     public void test()
             throws IOException {
-        InputStream input = ClientCompatibilityNullTest_1_0.class.getResourceAsStream("/1.0.protocol.compatibility.null.binary");
+        InputStream input = getClass().getResourceAsStream("/1.0.protocol.compatibility.null.binary");
         DataInputStream inputStream = new DataInputStream(input);
 
         {
@@ -579,7 +606,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -599,7 +626,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -636,7 +663,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -1327,7 +1354,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -1705,7 +1732,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -1725,7 +1752,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -1762,7 +1789,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -1782,7 +1809,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -2904,7 +2931,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -2924,7 +2951,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -2944,7 +2971,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -2964,7 +2991,7 @@ public class ClientCompatibilityNullTest_1_0 {
             inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
             byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
             inputStream.read(bytes);
-            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, frameLength), bytes));
+            assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
         }
         {
             int length = inputStream.readInt();
@@ -5741,4 +5768,7 @@ public class ClientCompatibilityNullTest_1_0 {
 
     }
 }
+
+
+
 
