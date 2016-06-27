@@ -174,7 +174,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         String key = "key";
 
-        map.set(key, "value", 1, TimeUnit.SECONDS);
+        map.set(key, "value", 5, TimeUnit.SECONDS);
         // this `set` operation should not affect existing ttl.
         // so "key" should be expired after 1 seconds.
         map.set(key, "value2");
