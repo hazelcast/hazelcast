@@ -26,7 +26,6 @@ import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -42,7 +41,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionPolicy.NONE;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 
 /**
  * NearCache.
@@ -95,12 +93,6 @@ public class NearCacheImpl implements NearCache<Data, Object> {
         this.serializationService = nodeEngine.getSerializationService();
         this.invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         this.mapName = mapName;
-        int partitionCount = getPartitionCount(nodeEngine);
-    }
-
-    private int getPartitionCount(NodeEngine nodeEngine) {
-        HazelcastProperties properties = nodeEngine.getProperties();
-        return properties.getInteger(PARTITION_COUNT);
     }
 
     // TODO this operation returns the given value in near-cache memory format (data or object)?
