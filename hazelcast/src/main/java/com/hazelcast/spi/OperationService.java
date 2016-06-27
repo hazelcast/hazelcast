@@ -106,6 +106,20 @@ public interface OperationService {
                                             Collection<Integer> partitions) throws Exception;
 
     /**
+     * Invokes an set of operation on selected set of partitions
+     * * <p/>
+     * This method blocks until all operations complete.
+     *
+     * @param serviceName      the name of the service
+     * @param operationFactory the factory responsible for creating operations
+     * @param partitions       the partitions the operation should be executed on.
+     * @return a Map with partitionId as key and the outcome of the operation as value.
+     * @throws Exception
+     */
+    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                            int[] partitions) throws Exception;
+
+    /**
      * Executes an operation remotely.
      * <p/>
      * It isn't allowed
