@@ -78,10 +78,14 @@ public class CacheClusterWideIteratorTest extends HazelcastTestSupport {
         cachingProvider.close();
     }
 
+    protected CacheConfig createCacheConfig() {
+        return new CacheConfig();
+    }
+
     private Cache<Integer, Integer> getCache() {
         String cacheName = randomString();
         CacheManager cacheManager = cachingProvider.getCacheManager();
-        CacheConfig<Integer, Integer> config = new CacheConfig<Integer, Integer>();
+        CacheConfig<Integer, Integer> config = createCacheConfig();
         return cacheManager.createCache(cacheName, config);
     }
 
