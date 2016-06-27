@@ -33,7 +33,6 @@ import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 import static com.hazelcast.util.CollectionUtil.toIntArray;
@@ -213,64 +212,4 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         operationFactory = in.readObject();
         partitions = in.readIntArray();
     }
-
-    // implements IdentifiedDataSerializable to speed up serialization of arrays
-    public static final class PartitionResponse implements IdentifiedDataSerializable {
-
-        private int[] partitions;
-        private Object[] results;
-
-        public PartitionResponse() {
-        }
-
-        PartitionResponse(int[] partitions, Object[] results) {
-            this.partitions = partitions;
-            this.results = results;
-        }
-
-        public void addResults(Map<Integer, Object> partitionResults) {
-            if (results == null) {
-                return;
-            }
-            for (int i = 0; i < results.length; i++) {
-                partitionResults.put(partitions[i], results[i]);
-            }
-        }
-
-        @Override
-        public int getFactoryId() {
-            return SpiDataSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getId() {
-            return SpiDataSerializerHook.PARTITION_RESPONSE;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeIntArray(partitions);
-            int resultLength = (results != null ? results.length : 0);
-            out.writeInt(resultLength);
-            if (resultLength > 0) {
-                for (Object result : results) {
-                    out.writeObject(result);
-                }
-            }
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            partitions = in.readIntArray();
-            int resultLength = in.readInt();
-            if (resultLength > 0) {
-                results = new Object[resultLength];
-                for (int i = 0; i < resultLength; i++) {
-                    results[i] = in.readObject();
-                }
-            }
-        }
-    }
-
-
 }

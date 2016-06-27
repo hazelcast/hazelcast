@@ -72,7 +72,7 @@ public interface MapOperationProvider {
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);
 
-    MapOperation createPutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries);
+    MultiPartitionOperation createPutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries);
 
     MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence);
 
