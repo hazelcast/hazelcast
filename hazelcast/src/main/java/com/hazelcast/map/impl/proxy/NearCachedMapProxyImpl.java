@@ -23,15 +23,19 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.nearcache.InvalidationCounter;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +55,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected NearCache<Data, Data> nearCache;
     protected boolean cacheLocalEntries;
+    protected InvalidationCounter invalidationCounter;
 
     public NearCachedMapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
@@ -68,6 +73,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
         this.nearCache = nearCacheProvider.getOrCreateNearCache(name);
         this.cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
+
+        HazelcastProperties properties = mapServiceContext.getNodeEngine().getProperties();
+        int partitionCount = properties.getInteger(GroupProperty.PARTITION_COUNT);
+        this.invalidationCounter = new InvalidationCounter(partitionCount);
     }
 
     // this operation returns the object in data format,
@@ -82,10 +91,20 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return value;
         }
 
+        long count = invalidationCounter.increase(key);
+
         value = super.getInternal(key);
 
         if (!isOwn(key) || cacheLocalEntries) {
+            if (invalidationCounter.isStale(key, count)) {
+                return value;
+            }
+
             nearCache.put(key, toData(value));
+
+            if (invalidationCounter.isStale(key, count)) {
+                invalidateCache(key);
+            }
         }
 
         return value;
@@ -121,13 +140,15 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     protected boolean isCachedNull(Object value) {
-        return NULL_OBJECT.equals(value);
+        return NULL_OBJECT == value;
     }
 
     @Override
     protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        invalidationCounter.increase(key);
+        Data data = super.putInternal(key, value, ttl, timeunit);
         invalidateCache(key);
-        return super.putInternal(key, value, ttl, timeunit);
+        return data;
     }
 
     @Override
@@ -168,64 +189,70 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected Data replaceInternal(Data key, Data value) {
+        Data data = super.replaceInternal(key, value);
         invalidateCache(key);
-        return super.replaceInternal(key, value);
+        return data;
     }
 
     @Override
     protected void setInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        invalidateCache(key);
         super.setInternal(key, value, ttl, timeunit);
+        invalidateCache(key);
     }
 
     @Override
     protected boolean evictInternal(Data key) {
+        boolean evicted = super.evictInternal(key);
         invalidateCache(key);
-        return super.evictInternal(key);
+        return evicted;
     }
 
     @Override
     protected void evictAllInternal() {
-        nearCache.clear();
         super.evictAllInternal();
+        nearCache.clear();
     }
 
     @Override
     public void loadAllInternal(boolean replaceExistingValues) {
+        super.loadAllInternal(replaceExistingValues);
+
         if (replaceExistingValues) {
             nearCache.clear();
         }
-        super.loadAllInternal(replaceExistingValues);
     }
 
     @Override
     protected void loadInternal(Iterable<Data> keys, boolean replaceExistingValues) {
-        invalidateCache(keys);
         super.loadInternal(keys, replaceExistingValues);
+        invalidateCache(keys);
     }
 
     @Override
     protected Data removeInternal(Data key) {
+        Data data = super.removeInternal(key);
         invalidateCache(key);
-        return super.removeInternal(key);
+        return data;
     }
 
     @Override
     protected void deleteInternal(Data key) {
-        invalidateCache(key);
         super.deleteInternal(key);
+        invalidateCache(key);
     }
 
     @Override
     protected boolean removeInternal(Data key, Data value) {
+        boolean result = super.removeInternal(key, value);
         invalidateCache(key);
-        return super.removeInternal(key, value);
+        return result;
     }
 
     @Override
     protected boolean tryRemoveInternal(Data key, long timeout, TimeUnit timeunit) {
+        boolean removed = super.tryRemoveInternal(key, timeout, timeunit);
         invalidateCache(key);
-        return super.tryRemoveInternal(key, timeout, timeunit);
+        return removed;
     }
 
     @Override
@@ -248,6 +275,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
         getCachedValue(keys, resultingKeyValuePairs);
 
+
+        Map<Data, Long> counters = new HashMap<Data, Long>(keys.size());
+        for (Data key : keys) {
+            counters.put(key, invalidationCounter.increase(key));
+        }
+
         int currentSize = resultingKeyValuePairs.size();
         super.getAllObjectInternal(keys, resultingKeyValuePairs);
 
@@ -257,7 +290,16 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             Data value = toData(resultingKeyValuePairs.get(i++));
 
             if (!isOwn(key) || cacheLocalEntries) {
+                long previousCount = counters.get(key);
+                if (invalidationCounter.isStale(key, previousCount)) {
+                    continue;
+                }
+
                 nearCache.put(key, value);
+
+                if (invalidationCounter.isStale(key, previousCount)) {
+                    invalidateCache(key);
+                }
             }
         }
     }
@@ -328,28 +370,34 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     protected void invalidateCache(Data key) {
         if (key != null) {
+            invalidationCounter.increase(key);
             nearCache.remove(key);
         }
     }
 
     protected void invalidateCache(Collection<Data> keys) {
         for (Data key : keys) {
+            invalidationCounter.increase(key);
             nearCache.remove(key);
         }
     }
 
     protected void invalidateCache(Iterable<Data> keys) {
         for (Data key : keys) {
+            invalidationCounter.increase(key);
             nearCache.remove(key);
         }
     }
 
     protected boolean isOwn(Data key) {
         int partitionId = partitionService.getPartitionId(key);
-        return partitionService.getPartitionOwner(partitionId).equals(thisAddress);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
+        return thisAddress.equals(partitionOwner);
     }
 
     public NearCache getNearCache() {
         return nearCache;
     }
+
+
 }
