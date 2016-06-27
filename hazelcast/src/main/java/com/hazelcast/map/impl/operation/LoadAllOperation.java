@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.recordstore.Storage;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -50,11 +52,30 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
 
     @Override
     public void run() throws Exception {
-        keys = selectThisPartitionsKeys(this.keys);
-        recordStore.loadAllFromStore(keys, replaceExistingValues);
+        keys = selectThisPartitionsKeys();
+
+        if (!replaceExistingValues) {
+            removeExistingKeys(keys);
+        }
+
+        recordStore.loadAllFromStore(keys);
     }
 
-    private List<Data> selectThisPartitionsKeys(Collection<Data> keys) {
+    private void removeExistingKeys(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        Storage storage = recordStore.getStorage();
+        Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            Data key = iterator.next();
+            if (storage.containsKey(key)) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private List<Data> selectThisPartitionsKeys() {
         final IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         final int partitionId = getPartitionId();
         List<Data> dataKeys = null;

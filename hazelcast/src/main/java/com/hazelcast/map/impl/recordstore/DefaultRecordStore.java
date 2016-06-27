@@ -46,6 +46,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -133,9 +134,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
+    public void loadAllFromStore(List<Data> keys) {
         if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            Future f = recordStoreLoader.loadValues(keys);
             loadingFutures.add(f);
         }
 
