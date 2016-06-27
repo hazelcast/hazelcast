@@ -155,6 +155,20 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     ////////////////////////////////////////////////////////////////////////////////
 
     @Test
+    public void test_endianness() {
+        final long address = baseAddress1;
+
+        memoryAccessor.putInt(address, 0x01000009);
+        if (memoryAccessor.isBigEndian()) {
+            assertEquals(0x01, memoryAccessor.getByte(address));
+        } else {
+            assertEquals(0x09, memoryAccessor.getByte(address));
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+
+    @Test
     public void test_copyMemory_whenAligned() {
         do_test_copyMemory(true);
     }
@@ -662,8 +676,8 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         memoryAccessor.putInt(accessAddress, 1);
         assertEquals(1, memoryAccessor.getInt(accessAddress));
 
-        assertFalse(memoryAccessor.compareAndSwapInt(null, accessAddress, 0, 2));
-        assertTrue(memoryAccessor.compareAndSwapInt(null, accessAddress, 1, 2));
+        assertFalse(memoryAccessor.compareAndSwapInt(accessAddress, 0, 2));
+        assertTrue(memoryAccessor.compareAndSwapInt(accessAddress, 1, 2));
 
         assertEquals(2, memoryAccessor.getInt(accessAddress));
 
@@ -695,8 +709,8 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
         memoryAccessor.putLong(accessAddress, 1L);
         assertEquals(1L, memoryAccessor.getLong(accessAddress));
 
-        assertFalse(memoryAccessor.compareAndSwapLong(null, accessAddress, 0L, 2L));
-        assertTrue(memoryAccessor.compareAndSwapLong(null, accessAddress, 1L, 2L));
+        assertFalse(memoryAccessor.compareAndSwapLong(accessAddress, 0L, 2L));
+        assertTrue(memoryAccessor.compareAndSwapLong(accessAddress, 1L, 2L));
 
         assertEquals(2L, memoryAccessor.getLong(accessAddress));
 
@@ -747,7 +761,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     void do_test_putOrderedInt(boolean aligned) {
         long accessAddress = aligned ? baseAddress1 : baseAddress1 + 1;
 
-        memoryAccessor.putOrderedInt(null, accessAddress, 1);
+        memoryAccessor.putOrderedInt(accessAddress, 1);
         assertEquals(1, memoryAccessor.getInt(accessAddress));
 
         memoryAccessor.putOrderedInt(sampleObject, SampleObject.INT_VALUE_OFFSET, 1);
@@ -770,7 +784,7 @@ public abstract class BaseMemoryAccessorTest extends UnsafeDependentMemoryAccess
     void do_test_putOrderedLong(boolean aligned) {
         long accessAddress = aligned ? baseAddress1 : baseAddress1 + 1;
 
-        memoryAccessor.putOrderedLong(null, accessAddress, 1L);
+        memoryAccessor.putOrderedLong(accessAddress, 1L);
         assertEquals(1L, memoryAccessor.getLong(accessAddress));
 
         memoryAccessor.putOrderedLong(sampleObject, SampleObject.LONG_VALUE_OFFSET, 1L);

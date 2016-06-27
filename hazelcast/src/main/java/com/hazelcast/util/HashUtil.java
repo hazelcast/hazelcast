@@ -156,7 +156,11 @@ public final class HashUtil {
                 mem, base + offset, len, DEFAULT_MURMUR_SEED);
     }
 
-    private static <R> long MurmurHash3_x64_64(LoadStrategy<R> loader, R resource, long offset, int len, final int seed) {
+    static <R> long MurmurHash3_x64_64(LoadStrategy<R> loader, R resource, long offset, int len) {
+        return MurmurHash3_x64_64(loader, resource, offset, len, DEFAULT_MURMUR_SEED);
+    }
+
+    static <R> long MurmurHash3_x64_64(LoadStrategy<R> loader, R resource, long offset, int len, final int seed) {
 
         // (len & ~(MURMUR64_BLOCK_SIZE - 1)) is the length rounded down to the Murmur64 block boundary
         final long tailStart = offset + (len & ~(MURMUR64_BLOCK_SIZE - 1));
@@ -342,7 +346,7 @@ public final class HashUtil {
         return PERTURBATIONS[Integer.numberOfLeadingZeros(capacity)];
     }
 
-    private abstract static class LoadStrategy<R> implements ByteAccessStrategy<R> {
+    abstract static class LoadStrategy<R> implements ByteAccessStrategy<R> {
 
         abstract int getInt(R resource, long offset);
 
