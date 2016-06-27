@@ -133,7 +133,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         clusterStateManager.lockClusterState(ClusterState.FROZEN, node.getThisAddress(), "fakeTxn", timeoutInMillis, partitionStateVersion);
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void changeClusterState_shouldFail_whenInitiatorDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -163,7 +163,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void changeClusterState_shouldNotFail_whenInitiatorDies_afterPrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -194,7 +194,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void changeClusterState_shouldFail_withoutBackup_whenInitiatorDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -224,7 +224,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void changeClusterState_shouldFail_withoutBackup_whenInitiatorDies_afterPrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -254,7 +254,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void changeClusterState_shouldNotFail_whenNonInitiatorMemberDies_duringCommit() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
@@ -290,7 +290,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         assertClusterState(ClusterState.FROZEN, instances);
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void changeClusterState_shouldFail_whenNonInitiatorMemberDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
