@@ -159,7 +159,7 @@ public class HTTPCommunicator {
         return urlConnection.getResponseCode();
     }
 
-    public String killMember(String groupName, String groupPassword) throws IOException {
+    public String shutdownMember(String groupName, String groupPassword) throws IOException {
 
         String url = address + "management/cluster/memberShutdown";
         return doPost(url, groupName, groupPassword);
