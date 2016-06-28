@@ -60,8 +60,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleForceStart(command);
             } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
                 handleListNodes(command);
-            } else if (uri.startsWith(URI_KILLNODE_CLUSTER_URL)) {
-                handleKillNode(command);
+            } else if (uri.startsWith(URI_SHUTDOWN_NODE_CLUSTER_URL)) {
+                handleShutdownNode(command);
             } else if (uri.startsWith(URI_WAN_SYNC_MAP)) {
                 handleWanSyncMap(command);
             } else {
@@ -215,7 +215,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         textCommandService.sendResponse(command);
     }
 
-    private void handleKillNode(HttpPostCommand command) throws UnsupportedEncodingException {
+    private void handleShutdownNode(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         String[] strList = bytesToString(data).split("&");
         String groupName = URLDecoder.decode(strList[0], "UTF-8");
@@ -230,7 +230,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = res.replace("${STATUS}", "success");
                 command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
                 textCommandService.sendResponse(command);
-                node.shutdown(false);
+                node.hazelcastInstance.shutdown();
                 return;
             }
         } catch (Throwable throwable) {

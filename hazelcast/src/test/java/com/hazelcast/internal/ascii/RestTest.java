@@ -26,6 +26,8 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -40,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
@@ -262,26 +265,37 @@ public class RestTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testKillNode() throws IOException {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+    public void testShutdownNode() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
-        assertEquals("{\"status\":\"success\"}", communicator.killMember("dev", "dev-pass"));
-        assertTrueEventually(new AssertTask() {
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        instance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
-            public void run()
-                    throws Exception {
-                assertFalse(instance1.getLifecycleService().isRunning());
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
+                    shutdownLatch.countDown();
+                }
             }
         });
+
+        try {
+            assertEquals("{\"status\":\"success\"}", communicator.shutdownMember("dev", "dev-pass"));
+        } catch (ConnectException ignored) {
+            // If node shuts down before response is received,
+            // `java.net.ConnectException: Connection refused` is expected.
+        }
+
+        assertOpenEventually(shutdownLatch);
+        assertFalse(instance.getLifecycleService().isRunning());
     }
 
     @Test
-    public void testKillNodeWithWrongCredentials() throws IOException {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+    public void testShutdownNodeWithWrongCredentials() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
-        assertEquals("{\"status\":\"forbidden\"}", communicator.killMember("dev1", "dev-pass"));
+        assertEquals("{\"status\":\"forbidden\"}", communicator.shutdownMember("dev1", "dev-pass"));
     }
 
     @Test
