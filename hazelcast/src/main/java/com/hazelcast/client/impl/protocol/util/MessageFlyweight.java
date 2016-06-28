@@ -185,11 +185,6 @@ public class MessageFlyweight {
         }
         return result;
     }
-
-    public boolean hasMoreBytesToRead() {
-        return index < buffer.capacity();
-    }
-
     //endregion GET Overloads
 
     protected int int32Get(int index) {
