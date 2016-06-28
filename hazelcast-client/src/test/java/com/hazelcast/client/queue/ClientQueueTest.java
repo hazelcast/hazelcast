@@ -31,7 +31,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.internal.matchers.Null;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,6 +44,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.interruptCurrentThread;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -573,19 +574,15 @@ public class ClientQueueTest {
         }
         assertEquals(maxSizeForQueue, q.size());
 
-        final Thread t1 = new Thread() {
+        spawn(new Runnable() {
+            @Override
             public void run() {
-                try {
-                    Thread.sleep(2 * 1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                sleepSeconds(1);
                 q.poll();
             }
-        };
-        t1.start();
+        });
 
-        boolean result = q.offer("item", 5, TimeUnit.SECONDS);
+        boolean result = q.offer("item", 15, TimeUnit.SECONDS);
         assertTrue(result);
 
 
@@ -599,22 +596,15 @@ public class ClientQueueTest {
         }
         assertEquals(0, q.size());
 
-
-        final Thread t2 = new Thread() {
+        spawn(new Runnable() {
+            @Override
             public void run() {
-                try {
-                    Thread.sleep(2 * 1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                sleepSeconds(1);
                 q.offer("item1");
             }
-        };
-        t2.start();
+        });
 
-        Object o = q.poll(5, TimeUnit.SECONDS);
+        Object o = q.poll(15, TimeUnit.SECONDS);
         assertEquals("item1", o);
-        t1.join(10000);
-        t2.join(10000);
     }
 }
