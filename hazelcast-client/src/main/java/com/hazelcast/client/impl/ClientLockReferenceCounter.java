@@ -16,10 +16,12 @@
 
 package com.hazelcast.client.impl;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public final class ClientLockReferenceCounter {
-    private volatile long referenceIdCounter = 0;
+    private AtomicLong referenceIdCounter = new AtomicLong();
 
     public long getNextReferenceId() {
-        return ++referenceIdCounter;
+        return referenceIdCounter.incrementAndGet();
     }
 }
