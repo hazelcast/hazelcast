@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheRecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -46,7 +47,7 @@ public class CacheMergeOperation
 
     @Override
     public void run() throws Exception {
-        backupRecord = cache.merge(mergingEntry, mergePolicy);
+        backupRecord = ((CacheRecordStore) cache).merge(mergingEntry, mergePolicy);
     }
 
     @Override
