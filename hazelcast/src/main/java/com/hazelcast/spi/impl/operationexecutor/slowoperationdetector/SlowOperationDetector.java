@@ -91,7 +91,7 @@ public final class SlowOperationDetector {
         this.genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
         this.partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
         this.enabled = hazelcastProperties.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED);
-        this.detectorThread = newDetectorThread(hazelcastThreadGroup);
+        this.detectorThread = new DetectorThread(hazelcastThreadGroup);
     }
 
     public List<SlowOperationDTO> getSlowOperationDTOs() {
@@ -121,11 +121,6 @@ public final class SlowOperationDetector {
             currentOperationDataArray[i].operationHashCode = -1;
         }
         return currentOperationDataArray;
-    }
-
-    private DetectorThread newDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
-        DetectorThread thread = new DetectorThread(hazelcastThreadGroup);
-        return thread;
     }
 
     private final class DetectorThread extends Thread {
@@ -166,7 +161,8 @@ public final class SlowOperationDetector {
         private void scanOperationRunner(long nowNanos, long nowMillis, OperationRunner operationRunner,
                                          CurrentOperationData operationData) {
             Object operation = operationRunner.currentTask();
-            if (operation == null) {
+            long startNanos = operationRunner.currentStartNanos();
+            if (operation == null || startNanos == 0) {
                 return;
             }
 
@@ -174,9 +170,8 @@ public final class SlowOperationDetector {
             if (operationData.operationHashCode != operationHashCode) {
                 // initialize currentOperationData for newly detected operation
                 operationData.operationHashCode = operationHashCode;
-                operationData.startNanos = nowNanos;
+                operationData.startNanos = startNanos;
                 operationData.invocation = null;
-                return;
             }
 
             long durationNanos = nowNanos - operationData.startNanos;

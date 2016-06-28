@@ -228,13 +228,13 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         public void run(Operation task) {
             operations.add(task);
 
-            currentTask = task;
+            setCurrentTask(task);
             try {
                 task.run();
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                currentTask = null;
+                resetCurrentTask();
             }
         }
     }

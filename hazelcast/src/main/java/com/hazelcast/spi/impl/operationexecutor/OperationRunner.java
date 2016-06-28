@@ -35,7 +35,9 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 public abstract class OperationRunner {
 
     protected final int partitionId;
-    protected volatile Object currentTask;
+
+    private volatile Object currentTask;
+    private volatile long currentStartNanos;
 
     private volatile Thread currentThread;
 
@@ -50,6 +52,18 @@ public abstract class OperationRunner {
     public abstract void run(Operation task);
 
     /**
+     * Returns the partitionId this OperationRunner is responsible for. If the partition id is smaller than 0,
+     * it is either a generic or ad hoc OperationRunner.
+     * <p/>
+     * The value will never change for this OperationRunner instance.
+     *
+     * @return the partition id.
+     */
+    public final int getPartitionId() {
+        return partitionId;
+    }
+
+    /**
      * Returns the current task that is executing. This value could be null if no operation is executing.
      * <p/>
      * Value could be stale as soon as it is returned.
@@ -61,6 +75,15 @@ public abstract class OperationRunner {
      */
     public final Object currentTask() {
         return currentTask;
+    }
+
+    /**
+     * Returns the timestamp when the current task was started.
+     *
+     * @return timestamp when the current task was started.
+     */
+    public long currentStartNanos() {
+        return currentStartNanos;
     }
 
     /**
@@ -104,14 +127,20 @@ public abstract class OperationRunner {
     }
 
     /**
-     * Returns the partitionId this OperationRunner is responsible for. If the partition id is smaller than 0,
-     * it is either a generic or ad hoc OperationRunner.
-     * <p/>
-     * The value will never change for this OperationRunner instance.
+     * Sets the current running task and its started timestamp.
      *
-     * @return the partition id.
+     * @param currentTask the current running task.
      */
-    public final int getPartitionId() {
-        return partitionId;
+    protected void setCurrentTask(Object currentTask) {
+        this.currentStartNanos = System.nanoTime();
+        this.currentTask = currentTask;
+    }
+
+    /**
+     * Resets the current running task and its started timestamp.
+     */
+    protected void resetCurrentTask() {
+        currentTask = null;
+        currentStartNanos = 0;
     }
 }

@@ -58,7 +58,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         Collection<SlowOperationLog.Invocation> invocations = getInvocations(firstLog);
         assertEqualsStringFormat("Expected %d invocations, but was %d", 4, invocations.size());
         for (SlowOperationLog.Invocation invocation : invocations) {
-            assertInvocationDurationBetween(invocation, 1000, 6500);
+            assertInvocationDurationBetween(invocation, 2500, 6500);
         }
     }
 
@@ -93,10 +93,10 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
                 (firstSize == 1 ^ secondSize == 1) && (firstSize == 4 ^ secondSize == 4));
 
         for (SlowOperationLog.Invocation invocation : firstInvocations) {
-            assertInvocationDurationBetween(invocation, 1000, 5500);
+            assertInvocationDurationBetween(invocation, 2500, 5500);
         }
         for (SlowOperationLog.Invocation invocation : secondInvocations) {
-            assertInvocationDurationBetween(invocation, 1000, 5500);
+            assertInvocationDurationBetween(invocation, 2500, 5500);
         }
     }
 
