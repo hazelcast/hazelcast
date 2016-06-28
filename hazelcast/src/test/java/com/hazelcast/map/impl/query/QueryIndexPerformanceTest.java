@@ -64,7 +64,7 @@ public class QueryIndexPerformanceTest extends HazelcastTestSupport {
         long tookWithIndex = runQuery(mapWithIndex, predicate);
 
         assertTrue("withIndex: " + tookWithIndex + " nanos, withoutIndex: " + tookWithoutIndex + " nanos",
-                tookWithIndex < (tookWithoutIndex / 2));
+                tookWithIndex < tookWithoutIndex);
     }
 
     private static long runQuery(IMap<String, Employee> map, Predicate predicate) {
