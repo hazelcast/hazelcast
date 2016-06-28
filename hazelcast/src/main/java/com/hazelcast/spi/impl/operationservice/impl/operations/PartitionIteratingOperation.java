@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
@@ -38,7 +37,7 @@ import java.util.concurrent.BlockingQueue;
 
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
-public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public final class PartitionIteratingOperation extends Operation implements IdentifiedDataSerializable {
 
     private OperationFactory operationFactory;
     private int[] partitions;
@@ -85,7 +84,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
             setCallerUuid(operation);
             OperationAccessor.setCallerAddress(operation, getCallerAddress());
-            nodeEngine.getOperationService().executeOperation(operation);
+            nodeEngine.getOperationService().execute(operation);
         }
         return responses;
     }
@@ -124,7 +123,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
             setCallerUuid(operation);
             OperationAccessor.setCallerAddress(operation, getCallerAddress());
-            nodeEngine.getOperationService().executeOperation(operation);
+            nodeEngine.getOperationService().execute(operation);
         }
         return responses;
     }
