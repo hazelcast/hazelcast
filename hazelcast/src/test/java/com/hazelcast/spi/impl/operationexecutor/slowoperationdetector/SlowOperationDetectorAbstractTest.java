@@ -24,7 +24,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -70,7 +69,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void executeOperation(HazelcastInstance instance, Operation operation) {
-        getOperationService(instance).executeOperation(operation);
+        getOperationService(instance).execute(operation);
     }
 
     static void executeEntryProcessor(IMap<String, String> map, EntryProcessor<String, String> entryProcessor) {
@@ -83,14 +82,6 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
         OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
         operationService.shutdown();
-    }
-
-    static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
-        InternalOperationService operationService = getOperationService(instance);
-        SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
-        Map<Integer, SlowOperationLog> slowOperationLogs = getFieldFromObject(slowOperationDetector, "slowOperationLogs");
-
-        return slowOperationLogs.values();
     }
 
     static Collection<SlowOperationLog.Invocation> getInvocations(SlowOperationLog log) {
@@ -121,6 +112,14 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
             }
         });
         return getSlowOperationLogs(instance);
+    }
+
+    static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
+        InternalOperationService operationService = getOperationService(instance);
+        SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
+        Map<Integer, SlowOperationLog> slowOperationLogs = getFieldFromObject(slowOperationDetector, "slowOperationLogs");
+
+        return slowOperationLogs.values();
     }
 
     static void assertNumberOfSlowOperationLogs(Collection<SlowOperationLog> logs, int expected) {
@@ -175,17 +174,6 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         assertTrue(format("Duration of invocation should be <= %d, but was %d", max, duration), duration <= max);
     }
 
-    @SuppressWarnings("unchecked")
-    static <E> E getFieldFromObject(Object object, String fieldName) {
-        try {
-            Field field = object.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return (E) field.get(object);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     SlowEntryProcessor getSlowEntryProcessor(int sleepSeconds) {
         SlowEntryProcessor entryProcessor = new SlowEntryProcessor(sleepSeconds);
         entryProcessors.add(entryProcessor);
@@ -195,6 +183,17 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     void awaitSlowEntryProcessors() {
         for (SlowEntryProcessor slowEntryProcessor : entryProcessors) {
             slowEntryProcessor.await();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <E> E getFieldFromObject(Object object, String fieldName) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return (E) field.get(object);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -256,7 +255,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    static abstract class JoinableOperation extends AbstractOperation {
+    static abstract class JoinableOperation extends Operation {
 
         private final CountDownLatch completedLatch = new CountDownLatch(1);
 

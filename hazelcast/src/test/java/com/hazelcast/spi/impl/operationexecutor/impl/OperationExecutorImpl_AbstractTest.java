@@ -12,7 +12,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -47,16 +46,16 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSupport {
 
-    protected LoggingServiceImpl loggingService;
-    protected HazelcastProperties props;
-    protected Address thisAddress;
-    protected HazelcastThreadGroup threadGroup;
-    protected DefaultNodeExtension nodeExtension;
-    protected OperationRunnerFactory handlerFactory;
-    protected InternalSerializationService serializationService;
-    protected PacketHandler responsePacketHandler;
-    protected OperationExecutorImpl executor;
-    protected Config config;
+    LoggingServiceImpl loggingService;
+    HazelcastProperties props;
+    Address thisAddress;
+    HazelcastThreadGroup threadGroup;
+    DefaultNodeExtension nodeExtension;
+    OperationRunnerFactory handlerFactory;
+    InternalSerializationService serializationService;
+    PacketHandler responsePacketHandler;
+    OperationExecutorImpl executor;
+    Config config;
 
     @Before
     public void setup() throws Exception {
@@ -97,9 +96,10 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         });
     }
 
-    protected class DummyResponsePacketHandler implements PacketHandler {
-        protected List<Packet> packets = synchronizedList(new LinkedList<Packet>());
-        protected List<Response> responses = synchronizedList(new LinkedList<Response>());
+    class DummyResponsePacketHandler implements PacketHandler {
+
+        List<Packet> packets = synchronizedList(new LinkedList<Packet>());
+        List<Response> responses = synchronizedList(new LinkedList<Response>());
 
         @Override
         public void handle(Packet packet) throws Exception {
@@ -116,30 +116,33 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         }
     }
 
-    protected static class DummyGenericOperation extends DummyOperation {
-        public DummyGenericOperation() {
+    static class DummyGenericOperation extends DummyOperation {
+
+        DummyGenericOperation() {
             super(GENERIC_PARTITION_ID);
         }
     }
 
-    protected static class DummyPartitionOperation extends DummyOperation {
-        public DummyPartitionOperation() {
+    static class DummyPartitionOperation extends DummyOperation {
+
+        DummyPartitionOperation() {
             this(0);
         }
 
-        public DummyPartitionOperation(int partitionId) {
+        DummyPartitionOperation(int partitionId) {
             super(partitionId);
         }
     }
 
-    protected static class DummyOperation extends AbstractOperation {
+    static class DummyOperation extends Operation {
+
         private int durationMs;
 
-        public DummyOperation(int partitionId) {
+        DummyOperation(int partitionId) {
             setPartitionId(partitionId);
         }
 
-        public DummyOperation durationMs(int durationMs) {
+        DummyOperation durationMs(int durationMs) {
             this.durationMs = durationMs;
             return this;
         }
@@ -166,10 +169,11 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         }
     }
 
-    protected class DummyOperationRunnerFactory implements OperationRunnerFactory {
-        protected List<DummyOperationRunner> partitionOperationHandlers = new LinkedList<DummyOperationRunner>();
-        protected List<DummyOperationRunner> genericOperationHandlers = new LinkedList<DummyOperationRunner>();
-        protected DummyOperationRunner adhocHandler;
+    class DummyOperationRunnerFactory implements OperationRunnerFactory {
+
+        List<DummyOperationRunner> partitionOperationHandlers = new LinkedList<DummyOperationRunner>();
+        List<DummyOperationRunner> genericOperationHandlers = new LinkedList<DummyOperationRunner>();
+        DummyOperationRunner adhocHandler;
 
         @Override
         public OperationRunner createPartitionRunner(int partitionId) {
@@ -197,12 +201,13 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         }
     }
 
-    public class DummyOperationRunner extends OperationRunner {
-        protected List<Packet> packets = synchronizedList(new LinkedList<Packet>());
-        protected List<Operation> operations = synchronizedList(new LinkedList<Operation>());
-        protected List<Runnable> tasks = synchronizedList(new LinkedList<Runnable>());
+    class DummyOperationRunner extends OperationRunner {
 
-        public DummyOperationRunner(int partitionId) {
+        List<Packet> packets = synchronizedList(new LinkedList<Packet>());
+        List<Operation> operations = synchronizedList(new LinkedList<Operation>());
+        List<Runnable> tasks = synchronizedList(new LinkedList<Runnable>());
+
+        DummyOperationRunner(int partitionId) {
             super(partitionId);
         }
 
@@ -223,7 +228,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         public void run(Operation task) {
             operations.add(task);
 
-            this.currentTask = task;
+            currentTask = task;
             try {
                 task.run();
             } catch (Exception e) {
@@ -234,16 +239,15 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         }
     }
 
+    static class UrgentDummyOperation extends DummyOperation implements UrgentSystemOperation {
 
-    protected static class UrgentDummyOperation extends DummyOperation implements UrgentSystemOperation {
-
-        public UrgentDummyOperation(int partitionId) {
+        UrgentDummyOperation(int partitionId) {
             super(partitionId);
         }
     }
 
-    protected static class DummyOperationHostileThread extends Thread implements OperationHostileThread {
-        protected DummyOperationHostileThread(Runnable task) {
+    static class DummyOperationHostileThread extends Thread implements OperationHostileThread {
+        DummyOperationHostileThread(Runnable task) {
             super(task);
         }
     }

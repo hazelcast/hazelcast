@@ -1,6 +1,5 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.test.AssertTask;
@@ -53,7 +52,6 @@ public class OperationExecutorImpl_GetOperationRunnerTest extends OperationExecu
 
         Operation nestedOp = new DummyOperation(-1);
 
-
         final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation(nestedOp);
         op.setPartitionId(Operation.GENERIC_PARTITION_ID);
 
@@ -76,11 +74,12 @@ public class OperationExecutorImpl_GetOperationRunnerTest extends OperationExecu
         });
     }
 
-    public class GetCurrentThreadOperationHandlerOperation extends AbstractOperation {
+    public class GetCurrentThreadOperationHandlerOperation extends Operation {
+
         volatile OperationRunner operationRunner;
         final Operation op;
 
-        public GetCurrentThreadOperationHandlerOperation(Operation op) {
+        GetCurrentThreadOperationHandlerOperation(Operation op) {
             this.op = op;
         }
 
@@ -95,14 +94,14 @@ public class OperationExecutorImpl_GetOperationRunnerTest extends OperationExecu
         }
     }
 
-    class DummyOperation extends AbstractOperation {
+    class DummyOperation extends Operation {
+
         DummyOperation(int partitionId) {
             setPartitionId(partitionId);
         }
 
         @Override
         public void run() throws Exception {
-
         }
     }
 }

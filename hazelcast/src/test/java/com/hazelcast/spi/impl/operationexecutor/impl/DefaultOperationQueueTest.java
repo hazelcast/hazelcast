@@ -22,13 +22,13 @@ import static org.junit.Assert.assertSame;
 public class DefaultOperationQueueTest extends HazelcastTestSupport {
 
     private DefaultOperationQueue operationQueue;
-    private ArrayBlockingQueue normalQueue;
-    private ArrayBlockingQueue priorityQueue;
+    private ArrayBlockingQueue<Object> normalQueue;
+    private ArrayBlockingQueue<Object> priorityQueue;
 
     @Before
     public void setup() {
-        normalQueue = new ArrayBlockingQueue(100);
-        priorityQueue = new ArrayBlockingQueue(100);
+        normalQueue = new ArrayBlockingQueue<Object>(100);
+        priorityQueue = new ArrayBlockingQueue<Object>(100);
         operationQueue = new DefaultOperationQueue(normalQueue, priorityQueue);
     }
 
@@ -201,12 +201,12 @@ public class DefaultOperationQueueTest extends HazelcastTestSupport {
         //assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
     }
 
-    public void assertEmpty(Queue q) {
+    public void assertEmpty(Queue<Object> q) {
         assertEquals("expecting an empty operationQueue, but the operationQueue is:" + q, 0, q.size());
     }
 
-    public void assertContent(Queue q, Object... expected) {
-        List actual = new LinkedList(q);
+    public void assertContent(Queue<Object> q, Object... expected) {
+        List<Object> actual = new LinkedList<Object>(q);
         assertEquals(Arrays.asList(expected), actual);
     }
 }

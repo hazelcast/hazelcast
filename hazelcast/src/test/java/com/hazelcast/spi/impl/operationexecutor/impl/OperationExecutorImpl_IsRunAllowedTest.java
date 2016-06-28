@@ -94,7 +94,6 @@ public class OperationExecutorImpl_IsRunAllowedTest extends OperationExecutorImp
         assertEqualsEventually(futureTask, FALSE);
     }
 
-
     // ===================== partition specific operations ========================
 
     @Test

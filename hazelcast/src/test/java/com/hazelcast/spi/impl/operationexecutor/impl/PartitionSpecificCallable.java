@@ -2,8 +2,9 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
-public abstract class PartitionSpecificCallable<E> implements PartitionSpecificRunnable {
-    public static final Object NO_RESPONSE = new Object() {
+abstract class PartitionSpecificCallable<E> implements PartitionSpecificRunnable {
+
+    private static final Object NO_RESPONSE = new Object() {
         @Override
         public String toString() {
             return "NO_RESPONSE";
@@ -14,10 +15,10 @@ public abstract class PartitionSpecificCallable<E> implements PartitionSpecificR
     private volatile E result;
     private volatile Throwable throwable;
 
-    public PartitionSpecificCallable() {
+    PartitionSpecificCallable() {
     }
 
-    public PartitionSpecificCallable(int partitionId) {
+    PartitionSpecificCallable(int partitionId) {
         this.partitionId = partitionId;
     }
 

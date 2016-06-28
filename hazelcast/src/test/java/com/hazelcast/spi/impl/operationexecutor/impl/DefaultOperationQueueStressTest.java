@@ -69,9 +69,10 @@ public class DefaultOperationQueueStressTest extends HazelcastTestSupport {
     }
 
     private class ConsumerThread extends TestThread {
+
         volatile long consumed = 0;
 
-        public ConsumerThread(int id) {
+        private ConsumerThread(int id) {
             super("ConsumerThread-" + id);
         }
 

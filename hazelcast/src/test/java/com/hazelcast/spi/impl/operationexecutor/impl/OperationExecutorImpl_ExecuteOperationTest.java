@@ -1,6 +1,5 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -28,7 +27,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
 
         final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
 
-        AbstractOperation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 executingThread.set(Thread.currentThread());
@@ -50,7 +49,7 @@ public class OperationExecutorImpl_ExecuteOperationTest extends OperationExecuto
 
         final AtomicReference<Thread> executingThread = new AtomicReference<Thread>();
 
-        AbstractOperation op = new AbstractOperation() {
+        Operation op = new Operation() {
             @Override
             public void run() throws Exception {
                 executingThread.set(Thread.currentThread());

@@ -1,6 +1,5 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.test.AssertTask;
@@ -19,7 +18,6 @@ import static org.junit.Assert.assertSame;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImpl_AbstractTest {
-
 
     @Test(expected = NullPointerException.class)
     public void whenNullOperation() {
@@ -41,7 +39,6 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
 
         assertSame(Thread.currentThread(), executingThread.get());
     }
-
 
     @Test
     public void whenGenericOperation_andCallingFromPartitionThread_thenExecuteOnPartitionThread() {
@@ -115,7 +112,6 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
             }
         });
     }
-
 
     // ===================== partition specific operations ========================
 
@@ -235,10 +231,11 @@ public class OperationExecutorImpl_RunOrExecuteTest extends OperationExecutorImp
         });
     }
 
-    private static class ThreadCapturingOperation extends AbstractOperation {
+    private static class ThreadCapturingOperation extends Operation {
+
         private final AtomicReference<Thread> executingThread;
 
-        public ThreadCapturingOperation(AtomicReference<Thread> executingThread) {
+        ThreadCapturingOperation(AtomicReference<Thread> executingThread) {
             this.executingThread = executingThread;
         }
 
