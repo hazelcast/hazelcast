@@ -98,7 +98,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         operation.setCallerUuid(getCallerUuid());
     }
 
-
     private Object[] executePartitionAwareOperations() {
         PartitionAwareOperationFactory operationFactory = (PartitionAwareOperationFactory) this.operationFactory;
         operationFactory.init(getNodeEngine());
@@ -270,6 +269,4 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             }
         }
     }
-
-
 }
