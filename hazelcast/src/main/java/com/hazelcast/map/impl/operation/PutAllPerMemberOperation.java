@@ -72,15 +72,6 @@ public class PutAllPerMemberOperation extends MapOperation implements Identified
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeIntArray(partitions);
