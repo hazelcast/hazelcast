@@ -56,7 +56,7 @@ public class MapStableReadStressTest extends StressTestSupport {
         }
     }
 
-    //@Test
+    @Test
     public void testChangingCluster() {
         test(true);
     }
