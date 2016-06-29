@@ -74,7 +74,7 @@ public final class TypeConverters {
     static class SqlDateConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof java.sql.Date) {
+            if (value instanceof java.util.Date) {
                 return value;
             }
             if (value instanceof String) {
@@ -93,6 +93,9 @@ public final class TypeConverters {
         Comparable convertInternal(Comparable value) {
             if (value instanceof Timestamp) {
                 return value;
+            }
+            if (value instanceof java.util.Date) {
+                return new Timestamp(((Date) value).getTime());
             }
             if (value instanceof String) {
                 return DateHelper.parseTimeStamp((String) value);
