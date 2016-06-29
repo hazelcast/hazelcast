@@ -86,6 +86,9 @@ public class Config {
 
     private final Map<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>();
 
+    private final Map<String, DurableExecutorConfig> durableExecutorConfigs
+            = new ConcurrentHashMap<String, DurableExecutorConfig>();
+
     private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
     private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
@@ -721,6 +724,15 @@ public class Config {
         return getExecutorConfig("default").getAsReadOnly();
     }
 
+    public DurableExecutorConfig findDurableExecutorConfig(String name) {
+        String baseName = getBaseName(name);
+        DurableExecutorConfig config = lookupByPattern(durableExecutorConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getDurableExecutorConfig("default").getAsReadOnly();
+    }
+
     /**
      * Returns the ExecutorConfig for the given name
      *
@@ -746,6 +758,30 @@ public class Config {
     }
 
     /**
+     * Returns the DurableExecutorConfig for the given name
+     *
+     * @param name name of the durable executor config
+     * @return DurableExecutorConfig
+     */
+    public DurableExecutorConfig getDurableExecutorConfig(String name) {
+        String baseName = getBaseName(name);
+        DurableExecutorConfig config = lookupByPattern(durableExecutorConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        DurableExecutorConfig defConfig = durableExecutorConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new DurableExecutorConfig();
+            defConfig.setName("default");
+            addDurableExecutorConfig(defConfig);
+        }
+        config = new DurableExecutorConfig(defConfig);
+        config.setName(name);
+        addDurableExecutorConfig(config);
+        return config;
+    }
+
+    /**
      * Adds a new ExecutorConfig by name
      *
      * @param executorConfig executor config to add
@@ -753,6 +789,17 @@ public class Config {
      */
     public Config addExecutorConfig(ExecutorConfig executorConfig) {
         this.executorConfigs.put(executorConfig.getName(), executorConfig);
+        return this;
+    }
+
+    /**
+     * Adds a new DurableExecutorConfig by name
+     *
+     * @param durableExecutorConfig executor config to add
+     * @return this config instance
+     */
+    public Config addDurableExecutorConfig(DurableExecutorConfig durableExecutorConfig) {
+        this.durableExecutorConfigs.put(durableExecutorConfig.getName(), durableExecutorConfig);
         return this;
     }
 
@@ -764,6 +811,19 @@ public class Config {
         this.executorConfigs.clear();
         this.executorConfigs.putAll(executorConfigs);
         for (Entry<String, ExecutorConfig> entry : executorConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Map<String, DurableExecutorConfig> getDurableExecutorConfigs() {
+        return durableExecutorConfigs;
+    }
+
+    public Config setDurableExecutorConfigs(Map<String, DurableExecutorConfig> durableExecutorConfigs) {
+        this.durableExecutorConfigs.clear();
+        this.durableExecutorConfigs.putAll(durableExecutorConfigs);
+        for (Entry<String, DurableExecutorConfig> entry : durableExecutorConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

@@ -29,6 +29,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
@@ -97,10 +98,39 @@ import static junit.framework.TestCase.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientExceptionFactoryTest extends HazelcastTestSupport {
 
-    ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
-
     @Parameterized.Parameter
     public Throwable throwable;
+    ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
+
+    @Test
+    public void testException() {
+        ClientMessage exceptionMessage = exceptionFactory.createExceptionMessage(throwable);
+        ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
+        Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
+        assertEquals(throwable.getClass(), resurrectedThrowable.getClass());
+        assertStackTraceArrayEquals(throwable.getStackTrace(), resurrectedThrowable.getStackTrace());
+        Throwable cause = throwable.getCause();
+        if (cause == null) {
+            assertNull(resurrectedThrowable.getCause());
+        } else {
+            assertEquals(cause.getClass(), resurrectedThrowable.getCause().getClass());
+        }
+    }
+
+    private void assertStackTraceArrayEquals(StackTraceElement[] stackTrace1, StackTraceElement[] stackTrace2) {
+        assertEquals(stackTrace1.length, stackTrace2.length);
+        for (int i = 0; i < stackTrace1.length; i++) {
+            StackTraceElement stackTraceElement1 = stackTrace1[i];
+            StackTraceElement stackTraceElement2 = stackTrace2[i];
+            //Not using stackTraceElement.equals
+            //because in IBM JDK stacktraceElements with null method name are not equal
+            assertEquals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName());
+            assertEquals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName());
+            assertEquals(stackTraceElement1.getFileName(), stackTraceElement2.getFileName());
+            assertEquals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
+        }
+
+    }
 
     @Parameterized.Parameters(name = "Throwable:{0}")
     public static Iterable<Object[]> parameters() {
@@ -159,6 +189,7 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new SecurityException(randomString())},
                 new Object[]{new SocketException(randomString())},
                 new Object[]{new StaleSequenceException(randomString(), 1)},
+                new Object[]{new StaleTaskIdException(randomString())},
                 new Object[]{new TargetDisconnectedException(randomString())},
                 new Object[]{new TargetNotMemberException(randomString())},
                 new Object[]{new TimeoutException(randomString())},
@@ -184,36 +215,6 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new OutOfMemoryError(randomString())},
                 new Object[]{new StackOverflowError(randomString())},
                 new Object[]{new NativeOutOfMemoryError(randomString())});
-
-    }
-
-    @Test
-    public void testException() {
-        ClientMessage exceptionMessage = exceptionFactory.createExceptionMessage(throwable);
-        ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
-        Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
-        assertEquals(throwable.getClass(), resurrectedThrowable.getClass());
-        assertStackTraceArrayEquals(throwable.getStackTrace(), resurrectedThrowable.getStackTrace());
-        Throwable cause = throwable.getCause();
-        if (cause == null) {
-            assertNull(resurrectedThrowable.getCause());
-        } else {
-            assertEquals(cause.getClass(), resurrectedThrowable.getCause().getClass());
-        }
-    }
-
-    private void assertStackTraceArrayEquals(StackTraceElement[] stackTrace1, StackTraceElement[] stackTrace2) {
-        assertEquals(stackTrace1.length, stackTrace2.length);
-        for (int i = 0; i < stackTrace1.length; i++) {
-            StackTraceElement stackTraceElement1 = stackTrace1[i];
-            StackTraceElement stackTraceElement2 = stackTrace2[i];
-            //Not using stackTraceElement.equals
-            //because in IBM JDK stacktraceElements with null method name are not equal
-            assertEquals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName());
-            assertEquals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName());
-            assertEquals(stackTraceElement1.getFileName(), stackTraceElement2.getFileName());
-            assertEquals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
-        }
 
     }
 

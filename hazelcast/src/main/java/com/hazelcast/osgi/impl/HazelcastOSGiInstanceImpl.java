@@ -22,6 +22,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.core.Endpoint;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
@@ -151,6 +152,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public IExecutorService getExecutorService(String name) {
         return delegatedInstance.getExecutorService(name);
+    }
+
+    @Override
+    public DurableExecutorService getDurableExecutorService(String name) {
+        return delegatedInstance.getDurableExecutorService(name);
     }
 
     @Override

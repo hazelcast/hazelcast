@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
@@ -150,6 +151,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap topicManagedMap;
         private ManagedMap multiMapManagedMap;
         private ManagedMap executorManagedMap;
+        private ManagedMap durableExecutorManagedMap;
         private ManagedMap wanReplicationManagedMap;
         private ManagedMap jobTrackerManagedMap;
         private ManagedMap replicatedMapManagedMap;
@@ -166,6 +168,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.topicManagedMap = createManagedMap("topicConfigs");
             this.multiMapManagedMap = createManagedMap("multiMapConfigs");
             this.executorManagedMap = createManagedMap("executorConfigs");
+            this.durableExecutorManagedMap = createManagedMap("durableExecutorConfigs");
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
@@ -195,6 +198,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleProperties(node);
                     } else if ("executor-service".equals(nodeName)) {
                         handleExecutor(node);
+                    } else if ("durable-executor-service".equals(nodeName)) {
+                        handleDurableExecutor(node);
                     } else if ("queue".equals(nodeName)) {
                         handleQueue(node);
                     } else if ("map".equals(nodeName)) {
@@ -501,6 +506,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleExecutor(Node node) {
             createAndFillListedBean(node, ExecutorConfig.class, "name", executorManagedMap);
+        }
+
+        public void handleDurableExecutor(Node node) {
+            createAndFillListedBean(node, DurableExecutorConfig.class, "name", durableExecutorManagedMap);
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {

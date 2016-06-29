@@ -120,6 +120,8 @@ public class ConfigXmlGenerator {
 
         executorXmlGenerator(xml, config);
 
+        durableExecutorXmlGenerator(xml, config);
+
         partitionGroupXmlGenerator(xml, config);
 
         listenerXmlGenerator(xml, config);
@@ -188,6 +190,17 @@ public class ConfigXmlGenerator {
             xml.append("<executor-service name=\"").append(ex.getName()).append("\">");
             xml.append("<pool-size>").append(ex.getPoolSize()).append("</pool-size>");
             xml.append("<queue-capacity>").append(ex.getQueueCapacity()).append("</queue-capacity>");
+            xml.append("</executor-service>");
+        }
+    }
+
+    private void durableExecutorXmlGenerator(StringBuilder xml, Config config) {
+        Collection<DurableExecutorConfig> exCfgs = config.getDurableExecutorConfigs().values();
+        for (DurableExecutorConfig ex : exCfgs) {
+            xml.append("<durable-executor-service name=\"").append(ex.getName()).append("\">");
+            xml.append("<pool-size>").append(ex.getPoolSize()).append("</pool-size>");
+            xml.append("<durability>").append(ex.getDurability()).append("</durability>");
+            xml.append("<capacity>").append(ex.getCapacity()).append("</capacity>");
             xml.append("</executor-service>");
         }
     }

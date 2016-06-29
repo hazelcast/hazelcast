@@ -33,6 +33,7 @@ import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -262,6 +263,7 @@ public class ReferenceObjects {
             new SecurityException(aString),
             new SocketException(aString),
             new StaleSequenceException(aString, 1),
+            new StaleTaskIdException(aString),
             new TargetDisconnectedException(aString),
             new TargetNotMemberException(aString),
             new TimeoutException(aString),

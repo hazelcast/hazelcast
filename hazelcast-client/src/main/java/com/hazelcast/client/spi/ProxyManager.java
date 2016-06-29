@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectLis
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
+import com.hazelcast.client.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientListProxy;
@@ -68,6 +69,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -162,6 +164,7 @@ public final class ProxyManager {
         register(AtomicLongService.SERVICE_NAME, ClientAtomicLongProxy.class);
         register(AtomicReferenceService.SERVICE_NAME, ClientAtomicReferenceProxy.class);
         register(DistributedExecutorService.SERVICE_NAME, ClientExecutorServiceProxy.class);
+        register(DistributedDurableExecutorService.SERVICE_NAME, ClientDurableExecutorServiceProxy.class);
         register(LockServiceImpl.SERVICE_NAME, ClientLockProxy.class);
         register(CountDownLatchService.SERVICE_NAME, ClientCountDownLatchProxy.class);
         register(MapReduceService.SERVICE_NAME, ClientMapReduceProxy.class);

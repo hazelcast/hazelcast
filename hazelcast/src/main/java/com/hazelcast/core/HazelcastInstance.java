@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
@@ -196,6 +197,20 @@ public interface HazelcastInstance {
      * @return the distributed executor service for the given name
      */
     IExecutorService getExecutorService(String name);
+
+    /**
+     * Returns the durable executor service for the given
+     * name.
+     * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * on the Hazelcast cluster.
+     * <p/>
+     * <p><b>Note:</b> Note that it don't support invokeAll/Any
+     * and don't have standard shutdown behavior</p>
+     *
+     * @param name name of the executor service
+     * @return the durable executor service for the given name
+     */
+    DurableExecutorService getDurableExecutorService(String name);
 
     /**
      * Executes the given transactional task in current thread using default options

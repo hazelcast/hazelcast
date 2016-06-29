@@ -32,6 +32,7 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
@@ -145,6 +146,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(ListService.SERVICE_NAME, new ListService(nodeEngine));
         registerService(SetService.SERVICE_NAME, new SetService(nodeEngine));
         registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
+        registerService(DistributedDurableExecutorService.SERVICE_NAME, new DistributedDurableExecutorService(nodeEngine));
         registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
         registerService(AtomicReferenceService.SERVICE_NAME, new AtomicReferenceService());
         registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
