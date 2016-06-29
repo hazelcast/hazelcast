@@ -51,10 +51,6 @@ public class MultipleEntryWithPredicateOperation extends MultipleEntryOperation 
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        if (backupProcessor == null) {
-            return null;
-        }
-
         MultipleEntryWithPredicateBackupOperation backupOperation
                 = new MultipleEntryWithPredicateBackupOperation(name, keys, backupProcessor, predicate);
         backupOperation.setWanEventList(wanEventList);
