@@ -24,10 +24,11 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class GetOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public class GetOperation extends AbstractOperation implements IdentifiedDataSerializable, ReadonlyOperation {
 
     private String name;
     private Data key;

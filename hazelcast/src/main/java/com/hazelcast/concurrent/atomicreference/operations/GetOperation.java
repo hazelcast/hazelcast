@@ -18,8 +18,9 @@ package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class GetOperation extends AbstractAtomicReferenceOperation {
+public class GetOperation extends AbstractAtomicReferenceOperation implements ReadonlyOperation {
 
     private Data returnValue;
 

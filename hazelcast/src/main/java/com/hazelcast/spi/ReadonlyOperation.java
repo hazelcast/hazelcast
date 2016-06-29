@@ -19,9 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 /**
- * Read-only operations are not retried during migration.
- *
- * @author mdogan 7/17/13
+ * Read-only operations are allowed to run during migration and passive state.
  */
 public interface ReadonlyOperation extends AllowedDuringPassiveState {
 
