@@ -20,15 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapLoader;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,6 +39,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -68,8 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.predicateApplyCount;
-import static com.hazelcast.map.TempData.DeleteEntryProcessor;
+import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.PREDICATE_APPLY_COUNT;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
@@ -86,76 +86,154 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     @Test
     public void testExecuteOnEntriesWithEntryListener() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
-        final IMap<String, String> map = instance.getMap("map");
+        IMap<String, String> map = instance.getMap("map");
         map.put("key", "value");
+
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
+        map.addEntryListener(new EntryUpdatedListener<String, String>() {
             @Override
-            public void onEntryEvent(EntryEvent<String, String> event) {
-                final String val = event.getValue();
-                final String oldValue = event.getOldValue();
+            public void entryUpdated(EntryEvent<String, String> event) {
+                String val = event.getValue();
+                String oldValue = event.getOldValue();
                 if ("newValue".equals(val) && "value".equals(oldValue)) {
                     latch.countDown();
                 }
             }
         }, true);
-        map.executeOnEntries(new AbstractEntryProcessor() {
+
+        map.executeOnEntries(new AbstractEntryProcessor<String, String>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<String, String> entry) {
                 entry.setValue("newValue");
                 return 5;
             }
         });
+
         assertOpenEventually(latch, 5);
     }
+
+
 
     @Test
     public void testExecuteOnKeysWithEntryListener() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
-        final IMap<String, String> map = instance.getMap("map");
+        IMap<String, String> map = instance.getMap("map");
         map.put("key", "value");
+
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
+        map.addEntryListener(new EntryUpdatedListener<String, String>() {
             @Override
-            public void onEntryEvent(EntryEvent<String, String> event) {
-                final String val = event.getValue();
-                final String oldValue = event.getOldValue();
+            public void entryUpdated(EntryEvent<String, String> event) {
+                String val = event.getValue();
+                String oldValue = event.getOldValue();
                 if ("newValue".equals(val) && "value".equals(oldValue)) {
                     latch.countDown();
                 }
             }
         }, true);
-        final HashSet<String> keys = new HashSet<String>();
+
+        HashSet<String> keys = new HashSet<String>();
         keys.add("key");
-        map.executeOnKeys(keys, new AbstractEntryProcessor() {
+        map.executeOnKeys(keys, new AbstractEntryProcessor<String, String>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<String, String> entry) {
                 entry.setValue("newValue");
                 return 5;
             }
         });
+
         assertOpenEventually(latch, 5);
     }
 
     @Test
     public void testUpdate_Issue_1764() {
-        Config cfg = getConfig();
-        cfg.getMapConfig("test").setInMemoryFormat(InMemoryFormat.OBJECT);
+        String mapName = randomMapName();
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+        Config cfg = getConfig();
+        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
 
         try {
-            IMap<String, Issue1764Data> map = instance1.getMap("test");
+            IMap<String, Issue1764Data> map = instance.getMap(mapName);
             map.put("a", new Issue1764Data("foo", "bar"));
             map.put("b", new Issue1764Data("abc", "123"));
             Set<String> keys = new HashSet<String>();
             keys.add("a");
-            map.executeOnKeys(keys, new Issue1764UpdatingEntryProcessor("test"));
+            map.executeOnKeys(keys, new Issue1764UpdatingEntryProcessor(mapName));
         } catch (ClassCastException e) {
             e.printStackTrace();
             fail("ClassCastException must not happen!");
+        } finally {
+            instance.shutdown();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static class Issue1764Data implements DataSerializable {
+
+        private static AtomicInteger serializationCount = new AtomicInteger();
+        private static AtomicInteger deserializationCount = new AtomicInteger();
+
+        private String attr1;
+        private String attr2;
+
+        Issue1764Data() {
+        }
+
+        Issue1764Data(String attr1, String attr2) {
+            this.attr1 = attr1;
+            this.attr2 = attr2;
+        }
+
+        String getAttr1() {
+            return attr1;
+        }
+
+        void setAttr1(String attr1) {
+            this.attr1 = attr1;
+        }
+
+        String getAttr2() {
+            return attr2;
+        }
+
+        void setAttr2(String attr2) {
+            this.attr2 = attr2;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + attr1 + " " + attr2 + "]";
+        }
+
+        public void writeData(ObjectDataOutput out) throws IOException {
+            serializationCount.incrementAndGet();
+            out.writeObject(attr1);
+            out.writeObject(attr2);
+        }
+
+        public void readData(ObjectDataInput in) throws IOException {
+            attr1 = in.readObject();
+            attr2 = in.readObject();
+            deserializationCount.incrementAndGet();
+        }
+    }
+
+    private static class Issue1764UpdatingEntryProcessor extends AbstractEntryProcessor<String, Issue1764Data> {
+
+        private static final long serialVersionUID = 1L;
+        private String newValue;
+
+        Issue1764UpdatingEntryProcessor(String newValue) {
+            this.newValue = newValue;
+        }
+
+        public Object process(Map.Entry<String, Issue1764Data> entry) {
+            Issue1764Data data = entry.getValue();
+            data.setAttr1(newValue);
+            entry.setValue(data);
+            return true;
         }
     }
 
@@ -164,11 +242,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config cfg = getConfig();
         cfg.getMapConfig("test").addMapIndexConfig(new MapIndexConfig("attr1", false));
         HazelcastInstance instance = createHazelcastInstance(cfg);
+
         IMap<String, TempData> map = instance.getMap("test");
         map.put("a", new TempData("foo", "bar"));
         map.put("b", new TempData("abc", "123"));
+
         TestPredicate predicate = new TestPredicate("foo");
         Map<String, Object> entries = map.executeOnEntries(new LoggingEntryProcessor(), predicate);
+
         assertEquals("The predicate should only relate to one entry!", 1, entries.size());
         assertEquals("The predicate's apply method should only be invoked once!", 1, predicate.getApplied());
         assertTrue("The predicate should only be used via index service!", predicate.isFilteredAndAppliedOnlyOnce());
@@ -186,23 +267,24 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        HazelcastInstance newPrimary = null;
         IMap<String, TempData> map = instance1.getMap("test");
         map.put("a", new TempData("foo", "bar"));
         map.put("b", new TempData("foo", "bar"));
-        map.executeOnKeys(map.keySet(), new DeleteEntryProcessor());
-        // Now the entry has been removed from the primary store but not the backup.
-        // Let's kill the primary and execute the logging processor again...
-        String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+        map.executeOnKeys(map.keySet(), new TempData.DeleteEntryProcessor());
 
-        if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+        // the entry has been removed from the primary store but not the backup,
+        // so let's kill the primary and execute the logging processor again
+        HazelcastInstance newPrimary;
+        String aMemberUiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+        if (aMemberUiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
             instance1.shutdown();
             newPrimary = instance2;
         } else {
             instance2.shutdown();
             newPrimary = instance1;
         }
-        //Make sure there are no entries left
+
+        // make sure there are no entries left
         IMap<String, TempData> map2 = newPrimary.getMap("test");
         Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
@@ -213,7 +295,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
      * This one with index which results in an exception.
      */
     @Test
-    public void testExecuteOnKeysBackupOperationIndexed() throws Exception {
+    public void testExecuteOnKeysBackupOperationIndexed() {
         Config cfg = getConfig();
         cfg.getMapConfig("test").setBackupCount(1).addMapIndexConfig(new MapIndexConfig("attr1", false));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -221,22 +303,24 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
         IMap<String, TempData> map = instance1.getMap("test");
-        HazelcastInstance newPrimary = null;
         map.put("a", new TempData("foo", "bar"));
         map.put("b", new TempData("abc", "123"));
-        map.executeOnKeys(map.keySet(), new DeleteEntryProcessor());
-        // Now the entry has been removed from the primary store but not the backup.
-        // Let's kill the primary and execute the logging processor again...
-        String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
-        if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+        map.executeOnKeys(map.keySet(), new TempData.DeleteEntryProcessor());
+
+        // the entry has been removed from the primary store but not the backup,
+        // so let's kill the primary and execute the logging processor again
+        HazelcastInstance newPrimary;
+        String aMemberUiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+        if (aMemberUiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
             instance1.shutdown();
             newPrimary = instance2;
         } else {
             instance2.shutdown();
             newPrimary = instance1;
         }
+
+        // make sure there are no entries left
         IMap<String, TempData> map2 = newPrimary.getMap("test");
-        //Make sure there are no entries left
         Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
     }
@@ -248,15 +332,17 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig("test").setBackupCount(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<String, TempData> map = instance1.getMap("test");
+
         try {
+            IMap<String, TempData> map = instance1.getMap("test");
             map.put("a", new TempData("foo", "bar"));
             map.executeOnEntries(new LoggingEntryProcessor(), Predicates.equal("attr1", "foo"));
-            map.executeOnEntries(new DeleteEntryProcessor(), Predicates.equal("attr1", "foo"));
-            // Now the entry has been removed from the primary store but not the backup.
-            // Let's kill the primary and execute the logging processor again...
-            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            map.executeOnEntries(new TempData.DeleteEntryProcessor(), Predicates.equal("attr1", "foo"));
+
+            // now the entry has been removed from the primary store but not the backup,
+            // so let's kill the primary and execute the logging processor again
             HazelcastInstance newPrimary;
+            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
             if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
                 instance1.shutdown();
                 newPrimary = instance2;
@@ -264,6 +350,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 instance2.shutdown();
                 newPrimary = instance1;
             }
+
             IMap<String, TempData> map2 = newPrimary.getMap("test");
             map2.executeOnEntries(new LoggingEntryProcessor(), Predicates.equal("attr1", "foo"));
         } finally {
@@ -276,85 +363,74 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testEntryProcessorWithKey() {
         Config cfg = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
 
         String key = generateKeyOwnedBy(instance1);
         SimpleValue simpleValue = new SimpleValue(1);
 
-        final IMap<Object, Object> map = instance2.getMap("map");
+        IMap<Object, Object> map = instance2.getMap("map");
         map.put(key, simpleValue);
         map.executeOnKey(key, new EntryInc());
         assertTrue(simpleValue.equals(map.get(key)));
 
         instance1.shutdown();
-
         assertTrue(simpleValue.equals(map.get(key)));
-
     }
 
     @Test
     public void testEntryProcessorWithKeys() {
         Config cfg = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
 
-        final IMap<Object, Object> map = instance2.getMap("map");
-        final Set<Object> keys = new HashSet<Object>();
-
+        IMap<Object, Object> map = instance2.getMap("map");
+        Set<Object> keys = new HashSet<Object>();
         for (int i = 0; i < 4; i++) {
             final String key = generateKeyOwnedBy(instance1);
             keys.add(key);
         }
 
         SimpleValue simpleValue = new SimpleValue(1);
-
         for (Object key : keys) {
             map.put(key, simpleValue);
         }
 
         map.executeOnKeys(keys, new EntryInc());
-
         for (Object key : keys) {
             assertEquals(simpleValue, map.get(key));
         }
 
         instance1.shutdown();
-
         for (Object key : keys) {
             assertEquals(simpleValue, map.get(key));
         }
-
     }
 
     @Test
     public void testIssue2754() {
         Config cfg = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-        final HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
 
-        final IMap<Object, Object> map = instance2.getMap("map");
+        IMap<Object, Object> map = instance2.getMap("map");
         Set<Object> keys = new HashSet<Object>();
-
         for (int i = 0; i < 4; i++) {
             String key = generateKeyOwnedBy(instance1);
             keys.add(key);
         }
 
         map.executeOnKeys(keys, new EntryCreate());
-
         for (Object key : keys) {
             assertEquals(6, map.get(key));
         }
 
         instance1.shutdown();
-
         for (Object key : keys) {
             assertEquals(6, map.get(key));
         }
-
     }
 
     @Test
@@ -364,16 +440,17 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig("test").setBackupCount(1);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<String, TempData> map = instance1.getMap("test");
+
         try {
+            IMap<String, TempData> map = instance1.getMap("test");
             map.put("a", new TempData("foo", "bar"));
             map.executeOnKey("a", new LoggingEntryProcessor());
-            map.executeOnKey("a", new DeleteEntryProcessor());
-            // Now the entry has been removed from the primary store but not the backup.
-            // Let's kill the primary and execute the logging processor again...
-            String a_member_uiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            map.executeOnKey("a", new TempData.DeleteEntryProcessor());
+            // now the entry has been removed from the primary store but not the backup,
+            // so let's kill the primary and execute the logging processor again
             HazelcastInstance newPrimary;
-            if (a_member_uiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
+            String aMemberUiid = instance1.getPartitionService().getPartition("a").getOwner().getUuid();
+            if (aMemberUiid.equals(instance1.getCluster().getLocalMember().getUuid())) {
                 instance1.shutdown();
                 newPrimary = instance2;
             } else {
@@ -390,30 +467,42 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapEntryProcessor() throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
-        map.put(1, 1);
+
+        String instance1Key = generateKeyOwnedBy(instance1);
+        String instance2Key = generateKeyOwnedBy(instance2);
+
+        IMap<String, Integer> map = instance1.getMap("testMapEntryProcessor");
+        map.put(instance1Key, 23);
+        map.put(instance2Key, 42);
+
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        assertEquals(2, map.executeOnKey(1, entryProcessor));
-        assertEquals((Integer) 2, map.get(1));
+        assertEquals(24, map.executeOnKey(instance1Key, entryProcessor));
+        assertEquals(43, map.executeOnKey(instance2Key, entryProcessor));
+
+        assertEquals((Integer) 24, map.get(instance1Key));
+        assertEquals((Integer) 43, map.get(instance2Key));
     }
 
     @Test
     public void testMapEntryProcessorCallback() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final AtomicInteger result = new AtomicInteger(0);
-        final CountDownLatch latch = new CountDownLatch(1);
         Config cfg = getConfig();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        nodeFactory.newHazelcastInstance(cfg);
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
         map.put(1, 1);
+
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        final AtomicInteger result = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(1);
         map.submitToKey(1, entryProcessor, new ExecutionCallback<Integer>() {
             @Override
             public void onResponse(Integer response) {
@@ -426,6 +515,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         });
+
         latch.await(10, TimeUnit.SECONDS);
         assertEquals(2, result.get());
     }
@@ -436,8 +526,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config cfg = getConfig();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        nodeFactory.newHazelcastInstance(cfg);
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
         assertEquals(1, map.executeOnKey(1, entryProcessor));
         assertEquals((Integer) 1, map.get(1));
@@ -450,23 +542,27 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
-        int size = 100;
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
-        for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), (Object) (i + 1));
-        }
-        for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), res.get(i));
-        }
-        instance1.shutdown();
-        instance2.shutdown();
-    }
 
+        try {
+            IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+            int size = 100;
+            for (int i = 0; i < size; i++) {
+                map.put(i, i);
+            }
+
+            EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+            Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
+            for (int i = 0; i < size; i++) {
+                assertEquals(map.get(i), (Object) (i + 1));
+            }
+            for (int i = 0; i < size; i++) {
+                assertEquals(map.get(i), res.get(i));
+            }
+        } finally {
+            instance1.shutdown();
+            instance2.shutdown();
+        }
+    }
 
     @Test
     public void testBackupMapEntryProcessorAllKeys() throws InterruptedException {
@@ -510,27 +606,56 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer, SampleObjects.Employee> map = instance1.getMap("testMapEntryProcessor");
-        int size = 10;
-        for (int i = 0; i < size; i++) {
-            map.put(i, new SampleObjects.Employee(i, "", 0, false, 0D, SampleObjects.State.STATE1));
-        }
-        EntryProcessor entryProcessor = new ChangeStateEntryProcessor();
-        EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate p = e.get("id").lessThan(5);
-        Map<Integer, Object> res = map.executeOnEntries(entryProcessor, p);
 
-        for (int i = 0; i < 5; i++) {
-            assertEquals(SampleObjects.State.STATE2, map.get(i).getState());
+        try {
+            IMap<Integer, Employee> map = instance1.getMap("testMapEntryProcessor");
+            int size = 10;
+            for (int i = 0; i < size; i++) {
+                map.put(i, new Employee(i, "", 0, false, 0D, SampleObjects.State.STATE1));
+            }
+
+            EntryProcessor entryProcessor = new ChangeStateEntryProcessor();
+            EntryObject entryObject = new PredicateBuilder().getEntryObject();
+            Predicate predicate = entryObject.get("id").lessThan(5);
+            Map<Integer, Object> res = map.executeOnEntries(entryProcessor, predicate);
+
+            for (int i = 0; i < 5; i++) {
+                assertEquals(SampleObjects.State.STATE2, map.get(i).getState());
+            }
+            for (int i = 5; i < size; i++) {
+                assertEquals(SampleObjects.State.STATE1, map.get(i).getState());
+            }
+            for (int i = 0; i < 5; i++) {
+                assertEquals(((Employee) res.get(i)).getState(), SampleObjects.State.STATE2);
+            }
+        } finally {
+            instance1.shutdown();
+            instance2.shutdown();
         }
-        for (int i = 5; i < size; i++) {
-            assertEquals(SampleObjects.State.STATE1, map.get(i).getState());
+    }
+
+    private static class ChangeStateEntryProcessor
+            implements EntryProcessor<Integer, Employee>, EntryBackupProcessor<Integer, Employee> {
+
+        ChangeStateEntryProcessor() {
         }
-        for (int i = 0; i < 5; i++) {
-            assertEquals(((SampleObjects.Employee) res.get(i)).getState(), SampleObjects.State.STATE2);
+
+        public Object process(Map.Entry<Integer, Employee> entry) {
+            Employee value = entry.getValue();
+            value.setState(SampleObjects.State.STATE2);
+            entry.setValue(value);
+            return value;
         }
-        instance1.shutdown();
-        instance2.shutdown();
+
+        public EntryBackupProcessor<Integer, Employee> getBackupProcessor() {
+            return ChangeStateEntryProcessor.this;
+        }
+
+        public void processBackup(Map.Entry<Integer, Employee> entry) {
+            Employee value = entry.getValue();
+            value.setState(SampleObjects.State.STATE2);
+            entry.setValue(value);
+        }
     }
 
     @Test
@@ -541,6 +666,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+
         IMap<Integer, Integer> map = instance1.getMap("testBackups");
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
@@ -566,83 +692,20 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config cfg = getConfig();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        nodeFactory.newHazelcastInstance(cfg);
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
         map.put(1, -1);
         map.put(2, -1);
         map.put(3, 1);
+
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
         map.executeOnKey(2, entryProcessor);
         map.executeOnEntries(entryProcessor);
+
         assertEquals(null, map.get(1));
         assertEquals(null, map.get(2));
         assertEquals(1, map.size());
-    }
-
-
-    private static class IncrementorEntryProcessor extends AbstractEntryProcessor implements DataSerializable {
-        IncrementorEntryProcessor() {
-            super(true);
-        }
-
-        public Object process(Map.Entry entry) {
-            Integer value = (Integer) entry.getValue();
-            if (value == null) {
-                value = 0;
-            }
-            if (value == -1) {
-                entry.setValue(null);
-                return null;
-            }
-            value++;
-            entry.setValue(value);
-            return value;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-        }
-
-        public void processBackup(Map.Entry entry) {
-            entry.setValue((Integer) entry.getValue() + 1);
-        }
-    }
-
-    private static class ChangeStateEntryProcessor implements EntryProcessor, EntryBackupProcessor {
-
-        ChangeStateEntryProcessor() {
-        }
-
-        public Object process(Map.Entry entry) {
-            SampleObjects.Employee value = (SampleObjects.Employee) entry.getValue();
-            value.setState(SampleObjects.State.STATE2);
-            entry.setValue(value);
-            return value;
-        }
-
-        public EntryBackupProcessor getBackupProcessor() {
-            return ChangeStateEntryProcessor.this;
-        }
-
-        public void processBackup(Map.Entry entry) {
-            SampleObjects.Employee value = (SampleObjects.Employee) entry.getValue();
-            value.setState(SampleObjects.State.STATE2);
-            entry.setValue(value);
-        }
-    }
-
-    private static class RemoveEntryProcessor extends AbstractEntryProcessor {
-        RemoveEntryProcessor() {
-        }
-
-        public Object process(Map.Entry entry) {
-            entry.setValue(null);
-            return null;
-        }
     }
 
     @Test
@@ -651,8 +714,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config cfg = getConfig();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+        nodeFactory.newHazelcastInstance(cfg);
+        nodeFactory.newHazelcastInstance(cfg);
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessorEntryListeners");
         final AtomicInteger addCount = new AtomicInteger(0);
         final AtomicInteger updateCount = new AtomicInteger(0);
@@ -661,7 +725,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger updateKey1Sum = new AtomicInteger(0);
         final AtomicInteger removeKey1Sum = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(6);
-        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
+        map.addEntryListener(new EntryAddedListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
@@ -670,7 +734,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 }
                 latch.countDown();
             }
-
+        }, true);
+        map.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
             @Override
             public void entryRemoved(EntryEvent<Integer, Integer> event) {
                 removeCount.incrementAndGet();
@@ -679,7 +744,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 }
                 latch.countDown();
             }
-
+        }, true);
+        map.addEntryListener(new EntryUpdatedListener<Integer, Integer>() {
             @Override
             public void entryUpdated(EntryEvent<Integer, Integer> event) {
                 updateCount.incrementAndGet();
@@ -696,6 +762,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.executeOnKey(1, new ValueSetterEntryProcessor(3));
         map.executeOnKey(1, new ValueSetterEntryProcessor(1));
         map.executeOnKey(1, new ValueSetterEntryProcessor(null));
+
         assertEquals((Integer) 1, map.get(2));
         assertEquals(null, map.get(1));
         assertTrue(latch.await(100, TimeUnit.SECONDS));
@@ -706,17 +773,17 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(5, addKey1Sum.get());
         assertEquals(4, updateKey1Sum.get());
         assertEquals(1, removeKey1Sum.get());
-
     }
 
-    private static class ValueSetterEntryProcessor extends AbstractEntryProcessor {
+    private static class ValueSetterEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+
         Integer value;
 
         ValueSetterEntryProcessor(Integer v) {
             this.value = v;
         }
 
-        public Object process(Map.Entry entry) {
+        public Object process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(value);
             return value;
         }
@@ -728,42 +795,31 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config cfg = getConfig();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessorEntryListeners");
         final AtomicInteger addCount = new AtomicInteger(0);
         final AtomicInteger updateCount = new AtomicInteger(0);
         final AtomicInteger removeCount = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(3);
-        map.addEntryListener(new EntryListener<Integer, Integer>() {
+        map.addEntryListener(new EntryAddedListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
                 latch.countDown();
             }
-
+        }, true);
+        map.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
             @Override
             public void entryRemoved(EntryEvent<Integer, Integer> event) {
                 removeCount.incrementAndGet();
                 latch.countDown();
             }
-
+        }, true);
+        map.addEntryListener(new EntryUpdatedListener<Integer, Integer>() {
             @Override
             public void entryUpdated(EntryEvent<Integer, Integer> event) {
                 updateCount.incrementAndGet();
                 latch.countDown();
-            }
-
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-
-            }
-
-            @Override
-            public void mapCleared(MapEvent event) {
-
             }
         }, true);
 
@@ -790,14 +846,15 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1, updateCount.get());
     }
 
-    private static class ValueReaderEntryProcessor extends AbstractEntryProcessor {
+    private static class ValueReaderEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+
         Integer value;
 
         ValueReaderEntryProcessor() {
         }
 
-        public Object process(Map.Entry entry) {
-            value = (Integer) entry.getValue();
+        public Integer process(Map.Entry<Integer, Integer> entry) {
+            value = entry.getValue();
             return value;
         }
 
@@ -813,87 +870,92 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
-        final AtomicInteger addCount = new AtomicInteger(0);
-        final AtomicInteger updateCount = new AtomicInteger(0);
-        final AtomicInteger removeCount = new AtomicInteger(0);
-        final CountDownLatch latch = new CountDownLatch(300);
-        map.addEntryListener(new EntryAdapter<Integer, Integer>() {
-            @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
-                addCount.incrementAndGet();
-                latch.countDown();
+
+        try {
+            IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+            final AtomicInteger addCount = new AtomicInteger(0);
+            final AtomicInteger updateCount = new AtomicInteger(0);
+            final AtomicInteger removeCount = new AtomicInteger(0);
+            final CountDownLatch latch = new CountDownLatch(300);
+            map.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+                @Override
+                public void entryAdded(EntryEvent<Integer, Integer> event) {
+                    addCount.incrementAndGet();
+                    latch.countDown();
+                }
+            }, true);
+            map.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
+                @Override
+                public void entryRemoved(EntryEvent<Integer, Integer> event) {
+                    removeCount.incrementAndGet();
+                    latch.countDown();
+                }
+            }, true);
+            map.addEntryListener(new EntryUpdatedListener<Integer, Integer>() {
+                @Override
+                public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                    updateCount.incrementAndGet();
+                    latch.countDown();
+                }
+            }, true);
+
+            int size = 100;
+            for (int i = 0; i < size; i++) {
+                map.put(i, i);
+            }
+            EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+            Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
+
+            for (int i = 0; i < size; i++) {
+                assertEquals(map.get(i), (Object) (i + 1));
+            }
+            for (int i = 0; i < size; i++) {
+                assertEquals(map.get(i), res.get(i));
             }
 
-            @Override
-            public void entryRemoved(EntryEvent<Integer, Integer> event) {
-                removeCount.incrementAndGet();
-                latch.countDown();
-            }
+            RemoveEntryProcessor removeEntryProcessor = new RemoveEntryProcessor();
+            map.executeOnEntries(removeEntryProcessor);
 
-            @Override
-            public void entryUpdated(EntryEvent<Integer, Integer> event) {
-                updateCount.incrementAndGet();
-                latch.countDown();
-            }
+            assertEquals(0, map.size());
+            assertTrue(latch.await(100, TimeUnit.SECONDS));
 
-            @Override
-            public void entryEvicted(EntryEvent<Integer, Integer> event) {
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-
-            }
-
-            @Override
-            public void mapCleared(MapEvent event) {
-
-            }
-        }, true);
-        int size = 100;
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
+            assertEquals(100, addCount.get());
+            assertEquals(100, removeCount.get());
+            assertEquals(100, updateCount.get());
+        } finally {
+            instance1.shutdown();
+            instance2.shutdown();
         }
-        final EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
-
-        for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), (Object) (i + 1));
-        }
-        for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), res.get(i));
-        }
-
-        final RemoveEntryProcessor removeEntryProcessor = new RemoveEntryProcessor();
-        map.executeOnEntries(removeEntryProcessor);
-
-        assertEquals(0, map.size());
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
-
-        assertEquals(100, addCount.get());
-        assertEquals(100, removeCount.get());
-        assertEquals(100, updateCount.get());
-
-        instance1.shutdown();
-        instance2.shutdown();
     }
 
+    private static class RemoveEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+
+        RemoveEntryProcessor() {
+        }
+
+        public Object process(Map.Entry<Integer, Integer> entry) {
+            entry.setValue(null);
+            return null;
+        }
+    }
 
     @Test
     public void testMapEntryProcessorPartitionAware() throws InterruptedException {
+        String mapName1 = "default";
+        String mapName2 = "default-2";
+
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = getConfig();
-        String map1 = "default";
-        String map2 = "default-2";
-        cfg.getMapConfig(map1).setInMemoryFormat(InMemoryFormat.OBJECT);
+        cfg.getMapConfig(mapName1).setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer, Integer> map = instance1.getMap(map1);
+
+        IMap<Integer, Integer> map = instance1.getMap(mapName1);
         map.put(1, 1);
-        EntryProcessor entryProcessor = new PartitionAwareTestEntryProcessor(map2);
+
+        EntryProcessor entryProcessor = new PartitionAwareTestEntryProcessor(mapName2);
         assertNull(map.executeOnKey(1, entryProcessor));
-        assertEquals(1, instance2.getMap(map2).get(1));
+        assertEquals(1, instance2.getMap(mapName2).get(1));
     }
 
     private static class PartitionAwareTestEntryProcessor implements EntryProcessor<Object, Object>, HazelcastInstanceAware {
@@ -922,7 +984,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
     public void testInstanceAwareness_onOwnerAndBackup() {
         String mapName = "default";
@@ -933,18 +994,18 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        IMap map1 = instance1.getMap(mapName);
-        IMap map2 = instance2.getMap(mapName);
+        IMap<String, String> map1 = instance1.getMap(mapName);
+        IMap<String, String> map2 = instance2.getMap(mapName);
 
-        String keyOn1 = generateKeyNotOwnedBy(instance1);
-        map1.executeOnKey(keyOn1, new UuidSetterEntryProcessor());
+        String keyOnInstance1 = generateKeyNotOwnedBy(instance1);
+        map1.executeOnKey(keyOnInstance1, new UuidSetterEntryProcessor());
 
-        assertEquals(instance1.getCluster().getLocalMember().getUuid(), map1.get(keyOn1));
-        assertEquals(instance2.getCluster().getLocalMember().getUuid(), map2.get(keyOn1));
-
+        assertEquals(instance1.getCluster().getLocalMember().getUuid(), map1.get(keyOnInstance1));
+        assertEquals(instance2.getCluster().getLocalMember().getUuid(), map2.get(keyOnInstance1));
     }
 
-    private static class UuidSetterEntryProcessor implements EntryProcessor, HazelcastInstanceAware, EntryBackupProcessor {
+    private static class UuidSetterEntryProcessor
+            implements EntryProcessor<String, String>, EntryBackupProcessor<String, String>, HazelcastInstanceAware {
 
         private transient HazelcastInstance hz;
 
@@ -952,24 +1013,24 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object process(Map.Entry entry) {
+        public Object process(Map.Entry<String, String> entry) {
             String uuid = hz.getCluster().getLocalMember().getUuid();
             return entry.setValue(uuid);
         }
 
         @Override
-        public EntryBackupProcessor getBackupProcessor() {
+        public EntryBackupProcessor<String, String> getBackupProcessor() {
             return this;
+        }
+
+        @Override
+        public void processBackup(Map.Entry<String, String> entry) {
+            process(entry);
         }
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             this.hz = hazelcastInstance;
-        }
-
-        @Override
-        public void processBackup(Map.Entry entry) {
-            process(entry);
         }
     }
 
@@ -994,47 +1055,68 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         });
         cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance hz = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
 
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        hz.getMap("default").executeOnKey(1, entryProcessor);
+        instance.getMap("default").executeOnKey(1, entryProcessor);
 
-        assertEquals(124, hz.getMap("default").get(1));
+        assertEquals(124, instance.getMap("default").get(1));
 
-        hz.shutdown();
+        instance.shutdown();
     }
 
     @Test
     public void testIssue7631_emptyKeysSupported() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
         IMap<Object, Object> map = factory.newHazelcastInstance().getMap("default");
+
         assertEquals(emptyMap(), map.executeOnEntries(new NoOpEntryProcessor()));
+    }
+
+    private static class NoOpEntryProcessor implements EntryProcessor<Object, Object> {
+
+        @Override
+        public Object process(final Map.Entry entry) {
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor<Object, Object> getBackupProcessor() {
+            return null;
+        }
     }
 
     @Test
     public void testSubmitToKey() throws InterruptedException, ExecutionException {
         HazelcastInstance instance1 = createHazelcastInstance(getConfig());
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
         map.put(1, 1);
-        Future f = map.submitToKey(1, new IncrementorEntryProcessor());
-        assertEquals(2, f.get());
+
+        Future future = map.submitToKey(1, new IncrementorEntryProcessor());
+        assertEquals(2, future.get());
         assertEquals(2, (int) map.get(1));
     }
 
     @Test
     public void testSubmitToNonExistentKey() throws InterruptedException, ExecutionException {
         HazelcastInstance instance1 = createHazelcastInstance(getConfig());
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
-        Future f = map.submitToKey(11, new IncrementorEntryProcessor());
-        assertEquals(1, f.get());
+
+        Future future = map.submitToKey(11, new IncrementorEntryProcessor());
+        assertEquals(1, future.get());
         assertEquals(1, (int) map.get(11));
     }
 
     @Test
     public void testSubmitToKeyWithCallback() throws InterruptedException, ExecutionException {
         HazelcastInstance instance1 = createHazelcastInstance(getConfig());
+
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
         map.put(1, 1);
+
         final CountDownLatch latch = new CountDownLatch(1);
         ExecutionCallback executionCallback = new ExecutionCallback() {
             @Override
@@ -1061,16 +1143,17 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = instance1.getMap("testMapMultipleEntryProcessor");
         IMap<Integer, Integer> map2 = instance2.getMap("testMapMultipleEntryProcessor");
-
         for (int i = 0; i < 10; i++) {
             map.put(i, 0);
         }
-        Set keys = new HashSet();
+
+        Set<Integer> keys = new HashSet<Integer>();
         keys.add(1);
         keys.add(4);
         keys.add(7);
         keys.add(9);
-        final Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
+
+        Map<Integer, Object> resultMap = map2.executeOnKeys(keys, new IncrementorEntryProcessor());
         assertEquals(1, resultMap.get(1));
         assertEquals(1, resultMap.get(4));
         assertEquals(1, resultMap.get(7));
@@ -1084,42 +1167,110 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(1, (int) map.get(7));
         assertEquals(0, (int) map.get(8));
         assertEquals(1, (int) map.get(9));
-
     }
 
     /**
-     * Expected serialization count is 0 in Object format
-     * when there is no registered event listener.
+     * Expected serialization count is 0 in Object format when there is no registered event listener.
      * If there is an event listener serialization count should be 1.
      */
     @Test
     public void testEntryProcessorSerializationCountWithObjectFormat() {
-        final String mapName = randomMapName();
-        final int expectedSerializationCount = 0;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        int expectedSerializationCount = 0;
+        String mapName = randomMapName();
+
         Config cfg = getConfig();
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+
         IMap<String, MyObject> map = instance.getMap(mapName);
         map.executeOnKey("key", new StoreOperation());
+
         Integer serialized = (Integer) map.executeOnKey("key", new FetchSerializedCount());
         assertEquals(expectedSerializationCount, serialized.intValue());
+
         instance.shutdown();
     }
 
     @Test
     public void testEntryProcessorNoDeserializationWithObjectFormat() {
-        final String mapName = randomMapName();
-        final int expectedDeserializationCount = 0;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        int expectedDeserializationCount = 0;
+        String mapName = randomMapName();
+
         Config cfg = getConfig();
         cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+
         IMap<String, MyObject> map = instance.getMap(mapName);
         map.executeOnKey("key", new StoreOperation());
+
         Integer serialized = (Integer) map.executeOnKey("key", new FetchDeSerializedCount());
         assertEquals(expectedDeserializationCount, serialized.intValue());
+
         instance.shutdown();
+    }
+
+    private static class MyObject implements DataSerializable {
+
+        int serializedCount = 0;
+        int deserializedCount = 0;
+
+        MyObject() {
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(++serializedCount);
+            out.writeInt(deserializedCount);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            serializedCount = in.readInt();
+            deserializedCount = in.readInt() + 1;
+        }
+    }
+
+    private static class StoreOperation implements EntryProcessor<Object, MyObject> {
+
+        @Override
+        public Object process(Map.Entry<Object, MyObject> entry) {
+            MyObject myObject = new MyObject();
+            entry.setValue(myObject);
+            return 1;
+        }
+
+        @Override
+        public EntryBackupProcessor<Object, MyObject> getBackupProcessor() {
+            return null;
+        }
+    }
+
+    private static class FetchSerializedCount implements EntryProcessor<String, MyObject> {
+
+        @Override
+        public Object process(Map.Entry<String, MyObject> entry) {
+            return entry.getValue().serializedCount;
+        }
+
+        @Override
+        public EntryBackupProcessor<String, MyObject> getBackupProcessor() {
+            return null;
+        }
+    }
+
+    private static class FetchDeSerializedCount implements EntryProcessor<String, MyObject> {
+
+        @Override
+        public Object process(Map.Entry<String, MyObject> entry) {
+            return entry.getValue().deserializedCount;
+        }
+
+        @Override
+        public EntryBackupProcessor<String, MyObject> getBackupProcessor() {
+            return null;
+        }
     }
 
     @Test
@@ -1152,8 +1303,49 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 assertEquals("failed to execute all entry processor tasks", maxTasks, actualOrder.size());
             }
         });
-        final List<Integer> actualOrder = processorMap.get(key);
+        List<Integer> actualOrder = processorMap.get(key);
         assertEquals("entry processor tasks executed in unexpected order", expectedOrder, actualOrder);
+    }
+
+    private static class SimpleEntryProcessor
+            implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
+
+        private Integer id;
+
+        SimpleEntryProcessor() {
+        }
+
+        SimpleEntryProcessor(Integer id) {
+            this.id = id;
+        }
+
+        @Override
+        public Object process(Map.Entry<Object, List<Integer>> entry) {
+            List<Integer> list = entry.getValue();
+            list.add(id);
+
+            return id;
+        }
+
+        @Override
+        public void processBackup(Map.Entry<Object, List<Integer>> entry) {
+            process(entry);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(id);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            id = in.readObject();
+        }
+
+        @Override
+        public EntryBackupProcessor<Object, List<Integer>> getBackupProcessor() {
+            return this;
+        }
     }
 
     @Test
@@ -1172,7 +1364,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        map.executeOnEntries(new DeleterEP(), new SqlPredicate("__key >=0"));
+        map.executeOnEntries(new DeleteEntryProcessor(), new SqlPredicate("__key >=0"));
 
         assertSizeEventually(0, map);
     }
@@ -1194,7 +1386,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 return null;
             }
         }, new IndexedTestPredicate(indexCalled));
-
 
         assertTrue("isIndexed method of IndexAwarePredicate should be called", indexCalled.get());
     }
@@ -1223,10 +1414,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void test_executeOnEntriesWithPredicate_runsOnBackup_whenIndexesAvailable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = getConfig();
-        HazelcastInstance node1 = factory.newHazelcastInstance(config);
-        HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
 
-        final IMap<Integer, Integer> map = node1.getMap("test");
+        final IMap<Integer, Integer> map = instance1.getMap("test");
         map.addIndex("__key", true);
 
         AssertTask task = new AssertTask() {
@@ -1236,74 +1427,30 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                     map.set(1, 1);
 
                     ApplyCountAwareIndexedTestPredicate predicate = new ApplyCountAwareIndexedTestPredicate("__key", 1);
-                    map.executeOnEntries(new DeleterEP(), predicate);
+                    map.executeOnEntries(new DeleteEntryProcessor(), predicate);
 
                     assertEquals("Expecting two predicate#apply method call one on owner, other one on backup",
-                            2, predicateApplyCount.get());
+                            2, PREDICATE_APPLY_COUNT.get());
                 } finally {
-                    // set predicateApplyCount to zero, for the cases we repeat this test.
-                    predicateApplyCount.set(0);
+                    // set predicateApplyCount to zero, in case we repeat this test
+                    PREDICATE_APPLY_COUNT.set(0);
                 }
             }
         };
-
         assertTrueEventually(task);
     }
 
+    static class ApplyCountAwareIndexedTestPredicate implements IndexAwarePredicate {
 
-    @Test
-    public void test_entryProcessorRuns_onAsyncBackup() {
-        Config config = getConfig();
-        config.getMapConfig("test").setBackupCount(0).setAsyncBackupCount(1);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
-
-        IMap map = node1.getMap("test");
-        map.executeOnKey(1, new EntryCreate());
-
-
-        AssertTask task = new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                long entryCountOnNode1 = getTotalOwnedAndBackupEntryCount(node1.getMap("test"));
-                long entryCountOnNode2 = getTotalOwnedAndBackupEntryCount(node2.getMap("test"));
-                assertEquals("EntryProcess should run on async backup and should create entry there",
-                        entryCountOnNode1, entryCountOnNode2);
-            }
-        };
-
-        assertTrueEventually(task);
-    }
-
-    private static long getTotalOwnedAndBackupEntryCount(IMap map) {
-        LocalMapStats localMapStats = map.getLocalMapStats();
-        return localMapStats.getOwnedEntryCount() + localMapStats.getBackupEntryCount();
-    }
-
-
-    public static class DeleterEP extends AbstractEntryProcessor {
-
-        @Override
-        public Object process(Map.Entry entry) {
-            entry.setValue(null);
-            return null;
-        }
-    }
-
-
-    public static class ApplyCountAwareIndexedTestPredicate implements IndexAwarePredicate {
-
-        public static final AtomicInteger predicateApplyCount = new AtomicInteger(0);
+        static final AtomicInteger PREDICATE_APPLY_COUNT = new AtomicInteger(0);
 
         private Comparable key;
         private String attributeName;
 
-        public ApplyCountAwareIndexedTestPredicate() {
+        ApplyCountAwareIndexedTestPredicate() {
         }
 
-        public ApplyCountAwareIndexedTestPredicate(String attributeName, Comparable key) {
+        ApplyCountAwareIndexedTestPredicate(String attributeName, Comparable key) {
             this.key = key;
             this.attributeName = attributeName;
         }
@@ -1321,8 +1468,76 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public boolean apply(Map.Entry mapEntry) {
-            predicateApplyCount.incrementAndGet();
+            PREDICATE_APPLY_COUNT.incrementAndGet();
             return true;
+        }
+    }
+
+    @Test
+    public void test_entryProcessorRuns_onAsyncBackup() {
+        Config config = getConfig();
+        config.getMapConfig("test").setBackupCount(0).setAsyncBackupCount(1);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance1.getMap("test");
+        map.executeOnKey(1, new EntryCreate());
+
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long entryCountOnNode1 = getTotalOwnedAndBackupEntryCount(instance1.getMap("test"));
+                long entryCountOnNode2 = getTotalOwnedAndBackupEntryCount(instance2.getMap("test"));
+                assertEquals("EntryProcess should run on async backup and should create entry there",
+                        entryCountOnNode1, entryCountOnNode2);
+            }
+        };
+
+        assertTrueEventually(task);
+    }
+
+    private static long getTotalOwnedAndBackupEntryCount(IMap map) {
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        return localMapStats.getOwnedEntryCount() + localMapStats.getBackupEntryCount();
+    }
+
+    private static class IncrementorEntryProcessor extends AbstractEntryProcessor<Integer, Integer> implements DataSerializable {
+
+        IncrementorEntryProcessor() {
+            super(true);
+        }
+
+        public Object process(Map.Entry<Integer, Integer> entry) {
+            Integer value = entry.getValue();
+            if (value == null) {
+                value = 0;
+            }
+            if (value == -1) {
+                entry.setValue(null);
+                return null;
+            }
+            value++;
+            entry.setValue(value);
+            return value;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
+    }
+
+    private static class DeleteEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
+
+        @Override
+        public Object process(Map.Entry<Integer, Integer> entry) {
+            entry.setValue(null);
+            return null;
         }
     }
 
@@ -1333,7 +1548,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         private final AtomicBoolean indexCalled;
 
-        public IndexedTestPredicate(AtomicBoolean indexCalled) {
+        IndexedTestPredicate(AtomicBoolean indexCalled) {
             this.indexCalled = indexCalled;
         }
 
@@ -1354,118 +1569,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-
-    private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
-        private Integer id;
-
-        public SimpleEntryProcessor() {
-        }
-
-        public SimpleEntryProcessor(Integer id) {
-            this.id = id;
-        }
-
-        @Override
-        public Object process(Map.Entry<Object, List<Integer>> entry) {
-            List l = entry.getValue();
-            l.add(id);
-
-            return id;
-        }
-
-        @Override
-        public void processBackup(Map.Entry entry) {
-            process(entry);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(id);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            id = in.readObject();
-        }
-
-        @Override
-        public EntryBackupProcessor<Object, List<Integer>> getBackupProcessor() {
-            return this;
-        }
-    }
-
-
-    public static class Issue1764Data implements DataSerializable {
-
-        public static AtomicInteger serializationCount = new AtomicInteger();
-        public static AtomicInteger deserializationCount = new AtomicInteger();
-
-        private String attr1;
-        private String attr2;
-
-        public Issue1764Data() {
-            //For deserialization...
-        }
-
-        public Issue1764Data(String attr1, String attr2) {
-            this.attr1 = attr1;
-            this.attr2 = attr2;
-        }
-
-        public String getAttr1() {
-            return attr1;
-        }
-
-        public void setAttr1(String attr1) {
-            this.attr1 = attr1;
-        }
-
-        public String getAttr2() {
-            return attr2;
-        }
-
-        public void setAttr2(String attr2) {
-            this.attr2 = attr2;
-        }
-
-        @Override
-        public String toString() {
-            return "[" + attr1 + " " + attr2 + "]";
-        }
-
-        public void writeData(ObjectDataOutput out) throws IOException {
-            serializationCount.incrementAndGet();
-            out.writeObject(attr1);
-            out.writeObject(attr2);
-        }
-
-        public void readData(ObjectDataInput in) throws IOException {
-            attr1 = in.readObject();
-            attr2 = in.readObject();
-            deserializationCount.incrementAndGet();
-        }
-    }
-
-    public static class Issue1764UpdatingEntryProcessor
-            extends AbstractEntryProcessor<String, Issue1764Data> {
-
-        private static final long serialVersionUID = 1L;
-        private String newValue;
-
-        public Issue1764UpdatingEntryProcessor(String newValue) {
-            this.newValue = newValue;
-        }
-
-        public Object process(Map.Entry<String, Issue1764Data> entry) {
-            Issue1764Data data = entry.getValue();
-            data.setAttr1(newValue);
-            entry.setValue(data);
-            return true;
-        }
-
-    }
-
-    public static class EntryInc extends AbstractEntryProcessor<String, SimpleValue> {
+    private static class EntryInc extends AbstractEntryProcessor<String, SimpleValue> {
 
         @Override
         public Object process(final Map.Entry<String, SimpleValue> entry) {
@@ -1475,15 +1579,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-
-    public static class SimpleValue implements Serializable {
+    private static class SimpleValue implements Serializable {
 
         public int i;
 
-        public SimpleValue() {
+        SimpleValue() {
         }
 
-        public SimpleValue(final int i) {
+        SimpleValue(final int i) {
             this.i = i;
         }
 
@@ -1511,7 +1614,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    public static class EntryCreate extends AbstractEntryProcessor<String, Integer> {
+    private static class EntryCreate extends AbstractEntryProcessor<String, Integer> {
 
         @Override
         public Object process(final Map.Entry<String, Integer> entry) {
@@ -1519,79 +1622,4 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return null;
         }
     }
-
-    private static class MyObject implements DataSerializable {
-
-        int serializedCount = 0;
-        int deserializedCount = 0;
-
-        public MyObject() {
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(++serializedCount);
-            out.writeInt(deserializedCount);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            serializedCount = in.readInt();
-            deserializedCount = in.readInt() + 1;
-        }
-    }
-
-    private static class NoOpEntryProcessor implements EntryProcessor {
-        @Override
-        public Object process(final Map.Entry entry) {
-            return null;
-        }
-
-        @Override
-        public EntryBackupProcessor getBackupProcessor() {
-            return null;
-        }
-    }
-
-    private static class StoreOperation implements EntryProcessor {
-
-        @Override
-        public Object process(Map.Entry entry) {
-            MyObject myObject = new MyObject();
-            entry.setValue(myObject);
-            return 1;
-        }
-
-        @Override
-        public EntryBackupProcessor getBackupProcessor() {
-            return null;
-        }
-    }
-
-    private static class FetchSerializedCount implements EntryProcessor<String, MyObject> {
-
-        @Override
-        public Object process(Map.Entry<String, MyObject> entry) {
-            return entry.getValue().serializedCount;
-        }
-
-        @Override
-        public EntryBackupProcessor<String, MyObject> getBackupProcessor() {
-            return null;
-        }
-    }
-
-    private static class FetchDeSerializedCount implements EntryProcessor<String, MyObject> {
-
-        @Override
-        public Object process(Map.Entry<String, MyObject> entry) {
-            return entry.getValue().deserializedCount;
-        }
-
-        @Override
-        public EntryBackupProcessor<String, MyObject> getBackupProcessor() {
-            return null;
-        }
-    }
-
 }
