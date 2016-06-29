@@ -2,9 +2,8 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -15,15 +14,15 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(value = {SlowTest.class, ParallelTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class ReplicatedMapTtlTest extends ReplicatedMapBaseTest {
 
     @Test
     public void testPutWithTTL_withMigration() throws Exception {
         int nodeCount = 1;
-        int keyCount = 40000;
-        int operationCount = 40000;
+        int keyCount = 10000;
+        int operationCount = 10000;
         int threadCount = 15;
         int ttl = 500;
         testPutWithTTL(nodeCount, keyCount, operationCount, threadCount, ttl, true);
@@ -32,12 +31,11 @@ public class ReplicatedMapTtlTest extends ReplicatedMapBaseTest {
     @Test
     public void testPutWithTTL_withoutMigration() throws Exception {
         int nodeCount = 5;
-        int keyCount = 20000;
-        int operationCount = 20000;
-        int threadCount = 15;
+        int keyCount = 10000;
+        int operationCount = 10000;
+        int threadCount = 10;
         int ttl = 500;
         testPutWithTTL(nodeCount, keyCount, operationCount, threadCount, ttl, false);
-
     }
 
     private void testPutWithTTL(int nodeCount, int keyCount, int operationCount, int threadCount, int ttl,
