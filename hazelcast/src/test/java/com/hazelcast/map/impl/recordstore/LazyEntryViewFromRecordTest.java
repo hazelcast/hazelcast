@@ -34,6 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -132,6 +133,16 @@ public class LazyEntryViewFromRecordTest {
         EntryView entryView = createDefaultEntryView();
 
         assertTrue(view.equals(entryView) && entryView.equals(view));
+    }
+
+    @Test
+    public void test_equals_whenSameReference() throws Exception {
+        assertTrue(view.equals(view));
+    }
+
+    @Test
+    public void test_equals_whenSuppliedObjectIsNotEntryView() throws Exception {
+        assertFalse(view.equals(this));
     }
 
     @Test
