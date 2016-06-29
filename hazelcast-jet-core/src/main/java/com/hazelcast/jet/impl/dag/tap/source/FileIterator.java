@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.impl.dag.tap.source;
 
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.data.tuple.JetTuple2;
+import com.hazelcast.jet.impl.util.JetUtil;
+import com.hazelcast.jet.io.tuple.Tuple;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,11 +30,12 @@ import java.io.LineNumberReader;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 
-public class FileIterator implements Iterator<String> {
+public class FileIterator implements Iterator<Tuple<Integer, String>> {
     private String line;
     private LineNumberReader raf;
     private boolean hasNext = true;
     private ByteCountingInputStream byteCountingStream;
+    private int lineNumber;
 
     public FileIterator(File file,
                         long start,
@@ -40,11 +43,11 @@ public class FileIterator implements Iterator<String> {
         try {
             this.byteCountingStream = new ByteCountingInputStream(new FileInputStream(file), end);
             this.raf = new LineNumberReader(new BufferedReader(
-                    new InputStreamReader(this.byteCountingStream, Charset.forName("UTF-8"))
+                    new InputStreamReader(byteCountingStream, Charset.forName("UTF-8"))
             ));
 
             if (start > 0) {
-                if (this.byteCountingStream.skip(start) < 0) {
+                if (byteCountingStream.skip(start) < 0) {
                     throw new JetException("Can't read from file inputStream");
                 }
             }
@@ -54,34 +57,35 @@ public class FileIterator implements Iterator<String> {
     }
 
     private void close() throws IOException {
-        this.hasNext = false;
+        hasNext = false;
 
-        if (this.byteCountingStream != null) {
-            this.byteCountingStream.close();
-            this.byteCountingStream = null;
+        if (byteCountingStream != null) {
+            byteCountingStream.close();
+            byteCountingStream = null;
         }
 
-        if (this.raf != null) {
-            this.raf.close();
-            this.raf = null;
+        if (raf != null) {
+            raf.close();
+            raf = null;
         }
     }
 
     public long getLineNumber() {
-        return this.byteCountingStream.getLineNumber();
+        return byteCountingStream.getLineNumber();
     }
 
     @Override
     public boolean hasNext() {
         try {
-            if (!this.hasNext) {
+            if (!hasNext) {
                 return false;
             }
 
-            if (this.line == null) {
-                this.line = this.raf.readLine();
+            if (line == null) {
+                line = raf.readLine();
+                lineNumber = raf.getLineNumber();
 
-                if (this.line == null) {
+                if (line == null) {
                     close();
                     return false;
                 }
@@ -94,19 +98,19 @@ public class FileIterator implements Iterator<String> {
     }
 
     @Override
-    public String next() {
+    public Tuple<Integer, String> next() {
         if (!hasNext()) {
             throw new IllegalStateException("Iterator closed");
         }
 
-        if (this.line == null) {
+        if (line == null) {
             return null;
         }
 
         try {
-            return this.line;
+            return new JetTuple2<>(lineNumber, line);
         } finally {
-            this.line = null;
+            line = null;
         }
     }
 }

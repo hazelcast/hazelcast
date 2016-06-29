@@ -34,7 +34,7 @@ public class UnorderedTest extends JetStreamTestSupport {
 
     @Test
     public void testUnordered_whenOrderedSource() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         IList<Integer> collected = list.stream()
@@ -55,7 +55,7 @@ public class UnorderedTest extends JetStreamTestSupport {
 
     @Test
     public void testUnordered_whenOrderedSource_asIntermediateOperation() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         IList<Integer> collected = list.stream()
@@ -78,7 +78,7 @@ public class UnorderedTest extends JetStreamTestSupport {
 
     @Test
     public void testUnordered_whenUnorderedSource() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Integer> collected = map.stream()

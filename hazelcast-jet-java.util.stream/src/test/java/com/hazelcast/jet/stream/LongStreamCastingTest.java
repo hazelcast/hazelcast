@@ -34,7 +34,7 @@ public class LongStreamCastingTest extends JetStreamTestSupport {
 
     @Before
     public void setUp() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         stream = list.stream().mapToLong(m -> m);
     }
 

@@ -30,7 +30,7 @@ public class CountTest extends JetStreamTestSupport {
 
     @Test
     public void testCount_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         long result = map.stream().count();
@@ -40,7 +40,7 @@ public class CountTest extends JetStreamTestSupport {
 
     @Test
     public void testCount_whenSourceList() throws Exception {
-        IList<Integer> list = getList(instance);
+        IList<Integer> list = getStreamList(instance);
         fillList(list);
 
         long result = list.stream().count();

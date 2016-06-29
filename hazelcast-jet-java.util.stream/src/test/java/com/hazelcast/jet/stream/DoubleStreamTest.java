@@ -46,7 +46,7 @@ public class DoubleStreamTest extends JetStreamTestSupport {
 
     @Before
     public void setupMap() {
-        map = getMap(instance);
+        map = getStreamMap(instance);
         fillMapDoubles(map);
         stream = map.stream().mapToDouble(Map.Entry::getValue);
     }

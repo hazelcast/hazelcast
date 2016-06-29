@@ -31,7 +31,7 @@ public class AnyMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testAnyMatchTrue_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -43,7 +43,7 @@ public class AnyMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testAnyMatchFalse_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -55,7 +55,7 @@ public class AnyMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testAnyMatchTrue_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -68,7 +68,7 @@ public class AnyMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testAnyMatchFalse_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -81,7 +81,7 @@ public class AnyMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testAnyMatch_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         boolean found = list.stream()

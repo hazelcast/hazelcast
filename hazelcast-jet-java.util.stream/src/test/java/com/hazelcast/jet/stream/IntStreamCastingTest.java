@@ -33,7 +33,7 @@ public class IntStreamCastingTest extends JetStreamTestSupport {
 
     @Before
     public void setUp() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         stream = list.stream().mapToInt(m -> m);
     }
 

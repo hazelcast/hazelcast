@@ -1,11 +1,25 @@
-package com.hazelcast.jet.internal.impl.dag;
+/*
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import com.hazelcast.jet.dag.Edge;
+package com.hazelcast.jet.dag;
+
+import com.hazelcast.jet.TestProcessors;
 import com.hazelcast.jet.impl.actor.ByReferenceDataTransferringStrategy;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
 import com.hazelcast.jet.strategy.IListBasedShufflingStrategy;
-import com.hazelcast.jet.processors.DummyProcessor;
-import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -15,7 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.base.JetBaseTest.createVertex;
+import static com.hazelcast.jet.JetTestSupport.createVertex;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -24,8 +38,8 @@ public class EdgeTest {
 
     @Test
     public void testEdgeName() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
+        Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         String name = "edge";
         Edge edge = new Edge(name, v1, v2);
         assertEquals(name, edge.getName());
@@ -33,8 +47,8 @@ public class EdgeTest {
 
     @Test
     public void testEdgeInputOutputVertexes() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
+        Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         Edge edge = new Edge("edge", v1, v2);
         assertEquals(v1, edge.getInputVertex());
         assertEquals(v2, edge.getOutputVertex());
@@ -42,8 +56,8 @@ public class EdgeTest {
 
     @Test
     public void testDefaultStrategies() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
+        Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         Edge edge = new Edge("edge", v1, v2);
         assertEquals(ByReferenceDataTransferringStrategy.INSTANCE, edge.getDataTransferringStrategy());
         assertEquals(DefaultHashingStrategy.INSTANCE, edge.getHashingStrategy());
@@ -54,8 +68,8 @@ public class EdgeTest {
 
     @Test
     public void testEdgeBuilder() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
+        Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         IListBasedShufflingStrategy shufflingStrategy = new IListBasedShufflingStrategy("test");
         Edge edge = new Edge.EdgeBuilder("edge", v1, v2)
                 .dataTransferringStrategy(ByReferenceDataTransferringStrategy.INSTANCE)
@@ -75,8 +89,8 @@ public class EdgeTest {
 
     @Test(expected = IllegalStateException.class)
     public void testEdgeBuilder_multipleCallToBuild_throwsException() throws Exception {
-        Vertex v1 = createVertex("v1", DummyProcessor.class);
-        Vertex v2 = createVertex("v2", DummyProcessor.class);
+        Vertex v1 = createVertex("v1", TestProcessors.Noop.class);
+        Vertex v2 = createVertex("v2", TestProcessors.Noop.class);
         Edge.EdgeBuilder edgeBuilder = new Edge.EdgeBuilder("edge", v1, v2);
         edgeBuilder.build();
         edgeBuilder.build();

@@ -33,7 +33,7 @@ public class MapTest extends JetStreamTestSupport {
 
     @Test
     public void testSimpleMap_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Integer> list = map.stream()
@@ -53,7 +53,7 @@ public class MapTest extends JetStreamTestSupport {
 
     @Test
     public void testSimpleMap_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         IList<Integer> result = list.stream()

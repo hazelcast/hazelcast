@@ -1,4 +1,4 @@
-package com.hazelcast.jet.internal.impl.statemachine;
+package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.dag.DAG;
@@ -8,8 +8,6 @@ import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
-import com.hazelcast.jet.impl.statemachine.InvalidEventException;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachineImpl;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;

@@ -48,7 +48,7 @@ public class IntStreamTest extends JetStreamTestSupport {
 
     @Before
     public void setupMap() {
-        map = getMap(instance);
+        map = getStreamMap(instance);
         fillMap(map);
         stream = map.stream().mapToInt(Map.Entry::getValue);
     }

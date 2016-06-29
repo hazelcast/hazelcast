@@ -32,7 +32,7 @@ public class ToArrayTest extends JetStreamTestSupport {
 
     @Test
     public void testToArray_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         Object[] objects = map.stream().toArray();
@@ -46,7 +46,7 @@ public class ToArrayTest extends JetStreamTestSupport {
 
     @Test
     public void testToArrayWithGenerator_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         Map.Entry[] entries = map.stream().toArray(Map.Entry[]::new);
@@ -59,7 +59,7 @@ public class ToArrayTest extends JetStreamTestSupport {
 
     @Test
     public void testToArray_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         Object[] objects = list.stream().toArray();
@@ -72,7 +72,7 @@ public class ToArrayTest extends JetStreamTestSupport {
 
     @Test
     public void testToArrayWithGenerator_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         Integer[] elements = list.stream().toArray(Integer[]::new);

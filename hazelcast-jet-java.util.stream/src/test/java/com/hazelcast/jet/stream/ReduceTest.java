@@ -31,7 +31,7 @@ public class ReduceTest extends JetStreamTestSupport {
 
     @Test
     public void testReduceWithIdentity() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int result = map.stream()
@@ -43,7 +43,7 @@ public class ReduceTest extends JetStreamTestSupport {
 
     @Test
     public void testReduceWithNoIdentity() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int result = map.stream()

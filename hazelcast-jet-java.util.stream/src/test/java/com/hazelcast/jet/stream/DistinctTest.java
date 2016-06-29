@@ -31,7 +31,7 @@ public class DistinctTest extends JetStreamTestSupport {
 
     @Test
     public void testDistinct_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         int modulus = 10;
         fillList(list, i -> i % modulus);
 
@@ -49,7 +49,7 @@ public class DistinctTest extends JetStreamTestSupport {
 
     @Test
     public void testDistinct_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int modulus = 10;

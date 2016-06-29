@@ -29,7 +29,7 @@ public class MinTest extends JetStreamTestSupport {
 
     @Test
     public void testMin_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int result = map.stream()
@@ -42,7 +42,7 @@ public class MinTest extends JetStreamTestSupport {
 
     @Test
     public void testMin_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         long result = list

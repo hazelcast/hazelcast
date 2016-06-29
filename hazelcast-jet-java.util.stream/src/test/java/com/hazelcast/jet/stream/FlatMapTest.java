@@ -34,7 +34,7 @@ public class FlatMapTest extends JetStreamTestSupport {
 
     @Test
     public void testFlatMap_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int repetitions = 10;
@@ -58,7 +58,7 @@ public class FlatMapTest extends JetStreamTestSupport {
 
     @Test
     public void testFlatMap_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         int repetitions = 10;
