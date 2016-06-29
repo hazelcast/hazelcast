@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.Integer.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -183,7 +184,16 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
         factory.shutdownAll();
 
-        assertEquals(numberOfItems, mapStore.countStore.get());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < 1000; i++) {
+                    assertEquals(valueOf(i), mapStore.store.get(i));
+                }
+            }
+        });
+
     }
 
     @Test
