@@ -88,8 +88,6 @@ The following are the fixed issues for 3.6.4 release.
 - Partition proxies are created eventually on all members. However, this is an async process driven by the eventing system. If a member does not have a proxy in its registry, then it will not fire MapPartitionLostListener. Before firing a partition lost event, proxies should be waited to be created. [8293]
 - Ensure skipping previously removed CacheEntryListenerConfiguration entries while iterating over added CacheEntryListenerConfigurations in the CacheConfig to register listeners. [8283]
 - Hazelcast instance is started without problems but Management Center does not launch and throws an exception when bundled Jetty is used with Java versions 1.8.0_91 and higher. [8248]
-- A failure in deserializing a single map entry causes the whole write-behind queue for that map to stop persisting any data. For example, when putting 3 entries x, y, z into a map and y can not be deserialized, neither y nor z are persisted using the configured MapStore. It would be reasonable to persist z even though y cannot be persisted. [7762]
-
 
 *3.6.3*
 
