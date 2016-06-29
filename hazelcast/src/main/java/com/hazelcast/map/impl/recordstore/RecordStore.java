@@ -285,10 +285,9 @@ public interface RecordStore<R extends Record> {
     /**
      * Loads all given keys from defined map store.
      *
-     * @param keys                  keys to be loaded.
-     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     * @param keys keys to be loaded.
      */
-    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
+    void loadAllFromStore(List<Data> keys);
 
     void updateLoadStatus(boolean lastBatch, Throwable exception);
 

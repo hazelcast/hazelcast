@@ -63,12 +63,9 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
     private final MapDataStore mapDataStore;
 
-    private final RecordStore recordStore;
-
     private final int partitionId;
 
     BasicRecordStoreLoader(RecordStore recordStore) {
-        this.recordStore = recordStore;
         final MapContainer mapContainer = recordStore.getMapContainer();
         this.name = mapContainer.getName();
         this.mapServiceContext = mapContainer.getMapServiceContext();
@@ -79,8 +76,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     @Override
-    public Future<?> loadValues(List<Data> keys, boolean replaceExistingValues) {
-        final Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
+    public Future<?> loadValues(List<Data> keys) {
+        final Callable task = new GivenKeysLoaderTask(keys);
         return executeTask(MAP_LOADER_EXECUTOR, task);
     }
 
@@ -100,25 +97,19 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     private final class GivenKeysLoaderTask implements Callable<Object> {
 
         private final List<Data> keys;
-        private final boolean replaceExistingValues;
 
-        private GivenKeysLoaderTask(List<Data> keys, boolean replaceExistingValues) {
+        private GivenKeysLoaderTask(List<Data> keys) {
             this.keys = keys;
-            this.replaceExistingValues = replaceExistingValues;
         }
 
         @Override
         public Object call() throws Exception {
-            loadValuesInternal(keys, replaceExistingValues);
+            loadValuesInternal(keys);
             return null;
         }
     }
 
-    private void loadValuesInternal(List<Data> keys, boolean replaceExistingValues) throws Exception {
-
-        if (!replaceExistingValues) {
-            removeExistingKeys(keys);
-        }
+    private void loadValuesInternal(List<Data> keys) throws Exception {
         removeUnloadableKeys(keys);
 
         if (keys.isEmpty()) {
@@ -241,20 +232,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
         operation.setServiceName(MapService.SERVICE_NAME);
         return operation;
-    }
-
-    private void removeExistingKeys(Collection<Data> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        Storage storage = recordStore.getStorage();
-        Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Data key = iterator.next();
-            if (storage.containsKey(key)) {
-                iterator.remove();
-            }
-        }
     }
 
     private void removeUnloadableKeys(Collection<Data> keys) {
