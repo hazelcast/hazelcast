@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.getters.MultiResult;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public abstract class AbstractPredicate<K, V>
     private boolean applyForMultiResult(Map.Entry mapEntry, MultiResult result) {
         List<Object> results = result.getResults();
         for (Object o : results) {
-            Comparable entryValue = (Comparable) convertEnumValue(o);
+            Comparable entryValue = (Comparable) convertEnumAndDateValue(o);
             // it's enough if there's only one result in the MultiResult that satisfies the predicate
             boolean satisfied = applyForSingleAttributeValue(mapEntry, entryValue);
             if (satisfied) {
@@ -110,7 +111,12 @@ public abstract class AbstractPredicate<K, V>
 
     private Comparable convert(AttributeType entryAttributeType, Class<?> entryAttributeClass, Comparable givenAttributeValue) {
         if (entryAttributeType == AttributeType.ENUM) {
-            // if attribute type is enum, convert given attribute to enum string
+            // if attribute type is enum, always convert given attribute to enum string
+            return entryAttributeType.getConverter().convert(givenAttributeValue);
+        } else if (entryAttributeType == AttributeType.DATE
+                || entryAttributeType == AttributeType.SQL_DATE
+                || entryAttributeType == AttributeType.SQL_TIMESTAMP) {
+            // if attribute type is date, always convert given attribute to long
             return entryAttributeType.getConverter().convert(givenAttributeValue);
         } else {
             // if given attribute value is already in expected type then there's no need for conversion.
@@ -128,12 +134,16 @@ public abstract class AbstractPredicate<K, V>
     protected Object readAttributeValue(Map.Entry entry) {
         Extractable extractable = (Extractable) entry;
         Object attributeValue = extractable.getAttributeValue(attributeName);
-        return convertEnumValue(attributeValue);
+        return convertEnumAndDateValue(attributeValue);
     }
 
-    protected Object convertEnumValue(Object attributeValue) {
-        if (attributeValue != null && attributeValue.getClass().isEnum()) {
-            attributeValue = attributeValue.toString();
+    protected Object convertEnumAndDateValue(Object attributeValue) {
+        if (attributeValue != null) {
+            if (attributeValue.getClass().isEnum()) {
+                attributeValue = attributeValue.toString();
+            } else if (attributeValue instanceof java.util.Date) {
+                attributeValue = ((Date) attributeValue).getTime();
+            }
         }
         return attributeValue;
     }

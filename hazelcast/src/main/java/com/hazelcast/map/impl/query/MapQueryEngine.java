@@ -30,18 +30,28 @@ public interface MapQueryEngine {
 
     /**
      * Executes a query on all the local partitions.
+     * <p>
+     * - Uses Indexes
+     * - Accepts PagingPredicate
+     * - Query executed in the calling thread
+     * - predicate evaluation will be parallelized if QUERY_PREDICATE_PARALLEL_EVALUATION is enabled or a PagingPredicate is used.
      *
-     * @param name      the name of the map
+     * @param mapName   the name of the map
      * @param predicate the predicate
      * @return the QueryResult
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    QueryResult queryLocalPartitions(String name, Predicate predicate, IterationType iterationType)
+    QueryResult queryLocalPartitions(String mapName, Predicate predicate, IterationType iterationType)
             throws ExecutionException, InterruptedException;
 
     /**
-     * Executes a query a specific local partition.
+     * Executes a query on a specific local partition.
+     * <p>
+     * - Does NOT use Indexes
+     * - Accepts PagingPredicate
+     * - Sequential full table scan
+     * - Query executed in the calling thread
      * <p>
      * todo: what happens when the partition is not local?
      *
@@ -55,8 +65,9 @@ public interface MapQueryEngine {
     /**
      * Query all local partitions.
      * <p>
-     * todo: we need better explanation of difference between this method and
-     * {@link #queryLocalPartitions(String, Predicate, IterationType)}
+     * - Does NOT accept PagingPredicate
+     * - Query executed in an Operation on this member (NOT in the calling thread)
+     * - Calls {@link #queryLocalPartitions(String, Predicate, IterationType)} in an operation
      *
      * @param mapName       map name.
      * @param predicate     except paging predicate.
@@ -66,6 +77,9 @@ public interface MapQueryEngine {
 
     /**
      * Queries all partitions. Paging predicates are not allowed.
+     * - Does NOT accept PagingPredicate
+     * - Query executed in an Operation on each member (NOT in the calling thread)
+     * - Calls {@link #queryLocalPartitions(String, Predicate, IterationType)} in an operation
      *
      * @param mapName       map name.
      * @param predicate     except paging predicate.
@@ -76,7 +90,10 @@ public interface MapQueryEngine {
     /**
      * Query all local partitions with a paging predicate.
      * <p>
-     * todo: it would be better to have a single queryLocal... method and let the implementation figure out how to deal
+     * - Query executed in an Operation on this member (or other members if some partitions are not local)
+     * <p>
+     * TODO:
+     * it would be better to have a single queryLocal... method and let the implementation figure out how to deal
      * with a regular predicate and a paging predicate. No need to have that in the interface. The problem is that currently
      * the signatures don't match up. This implementation detail should not be exposed through the interface.
      *
@@ -90,7 +107,10 @@ public interface MapQueryEngine {
     /**
      * Queries all partitions with a paging predicate.
      * <p>
-     * todo: it would be better to have single queryAll method and let the implementation figure out how to deal
+     * - Query executed in an Operation on each member (NOT in the calling thread)
+     * <p>
+     * TODO:
+     * it would be better to have single queryAll method and let the implementation figure out how to deal
      * with a paging predicate. See comment in {@link #queryLocalPartitionsWithPagingPredicate}
      *
      * @param mapName         map name.

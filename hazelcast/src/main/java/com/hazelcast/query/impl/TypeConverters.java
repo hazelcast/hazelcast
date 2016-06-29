@@ -21,8 +21,6 @@ import com.hazelcast.nio.serialization.Portable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.util.Date;
 
 public final class TypeConverters {
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
@@ -75,14 +73,16 @@ public final class TypeConverters {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof java.sql.Date) {
-                return value;
+                return ((java.sql.Date) value).getTime();
+            }
+            if (value instanceof java.util.Date) {
+                return ((java.util.Date) value).getTime();
             }
             if (value instanceof String) {
-                return DateHelper.parseSqlDate((String) value);
+                return DateHelper.parseSqlDate((String) value).getTime();
             }
             if (value instanceof Number) {
-                Number number = (Number) value;
-                return new java.sql.Date(number.longValue());
+                return ((Number) value).longValue();
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to java.sql.Date");
         }
@@ -91,15 +91,20 @@ public final class TypeConverters {
     static class SqlTimestampConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Timestamp) {
-                return value;
+            if (value instanceof java.sql.Timestamp) {
+                return ((java.sql.Timestamp) value).getTime();
+            }
+            if (value instanceof java.sql.Date) {
+                return ((java.sql.Date) value).getTime();
+            }
+            if (value instanceof java.util.Date) {
+                return ((java.util.Date) value).getTime();
             }
             if (value instanceof String) {
-                return DateHelper.parseTimeStamp((String) value);
+                return DateHelper.parseTimeStamp((String) value).getTime();
             }
             if (value instanceof Number) {
-                Number number = (Number) value;
-                return new Timestamp(number.longValue());
+                return ((Number) value).longValue();
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to java.sql.Timestamp");
         }
@@ -108,15 +113,14 @@ public final class TypeConverters {
     static class DateConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
-            if (value instanceof Date) {
-                return value;
+            if (value instanceof java.util.Date) {
+                return ((java.util.Date) value).getTime();
             }
             if (value instanceof String) {
-                return DateHelper.parseDate((String) value);
+                return DateHelper.parseDate((String) value).getTime();
             }
             if (value instanceof Number) {
-                Number number = (Number) value;
-                return new Date(number.longValue());
+                return ((Number) value).longValue();
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to java.util.Date");
         }
