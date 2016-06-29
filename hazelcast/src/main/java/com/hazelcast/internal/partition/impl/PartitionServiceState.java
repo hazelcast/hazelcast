@@ -40,6 +40,11 @@ public enum PartitionServiceState {
     /**
      * Indicates that there are out-of-sync replicas for owned partitions by this node.
      */
-    REPLICA_NOT_SYNC
+    REPLICA_NOT_SYNC,
+
+    /**
+     * Indicates that there are some replicas are not owned.
+     */
+    REPLICA_NOT_OWNED
 
 }

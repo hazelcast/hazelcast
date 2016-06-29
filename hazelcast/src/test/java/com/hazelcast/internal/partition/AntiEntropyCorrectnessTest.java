@@ -72,7 +72,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
         assertSizeAndDataEventually();
     }
 
-    static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
+    public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
         Node node = getNode(instance);
         FirewallingMockConnectionManager cm = (FirewallingMockConnectionManager) node.getConnectionManager();
         cm.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
