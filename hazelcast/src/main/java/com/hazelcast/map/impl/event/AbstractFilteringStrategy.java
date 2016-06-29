@@ -60,10 +60,10 @@ public abstract class AbstractFilteringStrategy implements FilteringStrategy {
         return queryEventFilter.eval(entry);
     }
 
-    private Extractors getExtractorsForMapName(String mapName) {
-        if (mapName == null) {
+    private Extractors getExtractorsForMapName(String mapNameOrNull) {
+        if (mapNameOrNull == null) {
             return Extractors.empty();
         }
-        return mapServiceContext.getExtractors(mapName);
+        return mapServiceContext.getExtractors(mapNameOrNull);
     }
 }

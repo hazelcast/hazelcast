@@ -66,7 +66,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
  *     <tr>
  *         <td>Mismatch</td>
  *         <td>Mismatch</td>
- *         <td>NO MATCH</td>
+ *         <td>NO MATCH (no event is triggered)</td>
  *     </tr>
  *     <tr>
  *         <td>Mismatch</td>

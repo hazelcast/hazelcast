@@ -36,7 +36,14 @@ import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 
 /**
- * This entry event filtering strategy models the default Hazelcast behaviour.
+ * This entry event filtering strategy models the default backwards compatible Hazelcast behaviour.
+ * In particular, when processing {@code UPDATED} events, the predicate is evaluated against the new value; if the new value
+ * matches the predicate, then the {@code UPDATED} event will be published to the registered listeners.
+ * <p>
+ * Note that when trying to build a continuous query cache, this filtering strategy is flawed, as the listener will not be
+ * notified for updated entries whose old value matched the predicate while new value does not match the predicate. This has
+ * been addressed in {@link QueryCacheNaturalFilteringStrategy}.
+ * </p>
  *
  * @see QueryCacheNaturalFilteringStrategy
  */

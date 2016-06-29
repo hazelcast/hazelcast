@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "includeValues: {0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 {true}, {false}
@@ -107,10 +107,10 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
         String name;
         int age;
 
-        Person() {
+        public Person() {
         }
 
-        Person(String name, int age) {
+        public Person(String name, int age) {
             this.name = name;
             this.age = age;
         }
