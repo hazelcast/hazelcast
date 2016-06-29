@@ -5,8 +5,10 @@ import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -43,6 +45,9 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         bodyExtractorExecutions = 0;
         limbExtractorExecutions = 0;
         Config config = new Config();
+
+        config.getSerializationConfig().addDataSerializableFactory(100, new CustomPredicateFactory());
+
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
         mapConfig.addMapAttributeConfig(extractor("name",
@@ -145,7 +150,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
         }
     }
 
-    private static final class CustomPredicate extends AbstractPredicate {
+    private static class CustomPredicate extends AbstractPredicate {
 
         public CustomPredicate() {
             super("limbname");
@@ -160,9 +165,22 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
 
         @Override
         public int getId() {
-            return 0;
+            return 100;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 100;
         }
     }
+
+    public static class CustomPredicateFactory extends ClusterDataSerializerHook.ClusterDataSerializerFactoryImpl {
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            return new CustomPredicate();
+        }
+    }
+
 
     @Test
     public void nestedAttributeQuery_distributedSql() throws Exception {

@@ -49,6 +49,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -1326,15 +1327,19 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
+    // predicates are cloned for thread-safety thus their state is not modified
+    // for test purposes, we store the state in the static context, since the predicate is used once
+    static class IndexedTestPredicateState {
+        public static AtomicBoolean indexCalled;
+    }
+
     /**
      * This predicate is used to check whether or not {@link IndexAwarePredicate#isIndexed} method is called.
      */
     private static class IndexedTestPredicate implements IndexAwarePredicate {
 
-        private final AtomicBoolean indexCalled;
-
         public IndexedTestPredicate(AtomicBoolean indexCalled) {
-            this.indexCalled = indexCalled;
+            IndexedTestPredicateState.indexCalled = indexCalled;
         }
 
         @Override
@@ -1344,7 +1349,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public boolean isIndexed(QueryContext queryContext) {
-            indexCalled.set(true);
+            IndexedTestPredicateState.indexCalled.set(true);
             return true;
         }
 

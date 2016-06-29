@@ -298,15 +298,13 @@ public class SqlPredicate
         }
     }
 
-    private void readObject(java.io.ObjectInputStream in)
-            throws IOException, ClassNotFoundException {
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         predicate = createPredicate(sql);
     }
 
     /**
      * Return a {@link CompoundPredicate}, possibly flattened if one or both arguments is an instance of
      * {@code CompoundPredicate}.
-     *
      */
     static <T extends CompoundPredicate> T flattenCompound(Predicate predicateLeft, Predicate predicateRight, Class<T> klass) {
         // The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
@@ -320,16 +318,16 @@ public class SqlPredicate
             if (predicateRight instanceof CompoundPredicate) {
                 subpredicatesRight = ((CompoundPredicate) predicateRight).getPredicates();
             } else {
-                subpredicatesRight = new Predicate[] {predicateRight};
+                subpredicatesRight = new Predicate[]{predicateRight};
             }
             predicates = new Predicate[subpredicatesLeft.length + subpredicatesRight.length];
             ArrayUtils.concat(subpredicatesLeft, subpredicatesRight, predicates);
         } else if (klass.isInstance(predicateRight)) {
             subpredicatesRight = ((CompoundPredicate) predicateRight).getPredicates();
             predicates = new Predicate[subpredicatesRight.length + 1];
-            ArrayUtils.concat(new Predicate[] {predicateLeft}, subpredicatesRight, predicates);
+            ArrayUtils.concat(new Predicate[]{predicateLeft}, subpredicatesRight, predicates);
         } else {
-            predicates = new Predicate[] {predicateLeft, predicateRight};
+            predicates = new Predicate[]{predicateLeft, predicateRight};
         }
         try {
             CompoundPredicate compoundPredicate = klass.newInstance();
@@ -388,4 +386,5 @@ public class SqlPredicate
     public int getId() {
         return PredicateDataSerializerHook.SQL_PREDICATE;
     }
+
 }

@@ -36,6 +36,11 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICAT
 /**
  * Provides base features for predicates, such as extraction and convertion of the attribute's value.
  * It also handles apply() on MultiResult.
+ *
+ * Remember to always deep-copy an user-specified instance of a Predicate before using in internal layers.
+ * Due to problems with thread-safety of some in-built Comparables like java.util.Date it's forbiden to use the user
+ * specified instance.
+ *
  */
 public abstract class AbstractPredicate<K, V>
         implements Predicate<K, V>, IdentifiedDataSerializable {

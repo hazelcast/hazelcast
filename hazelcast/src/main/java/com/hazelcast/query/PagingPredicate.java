@@ -338,7 +338,7 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
         out.writeObject(comparator);
         out.writeInt(page);
         out.writeInt(pageSize);
-        out.writeUTF(iterationType.name());
+        out.writeUTF(iterationType != null ? iterationType.name() : null);
         out.writeInt(anchorList.size());
         for (Map.Entry<Integer, Map.Entry<K, V>> anchor : anchorList) {
             out.writeInt(anchor.getKey());
@@ -354,7 +354,8 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
         comparator = in.readObject();
         page = in.readInt();
         pageSize = in.readInt();
-        iterationType = IterationType.valueOf(in.readUTF());
+        String iterationTypeName = in.readUTF();
+        iterationType = iterationTypeName != null ? IterationType.valueOf(iterationTypeName) : null;
         int size = in.readInt();
         anchorList = new ArrayList<Map.Entry<Integer, Map.Entry<K, V>>>(size);
         for (int i = 0; i < size; i++) {

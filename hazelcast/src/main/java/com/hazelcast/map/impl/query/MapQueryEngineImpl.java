@@ -219,7 +219,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
                 = new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
 
         for (Integer partitionId : partitions) {
-            QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId);
+            // Making sure not to use a predicate in a multi-threaded context
+            Predicate predicateCopy = serializationService.copy(predicate);
+            QueryPartitionCallable task = new QueryPartitionCallable(name, predicateCopy, partitionId);
             Future<Collection<QueryableEntry>> future = executor.submit(task);
             futures.add(future);
         }
@@ -242,7 +244,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         List<Future<Collection<QueryableEntry>>> futures =
                 new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
         for (Integer partitionId : partitions) {
-            QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId);
+            // Making sure not to use a predicate in a multi-threaded context
+            PagingPredicate predicateCopy = serializationService.copy(predicate);
+            QueryPartitionCallable task = new QueryPartitionCallable(name, predicateCopy, partitionId);
             Future<Collection<QueryableEntry>> future = executor.submit(task);
             futures.add(future);
         }
@@ -361,9 +365,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         // in case of value, we also need to get the keys for sorting.
         IterationType retrievalIterationType = iterationType == IterationType.VALUE ? IterationType.ENTRY : iterationType;
 
+        // query the local partitions
         try {
             Future<QueryResult> future = queryOnLocalMember(mapName, predicate, retrievalIterationType);
             List<Future<QueryResult>> futures = singletonList(future);
+            // modifies partitionIds list!
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
             if (partitionIds.isEmpty()) {
                 return getSortedQueryResultSet(resultList, predicate, iterationType);
@@ -375,6 +381,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             logger.warning("Could not get results", t);
         }
 
+        // query the remaining partitions that are not local to the member
         try {
             List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds, retrievalIterationType);
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
@@ -393,8 +400,10 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         // in case of value, we also need to get the keys for sorting.
         IterationType retrievalIterationType = iterationType == IterationType.VALUE ? IterationType.ENTRY : iterationType;
 
+        // query the local partitions
         try {
             List<Future<QueryResult>> futures = queryOnMembers(mapName, predicate, retrievalIterationType);
+            // modifies partitionIds list!
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
             if (partitionIds.isEmpty()) {
                 return getSortedQueryResultSet(resultList, predicate, iterationType);
@@ -406,6 +415,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             logger.warning("Could not get results", t);
         }
 
+        // query the remaining partitions that are not local to the member
         try {
             List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds, retrievalIterationType);
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
@@ -426,8 +436,10 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         Set<Integer> partitionIds = getAllPartitionIds();
         QueryResult result = newQueryResult(partitionIds.size(), iterationType);
 
+        // query the local partitions
         try {
             List<Future<QueryResult>> futures = queryOnMembers(mapName, predicate, iterationType);
+            // modifies partitionIds list!
             addResultsOfPredicate(futures, result, partitionIds);
             if (partitionIds.isEmpty()) {
                 return result;
@@ -439,6 +451,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             logger.warning("Could not get results", t);
         }
 
+        // query the remaining partitions that are not local to the member
         try {
             List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds, iterationType);
             addResultsOfPredicate(futures, result, partitionIds);

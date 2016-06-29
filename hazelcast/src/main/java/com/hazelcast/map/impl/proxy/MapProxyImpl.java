@@ -56,6 +56,7 @@ import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -75,6 +76,8 @@ import static java.util.Collections.emptyMap;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.IMap} interface.
+ * <p>
+ * Since an instance of a Predicate is not thread-safe this class deep-copies all Predicates given as method params
  *
  * @param <K> the key type of map.
  * @param <V> the value type of map.
@@ -414,7 +417,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
+        return addLocalEntryListenerInternal(listener, copy(predicate), null, includeValue);
     }
 
     @Override
@@ -422,7 +425,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
+        return addLocalEntryListenerInternal(listener, copy(predicate), null, includeValue);
     }
 
     @Override
@@ -432,7 +435,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         Data keyData = toData(key, partitionStrategy);
-        return addLocalEntryListenerInternal(listener, predicate, keyData, includeValue);
+        return addLocalEntryListenerInternal(listener, copy(predicate), keyData, includeValue);
     }
 
     @Override
@@ -442,7 +445,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         Data keyData = toData(key, partitionStrategy);
-        return addLocalEntryListenerInternal(listener, predicate, keyData, includeValue);
+        return addLocalEntryListenerInternal(listener, copy(predicate), keyData, includeValue);
     }
 
     @Override
@@ -480,7 +483,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, predicate, toData(key, partitionStrategy), includeValue);
+        return addEntryListenerInternal(listener, copy(predicate), toData(key, partitionStrategy), includeValue);
     }
 
     @Override
@@ -488,7 +491,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, predicate, toData(key, partitionStrategy), includeValue);
+        return addEntryListenerInternal(listener, copy(predicate), toData(key, partitionStrategy), includeValue);
     }
 
     @Override
@@ -496,7 +499,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, predicate, null, includeValue);
+        return addEntryListenerInternal(listener, copy(predicate), null, includeValue);
     }
 
     @Override
@@ -504,7 +507,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return addEntryListenerInternal(listener, predicate, null, includeValue);
+        return addEntryListenerInternal(listener, copy(predicate), null, includeValue);
     }
 
     @Override
@@ -606,12 +609,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        Predicate safePredicate = copy(predicate);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
+            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) safePredicate, IterationType.KEY);
         } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
+            QueryResult result = queryEngine.invokeQueryAllPartitions(name, safePredicate, IterationType.KEY);
             return new QueryResultCollection<K>(
                     getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
         }
@@ -625,12 +629,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     public Set entrySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        Predicate safePredicate = copy(predicate);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.ENTRY);
+            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) safePredicate, IterationType.ENTRY);
         } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
+            QueryResult result = queryEngine.invokeQueryAllPartitions(name, safePredicate, IterationType.ENTRY);
             return new QueryResultCollection<Map.Entry<K, V>>(
                     getNodeEngine().getSerializationService(), IterationType.ENTRY, false, true, result);
         }
@@ -645,12 +650,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @SuppressWarnings("unchecked")
     public Collection<V> values(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        Predicate safePredicate = copy(predicate);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.VALUE);
+            return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) safePredicate, IterationType.VALUE);
         } else {
-            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.VALUE);
+            QueryResult result = queryEngine.invokeQueryAllPartitions(name, safePredicate, IterationType.VALUE);
             return new QueryResultCollection<V>(
                     getNodeEngine().getSerializationService(), IterationType.VALUE, false, false, result);
         }
@@ -665,12 +671,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @SuppressWarnings("unchecked")
     public Set<K> localKeySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        Predicate safePredicate = copy(predicate);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
         if (predicate instanceof PagingPredicate) {
-            return queryEngine.queryLocalPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
+            return queryEngine.queryLocalPartitionsWithPagingPredicate(name, (PagingPredicate) safePredicate, IterationType.KEY);
         } else {
-            QueryResult result = queryEngine.invokeQueryLocalPartitions(name, predicate, IterationType.KEY);
+            QueryResult result = queryEngine.invokeQueryLocalPartitions(name, safePredicate, IterationType.KEY);
             // TODO: unique is not needed since map keys are unique by nature
             return new QueryResultCollection<K>(
                     getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
@@ -727,7 +734,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         List<Data> result = new ArrayList<Data>();
 
-        executeOnEntriesInternal(entryProcessor, predicate, result);
+        executeOnEntriesInternal(entryProcessor, copy(predicate), result);
         if (result.isEmpty()) {
             return emptyMap();
         }
@@ -789,6 +796,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw (Throwable) returnObj;
         }
         return returnObj;
+    }
+
+    protected <K, V> Predicate<K, V> copy(Predicate<K, V> predicate) {
+        return serializationService.copy(predicate);
     }
 
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {

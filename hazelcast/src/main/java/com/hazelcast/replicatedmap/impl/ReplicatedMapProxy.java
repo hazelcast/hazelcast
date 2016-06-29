@@ -20,6 +20,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -43,7 +44,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.util.AbstractMap;
@@ -79,7 +79,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     private final NodeEngine nodeEngine;
     private final ReplicatedMapService service;
     private final ReplicatedMapEventPublishingService eventPublishingService;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final InternalPartitionServiceImpl partitionService;
     private final ReplicatedMapConfig config;
 
@@ -91,7 +91,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         this.nodeEngine = nodeEngine;
         this.service = service;
         this.eventPublishingService = service.getEventPublishingService();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         this.config = service.getReplicatedMapConfig(name);
     }
@@ -340,14 +340,15 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
         isNotNull(listener, "listener");
-        EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
+        EventFilter eventFilter = new ReplicatedQueryEventFilter(null, serializationService.copy(predicate));
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         isNotNull(listener, "listener");
-        EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key), predicate);
+        EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key),
+                serializationService.copy(predicate));
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -54,6 +55,7 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Partitio
     private transient NodeEngine nodeEngine;
     private transient boolean hasIndex;
     private transient Map<Integer, List<Data>> partitionIdToKeys;
+    private transient InternalSerializationService serializationService;
 
     public PartitionWideEntryWithPredicateOperationFactory() {
     }
@@ -68,6 +70,7 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Partitio
     @Override
     public void init(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         queryIndex();
     }
 
@@ -107,7 +110,7 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Partitio
         if (hasIndex) {
             List<Data> keys = partitionIdToKeys.get(partition);
             InflatableSet<Data> keySet = InflatableSet.newBuilder(keys).build();
-            return new MultipleEntryWithPredicateOperation(name, keySet, entryProcessor, predicate);
+            return new MultipleEntryWithPredicateOperation(name, keySet, entryProcessor, serializationService.copy(predicate));
         }
 
         return createOperation();
@@ -143,7 +146,7 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Partitio
 
     @Override
     public Operation createOperation() {
-        return new PartitionWideEntryWithPredicateOperation(name, entryProcessor, predicate);
+        return new PartitionWideEntryWithPredicateOperation(name, entryProcessor, serializationService.copy(predicate));
     }
 
     @Override

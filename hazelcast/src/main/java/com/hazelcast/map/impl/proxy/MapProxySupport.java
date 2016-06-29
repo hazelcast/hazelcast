@@ -35,6 +35,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -82,7 +83,6 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.MutableLong;
@@ -120,6 +120,9 @@ import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.WARNING;
 
+/**
+ * Since an instance of a Predicate is not thread-safe this class assumes that it gets a private copy of a Predicate.
+ */
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
@@ -131,9 +134,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     /**
      * Defines the batch size for operations of {@link IMap#putAll(Map)} calls.
-     *
+     * <p>
      * A value of {@code 0} disables the batching and will send a single operation per member with all map entries.
-     *
+     * <p>
      * If you set this value too high, you may ran into OOME or blocked network pipelines due to huge operations.
      * If you set this value too low, you will lower the performance of the putAll() operation.
      */
@@ -143,17 +146,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     /**
      * Defines the initial size of entry arrays per partition for {@link IMap#putAll(Map)} calls.
-     *
+     * <p>
      * {@link IMap#putAll(Map)} splits up the entries of the user input map per partition,
      * to eventually send the entries the correct target nodes.
      * So the method creates multiple arrays with map entries per partition.
      * This value determines how the initial size of these arrays is calculated.
-     *
+     * <p>
      * The default value of {@code 0} uses an educated guess, depending on the map size, which is a good overall strategy.
      * If you insert entries which don't match a normal partition distribution you should configure this factor.
      * The initial size is calculated by this formula:
      * {@code initialSize = ceil(MAP_PUT_ALL_INITIAL_SIZE_FACTOR * map.size() / PARTITION_COUNT)}
-     *
+     * <p>
      * As a rule of thumb you can try the following values:
      * <ul>
      * <li>{@code 10.0} for map sizes up to 500 entries</li>
@@ -161,7 +164,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * <li>{@code 1.5} for map sizes between up to 50000 entries</li>
      * <li>{@code 1.0} for map sizes beyond 50000 entries</li>
      * </ul>
-     *
+     * <p>
      * If you set this value too high, you will waste memory.
      * If you set this value too low, you will suffer from expensive {@link java.util.Arrays#copyOf} calls.
      */
@@ -177,7 +180,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final IPartitionService partitionService;
     protected final Address thisAddress;
     protected final OperationService operationService;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final boolean statisticsEnabled;
     protected final MapConfig mapConfig;
 
@@ -203,7 +206,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 LockServiceImpl.getMaxLeaseTimeInMillis(properties));
         this.operationProvider = mapServiceContext.getMapOperationProvider(name);
         this.operationService = nodeEngine.getOperationService();
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.thisAddress = nodeEngine.getClusterService().getThisAddress();
         this.statisticsEnabled = mapConfig.isStatisticsEnabled();
 
@@ -974,7 +977,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return mapServiceContext.addLocalEventListener(listener, name);
     }
 
-    public String addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
+    protected String addLocalEntryListenerInternal(Object listener, Predicate predicate, Data key, boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         return mapServiceContext.addLocalEventListener(listener, eventFilter, name);
     }

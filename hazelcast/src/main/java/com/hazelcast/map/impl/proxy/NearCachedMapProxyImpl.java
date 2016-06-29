@@ -338,7 +338,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> resultingKeyValuePairs) {
-        super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
+        super.executeOnEntriesInternal(entryProcessor, serializationService.copy(predicate), resultingKeyValuePairs);
 
         for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
             Data key = resultingKeyValuePairs.get(i);

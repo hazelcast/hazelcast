@@ -115,6 +115,12 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         return portableContext;
     }
 
+    @Override
+    public <T> T copy(T obj) {
+        Data data = toData(obj);
+        return data == null ? null : this.<T>toObject(data);
+    }
+
     private void registerConstantSerializers() {
         registerConstant(null, nullSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
