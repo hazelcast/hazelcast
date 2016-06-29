@@ -29,6 +29,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
@@ -573,11 +574,12 @@ public class ClientExceptionFactory {
                 return new ServiceNotFoundException(message);
             }
         });
-    }
-
-    interface ExceptionFactory {
-        Throwable createException(String message, Throwable cause);
-
+        register(ClientProtocolErrorCodes.STALE_TASK_ID, StaleTaskIdException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new StaleTaskIdException(message);
+            }
+        });
     }
 
     public Throwable createException(ClientMessage clientMessage) {
@@ -627,12 +629,17 @@ public class ClientExceptionFactory {
         intToFactory.put(errorCode, exceptionFactory);
     }
 
-
     private int getErrorCode(Throwable e) {
         Integer errorCode = classToInt.get(e.getClass());
         if (errorCode == null) {
             return ClientProtocolErrorCodes.UNDEFINED;
         }
         return errorCode;
+    }
+
+
+    interface ExceptionFactory {
+        Throwable createException(String message, Throwable cause);
+
     }
 }

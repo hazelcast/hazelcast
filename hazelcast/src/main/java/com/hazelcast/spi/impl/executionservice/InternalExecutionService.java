@@ -23,4 +23,9 @@ import com.hazelcast.spi.ExecutionService;
  * in the future they can be added here.
  */
 public interface InternalExecutionService extends ExecutionService {
+
+
+    void executeDurable(String name, Runnable command);
+
+    void shutdownDurableExecutor(String name);
 }

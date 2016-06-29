@@ -40,6 +40,7 @@
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-service" type="executor-service" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="durable-executor-service" type="durable-executor-service" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
@@ -1598,6 +1599,39 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="durable-executor-service">
+        <xs:all>
+            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8">
+                <xs:annotation>
+                    <xs:documentation>
+                        The number of executor threads per member for the executor.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="durability" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8">
+                <xs:annotation>
+                    <xs:documentation>
+                        The durability of the executor
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Capacity of the executor task per partition.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the executor task.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:simpleType name="backup-count">
         <xs:restriction base="xs:byte">
             <xs:minInclusive value="0"/>
@@ -2110,6 +2144,8 @@
             <xs:element name="semaphore-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="id-generator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
+                        maxOccurs="unbounded"/>
+            <xs:element name="durable-executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
         </xs:choice>

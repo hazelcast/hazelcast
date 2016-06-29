@@ -28,9 +28,11 @@ import java.util.concurrent.Callable;
 
 /**
  * An adapter that adapts a {@link Runnable} to become a {@link Callable}.
+ *
  * @param <V>
  */
-public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>, HazelcastInstanceAware, PartitionAware {
+public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>,
+        HazelcastInstanceAware, PartitionAware {
 
     private Runnable task;
 

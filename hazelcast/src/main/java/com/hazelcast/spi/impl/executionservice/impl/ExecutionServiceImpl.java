@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
+import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.HazelcastThreadGroup;
@@ -75,6 +76,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private final ConcurrentMap<String, ManagedExecutorService> executors
             = new ConcurrentHashMap<String, ManagedExecutorService>();
 
+    private final ConcurrentMap<String, ManagedExecutorService> durableExecutors
+            = new ConcurrentHashMap<String, ManagedExecutorService>();
+
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
                 @Override
@@ -82,6 +86,15 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                     final ExecutorConfig cfg = nodeEngine.getConfig().findExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
                     return createExecutor(name, cfg.getPoolSize(), queueCapacity, ExecutorType.CACHED);
+                }
+            };
+
+    private final ConstructorFunction<String, ManagedExecutorService> durableConstructor =
+            new ConstructorFunction<String, ManagedExecutorService>() {
+                @Override
+                public ManagedExecutorService createNew(String name) {
+                    DurableExecutorConfig cfg = nodeEngine.getConfig().findDurableExecutorConfig(name);
+                    return createExecutor(name, cfg.getPoolSize(), Integer.MAX_VALUE, ExecutorType.CACHED);
                 }
             };
 
@@ -203,6 +216,12 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
+    public void executeDurable(String name, Runnable command) {
+        ManagedExecutorService executorService = ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
+        executorService.execute(command);
+    }
+
+    @Override
     public Future<?> submit(String name, Runnable task) {
         return getExecutor(name).submit(task);
     }
@@ -248,6 +267,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         for (ExecutorService executorService : executors.values()) {
             executorService.shutdown();
         }
+        for (ExecutorService executorService : durableExecutors.values()) {
+            executorService.shutdown();
+        }
         scheduledExecutorService.shutdownNow();
         cachedExecutorService.shutdown();
         try {
@@ -261,13 +283,22 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             logger.finest(e);
         }
         executors.clear();
+        durableExecutors.clear();
     }
 
     @Override
     public void shutdownExecutor(String name) {
-        final ExecutorService ex = executors.remove(name);
-        if (ex != null) {
-            ex.shutdown();
+        ExecutorService executorService = executors.remove(name);
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+    }
+
+    @Override
+    public void shutdownDurableExecutor(String name) {
+        ExecutorService executorService = durableExecutors.remove(name);
+        if (executorService != null) {
+            executorService.shutdown();
         }
     }
 

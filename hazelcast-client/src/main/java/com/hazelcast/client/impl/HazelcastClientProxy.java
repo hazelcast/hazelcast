@@ -23,6 +23,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICacheManager;
@@ -152,6 +153,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public IExecutorService getExecutorService(String name) {
         return getClient().getExecutorService(name);
+    }
+
+    @Override
+    public DurableExecutorService getDurableExecutorService(String name) {
+        return getClient().getDurableExecutorService(name);
     }
 
     @Override

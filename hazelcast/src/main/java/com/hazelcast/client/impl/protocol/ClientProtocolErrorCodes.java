@@ -102,6 +102,7 @@ public final class ClientProtocolErrorCodes {
     public static final int STACK_OVERFLOW_ERROR = 77;
     public static final int NATIVE_OUT_OF_MEMORY_ERROR = 78;
     public static final int SERVICE_NOT_FOUND = 79;
+    public static final int STALE_TASK_ID = 80;
 
     private ClientProtocolErrorCodes() {
     }
