@@ -31,7 +31,6 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,7 +53,7 @@ public class MapLockTest extends HazelcastTestSupport {
         final String key = randomString();
         map.lock(key);
         map.destroy();
-        Assert.assertFalse(map.isLocked(key));
+        assertFalse(map.isLocked(key));
     }
 
     @Test
@@ -64,7 +63,7 @@ public class MapLockTest extends HazelcastTestSupport {
         map.put(key, "value");
         map.lock(key);
         map.destroy();
-        Assert.assertFalse(map.isLocked(key));
+        assertFalse(map.isLocked(key));
     }
 
     @Test
@@ -110,7 +109,7 @@ public class MapLockTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void testLockEviction() throws Exception {
         final String name = randomString();
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -141,7 +140,7 @@ public class MapLockTest extends HazelcastTestSupport {
         mm.lock(key, 0, TimeUnit.SECONDS);
     }
 
-    @Test(timeout = 100000)
+    @Test
     public void testLockEviction2() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = getConfig();
@@ -168,7 +167,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 100000)
+    @Test
     public void testLockMigration() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final Config config = getConfig();
@@ -198,7 +197,7 @@ public class MapLockTest extends HazelcastTestSupport {
     }
 
     @Category(NightlyTest.class)
-    @Test(timeout = 100000)
+    @Test
     public void testLockEvictionWithMigration() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final Config config = getConfig();
@@ -227,7 +226,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertOpenEventually(latch);
     }
 
-    @Test(timeout = 1000 * 30, expected = IllegalMonitorStateException.class)
+    @Test(expected = IllegalMonitorStateException.class)
     public void testLockOwnership() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = getConfig();
@@ -243,7 +242,7 @@ public class MapLockTest extends HazelcastTestSupport {
         map2.unlock(1);
     }
 
-    @Test(timeout = 1000 * 30)
+    @Test
     public void testAbsentKeyIsLocked() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
@@ -260,11 +259,11 @@ public class MapLockTest extends HazelcastTestSupport {
         map1.lock(key);
         boolean putResult = map2.tryPut(key, val, 2, TimeUnit.SECONDS);
 
-        Assert.assertFalse("the result of try put should be false as the absent key is locked", putResult);
+        assertFalse("the result of try put should be false as the absent key is locked", putResult);
         assertTrueEventually(new AssertTask() {
             public void run() {
-                Assert.assertEquals("the key should be absent ", null, map1.get(key));
-                Assert.assertEquals("the key should be absent ", null, map2.get(key));
+                assertEquals("the key should be absent ", null, map1.get(key));
+                assertEquals("the key should be absent ", null, map2.get(key));
             }
         });
     }
@@ -343,7 +342,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertEquals("unlocked keys not removed", 1, map.size());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
         IMap map = getMap();
         String key = randomString();
@@ -351,7 +350,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue(isLocked);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
         final IMap map = getMap();
         final String key = randomString();
@@ -364,7 +363,7 @@ public class MapLockTest extends HazelcastTestSupport {
         thread.join();
 
         boolean isLocked = map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        Assert.assertFalse(isLocked);
+        assertFalse(isLocked);
     }
 
     @Test
@@ -375,7 +374,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Assert.assertFalse(map.isLocked(key));
+                assertFalse(map.isLocked(key));
             }
         }, 30);
     }
@@ -397,7 +396,7 @@ public class MapLockTest extends HazelcastTestSupport {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             LockStoreContainer lockContainer = lockService.getLockContainer(i);
-            Assert.assertEquals("LockStores should be empty", 0, lockContainer.getLockStores().size());
+            assertEquals("LockStores should be empty", 0, lockContainer.getLockStores().size());
         }
     }
 
