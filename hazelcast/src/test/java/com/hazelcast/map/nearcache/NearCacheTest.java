@@ -70,7 +70,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -203,11 +203,11 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertTrue(
-                String.format("Near cache misses should be > %d but were %d", 400, stats.getOwnedEntryCount()),
+                format("Near cache misses should be > %d but were %d", 400, stats.getOwnedEntryCount()),
                 stats.getOwnedEntryCount() > 400
         );
         assertEquals(
-                String.format("Near cache misses should be %d but were %d", mapSize, stats.getMisses()),
+                format("Near cache misses should be %d but were %d", mapSize, stats.getMisses()),
                 mapSize,
                 stats.getMisses()
         );
@@ -219,16 +219,16 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         stats = map.getLocalMapStats().getNearCacheStats();
         assertTrue(
-                String.format("Near cache hits should be > %d but were %d", 400, stats.getHits()),
+                format("Near cache hits should be > %d but were %d", 400, stats.getHits()),
                 stats.getHits() > 400
         );
         assertTrue(
-                String.format("Near cache misses should be > %d but were %d", 400, stats.getMisses()),
+                format("Near cache misses should be > %d but were %d", 400, stats.getMisses()),
                 stats.getMisses() > 400
         );
         long hitsAndMisses = stats.getHits() + stats.getMisses();
         assertEquals(
-                String.format("Near cache hits + misses should be %s but were %d", mapSize * 2, hitsAndMisses),
+                format("Near cache hits + misses should be %s but were %d", mapSize * 2, hitsAndMisses),
                 mapSize * 2,
                 hitsAndMisses
         );
@@ -370,7 +370,7 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         NearCache nearCache = getNearCache(mapName, instances[0]);
         assertEquals(
-                String.format("Near cache size should be %d but was %d", mapSize, nearCache.size()),
+                format("Near cache size should be %d but was %d", mapSize, nearCache.size()),
                 mapSize,
                 nearCache.size()
         );
@@ -397,7 +397,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
 
         assertTrue(
-                String.format(
+                format(
                         "NearCache operation count should be < %d but was %d",
                         mapSize * 2,
                         map.getLocalMapStats().getGetOperationCount()
@@ -453,7 +453,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         // Check near cache hits
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(
-                String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
+                format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
                 expectedNearCacheHits, stats.getHits());
     }
 
@@ -487,7 +487,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         // Check near cache hits
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(
-                String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
+                format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
                 expectedNearCacheHits,
                 stats.getHits()
         );
@@ -522,7 +522,7 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertTrue(
-                String.format("Near cache hits should be > %d but were %d", expectedNearCacheHits, stats.getHits()),
+                format("Near cache hits should be > %d but were %d", expectedNearCacheHits, stats.getHits()),
                 stats.getHits() > expectedNearCacheHits
         );
     }
@@ -530,11 +530,9 @@ public class NearCacheTest extends HazelcastTestSupport {
     @Test
     public void testGetAsyncPopulatesNearCache() throws Exception {
         int mapSize = 1000;
-        int expectedNearCacheOwnedEntryCount = 400;
         String mapName = "testGetAsyncPopulatesNearCache";
 
         Config config = getConfig();
-        config.setProperty(PARTITION_COUNT.getName(), valueOf(mapSize));
         config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
         final TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = hazelcastInstanceFactory.newHazelcastInstance(config);
@@ -553,13 +551,9 @@ public class NearCacheTest extends HazelcastTestSupport {
             map.get(i);
         }
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertTrue(
-                String.format(
-                        "Near cache owned entry count should be > %d but was %d",
-                        expectedNearCacheOwnedEntryCount, stats.getOwnedEntryCount()
-                ),
-                stats.getOwnedEntryCount() > expectedNearCacheOwnedEntryCount
-        );
+
+        String message = format("Near cache should be populated but current size is %d", stats.getOwnedEntryCount());
+        assertTrue(message, stats.getOwnedEntryCount() > 0);
     }
 
     @Test
@@ -591,7 +585,7 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
         assertEquals(
-                String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
+                format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
                 expectedNearCacheHits,
                 stats.getHits()
         );
