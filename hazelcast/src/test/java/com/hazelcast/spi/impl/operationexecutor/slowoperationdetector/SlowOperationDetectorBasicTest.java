@@ -282,7 +282,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
 
         @Override
         public void run() throws Exception {
-            getOperationService(instance).executeOperation(operation);
+            getOperationService(instance).execute(operation);
         }
 
         public void await() {

@@ -35,10 +35,10 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         //we are going to fill up the partition first with tons of normal operations with take a lot of time
         for (int k = 0; k < pendingOperations; k++) {
-            opService.executeOperation(new NormalPartitionAwareOperation(partitionid));
+            opService.execute(new NormalPartitionAwareOperation(partitionid));
         }
 
-        opService.executeOperation(new UrgentPartitionAwareOperation(latch, partitionid));
+        opService.execute(new UrgentPartitionAwareOperation(latch, partitionid));
 
         //if the system operation would be given urgency, we should only wait for 1 operation to be processed before
         //our system operation is processed.
@@ -60,11 +60,11 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         //we are going to fill up the partition first with tons of normal operations with take a lot of time
         for (int k = 0; k < pendingOperations; k++) {
-            opService.executeOperation(new NormalPartitionUnawareOperation());
+            opService.execute(new NormalPartitionUnawareOperation());
         }
 
         //then we place the system operation
-        opService.executeOperation(new UrgentPartitionUnawareOperation(latch));
+        opService.execute(new UrgentPartitionUnawareOperation(latch));
 
         //if the system operation would be given urgency, we should only wait for 1 operation to be processed before
         //our system operation is processed.

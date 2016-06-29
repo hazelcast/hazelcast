@@ -52,7 +52,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
 
         FailingOperation op = new FailingOperation(new CountDownLatch(1));
-        nodeEngine.getOperationService().executeOperation(op);
+        nodeEngine.getOperationService().execute(op);
 
         assertOpenEventually(op.latch);
         assertInstanceOf(ExpectedRuntimeException.class, op.failure);
@@ -66,7 +66,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
 
         FailingOperation op = new FailingOperation(new CountDownLatch(1));
         op.setPartitionId(1).setReplicaIndex(1);
-        nodeEngine.getOperationService().executeOperation(op);
+        nodeEngine.getOperationService().execute(op);
 
         assertOpenEventually(op.latch);
         assertInstanceOf(WrongTargetException.class, op.failure);
