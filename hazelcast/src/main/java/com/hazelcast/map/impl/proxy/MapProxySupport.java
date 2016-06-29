@@ -1070,7 +1070,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     /**
      * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
      */
-    // TODO: this method is untested
     public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> result) {
         try {
             OperationFactory operation
