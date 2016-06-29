@@ -151,7 +151,8 @@ public class ClientMapNearCacheTest {
 
     @Test
     public void testGetAsyncPopulatesNearCache() throws Exception {
-        IMap<Integer, Integer> map = getNearCachedMapFromClient(newInvalidationEnabledNearCacheConfig());
+        NearCacheConfig nearCacheConfig = newNearCacheConfig().setInvalidateOnChange(false);
+        IMap<Integer, Integer> map = getNearCachedMapFromClient(nearCacheConfig);
 
         int size = 1239;
         for (int i = 0; i < size; i++) {
