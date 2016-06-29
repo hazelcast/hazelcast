@@ -124,56 +124,6 @@ public final class IOUtil {
         return new ClassLoaderAwareObjectInputStream(classLoader, in);
     }
 
-    private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
-
-        private final ClassLoader classLoader;
-
-        private ClassLoaderAwareObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
-            super(in);
-            this.classLoader = classLoader;
-        }
-
-        protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
-            return ClassLoaderUtil.loadClass(classLoader, desc.getName());
-        }
-
-        protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
-            ClassLoader theClassLoader = getClassLoader();
-            if (theClassLoader == null) {
-                return super.resolveProxyClass(interfaces);
-            }
-            ClassLoader nonPublicLoader = null;
-            Class<?>[] classObjs = new Class<?>[interfaces.length];
-            for (int i = 0; i < interfaces.length; i++) {
-                Class<?> cl = ClassLoaderUtil.loadClass(theClassLoader, interfaces[i]);
-                if ((cl.getModifiers() & Modifier.PUBLIC) == 0) {
-                    if (nonPublicLoader != null) {
-                        if (nonPublicLoader != cl.getClassLoader()) {
-                            throw new IllegalAccessError("conflicting non-public interface class loaders");
-                        }
-                    } else {
-                        nonPublicLoader = cl.getClassLoader();
-                    }
-                }
-                classObjs[i] = cl;
-            }
-            try {
-                return Proxy.getProxyClass(nonPublicLoader != null ? nonPublicLoader : theClassLoader, classObjs);
-            } catch (IllegalArgumentException e) {
-                throw new ClassNotFoundException(null, e);
-            }
-        }
-
-        private ClassLoader getClassLoader() {
-            ClassLoader theClassLoader = this.classLoader;
-            if (theClassLoader == null) {
-                theClassLoader = Thread.currentThread().getContextClassLoader();
-            }
-            return theClassLoader;
-        }
-
-    }
-
     public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
             public void write(int b) throws IOException {
@@ -358,7 +308,90 @@ public final class IOUtil {
         }
     }
 
+    /**
+     * Ensures that the file described by {@code fileNow} is renamed to file described by {@code fileToBe}.
+     * First attempts to perform a direct, atomic rename; if that fails, checks whether the target exists,
+     * deletes it, and retries. Throws an exception in each case where the rename failed.
+     *
+     * @param fileNow describes an existing file
+     * @param fileToBe describes the desired pathname for the file
+     */
+    public static void rename(File fileNow, File fileToBe) {
+        if (fileNow.renameTo(fileToBe)) {
+            return;
+        }
+        if (!fileNow.exists()) {
+            throw new HazelcastException(String.format("Failed to rename %s to %s because %s doesn't exist.",
+                    fileNow, fileToBe, fileNow));
+
+        }
+        if (!fileToBe.exists()) {
+            throw new HazelcastException(String.format("Failed to rename %s to %s even though %s doesn't exist.",
+                    fileNow, fileToBe, fileToBe));
+
+        }
+        if (!fileToBe.delete()) {
+            throw new HazelcastException(String.format("Failed to rename %s to %s. %s exists and could not be deleted.",
+                    fileNow, fileToBe, fileToBe));
+        }
+        if (!fileNow.renameTo(fileToBe)) {
+            throw new HazelcastException(String.format("Failed to rename %s to %s even after deleting %s.",
+                    fileNow, fileToBe, fileToBe));
+        }
+    }
+
     public static String toFileName(String name) {
         return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
+    }
+
+
+    private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
+
+        private final ClassLoader classLoader;
+
+        private ClassLoaderAwareObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
+            super(in);
+            this.classLoader = classLoader;
+        }
+
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException {
+            return ClassLoaderUtil.loadClass(classLoader, desc.getName());
+        }
+
+        protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
+            ClassLoader theClassLoader = getClassLoader();
+            if (theClassLoader == null) {
+                return super.resolveProxyClass(interfaces);
+            }
+            ClassLoader nonPublicLoader = null;
+            Class<?>[] classObjs = new Class<?>[interfaces.length];
+            for (int i = 0; i < interfaces.length; i++) {
+                Class<?> cl = ClassLoaderUtil.loadClass(theClassLoader, interfaces[i]);
+                if ((cl.getModifiers() & Modifier.PUBLIC) == 0) {
+                    if (nonPublicLoader != null) {
+                        if (nonPublicLoader != cl.getClassLoader()) {
+                            throw new IllegalAccessError("conflicting non-public interface class loaders");
+                        }
+                    } else {
+                        nonPublicLoader = cl.getClassLoader();
+                    }
+                }
+                classObjs[i] = cl;
+            }
+            try {
+                return Proxy.getProxyClass(nonPublicLoader != null ? nonPublicLoader : theClassLoader, classObjs);
+            } catch (IllegalArgumentException e) {
+                throw new ClassNotFoundException(null, e);
+            }
+        }
+
+        private ClassLoader getClassLoader() {
+            ClassLoader theClassLoader = this.classLoader;
+            if (theClassLoader == null) {
+                theClassLoader = Thread.currentThread().getContextClassLoader();
+            }
+            return theClassLoader;
+        }
+
     }
 }
