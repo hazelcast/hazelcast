@@ -2,7 +2,6 @@ package com.hazelcast.transaction.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
 
@@ -112,7 +111,7 @@ public class MockTransactionLogRecord implements TransactionLogRecord {
         return this;
     }
 
-    static class MockOperation extends AbstractOperation {
+    static class MockOperation extends Operation {
         private boolean fail;
 
         public MockOperation() {

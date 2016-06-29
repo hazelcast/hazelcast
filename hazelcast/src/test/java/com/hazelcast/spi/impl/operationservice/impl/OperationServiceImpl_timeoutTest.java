@@ -11,7 +11,6 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -139,7 +138,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         }
     }
 
-    static class TimedOutBackupAwareOperation extends AbstractOperation
+    static class TimedOutBackupAwareOperation extends Operation
             implements BackupAwareOperation {
         @Override
         public void run() throws Exception {
@@ -213,7 +212,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         assertTrue(future.get());
     }
 
-    private static class SleepingOperation extends AbstractOperation {
+    private static class SleepingOperation extends Operation {
         private long sleepTime;
 
         public SleepingOperation() {

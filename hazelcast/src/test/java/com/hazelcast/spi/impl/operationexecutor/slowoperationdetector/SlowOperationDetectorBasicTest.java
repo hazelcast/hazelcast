@@ -19,14 +19,12 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
@@ -61,7 +60,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
 
         instance = createHazelcastInstance(config);
 
-        SlowRunnable runnable = new SlowRunnable(3, Operation.GENERIC_PARTITION_ID);
+        SlowRunnable runnable = new SlowRunnable(3, GENERIC_PARTITION_ID);
         getOperationService(instance).execute(runnable);
         runnable.await();
 
@@ -72,7 +71,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     public void testSlowRunnableOnGenericOperationThread() {
         instance = getSingleNodeCluster(1000);
 
-        SlowRunnable runnable = new SlowRunnable(3, Operation.GENERIC_PARTITION_ID);
+        SlowRunnable runnable = new SlowRunnable(3, GENERIC_PARTITION_ID);
         getOperationService(instance).execute(runnable);
         runnable.await();
 
@@ -246,7 +245,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         }
     }
 
-    private static class NestedSlowOperationOnSamePartition extends AbstractOperation {
+    private static class NestedSlowOperationOnSamePartition extends Operation {
 
         private final IMap<String, String> map;
         private final SlowEntryProcessor entryProcessor;
@@ -268,7 +267,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         }
     }
 
-    private static class NestedSlowOperationOnPartitionAndGenericOperationThreads extends AbstractOperation {
+    private static class NestedSlowOperationOnPartitionAndGenericOperationThreads extends Operation {
 
         private final HazelcastInstance instance;
         private final SlowOperation operation;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.partition.service;
 
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
-public class TestGetOperation extends AbstractOperation {
+public class TestGetOperation extends Operation {
 
     private Object returnValue;
 

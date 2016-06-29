@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -48,7 +47,7 @@ public class Backup_CallerUuidTest extends HazelcastTestSupport {
         assertEquals(CALLER_UUID.get(), hz.getCluster().getLocalMember().getUuid());
     }
 
-    private static class DummyUpdateOperation extends AbstractOperation implements BackupAwareOperation {
+    private static class DummyUpdateOperation extends Operation implements BackupAwareOperation {
         @Override
         public boolean shouldBackup() {
             return true;
@@ -74,7 +73,7 @@ public class Backup_CallerUuidTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyBackupOperation extends AbstractOperation implements BackupOperation {
+    private static class DummyBackupOperation extends Operation implements BackupOperation {
         @Override
         public void run() throws Exception {
             CALLER_UUID.set(getCallerUuid());

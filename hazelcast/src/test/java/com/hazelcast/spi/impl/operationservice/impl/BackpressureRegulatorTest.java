@@ -2,7 +2,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -177,7 +176,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         assertTrue("syncDelayCounter is " + synDelay, synDelay <= (1 + BackpressureRegulator.RANGE) * SYNC_WINDOW);
     }
 
-    private class UrgentOperation extends AbstractOperation implements UrgentSystemOperation, BackupAwareOperation {
+    private class UrgentOperation extends Operation implements UrgentSystemOperation, BackupAwareOperation {
         @Override
         public void run() throws Exception {
         }
@@ -203,7 +202,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         }
     }
 
-    private class PartitionSpecificOperation extends AbstractOperation implements PartitionAwareOperation, BackupAwareOperation {
+    private class PartitionSpecificOperation extends Operation implements PartitionAwareOperation, BackupAwareOperation {
 
         public PartitionSpecificOperation(int partitionId) {
             setPartitionId(partitionId);
@@ -234,7 +233,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         }
     }
 
-    private class GenericOperation extends AbstractOperation implements BackupAwareOperation {
+    private class GenericOperation extends Operation implements BackupAwareOperation {
 
         public GenericOperation() {
             setPartitionId(-1);

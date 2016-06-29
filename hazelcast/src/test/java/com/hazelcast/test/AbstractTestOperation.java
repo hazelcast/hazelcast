@@ -1,10 +1,10 @@
 package com.hazelcast.test;
 
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
-public abstract class AbstractTestOperation extends AbstractOperation {
+public abstract class AbstractTestOperation extends Operation {
 
-    public static final Object NO_RESPONSE = new Object() {
+    private static final Object NO_RESPONSE = new Object() {
         @Override
         public String toString() {
             return "NO_RESPONSE";

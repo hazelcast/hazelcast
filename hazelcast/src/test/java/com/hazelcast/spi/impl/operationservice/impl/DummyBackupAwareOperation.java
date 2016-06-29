@@ -2,7 +2,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
@@ -10,7 +9,7 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-class DummyBackupAwareOperation extends AbstractOperation implements BackupAwareOperation {
+class DummyBackupAwareOperation extends Operation implements BackupAwareOperation {
 
     public final static ConcurrentMap<String, Integer> backupCompletedMap = new ConcurrentHashMap<String, Integer>();
 

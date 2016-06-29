@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -80,7 +79,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
         });
     }
 
-    public static class SlowPartitionAwareSystemOperation extends AbstractOperation
+    public static class SlowPartitionAwareSystemOperation extends Operation
             implements UrgentSystemOperation, PartitionAwareOperation {
 
         private final CountDownLatch latch;
@@ -97,7 +96,7 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
         }
     }
 
-    public static class SlowPartitionUnawareSystemOperation extends AbstractOperation
+    public static class SlowPartitionUnawareSystemOperation extends Operation
             implements UrgentSystemOperation {
 
         private final CountDownLatch latch;

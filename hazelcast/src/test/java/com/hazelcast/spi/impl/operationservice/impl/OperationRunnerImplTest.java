@@ -208,7 +208,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationRunner.run(packet);
     }
 
-    public abstract class DummyWaitingOperation extends AbstractOperation implements BlockingOperation {
+    public abstract class DummyWaitingOperation extends Operation implements BlockingOperation {
         WaitNotifyKey waitNotifyKey = new WaitNotifyKey() {
             @Override
             public String getServiceName() {

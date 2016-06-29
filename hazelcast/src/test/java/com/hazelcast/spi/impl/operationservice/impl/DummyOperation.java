@@ -2,12 +2,12 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class DummyOperation extends AbstractOperation {
+public class DummyOperation extends Operation {
     public Object value;
     public Object result;
     private int delayMillis;

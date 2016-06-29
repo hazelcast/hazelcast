@@ -18,11 +18,11 @@ package com.hazelcast.internal.partition.service;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class TestBackupPutOperation extends AbstractOperation {
+public class TestBackupPutOperation extends Operation {
 
     private int value;
 

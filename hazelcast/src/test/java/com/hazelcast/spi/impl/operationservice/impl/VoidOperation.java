@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.io.IOException;
  * VoidOperation is an operation that doesn't return a response. This is practical for testing heartbeats and timeouts
  * when the caller is going to wait for a response.
  */
-class VoidOperation extends AbstractOperation implements PartitionAwareOperation {
+class VoidOperation extends Operation implements PartitionAwareOperation {
 
     private long durationMs;
 

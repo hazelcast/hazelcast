@@ -210,7 +210,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyOperation extends AbstractOperation {
+    private static class DummyOperation extends Operation {
         public DummyOperation() {
         }
 
@@ -221,7 +221,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
 
-    private static class OperationWithServiceNameOverride extends AbstractOperation {
+    private static class OperationWithServiceNameOverride extends Operation {
         public OperationWithServiceNameOverride() {
         }
 

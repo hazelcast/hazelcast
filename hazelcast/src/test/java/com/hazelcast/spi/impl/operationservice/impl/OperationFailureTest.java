@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
@@ -95,7 +94,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
         assertInstanceOf(ExpectedRuntimeException.class, failure);
     }
 
-    private static class FailingOperation extends AbstractOperation {
+    private static class FailingOperation extends Operation {
         final CountDownLatch latch;
         volatile Throwable failure;
 
@@ -115,7 +114,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
         }
     }
 
-    private static class EmptyBackupAwareOperation extends AbstractOperation implements BackupAwareOperation {
+    private static class EmptyBackupAwareOperation extends Operation implements BackupAwareOperation {
 
         @Override
         public void run() throws Exception {
@@ -142,7 +141,7 @@ public class OperationFailureTest extends HazelcastTestSupport {
         }
     }
 
-    private static class FailingBackupOperation extends AbstractOperation implements BackupOperation {
+    private static class FailingBackupOperation extends Operation implements BackupOperation {
         @Override
         public void run() throws Exception {
             throw new ExpectedRuntimeException();

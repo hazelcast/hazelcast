@@ -22,7 +22,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ExceptionAction;
@@ -189,7 +188,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static class AlwaysBlockingOperation extends AbstractOperation implements BlockingOperation {
+    private static class AlwaysBlockingOperation extends Operation implements BlockingOperation {
 
         @Override
         public void run() throws Exception {

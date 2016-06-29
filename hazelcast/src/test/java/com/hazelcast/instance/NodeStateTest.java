@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -269,17 +268,15 @@ public class NodeStateTest extends HazelcastTestSupport {
         }
     }
 
-    private static class DummyOperation extends AbstractOperation {
+    private static class DummyOperation extends Operation {
         @Override
         public void run() throws Exception {
         }
     }
 
-    private static class DummyAllowedDuringPassiveStateOperation
-            extends AbstractOperation implements AllowedDuringPassiveState {
+    private static class DummyAllowedDuringPassiveStateOperation extends Operation implements AllowedDuringPassiveState {
         @Override
         public void run() throws Exception {
         }
     }
-
 }

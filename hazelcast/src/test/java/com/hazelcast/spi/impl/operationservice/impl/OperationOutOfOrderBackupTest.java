@@ -23,7 +23,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -137,7 +136,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         final AtomicLong value = new AtomicLong();
     }
 
-    private static class SampleBackupAwareOperation extends AbstractOperation implements BackupAwareOperation {
+    private static class SampleBackupAwareOperation extends Operation implements BackupAwareOperation {
 
         long value;
 
@@ -188,7 +187,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         }
     }
 
-    private static class SampleBackupOperation extends AbstractOperation implements BackupOperation {
+    private static class SampleBackupOperation extends Operation implements BackupOperation {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -225,7 +224,7 @@ public class OperationOutOfOrderBackupTest extends HazelcastTestSupport {
         }
     }
 
-    private static class LatchOperation extends AbstractOperation {
+    private static class LatchOperation extends Operation {
 
         final CountDownLatch latch;
 

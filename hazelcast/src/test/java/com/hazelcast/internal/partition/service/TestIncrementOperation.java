@@ -16,11 +16,10 @@
 
 package com.hazelcast.internal.partition.service;
 
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
-public class TestIncrementOperation extends AbstractOperation implements BackupAwareOperation {
+public class TestIncrementOperation extends Operation implements BackupAwareOperation {
 
     private int value;
 

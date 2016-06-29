@@ -4,10 +4,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -68,7 +68,7 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
         return invocationBuilder.invoke();
     }
 
-    private static class DummyOperation extends AbstractOperation implements ReadonlyOperation {
+    private static class DummyOperation extends Operation implements ReadonlyOperation {
 
         @Override
         public void run() throws Exception {
@@ -91,7 +91,5 @@ public class StaleReadDuringMigrationTest extends HazelcastTestSupport {
             }
             return super.onInvocationException(throwable);
         }
-
     }
-
 }

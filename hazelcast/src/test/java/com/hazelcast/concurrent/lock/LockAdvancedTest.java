@@ -8,8 +8,8 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -473,7 +473,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         }, 30);
     }
 
-    private static class SlowLockOperation extends AbstractOperation {
+    private static class SlowLockOperation extends Operation {
 
         Data key;
         ObjectNamespace ns;

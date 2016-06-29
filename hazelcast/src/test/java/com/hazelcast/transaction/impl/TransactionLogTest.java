@@ -1,7 +1,6 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -214,7 +213,7 @@ public class TransactionLogTest {
                 .invokeOnTarget(targetOperation.getServiceName(), targetOperation, target);
     }
 
-    private static class DummyPartitionOperation extends AbstractOperation {
+    private static class DummyPartitionOperation extends Operation {
         {
             setPartitionId(0);
         }
@@ -229,7 +228,7 @@ public class TransactionLogTest {
         }
     }
 
-    private static class DummyTargetOperation extends AbstractOperation {
+    private static class DummyTargetOperation extends Operation {
         @Override
         public void run() throws Exception {
         }

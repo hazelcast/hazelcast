@@ -5,7 +5,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -291,7 +290,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         StressThread create();
     }
 
-    static class DummyOperation extends AbstractOperation implements BackupAwareOperation {
+    static class DummyOperation extends Operation implements BackupAwareOperation {
         long result;
         int asyncBackups;
         int syncBackups;
@@ -376,7 +375,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         }
     }
 
-    public static class DummyBackupOperation extends AbstractOperation implements BackupOperation {
+    public static class DummyBackupOperation extends Operation implements BackupOperation {
         private int runDelayMs;
 
         @Override
