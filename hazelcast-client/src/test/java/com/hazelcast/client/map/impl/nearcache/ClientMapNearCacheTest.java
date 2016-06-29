@@ -168,7 +168,8 @@ public class ClientMapNearCacheTest {
             map.get(i);
         }
 
-        assertThatOwnedEntryCountEquals(map, size);
+        long ownedEntryCount = getOwnedEntryCount(map);
+        assertTrue("NearCache must have some entries but current size is = " + ownedEntryCount, ownedEntryCount > 0);
     }
 
     @Test
