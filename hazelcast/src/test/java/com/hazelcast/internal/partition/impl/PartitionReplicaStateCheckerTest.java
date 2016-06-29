@@ -17,8 +17,15 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.service.TestMigrationAwareService;
+import com.hazelcast.internal.partition.service.TestPutOperation;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -34,6 +41,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.internal.partition.AntiEntropyCorrectnessTest.setBackupPacketDropFilter;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,7 +86,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
-        assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker.getPartitionServiceState());
+        assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
         partition.setReplicaAddresses(replicaAddresses);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
@@ -102,7 +110,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
-        assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker.getPartitionServiceState());
+        assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
         partition.setReplicaAddresses(replicaAddresses);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
@@ -151,7 +159,7 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
 
         PartitionReplicaStateChecker replicaStateChecker = partitionService.getPartitionReplicaStateChecker();
 
-        assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker.getPartitionServiceState());
+        assertEquals(PartitionServiceState.REPLICA_NOT_OWNED, replicaStateChecker.getPartitionServiceState());
 
         partition.setReplicaAddresses(replicaAddresses);
         assertEquals(PartitionServiceState.SAFE, replicaStateChecker.getPartitionServiceState());
@@ -189,4 +197,83 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         }, PartitionServiceState.SAFE);
     }
 
+    @Test
+    public void shouldNotBeSafe_whenReplicasAreNotSync() {
+        Config config = new Config();
+        ServiceConfig serviceConfig = TestMigrationAwareService.createServiceConfig(1);
+        config.getServicesConfig().addServiceConfig(serviceConfig);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        InternalPartitionServiceImpl partitionService1 = getNode(hz).partitionService;
+        InternalPartitionServiceImpl partitionService2 = getNode(hz2).partitionService;
+        drainAllReplicaSyncPermits(partitionService1);
+        drainAllReplicaSyncPermits(partitionService2);
+
+        warmUpPartitions(hz, hz2);
+
+        setBackupPacketDropFilter(hz, 100);
+        setBackupPacketDropFilter(hz2, 100);
+
+        NodeEngine nodeEngine = getNode(hz).nodeEngine;
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            Operation op = new TestPutOperationWithAsyncBackup(i);
+            nodeEngine.getOperationService().invokeOnPartition(null, op, i).join();
+        }
+
+        final PartitionReplicaStateChecker replicaStateChecker1 = partitionService1.getPartitionReplicaStateChecker();
+        final PartitionReplicaStateChecker replicaStateChecker2 = partitionService2.getPartitionReplicaStateChecker();
+
+        assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker1.getPartitionServiceState());
+        assertEquals(PartitionServiceState.REPLICA_NOT_SYNC, replicaStateChecker2.getPartitionServiceState());
+
+        addReplicaSyncPermits(partitionService1, 100);
+        addReplicaSyncPermits(partitionService2, 100);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(PartitionServiceState.SAFE, replicaStateChecker1.getPartitionServiceState());
+                assertEquals(PartitionServiceState.SAFE, replicaStateChecker2.getPartitionServiceState());
+            }
+        });
+    }
+
+    private void addReplicaSyncPermits(InternalPartitionServiceImpl partitionService, int k) {
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+        for (int i = 0; i < k; i++) {
+            replicaManager.releaseReplicaSyncPermit();
+        }
+    }
+
+    private int drainAllReplicaSyncPermits(InternalPartitionServiceImpl partitionService) {
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+        int k = 0;
+        while (replicaManager.tryToAcquireReplicaSyncPermit()) {
+            k++;
+        }
+        return k;
+    }
+
+    private static class TestPutOperationWithAsyncBackup extends TestPutOperation {
+
+        public TestPutOperationWithAsyncBackup() {
+        }
+
+        TestPutOperationWithAsyncBackup(int i) {
+            super(i);
+        }
+
+        @Override
+        public int getSyncBackupCount() {
+            return 0;
+        }
+
+        @Override
+        public int getAsyncBackupCount() {
+            return super.getSyncBackupCount();
+        }
+    }
 }

@@ -37,6 +37,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_ON_MASTER;
+import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_OWNED;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.SAFE;
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
@@ -72,7 +73,7 @@ public class PartitionReplicaStateChecker {
 
     public PartitionServiceState getPartitionServiceState() {
         if (hasMissingReplicaOwners()) {
-            return REPLICA_NOT_SYNC;
+            return REPLICA_NOT_OWNED;
         }
 
         if (migrationManager.hasOnGoingMigration()) {
