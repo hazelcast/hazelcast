@@ -20,22 +20,18 @@ package com.hazelcast.jet.impl.dag.tap.sink;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.jet.container.ContainerDescriptor;
 import com.hazelcast.jet.data.io.ProducerInputStream;
+import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.impl.strategy.CalculationStrategyImpl;
 import com.hazelcast.jet.impl.strategy.DefaultHashingStrategy;
-import com.hazelcast.jet.container.ContainerDescriptor;
-import com.hazelcast.jet.data.tuple.JetTuple;
 import com.hazelcast.jet.strategy.CalculationStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
-    public static final AtomicInteger DEBUG_COUNTER = new AtomicInteger(0);
-    public static final AtomicInteger DEBUG_COUNTER1 = new AtomicInteger(0);
 
     private final String name;
     private final ListContainer listContainer;
@@ -63,29 +59,22 @@ public class HazelcastListPartitionWriter extends AbstractHazelcastWriter {
 
     @Override
     protected void processChunk(ProducerInputStream<Object> chunk) {
-        try {
-            for (int i = 0; i < chunk.size(); i++) {
-                JetTuple tuple = (JetTuple) chunk.get(i);
+        for (int i = 0; i < chunk.size(); i++) {
+            JetTuple tuple = (JetTuple) chunk.get(i);
 
-                if (tuple == null) {
-                    continue;
-                }
-
-                if (!this.listContainer.hasEnoughCapacity(chunk.size())) {
-                    throw new IllegalStateException("IList " + name + " capacity exceeded");
-                }
-
-                if (!(tuple.getKey(0) instanceof Number)) {
-                    throw new IllegalStateException("Key for IList tuple should be Integer");
-                }
-
-                this.listContainer.add(tuple.getValueData(this.calculationStrategy, getNodeEngine()));
+            if (tuple == null) {
+                continue;
             }
-        } finally {
-            if (containerDescriptor.getApplicationName().startsWith("shufflingListTest_")) {
-                DEBUG_COUNTER.addAndGet(chunk.size());
-                DEBUG_COUNTER1.addAndGet(this.listContainer.size());
+
+            if (!this.listContainer.hasEnoughCapacity(chunk.size())) {
+                throw new IllegalStateException("IList " + name + " capacity exceeded");
             }
+
+            if (!(tuple.getKey(0) instanceof Number)) {
+                throw new IllegalStateException("Key for IList tuple should be Integer");
+            }
+
+            this.listContainer.add(tuple.getValueData(this.calculationStrategy, getNodeEngine()));
         }
     }
 

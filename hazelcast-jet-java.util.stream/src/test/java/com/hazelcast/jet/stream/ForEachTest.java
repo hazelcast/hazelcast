@@ -31,7 +31,7 @@ public class ForEachTest extends JetStreamTestSupport {
 
     @Test
     public void testForEach_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);
@@ -42,7 +42,7 @@ public class ForEachTest extends JetStreamTestSupport {
 
     @Test
     public void testForEach_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);

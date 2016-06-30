@@ -31,7 +31,7 @@ public class FilterTest extends JetStreamTestSupport {
 
     @Test
     public void testSimpleFilter_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IMap<String, Integer> result = map.stream()
@@ -48,7 +48,7 @@ public class FilterTest extends JetStreamTestSupport {
 
     @Test
     public void testSimpleFilter_whenSourceList() throws InterruptedException {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         IList<Integer> result = list

@@ -39,7 +39,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testIMapCollect_whenNoIntermediaries() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IMap<String, Integer> collected = map.stream().collect(DistributedCollectors.toIMap());
@@ -53,7 +53,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testIMapCollectWithMerge() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IMap<Integer, Integer> collected = map.stream()
@@ -71,7 +71,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testGrouping_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int mod = 10;
@@ -94,7 +94,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testTwoLevelGrouping_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int mod = 10;
@@ -124,7 +124,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testGrouping_whenSourceList() throws Exception {
-        IList<Integer> list = getList(instance);
+        IList<Integer> list = getStreamList(instance);
         fillList(list);
 
         int mod = 10;
@@ -146,7 +146,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testWordCount() throws Exception {
-        IStreamMap<String, String> map = getMap(instance);
+        IStreamMap<String, String> map = getStreamMap(instance);
         String words = "0 1 2 3 4 5 6 7 8 9";
         for (int i = 0; i < COUNT; i++) {
             map.put("key-" + i, words);
@@ -165,7 +165,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testIMapCollectWithMerge_whenSourceList() throws Exception {
-        IStreamList<String> list = getList(instance);
+        IStreamList<String> list = getStreamList(instance);
         String words = "0 1 2 3 4 5 6 7 8 9";
         for (int i = 0; i < COUNT; i++) {
             list.add(words);
@@ -184,7 +184,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testIListCollect_whenNoIntermediaries() throws Exception {
-        IList<Integer> list = getList(instance);
+        IList<Integer> list = getStreamList(instance);
         fillList(list);
 
         IList<Integer> collected = list.stream().collect(DistributedCollectors.toIList());
@@ -194,7 +194,7 @@ public class HazelcastCollectorTest extends JetStreamTestSupport {
 
     @Test
     public void testIListCollect_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Map.Entry<String, Integer>> collected = map.stream().collect(DistributedCollectors.toIList());

@@ -35,7 +35,7 @@ public class PeekTest extends JetStreamTestSupport {
 
     @Test
     public void testPeek_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);
@@ -49,7 +49,7 @@ public class PeekTest extends JetStreamTestSupport {
 
     @Test
     public void testPeek_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         final List<Integer> result = new ArrayList<>();
@@ -67,7 +67,7 @@ public class PeekTest extends JetStreamTestSupport {
 
     @Test
     public void testPeek_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);

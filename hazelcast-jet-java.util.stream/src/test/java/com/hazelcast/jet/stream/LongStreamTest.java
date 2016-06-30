@@ -48,7 +48,7 @@ public class LongStreamTest extends JetStreamTestSupport {
 
     @Before
     public void setupMap() {
-        map = getMap(instance);
+        map = getStreamMap(instance);
         fillMapLongs(map);
         stream = map.stream().mapToLong(Map.Entry::getValue);
     }

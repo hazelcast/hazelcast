@@ -32,7 +32,7 @@ public class LimitTest extends JetStreamTestSupport {
 
     @Test
     public void testLimit_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int limit = 10;
@@ -46,7 +46,7 @@ public class LimitTest extends JetStreamTestSupport {
 
     @Test
     public void testLimit_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int limit = 10;
@@ -61,7 +61,7 @@ public class LimitTest extends JetStreamTestSupport {
 
     @Test
     public void testLimit_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         int limit = 10;

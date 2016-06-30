@@ -445,5 +445,11 @@
                 <maven.javadoc.skip>false</maven.javadoc.skip>
             </properties>
         </profile>
+        <profile>
+            <id>javadoc</id>
+            <properties>
+                <maven.javadoc.skip>false</maven.javadoc.skip>
+            </properties>
+        </profile>
     </profiles>
 </project>

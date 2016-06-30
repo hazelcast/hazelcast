@@ -31,7 +31,7 @@ public class NoneMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testNoneMatchTrue_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -43,7 +43,7 @@ public class NoneMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testNoneMatchFalse_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -55,7 +55,7 @@ public class NoneMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testNoneMatchTrue_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -68,7 +68,7 @@ public class NoneMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testNoneMatchFalse_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         boolean found = map.stream()
@@ -81,7 +81,7 @@ public class NoneMatchTest extends JetStreamTestSupport {
 
     @Test
     public void testNoneMatch_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         boolean found = list.stream()

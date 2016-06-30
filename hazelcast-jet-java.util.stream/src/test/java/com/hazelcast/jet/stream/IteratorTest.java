@@ -33,7 +33,7 @@ public class IteratorTest extends JetStreamTestSupport {
 
     @Test
     public void testIterator_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         Iterator<Map.Entry<String, Integer>> iterator = map.stream().iterator();
@@ -49,7 +49,7 @@ public class IteratorTest extends JetStreamTestSupport {
 
     @Test
     public void testIterator_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         Iterator<Integer> iterator = list.stream().iterator();

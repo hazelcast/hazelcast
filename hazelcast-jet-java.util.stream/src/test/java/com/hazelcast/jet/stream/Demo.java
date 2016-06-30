@@ -32,7 +32,7 @@ public class Demo extends JetStreamTestSupport {
 
     @Test
     public void testFilterSquares() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Integer> list = map.stream()
@@ -48,7 +48,7 @@ public class Demo extends JetStreamTestSupport {
 
     @Test
     public void testSumAllValues() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         Integer sum = map.stream()
@@ -61,7 +61,7 @@ public class Demo extends JetStreamTestSupport {
 
     @Test
     public void testDistinctValues() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Integer> distinct = map.stream()

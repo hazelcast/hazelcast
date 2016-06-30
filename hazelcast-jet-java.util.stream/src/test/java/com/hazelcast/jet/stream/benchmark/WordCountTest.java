@@ -53,7 +53,7 @@ public class WordCountTest extends JetStreamTestSupport implements Serializable 
 
     @BeforeClass
     public static void setUp() {
-        map = getMap(instance);
+        map = getStreamMap(instance);
 
         int row = 0;
         StringBuilder sb = new StringBuilder();

@@ -40,7 +40,7 @@ public class DistributedStreamCastingTest extends JetStreamTestSupport {
 
     @Before
     public void setUp() {
-        List<Integer> list = getList(instance);
+        List<Integer> list = getStreamList(instance);
         stream = list.stream();
     }
 

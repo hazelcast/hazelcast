@@ -32,7 +32,7 @@ public class SkipTest extends JetStreamTestSupport {
 
     @Test
     public void testSkip_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int skip = 10;
@@ -46,7 +46,7 @@ public class SkipTest extends JetStreamTestSupport {
 
     @Test
     public void testSkip_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int skip = 10;
@@ -60,7 +60,7 @@ public class SkipTest extends JetStreamTestSupport {
     }
     @Test
     public void testSkip_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         int skip = 1024;

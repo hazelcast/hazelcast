@@ -41,7 +41,7 @@ public class AggregatorTest extends JetStreamTestSupport implements Serializable
 
     @BeforeClass
     public static void setUp() {
-        map = getMap(instance);
+        map = getStreamMap(instance);
         fillMap(map, COUNT);
     }
 

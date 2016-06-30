@@ -34,7 +34,7 @@ public class FindFirstTest extends JetStreamTestSupport {
 
     @Test
     public void testFindFirst_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         Optional<Map.Entry<String, Integer>> first = map.stream().findFirst();
@@ -48,7 +48,7 @@ public class FindFirstTest extends JetStreamTestSupport {
 
     @Test
     public void findFirst_whenSourceEmptyMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
 
         Optional<Map.Entry<String, Integer>> first = map.stream().findFirst();
 
@@ -57,7 +57,7 @@ public class FindFirstTest extends JetStreamTestSupport {
 
     @Test
     public void testFindFirst_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         Optional<Integer> first = list.stream().findFirst();
@@ -68,7 +68,7 @@ public class FindFirstTest extends JetStreamTestSupport {
 
     @Test
     public void findFirst_whenSourceEmptyList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
 
         Optional<Integer> first = list.stream().findFirst();
 

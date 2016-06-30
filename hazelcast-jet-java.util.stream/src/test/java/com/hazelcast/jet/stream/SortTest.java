@@ -33,7 +33,7 @@ public class SortTest extends JetStreamTestSupport {
 
     @Test
     public void testSort_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list, IntStream.range(0, COUNT).map(i -> COUNT - i - 1).limit(COUNT).iterator());
 
         IList<Integer> result = list
@@ -51,7 +51,7 @@ public class SortTest extends JetStreamTestSupport {
 
     @Test
     public void testSort_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Integer> result = map
@@ -70,7 +70,7 @@ public class SortTest extends JetStreamTestSupport {
 
     @Test
     public void testSortWithComparator_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Integer> result = map
@@ -89,7 +89,7 @@ public class SortTest extends JetStreamTestSupport {
 
     @Test
     public void testOperationsAfterSort() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         IList<Integer> result = map

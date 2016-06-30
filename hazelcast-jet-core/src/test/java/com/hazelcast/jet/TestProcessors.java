@@ -14,28 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.processors;
+package com.hazelcast.jet;
 
 import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
-import com.hazelcast.jet.io.tuple.Tuple;
 import com.hazelcast.jet.processor.ContainerProcessor;
 
-public class ReverseProcessor implements ContainerProcessor<Tuple<Integer, String>, Tuple<String, Integer>> {
-    @Override
-    public boolean process(ProducerInputStream<Tuple<Integer, String>> inputStream,
-                           ConsumerOutputStream<Tuple<String, Integer>> outputStream,
-                           String sourceName,
-                           ProcessorContext processorContext) throws Exception {
-        for (Tuple tuple : inputStream) {
-            Object key = tuple.getKey(0);
-            Object value = tuple.getValue(0);
-            tuple.setKey(0, value);
-            tuple.setValue(0, key);
-            outputStream.consume(tuple);
-        }
+public abstract class TestProcessors {
 
-        return true;
+    public static class Noop implements ContainerProcessor {
+        @Override
+        public boolean process(ProducerInputStream inputStream,
+                               ConsumerOutputStream outputStream,
+                               String sourceName, ProcessorContext processorContext) throws Exception {
+            outputStream.consumeStream(inputStream);
+            return true;
+        }
     }
 }

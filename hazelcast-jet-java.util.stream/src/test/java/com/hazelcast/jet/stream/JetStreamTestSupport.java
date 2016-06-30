@@ -15,13 +15,11 @@
  */
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.jet.JetTestSupport;
 import org.apache.log4j.Level;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.util.Arrays;
@@ -31,44 +29,29 @@ import java.util.function.Function;
 
 import static org.junit.Assert.fail;
 
-public abstract class JetStreamTestSupport extends HazelcastTestSupport {
+public abstract class JetStreamTestSupport extends JetTestSupport {
 
     public static final int COUNT = 10000;
     public static final int NODE_COUNT = 4;
 
     protected static HazelcastInstance instance;
-    protected static TestHazelcastFactory hazelcastInstanceFactory;
 
     @BeforeClass
     public static void setupCluster() throws InterruptedException {
         setLogLevel(Level.INFO);
-        hazelcastInstanceFactory = new TestHazelcastFactory();
-        instance = hazelcastInstanceFactory.newHazelcastInstance();
-
-        for (int i = 1; i < NODE_COUNT; i++) {
-            hazelcastInstanceFactory.newHazelcastInstance();
-        }
+        instance = createCluster(NODE_COUNT);
     }
 
-    @AfterClass
-    public static void shutdownCluster() {
-        hazelcastInstanceFactory.shutdownAll();
-
+    protected static <K, V> IStreamMap<K, V> getStreamMap(HazelcastInstance instance) {
+        return IStreamMap.streamMap(getMap(instance));
     }
 
-    protected static <K,V> IStreamMap<K,V> getMap(HazelcastInstance instance) {
-        return IStreamMap.streamMap(instance.getMap(randomName()));
-    }
-
-    protected static <E> IStreamList<E> getList(HazelcastInstance instance) {
-        return IStreamList.streamList(instance.getList(randomName()));
+    protected static <E> IStreamList<E> getStreamList(HazelcastInstance instance) {
+        return IStreamList.streamList(getList(instance));
     }
 
     protected static int fillMap(IMap<String, Integer> map) {
-        for (int i = 0; i < COUNT; i++) {
-            map.put("key-" + i, i);
-        }
-        return COUNT;
+        return fillMap(map, COUNT);
     }
 
     protected static int fillMap(IMap<String, Integer> map, int count) {
@@ -79,9 +62,7 @@ public abstract class JetStreamTestSupport extends HazelcastTestSupport {
     }
 
     protected static void fillList(IList<Integer> list) {
-        for (int i = 0; i < COUNT; i++) {
-            list.add(i);
-        }
+        fillListWithInts(list, COUNT);
     }
 
     protected static <R> void fillList(IList<R> list, Function<Integer, R> mapper) {
@@ -97,7 +78,7 @@ public abstract class JetStreamTestSupport extends HazelcastTestSupport {
     }
 
     protected static <T> List<T> sortedList(IList<T> list) {
-        @SuppressWarnings("unchecked") T[] array = (T[])new Object[list.size()];
+        @SuppressWarnings("unchecked") T[] array = (T[]) new Object[list.size()];
         list.toArray(array);
         Arrays.sort(array);
         return Arrays.asList(array);
@@ -105,7 +86,7 @@ public abstract class JetStreamTestSupport extends HazelcastTestSupport {
 
     protected <T extends Comparable<T>> void assertNotSorted(T[] array) {
         for (int i = 1; i < array.length; i++) {
-            if (array[i-1].compareTo(array[i]) > 0) {
+            if (array[i - 1].compareTo(array[i]) > 0) {
                 return;
             }
         }

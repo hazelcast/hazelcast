@@ -35,7 +35,7 @@ public class TransformTest extends JetStreamTestSupport {
 
     @Test
     public void testMultipleTransforms_whenSourceMap() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int count = 10;
@@ -56,7 +56,7 @@ public class TransformTest extends JetStreamTestSupport {
 
     @Test
     public void testMultipleTransforms_whenSourceList() {
-        IStreamList<Integer> list = getList(instance);
+        IStreamList<Integer> list = getStreamList(instance);
         fillList(list);
 
         int count = 10;
@@ -76,7 +76,7 @@ public class TransformTest extends JetStreamTestSupport {
 
     @Test
     public void testMultipleTransform_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap(instance);
         fillMap(map);
 
         int count = 10;
