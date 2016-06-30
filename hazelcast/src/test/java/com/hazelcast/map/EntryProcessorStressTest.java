@@ -28,7 +28,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertTrue;
@@ -46,56 +44,55 @@ import static org.junit.Assert.assertTrue;
 @Category(NightlyTest.class)
 public class EntryProcessorStressTest extends HazelcastTestSupport {
 
+    private static final int MAX_ITERATIONS = 50;
+    private static final int MAX_TASKS = 20;
+
     @Test
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/3683
-    public void dropedEntryProcessorTest_withKeyOwningNodeTermination() throws ExecutionException, InterruptedException {
+    public void droppedEntryProcessorTest_withKeyOwningNodeTermination() throws Exception {
         String mapName = randomString();
-        Config cfg = new Config();
-        cfg.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
 
-        final int maxIterations = 50;
+        Config config = new Config();
+        config.getMapConfig(mapName).setInMemoryFormat(InMemoryFormat.OBJECT);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(maxIterations + 1);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(MAX_ITERATIONS + 1);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
 
-        for (int iteration = 0; iteration < maxIterations; iteration++) {
-            HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
-
-            final int maxTasks = 20;
+        for (int iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+            HazelcastInstance instance2 = factory.newHazelcastInstance(config);
             final Object key = generateKeyOwnedBy(instance2);
 
             final IMap<Object, List<Integer>> processorMap = instance1.getMap(mapName);
             processorMap.put(key, new ArrayList<Integer>());
 
-            for (int i = 0; i < maxTasks; i++) {
+            for (int i = 0; i < MAX_TASKS; i++) {
                 processorMap.submitToKey(key, new SimpleEntryProcessor(i));
 
-                if (i == maxTasks / 2) {
-                    instance2.getLifecycleService().shutdown();
+                if (i == MAX_TASKS / 2) {
+                    instance2.shutdown();
                 }
             }
 
             assertTrueEventually(new AssertTask() {
                 public void run() throws Exception {
+                    // using >= for the test, as it can be the case that an EntryProcessor could be executed more than once,
+                    // when the owning node is terminated after running the EntryProcessor (and the backup),
+                    // but before the response is sent
                     List<Integer> actualOrder = processorMap.get(key);
-                    //using >= for the test, as it can be the case that an entry processor could be executed more the once
-                    //when the owning node is terminated after running the entry processor (and the backup) but before the response is sent
-                    assertTrue("failed to execute all entry processor tasks at iteration",
-                            actualOrder.size() >= maxTasks);
+                    assertTrue("failed to execute all entry processor tasks at iteration", actualOrder.size() >= MAX_TASKS);
                 }
             }, 30);
         }
     }
 
-    private static class SimpleEntryProcessor implements DataSerializable, EntryProcessor<Object, List<Integer>>,
-            EntryBackupProcessor<Object, List<Integer>> {
+    private static class SimpleEntryProcessor implements DataSerializable,
+            EntryProcessor<Object, List<Integer>>, EntryBackupProcessor<Object, List<Integer>> {
 
         private int id;
 
-        public SimpleEntryProcessor() {
+        SimpleEntryProcessor() {
         }
 
-        public SimpleEntryProcessor(Integer id) {
+        SimpleEntryProcessor(Integer id) {
             this.id = id;
         }
 
