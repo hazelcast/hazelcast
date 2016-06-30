@@ -40,6 +40,7 @@ import static com.hazelcast.nio.serialization.FieldType.LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE;
 import static com.hazelcast.nio.serialization.FieldType.PORTABLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
@@ -198,7 +199,7 @@ public class MorphingPortableReader extends DefaultPortableReader {
             case BYTE:
                 return super.readByte(fieldName);
             default:
-                throw createIncompatibleClassChangeError(fd, FLOAT);
+                throw createIncompatibleClassChangeError(fd, SHORT);
         }
     }
 
