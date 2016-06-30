@@ -220,7 +220,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
     @Test
     public void testCustomMergePolicy() {
         String mapName = randomMapName();
-        Config config = newConfig(CustomMergePolicy.class.getName(), mapName);
+        Config config = newConfig(TestCustomMergePolicy.class.getName(), mapName);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 

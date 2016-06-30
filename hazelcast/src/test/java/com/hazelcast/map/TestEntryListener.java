@@ -24,11 +24,9 @@ import com.hazelcast.core.MapEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TestEntryListener implements EntryListener, HazelcastInstanceAware {
+class TestEntryListener implements EntryListener, HazelcastInstanceAware {
 
-    public static final AtomicBoolean INSTANCE_AWARE = new AtomicBoolean();
-
-    private HazelcastInstance instance;
+    static final AtomicBoolean INSTANCE_AWARE = new AtomicBoolean();
 
     @Override
     public void entryAdded(EntryEvent event) {
@@ -56,7 +54,6 @@ public class TestEntryListener implements EntryListener, HazelcastInstanceAware 
 
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.instance = hazelcastInstance;
-        INSTANCE_AWARE.set(this.instance != null);
+        INSTANCE_AWARE.set(hazelcastInstance != null);
     }
 }

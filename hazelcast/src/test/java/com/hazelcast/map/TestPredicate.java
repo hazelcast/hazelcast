@@ -23,37 +23,40 @@ import com.hazelcast.query.impl.QueryableEntry;
 import java.util.Map;
 import java.util.Set;
 
-public class TestPredicate implements IndexAwarePredicate<String, TempData> {
+class TestPredicate implements IndexAwarePredicate<String, TestData> {
 
     private String value;
     private boolean filtered;
     private int applied;
 
-    public TestPredicate(String value) {
+    TestPredicate(String value) {
         this.value = value;
     }
 
-    public boolean apply(Map.Entry<String, TempData> mapEntry) {
+    @Override
+    public boolean apply(Map.Entry<String, TestData> mapEntry) {
         applied++;
-        TempData data = (TempData) mapEntry.getValue();
+        TestData data = mapEntry.getValue();
         return data.getAttr1().equals(value);
     }
 
-    public Set<QueryableEntry<String, TempData>> filter(QueryContext queryContext) {
+    @Override
+    @SuppressWarnings("unchecked")
+    public Set<QueryableEntry<String, TestData>> filter(QueryContext queryContext) {
         filtered = true;
         return (Set) queryContext.getIndex("attr1").getRecords(value);
     }
 
+    @Override
     public boolean isIndexed(QueryContext queryContext) {
         return queryContext.getIndex("attr1") != null;
     }
 
-    public boolean isFilteredAndAppliedOnlyOnce() {
+    boolean isFilteredAndAppliedOnlyOnce() {
         return filtered && applied == 1;
     }
 
-    public int getApplied() {
+    int getApplied() {
         return applied;
     }
-
 }

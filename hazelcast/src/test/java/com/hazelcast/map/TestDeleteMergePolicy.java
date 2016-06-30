@@ -10,7 +10,8 @@ import java.io.IOException;
 /**
  * Custom merge policy implementation that causes deletion of related entry.
  */
-public class DeleteMergePolicy implements MapMergePolicy {
+class TestDeleteMergePolicy implements MapMergePolicy {
+
     @Override
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         return null;
@@ -18,11 +19,9 @@ public class DeleteMergePolicy implements MapMergePolicy {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-
     }
 }

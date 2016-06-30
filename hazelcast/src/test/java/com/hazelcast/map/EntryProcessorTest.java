@@ -69,7 +69,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.PREDICATE_APPLY_COUNT;
-import static com.hazelcast.map.TempData.LoggingEntryProcessor;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -110,7 +109,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         assertOpenEventually(latch, 5);
     }
-
 
 
     @Test
@@ -242,12 +240,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         cfg.getMapConfig("test").addMapIndexConfig(new MapIndexConfig("attr1", false));
         HazelcastInstance instance = createHazelcastInstance(cfg);
 
-        IMap<String, TempData> map = instance.getMap("test");
-        map.put("a", new TempData("foo", "bar"));
-        map.put("b", new TempData("abc", "123"));
+        IMap<String, TestData> map = instance.getMap("test");
+        map.put("a", new TestData("foo", "bar"));
+        map.put("b", new TestData("abc", "123"));
 
         TestPredicate predicate = new TestPredicate("foo");
-        Map<String, Object> entries = map.executeOnEntries(new LoggingEntryProcessor(), predicate);
+        Map<String, Object> entries = map.executeOnEntries(new TestLoggingEntryProcessor(), predicate);
 
         assertEquals("The predicate should only relate to one entry!", 1, entries.size());
         assertEquals("The predicate's apply method should only be invoked once!", 1, predicate.getApplied());
@@ -266,10 +264,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        IMap<String, TempData> map = instance1.getMap("test");
-        map.put("a", new TempData("foo", "bar"));
-        map.put("b", new TempData("foo", "bar"));
-        map.executeOnKeys(map.keySet(), new TempData.DeleteEntryProcessor());
+        IMap<String, TestData> map = instance1.getMap("test");
+        map.put("a", new TestData("foo", "bar"));
+        map.put("b", new TestData("foo", "bar"));
+        map.executeOnKeys(map.keySet(), new TestDeleteEntryProcessor());
 
         // the entry has been removed from the primary store but not the backup,
         // so let's kill the primary and execute the logging processor again
@@ -284,8 +282,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         // make sure there are no entries left
-        IMap<String, TempData> map2 = newPrimary.getMap("test");
-        Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
+        IMap<String, TestData> map2 = newPrimary.getMap("test");
+        Map<String, Object> executedEntries = map2.executeOnEntries(new TestLoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
     }
 
@@ -301,10 +299,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        IMap<String, TempData> map = instance1.getMap("test");
-        map.put("a", new TempData("foo", "bar"));
-        map.put("b", new TempData("abc", "123"));
-        map.executeOnKeys(map.keySet(), new TempData.DeleteEntryProcessor());
+        IMap<String, TestData> map = instance1.getMap("test");
+        map.put("a", new TestData("foo", "bar"));
+        map.put("b", new TestData("abc", "123"));
+        map.executeOnKeys(map.keySet(), new TestDeleteEntryProcessor());
 
         // the entry has been removed from the primary store but not the backup,
         // so let's kill the primary and execute the logging processor again
@@ -319,8 +317,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         // make sure there are no entries left
-        IMap<String, TempData> map2 = newPrimary.getMap("test");
-        Map<String, Object> executedEntries = map2.executeOnEntries(new LoggingEntryProcessor());
+        IMap<String, TestData> map2 = newPrimary.getMap("test");
+        Map<String, Object> executedEntries = map2.executeOnEntries(new TestLoggingEntryProcessor());
         assertEquals(0, executedEntries.size());
     }
 
@@ -333,10 +331,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
         try {
-            IMap<String, TempData> map = instance1.getMap("test");
-            map.put("a", new TempData("foo", "bar"));
-            map.executeOnEntries(new LoggingEntryProcessor(), Predicates.equal("attr1", "foo"));
-            map.executeOnEntries(new TempData.DeleteEntryProcessor(), Predicates.equal("attr1", "foo"));
+            IMap<String, TestData> map = instance1.getMap("test");
+            map.put("a", new TestData("foo", "bar"));
+            map.executeOnEntries(new TestLoggingEntryProcessor(), Predicates.equal("attr1", "foo"));
+            map.executeOnEntries(new TestDeleteEntryProcessor(), Predicates.equal("attr1", "foo"));
 
             // now the entry has been removed from the primary store but not the backup,
             // so let's kill the primary and execute the logging processor again
@@ -350,8 +348,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 newPrimary = instance1;
             }
 
-            IMap<String, TempData> map2 = newPrimary.getMap("test");
-            map2.executeOnEntries(new LoggingEntryProcessor(), Predicates.equal("attr1", "foo"));
+            IMap<String, TestData> map2 = newPrimary.getMap("test");
+            map2.executeOnEntries(new TestLoggingEntryProcessor(), Predicates.equal("attr1", "foo"));
         } finally {
             instance1.shutdown();
             instance2.shutdown();
@@ -441,10 +439,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
         try {
-            IMap<String, TempData> map = instance1.getMap("test");
-            map.put("a", new TempData("foo", "bar"));
-            map.executeOnKey("a", new LoggingEntryProcessor());
-            map.executeOnKey("a", new TempData.DeleteEntryProcessor());
+            IMap<String, TestData> map = instance1.getMap("test");
+            map.put("a", new TestData("foo", "bar"));
+            map.executeOnKey("a", new TestLoggingEntryProcessor());
+            map.executeOnKey("a", new TestDeleteEntryProcessor());
             // now the entry has been removed from the primary store but not the backup,
             // so let's kill the primary and execute the logging processor again
             HazelcastInstance newPrimary;
@@ -456,7 +454,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 instance2.shutdown();
                 newPrimary = instance1;
             }
-            IMap<String, TempData> map2 = newPrimary.getMap("test");
+            IMap<String, TestData> map2 = newPrimary.getMap("test");
             assertFalse(map2.containsKey("a"));
         } finally {
             instance1.shutdown();

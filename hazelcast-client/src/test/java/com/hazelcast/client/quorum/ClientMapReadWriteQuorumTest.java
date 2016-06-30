@@ -44,7 +44,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
-import static com.hazelcast.map.TempData.LoggingEntryProcessor;
+
+import com.hazelcast.map.TestLoggingEntryProcessor;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -431,47 +432,47 @@ public class ClientMapReadWriteQuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testExecuteOnKeyOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        map1.executeOnKey("foo", new LoggingEntryProcessor());
+        map1.executeOnKey("foo", new TestLoggingEntryProcessor());
     }
 
     @Test(expected = QuorumException.class)
     public void testExecuteOnKeyOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        map4.executeOnKey("foo", new LoggingEntryProcessor());
+        map4.executeOnKey("foo", new TestLoggingEntryProcessor());
     }
 
     @Test
     public void testExecuteOnKeysOperationSuccessfulWhenQuorumSizeMet() throws Exception {
         HashSet<Object> keys = new HashSet<Object>();
         keys.add("foo");
-        map1.executeOnKey(keys, new LoggingEntryProcessor());
+        map1.executeOnKey(keys, new TestLoggingEntryProcessor());
     }
 
     @Test(expected = QuorumException.class)
     public void testExecuteOnKeysOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
         HashSet<Object> keys = new HashSet<Object>();
         keys.add("foo");
-        map4.executeOnKey(keys, new LoggingEntryProcessor());
+        map4.executeOnKey(keys, new TestLoggingEntryProcessor());
     }
 
     @Test
     public void testExecuteOnEntriesOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        map1.executeOnEntries(new LoggingEntryProcessor());
+        map1.executeOnEntries(new TestLoggingEntryProcessor());
     }
 
     @Test(expected = QuorumException.class)
     public void testExecuteOnEntriesOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        map4.executeOnEntries(new LoggingEntryProcessor());
+        map4.executeOnEntries(new TestLoggingEntryProcessor());
     }
 
     @Test
     public void testSubmmitToKeyOperationSuccessfulWhenQuorumSizeMet() throws Exception {
-        Future foo = map1.submitToKey("foo", new LoggingEntryProcessor());
+        Future foo = map1.submitToKey("foo", new TestLoggingEntryProcessor());
         foo.get();
     }
 
     @Test(expected = ExecutionException.class)
     public void testSubmmitToKeyOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        Future foo = map4.submitToKey("foo", new LoggingEntryProcessor());
+        Future foo = map4.submitToKey("foo", new TestLoggingEntryProcessor());
         foo.get();
     }
 

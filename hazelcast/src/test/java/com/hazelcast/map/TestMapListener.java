@@ -8,11 +8,9 @@ import com.hazelcast.map.listener.EntryRemovedListener;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TestMapListener implements EntryAddedListener, EntryRemovedListener, HazelcastInstanceAware {
+class TestMapListener implements EntryAddedListener, EntryRemovedListener, HazelcastInstanceAware {
 
-    public static final AtomicBoolean INSTANCE_AWARE = new AtomicBoolean();
-
-    private HazelcastInstance instance;
+    static final AtomicBoolean INSTANCE_AWARE = new AtomicBoolean();
 
     @Override
     public void entryAdded(EntryEvent event) {
@@ -24,7 +22,6 @@ public class TestMapListener implements EntryAddedListener, EntryRemovedListener
 
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.instance = hazelcastInstance;
-        INSTANCE_AWARE.set(this.instance != null);
+        INSTANCE_AWARE.set(hazelcastInstance != null);
     }
 }
