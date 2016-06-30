@@ -377,7 +377,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapForceUnlockCodec.encodeRequest(name, keyData, lockReferenceIdGenerator.getNextReferenceId());
+        ClientMessage request = MultiMapForceUnlockCodec
+                .encodeRequest(name, keyData, lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
