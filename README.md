@@ -1,4 +1,14 @@
-# hazelcast-azure
+# Table of Contents
+
+* [Discovery Implementation for Azure Services](#discovery-implementation-for-azure-services)
+* [Getting Started](#getting-started)
+* [Compiling with Gradle](#compiling-with-gradle)
+* [Configuring at Hazelcast Side](#configuring-at-hazelcast-side)
+* [Configuring at Azure Side](#configuring-at-azure-side)
+* [Automated Deployment](#automated-deployment)
+
+
+# Discovery Implementation for Azure Services
 
 This project provides a discovery strategy for Hazelcast 3.6-RC+1 enabled applications running on Azure. It will provide all Hazelcast instances by returning VMs within your Azure resource group that are tagged with a specified value.
 
@@ -42,9 +52,7 @@ compile 'com.hazelcast.azure:hazelcast-azure:1.0'
 
 Check the [releases](https://github.com/hazelcast/hazelcast-azure/releases) for the latest version.
 
-# Configuration
-
-## Hazelcast Configuration
+# Configuring at Hazelcast Side
 
 Ensure that you have added the package `hazelcast-azure` to your Maven or Gradle configuration as mentioned above.
 
@@ -74,7 +82,8 @@ In your Hazelcast configuration, use the `AzureDiscoveryStrategy` as shown below
 
 You will need to setup [Azure Active Directory Service Principal credentials](https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-service-principal-portal/) for your Azure Subscription for this plugin to work. With the credentials, fill in the placeholder values above.
 
-## Azure Configuration
+# Configuring at Azure Side
+
 
 - `client-id` - The Azure Active Directory Service Principal client ID
 - `client-secret` - The Azure Active Directory Service Principal client secret
@@ -87,6 +96,6 @@ With every Hazelcast Virtual Machine you deploy in your resource group, you need
 
 Read more about how you can [tag your virtual machines](https://azure.microsoft.com/en-us/documentation/articles/virtual-machines-tagging-arm/).
 
-## Automated Deployment
+# Automated Deployment
 
 You can also use the [Azure Hazelcast Template](https://github.com/Azure/azure-quickstart-templates/tree/master/hazelcast-vm-cluster) to automatically deploy a Hazelcast cluster which uses this plugin.
