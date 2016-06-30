@@ -8,7 +8,7 @@
 * [Automated Deployment](#automated-deployment)
 
 
-# Discovery Implementation for Azure Services
+# Hazelcast Discovery Plugin for Microsoft Azure
 
 This project provides a discovery strategy for Hazelcast 3.6-RC+1 enabled applications running on Azure. It will provide all Hazelcast instances by returning VMs within your Azure resource group that are tagged with a specified value.
 
