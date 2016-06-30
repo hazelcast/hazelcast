@@ -25,8 +25,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,21 +46,28 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 10;
     private static final long ITERATIONS = 50;
-    private static String MAP_NAME = "test-map";
+    private static final String MAP_NAME = "test-map";
+
     private TestHazelcastInstanceFactory instanceFactory;
 
-
     @Before
-    public void setUp() throws Exception {
-        if (instanceFactory != null) {
-            instanceFactory.shutdownAll();
-        }
+    public void setUp() {
         instanceFactory = new TestHazelcastInstanceFactory(500);
     }
 
+    @After
+    public void tearDown() {
+        instanceFactory.shutdownAll();
+    }
+
+    /**
+     * Creates a map that is used to test data consistency while nodes are joining and leaving the cluster.
+     *
+     * The basic idea is pretty simple. We'll add a number to a list for each key in the IMap. This allows us to verify whether
+     * the numbers are added in the correct order and also whether there's any data loss as nodes leave or join the cluster.
+     */
     @Test
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/3683
-    public void testEntryProcessorWhile2NodesAreBouncing() throws InterruptedException {
+    public void testEntryProcessorWhile2NodesAreBouncing() throws Exception {
         CountDownLatch startLatch = new CountDownLatch(1);
         AtomicBoolean isRunning = new AtomicBoolean(true);
 
@@ -69,10 +76,6 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = newInstance();
         HazelcastInstance instance3 = newInstance();
 
-        // Create a map that we'll use to test data consistency while nodes are joining and leaving the cluster
-        // The basic idea is pretty simple. In a loop, for each key in the IMap, we'll add a number to a list.
-        // This allows us to verify whether the numbers are added in the correct order and also whether there's
-        // any data loss as nodes leave or join the cluster.
         final IMap<Integer, List<Integer>> map = instance.getMap(MAP_NAME);
         final List<Integer> expected = new ArrayList<Integer>();
 
@@ -84,9 +87,9 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
         assertEquals(ENTRIES, map.size());
 
-        // spin up the threads that stop/start the instance2 and instance3, leaving one instance always running
-        Thread bounceThread1 = new Thread(new TwoNodesRestartingRunnable(instance2, instance3, startLatch, isRunning));
-        bounceThread1.start();
+        // spin up the thread that stops/starts the instance2 and instance3, always keeping one instance running
+        Thread bounceThread = new Thread(new TwoNodesRestartingRunnable(startLatch, isRunning, instance2, instance3));
+        bounceThread.start();
 
         // now, with nodes joining and leaving the cluster concurrently, start adding numbers to the lists
         int iteration = 0;
@@ -108,8 +111,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         isRunning.set(false);
 
         // wait for the instance bounces to complete
-        bounceThread1.join();
-
+        bounceThread.join();
 
         final CountDownLatch latch = new CountDownLatch(ENTRIES);
         for (int i = 0; i < ENTRIES; ++i) {
@@ -131,24 +133,28 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
     }
 
     private HazelcastInstance newInstance() {
-        final Config config = new Config();
-        final MapConfig mapConfig = new MapConfig(MAP_NAME);
+        MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setBackupCount(2);
+
+        Config config = new Config();
         config.addMapConfig(mapConfig);
         return instanceFactory.newHazelcastInstance(config);
     }
 
     private class TwoNodesRestartingRunnable implements Runnable {
+
         private final CountDownLatch start;
         private final AtomicBoolean isRunning;
+
         private HazelcastInstance instance1;
         private HazelcastInstance instance2;
 
-        private TwoNodesRestartingRunnable(HazelcastInstance h1, HazelcastInstance h2, CountDownLatch startLatch, AtomicBoolean isRunning) {
-            this.instance1 = h1;
-            this.instance2 = h2;
+        private TwoNodesRestartingRunnable(CountDownLatch startLatch, AtomicBoolean isRunning,
+                                           HazelcastInstance h1, HazelcastInstance h2) {
             this.start = startLatch;
             this.isRunning = isRunning;
+            this.instance1 = h1;
+            this.instance2 = h2;
         }
 
         @Override
@@ -158,7 +164,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
                 while (isRunning.get()) {
                     instance1.shutdown();
                     instance2.shutdown();
-                    Thread.sleep(10l);
+                    Thread.sleep(10L);
                     instance1 = newInstance();
                     instance2 = newInstance();
                 }
@@ -168,7 +174,17 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         }
     }
 
+    private static class InitListProcessor extends AbstractEntryProcessor<Integer, List<Integer>> {
+
+        @Override
+        public Object process(Map.Entry<Integer, List<Integer>> entry) {
+            entry.setValue(new ArrayList<Integer>());
+            return null;
+        }
+    }
+
     private static class IncrementProcessor extends AbstractEntryProcessor<Integer, List<Integer>> {
+
         private final int nextVal;
 
         private IncrementProcessor(int nextVal) {
@@ -184,14 +200,6 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
             list.add(nextVal);
             entry.setValue(list);
-            return null;
-        }
-    }
-
-    private static class InitListProcessor extends AbstractEntryProcessor<Integer, List<Integer>> {
-        @Override
-        public Object process(Map.Entry<Integer, List<Integer>> entry) {
-            entry.setValue(new ArrayList<Integer>());
             return null;
         }
     }
