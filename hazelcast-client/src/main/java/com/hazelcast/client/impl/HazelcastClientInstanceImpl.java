@@ -445,7 +445,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public <K, V> IMap<K, V> getMap(String name) {
         DistributedObject map = getDistributedObject(MapService.SERVICE_NAME, name);
-        ClientMapProxy<K, V> mapProxy = (ClientMapProxy<K, V>)map;
+        ClientMapProxy<K, V> mapProxy = (ClientMapProxy<K, V>) map;
         mapProxy.setReferenceCounter(lockReferenceCounter);
         return mapProxy;
     }
@@ -453,7 +453,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         DistributedObject multiMap = getDistributedObject(MultiMapService.SERVICE_NAME, name);
-        ClientMultiMapProxy<K, V> multiMapProxy = (ClientMultiMapProxy<K, V>)multiMap;
+        ClientMultiMapProxy<K, V> multiMapProxy = (ClientMultiMapProxy<K, V>) multiMap;
         multiMapProxy.setReferenceCounter(lockReferenceCounter);
         return multiMapProxy;
 
@@ -472,7 +472,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public ILock getLock(String key) {
         ILock lock = getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
-        ClientLockProxy lockProxy = (ClientLockProxy)lock;
+        ClientLockProxy lockProxy = (ClientLockProxy) lock;
         lockProxy.setReferenceCounter(lockReferenceCounter);
         return lockProxy;
     }

@@ -160,12 +160,10 @@ public class ClientMapProxy<K, V>
         extends ClientProxy
         implements IMap<K, V> {
 
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
-    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
-
-    private ClientLockReferenceCounter referenceCounter;
 
     private static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
         @Override
@@ -201,6 +199,8 @@ public class ClientMapProxy<K, V>
             return (T) MapSubmitToKeyCodec.decodeResponse(clientMessage).response;
         }
     };
+
+    private ClientLockReferenceCounter referenceCounter;
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
