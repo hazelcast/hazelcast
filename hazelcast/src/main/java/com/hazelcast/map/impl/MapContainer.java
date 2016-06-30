@@ -16,6 +16,13 @@
 
 package com.hazelcast.map.impl;
 
+import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
+import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
+import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
@@ -42,12 +49,6 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.RuntimeMemoryInfoAccessor;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
-import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
-import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
  * Map container.
@@ -91,9 +92,9 @@ public class MapContainer {
      * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
      * Otherwise undesired situations, like deadlocks, may appear.
      */
-    public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
+	public MapContainer(final String name, final Config config, final MapServiceContext mapServiceContext) {
         this.name = name;
-        this.mapConfig = mapConfig;
+		this.mapConfig = config.findMapConfig(name);
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
@@ -103,7 +104,7 @@ public class MapContainer {
         this.queryEntryFactory = new QueryEntryFactory(mapConfig.getCacheDeserializedValues());
         initWanReplication(nodeEngine);
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
-        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
+        this.extractors = new Extractors(config, mapConfig.getMapAttributeConfigs());
         this.indexes = new Indexes((InternalSerializationService) serializationService, extractors);
         this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
         this.mapStoreContext = createMapStoreContext(this);
