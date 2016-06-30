@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientLockReferenceCounter;
+import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
@@ -200,7 +200,7 @@ public class ClientMapProxy<K, V>
         }
     };
 
-    private ClientLockReferenceCounter referenceCounter;
+    private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -567,7 +567,7 @@ public class ClientMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         ClientMessage request = MapLockCodec.encodeRequest(name, keyData,
-                ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), referenceCounter.getNextReferenceId());
+                ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -603,7 +603,7 @@ public class ClientMapProxy<K, V>
         long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseUnit);
         long threadId = ThreadUtil.getThreadId();
         ClientMessage request = MapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis,
-                referenceCounter.getNextReferenceId());
+                lockReferenceIdGenerator.getNextReferenceId());
 
         ClientMessage response = invoke(request, keyData);
         MapTryLockCodec.ResponseParameters resultParameters = MapTryLockCodec.decodeResponse(response);
@@ -615,7 +615,7 @@ public class ClientMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         ClientMessage request = MapUnlockCodec
-                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), referenceCounter.getNextReferenceId());
+                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -623,7 +623,7 @@ public class ClientMapProxy<K, V>
     public void forceUnlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapForceUnlockCodec.encodeRequest(name, keyData, referenceCounter.getNextReferenceId());
+        ClientMessage request = MapForceUnlockCodec.encodeRequest(name, keyData, lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -1449,8 +1449,8 @@ public class ClientMapProxy<K, V>
         return "IMap{" + "name='" + name + '\'' + '}';
     }
 
-    public void setReferenceCounter(ClientLockReferenceCounter referenceCounter) {
-        this.referenceCounter = referenceCounter;
+    public void setLockReferenceIdGenerator(ClientLockReferenceIdGenerator lockReferenceIdGenerator) {
+        this.lockReferenceIdGenerator = lockReferenceIdGenerator;
     }
 
     private class ClientMapEventHandler

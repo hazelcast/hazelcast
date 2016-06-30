@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientLockReferenceCounter;
+import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;
@@ -95,7 +95,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
-    private ClientLockReferenceCounter referenceCounter;
+    private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
 
     public ClientMultiMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -310,7 +310,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         final Data keyData = toData(key);
         ClientMessage request = MultiMapLockCodec
-                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), -1, referenceCounter.getNextReferenceId());
+                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), -1, lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -321,7 +321,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         final Data keyData = toData(key);
         ClientMessage request = MultiMapLockCodec
                 .encodeRequest(name, keyData, ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit),
-                        referenceCounter.getNextReferenceId());
+                        lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -358,7 +358,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         long threadId = ThreadUtil.getThreadId();
         ClientMessage request = MultiMapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis,
-                referenceCounter.getNextReferenceId());
+                lockReferenceIdGenerator.getNextReferenceId());
         ClientMessage response = invoke(request, keyData);
         MultiMapTryLockCodec.ResponseParameters resultParameters = MultiMapTryLockCodec.decodeResponse(response);
         return resultParameters.response;
@@ -369,7 +369,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         final Data keyData = toData(key);
         ClientMessage request = MultiMapUnlockCodec
-                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), referenceCounter.getNextReferenceId());
+                .encodeRequest(name, keyData, ThreadUtil.getThreadId(), lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -377,7 +377,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapForceUnlockCodec.encodeRequest(name, keyData, referenceCounter.getNextReferenceId());
+        ClientMessage request = MultiMapForceUnlockCodec.encodeRequest(name, keyData, lockReferenceIdGenerator.getNextReferenceId());
         invoke(request, keyData);
     }
 
@@ -440,8 +440,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return "MultiMap{" + "name='" + name + '\'' + '}';
     }
 
-    public void setReferenceCounter(ClientLockReferenceCounter referenceCounter) {
-        this.referenceCounter = referenceCounter;
+    public void setLockReferenceIdGenerator(ClientLockReferenceIdGenerator lockReferenceIdGenerator) {
+        this.lockReferenceIdGenerator = lockReferenceIdGenerator;
     }
 
     private class ClientMultiMapEventHandler extends MultiMapAddEntryListenerCodec.AbstractEventHandler

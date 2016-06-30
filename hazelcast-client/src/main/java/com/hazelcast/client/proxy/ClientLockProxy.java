@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientLockReferenceCounter;
+import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.LockForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.LockGetLockCountCodec;
@@ -41,7 +41,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  */
 public class ClientLockProxy extends PartitionSpecificClientProxy implements ILock {
 
-    private ClientLockReferenceCounter referenceCounter;
+    private ClientLockReferenceIdGenerator referenceIdGenerator;
 
     public ClientLockProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
@@ -84,12 +84,12 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
     public void lock(long leaseTime, TimeUnit timeUnit) {
         checkPositive(leaseTime, "leaseTime should be positive");
         ClientMessage request = LockLockCodec.encodeRequest(name,
-                getTimeInMillis(leaseTime, timeUnit), ThreadUtil.getThreadId(), referenceCounter.getNextReferenceId());
+                getTimeInMillis(leaseTime, timeUnit), ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
     public void forceUnlock() {
-        ClientMessage request = LockForceUnlockCodec.encodeRequest(name, referenceCounter.getNextReferenceId());
+        ClientMessage request = LockForceUnlockCodec.encodeRequest(name, referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
@@ -102,13 +102,13 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
 
     public void lock() {
         ClientMessage request = LockLockCodec
-                .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceCounter.getNextReferenceId());
+                .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
     public void lockInterruptibly() throws InterruptedException {
         ClientMessage request = LockLockCodec
-                .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceCounter.getNextReferenceId());
+                .encodeRequest(name, -1, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
         invokeOnPartitionInterruptibly(request);
     }
 
@@ -130,14 +130,14 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseUnit);
         long threadId = ThreadUtil.getThreadId();
         ClientMessage request = LockTryLockCodec
-                .encodeRequest(name, threadId, leaseTimeInMillis, timeoutInMillis, referenceCounter.getNextReferenceId());
+                .encodeRequest(name, threadId, leaseTimeInMillis, timeoutInMillis, referenceIdGenerator.getNextReferenceId());
         LockTryLockCodec.ResponseParameters resultParameters = LockTryLockCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
     public void unlock() {
         ClientMessage request = LockUnlockCodec
-                .encodeRequest(name, ThreadUtil.getThreadId(), referenceCounter.getNextReferenceId());
+                .encodeRequest(name, ThreadUtil.getThreadId(), referenceIdGenerator.getNextReferenceId());
         invokeOnPartition(request);
     }
 
@@ -154,7 +154,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return "ILock{" + "name='" + name + '\'' + '}';
     }
 
-    public void setReferenceCounter(ClientLockReferenceCounter referenceCounter) {
-        this.referenceCounter = referenceCounter;
+    public void setReferenceIdGenerator(ClientLockReferenceIdGenerator referenceIdGenerator) {
+        this.referenceIdGenerator = referenceIdGenerator;
     }
 }

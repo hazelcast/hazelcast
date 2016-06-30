@@ -184,7 +184,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final SerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
 
-    private ClientLockReferenceCounter lockReferenceCounter;
+    private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -229,7 +229,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxyManager.init(config);
         hazelcastCacheManager = new ClientICacheManager(this);
 
-        lockReferenceCounter = new ClientLockReferenceCounter();
+        lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
     }
 
     private Diagnostics initDiagnostics(ClientConfig config) {
@@ -446,7 +446,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public <K, V> IMap<K, V> getMap(String name) {
         DistributedObject map = getDistributedObject(MapService.SERVICE_NAME, name);
         ClientMapProxy<K, V> mapProxy = (ClientMapProxy<K, V>) map;
-        mapProxy.setReferenceCounter(lockReferenceCounter);
+        mapProxy.setLockReferenceIdGenerator(lockReferenceIdGenerator);
         return mapProxy;
     }
 
@@ -454,7 +454,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         DistributedObject multiMap = getDistributedObject(MultiMapService.SERVICE_NAME, name);
         ClientMultiMapProxy<K, V> multiMapProxy = (ClientMultiMapProxy<K, V>) multiMap;
-        multiMapProxy.setReferenceCounter(lockReferenceCounter);
+        multiMapProxy.setLockReferenceIdGenerator(lockReferenceIdGenerator);
         return multiMapProxy;
 
     }
@@ -473,7 +473,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public ILock getLock(String key) {
         ILock lock = getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
         ClientLockProxy lockProxy = (ClientLockProxy) lock;
-        lockProxy.setReferenceCounter(lockReferenceCounter);
+        lockProxy.setReferenceIdGenerator(lockReferenceIdGenerator);
         return lockProxy;
     }
 
@@ -705,9 +705,5 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
         metricsRegistry.shutdown();
         diagnostics.shutdown();
-    }
-
-    public ClientLockReferenceCounter getLockReferenceCounter() {
-        return lockReferenceCounter;
     }
 }
