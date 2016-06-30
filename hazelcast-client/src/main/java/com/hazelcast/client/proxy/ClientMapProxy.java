@@ -1449,8 +1449,11 @@ public class ClientMapProxy<K, V>
         return "IMap{" + "name='" + name + '\'' + '}';
     }
 
-    public void setLockReferenceIdGenerator(ClientLockReferenceIdGenerator lockReferenceIdGenerator) {
-        this.lockReferenceIdGenerator = lockReferenceIdGenerator;
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+
+        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
     }
 
     private class ClientMapEventHandler

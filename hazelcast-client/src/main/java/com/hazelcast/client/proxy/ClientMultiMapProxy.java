@@ -423,6 +423,11 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         }
     }
 
+    @Override
+    public String toString() {
+        return "MultiMap{" + "name='" + name + '\'' + '}';
+    }
+
     protected void onDestroy() {
     }
 
@@ -430,18 +435,16 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+
+        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
+    }
+
     private EventHandler<ClientMessage> createHandler(final Object listener) {
         final ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return new ClientMultiMapEventHandler(listenerAdaptor);
-    }
-
-    @Override
-    public String toString() {
-        return "MultiMap{" + "name='" + name + '\'' + '}';
-    }
-
-    public void setLockReferenceIdGenerator(ClientLockReferenceIdGenerator lockReferenceIdGenerator) {
-        this.lockReferenceIdGenerator = lockReferenceIdGenerator;
     }
 
     private class ClientMultiMapEventHandler extends MultiMapAddEntryListenerCodec.AbstractEventHandler

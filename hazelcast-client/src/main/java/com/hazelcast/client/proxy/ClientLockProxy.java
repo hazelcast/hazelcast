@@ -154,7 +154,10 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         return "ILock{" + "name='" + name + '\'' + '}';
     }
 
-    public void setReferenceIdGenerator(ClientLockReferenceIdGenerator referenceIdGenerator) {
-        this.referenceIdGenerator = referenceIdGenerator;
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+
+        referenceIdGenerator = getClient().getLockReferenceIdGenerator();
     }
 }

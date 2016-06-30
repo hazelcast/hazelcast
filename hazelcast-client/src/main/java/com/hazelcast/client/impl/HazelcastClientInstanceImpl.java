@@ -444,18 +444,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public <K, V> IMap<K, V> getMap(String name) {
-        DistributedObject map = getDistributedObject(MapService.SERVICE_NAME, name);
-        ClientMapProxy<K, V> mapProxy = (ClientMapProxy<K, V>) map;
-        mapProxy.setLockReferenceIdGenerator(lockReferenceIdGenerator);
-        return mapProxy;
+        return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        DistributedObject multiMap = getDistributedObject(MultiMapService.SERVICE_NAME, name);
-        ClientMultiMapProxy<K, V> multiMapProxy = (ClientMultiMapProxy<K, V>) multiMap;
-        multiMapProxy.setLockReferenceIdGenerator(lockReferenceIdGenerator);
-        return multiMapProxy;
+        return getDistributedObject(MultiMapService.SERVICE_NAME, name);
 
     }
 
@@ -471,10 +465,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public ILock getLock(String key) {
-        ILock lock = getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
-        ClientLockProxy lockProxy = (ClientLockProxy) lock;
-        lockProxy.setReferenceIdGenerator(lockReferenceIdGenerator);
-        return lockProxy;
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
     }
 
     @Override
@@ -705,5 +696,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         }
         metricsRegistry.shutdown();
         diagnostics.shutdown();
+    }
+
+    public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {
+        return lockReferenceIdGenerator;
     }
 }
