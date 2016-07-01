@@ -48,7 +48,7 @@ public final class StartServer {
         if (System.getProperty("print.port") != null) {
             PrintWriter printWriter = null;
             try {
-                printWriter = new PrintWriter("ports" + File.pathSeparator + System.getProperty("print.port"), "UTF-8");
+                printWriter = new PrintWriter("ports" + File.separator + System.getProperty("print.port"), "UTF-8");
                 printWriter.println(hz.getCluster().getLocalMember().getAddress().getPort());
             } catch (FileNotFoundException e) {
                 throw e;
