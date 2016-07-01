@@ -113,10 +113,26 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
 
     /**
      * Entry has not exist and no add operation has been done.
+     * UPDATES gets count
+     */
+    protected boolean noOp(Map.Entry entry, Object oldValue, long now) {
+        if (noOp(entry, oldValue)) {
+            getLocalMapStats().incrementGets(getLatencyFrom(now));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Entry has not exist and no add operation has been done.
+     * DOES NOT update gets count
      */
     protected boolean noOp(Map.Entry entry, Object oldValue) {
         final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
-        return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
+        if (!mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null)) {
+            return true;
+        }
+        return false;
     }
 
     protected boolean entryRemoved(Map.Entry entry, Data key, Object oldValue, long now) {
