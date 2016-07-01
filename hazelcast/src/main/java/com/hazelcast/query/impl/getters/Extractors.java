@@ -20,7 +20,6 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsF
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,53 +52,11 @@ public final class Extractors {
 
 	public Extractors(final Config config, List<MapAttributeConfig> mapAttributeConfigs) {
 		
-	this.extractors = instantiateExtractors(config, mapAttributeConfigs);
+		this.extractors = ExtractorHelper.instantiateExtractors(config, mapAttributeConfigs);
         this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
                 EVICTION_PERCENTAGE);
         this.argumentsParser = new DefaultArgumentParser();
     }
-
-	private Map<String, ValueExtractor> instantiateExtractors(final Config config, List<MapAttributeConfig> mapAttributeConfigs){
-		
-		Map<String, ValueExtractor> result = new HashMap<String, ValueExtractor>();
-		
-		for (MapAttributeConfig attrConfig : mapAttributeConfigs) {
-			
-			if (config != null) {
-				
-				ValueExtractor extractor;
-				try {
-					extractor = instantiateExtractorFronConfigClassLoader(config, attrConfig);
-				} catch (IllegalArgumentException ex) {
-					// Do nothing, Just try another way to load the Extractor
-					extractor = ExtractorHelper.instantiateExtractor(attrConfig);
-				}
-				result.put(attrConfig.getName(), extractor);
-			}
-		}
-		
-		return result;
-	}
-	
-	private ValueExtractor instantiateExtractorFronConfigClassLoader(final Config config,
-			MapAttributeConfig attrConfig) {
-		
-		try {
-			Class<?> clazz = config.getClassLoader().loadClass(attrConfig.getExtractor());
-			Object extractor = clazz.newInstance();
-			if (extractor instanceof ValueExtractor) {
-				return (ValueExtractor) extractor;
-			} else {
-				throw new IllegalArgumentException("Extractor does not extend ValueExtractor class " + config);
-			}
-		} catch (IllegalAccessException ex) {
-			throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
-		} catch (InstantiationException ex) {
-			throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
-		} catch (ClassNotFoundException ex) {
-			throw new IllegalArgumentException("Could not initialize extractor " + config, ex);
-		}
-	}
 
     public Object extract(InternalSerializationService serializationService, Object target, String attributeName) {
         Object targetObject = getTargetObject(serializationService, target);
