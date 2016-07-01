@@ -1,3 +1,8 @@
+# Table of Contents
+
+* [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
+  * [AWSClient Configuration](#awsclient-configuration)
+  * [Debugging](#debugging)
 
 # Discovering Members within EC2 Cloud
 
@@ -70,7 +75,7 @@ public static void main( String[] args )throws Exception{
 
 When needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to `FINEST` or `DEBUG`. After this change, you can also see in the generated log whether the instances are accepted or rejected, and the reason the instances were rejected. Note that changing the log level in this way may affect the performance of the cluster. Please see the <a href="http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#logging-configuration" target="_blank">Logging Configuration</a> for information on logging mechanisms.
 
-<br> </br>
+
 ***RELATED INFORMATION***
 
 *You can download the white paper "Hazelcast on AWS: Best Practices for Deployment" from <a href="http://hazelcast.com/resources/hazelcast-on-aws-best-practices-for-deployment/" target="_blank">Hazelcast.com</a>.*
