@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
@@ -87,9 +88,9 @@ public class MapContainer {
      * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
      * Otherwise undesired situations, like deadlocks, may appear.
      */
-    public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
+    public MapContainer(final String name, final Config config, final MapServiceContext mapServiceContext) {
         this.name = name;
-        this.mapConfig = mapConfig;
+        this.mapConfig = config.findMapConfig(name);
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.partitioningStrategy = createPartitioningStrategy();
@@ -101,7 +102,7 @@ public class MapContainer {
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
-        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs());
+        this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
         this.indexes = new Indexes(serializationService, extractors);
         this.evictor = createEvictor(mapServiceContext);
         this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
