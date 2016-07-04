@@ -28,6 +28,8 @@ import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 @SuppressWarnings("VolatileLongOrDoubleField")
 public abstract class AbstractRecord<V> implements Record<V> {
 
+    private static final int NUMBER_OF_LONGS = 6;
+
     protected Data key;
     protected long version;
     protected long ttl;
@@ -104,8 +106,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public long getCost() {
-        final int numberOfLongs = 6;
-        return REFERENCE_COST_IN_BYTES + numberOfLongs * LONG_SIZE_IN_BYTES;
+        return REFERENCE_COST_IN_BYTES + NUMBER_OF_LONGS * LONG_SIZE_IN_BYTES;
     }
 
     @Override
@@ -129,7 +130,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public void onStore() {
-
     }
 
     @Override
@@ -185,33 +185,25 @@ public abstract class AbstractRecord<V> implements Record<V> {
         }
 
         AbstractRecord<?> that = (AbstractRecord<?>) o;
-
         if (version != that.version) {
             return false;
         }
-
         if (ttl != that.ttl) {
             return false;
         }
-
         if (creationTime != that.creationTime) {
             return false;
         }
-
         if (hits != that.hits) {
             return false;
         }
-
         if (lastAccessTime != that.lastAccessTime) {
             return false;
         }
-
         if (lastUpdateTime != that.lastUpdateTime) {
             return false;
         }
-
         return key.equals(that.key);
-
     }
 
     @Override
