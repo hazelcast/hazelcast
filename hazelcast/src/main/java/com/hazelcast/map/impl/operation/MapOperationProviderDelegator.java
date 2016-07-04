@@ -138,8 +138,8 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createPutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries) {
-        return getDelegate().createPutAllPerMemberOperation(name, partitions, mapEntries);
+    public OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries) {
+        return getDelegate().createPutAllOperationFactory(name, partitions, mapEntries);
     }
 
     @Override

@@ -16,64 +16,68 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 /**
  * Inserts the {@link MapEntries} for all partitions of a member via locally invoked {@link PutAllOperation}.
  * <p/>
  * Used to reduce the number of remote invocations of an {@link com.hazelcast.core.IMap#putAll(Map)} call.
  */
-public class PutAllPerMemberOperation extends MapOperation implements IdentifiedDataSerializable {
+public class PutAllPartitionAwareOperationFactory implements PartitionAwareOperationFactory {
 
-    private int[] partitions;
-    private MapEntries[] mapEntries;
+    protected String name;
+    protected int[] partitions;
+    protected MapEntries[] mapEntries;
 
     @SuppressWarnings("unused")
-    public PutAllPerMemberOperation() {
+    public PutAllPartitionAwareOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public PutAllPerMemberOperation(String name, int[] partitions, MapEntries[] mapEntries) {
-        super(name);
+    public PutAllPartitionAwareOperationFactory(String name, int[] partitions, MapEntries[] mapEntries) {
+        this.name = name;
         this.partitions = partitions;
         this.mapEntries = mapEntries;
     }
 
     @Override
-    public void run() throws Exception {
-        NodeEngine nodeEngine = getNodeEngine();
-        Future[] futures = new Future[partitions.length];
-        for (int i = 0; i < partitions.length; i++) {
-            Operation op = new PutAllOperation(name, mapEntries[i]);
-            op.setNodeEngine(nodeEngine)
-                    .setPartitionId(partitions[i])
-                    .setReplicaIndex(getReplicaIndex())
-                    .setService(getService())
-                    .setCallerUuid(getCallerUuid());
-            OperationAccessor.setCallerAddress(op, getCallerAddress());
-            futures[i] = nodeEngine.getOperationService().invokeOnPartition(op);
-        }
-        // TODO: this should be done non-blocking to free the operation thread as soon as possible
-        for (Future future : futures) {
-            future.get();
-        }
+    public void init(NodeEngine nodeEngine) {
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
+    public Operation createOperation() {
+        throw new UnsupportedOperationException("A PartitionAwareOperationFactory should be used via createPartitionOperation()");
+    }
+
+    @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public int[] getPartitions() {
+        return partitions;
+    }
+
+    @Override
+    public Operation createPartitionOperation(int partitionId) {
+        for (int i = 0; i < partitions.length; i++) {
+            if (partitions[i] == partitionId) {
+                return new PutAllOperation(name, mapEntries[i]);
+            }
+        }
+        throw new IllegalArgumentException("Unknown partitionId " + partitionId + " (" + Arrays.toString(partitions) + ")");
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
         out.writeIntArray(partitions);
         for (MapEntries entry : mapEntries) {
             entry.writeData(out);
@@ -81,8 +85,8 @@ public class PutAllPerMemberOperation extends MapOperation implements Identified
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
         partitions = in.readIntArray();
         mapEntries = new MapEntries[partitions.length];
         for (int i = 0; i < partitions.length; i++) {
@@ -90,15 +94,5 @@ public class PutAllPerMemberOperation extends MapOperation implements Identified
             entry.readData(in);
             mapEntries[i] = entry;
         }
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.PUT_ALL_PER_MEMBER;
     }
 }
