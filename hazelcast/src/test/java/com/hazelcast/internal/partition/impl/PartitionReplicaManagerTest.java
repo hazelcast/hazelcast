@@ -47,7 +47,7 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
     private PartitionReplicaManager manager;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         setLoggingLog4j();
         setLogLevel(Level.TRACE);
 
@@ -62,10 +62,10 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
-        factory.terminateAll();
-
+    public void tearDown() {
         resetLogLevel();
+
+        factory.terminateAll();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -84,7 +84,7 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCheckSyncPartitionTarget_whenPartitionOwnerIsSameNode_thenReturnFalse() {
+    public void testCheckSyncPartitionTarget_whenNodeIsPartitionOwner_thenReturnFalse() {
         warmUpPartitions(hazelcastInstance);
 
         assertFalse(manager.checkSyncPartitionTarget(PARTITION_ID, 0));
