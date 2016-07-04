@@ -46,7 +46,7 @@ public class IndexImplTest {
     @Before
     public void setUp() {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
-        Extractors mockExtractors = new Extractors(Collections.<MapAttributeConfig>emptyList());
+        Extractors mockExtractors = new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
         index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService, mockExtractors);
     }
 
