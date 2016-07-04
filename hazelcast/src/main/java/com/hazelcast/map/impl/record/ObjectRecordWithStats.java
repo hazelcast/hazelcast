@@ -60,7 +60,6 @@ class ObjectRecordWithStats extends AbstractRecordWithStats<Object> {
         ObjectRecordWithStats that = (ObjectRecordWithStats) o;
 
         return value.equals(that.value);
-
     }
 
     @Override
