@@ -49,6 +49,7 @@ import static com.hazelcast.internal.partition.InternalPartitionService.REPLICA_
  *
  */
 public class PartitionReplicaManager {
+
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -146,7 +147,7 @@ public class PartitionReplicaManager {
         schedulePartitionReplicaSync(syncInfo, target, scheduleDelay, "ANOTHER SYNC IN PROGRESS");
     }
 
-    private boolean checkSyncPartitionTarget(int partitionId, int replicaIndex) {
+    boolean checkSyncPartitionTarget(int partitionId, int replicaIndex) {
         final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
         final Address target = partition.getOwnerOrNull();
         if (target == null) {
