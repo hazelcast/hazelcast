@@ -44,25 +44,25 @@ final class DateHelper {
 
     static Timestamp parseTimeStamp(final String value) {
         try {
-            return new Timestamp(getTimestampFormat().parse(value).getTime());
-        } catch (ParseException e) {
-            return throwRuntimeParseException(value, e, TIMESTAMP_FORMAT);
+            return Timestamp.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return throwRuntimeParseException(value, new ParseException(e.getMessage(), 0), TIMESTAMP_FORMAT);
         }
     }
 
     static java.sql.Date parseSqlDate(final String value) {
         try {
-            return new java.sql.Date(getSqlDateFormat().parse(value).getTime());
-        } catch (ParseException e) {
-            return throwRuntimeParseException(value, e, SQL_DATE_FORMAT);
+            return java.sql.Date.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return throwRuntimeParseException(value, new ParseException(value, 0), SQL_DATE_FORMAT);
         }
     }
 
     static java.sql.Time parseSqlTime(final String value) {
         try {
-            return new Time(getSqlTimeFormat().parse(value).getTime());
-        } catch (ParseException e) {
-            return throwRuntimeParseException(value, e, SQL_TIME_FORMAT);
+            return Time.valueOf(value);
+        } catch (IllegalArgumentException e) {
+            return throwRuntimeParseException(value, new ParseException(value, 0), SQL_TIME_FORMAT);
         }
     }
 
