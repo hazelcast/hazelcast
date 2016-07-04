@@ -62,12 +62,12 @@ public class RecordsTest extends HazelcastTestSupport {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
         Record record = new CachedDataRecordWithStats(dataPayload);
-        Object firstDeserilizedValue = Records.getValueOrCachedValue(record, serializationService);
-        assertEquals(objectPayload, firstDeserilizedValue);
+        Object firstDeserializedValue = Records.getValueOrCachedValue(record, serializationService);
+        assertEquals(objectPayload, firstDeserializedValue);
 
-        //we don't need serialization service for the 2nd call
-        Object secondDeserilizedValue = Records.getValueOrCachedValue(record, null);
-        assertSame(firstDeserilizedValue, secondDeserilizedValue);
+        // we don't need serialization service for the 2nd call
+        Object secondDeserializedValue = Records.getValueOrCachedValue(record, null);
+        assertSame(firstDeserializedValue, secondDeserializedValue);
     }
 
     @Test
@@ -75,44 +75,43 @@ public class RecordsTest extends HazelcastTestSupport {
         String objectPayload = "foo";
         Data dataPayload = serializationService.toData(objectPayload);
         Record record = new CachedDataRecord(dataPayload);
-        Object firstDeserilizedValue = Records.getValueOrCachedValue(record, serializationService);
-        assertEquals(objectPayload, firstDeserilizedValue);
+        Object firstDeserializedValue = Records.getValueOrCachedValue(record, serializationService);
+        assertEquals(objectPayload, firstDeserializedValue);
 
-        //we don't need serialization service for the 2nd call
-        Object secondDeserilizedValue = Records.getValueOrCachedValue(record, null);
-        assertSame(firstDeserilizedValue, secondDeserilizedValue);
+        // we don't need serialization service for the 2nd call
+        Object secondDeserializedValue = Records.getValueOrCachedValue(record, null);
+        assertSame(firstDeserializedValue, secondDeserializedValue);
     }
 
     @Test
     public void givenCachedDataRecord_whenThreadIsInside_thenGetValueOrCachedValueReturnsTheThread() {
-        //given
+        // given
         CachedDataRecord record = new CachedDataRecord();
 
-        //when
+        // when
         SerializableThread objectPayload = new SerializableThread();
         Data dataPayload = serializationService.toData(objectPayload);
         record.setValue(dataPayload);
 
-        //then
+        // then
         Object cachedValue = Records.getValueOrCachedValue(record, serializationService);
         assertInstanceOf(SerializableThread.class, cachedValue);
     }
 
     @Test
     public void givenCachedDataRecordValueIsThread_whenCachedValueIsCreated_thenGetCachedValueReturnsTheThread() {
-        //given
+        // given
         SerializableThread objectPayload = new SerializableThread();
         Data dataPayload = serializationService.toData(objectPayload);
         CachedDataRecord record = new CachedDataRecord(dataPayload);
 
-        //when
+        // when
         Records.getValueOrCachedValue(record, serializationService);
 
-        //then
+        // then
         Object cachedValue = Records.getCachedValue(record);
         assertInstanceOf(SerializableThread.class, cachedValue);
     }
-
 
     @Test
     public void applyRecordInfo() throws Exception {
@@ -132,20 +131,6 @@ public class RecordsTest extends HazelcastTestSupport {
         assertEquals(now, record.getLastStoredTime());
     }
 
-    protected RecordInfo newRecordInfo(long now) {
-        RecordInfo recordInfo = mock(RecordInfo.class);
-
-        when(recordInfo.getCreationTime()).thenReturn(now);
-        when(recordInfo.getLastAccessTime()).thenReturn(now);
-        when(recordInfo.getLastUpdateTime()).thenReturn(now);
-        when(recordInfo.getHits()).thenReturn(12L);
-        when(recordInfo.getVersion()).thenReturn(123L);
-        when(recordInfo.getExpirationTime()).thenReturn(now);
-        when(recordInfo.getLastStoredTime()).thenReturn(now);
-
-        return recordInfo;
-    }
-
     @Test
     public void buildRecordInfo() throws Exception {
         long now = Clock.currentTimeMillis();
@@ -163,7 +148,21 @@ public class RecordsTest extends HazelcastTestSupport {
         assertEquals(now, recordInfo.getLastStoredTime());
     }
 
-    protected Record newRecord(long now) {
+    private static RecordInfo newRecordInfo(long now) {
+        RecordInfo recordInfo = mock(RecordInfo.class);
+
+        when(recordInfo.getCreationTime()).thenReturn(now);
+        when(recordInfo.getLastAccessTime()).thenReturn(now);
+        when(recordInfo.getLastUpdateTime()).thenReturn(now);
+        when(recordInfo.getHits()).thenReturn(12L);
+        when(recordInfo.getVersion()).thenReturn(123L);
+        when(recordInfo.getExpirationTime()).thenReturn(now);
+        when(recordInfo.getLastStoredTime()).thenReturn(now);
+
+        return recordInfo;
+    }
+
+    private static Record newRecord(long now) {
         Record record = mock(Record.class, withSettings());
 
         when(record.getCreationTime()).thenReturn(now);
@@ -176,8 +175,6 @@ public class RecordsTest extends HazelcastTestSupport {
         return record;
     }
 
-
     private static class SerializableThread extends Thread implements Serializable {
-
     }
 }

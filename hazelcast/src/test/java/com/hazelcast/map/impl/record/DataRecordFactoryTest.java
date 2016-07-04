@@ -44,7 +44,6 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
     private Object object = new Object();
     private Data data = new HeapData();
 
-
     @Before
     public void setUp() {
         mockSerializationService = mock(SerializationService.class);
@@ -52,7 +51,6 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
         object = new Object();
         data = new HeapData();
         when(mockSerializationService.toData(object, mockPartitioningStrategy)).thenReturn(data);
-
     }
 
     @Test
@@ -75,12 +73,6 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
         assertInstanceOf(DataRecord.class, dataRecord);
     }
 
-    protected Record<Data> newDataRecord(DataRecordFactory dataRecordFactory) {
-        Record<Data> record = dataRecordFactory.newRecord(object);
-        ((AbstractRecord) record).setKey(data);
-        return record;
-    }
-
     @Test
     public void givenStatisticsEnabledAndCacheDeserializedValuesIsDefault_thenCreateCachedDataRecordWithStats() {
         MapConfig mapConfig = new MapConfig().setStatisticsEnabled(true);
@@ -99,5 +91,11 @@ public class DataRecordFactoryTest extends HazelcastTestSupport {
         Record<Data> dataRecord = newDataRecord(dataRecordFactory);
 
         assertInstanceOf(CachedDataRecord.class, dataRecord);
+    }
+
+    private Record<Data> newDataRecord(DataRecordFactory dataRecordFactory) {
+        Record<Data> record = dataRecordFactory.newRecord(object);
+        ((AbstractRecord) record).setKey(data);
+        return record;
     }
 }
