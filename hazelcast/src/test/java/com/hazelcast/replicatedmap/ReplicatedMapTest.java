@@ -41,7 +41,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,7 +59,6 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(value = {QuickTest.class, ParallelTest.class})
 public class ReplicatedMapTest extends ReplicatedMapBaseTest {
-
 
     @Test
     public void testEmptyMapIsEmpty() throws Exception {
@@ -577,7 +575,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         testSize(buildConfig(InMemoryFormat.BINARY));
     }
 
-
     private void testSize(Config config) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
@@ -657,7 +654,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         assertFalse(map.containsValue(1));
     }
-
 
     @Test
     public void testContainsValueObject() throws Exception {
@@ -1032,7 +1028,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         assertTrue(map.size() == 0);
     }
 
-
     @Test
     public void testDestroy() throws Exception {
         HazelcastInstance instance = createHazelcastInstance();
@@ -1043,7 +1038,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         assertEquals(0, objects.size());
     }
 
-
     /**
      * This method works around a bug in IBM's Java 6 J9 JVM where ArrayList's copy constructor
      * is somehow broken and either includes nulls as values or copies not all elements.
@@ -1053,9 +1047,8 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
      */
     private <V> List<V> copyToList(Collection<V> collection) {
         List<V> values = new ArrayList<V>();
-        Iterator<V> iterator = collection.iterator();
-        while (iterator.hasNext()) {
-            values.add(iterator.next());
+        for (V value : collection) {
+            values.add(value);
         }
         return values;
     }
@@ -1064,8 +1057,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
 
         @Override
         public int compare(Integer o1, Integer o2) {
-            return o1 == o2 ? 0 : o1 > o2 ? -1 : 1;
+            return o1.equals(o2) ? 0 : o1 > o2 ? -1 : 1;
         }
     }
-
 }

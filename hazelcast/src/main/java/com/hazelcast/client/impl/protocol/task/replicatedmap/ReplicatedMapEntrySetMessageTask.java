@@ -50,7 +50,7 @@ public class ReplicatedMapEntrySetMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         ReplicatedMapEntries entries = (ReplicatedMapEntries) response;
-        return ReplicatedMapEntrySetCodec.encodeResponse(entries.getEntries());
+        return ReplicatedMapEntrySetCodec.encodeResponse(entries.entries());
     }
 
     @Override

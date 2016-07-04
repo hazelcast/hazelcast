@@ -26,6 +26,8 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -34,46 +36,66 @@ import java.util.Map;
  */
 public class ReplicatedMapEntries implements Portable {
 
-    private final List<Map.Entry<Data, Data>> entries;
+    private List<Data> keys;
+    private List<Data> values;
 
     public ReplicatedMapEntries() {
-        entries = new ArrayList<Map.Entry<Data, Data>>();
+    }
+
+    public ReplicatedMapEntries(int initialSize) {
+        keys = new ArrayList<Data>(initialSize);
+        values = new ArrayList<Data>(initialSize);
     }
 
     public ReplicatedMapEntries(List<Map.Entry<Data, Data>> entries) {
-        this.entries = entries;
-    }
-
-    public List<Map.Entry<Data, Data>> getEntries() {
-        return entries;
-    }
-
-    public void add(Map.Entry<Data, Data> entry) {
-        entries.add(entry);
-    }
-
-    public void add(Data key, Data value) {
-        entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
-    }
-
-    @Override
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("size", entries.size());
-        ObjectDataOutput out = writer.getRawDataOutput();
+        int initialSize = entries.size();
+        keys = new ArrayList<Data>(initialSize);
+        values = new ArrayList<Data>(initialSize);
         for (Map.Entry<Data, Data> entry : entries) {
-            out.writeData(entry.getKey());
-            out.writeData(entry.getValue());
+            keys.add(entry.getKey());
+            values.add(entry.getValue());
         }
     }
 
-    @Override
-    public void readPortable(PortableReader reader) throws IOException {
-        int size = reader.readInt("size");
-        ObjectDataInput in = reader.getRawDataInput();
-        for (int i = 0; i < size; i++) {
-            Data key = in.readData();
-            Data value = in.readData();
-            entries.add(new AbstractMap.SimpleImmutableEntry(key, value));
+    public void add(Data key, Data value) {
+        ensureEntriesCreated();
+        keys.add(key);
+        values.add(value);
+    }
+
+    public List<Map.Entry<Data, Data>> entries() {
+        ArrayList<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>(keys.size());
+        putAllToList(entries);
+        return entries;
+    }
+
+    public Data getKey(int index) {
+        return keys.get(index);
+    }
+
+    public Data getValue(int index) {
+        return values.get(index);
+    }
+
+    public int size() {
+        return (keys == null ? 0 : keys.size());
+    }
+
+    private void putAllToList(Collection<Map.Entry<Data, Data>> targetList) {
+        if (keys == null) {
+            return;
+        }
+        Iterator<Data> keyIterator = keys.iterator();
+        Iterator<Data> valueIterator = values.iterator();
+        while (keyIterator.hasNext()) {
+            targetList.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyIterator.next(), valueIterator.next()));
+        }
+    }
+
+    private void ensureEntriesCreated() {
+        if (keys == null) {
+            keys = new ArrayList<Data>();
+            values = new ArrayList<Data>();
         }
     }
 
@@ -87,4 +109,26 @@ public class ReplicatedMapEntries implements Portable {
         return ReplicatedMapPortableHook.MAP_ENTRIES;
     }
 
+    @Override
+    public void writePortable(PortableWriter writer) throws IOException {
+        int size = size();
+        writer.writeInt("size", size);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        for (int i = 0; i < size; i++) {
+            out.writeData(keys.get(i));
+            out.writeData(values.get(i));
+        }
+    }
+
+    @Override
+    public void readPortable(PortableReader reader) throws IOException {
+        int size = reader.readInt("size");
+        keys = new ArrayList<Data>(size);
+        values = new ArrayList<Data>(size);
+        ObjectDataInput in = reader.getRawDataInput();
+        for (int i = 0; i < size; i++) {
+            keys.add(in.readData());
+            values.add(in.readData());
+        }
+    }
 }
