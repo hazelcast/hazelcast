@@ -75,7 +75,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             }
 
             // first call noOp, other if checks below depends on it.
-            if (noOp(entry, value)) {
+            if (noOp(entry, value, now)) {
                 continue;
             }
             if (entryRemoved(entry, key, value, now)) {

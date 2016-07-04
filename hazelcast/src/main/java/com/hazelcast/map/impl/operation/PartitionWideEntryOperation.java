@@ -79,7 +79,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             }
 
             // first call noOp, other if checks below depends on it.
-            if (noOp(entry, oldValue)) {
+            if (noOp(entry, oldValue, now)) {
                 continue;
             }
             if (entryRemoved(entry, dataKey, oldValue, now)) {
