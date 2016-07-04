@@ -87,8 +87,7 @@ class MapServiceContextImpl implements MapServiceContext {
         public MapContainer createNew(String mapName) {
             final MapServiceContext mapServiceContext = getService().getMapServiceContext();
             final Config config = nodeEngine.getConfig();
-            final MapConfig mapConfig = config.findMapConfig(mapName);
-            return new MapContainer(mapName, mapConfig, mapServiceContext);
+            return new MapContainer(mapName, config, mapServiceContext);
         }
     };
     /**

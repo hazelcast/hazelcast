@@ -16,13 +16,13 @@
 
 package com.hazelcast.mapreduce.aggregation.impl;
 
+import java.util.Collections;
+
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-
-import java.util.Collections;
 
 /**
  * Internal implementation of an map entry with changeable value to prevent
@@ -38,7 +38,7 @@ final class SimpleEntry<K, V>
     private V value;
 
     public SimpleEntry() {
-        this.extractors = new Extractors(Collections.<MapAttributeConfig>emptyList());
+		this.extractors = new Extractors(null, Collections.<MapAttributeConfig> emptyList());
     }
 
     @Override

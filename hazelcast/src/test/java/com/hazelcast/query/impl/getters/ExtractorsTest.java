@@ -55,7 +55,7 @@ public class ExtractorsTest {
     public void getGetter_extractor_cachingWorks() {
         // GIVEN
         MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(asList(config));
+        Extractors extractors = new Extractors(null, asList(config));
 
         // WHEN
         Getter getterFirstInvocation = extractors.getGetter(UNUSED, bond, "gimmePower");
@@ -70,7 +70,7 @@ public class ExtractorsTest {
     public void extract_extractor_correctValue() {
         // GIVEN
         MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(asList(config));
+        Extractors extractors = new Extractors(null, asList(config));
 
         // WHEN
         Object power = extractors.extract(UNUSED, bond, "gimmePower");
@@ -118,7 +118,7 @@ public class ExtractorsTest {
     }
 
     private static Extractors extractors() {
-        return new Extractors(Collections.<MapAttributeConfig>emptyList());
+        return new Extractors(null, Collections.<MapAttributeConfig>emptyList());
     }
 
 }

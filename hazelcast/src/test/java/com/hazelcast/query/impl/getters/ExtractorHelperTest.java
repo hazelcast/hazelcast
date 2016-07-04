@@ -1,19 +1,5 @@
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.config.MapAttributeConfig;
-import com.hazelcast.query.extractor.ValueCollector;
-import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-
-import java.util.Map;
-
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 import static groovy.util.GroovyTestCase.assertEquals;
@@ -21,6 +7,22 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isA;
+
+import java.util.Map;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapAttributeConfig;
+import com.hazelcast.query.extractor.ValueCollector;
+import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -61,12 +63,34 @@ public class ExtractorHelperTest {
         MapAttributeConfig nameExtractor = new MapAttributeConfig("name", "com.hazelcast.query.impl.getters.ExtractorHelperTest$NameExtractor");
 
         // WHEN
-        Map<String, ValueExtractor> extractors = ExtractorHelper.instantiateExtractors(asList(iqExtractor, nameExtractor));
+		Map<String, ValueExtractor> extractors =
+				ExtractorHelper.instantiateExtractors(null, asList(iqExtractor, nameExtractor));
 
         // THEN
         assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
         assertThat(extractors.get("name"), instanceOf(NameExtractor.class));
     }
+	
+	@Test
+	public void instantiate_extractors_withCustomClassLoader() {
+		// GIVEN
+		MapAttributeConfig iqExtractor =
+				new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+		MapAttributeConfig nameExtractor =
+				new MapAttributeConfig("name", "com.hazelcast.query.impl.getters.ExtractorHelperTest$NameExtractor");
+		Config config = new Config();
+		// For other custom class loaders (from OSGi bundles, for example)
+		ClassLoader customClassLoader = getClass().getClassLoader();
+		config.setClassLoader(customClassLoader);
+		
+		// WHEN
+		Map<String, ValueExtractor> extractors =
+				ExtractorHelper.instantiateExtractors(config, asList(iqExtractor, nameExtractor));
+		
+		// THEN
+		assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
+		assertThat(extractors.get("name"), instanceOf(NameExtractor.class));
+	}
 
     @Test
     public void instantiate_extractors_oneClassNotExisting() {
@@ -79,7 +103,7 @@ public class ExtractorHelperTest {
         expected.expectCause(isA(ClassNotFoundException.class));
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(iqExtractor, nameExtractor));
+		ExtractorHelper.instantiateExtractors(null, asList(iqExtractor, nameExtractor));
     }
 
     @Test
@@ -92,7 +116,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(iqExtractor, iqExtractorDuplicate));
+		ExtractorHelper.instantiateExtractors(null, asList(iqExtractor, iqExtractorDuplicate));
     }
 
     @Test
@@ -104,7 +128,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(string));
+		ExtractorHelper.instantiateExtractors(null, asList(string));
     }
 
     @Test
@@ -116,7 +140,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(string));
+		ExtractorHelper.instantiateExtractors(null, asList(string));
     }
 
     @Test
@@ -128,7 +152,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(string));
+		ExtractorHelper.instantiateExtractors(null, asList(string));
     }
 
     @Test

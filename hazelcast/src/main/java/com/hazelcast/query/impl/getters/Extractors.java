@@ -16,6 +16,14 @@
 
 package com.hazelcast.query.impl.getters;
 
+import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
+import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
@@ -23,14 +31,6 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentParser;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
-import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
-import static com.hazelcast.query.impl.getters.ExtractorHelper.instantiateExtractors;
 
 // one instance per MapContainer
 public final class Extractors {
@@ -50,9 +50,9 @@ public final class Extractors {
     private final EvictableGetterCache getterCache;
     private final DefaultArgumentParser argumentsParser;
 
-    // TODO InternalSerializationService should be passed in constructor
-    public Extractors(List<MapAttributeConfig> mapAttributeConfigs) {
-        this.extractors = instantiateExtractors(mapAttributeConfigs);
+	public Extractors(final Config config, List<MapAttributeConfig> mapAttributeConfigs) {
+		
+		this.extractors = ExtractorHelper.instantiateExtractors(config, mapAttributeConfigs);
         this.getterCache = new EvictableGetterCache(MAX_CLASSES_IN_CACHE, MAX_GETTERS_PER_CLASS_IN_CACHE,
                 EVICTION_PERCENTAGE);
         this.argumentsParser = new DefaultArgumentParser();
@@ -128,7 +128,7 @@ public final class Extractors {
     }
 
     public static Extractors empty() {
-        return new Extractors(Collections.<MapAttributeConfig>emptyList());
+		return new Extractors(null, Collections.<MapAttributeConfig> emptyList());
     }
 
 }
