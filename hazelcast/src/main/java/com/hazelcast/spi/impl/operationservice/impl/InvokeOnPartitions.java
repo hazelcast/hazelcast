@@ -20,6 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
@@ -61,7 +62,7 @@ final class InvokeOnPartitions {
      * Executes all the operations on the partitions.
      */
     Map<Integer, Object> invoke() throws Exception {
-        ensureNotCallingFromOperationThread();
+        ensureNotCallingFromPartitionOperationThread();
 
         invokeOnAllPartitions();
 
@@ -72,8 +73,9 @@ final class InvokeOnPartitions {
         return partitionResults;
     }
 
-    private void ensureNotCallingFromOperationThread() {
-        if (operationService.operationExecutor.isOperationThread()) {
+    private void ensureNotCallingFromPartitionOperationThread() {
+        /// Ensure not calling from partition thread
+        if (Thread.currentThread() instanceof PartitionOperationThread) {
             throw new IllegalThreadStateException(Thread.currentThread() + " cannot make invocation on multiple partitions!");
         }
     }
