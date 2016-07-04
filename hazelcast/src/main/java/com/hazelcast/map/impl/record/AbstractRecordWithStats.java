@@ -21,14 +21,14 @@ import com.hazelcast.util.Clock;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 
 /**
- * @param <V>
+ * @param <V> type of {@link AbstractRecord}
  */
 abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     protected long lastStoredTime;
     protected long expirationTime;
 
-    protected AbstractRecordWithStats() {
+    AbstractRecordWithStats() {
     }
 
     @Override
@@ -64,26 +64,16 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
         if (!super.equals(o)) {
             return false;
         }
 
         AbstractRecordWithStats<?> that = (AbstractRecordWithStats<?>) o;
-
         if (lastStoredTime != that.lastStoredTime) {
             return false;
         }
 
         return expirationTime == that.expirationTime;
-
     }
 
     @Override

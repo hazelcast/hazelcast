@@ -37,6 +37,8 @@ public class ObjectRecordWithStatsTest {
 
     private ObjectRecordWithStats record;
     private ObjectRecordWithStats recordSameAttributes;
+    private ObjectRecordWithStats recordOtherLastStoredTime;
+    private ObjectRecordWithStats recordOtherExpirationTime;
     private ObjectRecordWithStats recordOtherKeyAndValue;
     private DataRecordWithStats dataRecord;
 
@@ -53,6 +55,14 @@ public class ObjectRecordWithStatsTest {
         recordSameAttributes.setKey(key);
         recordSameAttributes.setValue(VALUE);
 
+        recordOtherLastStoredTime = new ObjectRecordWithStats(VALUE);
+        recordOtherLastStoredTime.setKey(key);
+        recordOtherLastStoredTime.onStore();
+
+        recordOtherExpirationTime = new ObjectRecordWithStats(VALUE);
+        recordOtherExpirationTime.setKey(key);
+        recordOtherExpirationTime.setExpirationTime(2342);
+
         recordOtherKeyAndValue = new ObjectRecordWithStats();
         recordOtherKeyAndValue.setKey(otherKey);
         recordOtherKeyAndValue.setValue(otherValue);
@@ -66,6 +76,7 @@ public class ObjectRecordWithStatsTest {
     public void testGetValue() {
         assertEquals(VALUE, record.getValue());
         assertEquals(VALUE, recordSameAttributes.getValue());
+
         assertNotEquals(VALUE, recordOtherKeyAndValue.getValue());
     }
 
@@ -83,6 +94,8 @@ public class ObjectRecordWithStatsTest {
         assertNotEquals(record, new Object());
 
         assertNotEquals(record, dataRecord);
+        assertNotEquals(record, recordOtherLastStoredTime);
+        assertNotEquals(record, recordOtherExpirationTime);
         assertNotEquals(record, recordOtherKeyAndValue);
     }
 
@@ -92,6 +105,8 @@ public class ObjectRecordWithStatsTest {
         assertEquals(record.hashCode(), recordSameAttributes.hashCode());
 
         assertNotEquals(record.hashCode(), dataRecord.hashCode());
+        assertNotEquals(record.hashCode(), recordOtherLastStoredTime.hashCode());
+        assertNotEquals(record.hashCode(), recordOtherExpirationTime.hashCode());
         assertNotEquals(record.hashCode(), recordOtherKeyAndValue.hashCode());
     }
 }
