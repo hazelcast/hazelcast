@@ -1,17 +1,19 @@
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
@@ -22,9 +24,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isA;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class ExtractorHelperTest {
+
+    @Parameterized.Parameters(name = "useClassloader:{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {false},
+                {true}
+        });
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean useClassloader;
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
@@ -35,7 +48,7 @@ public class ExtractorHelperTest {
         MapAttributeConfig config = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
 
         // WHEN
-        ValueExtractor extractor = ExtractorHelper.instantiateExtractor(config);
+        ValueExtractor extractor = instantiateExtractor(config);
 
         // THEN
         assertThat(extractor, instanceOf(IqExtractor.class));
@@ -51,7 +64,7 @@ public class ExtractorHelperTest {
         expected.expectCause(isA(ClassNotFoundException.class));
 
         // WHEN
-        ExtractorHelper.instantiateExtractor(config);
+        instantiateExtractor(config);
     }
 
     @Test
@@ -61,7 +74,28 @@ public class ExtractorHelperTest {
         MapAttributeConfig nameExtractor = new MapAttributeConfig("name", "com.hazelcast.query.impl.getters.ExtractorHelperTest$NameExtractor");
 
         // WHEN
-        Map<String, ValueExtractor> extractors = ExtractorHelper.instantiateExtractors(asList(iqExtractor, nameExtractor));
+        Map<String, ValueExtractor> extractors =
+                instantiateExtractors(asList(iqExtractor, nameExtractor));
+
+        // THEN
+        assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
+        assertThat(extractors.get("name"), instanceOf(NameExtractor.class));
+    }
+
+    @Test
+    public void instantiate_extractors_withCustomClassLoader() {
+        // GIVEN
+        MapAttributeConfig iqExtractor =
+                new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+        MapAttributeConfig nameExtractor =
+                new MapAttributeConfig("name", "com.hazelcast.query.impl.getters.ExtractorHelperTest$NameExtractor");
+        Config config = new Config();
+        // For other custom class loaders (from OSGi bundles, for example)
+        ClassLoader customClassLoader = getClass().getClassLoader();
+        config.setClassLoader(customClassLoader);
+
+        // WHEN
+        Map<String, ValueExtractor> extractors = instantiateExtractors(asList(iqExtractor, nameExtractor));
 
         // THEN
         assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
@@ -79,7 +113,7 @@ public class ExtractorHelperTest {
         expected.expectCause(isA(ClassNotFoundException.class));
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(iqExtractor, nameExtractor));
+        instantiateExtractors(asList(iqExtractor, nameExtractor));
     }
 
     @Test
@@ -92,7 +126,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(iqExtractor, iqExtractorDuplicate));
+        instantiateExtractors(asList(iqExtractor, iqExtractorDuplicate));
     }
 
     @Test
@@ -104,7 +138,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(string));
+        instantiateExtractors(asList(string));
     }
 
     @Test
@@ -116,7 +150,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(string));
+        instantiateExtractors(asList(string));
     }
 
     @Test
@@ -128,7 +162,7 @@ public class ExtractorHelperTest {
         expected.expect(IllegalArgumentException.class);
 
         // WHEN
-        ExtractorHelper.instantiateExtractors(asList(string));
+        instantiateExtractors(asList(string));
     }
 
     @Test
@@ -217,6 +251,16 @@ public class ExtractorHelperTest {
         @Override
         public void extract(Object target, Object arguments, ValueCollector collector) {
         }
+    }
+
+    private ValueExtractor instantiateExtractor(MapAttributeConfig mapAttributeConfig) {
+        return ExtractorHelper.instantiateExtractor(mapAttributeConfig,
+                useClassloader ? this.getClass().getClassLoader() : null);
+    }
+
+    private Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs) {
+        return ExtractorHelper.instantiateExtractors(mapAttributeConfigs,
+                useClassloader ? this.getClass().getClassLoader() : null);
     }
 
 }

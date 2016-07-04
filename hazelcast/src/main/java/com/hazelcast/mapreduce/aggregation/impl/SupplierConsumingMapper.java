@@ -103,7 +103,7 @@ class SupplierConsumingMapper<Key, ValueIn, ValueOut>
         private V value;
 
         public SimpleEntry() {
-            this.extractors = new Extractors(Collections.<MapAttributeConfig>emptyList());
+            this.extractors = new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
         }
 
         @Override
