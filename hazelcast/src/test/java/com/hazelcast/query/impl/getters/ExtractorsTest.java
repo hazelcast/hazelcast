@@ -5,12 +5,16 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 
 import static java.util.Arrays.asList;
@@ -20,9 +24,20 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 public class ExtractorsTest {
+
+    @Parameterized.Parameters(name = "useClassloader:{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {false},
+                {true}
+        });
+    }
+
+    @Parameterized.Parameter(0)
+    public boolean useClassloader;
 
     private Bond bond = new Bond();
 
@@ -55,7 +70,7 @@ public class ExtractorsTest {
     public void getGetter_extractor_cachingWorks() {
         // GIVEN
         MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(asList(config));
+        Extractors extractors = new Extractors(asList(config), useClassloader ? this.getClass().getClassLoader() : null);
 
         // WHEN
         Getter getterFirstInvocation = extractors.getGetter(UNUSED, bond, "gimmePower");
@@ -70,7 +85,7 @@ public class ExtractorsTest {
     public void extract_extractor_correctValue() {
         // GIVEN
         MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
-        Extractors extractors = new Extractors(asList(config));
+        Extractors extractors = new Extractors(asList(config), useClassloader ? this.getClass().getClassLoader() : null);
 
         // WHEN
         Object power = extractors.extract(UNUSED, bond, "gimmePower");
@@ -118,7 +133,7 @@ public class ExtractorsTest {
     }
 
     private static Extractors extractors() {
-        return new Extractors(Collections.<MapAttributeConfig>emptyList());
+        return new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
     }
 
 }
