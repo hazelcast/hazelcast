@@ -48,11 +48,10 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        factory = createHazelcastInstanceFactory(1);
-
         setLoggingLog4j();
         setLogLevel(Level.TRACE);
 
+        factory = createHazelcastInstanceFactory(1);
         hazelcastInstance = factory.newHazelcastInstance();
 
         Node node = getNode(hazelcastInstance);
