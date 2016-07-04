@@ -67,7 +67,6 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
         DataRecordWithStats that = (DataRecordWithStats) o;
 
         return value.equals(that.value);
-
     }
 
     @Override
