@@ -65,11 +65,6 @@ public class HashSlotArray16byteKeyImpl extends HashSlotArrayBase implements Has
     }
 
 
-    @Override
-    public int keySize() {
-        return KEY_SIZE;
-    }
-
     /**
      * {@inheritDoc}
      *

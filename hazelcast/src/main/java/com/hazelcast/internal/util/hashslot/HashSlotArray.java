@@ -62,16 +62,6 @@ import com.hazelcast.nio.Disposable;
 public interface HashSlotArray extends Disposable {
 
     /**
-     * @return the size, in bytes, of the key part of each slot.
-     */
-    int keySize();
-
-    /**
-     * @return the size, in bytes, of the value part of each slot.
-     */
-    int valueSize();
-
-    /**
      * @return current base address of this flyweight
      */
     long address();

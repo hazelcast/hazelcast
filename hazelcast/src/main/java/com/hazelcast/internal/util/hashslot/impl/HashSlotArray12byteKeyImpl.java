@@ -62,11 +62,6 @@ public final class HashSlotArray12byteKeyImpl extends HashSlotArrayBase implemen
                 : "Value length must be 4 plus a positive multiple of 8, but was " + valueLength;
     }
 
-    @Override
-    public int keySize() {
-        return KEY_SIZE;
-    }
-
     /**
      * {@inheritDoc}
      *
@@ -90,22 +85,22 @@ public final class HashSlotArray12byteKeyImpl extends HashSlotArrayBase implemen
     }
 
     @Override protected long key2OfSlot(long baseAddress, long slot) {
-        return mem.getInt(slotBase(baseAddress, slot) + KEY_2_OFFSET);
+        return mem().getInt(slotBase(baseAddress, slot) + KEY_2_OFFSET);
     }
 
     @Override protected void putKey(long baseAddress, long slot, long key1, long key2) {
-        mem.putLong(slotBase(baseAddress, slot) + KEY_1_OFFSET, key1);
-        mem.putInt(slotBase(baseAddress, slot) + KEY_2_OFFSET, (int) key2);
+        mem().putLong(slotBase(baseAddress, slot) + KEY_1_OFFSET, key1);
+        mem().putInt(slotBase(baseAddress, slot) + KEY_2_OFFSET, (int) key2);
     }
 
     @Override
     protected void markUnassigned(long baseAddress, long slot) {
-        mem.putInt(slotBase(baseAddress, slot) + offsetOfUnassignedSentinel, (int) unassignedSentinel);
+        mem().putInt(slotBase(baseAddress, slot) + offsetOfUnassignedSentinel, (int) unassignedSentinel);
     }
 
     @Override
     protected boolean isAssigned(long baseAddress, long slot) {
-        return mem.getInt(slotBase(baseAddress, slot) + offsetOfUnassignedSentinel) != unassignedSentinel;
+        return mem().getInt(slotBase(baseAddress, slot) + offsetOfUnassignedSentinel) != unassignedSentinel;
     }
 
     @Override protected long keyHash(long key1, long key2) {

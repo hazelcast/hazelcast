@@ -60,11 +60,6 @@ public class HashSlotArray8byteKeyImpl extends HashSlotArrayBase implements Hash
                 : "Value size must be a positive multiple of 8, but was " + valueLength;
     }
 
-    @Override
-    public int keySize() {
-        return KEY_SIZE;
-    }
-
     /**
      * {@inheritDoc}
      *
@@ -92,7 +87,7 @@ public class HashSlotArray8byteKeyImpl extends HashSlotArrayBase implements Hash
     }
 
     @Override protected void putKey(long baseAddress, long slot, long key, long ignored) {
-        mem.putLong(slotBase(baseAddress, slot) + KEY_1_OFFSET, key);
+        mem().putLong(slotBase(baseAddress, slot) + KEY_1_OFFSET, key);
     }
 
     @Override protected long keyHash(long key, long ignored) {
