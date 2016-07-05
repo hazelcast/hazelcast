@@ -53,9 +53,14 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     protected final long offsetOfUnassignedSentinel;
 
     /**
+     * Total length of an array slot in bytes.
+     */
+    protected final int slotLength;
+
+    /**
      * Allows access to memory allocated from {@link #malloc}
      */
-    protected final MemoryAccessor mem;
+    private MemoryAccessor mem;
 
     /**
      * Memory allocator
@@ -76,11 +81,6 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
      * The initial capacity of a newly created array.
      */
     private final int initialCapacity;
-
-    /**
-     * Total length of an array slot in bytes.
-     */
-    private final int slotLength;
 
     /**
      * Offset of the value block from the slot's base address.
@@ -118,8 +118,10 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     ) {
         this.unassignedSentinel = unassignedSentinel;
         this.offsetOfUnassignedSentinel = offsetOfUnassignedSentinel;
-        this.malloc = mm.getAllocator();
-        this.mem = mm.getAccessor();
+        if (mm != null) {
+            this.malloc = mm.getAllocator();
+            this.mem = mm.getAccessor();
+        }
         this.auxMalloc = auxMalloc;
         this.valueOffset = keyLength;
         this.valueLength = valueLength;
@@ -130,11 +132,6 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
 
 
     // These public final methods implement the general HashSlotArray interface
-
-    @Override
-    public int valueSize() {
-        return valueLength;
-    }
 
     @Override
     public final long address() {
@@ -212,10 +209,6 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
 
 
     // These protected final methods will be called from the subclasses
-
-    protected final long slotBase(long baseAddr, long slot) {
-        return baseAddr + slotLength * slot;
-    }
 
     protected final long ensure0(long key1, long key2) {
         assertValid();
@@ -302,12 +295,76 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         markUnassigned(baseAddress, slotPrev);
     }
 
+    protected final void allocateArrayAndAdjustFields(long size, long newCapacity) {
+        baseAddress = malloc.allocate(HEADER_SIZE + newCapacity * slotLength) + HEADER_SIZE;
+        setSize(size);
+        setCapacity(newCapacity);
+        setExpansionThreshold(maxSizeForCapacity(newCapacity, loadFactor));
+        markAllUnassigned();
+    }
+
+    protected final void rehash(long oldCapacity, long oldAddress) {
+        final long mask = mask();
+        for (long slot = oldCapacity; --slot >= 0;) {
+            if (!isAssigned(oldAddress, slot)) {
+                continue;
+            }
+            long newSlot = slotHash(oldAddress, slot) & mask;
+            while (isSlotAssigned(newSlot)) {
+                newSlot = (newSlot + 1) & mask;
+            }
+            putKey(baseAddress, newSlot, key1OfSlot(oldAddress, slot), key2OfSlot(oldAddress, slot));
+            final long valueAddrOfOldSlot = slotBase(oldAddress, slot) + valueOffset;
+            mem.copyMemory(valueAddrOfOldSlot, valueAddrOfSlot(newSlot), valueLength);
+        }
+    }
+
+    protected final void setMemMgr(MemoryManager memoryManager) {
+        mem = memoryManager.getAccessor();
+        malloc = memoryManager.getAllocator();
+    }
+
     protected final void assertValid() {
         assert baseAddress >= HEADER_SIZE : "This instance doesn't point to a valid hashtable";
     }
 
+    protected final MemoryAllocator malloc() {
+        return malloc;
+    }
+
+    protected final MemoryAccessor mem() {
+        return mem;
+    }
+
+    protected final long slotBase(long baseAddr, long slot) {
+        return baseAddr + slotLength * slot;
+    }
+
 
     // These protected methods will be overridden in some subclasses
+
+    /**
+     * Allocates a new slot array with the requested size and moves all the
+     * assigned slots from the current array into the new one.
+     */
+    protected void resizeTo(long newCapacity) {
+        final long oldCapacity = capacity();
+        final long oldAllocatedSize = HEADER_SIZE + oldCapacity * slotLength;
+        final MemoryAllocator oldMalloc;
+        final long oldAddress;
+        if (auxMalloc != null) {
+            final long size = size();
+            oldAddress = move(baseAddress, oldCapacity, malloc, auxMalloc);
+            oldMalloc = auxMalloc;
+            auxAllocateAndAdjustFields(oldAddress, size, oldCapacity, newCapacity);
+        } else {
+            oldMalloc = malloc;
+            oldAddress = baseAddress;
+            allocateArrayAndAdjustFields(size(), newCapacity);
+        }
+        rehash(oldCapacity, oldAddress);
+        oldMalloc.free(oldAddress - HEADER_SIZE, oldAllocatedSize);
+    }
 
     protected long key1OfSlot(long baseAddress, long slot) {
         return mem.getLong(slotBase(baseAddress, slot) + KEY_1_OFFSET);
@@ -385,14 +442,6 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         return isAssigned(baseAddress, slot);
     }
 
-    private void allocateArrayAndAdjustFields(long size, long newCapacity) {
-        baseAddress = malloc.allocate(HEADER_SIZE + newCapacity * slotLength) + HEADER_SIZE;
-        setSize(size);
-        setCapacity(newCapacity);
-        setExpansionThreshold(maxSizeForCapacity(newCapacity, loadFactor));
-        markAllUnassigned();
-    }
-
     private void auxAllocateAndAdjustFields(long auxAddress, long size, long oldCapacity, long newCapacity) {
         try {
             allocateArrayAndAdjustFields(size, newCapacity);
@@ -423,40 +472,6 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
         }
     }
 
-    /**
-     * Allocate a new slot array with the requested size and move all the
-     * assigned slots from the current array into the new one.
-     */
-    private void resizeTo(long newCapacity) {
-        final long oldCapacity = capacity();
-        final long oldAllocatedSize = HEADER_SIZE + oldCapacity * slotLength;
-        final MemoryAllocator oldMalloc;
-        final long oldAddress;
-        if (auxMalloc != null) {
-            final long size = size();
-            oldAddress = move(baseAddress, oldCapacity, malloc, auxMalloc);
-            oldMalloc = auxMalloc;
-            auxAllocateAndAdjustFields(oldAddress, size, oldCapacity, newCapacity);
-        } else {
-            oldMalloc = malloc;
-            oldAddress = baseAddress;
-            allocateArrayAndAdjustFields(size(), newCapacity);
-        }
-        final long mask = mask();
-        for (long slot = oldCapacity; --slot >= 0;) {
-            if (isAssigned(oldAddress, slot)) {
-                long newSlot = slotHash(oldAddress, slot) & mask;
-                while (isSlotAssigned(newSlot)) {
-                    newSlot = (newSlot + 1) & mask;
-                }
-                putKey(baseAddress, newSlot, key1OfSlot(oldAddress, slot), key2OfSlot(oldAddress, slot));
-                final long valueAddrOfOldSlot = slotBase(oldAddress, slot) + valueOffset;
-                mem.copyMemory(valueAddrOfOldSlot, valueAddrOfSlot(newSlot), valueLength);
-            }
-        }
-        oldMalloc.free(oldAddress - HEADER_SIZE, oldAllocatedSize);
-    }
-
     private static long maxSizeForCapacity(long capacity, float loadFactor) {
         return Math.max(2, (long) Math.ceil(capacity * loadFactor)) - 1;
     }
@@ -470,7 +485,7 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
 
         long currentSlot;
 
-        protected Cursor() {
+        public Cursor() {
             reset();
         }
 
