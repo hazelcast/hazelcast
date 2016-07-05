@@ -35,6 +35,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Test;
@@ -436,6 +437,7 @@ public class TopicTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Repeat(10)
     public void removeMessageListener() throws InterruptedException {
         String topicName = "removeMessageListener" + generateRandomString(5);
 
@@ -443,57 +445,31 @@ public class TopicTest extends HazelcastTestSupport {
             HazelcastInstance instance = createHazelcastInstance();
             ITopic<String> topic = instance.getTopic(topicName);
 
-            final CountDownLatch latch = new CountDownLatch(2);
-            final CountDownLatch cp = new CountDownLatch(1);
+            final AtomicInteger onMessageCount = new AtomicInteger(0);
+            final CountDownLatch onMessageInvoked = new CountDownLatch(1);
 
             MessageListener<String> messageListener = new MessageListener<String>() {
                 public void onMessage(Message<String> msg) {
-                    latch.countDown();
-                    cp.countDown();
-
+                    onMessageCount.incrementAndGet();
+                    onMessageInvoked.countDown();
                 }
             };
 
             final String message = "message_" + messageListener.hashCode() + "_";
             final String id = topic.addMessageListener(messageListener);
             topic.publish(message + "1");
-            cp.await();
-            topic.removeMessageListener(id);
+            onMessageInvoked.await();
+            assertTrue(topic.removeMessageListener(id));
             topic.publish(message + "2");
 
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() {
-                    assertEquals(1, latch.getCount());
+                    assertEquals(1, onMessageCount.get());
                 }
             });
         } finally {
             shutdownNodeFactory();
-        }
-    }
-
-    @Test
-    public void test10TimesRemoveMessageListener() throws InterruptedException {
-        ExecutorService ex = Executors.newFixedThreadPool(1);
-        final CountDownLatch latch = new CountDownLatch(10);
-
-        try {
-            ex.execute(new Runnable() {
-                public void run() {
-                    for (int i = 0; i < 10; i++) {
-                        try {
-                            removeMessageListener();
-                            latch.countDown();
-                        } catch (InterruptedException e) {
-                            return;
-                        }
-                    }
-                }
-            });
-
-            assertTrue(latch.await(30, TimeUnit.SECONDS));
-        } finally {
-            ex.shutdownNow();
         }
     }
 
