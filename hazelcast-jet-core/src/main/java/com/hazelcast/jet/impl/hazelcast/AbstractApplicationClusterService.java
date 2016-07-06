@@ -18,15 +18,15 @@ package com.hazelcast.jet.impl.hazelcast;
 
 
 import com.hazelcast.core.Member;
+import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.counters.Accumulator;
+import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.application.ApplicationClusterService;
 import com.hazelcast.jet.impl.application.ApplicationStateManager;
 import com.hazelcast.jet.impl.application.LocalizationResource;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.container.CounterKey;
-import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.dag.DAG;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -35,8 +35,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 
-public abstract class AbstractApplicationClusterService<PayLoad>
-        extends OperationExecutorService<PayLoad>
+public abstract class AbstractApplicationClusterService<Payload>
+        extends OperationExecutorService<Payload>
         implements ApplicationClusterService {
     protected final String name;
     protected final ExecutorService executorService;
@@ -82,36 +82,36 @@ public abstract class AbstractApplicationClusterService<PayLoad>
 
     protected abstract <T> T toObject(com.hazelcast.nio.serialization.Data data);
 
-    protected abstract Map<CounterKey, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception;
+    protected abstract Map<String, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception;
 
     @SuppressWarnings("unchecked")
-    public Map<CounterKey, Accumulator> getAccumulators() {
+    public Map<String, Accumulator> getAccumulators() {
         Set<Member> members = this.getMembers();
-        Map<CounterKey, Accumulator> cache = new HashMap<CounterKey, Accumulator>();
+        Map<String, Accumulator> cache = new HashMap<String, Accumulator>();
 
         try {
             for (Member member : members) {
                 Callable callable =
                         createInvocation(
                                 member,
-                                new InvocationFactory<PayLoad>() {
+                                new InvocationFactory<Payload>() {
                                     @Override
-                                    public PayLoad payLoad() {
+                                    public Payload payload() {
                                         return createAccumulatorsInvoker();
                                     }
                                 }
                         );
 
-                Map<CounterKey, Accumulator> memberResponse = readAccumulatorsResponse(callable);
+                Map<String, Accumulator> memberResponse = readAccumulatorsResponse(callable);
 
-                for (Map.Entry<CounterKey, Accumulator> entry : memberResponse.entrySet()) {
-                    CounterKey counterKey = entry.getKey();
+                for (Map.Entry<String, Accumulator> entry : memberResponse.entrySet()) {
+                    String key = entry.getKey();
                     Accumulator accumulator = entry.getValue();
 
-                    Accumulator collector = cache.get(counterKey);
+                    Accumulator collector = cache.get(key);
 
                     if (collector == null) {
-                        cache.put(counterKey, accumulator);
+                        cache.put(key, accumulator);
                     } else {
                         collector.merge(accumulator);
                     }
@@ -121,6 +121,6 @@ public abstract class AbstractApplicationClusterService<PayLoad>
             throw JetUtil.reThrow(e);
         }
 
-        return cache;
+        return Collections.unmodifiableMap(cache);
     }
 }

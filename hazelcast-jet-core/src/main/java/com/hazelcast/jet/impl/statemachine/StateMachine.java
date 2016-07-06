@@ -60,7 +60,7 @@ public interface StateMachine
      * Executes transition of the state-machine in accordance with request;
      *
      * @param request - corresponding request;
-     * @param <P>     - type of the payLoad;
+     * @param <P>     - type of the payload;
      * @return - awaiting future with results of transition;
      */
     <P> ICompletableFuture<Output> handleRequest(StateMachineRequest<Input, P> request);

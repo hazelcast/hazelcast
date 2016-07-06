@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import java.io.PrintStream;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -42,7 +43,7 @@ public class CombinedJetException extends RuntimeException {
      * @return combined list of errors
      */
     public List<Throwable> getErrors() {
-        return errors;
+        return Collections.unmodifiableList(errors);
     }
 
     /**

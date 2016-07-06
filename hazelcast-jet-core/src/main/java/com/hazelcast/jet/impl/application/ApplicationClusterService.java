@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.application;
 
 import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 
@@ -83,5 +82,5 @@ public interface ApplicationClusterService {
     /**
      * @return accumulators
      */
-    Map<CounterKey, Accumulator> getAccumulators();
+    Map<String, Accumulator> getAccumulators();
 }

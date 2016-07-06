@@ -23,7 +23,7 @@ public interface SleepingStrategy {
     /**
      * Awaits next amount of nanoseconds depending on if;
      *
-     * @param wasPayLoad value;
+     * @param wasPayload value;
      */
-    void await(boolean wasPayLoad);
+    void await(boolean wasPayload);
 }

@@ -21,7 +21,6 @@ import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.application.ApplicationListener;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ContainerListener;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
@@ -40,7 +39,7 @@ public class DefaultContainerContext implements ContainerContext {
     private final NodeEngine nodeEngine;
     private final JetTupleFactory tupleFactory;
     private final ApplicationContext applicationContext;
-    private final ConcurrentMap<CounterKey, Accumulator> accumulatorMap;
+    private final ConcurrentMap<String, Accumulator> accumulatorMap;
 
     public DefaultContainerContext(NodeEngine nodeEngine,
                                    ApplicationContext applicationContext,
@@ -52,7 +51,7 @@ public class DefaultContainerContext implements ContainerContext {
         this.nodeEngine = nodeEngine;
         this.tupleFactory = tupleFactory;
         this.applicationContext = applicationContext;
-        this.accumulatorMap = new ConcurrentHashMap<CounterKey, Accumulator>();
+        this.accumulatorMap = new ConcurrentHashMap<String, Accumulator>();
         applicationContext.registerAccumulators(this.accumulatorMap);
     }
 
@@ -133,13 +132,13 @@ public class DefaultContainerContext implements ContainerContext {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V, R extends Serializable> Accumulator<V, R> getAccumulator(CounterKey counterKey) {
-        return this.accumulatorMap.get(counterKey);
+    public <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key) {
+        return this.accumulatorMap.get(key);
     }
 
     @Override
-    public <V, R extends Serializable> void setAccumulator(CounterKey counterKey,
+    public <V, R extends Serializable> void setAccumulator(String key,
                                                            Accumulator<V, R> accumulator) {
-        this.accumulatorMap.put(counterKey, accumulator);
+        this.accumulatorMap.put(key, accumulator);
     }
 }

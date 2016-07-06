@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.executor;
 
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.ObjectReaderFactory;
@@ -42,22 +41,22 @@ public interface TaskContext {
     /**
      * Accumulator for the statistics gathering
      *
-     * @param counterKey key of the accumulator
-     * @param <V>        type of the accumulator's input value
-     * @param <R>        type of the accumulator's output value
+     * @param key key of the accumulator
+     * @param <V> type of the accumulator's input value
+     * @param <R> type of the accumulator's output value
      * @return corresponding accumulator
      */
-    <V, R extends Serializable> Accumulator<V, R> getAccumulator(CounterKey counterKey);
+    <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key);
 
     /**
-     * Set new accumulator assigned to corresponding counterKey
+     * Set new accumulator assigned to corresponding key
      *
-     * @param counterKey  key to be assigned
+     * @param key         key to be assigned
      * @param accumulator corresponding accumulator
      * @param <V>         type of the accumulator's input value
      * @param <R>         type of the accumulator's output value
      */
-    <V, R extends Serializable> void setAccumulator(CounterKey counterKey, Accumulator<V, R> accumulator);
+    <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator);
 
     /**
      * Register dataType for serialization purposes

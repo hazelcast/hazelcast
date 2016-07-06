@@ -32,7 +32,7 @@ public class NullObjectWriter implements ObjectWriter<Object> {
     }
 
     @Override
-    public void writePayLoad(Object object,
+    public void writePayload(Object object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeObject(object);
@@ -43,6 +43,6 @@ public class NullObjectWriter implements ObjectWriter<Object> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

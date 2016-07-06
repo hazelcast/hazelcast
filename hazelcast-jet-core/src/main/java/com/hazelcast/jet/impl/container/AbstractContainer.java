@@ -21,11 +21,9 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.processor.context.DefaultContainerContext;
-import com.hazelcast.jet.impl.statemachine.ContainerStateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.spi.NodeEngine;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public abstract class AbstractContainer
         <SI extends ContainerEvent,
@@ -35,13 +33,11 @@ public abstract class AbstractContainer
     private final int id;
 
     private final NodeEngine nodeEngine;
-    private final List<ProcessingContainer> followers;
-    private final List<ProcessingContainer> predecessors;
     private final ContainerContext containerContext;
     private final ApplicationContext applicationContext;
-    private final ContainerStateMachine<SI, SS, SO> stateMachine;
+    private final StateMachine<SI, SS, SO> stateMachine;
 
-    public AbstractContainer(ContainerStateMachineFactory<SI, SS, SO> stateMachineFactory,
+    public AbstractContainer(StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
                              NodeEngine nodeEngine,
                              ApplicationContext applicationContext,
                              JetTupleFactory tupleFactory) {
@@ -49,7 +45,7 @@ public abstract class AbstractContainer
     }
 
     public AbstractContainer(Vertex vertex,
-                             ContainerStateMachineFactory<SI, SS, SO> stateMachineFactory,
+                             StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
                              NodeEngine nodeEngine,
                              ApplicationContext applicationContext,
                              JetTupleFactory tupleFactory) {
@@ -57,8 +53,6 @@ public abstract class AbstractContainer
         String name = vertex == null ? applicationContext.getName() : vertex.getName();
         this.stateMachine = stateMachineFactory.newStateMachine(name, this, nodeEngine, applicationContext);
         this.applicationContext = applicationContext;
-        this.followers = new ArrayList<ProcessingContainer>();
-        this.predecessors = new ArrayList<ProcessingContainer>();
         this.id = applicationContext.getContainerIDGenerator().incrementAndGet();
         this.containerContext = new DefaultContainerContext(nodeEngine, applicationContext, this.id, vertex, tupleFactory);
     }
@@ -69,18 +63,8 @@ public abstract class AbstractContainer
     }
 
     @Override
-    public ContainerStateMachine<SI, SS, SO> getStateMachine() {
+    public StateMachine<SI, SS, SO> getStateMachine() {
         return this.stateMachine;
-    }
-
-    @Override
-    public void addFollower(ProcessingContainer container) {
-        this.followers.add(container);
-    }
-
-    @Override
-    public void addPredecessor(ProcessingContainer container) {
-        this.predecessors.add(container);
     }
 
     @Override
@@ -93,16 +77,6 @@ public abstract class AbstractContainer
     }
 
     protected abstract void wakeUpExecutor();
-
-    @Override
-    public List<ProcessingContainer> getFollowers() {
-        return this.followers;
-    }
-
-    @Override
-    public List<ProcessingContainer> getPredecessors() {
-        return this.predecessors;
-    }
 
     @Override
     public ApplicationContext getApplicationContext() {

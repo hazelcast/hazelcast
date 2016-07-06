@@ -32,7 +32,7 @@ public class LongWriter implements ObjectWriter<Long> {
     }
 
     @Override
-    public void writePayLoad(Long object,
+    public void writePayload(Long object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeLong(object);
@@ -43,6 +43,6 @@ public class LongWriter implements ObjectWriter<Long> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

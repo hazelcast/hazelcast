@@ -32,7 +32,7 @@ public class ByteWriter implements ObjectWriter<Byte> {
     }
 
     @Override
-    public void writePayLoad(Byte object,
+    public void writePayload(Byte object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.write(object);
@@ -43,6 +43,6 @@ public class ByteWriter implements ObjectWriter<Byte> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

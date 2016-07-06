@@ -29,7 +29,7 @@ public interface StateMachineRequest<E extends StateMachineEvent, P> {
     E getContainerEvent();
 
     /**
-     * @return - payLoad;
+     * @return - payload;
      */
-    P getPayLoad();
+    P getPayload();
 }

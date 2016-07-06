@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
@@ -92,14 +92,17 @@ public class DefaultSocketReader
             return false;
         }
 
-        if (!this.socketAssigned) {
-            return true;
+        if (socketAssigned) {
+            if (processRead(payload)) {
+                return true;
+            }
+        } else {
+            if (waitingForFinish) {
+                finished = true;
+            } else {
+                return true;
+            }
         }
-
-        if (processRead(payload)) {
-            return true;
-        }
-
         return checkFinished();
     }
 

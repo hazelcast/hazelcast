@@ -23,7 +23,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
 import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
 import com.hazelcast.jet.impl.executor.SharedApplicationExecutor;
-import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
@@ -42,7 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class JetApplicationManagerImpl implements JetApplicationManager {
+public class JetApplicationManager {
     public static final int MAX_PORT = 0xFFFF;
     private final NodeEngine nodeEngine;
     private final Address localJetAddress;
@@ -60,19 +59,19 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
     private final IFunction<String, ApplicationContext> function = new IFunction<String, ApplicationContext>() {
         @Override
         public ApplicationContext apply(String name) {
-            return new ApplicationContextImpl(
+            return new ApplicationContext(
                     name,
                     nodeEngine,
                     localJetAddress,
                     threadLocal.get(),
-                    JetApplicationManagerImpl.this
+                    JetApplicationManager.this
             );
         }
     };
     private final ILogger logger;
     private final JetConfig config;
 
-    public JetApplicationManagerImpl(final NodeEngine nodeEngine) {
+    public JetApplicationManager(final NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = this.getNodeEngine().getLogger(JetApplicationManager.class);
         this.config = JetUtil.resolveDefaultJetConfig(nodeEngine);
@@ -121,6 +120,7 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
                     public void stateChanged(LifecycleEvent event) {
                         if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
                             try {
+                                serverSocketChannel.close();
                                 networkExecutor.shutdown();
                                 acceptorExecutor.shutdown();
                                 processingExecutor.shutdown();
@@ -149,12 +149,13 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
         try {
             int port = config.getPort();
             while (port <= MAX_PORT) {
-                logger.info("Trying to bind " + host + ":" + port);
+                logger.fine("Trying to bind " + host + ":" + port);
                 ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
                 try {
                     serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
                     serverSocketChannel.bind(new InetSocketAddress(host, port));
                     serverSocketChannel.configureBlocking(false);
+                    logger.info("Jet is listening on " + host + ":" + port);
                     return serverSocketChannel;
                 } catch (java.nio.channels.AlreadyBoundException | java.net.BindException e) {
                     serverSocketChannel.close();
@@ -171,7 +172,6 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
         }
     }
 
-    @Override
     public ApplicationContext getOrCreateApplicationContext(String name,
                                                             ApplicationConfig config) {
         this.threadLocal.set(config);
@@ -187,7 +187,6 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
         }
     }
 
-    @Override
     public NodeEngine getNodeEngine() {
         return this.nodeEngine;
     }
@@ -198,37 +197,30 @@ public class JetApplicationManagerImpl implements JetApplicationManager {
         this.processingExecutor.wakeUp();
     }
 
-    @Override
     public void destroyApplication(String name) {
         this.applicationContexts.remove(name);
     }
 
-    @Override
     public Address getLocalJetAddress() {
         return this.localJetAddress;
     }
 
-    @Override
     public SharedApplicationExecutor getNetworkExecutor() {
         return this.networkExecutor;
     }
 
-    @Override
     public SharedApplicationExecutor getProcessingExecutor() {
         return this.processingExecutor;
     }
 
-    @Override
     public Collection<ApplicationContext> getApplicationContexts() {
         return this.applicationContexts.values();
     }
 
-    @Override
     public SharedApplicationExecutor getAcceptorExecutor() {
         return this.acceptorExecutor;
     }
 
-    @Override
     public ApplicationContext getApplicationContext(String name) {
         return this.applicationContexts.get(name);
     }

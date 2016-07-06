@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.hazelcast;
 
-import com.hazelcast.jet.impl.JetApplicationManager;
+import com.hazelcast.jet.impl.application.JetApplicationManager;
 import com.hazelcast.spi.RemoteService;
 
 public interface JetService extends RemoteService {

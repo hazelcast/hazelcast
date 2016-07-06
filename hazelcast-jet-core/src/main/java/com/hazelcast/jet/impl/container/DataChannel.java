@@ -16,18 +16,51 @@
 
 package com.hazelcast.jet.impl.container;
 
+import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.impl.actor.ComposedActor;
+import com.hazelcast.jet.impl.actor.ObjectActor;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public interface DataChannel {
-    List<ComposedActor> getActors();
+public class DataChannel {
+    private final Edge edge;
+    private final boolean isShuffled;
+    private final List<ComposedActor> actors;
+    private final ProcessingContainer sourceContainer;
+    private final ProcessingContainer targetContainer;
 
-    ProcessingContainer getSourceContainer();
+    public DataChannel(ProcessingContainer sourceContainer,
+                       ProcessingContainer targetContainer,
+                       Edge edge) {
+        this.edge = edge;
 
-    ProcessingContainer getTargetContainer();
+        this.sourceContainer = sourceContainer;
+        this.targetContainer = targetContainer;
 
-    boolean isShuffled();
+        this.isShuffled = edge.isShuffled();
+        this.actors = new ArrayList<>();
 
-    void close();
+        init();
+    }
+
+    private void init() {
+        for (ContainerTask containerTask : this.sourceContainer.getContainerTasks()) {
+            this.actors.add(containerTask.registerOutputChannel(this, this.edge, this.targetContainer));
+        }
+    }
+
+    public List<ComposedActor> getActors() {
+        return this.actors;
+    }
+
+    public boolean isShuffled() {
+        return this.isShuffled;
+    }
+
+    public void close() {
+        for (ObjectActor actor : getActors()) {
+            actor.handleProducerCompleted();
+        }
+    }
 }

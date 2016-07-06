@@ -38,7 +38,7 @@ public class SenderObjectWriter implements ObjectWriter<ProducerInputStream<Obje
     }
 
     @Override
-    public void writePayLoad(ProducerInputStream<Object> object,
+    public void writePayload(ProducerInputStream<Object> object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         write(object, objectDataOutput, objectWriterFactory);

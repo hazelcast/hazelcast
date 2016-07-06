@@ -18,23 +18,23 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.application.JetApplicationManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
 
-public class InitApplicationRequestOperation extends JetOperation {
+public class InitApplicationOperation extends JetOperation {
     private ApplicationConfig config;
 
     @SuppressWarnings("unused")
-    public InitApplicationRequestOperation() {
+    public InitApplicationOperation() {
     }
 
-    public InitApplicationRequestOperation(String name,
-                                           ApplicationConfig config) {
+    public InitApplicationOperation(String name,
+                                    ApplicationConfig config) {
         super(name);
         this.config = config;
     }

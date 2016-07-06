@@ -21,17 +21,16 @@ import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerE
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.impl.executor.TaskExecutor;
-import com.hazelcast.jet.impl.statemachine.ProcessingContainerStateMachine;
+import com.hazelcast.jet.impl.statemachine.AbstractStateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.impl.statemachine.AbstractStateMachineImpl;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Map;
 
-public class ProcessingContainerStateMachineImpl extends
-        AbstractStateMachineImpl<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>
-        implements ProcessingContainerStateMachine {
+public class ProcessingContainerStateMachine extends
+        AbstractStateMachine<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse> {
+
     private static final Map<ProcessingContainerState, Map<ProcessingContainerEvent, ProcessingContainerState>>
             STATE_TRANSITION_MATRIX =
             LinkedMapBuilder.<ProcessingContainerState, Map<ProcessingContainerEvent, ProcessingContainerState>>builder().
@@ -64,10 +63,10 @@ public class ProcessingContainerStateMachineImpl extends
                     ).
                     build();
 
-    public ProcessingContainerStateMachineImpl(String name,
-                                               StateMachineRequestProcessor<ProcessingContainerEvent> processor,
-                                               NodeEngine nodeEngine,
-                                               ApplicationContext applicationContext) {
+    public ProcessingContainerStateMachine(String name,
+                                           StateMachineRequestProcessor<ProcessingContainerEvent> processor,
+                                           NodeEngine nodeEngine,
+                                           ApplicationContext applicationContext) {
         super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, applicationContext);
     }
 

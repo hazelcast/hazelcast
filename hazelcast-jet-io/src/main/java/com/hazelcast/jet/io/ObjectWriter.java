@@ -45,7 +45,7 @@ public interface ObjectWriter<T> {
      * @param objectWriterFactory - factory for the object writers;
      * @throws IOException if any exception
      */
-    void writePayLoad(T object, ObjectDataOutput objectDataOutput, ObjectWriterFactory objectWriterFactory)
+    void writePayload(T object, ObjectDataOutput objectDataOutput, ObjectWriterFactory objectWriterFactory)
             throws IOException;
 
     /**

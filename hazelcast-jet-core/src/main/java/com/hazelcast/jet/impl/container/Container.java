@@ -16,16 +16,16 @@
 
 package com.hazelcast.jet.impl.container;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.spi.NodeEngine;
-
-import java.util.List;
 
 /**
  * Interface which represents abstract JET-container;
  * Containers:
- *
+ * <p/>
  * <pre>
  *     1) Application master;
  *     2) Data processing container;
@@ -39,8 +39,7 @@ public interface Container
         <SI extends ContainerEvent,
                 SS extends ContainerState,
                 SO extends ContainerResponse> extends
-        ContainerRequestHandler<SI, SO>,
-        ContainerStateMachineRequestProcessor<SI> {
+        StateMachineRequestProcessor<SI> {
     /**
      * @return - Hazelcast nodeEngine object;
      */
@@ -57,30 +56,6 @@ public interface Container
     ApplicationContext getApplicationContext();
 
     /**
-     * Register followed container;
-     *
-     * @param container - followed container;
-     */
-    void addFollower(ProcessingContainer container);
-
-    /**
-     * Register previous container;
-     *
-     * @param container - corresnponding container;
-     */
-    void addPredecessor(ProcessingContainer container);
-
-    /**
-     * @return - list of containers followed by current container;
-     */
-    List<ProcessingContainer> getFollowers();
-
-    /**
-     * @return - list of previous containers;
-     */
-    List<ProcessingContainer> getPredecessors();
-
-    /**
      * @return - context of container;
      */
     ContainerContext getContainerContext();
@@ -89,4 +64,13 @@ public interface Container
      * @return - container's identifier;
      */
     int getID();
+
+    /**
+     * Handle's container's request with state-machine's input event;
+     *
+     * @param event - corresponding request;
+     * @param <P>   - type of request payload;
+     * @return - awaiting future;
+     */
+    <P> ICompletableFuture<SO> handleContainerRequest(ContainerRequest<SI, P> event);
 }

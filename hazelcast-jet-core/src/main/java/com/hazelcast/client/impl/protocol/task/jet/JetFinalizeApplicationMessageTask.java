@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetFinalizeApplicationCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.FinalizationApplicationRequestOperation;
+import com.hazelcast.jet.impl.operation.FinalizeApplicationOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 
@@ -46,7 +46,7 @@ public class JetFinalizeApplicationMessageTask
 
     @Override
     protected JetOperation prepareOperation() {
-        return new FinalizationApplicationRequestOperation(getApplicationName());
+        return new FinalizeApplicationOperation(getApplicationName());
     }
 
     @Override

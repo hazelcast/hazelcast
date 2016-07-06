@@ -17,13 +17,15 @@
 package com.hazelcast.jet.impl.container;
 
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.statemachine.StateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.spi.NodeEngine;
 
 public abstract class AbstractServiceContainer
         <SI extends ContainerEvent,
                 SS extends ContainerState,
                 SO extends ContainerResponse> extends AbstractContainer<SI, SS, SO> {
-    public AbstractServiceContainer(ContainerStateMachineFactory<SI, SS, SO> stateMachineFactory,
+    public AbstractServiceContainer(StateMachineFactory<SI, StateMachine<SI, SS, SO>> stateMachineFactory,
                                     NodeEngine nodeEngine,
                                     ApplicationContext applicationContext) {
         super(stateMachineFactory, nodeEngine, applicationContext, null);

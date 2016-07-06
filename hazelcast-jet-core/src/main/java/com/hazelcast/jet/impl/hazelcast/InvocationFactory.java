@@ -30,5 +30,5 @@ package com.hazelcast.jet.impl.hazelcast;
  * @param <INSTANCE> - type of the created instance;
  */
 public interface InvocationFactory<INSTANCE> {
-    INSTANCE payLoad();
+    INSTANCE payload();
 }

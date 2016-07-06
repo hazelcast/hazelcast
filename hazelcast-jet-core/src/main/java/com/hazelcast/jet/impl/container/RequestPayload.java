@@ -20,14 +20,14 @@ import com.hazelcast.jet.impl.statemachine.StateMachineEvent;
 import com.hazelcast.jet.impl.statemachine.StateMachineOutput;
 import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 
-public class RequestPayLoad<SI extends StateMachineEvent, SO extends StateMachineOutput> {
+public class RequestPayload<SI extends StateMachineEvent, SO extends StateMachineOutput> {
     private final BasicCompletableFuture<SO> future;
-    private final Object payLoad;
+    private final Object payload;
     private final SI event;
 
-    public RequestPayLoad(SI event, BasicCompletableFuture<SO> future, Object payLoad) {
+    public RequestPayload(SI event, BasicCompletableFuture<SO> future, Object payload) {
         this.event = event;
-        this.payLoad = payLoad;
+        this.payload = payload;
         this.future = future;
     }
 
@@ -39,7 +39,7 @@ public class RequestPayLoad<SI extends StateMachineEvent, SO extends StateMachin
         return event;
     }
 
-    public Object getPayLoad() {
-        return payLoad;
+    public Object getPayload() {
+        return payload;
     }
 }

@@ -33,7 +33,7 @@ public class ContainerFinalizedRequest implements ContainerRequest<ProcessingCon
     }
 
     @Override
-    public ProcessingContainer getPayLoad() {
+    public ProcessingContainer getPayload() {
         return this.processingContainer;
     }
 }

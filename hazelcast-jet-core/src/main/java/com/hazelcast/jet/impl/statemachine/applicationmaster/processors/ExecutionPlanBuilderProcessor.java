@@ -21,15 +21,14 @@ import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
-import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.ApplicationMaster;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.DataChannel;
-import com.hazelcast.jet.impl.container.DefaultDataChannel;
 import com.hazelcast.jet.impl.container.DefaultProcessingContainer;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.data.tuple.DefaultJetTupleFactory;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerStartRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.processor.ContainerProcessor;
@@ -49,7 +48,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<DAG> {
+public class ExecutionPlanBuilderProcessor implements ContainerPayloadProcessor<DAG> {
     private final NodeEngine nodeEngine;
     private final JetTupleFactory tupleFactory;
     private final ClassLoader applicationClassLoader;
@@ -94,7 +93,6 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
     public void process(DAG dag) throws Exception {
         checkNotNull(dag);
 
-
         logger.fine("Processing DAG " + dag.getName());
 
         //Process dag and container's chain building
@@ -131,10 +129,6 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
         long secondsToAwait =
                 applicationConfig.getSecondsToAwait();
 
-        for (ProcessingContainer container : roots) {
-            this.applicationMaster.addFollower(container);
-        }
-
         this.applicationMaster.deployNetworkEngine();
 
         logger.fine("Deployed network engine for DAG " + dag.getName());
@@ -154,10 +148,7 @@ public class ExecutionPlanBuilderProcessor implements ContainerPayLoadProcessor<
                                  Edge edge
     ) {
         if ((container != null) && (next != null)) {
-            DataChannel channel = new DefaultDataChannel(container, next, edge);
-
-            container.addFollower(next);
-            next.addPredecessor(container);
+            DataChannel channel = new DataChannel(container, next, edge);
 
             container.addOutputChannel(channel);
             next.addInputChannel(channel);

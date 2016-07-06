@@ -143,14 +143,14 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
     protected boolean execute() throws Exception {
         checkIncoming();
 
-        boolean payLoad = false;
+        boolean payload = false;
         int idx = 0;
 
         while (idx < this.tasks.size()) {
             Task task = this.tasks.get(idx);
 
             boolean activeTask = task.executeTask(this.payload);
-            payLoad = payLoad || this.payload.produced();
+            payload = payload || this.payload.produced();
 
             if (!activeTask) {
                 this.workingTaskCount.decrementAndGet();
@@ -168,7 +168,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
             }
         }
 
-        return payLoad;
+        return payload;
     }
 
     protected void onTaskDeactivation() {
@@ -177,21 +177,21 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
 
     public void run() {
         this.workingThread = Thread.currentThread();
-        boolean wasPayLoad = false;
+        boolean wasPayload = false;
 
         try {
             while (!this.shutdown) {
-                boolean payLoad = false;
+                boolean payload = false;
 
                 try {
-                    payLoad = execute();
+                    payload = execute();
 
-                    if (!payLoad) {
+                    if (!payload) {
                         if (this.shutdown) {
                             break;
                         }
 
-                        this.sleepingStrategy.await(wasPayLoad);
+                        this.sleepingStrategy.await(wasPayload);
 
                         if (tasks.size() == 0) {
                             if (this.tasks.size() > 0) {
@@ -208,7 +208,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
                     this.logger.warning(e.getMessage(), e);
                 }
 
-                wasPayLoad = payLoad;
+                wasPayload = payload;
             }
         } finally {
             this.tasks.clear();

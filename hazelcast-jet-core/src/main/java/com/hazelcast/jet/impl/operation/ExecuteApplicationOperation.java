@@ -19,18 +19,18 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
 
 
-public class ExecutionApplicationRequestOperation extends AsyncJetOperation {
+public class ExecuteApplicationOperation extends AsyncJetOperation {
 
     @SuppressWarnings("unused")
-    public ExecutionApplicationRequestOperation() {
+    public ExecuteApplicationOperation() {
     }
 
-    public ExecutionApplicationRequestOperation(String name) {
+    public ExecuteApplicationOperation(String name) {
         super(name);
     }
 
@@ -58,7 +58,7 @@ public class ExecutionApplicationRequestOperation extends AsyncJetOperation {
 
                 @Override
                 public void onFailure(Throwable throwable) {
-
+                    getLogger().info("Operation failed");
                     sendResponse(throwable);
                 }
             });

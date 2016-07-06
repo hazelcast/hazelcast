@@ -18,19 +18,17 @@ package com.hazelcast.jet.impl.hazelcast.client;
 
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.application.ApplicationClusterService;
-import com.hazelcast.jet.impl.application.ApplicationProxy;
-import com.hazelcast.jet.impl.application.Initable;
-import com.hazelcast.jet.impl.application.DefaultApplicationStateManager;
-import com.hazelcast.jet.impl.application.LocalizationResourceType;
-import com.hazelcast.jet.impl.util.JetThreadFactory;
-import com.hazelcast.jet.impl.application.ApplicationStateManager;
-import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
-import com.hazelcast.jet.impl.application.LocalizationResource;
+import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.application.ApplicationClusterService;
+import com.hazelcast.jet.impl.application.ApplicationStateManager;
+import com.hazelcast.jet.impl.application.Initable;
+import com.hazelcast.jet.impl.application.LocalizationResource;
+import com.hazelcast.jet.impl.application.LocalizationResourceType;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.io.IOException;
@@ -45,16 +43,16 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class JetApplicationProxy extends ClientProxy implements ApplicationProxy, Initable {
+public class ClientApplicationProxy extends ClientProxy implements Application, Initable {
     private final Set<LocalizationResource> localizedResources;
     private final ApplicationStateManager applicationStateManager;
     private ApplicationClusterService applicationClusterService;
 
-    public JetApplicationProxy(String serviceName,
-                               String name) {
+    public ClientApplicationProxy(String serviceName,
+                                  String name) {
         super(serviceName, name);
         this.localizedResources = new HashSet<LocalizationResource>();
-        this.applicationStateManager = new DefaultApplicationStateManager(name);
+        this.applicationStateManager = new ApplicationStateManager(name);
     }
 
     protected void onInitialize() {
@@ -144,7 +142,7 @@ public class JetApplicationProxy extends ClientProxy implements ApplicationProxy
     }
 
     @Override
-    public Map<CounterKey, Accumulator> getAccumulators() {
+    public Map<String, Accumulator> getAccumulators() {
         return this.applicationClusterService.getAccumulators();
     }
 

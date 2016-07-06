@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.statemachine.container.processors;
 
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
-public class ContainerStartProcessor implements ContainerPayLoadProcessor<Dummy> {
+public class ContainerStartProcessor implements ContainerPayloadProcessor<Dummy> {
     private final ProcessingContainer container;
 
     public ContainerStartProcessor(ProcessingContainer container) {
@@ -28,7 +28,7 @@ public class ContainerStartProcessor implements ContainerPayLoadProcessor<Dummy>
     }
 
     @Override
-    public void process(Dummy payLoad) throws Exception {
+    public void process(Dummy payload) throws Exception {
         this.container.start();
     }
 }

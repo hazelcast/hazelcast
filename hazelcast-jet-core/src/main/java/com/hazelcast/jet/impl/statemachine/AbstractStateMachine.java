@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.statemachine;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.RequestPayLoad;
+import com.hazelcast.jet.impl.container.RequestPayload;
 import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.executor.TaskExecutor;
@@ -33,7 +33,7 @@ import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
-public abstract class AbstractStateMachineImpl
+public abstract class AbstractStateMachine
         <Input extends StateMachineEvent,
                 State extends StateMachineState,
                 Output extends StateMachineOutput> implements StateMachine<Input, State, Output> {
@@ -45,14 +45,14 @@ public abstract class AbstractStateMachineImpl
     private final Map<State, Map<Input, State>> stateTransitionMatrix;
     private final ApplicationContext applicationContext;
     private final StateMachineRequestProcessor<Input> processor;
-    private final BlockingQueue<RequestPayLoad<Input, Output>> eventsQueue =
-            new LinkedBlockingDeque<RequestPayLoad<Input, Output>>();
+    private final BlockingQueue<RequestPayload<Input, Output>> eventsQueue =
+            new LinkedBlockingDeque<>();
 
-    protected AbstractStateMachineImpl(String name,
-                                       Map<State, Map<Input, State>> stateTransitionMatrix,
-                                       StateMachineRequestProcessor<Input> processor,
-                                       NodeEngine nodeEngine,
-                                       ApplicationContext applicationContext) {
+    protected AbstractStateMachine(String name,
+                                   Map<State, Map<Input, State>> stateTransitionMatrix,
+                                   StateMachineRequestProcessor<Input> processor,
+                                   NodeEngine nodeEngine,
+                                   ApplicationContext applicationContext) {
         this.name = name;
         this.processor = processor;
         this.applicationContext = applicationContext;
@@ -76,14 +76,14 @@ public abstract class AbstractStateMachineImpl
     public <P> ICompletableFuture<Output> handleRequest(StateMachineRequest<Input, P> request) {
         BasicCompletableFuture<Output> future
                 = new BasicCompletableFuture<>(applicationContext.getNodeEngine(), logger);
-        RequestPayLoad<Input, Output> payLoad =
-                new RequestPayLoad<Input, Output>(request.getContainerEvent(), future, request.getPayLoad());
+        RequestPayload<Input, Output> payload =
+                new RequestPayload<>(request.getContainerEvent(), future, request.getPayload());
 
-        if (!this.eventsQueue.offer(payLoad)) {
+        if (!this.eventsQueue.offer(payload)) {
             throw new JetException("Can't add request to the stateMachine " + name);
         }
 
-        return payLoad.getFuture();
+        return payload.getFuture();
     }
 
     protected abstract Output output(Input input, State nextState);
@@ -98,15 +98,15 @@ public abstract class AbstractStateMachineImpl
     }
 
     private class EventsProcessor extends AbstractTask {
-        private final Queue<RequestPayLoad<Input, Output>> requestsQueue;
+        private final Queue<RequestPayload<Input, Output>> requestsQueue;
 
-        EventsProcessor(Queue<RequestPayLoad<Input, Output>> requestsQueue) {
+        EventsProcessor(Queue<RequestPayload<Input, Output>> requestsQueue) {
             this.requestsQueue = requestsQueue;
         }
 
         @Override
         public boolean executeTask(Payload payload) {
-            RequestPayLoad<Input, Output> requestHolder = this.requestsQueue.poll();
+            RequestPayload<Input, Output> requestHolder = this.requestsQueue.poll();
 
             try {
                 if (requestHolder == null) {
@@ -129,7 +129,7 @@ public abstract class AbstractStateMachineImpl
 
                     if (nextState != null) {
                         if (processor != null) {
-                            processor.processRequest(requestHolder.getEvent(), requestHolder.getPayLoad());
+                            processor.processRequest(requestHolder.getEvent(), requestHolder.getPayload());
                         }
 
                         if (logger.isFineEnabled()) {

@@ -76,8 +76,8 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public JetPacket(byte[] applicationNameBytes, byte[] payLoad) {
-        this(-1, -1, applicationNameBytes, payLoad);
+    public JetPacket(byte[] applicationNameBytes, byte[] payload) {
+        this(-1, -1, applicationNameBytes, payload);
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -104,9 +104,9 @@ public final class JetPacket extends HeapData implements OutboundFrame {
     public JetPacket(int taskID,
                      int containerId,
                      byte[] applicationNameBytes,
-                     byte[] payLoad
+                     byte[] payload
     ) {
-        this(payLoad, -1);
+        this(payload, -1);
 
         this.taskID = taskID;
         this.containerId = containerId;

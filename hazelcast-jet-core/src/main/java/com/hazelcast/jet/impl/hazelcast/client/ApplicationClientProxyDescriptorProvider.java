@@ -16,21 +16,36 @@
 
 package com.hazelcast.jet.impl.hazelcast.client;
 
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyDescriptor;
 import com.hazelcast.client.spi.ClientProxyDescriptorProvider;
+import com.hazelcast.jet.impl.hazelcast.JetService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class JetClientProxyDescriptorProvider implements ClientProxyDescriptorProvider {
+public class ApplicationClientProxyDescriptorProvider implements ClientProxyDescriptorProvider {
     private final ClientProxyDescriptor[] descriptors;
 
-    public JetClientProxyDescriptorProvider() {
+    public ApplicationClientProxyDescriptorProvider() {
         this.descriptors = new ClientProxyDescriptor[1];
-        this.descriptors[0] = new JetClientProxyDescriptor();
+        this.descriptors[0] = new ApplicationProxyDescriptor();
     }
 
     @Override
     public ClientProxyDescriptor[] createClientProxyDescriptors() {
         return this.descriptors;
     }
+
+    public static class ApplicationProxyDescriptor implements ClientProxyDescriptor {
+        @Override
+        public String getServiceName() {
+            return JetService.SERVICE_NAME;
+        }
+
+        @Override
+        public Class<? extends ClientProxy> getClientProxyClass() {
+            return ClientApplicationProxy.class;
+        }
+    }
+
 }

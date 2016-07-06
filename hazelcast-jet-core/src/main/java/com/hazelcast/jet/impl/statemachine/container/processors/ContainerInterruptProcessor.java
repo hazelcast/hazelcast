@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.logging.ILogger;
 
-public class ContainerInterruptProcessor implements ContainerPayLoadProcessor<Throwable> {
+public class ContainerInterruptProcessor implements ContainerPayloadProcessor<Throwable> {
     private final ProcessingContainer container;
     private final ILogger logger;
 

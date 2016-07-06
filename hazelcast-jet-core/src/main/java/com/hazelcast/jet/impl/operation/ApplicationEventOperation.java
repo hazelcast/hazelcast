@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachine;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachineRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

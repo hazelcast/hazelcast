@@ -32,7 +32,7 @@ public class ApplicationStateMachineRequest implements StateMachineRequest<Appli
     }
 
     @Override
-    public Dummy getPayLoad() {
+    public Dummy getPayload() {
         return Dummy.INSTANCE;
     }
 }

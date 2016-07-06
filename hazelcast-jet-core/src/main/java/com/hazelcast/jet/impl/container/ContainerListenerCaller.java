@@ -26,8 +26,8 @@ public interface ContainerListenerCaller {
      * Performs container's listener invocation;
      *
      * @param listener - container's listener;
-     * @param payLoad  - arguments of errors;
+     * @param payload  - arguments of errors;
      * @param <T>      - type of corresponding exception;
      */
-    <T extends Throwable> void call(ContainerListener listener, T... payLoad);
+    <T extends Throwable> void call(ContainerListener listener, T... payload);
 }

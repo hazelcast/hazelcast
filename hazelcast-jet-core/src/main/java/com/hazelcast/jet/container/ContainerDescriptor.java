@@ -119,18 +119,18 @@ public interface ContainerDescriptor {
     /**
      * Return accumulator to collect statistics
      *
-     * @param counterKey key which represents counter
+     * @param key key which represents counter
      * @param <V>        input accumulator type
      * @param <R>        output accumulator type
      * @return accumulator
      */
-    <V, R extends Serializable> Accumulator<V, R> getAccumulator(CounterKey counterKey);
+    <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key);
 
     /**
-     * @param counterKey  key which represents corresponding accumulator
+     * @param key  key which represents corresponding accumulator
      * @param accumulator corresponding accumulator object
      * @param <V>         input accumulator type
      * @param <R>         output accumulator type
      */
-    <V, R extends Serializable> void setAccumulator(CounterKey counterKey, Accumulator<V, R> accumulator);
+    <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator);
 }

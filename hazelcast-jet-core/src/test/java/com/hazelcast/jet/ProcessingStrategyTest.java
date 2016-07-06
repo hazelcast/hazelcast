@@ -3,14 +3,11 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.application.Application;
-import com.hazelcast.jet.container.CounterKey;
-import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Edge;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.tap.ListSink;
 import com.hazelcast.jet.dag.tap.ListSource;
-import com.hazelcast.jet.impl.counters.LongCounter;
 import com.hazelcast.jet.strategy.ProcessingStrategy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -18,8 +15,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,7 +39,7 @@ public class ProcessingStrategyTest extends JetTestSupport {
 
     @Test
     public void testBroadcast() throws Exception {
-        int  count = getCountWithStrategy(ProcessingStrategy.BROADCAST);
+        int count = getCountWithStrategy(ProcessingStrategy.BROADCAST);
         assertEquals(count, COUNT * TASK_COUNT);
     }
 

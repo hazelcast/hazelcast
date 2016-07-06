@@ -20,11 +20,11 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.DataChannel;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
 import java.util.List;
 
-public class ContainerExecutionCompletedProcessor implements ContainerPayLoadProcessor<Dummy> {
+public class ContainerExecutionCompletedProcessor implements ContainerPayloadProcessor<Dummy> {
     private final ProcessingContainer container;
     private final ApplicationContext applicationContext;
 
@@ -35,7 +35,7 @@ public class ContainerExecutionCompletedProcessor implements ContainerPayLoadPro
 
     //payload - completed container
     @Override
-    public void process(Dummy payLoad) throws Exception {
+    public void process(Dummy payload) throws Exception {
         List<DataChannel> channels = this.container.getOutputChannels();
 
         if (channels.size() > 0) {
