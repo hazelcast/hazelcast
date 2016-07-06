@@ -81,7 +81,7 @@ public interface Task {
     /**
      * Execute next iteration of task;
      *
-     * @param payload - payLoad which holds execution useful activity;
+     * @param payload - payload which holds execution useful activity;
      * @return - true - if task should be executed again, false if task should be removed from executor;
      * @throws Exception if any exception
      */

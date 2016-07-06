@@ -16,22 +16,20 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster;
 
-import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.executor.TaskExecutor;
-import com.hazelcast.jet.impl.statemachine.AppMasterStateMachine;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
-import com.hazelcast.jet.impl.statemachine.AbstractStateMachineImpl;
+import com.hazelcast.jet.impl.executor.TaskExecutor;
+import com.hazelcast.jet.impl.statemachine.AbstractStateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
+import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Map;
 
-public class ApplicationMasterStateMachineImpl extends
-        AbstractStateMachineImpl<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse>
-        implements AppMasterStateMachine {
+public class ApplicationMasterStateMachine extends
+        AbstractStateMachine<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse> {
 
     private static final Map<ApplicationMasterState, Map<ApplicationMasterEvent, ApplicationMasterState>>
             STATE_TRANSITION_MATRIX =
@@ -94,10 +92,10 @@ public class ApplicationMasterStateMachineImpl extends
                             )
                     ).build();
 
-    public ApplicationMasterStateMachineImpl(String name,
-                                             StateMachineRequestProcessor<ApplicationMasterEvent> processor,
-                                             NodeEngine nodeEngine,
-                                             ApplicationContext applicationContext) {
+    public ApplicationMasterStateMachine(String name,
+                                         StateMachineRequestProcessor<ApplicationMasterEvent> processor,
+                                         NodeEngine nodeEngine,
+                                         ApplicationContext applicationContext) {
         super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, applicationContext);
     }
 

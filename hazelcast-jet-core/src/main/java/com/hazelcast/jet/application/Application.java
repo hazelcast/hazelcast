@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.application;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
 import com.hazelcast.jet.impl.application.LocalizationResourceType;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.Future;
 /**
  * Represents abstract application
  */
-public interface Application {
+public interface Application extends DistributedObject {
     /**
      * Submit dag to the cluster
      *
@@ -111,7 +111,7 @@ public interface Application {
      *
      * @return map with accumulators
      */
-    Map<CounterKey, Accumulator> getAccumulators();
+    Map<String, Accumulator> getAccumulators();
 
 
     /**

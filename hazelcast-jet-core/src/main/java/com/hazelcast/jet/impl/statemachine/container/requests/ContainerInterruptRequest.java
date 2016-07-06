@@ -40,7 +40,7 @@ public class ContainerInterruptRequest implements ContainerRequest<ProcessingCon
     }
 
     @Override
-    public Throwable getPayLoad() {
+    public Throwable getPayload() {
         return this.error;
     }
 }

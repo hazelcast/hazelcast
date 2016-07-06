@@ -16,10 +16,8 @@
 
 package com.hazelcast.jet.impl.hazelcast;
 
-import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.application.ApplicationProxy;
-import com.hazelcast.jet.impl.application.ApplicationProxyImpl;
-import com.hazelcast.jet.impl.application.JetApplicationManagerImpl;
+import com.hazelcast.jet.impl.application.JetApplicationManager;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -36,13 +34,13 @@ public class JetServiceImpl implements JetService {
             new ConstructorFunction<String, ApplicationProxy>() {
                 @Override
                 public ApplicationProxy createNew(String name) {
-                    return new ApplicationProxyImpl(name, JetServiceImpl.this, nodeEngine);
+                    return new ApplicationProxy(name, JetServiceImpl.this, nodeEngine);
                 }
             };
 
     public JetServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.applicationManager = new JetApplicationManagerImpl(nodeEngine);
+        this.applicationManager = new JetApplicationManager(nodeEngine);
         this.applications = new ConcurrentHashMap<String, ApplicationProxy>();
     }
 

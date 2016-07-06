@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.statemachine;
+package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
-
-/**
- * Represents abstract applicationMaster's stateMachine
- * This is one of the representations of container state-machine;
+/***
+ * Interface which represents processor to be invoked on container's state-machine work;
+ *
+ * @param <Payload> - type of the processor's argument;
  */
-public interface AppMasterStateMachine extends
-        ContainerStateMachine<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse> {
+public interface ContainerPayloadProcessor<Payload> {
+    /**
+     * Invoked on change of state of container's state-machine;
+     *
+     * @param payload - argument;
+     * @throws Exception if any exception
+     */
+    void process(Payload payload) throws Exception;
 }

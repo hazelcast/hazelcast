@@ -18,13 +18,13 @@ package com.hazelcast.jet.impl.statemachine.container.processors;
 
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
-public final class ContainerPayLoadFactory {
-    private ContainerPayLoadFactory() {
+public final class ContainerPayloadFactory {
+    private ContainerPayloadFactory() {
     }
 
-    public static ContainerPayLoadProcessor getProcessor(ProcessingContainerEvent event,
+    public static ContainerPayloadProcessor getProcessor(ProcessingContainerEvent event,
                                                          ProcessingContainer container) {
         switch (event) {
             case START:

@@ -16,17 +16,18 @@
 
 package com.hazelcast.jet.impl.statemachine.application;
 
-import com.hazelcast.jet.impl.application.ApplicationContextImpl;
+import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.CombinedJetException;
 import com.hazelcast.jet.application.ApplicationListener;
+import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultApplicationStateMachineRequestProcessor implements ApplicationStateMachineRequestProcessor {
-    private final ApplicationContextImpl applicationContext;
+public class DefaultApplicationStateMachineRequestProcessor implements StateMachineRequestProcessor<ApplicationEvent> {
+    private final ApplicationContext applicationContext;
 
-    public DefaultApplicationStateMachineRequestProcessor(ApplicationContextImpl applicationContext) {
+    public DefaultApplicationStateMachineRequestProcessor(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
@@ -46,7 +47,7 @@ public class DefaultApplicationStateMachineRequestProcessor implements Applicati
     }
 
     @Override
-    public void processRequest(ApplicationEvent event, Object payLoad) throws Exception {
+    public void processRequest(ApplicationEvent event, Object payload) throws Exception {
         if (event == ApplicationEvent.EXECUTION_START) {
             this.applicationContext.getExecutorContext().getNetworkTaskContext().init();
             this.applicationContext.getExecutorContext().getApplicationTaskContext().init();

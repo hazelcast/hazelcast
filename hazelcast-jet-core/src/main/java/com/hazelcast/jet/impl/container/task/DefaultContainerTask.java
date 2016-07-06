@@ -466,7 +466,7 @@ public class DefaultContainerTask extends AbstractTask
 
     private void completeTaskExecution(Throwable e) {
         try {
-            logger.fine("completeTaskExecution=" + applicationContext.getName());
+            logger.info("completeTaskExecution=" + applicationContext.getName() + " with throwable " + e);
             this.taskProcessor.onClose();
         } finally {
             this.container.handleTaskEvent(this, TaskEvent.TASK_EXECUTION_COMPLETED, e);

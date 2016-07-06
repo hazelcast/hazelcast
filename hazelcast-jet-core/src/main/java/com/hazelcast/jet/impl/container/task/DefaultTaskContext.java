@@ -20,7 +20,6 @@ import com.hazelcast.jet.impl.data.io.JetTupleDataType;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.io.IOContext;
 import com.hazelcast.jet.io.impl.IOContextImpl;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.io.DataType;
 import com.hazelcast.jet.io.ObjectReaderFactory;
@@ -35,7 +34,7 @@ public class DefaultTaskContext implements TaskContext {
     private final int taskCount;
     private final int taskNumber;
     private final IOContext ioContext;
-    private final ConcurrentMap<CounterKey, Accumulator> accumulatorMap;
+    private final ConcurrentMap<String, Accumulator> accumulatorMap;
 
     public DefaultTaskContext(int taskCount,
                               int taskNumber,
@@ -43,7 +42,7 @@ public class DefaultTaskContext implements TaskContext {
         this.taskCount = taskCount;
         this.taskNumber = taskNumber;
         this.ioContext = new IOContextImpl(JetTupleDataType.INSTANCE);
-        this.accumulatorMap = new ConcurrentHashMap<CounterKey, Accumulator>();
+        this.accumulatorMap = new ConcurrentHashMap<>();
         applicationContext.registerAccumulators(this.accumulatorMap);
     }
 
@@ -59,13 +58,13 @@ public class DefaultTaskContext implements TaskContext {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V, R extends Serializable> Accumulator<V, R> getAccumulator(CounterKey counterKey) {
-        return this.accumulatorMap.get(counterKey);
+    public <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key) {
+        return this.accumulatorMap.get(key);
     }
 
     @Override
-    public <V, R extends Serializable> void setAccumulator(CounterKey counterKey, Accumulator<V, R> accumulator) {
-        this.accumulatorMap.put(counterKey, accumulator);
+    public <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator) {
+        this.accumulatorMap.put(key, accumulator);
     }
 
     @Override

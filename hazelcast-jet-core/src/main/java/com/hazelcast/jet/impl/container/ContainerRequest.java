@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.statemachine.StateMachineRequest;
  * Represents container's request;
  *
  * @param <E> - event for the container's state-machine;
- * @param <P> - payLoad argument;
+ * @param <P> - payload argument;
  */
 public interface ContainerRequest<E extends ContainerEvent, P> extends StateMachineRequest<E, P> {
 }

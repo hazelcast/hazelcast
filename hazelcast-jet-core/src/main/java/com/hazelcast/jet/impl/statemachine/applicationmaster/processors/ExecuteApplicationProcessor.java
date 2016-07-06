@@ -16,25 +16,27 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
+import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
 import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.application.ExecutorContext;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.dag.Vertex;
+import com.hazelcast.logging.ILogger;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
-public class ExecuteApplicationProcessor implements ContainerPayLoadProcessor<Dummy> {
+public class ExecuteApplicationProcessor implements ContainerPayloadProcessor<Dummy> {
     private final long secondsToAwait;
     private final ExecutorContext executorContext;
     private final ApplicationMaster applicationMaster;
     private final ApplicationContext applicationContext;
+    private final ILogger logger;
 
     public ExecuteApplicationProcessor(ApplicationMaster applicationMaster) {
         this.applicationMaster = applicationMaster;
@@ -42,6 +44,7 @@ public class ExecuteApplicationProcessor implements ContainerPayLoadProcessor<Du
         ApplicationConfig config = this.applicationContext.getApplicationConfig();
         this.secondsToAwait = config.getSecondsToAwait();
         this.executorContext = this.applicationContext.getExecutorContext();
+        this.logger = this.applicationContext.getNodeEngine().getLogger(ExecuteApplicationProcessor.class);
     }
 
     @Override

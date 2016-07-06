@@ -20,7 +20,6 @@ import com.hazelcast.jet.container.ProcessorContext;
 import com.hazelcast.jet.application.ApplicationListener;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.container.ContainerListener;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.dag.Vertex;
@@ -129,12 +128,12 @@ public class DefaultProcessorContext implements ProcessorContext {
     }
 
     @Override
-    public <V, R extends Serializable> Accumulator<V, R> getAccumulator(CounterKey counterKey) {
-        return this.taskContext.getAccumulator(counterKey);
+    public <V, R extends Serializable> Accumulator<V, R> getAccumulator(String key) {
+        return this.taskContext.getAccumulator(key);
     }
 
     @Override
-    public <V, R extends Serializable> void setAccumulator(CounterKey counterKey, Accumulator<V, R> accumulator) {
-        this.taskContext.setAccumulator(counterKey, accumulator);
+    public <V, R extends Serializable> void setAccumulator(String key, Accumulator<V, R> accumulator) {
+        this.taskContext.setAccumulator(key, accumulator);
     }
 }

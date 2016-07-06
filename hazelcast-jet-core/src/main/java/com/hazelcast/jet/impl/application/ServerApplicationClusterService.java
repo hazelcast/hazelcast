@@ -25,15 +25,14 @@ import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.hazelcast.AbstractApplicationClusterService;
 import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
 import com.hazelcast.jet.impl.operation.ApplicationEventOperation;
-import com.hazelcast.jet.impl.operation.ExecutionApplicationRequestOperation;
-import com.hazelcast.jet.impl.operation.FinalizationApplicationRequestOperation;
+import com.hazelcast.jet.impl.operation.ExecuteApplicationOperation;
+import com.hazelcast.jet.impl.operation.FinalizeApplicationOperation;
 import com.hazelcast.jet.impl.operation.GetAccumulatorsOperation;
-import com.hazelcast.jet.impl.operation.InitApplicationRequestOperation;
+import com.hazelcast.jet.impl.operation.InitApplicationOperation;
 import com.hazelcast.jet.impl.operation.InterruptExecutionOperation;
 import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
 import com.hazelcast.jet.impl.operation.SubmitApplicationRequestOperation;
 import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.nio.serialization.Data;
@@ -57,7 +56,7 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
     }
 
     public JetOperation createInitApplicationInvoker(ApplicationConfig config) {
-        return new InitApplicationRequestOperation(
+        return new InitApplicationOperation(
                 this.name,
                 config
         );
@@ -65,7 +64,7 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
 
     @Override
     public JetOperation createFinalizationInvoker() {
-        return new FinalizationApplicationRequestOperation(
+        return new FinalizeApplicationOperation(
                 this.name
         );
     }
@@ -79,7 +78,7 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
 
     @Override
     public JetOperation createExecutionInvoker() {
-        return new ExecutionApplicationRequestOperation(
+        return new ExecuteApplicationOperation(
                 this.name
         );
     }
@@ -127,7 +126,7 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
     public <T> Callable<T> createInvocation(Member member,
                                             InvocationFactory<JetOperation> factory) {
         return new ServerApplicationInvocation<T>(
-                factory.payLoad(),
+                factory.payload(),
                 member.getAddress(),
                 this.nodeEngine
         );
@@ -139,7 +138,7 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
     }
 
     @SuppressWarnings("unchecked")
-    public Map<CounterKey, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception {
-        return (Map<CounterKey, Accumulator>) callable.call();
+    public Map<String, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception {
+        return (Map<String, Accumulator>) callable.call();
     }
 }

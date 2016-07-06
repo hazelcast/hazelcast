@@ -26,8 +26,8 @@ public interface StateMachineRequestProcessor<SI extends StateMachineEvent> {
      * Will be executed on next transition request;
      *
      * @param event   - corresponding input event;
-     * @param payLoad - arguments payLoad;
+     * @param payload - arguments payload;
      * @throws Exception if any exception
      */
-    void processRequest(SI event, Object payLoad) throws Exception;
+    void processRequest(SI event, Object payload) throws Exception;
 }

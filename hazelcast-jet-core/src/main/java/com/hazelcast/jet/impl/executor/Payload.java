@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.executor;
 
 /**
- * Represents abstract execution payLoad;
+ * Represents abstract execution payload;
  */
 public interface Payload {
     /**
-     * Set marker to payLoad if last processing operation contained useful operations;
+     * Set marker to payload if last processing operation contained useful operations;
      *
      * @param activity - true - it there were useful operations, false - otherwise;
      */

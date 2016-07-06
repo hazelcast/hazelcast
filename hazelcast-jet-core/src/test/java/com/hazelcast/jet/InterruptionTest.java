@@ -26,40 +26,56 @@ import com.hazelcast.jet.dag.tap.MapSource;
 import com.hazelcast.jet.data.io.ConsumerOutputStream;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.processor.ContainerProcessor;
-import com.hazelcast.jet.processor.ProcessorDescriptor;
-import org.junit.BeforeClass;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+
+@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class InterruptionTest extends JetTestSupport {
 
-    public static final int TASK_COUNT = 4;
-    public static final int NODE_COUNT = 2;
-    public static final int COUNT = 1000;
-    private static HazelcastInstance instance;
+    private static int COUNT = 10000;
+    private TestHazelcastInstanceFactory factory;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        instance = createCluster(NODE_COUNT);
+    @Before
+    public void setup() throws InterruptedException {
+        factory = new TestHazelcastInstanceFactory();
+    }
+
+    @After
+    public void tearDown() {
+        factory.shutdownAll();
     }
 
     @Test
     public void tesInterruptSlowApplication() throws Exception {
+        int nodeCount = 2;
+        HazelcastInstance instance = createCluster(factory, nodeCount);
         final Application application = JetEngine.getJetApplication(instance, "testInterrupt");
         IMap<Integer, Integer> map = getMap(instance);
-        fillMapWithInts(map, 100);
+        fillMapWithInts(map, COUNT);
 
         DAG dag = new DAG();
-        Vertex vertex = new Vertex("vertex", ProcessorDescriptor.builder(SlowProcessor.class)
-                .withTaskCount(TASK_COUNT).build());
+        Vertex vertex = createVertex("vertex", SlowProcessor.class);
         vertex.addSource(new MapSource(map));
         dag.addVertex(vertex);
         application.submit(dag);
@@ -79,15 +95,74 @@ public class InterruptionTest extends JetTestSupport {
             fail("The application was not interrupted");
         } catch (ExecutionException e) {
             assertTrue(interrupted.get());
-            //TODO: messy chained exceptions
         } finally {
             application.finalizeApplication().get();
         }
     }
 
+    @Test
+    public void testExceptionInProcessor_whenMultipleNodes() throws Exception {
+        int nodeCount = 3;
+        HazelcastInstance instance = createCluster(factory, nodeCount);
+        final Application application = JetEngine.getJetApplication(instance, "testExceptionMultipleNodes");
+        IMap<Integer, Integer> map = getMap(instance);
+        fillMapWithInts(map, COUNT);
+
+        DAG dag = new DAG();
+        Vertex vertex = createVertex("vertex", ExceptionProcessor.class);
+        vertex.addSource(new MapSource(map));
+        dag.addVertex(vertex);
+        application.submit(dag);
+
+        try {
+            execute(application);
+            fail("The application should not execute successfully.");
+        } catch (ExecutionException e) {
+            CombinedJetException ex = (CombinedJetException) e.getCause();
+            List<Throwable> errors = ex.getErrors();
+            assertEquals(nodeCount, errors.size());
+
+            for (Throwable error : errors) {
+                assertEquals(ExceptionProcessor.ERROR_MESSAGE, error.getMessage());
+            }
+        }
+    }
+
+    @Test
+    public void testExceptionInProcessor_whenSingleNode() throws Exception {
+        HazelcastInstance instance = createCluster(factory, 1);
+        final Application application = JetEngine.getJetApplication(instance, "testExceptionSingleNode");
+        IMap<Integer, Integer> map = getMap(instance);
+        fillMapWithInts(map, COUNT);
+
+        DAG dag = new DAG();
+        Vertex vertex = createVertex("vertex", ExceptionProcessor.class);
+        vertex.addSource(new MapSource(map));
+        dag.addVertex(vertex);
+        application.submit(dag);
+
+        try {
+            execute(application);
+            fail("The application should not execute successfully.");
+        } catch (ExecutionException e) {
+            RuntimeException exception = (RuntimeException) e.getCause();
+            assertEquals(ExceptionProcessor.ERROR_MESSAGE, exception.getCause().getMessage());
+        }
+    }
+
+    public static class ExceptionProcessor implements ContainerProcessor {
+
+        private static final String ERROR_MESSAGE = "exception";
+
+        @Override
+        public boolean process(ProducerInputStream inputStream, ConsumerOutputStream outputStream, String sourceName, ProcessorContext processorContext) throws Exception {
+            throw new Exception(ERROR_MESSAGE);
+        }
+    }
+
     public static class SlowProcessor implements ContainerProcessor {
 
-        private static final CountDownLatch latch = new CountDownLatch(TASK_COUNT * NODE_COUNT);
+        private static final CountDownLatch latch = new CountDownLatch(TASK_COUNT);
         private boolean started;
 
         @Override

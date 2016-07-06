@@ -28,13 +28,14 @@ import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingReceiver;
 import com.hazelcast.jet.impl.actor.shuffling.io.ShufflingSender;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.application.ApplicationException;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterStateMachineFactory;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ApplicationMasterPayLoadFactory;
+import com.hazelcast.jet.impl.statemachine.StateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ApplicationMasterPayloadFactory;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
@@ -54,28 +55,28 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ApplicationMasterImpl extends
-        AbstractServiceContainer<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse>
-        implements ApplicationMaster {
+public class ApplicationMaster extends
+        AbstractServiceContainer<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse> {
 
     private static final InterruptedException APPLICATION_INTERRUPTED_EXCEPTION =
             new InterruptedException("Application has been interrupted");
 
-    private static final ApplicationMasterStateMachineFactory STATE_MACHINE_FACTORY =
-            new DefaultApplicationMasterStateMachineFactory();
+    private static final StateMachineFactory<ApplicationMasterEvent,
+            StateMachine<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse>>
+            STATE_MACHINE_FACTORY = ApplicationMasterStateMachine::new;
 
-    private final List<ProcessingContainer> containers = new CopyOnWriteArrayList<ProcessingContainer>();
-    private final Map<Integer, ProcessingContainer> containersCache = new ConcurrentHashMap<Integer, ProcessingContainer>();
+    private final List<ProcessingContainer> containers = new CopyOnWriteArrayList<>();
+    private final Map<Integer, ProcessingContainer> containersCache = new ConcurrentHashMap<>();
 
-    private final Map<Vertex, ProcessingContainer> vertex2ContainerCache = new ConcurrentHashMap<Vertex, ProcessingContainer>();
+    private final Map<Vertex, ProcessingContainer> vertex2ContainerCache = new ConcurrentHashMap<>();
 
     private final AtomicInteger containerCounter = new AtomicInteger(0);
 
     private final AtomicInteger networkTaskCounter = new AtomicInteger(0);
     private final AtomicReference<BasicCompletableFuture<Object>> executionMailBox =
-            new AtomicReference<BasicCompletableFuture<Object>>(null);
+            new AtomicReference<>(null);
     private final AtomicReference<BasicCompletableFuture<Object>> interruptionFutureHolder =
-            new AtomicReference<BasicCompletableFuture<Object>>(null);
+            new AtomicReference<>(null);
 
     private final ILogger logger;
     private final DiscoveryService discoveryService;
@@ -84,7 +85,7 @@ public class ApplicationMasterImpl extends
     private volatile DAG dag;
     private final byte[] applicationNameBytes;
 
-    public ApplicationMasterImpl(
+    public ApplicationMaster(
             ApplicationContext applicationContext,
             DiscoveryService discoveryService
     ) {
@@ -97,15 +98,17 @@ public class ApplicationMasterImpl extends
 
     @Override
     @SuppressWarnings("unchecked")
-    public void processRequest(ApplicationMasterEvent event, Object payLoad) throws Exception {
-        ContainerPayLoadProcessor processor = ApplicationMasterPayLoadFactory.getProcessor(event, this);
+    public void processRequest(ApplicationMasterEvent event, Object payload) throws Exception {
+        ContainerPayloadProcessor processor = ApplicationMasterPayloadFactory.getProcessor(event, this);
 
         if (processor != null) {
-            processor.process(payLoad);
+            processor.process(payload);
         }
     }
 
-    @Override
+    /**
+     * Handle event when some container has been completed;
+     */
     public void handleContainerCompleted() {
         if (this.containerCounter.incrementAndGet() >= this.containers.size()) {
             if (getNetworkTaskCount() > 0) {
@@ -116,8 +119,13 @@ public class ApplicationMasterImpl extends
         }
     }
 
-    @Override
+    /**
+     * Handle event when some container has been interrupted;
+     *
+     * @param error corresponding error;
+     */
     public void handleContainerInterrupted(Throwable error) {
+        logger.info("handle container interrupted " + error);
         this.interrupted = true;
         this.interruptionError = error;
         handleContainerCompleted();
@@ -150,6 +158,8 @@ public class ApplicationMasterImpl extends
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private void notifyInterrupted(Throwable error) throws Exception {
+        logger.info("notify interrupted " + error);
+
         Throwable interruptionError =
                 error == null ? APPLICATION_INTERRUPTED_EXCEPTION : error;
 
@@ -169,14 +179,18 @@ public class ApplicationMasterImpl extends
         }
     }
 
-    @Override
+    /**
+     * Invoked by network task on task's finish
+     */
     public void notifyNetworkTaskFinished() {
         if (this.networkTaskCounter.incrementAndGet() >= getNetworkTaskCount()) {
             notifyCompletionFinished();
         }
     }
 
-    @Override
+    /**
+     * Register application execution;
+     */
     public void registerExecution() {
         this.interrupted = false;
         this.interruptionError = null;
@@ -185,27 +199,38 @@ public class ApplicationMasterImpl extends
         this.executionMailBox.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
     }
 
-    @Override
+    /**
+     * Register application interruption;
+     */
     public void registerInterruption() {
         this.interruptionFutureHolder.set(new BasicCompletableFuture<>(getNodeEngine(), logger));
     }
 
-    @Override
+    /**
+     * @return mailBox which is used to signal that application's;
+     * execution has been completed;
+     */
     public ICompletableFuture<Object> getExecutionMailBox() {
         return this.executionMailBox.get();
     }
 
-    @Override
+    /**
+     * @return mailBox which is used to signal that application's;
+     * interruption has been completed;
+     */
     public ICompletableFuture<Object> getInterruptionMailBox() {
         return this.interruptionFutureHolder.get();
     }
 
-    @Override
+    /**
+     * @return list of containers;
+     */
     public List<ProcessingContainer> containers() {
         return Collections.unmodifiableList(this.containers);
     }
 
     private void addToExecutionMailBox(Object object) {
+        logger.info("add to execution mail box " + object);
         addToMailBox(object);
     }
 
@@ -218,7 +243,11 @@ public class ApplicationMasterImpl extends
         }
     }
 
-    @Override
+    /**
+     * Handles some event during execution;
+     *
+     * @param error corresponding error;
+     */
     public void notifyExecutionError(Object reason) {
         for (MemberImpl member : getNodeEngine().getClusterService().getMemberImpls()) {
             if (!member.localMember()) {
@@ -240,7 +269,11 @@ public class ApplicationMasterImpl extends
         this.discoveryService.getSocketWriters().get(jetAddress).sendServicePacket(jetPacket);
     }
 
-    @Override
+    /**
+     * Notify all application's containers with some signal;
+     *
+     * @param reason signal object;
+     */
     public void notifyContainers(Object reason) {
         Throwable error = getError(reason);
         handleContainerRequest(
@@ -283,7 +316,9 @@ public class ApplicationMasterImpl extends
         }
     }
 
-    @Override
+    /**
+     * Deploys network engine;
+     */
     public void deployNetworkEngine() {
         this.discoveryService.executeDiscovery();
     }
@@ -296,7 +331,14 @@ public class ApplicationMasterImpl extends
         return ((InternalSerializationService) getNodeEngine().getSerializationService()).toBytes(reason);
     }
 
-    @Override
+    /**
+     * Register shuffling receiver for the corresponding task and address;
+     *
+     * @param taskID           corresponding taskID
+     * @param containerContext corresponding container context;
+     * @param address          corresponding address;
+     * @param receiver         registered receiver;
+     */
     public void registerShufflingReceiver(int taskID,
                                           ContainerContext containerContext,
                                           Address address,
@@ -307,7 +349,14 @@ public class ApplicationMasterImpl extends
         this.discoveryService.getSocketReaders().get(address).registerConsumer(receiver.getRingBufferActor());
     }
 
-    @Override
+    /**
+     * Register shuffling receiver for the corresponding task and address;
+     *
+     * @param taskID           corresponding taskID
+     * @param containerContext corresponding container context;
+     * @param address          corresponding address;
+     * @param sender           registered sender;
+     */
     public void registerShufflingSender(int taskID,
                                         ContainerContext containerContext,
                                         Address address,
@@ -318,27 +367,43 @@ public class ApplicationMasterImpl extends
         this.discoveryService.getSocketWriters().get(address).registerProducer(sender.getRingBufferActor());
     }
 
-    @Override
+    /**
+     * @return map with containers;
+     */
     public Map<Integer, ProcessingContainer> getContainersCache() {
         return this.containersCache;
     }
 
-    @Override
+    /**
+     * @return dag of the application;
+     */
     public DAG getDag() {
         return this.dag;
     }
 
-    @Override
+    /**
+     * Set up dag for the corresponding application;
+     *
+     * @param dag corresponding dag;
+     */
     public void setDag(DAG dag) {
         this.dag = dag;
     }
 
-    @Override
+    /**
+     * @param vertex the vertex to get the container for
+     * @return processing container for the corresponding vertex;
+     */
     public ProcessingContainer getContainerByVertex(Vertex vertex) {
         return this.vertex2ContainerCache.get(vertex);
     }
 
-    @Override
+    /**
+     * Register container for the specified vertex;
+     *
+     * @param vertex    corresponding vertex;
+     * @param container corresponding container;
+     */
     public void registerContainer(Vertex vertex, ProcessingContainer container) {
         this.containers.add(container);
         this.vertex2ContainerCache.put(vertex, container);

@@ -18,22 +18,22 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.application.JetApplicationManager;
+import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.FinalizeApplicationRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
 
-public class FinalizationApplicationRequestOperation extends AsyncJetOperation {
+public class FinalizeApplicationOperation extends AsyncJetOperation {
 
     @SuppressWarnings("unused")
-    public FinalizationApplicationRequestOperation() {
+    public FinalizeApplicationOperation() {
 
     }
 
-    public FinalizationApplicationRequestOperation(String name) {
+    public FinalizeApplicationOperation(String name) {
         super(name);
     }
 

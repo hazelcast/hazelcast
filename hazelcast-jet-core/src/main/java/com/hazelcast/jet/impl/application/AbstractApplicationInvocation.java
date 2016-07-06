@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.application;
 import com.hazelcast.nio.Address;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 public abstract class AbstractApplicationInvocation<Instance, T> implements Callable<T> {
     private final Address address;
@@ -31,10 +32,17 @@ public abstract class AbstractApplicationInvocation<Instance, T> implements Call
     }
 
     @Override
-    public T call() {
-        return execute(this.operation, this.address);
+    public T call() throws Exception {
+        try {
+            return execute(this.operation, this.address);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof Exception) {
+                throw (Exception) e.getCause();
+            }
+            throw e;
+        }
     }
 
     @SuppressWarnings("unchecked")
-    protected abstract T execute(Instance operation, Address address);
+    protected abstract T execute(Instance operation, Address address) throws Exception;
 }

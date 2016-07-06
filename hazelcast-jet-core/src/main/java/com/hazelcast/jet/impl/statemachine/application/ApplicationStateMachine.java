@@ -16,18 +16,17 @@
 
 package com.hazelcast.jet.impl.statemachine.application;
 
-import com.hazelcast.jet.impl.statemachine.ApplicationStateMachine;
-import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.executor.TaskExecutor;
+import com.hazelcast.jet.impl.statemachine.AbstractStateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.impl.statemachine.AbstractStateMachineImpl;
+import com.hazelcast.jet.impl.util.LinkedMapBuilder;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Map;
 
-public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<ApplicationEvent, ApplicationState, ApplicationResponse>
-        implements ApplicationStateMachine {
+public class ApplicationStateMachine
+        extends AbstractStateMachine<ApplicationEvent, ApplicationState, ApplicationResponse> {
 
     private static final Map<ApplicationState, Map<ApplicationEvent, ApplicationState>> STATE_TRANSITION_MATRIX =
             LinkedMapBuilder.<ApplicationState, Map<ApplicationEvent, ApplicationState>>builder().
@@ -142,14 +141,14 @@ public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<Applic
                             )
                     ).build();
 
-    public ApplicationStateMachineImpl(String name,
-                                       StateMachineRequestProcessor<ApplicationEvent> processor,
-                                       NodeEngine nodeEngine,
-                                       ApplicationContext applicationContext) {
+    public ApplicationStateMachine(String name,
+                                   StateMachineRequestProcessor<ApplicationEvent> processor,
+                                   NodeEngine nodeEngine,
+                                   ApplicationContext applicationContext) {
         super(name, STATE_TRANSITION_MATRIX, processor, nodeEngine, applicationContext);
     }
 
-    public ApplicationStateMachineImpl(String name) {
+    public ApplicationStateMachine(String name) {
         super(name, STATE_TRANSITION_MATRIX, null, null, null);
     }
 
@@ -172,7 +171,11 @@ public class ApplicationStateMachineImpl extends AbstractStateMachineImpl<Applic
         return ApplicationState.NEW;
     }
 
-    @Override
+    /**
+     * Invoked on next state-machine event
+     *
+     * @param applicationEvent - corresponding state-machine event
+     */
     public void onEvent(ApplicationEvent applicationEvent) {
         Map<ApplicationEvent, ApplicationState> transition = STATE_TRANSITION_MATRIX.get(currentState());
 

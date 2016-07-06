@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.jet.impl.application.AbstractApplicationInvocation;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 
 public class ClientApplicationInvocation<T> extends AbstractApplicationInvocation<ClientMessage, T> {
@@ -35,11 +34,7 @@ public class ClientApplicationInvocation<T> extends AbstractApplicationInvocatio
 
     @Override
     @SuppressWarnings("unchecked")
-    protected T execute(ClientMessage operation, Address address) {
-        try {
-            return (T) new ClientInvocation(this.client, operation, address).invoke().get();
-        } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
-        }
+    protected T execute(ClientMessage operation, Address address) throws Exception {
+        return (T) new ClientInvocation(this.client, operation, address).invoke().get();
     }
 }

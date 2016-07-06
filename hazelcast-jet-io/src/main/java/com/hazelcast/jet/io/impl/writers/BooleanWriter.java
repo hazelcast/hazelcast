@@ -32,7 +32,7 @@ public class BooleanWriter implements ObjectWriter<Boolean> {
     }
 
     @Override
-    public void writePayLoad(Boolean object,
+    public void writePayload(Boolean object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeBoolean(object);
@@ -43,6 +43,6 @@ public class BooleanWriter implements ObjectWriter<Boolean> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

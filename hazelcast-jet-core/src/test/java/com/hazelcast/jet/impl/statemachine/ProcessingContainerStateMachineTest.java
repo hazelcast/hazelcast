@@ -18,15 +18,13 @@ package com.hazelcast.jet.impl.statemachine;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.DefaultExecutorContext;
+import com.hazelcast.jet.impl.application.ExecutorContext;
 import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
 import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
-import com.hazelcast.jet.impl.statemachine.InvalidEventException;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachineImpl;
+import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachine;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalizedRequest;
@@ -58,7 +56,7 @@ import static org.mockito.Mockito.when;
 public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
 
     private StateMachineContext stateMachineContext;
-    private ProcessingContainerStateMachineImpl stateMachine;
+    private ProcessingContainerStateMachine stateMachine;
     private StateMachineTaskExecutorImpl executor;
 
     @Before
@@ -225,13 +223,13 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
 
     private class StateMachineContext {
         private StateMachineTaskExecutorImpl executor;
-        private ProcessingContainerStateMachineImpl stateMachine;
+        private ProcessingContainerStateMachine stateMachine;
 
         public StateMachineTaskExecutorImpl getExecutor() {
             return executor;
         }
 
-        public ProcessingContainerStateMachineImpl getStateMachine() {
+        public ProcessingContainerStateMachine getStateMachine() {
             return stateMachine;
         }
 
@@ -250,12 +248,12 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
             when(nodeEngine.getExecutionService()).thenReturn(executionService);
 
             ApplicationContext context = mock(ApplicationContext.class);
-            DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+            ExecutorContext executorContext = mock(ExecutorContext.class);
             when(context.getExecutorContext()).thenReturn(executorContext);
             when(context.getNodeEngine()).thenReturn(nodeEngine);
             executor = new StateMachineTaskExecutorImpl(randomName(), 1, 1, nodeEngine);
             when(executorContext.getDataContainerStateMachineExecutor()).thenReturn(executor);
-            stateMachine = new ProcessingContainerStateMachineImpl(randomName(), requestProcessor, nodeEngine, context);
+            stateMachine = new ProcessingContainerStateMachine(randomName(), requestProcessor, nodeEngine, context);
             return this;
         }
     }

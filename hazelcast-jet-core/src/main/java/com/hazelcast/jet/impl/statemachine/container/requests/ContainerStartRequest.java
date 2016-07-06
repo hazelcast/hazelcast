@@ -30,7 +30,7 @@ public class ContainerStartRequest implements ContainerRequest<ProcessingContain
     }
 
     @Override
-    public Dummy getPayLoad() {
+    public Dummy getPayload() {
         return Dummy.INSTANCE;
     }
 }

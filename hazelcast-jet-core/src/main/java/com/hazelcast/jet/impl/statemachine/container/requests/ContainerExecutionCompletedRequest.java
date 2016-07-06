@@ -27,7 +27,7 @@ public class ContainerExecutionCompletedRequest implements ContainerRequest<Proc
     }
 
     @Override
-    public Dummy getPayLoad() {
+    public Dummy getPayload() {
         return Dummy.INSTANCE;
     }
 }

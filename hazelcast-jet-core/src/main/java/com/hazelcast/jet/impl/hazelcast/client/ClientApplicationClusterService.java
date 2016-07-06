@@ -30,7 +30,6 @@ import com.hazelcast.client.impl.protocol.codec.JetLocalizeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.config.ApplicationConfig;
-import com.hazelcast.jet.container.CounterKey;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.application.localization.Chunk;
@@ -132,7 +131,7 @@ public class ClientApplicationClusterService
     public <T> Callable<T> createInvocation(Member member,
                                             InvocationFactory<ClientMessage> factory) {
         return new ClientApplicationInvocation<T>(
-                factory.payLoad(),
+                factory.payload(),
                 member.getAddress(),
                 this.client
         );
@@ -144,7 +143,7 @@ public class ClientApplicationClusterService
     }
 
     @Override
-    public Map<CounterKey, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception {
+    public Map<String, Accumulator> readAccumulatorsResponse(Callable callable) throws Exception {
         ClientMessage clientMessage = (ClientMessage) callable.call();
         JetGetAccumulatorsCodec.ResponseParameters responseParameters =
                 JetGetAccumulatorsCodec.decodeResponse(clientMessage);

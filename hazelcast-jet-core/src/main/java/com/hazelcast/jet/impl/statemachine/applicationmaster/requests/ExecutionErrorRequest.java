@@ -32,7 +32,7 @@ public class ExecutionErrorRequest implements ContainerRequest<ApplicationMaster
     }
 
     @Override
-    public Throwable getPayLoad() {
+    public Throwable getPayload() {
         return this.error;
     }
 }

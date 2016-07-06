@@ -32,7 +32,7 @@ public class FloatWriter implements ObjectWriter<Float> {
     }
 
     @Override
-    public void writePayLoad(Float object,
+    public void writePayload(Float object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeFloat(object);
@@ -43,6 +43,6 @@ public class FloatWriter implements ObjectWriter<Float> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

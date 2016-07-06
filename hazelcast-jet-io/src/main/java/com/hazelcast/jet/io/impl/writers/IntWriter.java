@@ -32,7 +32,7 @@ public class IntWriter implements ObjectWriter<Integer> {
     }
 
     @Override
-    public void writePayLoad(Integer object,
+    public void writePayload(Integer object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeInt(object);
@@ -43,6 +43,6 @@ public class IntWriter implements ObjectWriter<Integer> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

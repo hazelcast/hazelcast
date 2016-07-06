@@ -28,7 +28,7 @@ public class FinalizeApplicationRequest implements ContainerRequest<ApplicationM
     }
 
     @Override
-    public Dummy getPayLoad() {
+    public Dummy getPayload() {
         return Dummy.INSTANCE;
     }
 }

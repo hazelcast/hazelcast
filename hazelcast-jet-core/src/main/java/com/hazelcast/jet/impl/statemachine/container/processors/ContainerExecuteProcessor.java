@@ -17,9 +17,9 @@
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
 import com.hazelcast.jet.impl.Dummy;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
-public class ContainerExecuteProcessor implements ContainerPayLoadProcessor<Dummy> {
+public class ContainerExecuteProcessor implements ContainerPayloadProcessor<Dummy> {
     @Override
     public void process(Dummy payload) throws Exception {
 

@@ -33,7 +33,7 @@ public class TupleWriter implements ObjectWriter<Tuple> {
     }
 
     @Override
-    public void writePayLoad(Tuple tuple,
+    public void writePayload(Tuple tuple,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         int keySize = tuple.keySize();
@@ -64,6 +64,6 @@ public class TupleWriter implements ObjectWriter<Tuple> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(tuple, objectDataOutput, objectWriterFactory);
-        writePayLoad(tuple, objectDataOutput, objectWriterFactory);
+        writePayload(tuple, objectDataOutput, objectWriterFactory);
     }
 }

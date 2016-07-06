@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.application.JetApplicationManager;
 import com.hazelcast.jet.impl.data.io.NetworkTask;
 import com.hazelcast.jet.impl.data.io.SocketReader;
-import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.hazelcast.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.executor.Payload;

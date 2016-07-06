@@ -16,33 +16,32 @@
 
 package com.hazelcast.jet.impl.container;
 
-import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
-import com.hazelcast.jet.impl.actor.ComposedActor;
-import com.hazelcast.jet.impl.actor.ObjectProducer;
-import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
-import com.hazelcast.jet.impl.container.task.TaskEvent;
-import com.hazelcast.jet.impl.container.task.TaskProcessorFactory;
-import com.hazelcast.jet.processor.ContainerProcessor;
-import com.hazelcast.jet.impl.statemachine.ProcessingContainerStateMachine;
-import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
-import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
-import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
-import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerStateMachineFactory;
-import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
-import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
-import com.hazelcast.jet.impl.container.task.DefaultTaskContext;
-import com.hazelcast.jet.impl.container.task.processors.factory.DefaultTaskProcessorFactory;
-import com.hazelcast.jet.impl.container.task.processors.factory.ShuffledTaskProcessorFactory;
-import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachineImpl;
-import com.hazelcast.jet.impl.statemachine.container.processors.ContainerPayLoadFactory;
-import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalizedRequest;
 import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.dag.tap.SinkTap;
 import com.hazelcast.jet.dag.tap.SourceTap;
 import com.hazelcast.jet.data.DataReader;
 import com.hazelcast.jet.data.DataWriter;
 import com.hazelcast.jet.data.tuple.JetTupleFactory;
+import com.hazelcast.jet.impl.actor.ComposedActor;
+import com.hazelcast.jet.impl.actor.ObjectProducer;
+import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.container.events.DefaultEventProcessorFactory;
+import com.hazelcast.jet.impl.container.events.EventProcessorFactory;
+import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerEvent;
+import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
+import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
+import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
+import com.hazelcast.jet.impl.container.task.DefaultTaskContext;
+import com.hazelcast.jet.impl.container.task.TaskEvent;
+import com.hazelcast.jet.impl.container.task.TaskProcessorFactory;
+import com.hazelcast.jet.impl.container.task.processors.factory.DefaultTaskProcessorFactory;
+import com.hazelcast.jet.impl.container.task.processors.factory.ShuffledTaskProcessorFactory;
+import com.hazelcast.jet.impl.statemachine.StateMachine;
+import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
+import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachine;
+import com.hazelcast.jet.impl.statemachine.container.processors.ContainerPayloadFactory;
+import com.hazelcast.jet.impl.statemachine.container.requests.ContainerFinalizedRequest;
+import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.spi.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -59,23 +58,10 @@ import java.util.function.Supplier;
 public abstract class AbstractProcessingContainer extends
         AbstractContainer<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>
         implements ProcessingContainer {
-    private static final ProcessingContainerStateMachineFactory STATE_MACHINE_FACTORY =
-            new ProcessingContainerStateMachineFactory() {
-                @Override
-                public ProcessingContainerStateMachine newStateMachine(
-                        String name,
-                        StateMachineRequestProcessor<ProcessingContainerEvent> processor,
-                        NodeEngine nodeEngine,
-                        ApplicationContext applicationContext
-                ) {
-                    return new ProcessingContainerStateMachineImpl(
-                            name,
-                            processor,
-                            nodeEngine,
-                            applicationContext
-                    );
-                }
-            };
+
+    private static final StateMachineFactory<ProcessingContainerEvent,
+            StateMachine<ProcessingContainerEvent, ProcessingContainerState, ProcessingContainerResponse>>
+            STATE_MACHINE_FACTORY = ProcessingContainerStateMachine::new;
 
     private final Vertex vertex;
 
@@ -266,11 +252,11 @@ public abstract class AbstractProcessingContainer extends
 
     @Override
     @SuppressWarnings("unchecked")
-    public void processRequest(ProcessingContainerEvent event, Object payLoad) throws Exception {
-        ContainerPayLoadProcessor processor = ContainerPayLoadFactory.getProcessor(event, this);
+    public void processRequest(ProcessingContainerEvent event, Object payload) throws Exception {
+        ContainerPayloadProcessor processor = ContainerPayloadFactory.getProcessor(event, this);
 
         if (processor != null) {
-            processor.process(payLoad);
+            processor.process(payload);
         }
     }
 
@@ -306,8 +292,8 @@ public abstract class AbstractProcessingContainer extends
         for (SinkTap sinkTap : sinks) {
             if (!sinkTap.isPartitioned()) {
                 List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
-                                getNodeEngine(),
-                                getContainerContext())
+                        getNodeEngine(),
+                        getContainerContext())
                 );
                 int i = 0;
 
@@ -324,8 +310,8 @@ public abstract class AbstractProcessingContainer extends
             } else {
                 for (ContainerTask containerTask : getContainerTasks()) {
                     List<DataWriter> writers = Arrays.asList(sinkTap.getWriters(
-                                    getNodeEngine(),
-                                    getContainerContext())
+                            getNodeEngine(),
+                            getContainerContext())
                     );
 
                     containerTask.registerSinkWriters(writers);

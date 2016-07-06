@@ -32,7 +32,7 @@ public class DoubleWriter implements ObjectWriter<Double> {
     }
 
     @Override
-    public void writePayLoad(Double object,
+    public void writePayload(Double object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeDouble(object);
@@ -43,6 +43,6 @@ public class DoubleWriter implements ObjectWriter<Double> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

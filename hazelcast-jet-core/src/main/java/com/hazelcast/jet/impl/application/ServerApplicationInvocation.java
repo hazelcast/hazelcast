@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.application;
 
 import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.operation.JetOperation;
-import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -36,15 +35,10 @@ public class ServerApplicationInvocation<T> extends AbstractApplicationInvocatio
     }
 
     @SuppressWarnings("unchecked")
-    protected T execute(JetOperation operation, Address address) {
+    protected T execute(JetOperation operation, Address address) throws Exception {
         OperationService os = nodeEngine.getOperationService();
-        try {
-            InvocationBuilder ib = os
-                    .createInvocationBuilder(JetService.SERVICE_NAME, operation, address);
-
-            return (T) ib.invoke().get();
-        } catch (Throwable e) {
-            throw JetUtil.reThrow(e);
-        }
+        InvocationBuilder ib = os
+                .createInvocationBuilder(JetService.SERVICE_NAME, operation, address);
+        return (T) ib.invoke().get();
     }
 }

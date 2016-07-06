@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.JetApplicationManager;
 import com.hazelcast.jet.impl.application.ApplicationContext;
+import com.hazelcast.jet.impl.application.JetApplicationManager;
 import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

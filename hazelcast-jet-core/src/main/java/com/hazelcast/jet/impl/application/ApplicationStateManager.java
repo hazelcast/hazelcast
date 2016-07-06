@@ -16,23 +16,29 @@
 
 package com.hazelcast.jet.impl.application;
 
+
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachine;
 
-/**
- * Abstract entity to manage application state machine
- */
-public interface ApplicationStateManager {
+public class ApplicationStateManager {
+    private final ApplicationStateMachine applicationStateMachine;
+
+    public ApplicationStateManager(String applicationName) {
+        this.applicationStateMachine = new ApplicationStateMachine(applicationName);
+    }
+
     /**
      * @return state of the application state machine
      */
-    ApplicationState getApplicationState();
+    public ApplicationState getApplicationState() {
+        return this.applicationStateMachine.currentState();
+    }
 
     /**
-     * Will be invoked on some application event
-     *
-     * @param applicationEvent - event of the application
+     * Notify manager of some application event
      */
-    void onEvent(ApplicationEvent applicationEvent);
+    public void onEvent(ApplicationEvent applicationEvent) {
+        this.applicationStateMachine.onEvent(applicationEvent);
+    }
 }
-

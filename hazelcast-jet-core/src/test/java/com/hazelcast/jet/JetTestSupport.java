@@ -25,6 +25,7 @@ import com.hazelcast.jet.dag.Vertex;
 import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.jet.processor.ProcessorDescriptor;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.apache.log4j.Level;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -37,7 +38,7 @@ import java.util.stream.IntStream;
 public class JetTestSupport extends HazelcastTestSupport {
 
     protected static TestHazelcastFactory hazelcastInstanceFactory;
-    protected static final int TASK_COUNT = 4;
+    protected static final int TASK_COUNT = 1;
 
     @BeforeClass
     public static void setUpFactory() {
@@ -45,12 +46,21 @@ public class JetTestSupport extends HazelcastTestSupport {
         hazelcastInstanceFactory = new TestHazelcastFactory();
     }
 
-    protected static HazelcastInstance createCluster(int nodeCount) {
+    @AfterClass
+    public static void tearDownFactory() {
+        hazelcastInstanceFactory.shutdownAll();
+    }
+
+    protected static HazelcastInstance createCluster(TestHazelcastInstanceFactory factory, int nodeCount) {
         HazelcastInstance instance = null;
         for (int i = 0; i < nodeCount; i++) {
-            instance = hazelcastInstanceFactory.newHazelcastInstance();
+            instance = factory.newHazelcastInstance();
         }
         return instance;
+    }
+
+    protected static HazelcastInstance createCluster(int nodeCount) {
+        return createCluster(hazelcastInstanceFactory, nodeCount);
     }
 
     protected static <K, V> IMap<K, V> getMap(HazelcastInstance instance) {
@@ -95,8 +105,4 @@ public class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    @AfterClass
-    public static void tearDownFactory() {
-        hazelcastInstanceFactory.shutdownAll();
-    }
 }

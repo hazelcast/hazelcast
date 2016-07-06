@@ -33,7 +33,7 @@ public class CharWriter implements ObjectWriter<Character> {
     }
 
     @Override
-    public void writePayLoad(Character object,
+    public void writePayload(Character object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeChar(object);
@@ -44,6 +44,6 @@ public class CharWriter implements ObjectWriter<Character> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

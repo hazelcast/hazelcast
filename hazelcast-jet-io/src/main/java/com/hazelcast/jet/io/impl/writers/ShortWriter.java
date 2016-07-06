@@ -33,7 +33,7 @@ public class ShortWriter implements ObjectWriter<Short> {
     }
 
     @Override
-    public void writePayLoad(Short object,
+    public void writePayload(Short object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeShort(object);
@@ -44,6 +44,6 @@ public class ShortWriter implements ObjectWriter<Short> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

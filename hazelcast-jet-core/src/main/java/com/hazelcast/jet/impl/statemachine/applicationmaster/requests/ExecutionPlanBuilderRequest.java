@@ -33,7 +33,7 @@ public class ExecutionPlanBuilderRequest implements ContainerRequest<Application
     }
 
     @Override
-    public DAG getPayLoad() {
+    public DAG getPayload() {
         return this.dag;
     }
 }

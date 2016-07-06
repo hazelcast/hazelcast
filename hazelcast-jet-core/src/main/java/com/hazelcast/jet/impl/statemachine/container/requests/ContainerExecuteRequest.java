@@ -27,7 +27,7 @@ public class ContainerExecuteRequest implements ContainerRequest<ProcessingConta
     }
 
     @Override
-    public Dummy getPayLoad() {
+    public Dummy getPayload() {
         return Dummy.INSTANCE;
     }
 }

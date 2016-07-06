@@ -19,18 +19,8 @@ package com.hazelcast.jet.impl.container.processingcontainer;
 import com.hazelcast.jet.impl.container.ContainerResponse;
 
 public interface ProcessingContainerResponse extends ContainerResponse {
-    ProcessingContainerResponse SUCCESS = new ProcessingContainerResponse() {
-        @Override
-        public boolean isSuccess() {
-            return true;
-        }
-    };
-    ProcessingContainerResponse FAILURE = new ProcessingContainerResponse() {
-        @Override
-        public boolean isSuccess() {
-            return false;
-        }
-    };
+    ProcessingContainerResponse SUCCESS = (ProcessingContainerResponse) () -> true;
+    ProcessingContainerResponse FAILURE = (ProcessingContainerResponse) () -> false;
 
     boolean isSuccess();
 }

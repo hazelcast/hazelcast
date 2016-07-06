@@ -27,7 +27,7 @@ public interface ContainerListener {
      */
     ContainerListenerCaller EXECUTED_LISTENER_CALLER = new ContainerListenerCaller() {
         @Override
-        public <T extends Throwable> void call(ContainerListener listener, T... payLoad) {
+        public <T extends Throwable> void call(ContainerListener listener, T... payload) {
             listener.onContainerExecuted();
         }
     };
@@ -37,7 +37,7 @@ public interface ContainerListener {
      */
     ContainerListenerCaller INTERRUPTED_LISTENER_CALLER = new ContainerListenerCaller() {
         @Override
-        public <T extends Throwable> void call(ContainerListener listener, T... payLoad) {
+        public <T extends Throwable> void call(ContainerListener listener, T... payload) {
             listener.onContainerExecutionInterrupted();
         }
     };
@@ -47,8 +47,8 @@ public interface ContainerListener {
      */
     ContainerListenerCaller FAILURE_LISTENER_CALLER = new ContainerListenerCaller() {
         @Override
-        public <T extends Throwable> void call(ContainerListener listener, T... payLoad) {
-            listener.onContainerExecutionFailure(payLoad[0]);
+        public <T extends Throwable> void call(ContainerListener listener, T... payload) {
+            listener.onContainerExecutionFailure(payload[0]);
         }
     };
 

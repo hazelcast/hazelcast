@@ -27,7 +27,7 @@ public class ExecutionInterruptedRequest implements ContainerRequest<Application
     }
 
     @Override
-    public Dummy getPayLoad() {
+    public Dummy getPayload() {
         return Dummy.INSTANCE;
     }
 }

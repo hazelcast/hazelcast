@@ -32,7 +32,7 @@ public class StringWriter implements ObjectWriter<String> {
     }
 
     @Override
-    public void writePayLoad(String object,
+    public void writePayload(String object,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
         objectDataOutput.writeUTF(object);
@@ -43,6 +43,6 @@ public class StringWriter implements ObjectWriter<String> {
                       ObjectDataOutput objectDataOutput,
                       ObjectWriterFactory objectWriterFactory) throws IOException {
         writeType(object, objectDataOutput, objectWriterFactory);
-        writePayLoad(object, objectDataOutput, objectWriterFactory);
+        writePayload(object, objectDataOutput, objectWriterFactory);
     }
 }

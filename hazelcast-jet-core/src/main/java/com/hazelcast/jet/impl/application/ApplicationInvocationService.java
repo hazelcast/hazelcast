@@ -29,9 +29,9 @@ import java.util.concurrent.Callable;
  * Abstract service to invoke operation's of Jet's lifecycle
  * It can be used either for client or for server
  *
- * @param <PayLoad> - type of invokers
+ * @param <Payload> - type of invokers
  */
-public interface ApplicationInvocationService<PayLoad> {
+public interface ApplicationInvocationService<Payload> {
     /**
      * @return - member of JET cluster;
      */
@@ -40,33 +40,33 @@ public interface ApplicationInvocationService<PayLoad> {
     /**
      * @return - invoker for interrupt operation;
      */
-    PayLoad createInterruptInvoker();
+    Payload createInterruptInvoker();
 
     /**
      * @return - invoker for execute operation;
      */
-    PayLoad createExecutionInvoker();
+    Payload createExecutionInvoker();
 
     /**
      * @return - invoker to work with accumulators;
      */
-    PayLoad createAccumulatorsInvoker();
+    Payload createAccumulatorsInvoker();
 
     /**
      * @return - invoker to finalize application;
      */
-    PayLoad createFinalizationInvoker();
+    Payload createFinalizationInvoker();
 
     /**
      * @return - invoker to accept application's localization;
      */
-    PayLoad createAcceptedLocalizationInvoker();
+    Payload createAcceptedLocalizationInvoker();
 
     /**
      * @param chunk - chunk of byte-code;
      * @return - invoker to localize application;
      */
-    PayLoad createLocalizationInvoker(Chunk chunk);
+    Payload createLocalizationInvoker(Chunk chunk);
 
     /**
      * Invoker to send JET event;
@@ -74,7 +74,7 @@ public interface ApplicationInvocationService<PayLoad> {
      * @param applicationEvent - JET event
      * @return - invoker
      */
-    PayLoad createEventInvoker(ApplicationEvent applicationEvent);
+    Payload createEventInvoker(ApplicationEvent applicationEvent);
 
     /**
      * Return invoker to init JET application
@@ -82,7 +82,7 @@ public interface ApplicationInvocationService<PayLoad> {
      * @param config - application config
      * @return - invoker to init application
      */
-    PayLoad createInitApplicationInvoker(ApplicationConfig config);
+    Payload createInitApplicationInvoker(ApplicationConfig config);
 
     /**
      * Creates invocation to be called on the corresponding member;
@@ -93,5 +93,5 @@ public interface ApplicationInvocationService<PayLoad> {
      * @return - Callable object for the corresponding invocation;
      */
     <T> Callable<T> createInvocation(Member member,
-                                     InvocationFactory<PayLoad> operationFactory);
+                                     InvocationFactory<Payload> operationFactory);
 }

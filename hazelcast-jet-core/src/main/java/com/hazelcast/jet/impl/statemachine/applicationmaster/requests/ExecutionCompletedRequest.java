@@ -28,7 +28,7 @@ public class ExecutionCompletedRequest implements ContainerRequest<ApplicationMa
     }
 
     @Override
-    public Dummy getPayLoad() {
+    public Dummy getPayload() {
         return Dummy.INSTANCE;
     }
 }

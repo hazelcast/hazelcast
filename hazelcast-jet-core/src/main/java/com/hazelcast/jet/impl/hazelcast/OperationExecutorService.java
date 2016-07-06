@@ -27,17 +27,19 @@ import com.hazelcast.jet.impl.application.LocalizationResource;
 import com.hazelcast.jet.impl.application.localization.Chunk;
 import com.hazelcast.jet.impl.application.localization.ChunkIterator;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
-import com.hazelcast.jet.impl.util.JetUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public abstract class OperationExecutorService<PayLoad> implements ApplicationInvocationService<PayLoad> {
+import static com.hazelcast.jet.impl.util.JetUtil.reThrow;
+
+public abstract class OperationExecutorService<Payload> implements ApplicationInvocationService<Payload> {
 
     protected ApplicationConfig applicationConfig;
 
@@ -56,9 +58,9 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
                 ApplicationEvent.INIT_SUCCESS,
                 ApplicationEvent.INIT_FAILURE,
                 applicationStateManager,
-                new InvocationFactory<PayLoad>() {
+                new InvocationFactory<Payload>() {
                     @Override
-                    public PayLoad payLoad() {
+                    public Payload payload() {
                         return createInitApplicationInvoker(config);
                     }
                 }
@@ -71,9 +73,9 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
                 ApplicationEvent.FINALIZATION_SUCCESS,
                 ApplicationEvent.FINALIZATION_FAILURE,
                 applicationStateManager,
-                new InvocationFactory<PayLoad>() {
+                new InvocationFactory<Payload>() {
                     @Override
-                    public PayLoad payLoad() {
+                    public Payload payload() {
                         return createFinalizationInvoker();
                     }
                 }
@@ -87,9 +89,9 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
                 ApplicationEvent.INTERRUPTION_SUCCESS,
                 ApplicationEvent.INTERRUPTION_FAILURE,
                 applicationStateManager,
-                new InvocationFactory<PayLoad>() {
+                new InvocationFactory<Payload>() {
                     @Override
-                    public PayLoad payLoad() {
+                    public Payload payload() {
                         return createInterruptInvoker();
                     }
                 }
@@ -102,15 +104,15 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
                 ApplicationEvent.EXECUTION_SUCCESS,
                 ApplicationEvent.EXECUTION_FAILURE,
                 applicationStateManager,
-                new InvocationFactory<PayLoad>() {
+                new InvocationFactory<Payload>() {
                     @Override
-                    public PayLoad payLoad() {
+                    public Payload payload() {
                         return createExecutionInvoker();
                     }
                 });
     }
 
-    public abstract PayLoad createSubmitInvoker(DAG dag);
+    public abstract Payload createSubmitInvoker(DAG dag);
 
     protected OperationExecutor createOperationSubmitExecutor(final DAG dag, ApplicationStateManager applicationStateManager) {
         return new OperationExecutor(
@@ -118,9 +120,9 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
                 ApplicationEvent.SUBMIT_SUCCESS,
                 ApplicationEvent.SUBMIT_FAILURE,
                 applicationStateManager,
-                new InvocationFactory<PayLoad>() {
+                new InvocationFactory<Payload>() {
                     @Override
-                    public PayLoad payLoad() {
+                    public Payload payload() {
                         return createSubmitInvoker(dag);
                     }
                 }
@@ -143,7 +145,7 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
         );
     }
 
-    protected List<Future> invokeInCluster(InvocationFactory<PayLoad> operationFactory) {
+    protected List<Future> invokeInCluster(InvocationFactory<Payload> operationFactory) {
         Set<Member> members = getMembers();
         List<Future> futureList = new ArrayList<Future>(
                 members.size()
@@ -168,34 +170,33 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
         for (Future future : list) {
             try {
                 future.get();
-            } catch (Throwable e) {
+            } catch (ExecutionException e) {
+                errors.add(e.getCause());
+            } catch (InterruptedException e) {
                 errors.add(e);
             }
         }
 
         if (errors.size() > 1) {
             throw new CombinedJetException(errors);
-        } else if (errors.size() == 1) {
-            reThrow(errors.get(0));
+        }
+        if (errors.size() == 1) {
+            throw reThrow(errors.get(0));
         }
     }
 
 
     private void publishEvent(final ApplicationEvent applicationEvent) {
         List<Future> futures = invokeInCluster(
-                new InvocationFactory<PayLoad>() {
+                new InvocationFactory<Payload>() {
                     @Override
-                    public PayLoad payLoad() {
+                    public Payload payload() {
                         return createEventInvoker(applicationEvent);
                     }
                 }
         );
 
         await(futures);
-    }
-
-    protected void reThrow(Throwable e) {
-        throw JetUtil.reThrow(e);
     }
 
     protected abstract ApplicationConfig getApplicationConfig();
@@ -219,9 +220,9 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
         while (iterator.hasNext()) {
             final Chunk chunk = iterator.next();
 
-            InvocationFactory<PayLoad> operationFactory = new InvocationFactory<PayLoad>() {
+            InvocationFactory<Payload> operationFactory = new InvocationFactory<Payload>() {
                 @Override
-                public PayLoad payLoad() {
+                public Payload payload() {
                     return createLocalizationInvoker(chunk);
                 }
             };
@@ -233,9 +234,9 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
 
         await(futures);
 
-        InvocationFactory<PayLoad> operationFactory = new InvocationFactory<PayLoad>() {
+        InvocationFactory<Payload> operationFactory = new InvocationFactory<Payload>() {
             @Override
-            public PayLoad payLoad() {
+            public Payload payload() {
                 return createAcceptedLocalizationInvoker();
             }
         };
@@ -253,14 +254,14 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
         private final ApplicationEvent startEvent;
         private final ApplicationEvent successEvent;
         private final ApplicationEvent failureEvent;
-        private final InvocationFactory<PayLoad> operationFactory;
+        private final InvocationFactory<Payload> operationFactory;
         private final ApplicationStateManager applicationStateManager;
 
         public OperationExecutor(ApplicationEvent startEvent,
                                  ApplicationEvent successEvent,
                                  ApplicationEvent failureEvent,
                                  ApplicationStateManager applicationStateManager,
-                                 InvocationFactory<PayLoad> invocationFactory
+                                 InvocationFactory<Payload> invocationFactory
         ) {
             this.startEvent = startEvent;
             this.successEvent = successEvent;
@@ -284,7 +285,7 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
             this.applicationStateManager = applicationStateManager;
         }
 
-        private void executePayLoad() {
+        private void executePayload() {
             if (this.startEvent != null) {
                 publishEvent(this.startEvent);
                 this.applicationStateManager.onEvent(this.startEvent);
@@ -315,16 +316,16 @@ public abstract class OperationExecutorService<PayLoad> implements ApplicationIn
                         this.applicationStateManager.onEvent(this.failureEvent);
                     }
                 } catch (Throwable ee) {
-                    reThrow(new CombinedJetException(Arrays.asList(e, ee)));
+                    throw reThrow(new CombinedJetException(Arrays.asList(e, ee)));
                 }
 
-                reThrow(e);
+                throw reThrow(e);
             }
         }
 
         @Override
         public void run() {
-            executePayLoad();
+            executePayload();
         }
     }
 }

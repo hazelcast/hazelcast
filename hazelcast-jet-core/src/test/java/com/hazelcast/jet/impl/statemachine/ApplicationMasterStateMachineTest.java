@@ -3,12 +3,12 @@ package com.hazelcast.jet.impl.statemachine;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.DefaultExecutorContext;
+import com.hazelcast.jet.impl.application.ExecutorContext;
 import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
 import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachineImpl;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 public class ApplicationMasterStateMachineTest extends HazelcastTestSupport {
 
     private StateMachineContext stateMachineContext;
-    private ApplicationMasterStateMachineImpl stateMachine;
+    private ApplicationMasterStateMachine stateMachine;
     private StateMachineTaskExecutorImpl executor;
 
     @Before
@@ -291,13 +291,13 @@ public class ApplicationMasterStateMachineTest extends HazelcastTestSupport {
 
     private class StateMachineContext {
         private StateMachineTaskExecutorImpl executor;
-        private ApplicationMasterStateMachineImpl stateMachine;
+        private ApplicationMasterStateMachine stateMachine;
 
         public StateMachineTaskExecutorImpl getExecutor() {
             return executor;
         }
 
-        public ApplicationMasterStateMachineImpl getStateMachine() {
+        public ApplicationMasterStateMachine getStateMachine() {
             return stateMachine;
         }
 
@@ -318,13 +318,13 @@ public class ApplicationMasterStateMachineTest extends HazelcastTestSupport {
             when(nodeEngine.getExecutionService()).thenReturn(executionService);
 
             ApplicationContext context = mock(ApplicationContext.class);
-            DefaultExecutorContext executorContext = mock(DefaultExecutorContext.class);
+            ExecutorContext executorContext = mock(ExecutorContext.class);
             when(context.getExecutorContext()).thenReturn(executorContext);
             when(context.getNodeEngine()).thenReturn(nodeEngine);
 
             executor = new StateMachineTaskExecutorImpl(randomName(), 1, 1, nodeEngine);
             when(executorContext.getApplicationMasterStateMachineExecutor()).thenReturn(executor);
-            stateMachine = new ApplicationMasterStateMachineImpl(randomName(), requestProcessor, nodeEngine, context);
+            stateMachine = new ApplicationMasterStateMachine(randomName(), requestProcessor, nodeEngine, context);
             return this;
         }
     }

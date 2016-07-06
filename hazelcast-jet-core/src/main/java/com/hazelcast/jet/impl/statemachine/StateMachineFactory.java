@@ -20,28 +20,26 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.spi.NodeEngine;
 
 /**
- * Factory to construct abstract state-machine;
+ * Factory to construct abstract state-machine
  *
- * @param <Input>-  type of stateMachine input events;
- * @param <State>-  type of stateMachine state;
- * @param <Output>- type of stateMachine output events;
+ * @param <Input> type of stateMachine input events
+ * @param <SM>    type of stateMachine
  */
 public interface StateMachineFactory
         <Input extends StateMachineEvent,
-                State extends StateMachineState,
-                Output extends StateMachineOutput> {
+                SM extends StateMachine<Input, ?, ?>> {
     /**
-     * Creates new stateMachine;
+     * Creates new stateMachine
      *
-     * @param name               - name of the corresponding state-machine;
-     * @param processor          - corresponding processor for transitions;
-     * @param nodeEngine         - Hazelcast NodeEngine;
-     * @param applicationContext - Jet applicationContext;
-     * @return - corresponding state-machine;
+     * @param name               name of the corresponding state-machine
+     * @param processor          corresponding processor for transitions
+     * @param nodeEngine         Hazelcast NodeEngine
+     * @param applicationContext Jet applicationContext
+     * @return corresponding state-machine
      */
-    StateMachine<Input, State, Output> newStateMachine(String name,
-                                                       StateMachineRequestProcessor<Input> processor,
-                                                       NodeEngine nodeEngine,
-                                                       ApplicationContext applicationContext
+    SM newStateMachine(String name,
+                       StateMachineRequestProcessor<Input> processor,
+                       NodeEngine nodeEngine,
+                       ApplicationContext applicationContext
     );
 }

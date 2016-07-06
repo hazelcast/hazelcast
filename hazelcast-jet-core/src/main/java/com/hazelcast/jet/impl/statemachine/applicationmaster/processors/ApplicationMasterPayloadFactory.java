@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.statemachine.applicationmaster.processors;
 
+import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
-public final class ApplicationMasterPayLoadFactory {
-    private ApplicationMasterPayLoadFactory() {
+public final class ApplicationMasterPayloadFactory {
+    private ApplicationMasterPayloadFactory() {
     }
 
-    public static ContainerPayLoadProcessor getProcessor(ApplicationMasterEvent event,
+    public static ContainerPayloadProcessor getProcessor(ApplicationMasterEvent event,
                                                          ApplicationMaster applicationMaster) {
         switch (event) {
             case SUBMIT_DAG:

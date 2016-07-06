@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.statemachine.container.processors;
 
+import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
-import com.hazelcast.jet.impl.container.ContainerPayLoadProcessor;
-import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMaster;
+import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 import com.hazelcast.logging.ILogger;
 
-public class ContainerInterruptedProcessor implements ContainerPayLoadProcessor<Throwable> {
+public class ContainerInterruptedProcessor implements ContainerPayloadProcessor<Throwable> {
     private final ProcessingContainer container;
     private final ApplicationMaster applicationMaster;
     private final ILogger logger;
