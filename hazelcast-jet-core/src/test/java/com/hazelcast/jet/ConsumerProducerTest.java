@@ -52,7 +52,7 @@ public class ConsumerProducerTest extends JetTestSupport {
 
     @Test
     public void testFinalization_whenEmptyProducerWithNoConsumer() throws Exception {
-        final Application application = JetEngine.getJetApplication(instance, "emptyProducerNoConsumer");
+        final Application application = JetEngine.getApplication(instance, "emptyProducerNoConsumer");
         DAG dag = new DAG();
 
         IList<String> sourceList = getList(instance);
@@ -67,7 +67,7 @@ public class ConsumerProducerTest extends JetTestSupport {
 
     @Test
     public void testFinalization_whenEmptyProducerWithConsumer() throws Exception {
-        final Application application = JetEngine.getJetApplication(instance, "emptyProducerWithConsumer");
+        final Application application = JetEngine.getApplication(instance, "emptyProducerWithConsumer");
         DAG dag = new DAG();
 
         IList<String> sourceList = getList(instance);
@@ -90,7 +90,7 @@ public class ConsumerProducerTest extends JetTestSupport {
 
     @Test
     public void testArrayProducer() throws Exception {
-        Application application = JetEngine.getJetApplication(instance, "arrayProducer");
+        Application application = JetEngine.getApplication(instance, "arrayProducer");
 
         IList<Integer[]> sourceList = getList(instance);
         IList<Integer[]> sinkList = getList(instance);

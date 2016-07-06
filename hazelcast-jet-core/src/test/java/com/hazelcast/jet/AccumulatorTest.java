@@ -59,7 +59,7 @@ public class AccumulatorTest extends JetTestSupport {
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
-        final Application application = JetEngine.getJetApplication(instance, "emptyProducerNoConsumer");
+        final Application application = JetEngine.getApplication(instance, "emptyProducerNoConsumer");
         DAG dag = new DAG();
         Vertex vertex = createVertex("accumulator", AccumulatorProcessor.class);
         vertex.addSource(new MapSource(map));
@@ -71,7 +71,7 @@ public class AccumulatorTest extends JetTestSupport {
             Accumulator accumulator = application.getAccumulators().get(AccumulatorProcessor.ACCUMULATOR_KEY);
             assertEquals(COUNT, (long) accumulator.getLocalValue());
         } finally {
-            application.finalizeApplication().get();
+            application.destroy();
         }
     }
 

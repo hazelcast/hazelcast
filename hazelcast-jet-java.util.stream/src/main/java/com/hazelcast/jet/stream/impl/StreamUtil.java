@@ -86,7 +86,7 @@ public final class StreamUtil {
     }
 
     public static void executeApplication(StreamContext context, DAG dag) {
-        Application jetApplication = JetEngine.getJetApplication(context.getHazelcastInstance(), randomName());
+        Application jetApplication = JetEngine.getApplication(context.getHazelcastInstance(), randomName());
         try {
             Set<Class> classes = context.getClasses();
             jetApplication.submit(dag, classes.toArray(new Class[classes.size()]));
@@ -97,7 +97,7 @@ public final class StreamUtil {
             result(jetApplication.execute());
             context.getStreamListeners().forEach(Runnable::run);
         } finally {
-            result(jetApplication.finalizeApplication());
+            jetApplication.destroy();
         }
     }
 

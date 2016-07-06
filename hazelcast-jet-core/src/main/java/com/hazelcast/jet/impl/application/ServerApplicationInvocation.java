@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.application;
 
 
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
@@ -38,7 +37,7 @@ public class ServerApplicationInvocation<T> extends AbstractApplicationInvocatio
     protected T execute(JetOperation operation, Address address) throws Exception {
         OperationService os = nodeEngine.getOperationService();
         InvocationBuilder ib = os
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, address);
+                .createInvocationBuilder(ApplicationService.SERVICE_NAME, operation, address);
         return (T) ib.invoke().get();
     }
 }

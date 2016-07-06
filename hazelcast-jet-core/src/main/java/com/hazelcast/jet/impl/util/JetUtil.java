@@ -21,7 +21,7 @@ import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.config.JetClientConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.ByteArrayOutputStream;
@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -231,9 +232,8 @@ public final class JetUtil {
     }
 
     public static ApplicationContext getApplicationContext(NodeEngine nodeEngine, String applicationName) {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        return service.getApplicationManager()
-                .getApplicationContext(applicationName);
+        ApplicationService service = nodeEngine.getService(ApplicationService.SERVICE_NAME);
+        return service.getContext(applicationName);
     }
 
     public static List<Integer> getLocalPartitions(final NodeEngine nodeEngine) {
@@ -242,5 +242,13 @@ public final class JetUtil {
 
     public static boolean isPartitionLocal(final NodeEngine nodeEngine, int partitionId) {
         return nodeEngine.getPartitionService().getPartition(partitionId).isLocal();
+    }
+
+    public static <T> T uncheckedGet(Future<T> future) {
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw JetUtil.reThrow(e);
+        }
     }
 }

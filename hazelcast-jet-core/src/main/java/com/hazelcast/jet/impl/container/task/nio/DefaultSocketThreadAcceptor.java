@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.container.task.nio;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.JetApplicationManager;
 import com.hazelcast.jet.impl.data.io.NetworkTask;
 import com.hazelcast.jet.impl.data.io.SocketReader;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.config.ApplicationConfig;
@@ -37,29 +37,29 @@ import java.util.Collection;
 
 public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
     private final ServerSocketChannel serverSocketChannel;
-    private final JetApplicationManager jetApplicationManager;
+    private final ApplicationService applicationService;
 
     private long lastConnectionsTimeChecking = -1;
 
     public DefaultSocketThreadAcceptor(
-            JetApplicationManager jetApplicationManager,
+            ApplicationService applicationService,
             NodeEngine nodeEngine,
             ServerSocketChannel serverSocketChannel
     ) {
         super(nodeEngine);
         this.serverSocketChannel = serverSocketChannel;
-        this.jetApplicationManager = jetApplicationManager;
+        this.applicationService = applicationService;
     }
 
     protected boolean consumePacket(JetPacket packet) throws Exception {
         if (packet.getHeader() == JetPacket.HEADER_JET_MEMBER_EVENT) {
-            NodeEngine nodeEngine = this.jetApplicationManager.getNodeEngine();
+            NodeEngine nodeEngine = this.applicationService.getNodeEngine();
 
             String applicationName = nodeEngine.getSerializationService().toObject(
                     new HeapData(packet.getApplicationNameBytes())
             );
 
-            ApplicationContext applicationContext = this.jetApplicationManager.getApplicationContext(applicationName);
+            ApplicationContext applicationContext = this.applicationService.getContext(applicationName);
 
             if (applicationContext != null) {
                 Address address = applicationContext.getNodeEngine().getSerializationService().toObject(
@@ -121,7 +121,7 @@ public class DefaultSocketThreadAcceptor extends DefaultSocketReader {
     }
 
     private void checkSocketChannels() {
-        for (ApplicationContext applicationContext : this.jetApplicationManager.getApplicationContexts()) {
+        for (ApplicationContext applicationContext : this.applicationService.getApplicationContexts()) {
             checkTasksActivity(applicationContext.getSocketReaders().values());
             checkTasksActivity(applicationContext.getSocketWriters().values());
         }

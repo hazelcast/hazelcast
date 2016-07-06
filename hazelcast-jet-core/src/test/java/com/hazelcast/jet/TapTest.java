@@ -67,7 +67,7 @@ public class TapTest extends JetTestSupport {
 
     @Test
     public void testMapToList() throws Exception {
-        Application application = JetEngine.getJetApplication(instance, "mapToList");
+        Application application = JetEngine.getApplication(instance, "mapToList");
         IMap<Integer, Integer> sourceMap = getMap(instance);
         IList<Integer> sinkList = getList(instance);
         fillMapWithInts(sourceMap, COUNT);
@@ -86,7 +86,7 @@ public class TapTest extends JetTestSupport {
 
     @Test
     public void testListToList() throws Exception {
-        Application application = JetEngine.getJetApplication(instance, "listToList");
+        Application application = JetEngine.getApplication(instance, "listToList");
 
         IList<Integer> sourceList = getList(instance);
         fillListWithInts(sourceList, COUNT);
@@ -107,7 +107,7 @@ public class TapTest extends JetTestSupport {
 
     @Test
     public void testMapToMultipleSinks() throws Exception {
-        Application application = JetEngine.getJetApplication(instance, "multipleSinks");
+        Application application = JetEngine.getApplication(instance, "multipleSinks");
 
         IMap<Integer, Integer> sourceMap = instance.getMap("sourceMap");
 
@@ -137,7 +137,7 @@ public class TapTest extends JetTestSupport {
 
     @Test
     public void testFileToFile() throws Exception {
-        Application application = JetEngine.getJetApplication(instance, "fileToFile");
+        Application application = JetEngine.getApplication(instance, "fileToFile");
 
         File input = createInputFile();
         File output = File.createTempFile("output", null);

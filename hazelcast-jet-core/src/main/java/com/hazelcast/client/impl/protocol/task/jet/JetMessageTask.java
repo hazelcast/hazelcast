@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.permission.JetPermission;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -37,7 +37,7 @@ public abstract class JetMessageTask<P> extends AbstractMessageTask<P> implement
 
     @Override
     public String getServiceName() {
-        return JetService.SERVICE_NAME;
+        return ApplicationService.SERVICE_NAME;
     }
 
     @Override

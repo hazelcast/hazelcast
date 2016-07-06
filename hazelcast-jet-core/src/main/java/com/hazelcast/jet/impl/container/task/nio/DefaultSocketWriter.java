@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;

@@ -19,14 +19,11 @@ package com.hazelcast.jet.impl.application;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.impl.application.localization.Chunk;
-import com.hazelcast.jet.impl.hazelcast.InvocationFactory;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
-import com.hazelcast.jet.impl.hazelcast.AbstractApplicationClusterService;
 import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
 import com.hazelcast.jet.impl.operation.ApplicationEventOperation;
 import com.hazelcast.jet.impl.operation.ExecuteApplicationOperation;
-import com.hazelcast.jet.impl.operation.FinalizeApplicationOperation;
 import com.hazelcast.jet.impl.operation.GetAccumulatorsOperation;
 import com.hazelcast.jet.impl.operation.InitApplicationOperation;
 import com.hazelcast.jet.impl.operation.InterruptExecutionOperation;
@@ -42,9 +39,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 
-public class ServerApplicationClusterService extends AbstractApplicationClusterService<JetOperation> {
+public class ServerApplicationClusterService extends ApplicationClusterService<JetOperation> {
     private final NodeEngine nodeEngine;
 
     public ServerApplicationClusterService(String name,
@@ -59,13 +57,6 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
         return new InitApplicationOperation(
                 this.name,
                 config
-        );
-    }
-
-    @Override
-    public JetOperation createFinalizationInvoker() {
-        return new FinalizeApplicationOperation(
-                this.name
         );
     }
 
@@ -123,10 +114,10 @@ public class ServerApplicationClusterService extends AbstractApplicationClusterS
     }
 
     @Override
-    public <T> Callable<T> createInvocation(Member member,
-                                            InvocationFactory<JetOperation> factory) {
-        return new ServerApplicationInvocation<T>(
-                factory.payload(),
+    protected <T> Callable<T> createInvocation(Member member,
+                                            Supplier<JetOperation> factory) {
+        return new ServerApplicationInvocation<>(
+                factory.get(),
                 member.getAddress(),
                 this.nodeEngine
         );

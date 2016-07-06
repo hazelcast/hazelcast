@@ -87,11 +87,11 @@ public class ApplicationContext {
                               NodeEngine nodeEngine,
                               Address localJetAddress,
                               ApplicationConfig applicationConfig,
-                              JetApplicationManager jetApplicationManager) {
+                              ApplicationService applicationService) {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.localJetAddress = localJetAddress;
-        this.owner = new AtomicReference<Address>();
+        this.owner = new AtomicReference<>();
         this.containerIdGenerator = new AtomicInteger(0);
 
         this.applicationConfig = applicationConfig;
@@ -100,8 +100,8 @@ public class ApplicationContext {
                 this.name,
                 this.applicationConfig,
                 nodeEngine,
-                jetApplicationManager.getNetworkExecutor(),
-                jetApplicationManager.getProcessingExecutor()
+                applicationService.getNetworkExecutor(),
+                applicationService.getProcessingExecutor()
 
         );
 

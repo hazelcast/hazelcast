@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.hazelcast.client;
+package com.hazelcast.jet.impl.application.client;
 
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetAcceptLocalizationCodec;
 import com.hazelcast.client.impl.protocol.codec.JetEventCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteCodec;
-import com.hazelcast.client.impl.protocol.codec.JetFinalizeApplicationCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetAccumulatorsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetInitCodec;
 import com.hazelcast.client.impl.protocol.codec.JetInterruptCodec;
@@ -32,9 +31,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
+import com.hazelcast.jet.impl.application.ApplicationClusterService;
 import com.hazelcast.jet.impl.application.localization.Chunk;
-import com.hazelcast.jet.impl.hazelcast.AbstractApplicationClusterService;
-import com.hazelcast.jet.impl.hazelcast.InvocationFactory;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.nio.serialization.Data;
 
@@ -42,10 +40,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 
 
 public class ClientApplicationClusterService
-        extends AbstractApplicationClusterService<ClientMessage> {
+        extends ApplicationClusterService<ClientMessage> {
     private final HazelcastClientInstanceImpl client;
 
     public ClientApplicationClusterService(
@@ -105,11 +104,6 @@ public class ClientApplicationClusterService
     }
 
     @Override
-    public ClientMessage createFinalizationInvoker() {
-        return JetFinalizeApplicationCodec.encodeRequest(this.name);
-    }
-
-    @Override
     public ClientMessage createEventInvoker(ApplicationEvent applicationEvent) {
         return JetEventCodec.encodeRequest(
                 this.name,
@@ -128,10 +122,10 @@ public class ClientApplicationClusterService
     }
 
     @Override
-    public <T> Callable<T> createInvocation(Member member,
-                                            InvocationFactory<ClientMessage> factory) {
+    protected <T> Callable<T> createInvocation(Member member,
+                                               Supplier<ClientMessage> factory) {
         return new ClientApplicationInvocation<T>(
-                factory.payload(),
+                factory.get(),
                 member.getAddress(),
                 this.client
         );

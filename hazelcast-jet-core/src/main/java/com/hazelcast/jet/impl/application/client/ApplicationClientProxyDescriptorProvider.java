@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.hazelcast.client;
+package com.hazelcast.jet.impl.application.client;
 
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyDescriptor;
 import com.hazelcast.client.spi.ClientProxyDescriptorProvider;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.application.ApplicationService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -39,7 +39,7 @@ public class ApplicationClientProxyDescriptorProvider implements ClientProxyDesc
     public static class ApplicationProxyDescriptor implements ClientProxyDescriptor {
         @Override
         public String getServiceName() {
-            return JetService.SERVICE_NAME;
+            return ApplicationService.SERVICE_NAME;
         }
 
         @Override

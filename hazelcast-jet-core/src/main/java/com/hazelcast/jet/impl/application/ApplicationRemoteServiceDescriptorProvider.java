@@ -14,23 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.hazelcast;
+package com.hazelcast.jet.impl.application;
 
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptor;
 import com.hazelcast.spi.impl.servicemanager.RemoteServiceDescriptorProvider;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public class JetRemoteServiceDescriptorProvider implements RemoteServiceDescriptorProvider {
+public class ApplicationRemoteServiceDescriptorProvider implements RemoteServiceDescriptorProvider {
     private RemoteServiceDescriptor[] descriptors;
 
-    public JetRemoteServiceDescriptorProvider() {
+    public ApplicationRemoteServiceDescriptorProvider() {
+
         this.descriptors = new RemoteServiceDescriptor[1];
-        this.descriptors[0] = new JetRemoteServiceDescriptor();
+        this.descriptors[0] = new RemoteServiceDescriptor() {
+            @Override
+            public String getServiceName() {
+                return ApplicationService.SERVICE_NAME;
+            }
+
+            @Override
+            public RemoteService getService(NodeEngine nodeEngine) {
+                return new ApplicationService(nodeEngine);
+            }
+        };
     }
 
     @Override
     public RemoteServiceDescriptor[] createRemoteServiceDescriptors() {
         return this.descriptors;
     }
+
 }
