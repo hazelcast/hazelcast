@@ -7,7 +7,7 @@ import com.hazelcast.jet.impl.application.ExecutorContext;
 import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
-import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
@@ -45,7 +45,7 @@ public class ApplicationMasterStateMachineTest extends HazelcastTestSupport {
 
     private StateMachineContext stateMachineContext;
     private ApplicationMasterStateMachine stateMachine;
-    private StateMachineTaskExecutorImpl executor;
+    private StateMachineExecutor executor;
 
     @Before
     public void setUp() throws Exception {
@@ -290,10 +290,10 @@ public class ApplicationMasterStateMachineTest extends HazelcastTestSupport {
     }
 
     private class StateMachineContext {
-        private StateMachineTaskExecutorImpl executor;
+        private StateMachineExecutor executor;
         private ApplicationMasterStateMachine stateMachine;
 
-        public StateMachineTaskExecutorImpl getExecutor() {
+        public StateMachineExecutor getExecutor() {
             return executor;
         }
 
@@ -322,7 +322,7 @@ public class ApplicationMasterStateMachineTest extends HazelcastTestSupport {
             when(context.getExecutorContext()).thenReturn(executorContext);
             when(context.getNodeEngine()).thenReturn(nodeEngine);
 
-            executor = new StateMachineTaskExecutorImpl(randomName(), 1, 1, nodeEngine);
+            executor = new StateMachineExecutor(randomName(), 1, 1, nodeEngine);
             when(executorContext.getApplicationMasterStateMachineExecutor()).thenReturn(executor);
             stateMachine = new ApplicationMasterStateMachine(randomName(), requestProcessor, nodeEngine, context);
             return this;

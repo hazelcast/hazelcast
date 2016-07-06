@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.statemachine.application;
 
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.executor.TaskExecutor;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.statemachine.AbstractStateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
@@ -162,7 +162,7 @@ public class ApplicationStateMachine
     }
 
     @Override
-    protected TaskExecutor getExecutor() {
+    protected StateMachineExecutor getExecutor() {
         return getApplicationContext().getExecutorContext().getApplicationStateMachineExecutor();
     }
 

@@ -17,18 +17,18 @@
 package com.hazelcast.jet.impl.executor;
 
 /**
- * Represents abstract execution payload;
+ * Represents abstract execution payload
  */
 public interface Payload {
     /**
-     * Set marker to payload if last processing operation contained useful operations;
+     * Set marker to payload if last processing operation contained useful operations
      *
-     * @param activity - true - it there were useful operations, false - otherwise;
+     * @param activity true it there were useful operations, false otherwise
      */
     void set(boolean activity);
 
     /**
-     * @return -true if there were useful operations, false otherwise;
+     * @return true if there were useful operations, false otherwise
      */
     boolean produced();
 }

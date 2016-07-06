@@ -26,14 +26,14 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
 
-public class InitApplicationOperation extends JetOperation {
+public class ApplicationInitOperation extends JetOperation {
     private ApplicationConfig config;
 
     @SuppressWarnings("unused")
-    public InitApplicationOperation() {
+    public ApplicationInitOperation() {
     }
 
-    public InitApplicationOperation(String name,
+    public ApplicationInitOperation(String name,
                                     ApplicationConfig config) {
         super(name);
         this.config = config;

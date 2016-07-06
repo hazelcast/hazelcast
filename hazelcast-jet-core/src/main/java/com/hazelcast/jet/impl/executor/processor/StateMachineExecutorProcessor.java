@@ -17,8 +17,7 @@
 package com.hazelcast.jet.impl.executor.processor;
 
 
-import com.hazelcast.jet.impl.executor.TaskConsumer;
-import com.hazelcast.jet.impl.executor.TaskExecutor;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -26,13 +25,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StateMachineExecutorProcessor extends AbstractExecutorProcessor<TaskExecutor>
-        implements TaskConsumer {
-    protected final List<Task> originTasks = new ArrayList<Task>();
+public class StateMachineExecutorProcessor extends ExecutorProcessor<StateMachineExecutor> {
+    protected final List<Task> originTasks = new ArrayList<>();
 
-    public StateMachineExecutorProcessor(int threadNum,
-                                         ILogger logger,
-                                         TaskExecutor taskExecutor) {
+    public StateMachineExecutorProcessor(int threadNum, ILogger logger, StateMachineExecutor taskExecutor) {
         super(threadNum, logger, taskExecutor);
     }
 

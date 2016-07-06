@@ -25,9 +25,8 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.task.nio.DefaultSocketThreadAcceptor;
-import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
-import com.hazelcast.jet.impl.executor.SharedApplicationExecutor;
-import com.hazelcast.jet.impl.executor.SharedBalancedExecutorImpl;
+import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
+import com.hazelcast.jet.impl.executor.BalancedExecutor;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.FinalizeApplicationRequest;
 import com.hazelcast.jet.impl.util.JetUtil;
@@ -56,10 +55,10 @@ public class ApplicationService implements RemoteService {
 
     private final Address localJetAddress;
     private final ServerSocketChannel serverSocketChannel;
-    private final SharedApplicationExecutor networkExecutor;
-    private final SharedApplicationExecutor acceptorExecutor;
+    private final BalancedExecutor networkExecutor;
+    private final BalancedExecutor acceptorExecutor;
 
-    private final SharedApplicationExecutor processingExecutor;
+    private final BalancedExecutor processingExecutor;
 
     private final ConcurrentMap<String, ApplicationContext> applicationContexts =
             new ConcurrentHashMap<>(16);
@@ -82,21 +81,21 @@ public class ApplicationService implements RemoteService {
             throw JetUtil.reThrow(e);
         }
 
-        this.networkExecutor = new SharedBalancedExecutorImpl(
+        this.networkExecutor = new BalancedExecutor(
                 "network-reader-writer",
                 config.getIoThreadCount(),
                 config.getShutdownTimeoutSeconds(),
                 nodeEngine
         );
 
-        this.processingExecutor = new SharedBalancedExecutorImpl(
+        this.processingExecutor = new BalancedExecutor(
                 "application_executor",
                 config.getProcessingThreadCount(),
                 config.getShutdownTimeoutSeconds(),
                 nodeEngine
         );
 
-        this.acceptorExecutor = new SharedBalancedExecutorImpl(
+        this.acceptorExecutor = new BalancedExecutor(
                 "network-acceptor",
                 1,
                 config.getShutdownTimeoutSeconds(),
@@ -104,7 +103,7 @@ public class ApplicationService implements RemoteService {
         );
 
         List<Task> taskList = createAcceptorTask(nodeEngine);
-        this.acceptorExecutor.submitTaskContext(new DefaultApplicationTaskContext(
+        this.acceptorExecutor.submitTaskContext(new ApplicationTaskContext(
                 taskList
         ));
 
@@ -219,11 +218,11 @@ public class ApplicationService implements RemoteService {
         return this.localJetAddress;
     }
 
-    public SharedApplicationExecutor getNetworkExecutor() {
+    public BalancedExecutor getNetworkExecutor() {
         return this.networkExecutor;
     }
 
-    public SharedApplicationExecutor getProcessingExecutor() {
+    public BalancedExecutor getProcessingExecutor() {
         return this.processingExecutor;
     }
 

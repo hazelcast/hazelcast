@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.impl.application;
 
-import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
-import com.hazelcast.jet.impl.executor.SharedApplicationExecutor;
-import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.executor.TaskExecutor;
-import com.hazelcast.jet.impl.executor.DefaultApplicationTaskContext;
-import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
 import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.impl.executor.ApplicationTaskContext;
+import com.hazelcast.jet.impl.executor.BalancedExecutor;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
+import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.ArrayList;
@@ -32,81 +30,81 @@ import java.util.ArrayList;
  */
 public class ExecutorContext {
     private final ApplicationTaskContext networkTaskContext;
-    private final SharedApplicationExecutor networkExecutor;
-    private final TaskExecutor containerStateMachineExecutor;
-    private final SharedApplicationExecutor processingExecutor;
-    private final TaskExecutor applicationStateMachineExecutor;
+    private final BalancedExecutor networkExecutor;
+    private final StateMachineExecutor containerStateMachineExecutor;
+    private final BalancedExecutor processingExecutor;
+    private final StateMachineExecutor applicationStateMachineExecutor;
     private final ApplicationTaskContext applicationTaskContext;
-    private final TaskExecutor applicationMasterStateMachineExecutor;
+    private final StateMachineExecutor applicationMasterStateMachineExecutor;
 
     public ExecutorContext(
             String name,
             ApplicationConfig applicationConfig,
             NodeEngine nodeEngine,
-            SharedApplicationExecutor networkExecutor,
-            SharedApplicationExecutor processingExecutor) {
+            BalancedExecutor networkExecutor,
+            BalancedExecutor processingExecutor) {
         this.networkExecutor = networkExecutor;
         this.processingExecutor = processingExecutor;
         int awaitingTimeOut = applicationConfig.getSecondsToAwait();
 
-        this.networkTaskContext = new DefaultApplicationTaskContext(new ArrayList<Task>());
-        this.applicationTaskContext = new DefaultApplicationTaskContext(new ArrayList<Task>());
+        this.networkTaskContext = new ApplicationTaskContext(new ArrayList<Task>());
+        this.applicationTaskContext = new ApplicationTaskContext(new ArrayList<Task>());
 
         this.containerStateMachineExecutor =
-                new StateMachineTaskExecutorImpl(name + "-container-state_machine", 1, awaitingTimeOut, nodeEngine);
+                new StateMachineExecutor(name + "-container-state_machine", 1, awaitingTimeOut, nodeEngine);
 
         this.applicationStateMachineExecutor =
-                new StateMachineTaskExecutorImpl(name + "-application-state_machine", 1, awaitingTimeOut, nodeEngine);
+                new StateMachineExecutor(name + "-application-state_machine", 1, awaitingTimeOut, nodeEngine);
 
         this.applicationMasterStateMachineExecutor =
-                new StateMachineTaskExecutorImpl(name + "-application-master-state_machine", 1, awaitingTimeOut, nodeEngine);
+                new StateMachineExecutor(name + "-application-master-state_machine", 1, awaitingTimeOut, nodeEngine);
     }
 
     /**
-         * @return executor for application state-machine
-         */
-    public TaskExecutor getApplicationStateMachineExecutor() {
+     * @return executor for application state-machine
+     */
+    public StateMachineExecutor getApplicationStateMachineExecutor() {
         return this.applicationStateMachineExecutor;
     }
 
     /**
-         * @return executor for processing container state-machine
-         */
-    public TaskExecutor getDataContainerStateMachineExecutor() {
+     * @return executor for processing container state-machine
+     */
+    public StateMachineExecutor getDataContainerStateMachineExecutor() {
         return this.containerStateMachineExecutor;
     }
 
     /**
-         * @return executor for application-master state-machine
-         */
-    public TaskExecutor getApplicationMasterStateMachineExecutor() {
+     * @return executor for application-master state-machine
+     */
+    public StateMachineExecutor getApplicationMasterStateMachineExecutor() {
         return this.applicationMasterStateMachineExecutor;
     }
 
     /**
-         * @return shared executor to manage network specific tasks
-         */
-    public SharedApplicationExecutor getNetworkExecutor() {
+     * @return shared executor to manage network specific tasks
+     */
+    public BalancedExecutor getNetworkExecutor() {
         return this.networkExecutor;
     }
 
     /**
-         * @return shared executor to manage processing specific tasks
-         */
-    public SharedApplicationExecutor getProcessingExecutor() {
+     * @return shared executor to manage processing specific tasks
+     */
+    public BalancedExecutor getProcessingExecutor() {
         return this.processingExecutor;
     }
 
     /**
-         * @return context for the network specific tasks
-         */
+     * @return context for the network specific tasks
+     */
     public ApplicationTaskContext getNetworkTaskContext() {
         return this.networkTaskContext;
     }
 
     /**
-         * @return context for the application specific tasks
-         */
+     * @return context for the application specific tasks
+     */
     public ApplicationTaskContext getApplicationTaskContext() {
         return this.applicationTaskContext;
     }

@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.RequestPayload;
 import com.hazelcast.jet.impl.container.task.AbstractTask;
 import com.hazelcast.jet.impl.executor.Payload;
-import com.hazelcast.jet.impl.executor.TaskExecutor;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.util.BasicCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -64,7 +64,7 @@ public abstract class AbstractStateMachine
         }
     }
 
-    protected abstract TaskExecutor getExecutor();
+    protected abstract StateMachineExecutor getExecutor();
 
     protected abstract State defaultState();
 

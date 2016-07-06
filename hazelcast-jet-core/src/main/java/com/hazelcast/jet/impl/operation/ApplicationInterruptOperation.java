@@ -21,45 +21,39 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ApplicationMaster;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecuteApplicationRequest;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.InterruptApplicationRequest;
 
-
-public class ExecuteApplicationOperation extends AsyncJetOperation {
+public class ApplicationInterruptOperation extends AsyncJetOperation {
 
     @SuppressWarnings("unused")
-    public ExecuteApplicationOperation() {
+    public ApplicationInterruptOperation() {
     }
 
-    public ExecuteApplicationOperation(String name) {
+    public ApplicationInterruptOperation(String name) {
         super(name);
     }
 
     @Override
     public void run() throws Exception {
-
         ApplicationContext applicationContext = getApplicationContext();
+
         ApplicationMaster applicationMaster = applicationContext.getApplicationMaster();
+        ICompletableFuture<ApplicationMasterResponse> interruptFuture = applicationMaster.handleContainerRequest(
+                new InterruptApplicationRequest()
+        );
 
-        getLogger().fine("ExecutionApplicationRequestOperation.run " + applicationContext.getName());
-
-        ICompletableFuture<ApplicationMasterResponse> future = applicationMaster
-                .handleContainerRequest(new ExecuteApplicationRequest());
-
-        //Waiting for until all containers started
-        future.andThen(new ContainerRequestCallback(this, "Unable to start containers", () -> {
-
-            //Waiting for execution completion
-            final ICompletableFuture<Object> mailboxFuture = applicationMaster.getExecutionMailBox();
-            mailboxFuture.andThen(new ExecutionCallback<Object>() {
+        interruptFuture.andThen(new ContainerRequestCallback(this,
+                "Unable interrupt application's execution", () -> {
+            ICompletableFuture<Object> future = applicationMaster.getInterruptionMailBox();
+            future.andThen(new ExecutionCallback<Object>() {
                 @Override
-                public void onResponse(Object o) {
-                    sendResponse(o);
+                public void onResponse(Object response) {
+                    sendResponse(response);
                 }
 
                 @Override
-                public void onFailure(Throwable throwable) {
-                    getLogger().info("Operation failed");
-                    sendResponse(throwable);
+                public void onFailure(Throwable t) {
+                    sendResponse(t);
                 }
             });
         }));

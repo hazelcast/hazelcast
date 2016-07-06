@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.executor.processor;
 
-import com.hazelcast.jet.impl.executor.BalancedWorkingProcessor;
 import com.hazelcast.jet.impl.executor.BalancedExecutor;
 import com.hazelcast.jet.impl.executor.Task;
 import com.hazelcast.logging.ILogger;
@@ -25,22 +24,17 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class SharedBalancedExecutorProcessor
-        extends AbstractExecutorProcessor<BalancedExecutor>
-        implements BalancedWorkingProcessor {
-    protected final AtomicReference<BalancedWorkingProcessor> unLoadedBalancingProcessor =
-            new AtomicReference<BalancedWorkingProcessor>(null);
+public class BalancedExecutorProcessor extends ExecutorProcessor<BalancedExecutor> {
+
+    protected final AtomicReference<BalancedExecutorProcessor> unLoadedBalancingProcessor = new AtomicReference<>(null);
     protected final Queue<Task> incomingBalancingTask = new ConcurrentLinkedQueue<Task>();
     protected volatile boolean balanced = true;
     protected volatile boolean balancingIncoming;
 
-    public SharedBalancedExecutorProcessor(int threadNum,
-                                           ILogger logger,
-                                           BalancedExecutor taskExecutor) {
+    public BalancedExecutorProcessor(int threadNum, ILogger logger, BalancedExecutor taskExecutor) {
         super(threadNum, logger, taskExecutor);
     }
 
-    @Override
     public void setBalancingIncoming(boolean balancingIncoming) {
         this.balancingIncoming = balancingIncoming;
     }
@@ -50,12 +44,10 @@ public class SharedBalancedExecutorProcessor
         this.balanced = true;
     }
 
-    @Override
-    public boolean balanceWith(BalancedWorkingProcessor unBalancedProcessor) {
+    public boolean balanceWith(BalancedExecutorProcessor unBalancedProcessor) {
         return this.unLoadedBalancingProcessor.compareAndSet(null, unBalancedProcessor);
     }
 
-    @Override
     public void setBalanced(boolean balanced) {
         this.balanced = balanced;
     }
@@ -99,8 +91,7 @@ public class SharedBalancedExecutorProcessor
 
     private void balance() {
         if (!this.taskExecutor.isBalanced()) {
-            BalancedWorkingProcessor unLoadedBalancer
-                    = this.unLoadedBalancingProcessor.getAndSet(null);
+            BalancedExecutorProcessor unLoadedBalancer = this.unLoadedBalancingProcessor.getAndSet(null);
 
             if (unLoadedBalancer != null) {
                 if (executeBalancing(unLoadedBalancer)) {
@@ -110,20 +101,18 @@ public class SharedBalancedExecutorProcessor
 
             this.taskExecutor.setBalanced();
         } else if (!this.balanced) {
-            this.balanced = this.taskExecutor.registerUnBalanced(this);
+            this.balanced = this.taskExecutor.registerUnbalanced(this);
         }
     }
 
-    private boolean executeBalancing(BalancedWorkingProcessor unLoadedBalancer) {
+    private boolean executeBalancing(BalancedExecutorProcessor unLoadedBalancer) {
         int tasksSize = this.tasks.size();
         int delta = tasksSize - unLoadedBalancer.getWorkingTaskCount();
 
         if (delta >= 2) {
             for (int i = 0; i < delta / 2; i++) {
                 if (this.tasks.size() > 0) {
-                    unLoadedBalancer.acceptIncomingBalancingTask(
-                            this.tasks.remove(this.tasks.size() - 1)
-                    );
+                    unLoadedBalancer.acceptIncomingBalancingTask(this.tasks.remove(this.tasks.size() - 1));
 
                     this.workingTaskCount.decrementAndGet();
                 }
@@ -148,7 +137,6 @@ public class SharedBalancedExecutorProcessor
         return false;
     }
 
-    @Override
     public void acceptIncomingBalancingTask(Task task) {
         this.incomingBalancingTask.offer(task);
         this.balancingIncoming = true;

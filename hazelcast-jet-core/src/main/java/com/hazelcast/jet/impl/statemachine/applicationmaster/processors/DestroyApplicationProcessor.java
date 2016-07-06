@@ -23,11 +23,11 @@ import com.hazelcast.jet.impl.Dummy;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.impl.container.ContainerPayloadProcessor;
 
-public class FinalizeApplicationProcessor implements ContainerPayloadProcessor<Dummy> {
+public class DestroyApplicationProcessor implements ContainerPayloadProcessor<Dummy> {
     private final ApplicationMaster applicationMaster;
     private final ApplicationTaskContext applicationTaskContext;
 
-    public FinalizeApplicationProcessor(ApplicationMaster applicationMaster) {
+    public DestroyApplicationProcessor(ApplicationMaster applicationMaster) {
         this.applicationMaster = applicationMaster;
         this.applicationTaskContext = applicationMaster.getApplicationContext().getExecutorContext().getNetworkTaskContext();
     }

@@ -16,16 +16,44 @@
 
 package com.hazelcast.jet.impl.executor;
 
-public interface ApplicationTaskContext {
-    void addTask(Task task);
+import java.util.List;
 
-    Task[] getTasks();
+public class ApplicationTaskContext {
+    private final List<Task> tasks;
 
-    void finalizeTasks();
+    public ApplicationTaskContext(List<Task> tasks) {
+        this.tasks = tasks;
+    }
 
-    void init();
+    public void addTask(Task task) {
+        tasks.add(task);
+    }
 
-    void interrupt();
+    public Task[] getTasks() {
+        return tasks.toArray(new Task[tasks.size()]);
+    }
 
-    void destroy();
+    public void finalizeTasks() {
+        for (Task task : tasks) {
+            task.finalizeTask();
+        }
+    }
+
+    public void init() {
+        for (Task task : tasks) {
+            task.init();
+        }
+    }
+
+    public void interrupt() {
+        for (Task task : tasks) {
+            task.interrupt(null);
+        }
+    }
+
+    public void destroy() {
+        for (Task task : tasks) {
+            task.destroy();
+        }
+    }
 }

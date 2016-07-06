@@ -35,7 +35,12 @@ import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;
-import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ApplicationMasterPayloadFactory;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecuteApplicationProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionCompletedProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionErrorProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.ExecutionPlanBuilderProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.DestroyApplicationProcessor;
+import com.hazelcast.jet.impl.statemachine.applicationmaster.processors.InterruptApplicationProcessor;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionCompletedRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionErrorRequest;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.requests.ExecutionInterruptedRequest;
@@ -55,6 +60,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ApplicationMaster extends
         AbstractServiceContainer<ApplicationMasterEvent, ApplicationMasterState, ApplicationMasterResponse> {
 
@@ -99,7 +105,7 @@ public class ApplicationMaster extends
     @Override
     @SuppressWarnings("unchecked")
     public void processRequest(ApplicationMasterEvent event, Object payload) throws Exception {
-        ContainerPayloadProcessor processor = ApplicationMasterPayloadFactory.getProcessor(event, this);
+        ContainerPayloadProcessor processor = getProcessor(event, this);
 
         if (processor != null) {
             processor.process(payload);
@@ -413,5 +419,25 @@ public class ApplicationMaster extends
     @Override
     protected void wakeUpExecutor() {
         getApplicationContext().getExecutorContext().getApplicationMasterStateMachineExecutor().wakeUp();
+    }
+
+    private static ContainerPayloadProcessor getProcessor(ApplicationMasterEvent event,
+                                                         ApplicationMaster applicationMaster) {
+        switch (event) {
+            case SUBMIT_DAG:
+                return new ExecutionPlanBuilderProcessor(applicationMaster);
+            case EXECUTE:
+                return new ExecuteApplicationProcessor(applicationMaster);
+            case INTERRUPT_EXECUTION:
+                return new InterruptApplicationProcessor(applicationMaster);
+            case EXECUTION_ERROR:
+                return new ExecutionErrorProcessor(applicationMaster);
+            case EXECUTION_COMPLETED:
+                return new ExecutionCompletedProcessor();
+            case FINALIZE:
+                return new DestroyApplicationProcessor(applicationMaster);
+            default:
+                return null;
+        }
     }
 }

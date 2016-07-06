@@ -20,7 +20,7 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
-import com.hazelcast.jet.impl.executor.TaskExecutor;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.statemachine.AbstractStateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineRequestProcessor;
 import com.hazelcast.jet.impl.util.LinkedMapBuilder;
@@ -100,7 +100,7 @@ public class ApplicationMasterStateMachine extends
     }
 
     @Override
-    protected TaskExecutor getExecutor() {
+    protected StateMachineExecutor getExecutor() {
         return getApplicationContext().getExecutorContext().getApplicationMasterStateMachineExecutor();
     }
 

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.jet;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetInterruptCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.operation.InterruptExecutionOperation;
+import com.hazelcast.jet.impl.operation.ApplicationInterruptOperation;
 import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.nio.Connection;
 
@@ -46,7 +46,7 @@ public class JetInterruptMessageTask
 
     @Override
     protected JetOperation prepareOperation() {
-        return new InterruptExecutionOperation(getApplicationName());
+        return new ApplicationInterruptOperation(getApplicationName());
     }
 
     @Override
