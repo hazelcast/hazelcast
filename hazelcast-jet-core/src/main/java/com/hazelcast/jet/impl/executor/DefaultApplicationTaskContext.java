@@ -27,38 +27,38 @@ public class DefaultApplicationTaskContext implements ApplicationTaskContext {
 
     @Override
     public void addTask(Task task) {
-        this.tasks.add(task);
+        tasks.add(task);
     }
 
     @Override
     public Task[] getTasks() {
-        return this.tasks.toArray(new Task[this.tasks.size()]);
+        return tasks.toArray(new Task[tasks.size()]);
     }
 
     @Override
     public void finalizeTasks() {
-        for (Task task : this.tasks) {
+        for (Task task : tasks) {
             task.finalizeTask();
         }
     }
 
     @Override
     public void init() {
-        for (Task task : this.tasks) {
+        for (Task task : tasks) {
             task.init();
         }
     }
 
     @Override
     public void interrupt() {
-        for (Task task : this.tasks) {
+        for (Task task : tasks) {
             task.interrupt(null);
         }
     }
 
     @Override
     public void destroy() {
-        for (Task task : this.tasks) {
+        for (Task task : tasks) {
             task.destroy();
         }
     }

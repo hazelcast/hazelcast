@@ -18,8 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.JetApplicationManager;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -64,8 +63,8 @@ public abstract class JetOperation extends Operation {
     }
 
     protected ApplicationContext getApplicationContext() {
-        JetApplicationManager jetApplicationManager = getApplicationManager();
-        ApplicationContext applicationContext = jetApplicationManager.getApplicationContext(getApplicationName());
+        ApplicationService service = getService();
+        ApplicationContext applicationContext = service.getContext(getApplicationName());
 
         if (applicationContext == null) {
             throw new JetException("No application context found for applicationId=" + getApplicationName());
@@ -73,11 +72,6 @@ public abstract class JetOperation extends Operation {
 
         validateApplicationContext(applicationContext);
         return applicationContext;
-    }
-
-    protected JetApplicationManager getApplicationManager() {
-        JetService service = getService();
-        return service.getApplicationManager();
     }
 
     protected void validateApplicationContext(ApplicationContext applicationContext) {

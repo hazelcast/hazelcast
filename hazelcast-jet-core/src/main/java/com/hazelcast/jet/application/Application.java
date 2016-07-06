@@ -100,13 +100,6 @@ public interface Application extends DistributedObject {
     Future interrupt();
 
     /**
-     * Finalizes application
-     *
-     * @return Future which will return finalization's result
-     */
-    Future finalizeApplication();
-
-    /**
      * Returns map with statistic counters info for the certain application
      *
      * @return map with accumulators

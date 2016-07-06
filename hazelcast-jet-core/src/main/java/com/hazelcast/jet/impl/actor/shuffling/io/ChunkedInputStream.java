@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.actor.shuffling.io;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 
 import java.io.IOException;
 import java.io.InputStream;

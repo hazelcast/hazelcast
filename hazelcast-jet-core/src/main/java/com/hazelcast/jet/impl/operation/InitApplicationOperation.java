@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.impl.application.ApplicationContext;
-import com.hazelcast.jet.impl.application.JetApplicationManager;
+import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
@@ -51,9 +51,9 @@ public class InitApplicationOperation extends JetOperation {
     }
 
     private void initializeApplicationContext() throws JetException {
-        JetApplicationManager jetApplicationManager = getApplicationManager();
+        ApplicationService service = getService();
         ApplicationContext applicationContext =
-                jetApplicationManager.getOrCreateApplicationContext(this.name, this.config);
+                service.createApplicationContext(this.name, this.config);
         validateApplicationContext(applicationContext);
     }
 

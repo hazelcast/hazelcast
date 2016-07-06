@@ -44,7 +44,7 @@ public class ProcessingStrategyTest extends JetTestSupport {
     }
 
     private int getCountWithStrategy(ProcessingStrategy processingStrategy) throws Exception {
-        Application application = JetEngine.getJetApplication(instance, processingStrategy.toString());
+        Application application = JetEngine.getApplication(instance, processingStrategy.toString());
 
         IList<Integer> source = getList(instance);
         IList<Integer> sink = getList(instance);

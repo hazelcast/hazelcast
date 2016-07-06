@@ -29,14 +29,12 @@ import com.hazelcast.jet.processor.ContainerProcessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -70,7 +68,7 @@ public class InterruptionTest extends JetTestSupport {
     public void tesInterruptSlowApplication() throws Exception {
         int nodeCount = 2;
         HazelcastInstance instance = createCluster(factory, nodeCount);
-        final Application application = JetEngine.getJetApplication(instance, "testInterrupt");
+        final Application application = JetEngine.getApplication(instance, "testInterrupt");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -96,7 +94,7 @@ public class InterruptionTest extends JetTestSupport {
         } catch (ExecutionException e) {
             assertTrue(interrupted.get());
         } finally {
-            application.finalizeApplication().get();
+            application.destroy();
         }
     }
 
@@ -104,7 +102,7 @@ public class InterruptionTest extends JetTestSupport {
     public void testExceptionInProcessor_whenMultipleNodes() throws Exception {
         int nodeCount = 3;
         HazelcastInstance instance = createCluster(factory, nodeCount);
-        final Application application = JetEngine.getJetApplication(instance, "testExceptionMultipleNodes");
+        final Application application = JetEngine.getApplication(instance, "testExceptionMultipleNodes");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 
@@ -131,7 +129,7 @@ public class InterruptionTest extends JetTestSupport {
     @Test
     public void testExceptionInProcessor_whenSingleNode() throws Exception {
         HazelcastInstance instance = createCluster(factory, 1);
-        final Application application = JetEngine.getJetApplication(instance, "testExceptionSingleNode");
+        final Application application = JetEngine.getApplication(instance, "testExceptionSingleNode");
         IMap<Integer, Integer> map = getMap(instance);
         fillMapWithInts(map, COUNT);
 

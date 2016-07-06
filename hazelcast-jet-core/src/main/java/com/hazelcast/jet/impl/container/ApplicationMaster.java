@@ -31,7 +31,7 @@ import com.hazelcast.jet.impl.application.ApplicationException;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterEvent;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterResponse;
 import com.hazelcast.jet.impl.container.applicationmaster.ApplicationMasterState;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.statemachine.StateMachine;
 import com.hazelcast.jet.impl.statemachine.StateMachineFactory;
 import com.hazelcast.jet.impl.statemachine.applicationmaster.ApplicationMasterStateMachine;

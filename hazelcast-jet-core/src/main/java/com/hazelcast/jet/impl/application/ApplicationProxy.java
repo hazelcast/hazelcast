@@ -21,8 +21,8 @@ import com.hazelcast.jet.application.Application;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
-import com.hazelcast.jet.impl.hazelcast.JetService;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachine;
 import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -40,39 +40,38 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class ApplicationProxy extends AbstractDistributedObject<JetService> implements Application, Initable {
+public class ApplicationProxy extends AbstractDistributedObject<ApplicationService> implements Application {
     private final String name;
     private final HazelcastInstance hazelcastInstance;
     private final Set<LocalizationResource> localizedResources;
-    private final ApplicationStateManager applicationStateManager;
+    private final ApplicationStateMachine applicationStateMachine;
     private final ApplicationClusterService applicationClusterService;
 
-    public ApplicationProxy(String name, JetService jetService, NodeEngine nodeEngine) {
-        super(nodeEngine, jetService);
+    public ApplicationProxy(String name, ApplicationService applicationService, NodeEngine nodeEngine) {
+        super(nodeEngine, applicationService);
 
         this.name = name;
-        this.localizedResources = new HashSet<LocalizationResource>();
+        localizedResources = new HashSet<>();
         String hzName = nodeEngine.getHazelcastInstance().getName();
 
         ExecutorService executorService = Executors.newCachedThreadPool(
-                new JetThreadFactory("invoker-application-thread-" + this.name, hzName)
+                new JetThreadFactory("invoker-application-thread-" + name, hzName)
         );
 
-        this.hazelcastInstance = nodeEngine.getHazelcastInstance();
-        this.applicationStateManager = new ApplicationStateManager(name);
+        hazelcastInstance = nodeEngine.getHazelcastInstance();
+        applicationStateMachine = new ApplicationStateMachine(name);
 
-        this.applicationClusterService = new ServerApplicationClusterService(
+        applicationClusterService = new ServerApplicationClusterService(
                 name, executorService,
                 nodeEngine
         );
     }
 
-    @Override
     public void init(ApplicationConfig config) {
         if (config == null) {
             config = JetUtil.resolveApplicationConfig(getNodeEngine(), name);
         }
-        this.applicationClusterService.initApplication(config, this.applicationStateManager);
+        applicationClusterService.init(config, applicationStateMachine);
     }
 
     @Override
@@ -87,17 +86,22 @@ public class ApplicationProxy extends AbstractDistributedObject<JetService> impl
 
     @Override
     public Future execute() {
-        return this.applicationClusterService.executeApplication(this.applicationStateManager);
+        return applicationClusterService.execute(applicationStateMachine);
     }
 
     @Override
     public Future interrupt() {
-        return this.applicationClusterService.interruptApplication(this.applicationStateManager);
+        return applicationClusterService.interrupt(applicationStateMachine);
     }
 
     @Override
-    public Future finalizeApplication() {
-        return this.applicationClusterService.finalizeApplication(this.applicationStateManager);
+    protected boolean preDestroy() {
+        try {
+            applicationClusterService.destroy(applicationStateMachine).get();
+            return true;
+        } catch (Exception e) {
+            throw JetUtil.reThrow(e);
+        }
     }
 
     @Override
@@ -105,55 +109,55 @@ public class ApplicationProxy extends AbstractDistributedObject<JetService> impl
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
-            this.localizedResources.add(new LocalizationResource(clazz));
+            localizedResources.add(new LocalizationResource(clazz));
         }
     }
 
     @Override
     public void addResource(URL url) throws IOException {
-        this.localizedResources.add(new LocalizationResource(url));
+        localizedResources.add(new LocalizationResource(url));
     }
 
     @Override
     public void addResource(InputStream inputStream, String name, LocalizationResourceType resourceType) throws IOException {
-        this.localizedResources.add(new LocalizationResource(inputStream, name, resourceType));
+        localizedResources.add(new LocalizationResource(inputStream, name, resourceType));
     }
 
     @Override
     public String getName() {
-        return this.name;
+        return name;
     }
 
     @Override
     public void clearResources() {
-        this.localizedResources.clear();
+        localizedResources.clear();
     }
 
     @Override
     public ApplicationState getApplicationState() {
-        return this.applicationStateManager.getApplicationState();
+        return applicationStateMachine.currentState();
     }
 
     @Override
     public String getServiceName() {
-        return JetService.SERVICE_NAME;
+        return ApplicationService.SERVICE_NAME;
     }
 
     @Override
     public Map<String, Accumulator> getAccumulators() {
-        return this.applicationClusterService.getAccumulators();
+        return applicationClusterService.getAccumulators();
     }
 
     @Override
     public HazelcastInstance getHazelcastInstance() {
-        return this.hazelcastInstance;
+        return hazelcastInstance;
     }
 
     private void localizeApplication() {
-        this.applicationClusterService.localizeApplication(this.localizedResources, this.applicationStateManager);
+        applicationClusterService.localize(localizedResources, applicationStateMachine);
     }
 
     private void submit0(final DAG dag) {
-        this.applicationClusterService.submitDag(dag, this.applicationStateManager);
+        applicationClusterService.submitDag(dag, applicationStateMachine);
     }
 }

@@ -74,11 +74,6 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
                 return new com.hazelcast.client.impl.protocol.task.jet.JetEventMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.JetFinalizeApplicationCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.jet.JetFinalizeApplicationMessageTask(clientMessage, node, connection);
-            }
-        };
 //endregion
 //region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task
         factories[com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {

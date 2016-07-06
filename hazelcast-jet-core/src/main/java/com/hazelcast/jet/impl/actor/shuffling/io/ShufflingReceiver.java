@@ -27,7 +27,7 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.data.io.DefaultObjectIOStream;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;

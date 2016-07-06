@@ -101,7 +101,7 @@ public class JetTestSupport extends HazelcastTestSupport {
         try {
             application.execute().get();
         } finally {
-            application.finalizeApplication();
+            application.destroy();
         }
     }
 

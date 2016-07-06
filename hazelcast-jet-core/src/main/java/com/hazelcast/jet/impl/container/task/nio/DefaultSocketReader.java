@@ -26,7 +26,7 @@ import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.nio.Address;

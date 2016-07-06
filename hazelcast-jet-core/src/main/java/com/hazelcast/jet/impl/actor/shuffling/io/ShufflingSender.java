@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.jet.impl.container.ContainerContext;
 import com.hazelcast.jet.impl.container.ContainerTask;
 import com.hazelcast.jet.impl.dag.tap.sink.AbstractHazelcastWriter;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
+import com.hazelcast.jet.impl.data.io.JetPacket;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.jet.data.io.ProducerInputStream;
 import com.hazelcast.jet.impl.actor.RingBufferActor;

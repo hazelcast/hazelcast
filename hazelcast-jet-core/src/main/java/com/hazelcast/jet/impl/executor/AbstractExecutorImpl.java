@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.executor;
 
 
 import com.hazelcast.jet.impl.util.JetThreadFactory;
+import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 
@@ -76,9 +77,13 @@ public abstract class AbstractExecutorImpl<T extends WorkingProcessor>
     }
 
     @Override
-    public void shutdown() throws Exception {
+    public void shutdown() {
         for (WorkingProcessor processor : this.processors) {
-            processor.shutdown().get(this.awaitingTimeOut, TimeUnit.SECONDS);
+            try {
+                processor.shutdown().get(this.awaitingTimeOut, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                throw JetUtil.reThrow(e);
+            }
         }
     }
 

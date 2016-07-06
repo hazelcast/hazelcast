@@ -35,7 +35,6 @@ public interface AbstractExecutor {
     /**
      * Synchronously shutdown executor;
      *
-     * @throws Exception if exception during shutdown
      */
-    void shutdown() throws Exception;
+    void shutdown();
 }

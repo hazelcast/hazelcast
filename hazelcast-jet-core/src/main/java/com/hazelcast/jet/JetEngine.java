@@ -18,11 +18,12 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.application.Application;
-import com.hazelcast.jet.impl.application.Initable;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.config.ApplicationConfig;
+import com.hazelcast.jet.impl.application.ApplicationProxy;
+import com.hazelcast.jet.impl.application.ApplicationService;
+import com.hazelcast.jet.impl.application.client.ClientApplicationProxy;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
 import com.hazelcast.jet.impl.util.JetUtil;
-import com.hazelcast.jet.config.ApplicationConfig;
 
 /**
  * Utility class for creating new Jet Applications
@@ -37,34 +38,41 @@ public final class JetEngine {
 
     /**
      * Create a new application given a Hazelcast instance and name
+     *
      * @param hazelcastInstance Hazelcast instance to use
-     * @param applicationName name of the application
+     * @param name   name of the application
      * @return a new Jet Application
      */
-    public static Application getJetApplication(HazelcastInstance hazelcastInstance,
-                                                String applicationName) {
-        return getJetApplication(hazelcastInstance, applicationName, null);
+    public static Application getApplication(HazelcastInstance hazelcastInstance,
+                                             String name) {
+        return getApplication(hazelcastInstance, name, null);
     }
 
     /**
      * Create a new application given a Hazelcast instance, name and application configuration
+     *
      * @param hazelcastInstance Hazelcast instance to use
-     * @param applicationName name of the application
+     * @param name   name of the application
      * @param applicationConfig configuration for the application
      * @return a new Jet Application
      */
-    public static Application getJetApplication(HazelcastInstance hazelcastInstance,
-                                                String applicationName,
-                                                ApplicationConfig applicationConfig) {
-        checkApplicationName(applicationName);
+    public static Application getApplication(HazelcastInstance hazelcastInstance,
+                                             String name,
+                                             ApplicationConfig applicationConfig) {
+        checkApplicationName(name);
 
         Application application = hazelcastInstance.getDistributedObject(
-                JetService.SERVICE_NAME,
-                applicationName
+                ApplicationService.SERVICE_NAME,
+                name
         );
 
+        // TODO: application init should be done in createDistributedObject
         if (application.getApplicationState() == ApplicationState.NEW) {
-            ((Initable) application).init(applicationConfig);
+            if (application instanceof ApplicationProxy) {
+                ((ApplicationProxy) application).init(applicationConfig);
+            } else {
+                ((ClientApplicationProxy) application).init(applicationConfig);
+            }
         }
 
         return application;

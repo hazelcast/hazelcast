@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.hazelcast.client;
+package com.hazelcast.jet.impl.application.client;
 
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.HazelcastInstance;
@@ -23,11 +23,10 @@ import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
 import com.hazelcast.jet.impl.application.ApplicationClusterService;
-import com.hazelcast.jet.impl.application.ApplicationStateManager;
-import com.hazelcast.jet.impl.application.Initable;
 import com.hazelcast.jet.impl.application.LocalizationResource;
 import com.hazelcast.jet.impl.application.LocalizationResourceType;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
+import com.hazelcast.jet.impl.statemachine.application.ApplicationStateMachine;
 import com.hazelcast.jet.impl.util.JetThreadFactory;
 import com.hazelcast.jet.impl.util.JetUtil;
 
@@ -43,42 +42,41 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class ClientApplicationProxy extends ClientProxy implements Application, Initable {
+public class ClientApplicationProxy extends ClientProxy implements Application {
     private final Set<LocalizationResource> localizedResources;
-    private final ApplicationStateManager applicationStateManager;
+    private final ApplicationStateMachine applicationStateMachine;
     private ApplicationClusterService applicationClusterService;
 
     public ClientApplicationProxy(String serviceName,
                                   String name) {
         super(serviceName, name);
-        this.localizedResources = new HashSet<LocalizationResource>();
-        this.applicationStateManager = new ApplicationStateManager(name);
+        localizedResources = new HashSet<>();
+        applicationStateMachine = new ApplicationStateMachine(name);
     }
 
     protected void onInitialize() {
         String hzName = getClient().getName();
 
         ExecutorService executorService = Executors.newCachedThreadPool(
-                new JetThreadFactory("client-invoker-application-thread-" + this.name, hzName)
+                new JetThreadFactory("client-invoker-application-thread-" + name, hzName)
         );
 
-        this.applicationClusterService = new ClientApplicationClusterService(
+        applicationClusterService = new ClientApplicationClusterService(
                 getClient(),
-                this.name,
+                name,
                 executorService
         );
     }
 
-    @Override
     public void init(ApplicationConfig config) {
         if (config == null) {
             config = JetUtil.resolveApplicationConfig(getClient(), name);
         }
-        this.applicationClusterService.initApplication(config, this.applicationStateManager);
+        applicationClusterService.init(config, applicationStateMachine);
     }
 
     private void localizeApplication() {
-        this.applicationClusterService.localizeApplication(this.localizedResources, this.applicationStateManager);
+        applicationClusterService.localize(localizedResources, applicationStateMachine);
     }
 
     @Override
@@ -92,7 +90,7 @@ public class ClientApplicationProxy extends ClientProxy implements Application, 
     }
 
     private void submit0(final DAG dag) {
-        this.applicationClusterService.submitDag(dag, this.applicationStateManager);
+        applicationClusterService.submitDag(dag, applicationStateMachine);
     }
 
     @Override
@@ -100,50 +98,55 @@ public class ClientApplicationProxy extends ClientProxy implements Application, 
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
-            this.localizedResources.add(new LocalizationResource(clazz));
+            localizedResources.add(new LocalizationResource(clazz));
         }
     }
 
     @Override
     public void addResource(URL url) throws IOException {
-        this.localizedResources.add(new LocalizationResource(url));
+        localizedResources.add(new LocalizationResource(url));
     }
 
     @Override
     public void addResource(InputStream inputStream,
                             String name,
                             LocalizationResourceType resourceType) throws IOException {
-        this.localizedResources.add(new LocalizationResource(inputStream, name, resourceType));
+        localizedResources.add(new LocalizationResource(inputStream, name, resourceType));
     }
 
     @Override
     public void clearResources() {
-        this.localizedResources.clear();
+        localizedResources.clear();
     }
 
     @Override
     public ApplicationState getApplicationState() {
-        return this.applicationStateManager.getApplicationState();
+        return applicationStateMachine.currentState();
     }
 
     @Override
     public Future execute() {
-        return this.applicationClusterService.executeApplication(this.applicationStateManager);
+        return applicationClusterService.execute(applicationStateMachine);
     }
 
     @Override
     public Future interrupt() {
-        return this.applicationClusterService.interruptApplication(this.applicationStateManager);
+        return applicationClusterService.interrupt(applicationStateMachine);
     }
 
     @Override
-    public Future finalizeApplication() {
-        return this.applicationClusterService.finalizeApplication(this.applicationStateManager);
+    protected boolean preDestroy() {
+        try {
+            applicationClusterService.destroy(applicationStateMachine).get();
+            return true;
+        } catch (Exception e) {
+            throw JetUtil.reThrow(e);
+        }
     }
 
     @Override
     public Map<String, Accumulator> getAccumulators() {
-        return this.applicationClusterService.getAccumulators();
+        return applicationClusterService.getAccumulators();
     }
 
     @Override

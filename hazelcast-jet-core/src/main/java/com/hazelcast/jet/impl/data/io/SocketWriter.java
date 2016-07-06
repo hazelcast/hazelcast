@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.data.io;
 
 import com.hazelcast.jet.impl.actor.RingBufferActor;
-import com.hazelcast.jet.impl.hazelcast.JetPacket;
 
 /**
  * Represents abstract task to write to network socket

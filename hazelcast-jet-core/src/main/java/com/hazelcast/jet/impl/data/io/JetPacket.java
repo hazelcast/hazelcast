@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.hazelcast;
+package com.hazelcast.jet.impl.data.io;
 
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;

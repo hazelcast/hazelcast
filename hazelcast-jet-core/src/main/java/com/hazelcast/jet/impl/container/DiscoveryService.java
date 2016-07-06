@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.container.task.nio.DefaultSocketWriter;
 import com.hazelcast.jet.impl.data.io.SocketReader;
 import com.hazelcast.jet.impl.data.io.SocketWriter;
 import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.hazelcast.JetService;
+import com.hazelcast.jet.impl.application.ApplicationService;
 import com.hazelcast.jet.impl.operation.DiscoveryOperation;
 import com.hazelcast.jet.impl.util.JetUtil;
 import com.hazelcast.nio.Address;
@@ -73,7 +73,7 @@ public class DiscoveryService {
             for (Member member : this.nodeEngine.getClusterService().getMembers()) {
                 if (!member.localMember()) {
                     Future<Address> future = this.nodeEngine.getOperationService().invokeOnTarget(
-                            JetService.SERVICE_NAME,
+                            ApplicationService.SERVICE_NAME,
                             new DiscoveryOperation(),
                             member.getAddress()
                     );
