@@ -32,7 +32,7 @@ import com.hazelcast.replicatedmap.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.replicatedmap.merge.PassThroughMergePolicy;
 import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -40,14 +40,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
@@ -57,10 +62,24 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
         HazelcastInstanceFactory.terminateAll();
     }
 
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[] {
+                new LatestUpdateMergePolicyTestCase(),
+                new HighestHitsMergePolicyTestCase(),
+                new PutIfAbsentMapMergePolicyTestCase(),
+                new PassThroughMapMergePolicyTestCase(),
+                new CustomMergePolicyTestCase(),
+        });
+    }
+
+    @Parameterized.Parameter
+    public ReplicatedMapMergePolicyTestCase testCase;
+
     @Test
-    public void testLatestUpdateMapMergePolicy() {
+    public void testMapMergePolicy() {
         String mapName = randomMapName();
-        Config config = newConfig(LatestUpdateMapMergePolicy.class.getName(), mapName);
+        Config config = newConfig(testCase.getMergePolicyClassName(), mapName);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
@@ -69,6 +88,8 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
         TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
         h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
 
+        // wait for cluster to be formed before breaking the connection
+        waitAllForSafeState(h1, h2);
         closeConnectionBetween(h1, h2);
 
         assertOpenEventually(memberShipListener.latch);
@@ -77,164 +98,16 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         ReplicatedMap<Object, Object> map1 = h1.getReplicatedMap(mapName);
         ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
-        map1.put("key1", "value");
-        //prevent updating at the same time
-        sleepMillis(1);
-        map2.put("key1", "LatestUpdatedValue");
-        map2.put("key2", "value2");
-        //prevent updating at the same time
-        sleepMillis(1);
-        map1.put("key2", "LatestUpdatedValue2");
+        Map<Object, Object> expectedValues = testCase.populateMaps(map1, map2, h1);
 
         assertOpenEventually(lifeCycleListener.latch);
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
         ReplicatedMap<Object, Object> mapTest = h1.getReplicatedMap(mapName);
-        assertEquals("LatestUpdatedValue", mapTest.get("key1"));
-        assertEquals("LatestUpdatedValue2", mapTest.get("key2"));
-    }
-
-    @Test
-    public void testHigherHitsMapMergePolicy() {
-        String mapName = randomMapName();
-        Config config = newConfig(HigherHitsMapMergePolicy.class.getName(), mapName);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
-
-        closeConnectionBetween(h1, h2);
-
-        assertOpenEventually(memberShipListener.latch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
-        ReplicatedMap<Object, Object> map1 = h1.getReplicatedMap(mapName);
-        map1.put("key1", "higherHitsValue");
-        map1.put("key2", "value2");
-        //increase hits number
-        map1.get("key1");
-        map1.get("key1");
-
-        ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
-        map2.put("key1", "value1");
-        map2.put("key2", "higherHitsValue2");
-        //increase hits number
-        map2.get("key2");
-        map2.get("key2");
-
-        assertOpenEventually(lifeCycleListener.latch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        ReplicatedMap<Object, Object> mapTest = h2.getReplicatedMap(mapName);
-        assertEquals("higherHitsValue", mapTest.get("key1"));
-        assertEquals("higherHitsValue2", mapTest.get("key2"));
-    }
-
-    @Test
-    public void testPutIfAbsentMapMergePolicy() {
-        String mapName = randomMapName();
-        Config config = newConfig(PutIfAbsentMapMergePolicy.class.getName(), mapName);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
-
-        closeConnectionBetween(h1, h2);
-
-        assertOpenEventually(memberShipListener.latch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
-        ReplicatedMap<Object, Object> map1 = h1.getReplicatedMap(mapName);
-        map1.put("key1", "PutIfAbsentValue1");
-
-        ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
-        map2.put("key1", "value");
-        map2.put("key2", "PutIfAbsentValue2");
-
-        assertOpenEventually(lifeCycleListener.latch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        ReplicatedMap<Object, Object> mapTest = h2.getReplicatedMap(mapName);
-        assertEquals("PutIfAbsentValue1", mapTest.get("key1"));
-        assertEquals("PutIfAbsentValue2", mapTest.get("key2"));
-    }
-
-    @Test
-    public void testPassThroughMapMergePolicy() {
-        String mapName = randomMapName();
-        Config config = newConfig(PassThroughMergePolicy.class.getName(), mapName);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
-
-        closeConnectionBetween(h1, h2);
-
-        assertOpenEventually(memberShipListener.latch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
-        ReplicatedMap<Object, Object> map1 = h1.getReplicatedMap(mapName);
-        String key = generateKeyOwnedBy(h1);
-        map1.put(key, "value");
-
-        ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
-        map2.put(key, "passThroughValue");
-
-        assertOpenEventually(lifeCycleListener.latch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        ReplicatedMap<Object, Object> mapTest = h2.getReplicatedMap(mapName);
-        assertEquals("passThroughValue", mapTest.get(key));
-    }
-
-    @Test
-    public void testCustomMergePolicy() {
-        String mapName = randomMapName();
-        Config config = newConfig(CustomMergePolicy.class.getName(), mapName);
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
-
-        closeConnectionBetween(h1, h2);
-
-        assertOpenEventually(memberShipListener.latch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
-        ReplicatedMap<Object, Object> map1 = h1.getReplicatedMap(mapName);
-        String key = generateKeyOwnedBy(h1);
-        map1.put(key, "value");
-
-        ReplicatedMap<Object, Object> map2 = h2.getReplicatedMap(mapName);
-        map2.put(key, Integer.valueOf(1));
-
-        assertOpenEventually(lifeCycleListener.latch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        ReplicatedMap<Object, Object> mapTest = h2.getReplicatedMap(mapName);
-        assertNotNull(mapTest.get(key));
-        assertTrue(mapTest.get(key) instanceof Integer);
+        for (Map.Entry<Object, Object> entry : expectedValues.entrySet()) {
+            assertEquals(entry.getValue(), mapTest.get(entry.getKey()));
+        }
     }
 
     private Config newConfig(String mergePolicy, String mapName) {
@@ -288,4 +161,159 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
     }
 
+    private interface ReplicatedMapMergePolicyTestCase {
+        // Populate given maps with K-V pairs. Optional HZ instance is required by specific merge policies in order to
+        // generate keys owned by the given instance.
+        // return K-V pairs expected to be found in the merged map
+        Map<Object, Object> populateMaps(ReplicatedMap<Object, Object> map1, ReplicatedMap<Object, Object> map2,
+                                         HazelcastInstance instance);
+
+        // return merge policy's class name
+        String getMergePolicyClassName();
+    }
+
+    private static class LatestUpdateMergePolicyTestCase implements ReplicatedMapMergePolicyTestCase {
+        @Override
+        public Map<Object, Object> populateMaps(ReplicatedMap<Object, Object> map1, ReplicatedMap<Object, Object> map2,
+                                                HazelcastInstance instance) {
+            map1.put("key1", "value");
+            //prevent updating at the same time
+            sleepMillis(1);
+            map2.put("key1", "LatestUpdatedValue");
+            map2.put("key2", "value2");
+            //prevent updating at the same time
+            sleepMillis(1);
+            map1.put("key2", "LatestUpdatedValue2");
+
+            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            expectedValues.put("key1", "LatestUpdatedValue");
+            expectedValues.put("key2", "LatestUpdatedValue2");
+            return expectedValues;
+        }
+
+        @Override
+        public String getMergePolicyClassName() {
+            return LatestUpdateMapMergePolicy.class.getName();
+        }
+
+        @Override
+        public String toString() {
+            return "LatestUpdateMapMergePolicy";
+        }
+    }
+
+    private static class HighestHitsMergePolicyTestCase implements ReplicatedMapMergePolicyTestCase {
+        @Override
+        public Map<Object, Object> populateMaps(ReplicatedMap<Object, Object> map1, ReplicatedMap<Object, Object> map2,
+                                                HazelcastInstance instance) {
+            map1.put("key1", "higherHitsValue");
+            map1.put("key2", "value2");
+            //increase hits number
+            map1.get("key1");
+            map1.get("key1");
+
+            map2.put("key1", "value1");
+            map2.put("key2", "higherHitsValue2");
+            //increase hits number
+            map2.get("key2");
+            map2.get("key2");
+
+            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            expectedValues.put("key1", "higherHitsValue");
+            expectedValues.put("key2", "higherHitsValue2");
+            return expectedValues;
+        }
+
+        @Override
+        public String getMergePolicyClassName() {
+            return HigherHitsMapMergePolicy.class.getName();
+        }
+
+        @Override
+        public String toString() {
+            return "HigherHitsMapMergePolicy";
+        }
+    }
+
+    private static class PutIfAbsentMapMergePolicyTestCase implements ReplicatedMapMergePolicyTestCase {
+        @Override
+        public Map<Object, Object> populateMaps(ReplicatedMap<Object, Object> map1, ReplicatedMap<Object, Object> map2,
+                                                HazelcastInstance instance) {
+            map1.put("key1", "PutIfAbsentValue1");
+
+            map2.put("key1", "value");
+            map2.put("key2", "PutIfAbsentValue2");
+
+            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            expectedValues.put("key1", "PutIfAbsentValue1");
+            expectedValues.put("key2", "PutIfAbsentValue2");
+            return expectedValues;
+        }
+
+        @Override
+        public String getMergePolicyClassName() {
+            return PutIfAbsentMapMergePolicy.class.getName();
+        }
+
+        @Override
+        public String toString() {
+            return "PutIfAbsentMapMergePolicy";
+        }
+    }
+
+    private static class PassThroughMapMergePolicyTestCase implements ReplicatedMapMergePolicyTestCase {
+
+        @Override
+        public Map<Object, Object> populateMaps(ReplicatedMap<Object, Object> map1, ReplicatedMap<Object, Object> map2,
+                                                HazelcastInstance instance) {
+
+            assertNotNull(instance);
+            String key = generateKeyOwnedBy(instance);
+            map1.put(key, "value");
+
+            map2.put(key, "passThroughValue");
+            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            expectedValues.put(key, "passThroughValue");
+            return expectedValues;
+        }
+
+        @Override
+        public String getMergePolicyClassName() {
+            return PassThroughMergePolicy.class.getName();
+        }
+
+        @Override
+        public String toString() {
+            return "PassThroughMergePolicy";
+        }
+    }
+
+    private static class CustomMergePolicyTestCase implements ReplicatedMapMergePolicyTestCase {
+
+        @Override
+        public Map<Object, Object> populateMaps(ReplicatedMap<Object, Object> map1, ReplicatedMap<Object, Object> map2,
+                                                HazelcastInstance instance) {
+
+            assertNotNull(instance);
+            String key = generateKeyOwnedBy(instance);
+            Integer value = Integer.valueOf(1);
+            map1.put(key, "value");
+
+            map2.put(key, value);
+
+            Map<Object, Object> expectedValues = new HashMap<Object, Object>();
+            expectedValues.put(key, value);
+            return expectedValues;
+        }
+
+        @Override
+        public String getMergePolicyClassName() {
+            return CustomMergePolicy.class.getName();
+        }
+
+        @Override
+        public String toString() {
+            return "CustomMergePolicy";
+        }
+    }
 }
