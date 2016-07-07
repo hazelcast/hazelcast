@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapContainer;
@@ -29,14 +28,12 @@ import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.CachedQueryEntry;
-import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationPublisher;
@@ -44,26 +41,41 @@ import com.hazelcast.wan.WanReplicationPublisher;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 
-import static com.hazelcast.core.EntryEventType.EVICTED;
-import static com.hazelcast.core.EntryEventType.EXPIRED;
-import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.event.AbstractFilteringStrategy.FILTER_DOES_NOT_MATCH;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 public class MapEventPublisherImpl implements MapEventPublisher {
+
+    /**
+     * When {@code true}, enables processing of entry events for listeners with predicates to fit with "query cache" concept:
+     * for example when the original event indicates an update from an old value that does not match the predicate to a new value
+     * that does match, then the entry listener will be notified with an ADDED event.
+     * This affects only map listeners with predicates and the way entry updates are handled. Put/remove operations are not
+     * affected, neither are listeners without predicates.
+     * Default value is {@code false}, to maintain compatible behavior with previous Hazelcast versions.
+     */
+    public static final HazelcastProperty LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES = new HazelcastProperty(
+            "hazelcast.map.entry.filtering.natural.event.types", false);
 
     protected final MapServiceContext mapServiceContext;
     protected final NodeEngine nodeEngine;
     protected final SerializationService serializationService;
     protected final EventService eventService;
+    protected final FilteringStrategy filteringStrategy;
 
     public MapEventPublisherImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.eventService = nodeEngine.getEventService();
+        if (this.nodeEngine.getProperties().
+                getBoolean(LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES)) {
+            this.filteringStrategy = new QueryCacheNaturalFilteringStrategy(serializationService, mapServiceContext);
+        } else {
+            this.filteringStrategy = new DefaultEntryEventFilteringStrategy(serializationService, mapServiceContext);
+        }
     }
 
     @Override
@@ -140,75 +152,47 @@ public class MapEventPublisherImpl implements MapEventPublisher {
             return;
         }
 
-        List<EventRegistration> includeValueRegistrations = null;
-        List<EventRegistration> nullValueRegistrations = null;
+        publishEvent(registrations, caller, mapName, eventType, dataKey, oldValue, value, mergingValue);
+    }
+
+    private void publishEvent(Collection<EventRegistration> registrations, Address caller, String mapName,
+                                     EntryEventType eventType, Data dataKey, Object oldValue, Object value,
+                                     Object mergingValue) {
+
+        EntryEventDataCache eventDataCache = filteringStrategy.getEntryEventDataCache();
+
+        int orderKey = pickOrderKey(dataKey);
 
         for (EventRegistration registration : registrations) {
             EventFilter filter = registration.getFilter();
-
-            if (!doFilter(filter, dataKey, oldValue, value, eventType, mapName)) {
+            // a filtering strategy determines whether the event must be published on the specific
+            // event registration and may alter the type of event to be published
+            int eventTypeForPublishing = filteringStrategy.doFilter(filter, dataKey, oldValue, value, eventType, mapName);
+            if (eventTypeForPublishing == FILTER_DOES_NOT_MATCH) {
                 continue;
             }
 
-            if (isIncludeValue(filter)) {
-                includeValueRegistrations = getOrCreateList(includeValueRegistrations);
-                includeValueRegistrations.add(registration);
-            } else {
-                nullValueRegistrations = getOrCreateList(nullValueRegistrations);
-                nullValueRegistrations.add(registration);
-            }
+            EntryEventData eventDataToBePublished = eventDataCache.getOrCreateEventData(mapName, caller, dataKey,
+                    value, oldValue, mergingValue, eventTypeForPublishing, isIncludeValue(filter));
+            eventService.publishEvent(SERVICE_NAME, registration, eventDataToBePublished, orderKey);
         }
 
-        if (!isEmpty(includeValueRegistrations)) {
-            Data dataOldValue = mapServiceContext.toData(oldValue);
-            Data dataValue = mapServiceContext.toData(value);
-            Data dataMergingValue = mapServiceContext.toData(mergingValue);
-            EntryEventData eventData = createEntryEventData(mapName, caller, dataKey,
-                    dataValue, dataOldValue, dataMergingValue, eventType.getType());
-            int orderKey = pickOrderKey(dataKey);
-            publishEventInternal(includeValueRegistrations, eventData, orderKey);
-        }
-
-        if (!isEmpty(nullValueRegistrations)) {
-            EntryEventData eventData = createEntryEventData(mapName, caller, dataKey,
-                    null, null, null, eventType.getType());
-            int orderKey = pickOrderKey(dataKey);
-            publishEventInternal(nullValueRegistrations, eventData, orderKey);
+        // if events were generated, execute the post-publish hook on each one
+        if (!eventDataCache.isEmpty()) {
+            postPublishEvent(eventDataCache.eventDataIncludingValues(), eventDataCache.eventDataExcludingValues());
         }
     }
 
-    protected List<EventRegistration> getOrCreateList(List<EventRegistration> registrations) {
-        if (registrations == null) {
-            registrations = new ArrayList<EventRegistration>();
-        }
-        return registrations;
-    }
-
-    protected boolean doFilter(EventFilter filter, Data dataKey,
-                               Object dataOldValue, Object dataValue, EntryEventType eventType, String mapNameOrNull) {
-        if (filter instanceof MapPartitionLostEventFilter) {
-            return false;
-        }
-
-        // the order of the following ifs is important!
-        // QueryEventFilter is instance of EntryEventFilter
-        if (filter instanceof EventListenerFilter) {
-            if (!filter.eval(eventType.getType())) {
-                return false;
-            } else {
-                filter = ((EventListenerFilter) filter).getEventFilter();
-            }
-        }
-        if (filter instanceof TrueEventFilter) {
-            return true;
-        }
-        if (filter instanceof QueryEventFilter) {
-            return processQueryEventFilter(filter, eventType, dataKey, dataOldValue, dataValue, mapNameOrNull);
-        }
-        if (filter instanceof EntryEventFilter) {
-            return processEntryEventFilter(filter, dataKey);
-        }
-        throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
+    /**
+     * Hook for actions to perform after any of {@code publishEvent} methods is executed.
+     * This method will be invoked once per unique EntryEventData generated by {@code publishEvent},
+     * regardless of the number of registrations on which the event is published.
+     * @param eventDataIncludingValues
+     * @param eventDataExcludingValues
+     */
+    protected void postPublishEvent(Collection<EntryEventData> eventDataIncludingValues,
+                                    Collection<EntryEventData> eventDataExcludingValues) {
+        // nop
     }
 
     protected boolean isIncludeValue(EventFilter filter) {
@@ -276,45 +260,9 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         return thisAddress.toString();
     }
 
-    private boolean processEntryEventFilter(EventFilter filter, Data dataKey) {
-        EntryEventFilter eventFilter = (EntryEventFilter) filter;
-        return eventFilter.eval(dataKey);
-    }
-
-    private boolean processQueryEventFilter(EventFilter filter, EntryEventType eventType,
-                                            Data dataKey, Object dataOldValue, Object dataValue, String mapNameOrNull) {
-        Object testValue;
-        if (eventType == REMOVED || eventType == EVICTED || eventType == EXPIRED) {
-            testValue = dataOldValue;
-        } else {
-            testValue = dataValue;
-        }
-
-        Extractors extractors = getExtractorsForMapName(mapNameOrNull);
-        QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        QueryableEntry entry = new CachedQueryEntry((InternalSerializationService) serializationService,
-                dataKey, testValue, extractors);
-        return queryEventFilter.eval(entry);
-    }
-
-    private Extractors getExtractorsForMapName(String mapName) {
-        if (mapName == null) {
-            return Extractors.empty();
-        }
-        return mapServiceContext.getExtractors(mapName);
-    }
-
     protected void publishWanReplicationEventInternal(String mapName, ReplicationEventObject event) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         WanReplicationPublisher wanReplicationPublisher = mapContainer.getWanReplicationPublisher();
         wanReplicationPublisher.publishReplicationEvent(SERVICE_NAME, event);
-    }
-
-    private EntryEventData createEntryEventData(String mapName, Address caller,
-                                                Data dataKey, Data dataNewValue, Data dataOldValue,
-                                                Data dataMergingValue, int eventType) {
-        String thisNodesAddress = getThisNodesAddress();
-        return new EntryEventData(thisNodesAddress, mapName, caller,
-                dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
     }
 }
