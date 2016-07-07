@@ -36,8 +36,8 @@ public class TupleWriter implements ObjectWriter<Tuple> {
     public void writePayload(Tuple tuple,
                              ObjectDataOutput objectDataOutput,
                              ObjectWriterFactory objectWriterFactory) throws IOException {
-        int keySize = tuple.keySize();
-        int valueSize = tuple.valueSize();
+        int keySize = tuple.keyCount();
+        int valueSize = tuple.valueCount();
 
         objectDataOutput.writeInt(keySize);
         objectDataOutput.writeInt(valueSize);

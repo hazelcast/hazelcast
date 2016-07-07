@@ -31,18 +31,14 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
     protected int valueSize;
 
     public DefaultTuple() {
-
     }
 
     public DefaultTuple(K key, V value) {
         checkNotNull(key);
         checkNotNull(value);
-
         this.data = new Object[2];
-
         this.keySize = 1;
         this.valueSize = 1;
-
         this.data[0] = key;
         this.data[1] = value;
     }
@@ -95,12 +91,12 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
     }
 
     @Override
-    public int keySize() {
+    public int keyCount() {
         return this.keySize;
     }
 
     @Override
-    public int valueSize() {
+    public int valueCount() {
         return this.valueSize;
     }
 
@@ -119,17 +115,17 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
     @Override
     @SuppressWarnings("unchecked")
     public K[] cloneKeys() {
-        K[] tmp = (K[]) new Object[this.keySize];
-        System.arraycopy(this.data, 0, tmp, 0, this.keySize);
-        return tmp;
+        Object[] result = new Object[this.keySize];
+        System.arraycopy(this.data, 0, result, 0, this.keySize);
+        return (K[]) result;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public V[] cloneValues() {
-        V[] tmp = (V[]) new Object[this.valueSize];
-        System.arraycopy(this.data, this.keySize, tmp, 0, this.valueSize);
-        return tmp;
+        Object[] result = new Object[this.valueSize];
+        System.arraycopy(this.data, this.keySize, result, 0, this.valueSize);
+        return (V[]) result;
     }
 
     @Override
@@ -151,21 +147,16 @@ public class DefaultTuple<K, V> implements Tuple<K, V> {
         if (this == o) {
             return true;
         }
-
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || o.getClass() != DefaultTuple.class) {
             return false;
         }
-
         DefaultTuple<?, ?> tuple = (DefaultTuple<?, ?>) o;
-
         if (keySize != tuple.keySize) {
             return false;
         }
-
         if (valueSize != tuple.valueSize) {
             return false;
         }
-
         return Arrays.equals(data, tuple.data);
     }
 

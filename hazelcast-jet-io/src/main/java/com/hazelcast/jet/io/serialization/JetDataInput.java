@@ -16,65 +16,514 @@
 
 package com.hazelcast.jet.io.serialization;
 
+import com.hazelcast.internal.memory.MemoryAccessor;
 import com.hazelcast.internal.memory.MemoryManager;
+import com.hazelcast.internal.memory.impl.EndiannessUtil;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.io.impl.serialization.HeapData;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.serialization.Data;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteOrder;
 
+import static com.hazelcast.internal.memory.impl.EndiannessUtil.CUSTOM_ACCESS;
+import static com.hazelcast.nio.Bits.CHAR_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.BufferObjectDataInput.UTF_BUFFER_SIZE;
+
 /**
- * Provides serialization methods for arrays of primitive types which are located in off-heap
- * Let us to work with long pointers
+ * Specialization of {@link ObjectDataInput} backed by a {@link MemoryManager}-provided memory block,
+ * characterized by its base address and size.
  */
-public interface JetDataInput extends ObjectDataInput {
+@SuppressWarnings("checkstyle:methodcount")
+public class JetDataInput implements ObjectDataInput {
 
-    int read() throws IOException;
+    public static final int INITIAL_UTF8_BUFSIZE = UTF_BUFFER_SIZE * 8;
+    private final boolean isBigEndian;
+    private final InternalSerializationService service;
+    private long bufBase;
+    private long size;
+    private long pos;
+    private char[] charBuffer;
+    private MemoryAccessor accessor;
 
-    int read(long position) throws IOException;
+    public JetDataInput(MemoryManager memoryManager, InternalSerializationService service, boolean isBigEndian) {
+        this.service = service;
+        this.pos = 0;
+        this.isBigEndian = isBigEndian;
+        setMemoryManager(memoryManager);
+    }
 
-    boolean readBoolean(long position) throws IOException;
+    public void setMemoryManager(MemoryManager memoryManager) {
+        this.accessor = memoryManager != null ? memoryManager.getAccessor() : null;
+    }
 
-    byte readByte(long position) throws IOException;
 
-    char readChar(long position) throws IOException;
 
-    double readDouble(int position) throws IOException;
+    // ObjectDataInput implementation
 
-    double readDouble(ByteOrder byteOrder) throws IOException;
+    @Override
+    public final boolean readBoolean() throws IOException {
+        final int ch = read();
+        if (ch < 0) {
+            throw new EOFException();
+        }
+        return ch != 0;
+    }
 
-    double readDouble(long position, ByteOrder byteOrder) throws IOException;
 
-    float readFloat(int position) throws IOException;
+    /**
+     * See the general contract of the <code>readByte</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next byte of this input stream as a signed 8-bit
+     * <code>byte</code>.
+     * @throws java.io.EOFException if this input stream has reached the end.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.FilterInputStream#in
+     */
+    @Override
+    public final byte readByte() throws IOException {
+        final int ch = read();
+        if (ch < 0) {
+            throw new EOFException();
+        }
+        return (byte) ch;
+    }
 
-    float readFloat(ByteOrder byteOrder) throws IOException;
+    /**
+     * See the general contract of the <code>readChar</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next two bytes of this input stream as a Unicode character.
+     * @throws java.io.EOFException if this input stream reaches the end before reading two
+     *                              bytes.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.FilterInputStream#in
+     */
+    @Override
+    public final char readChar() throws IOException {
+        checkAvailable(pos, CHAR_SIZE_IN_BYTES);
+        final char c = EndiannessUtil.readChar(CUSTOM_ACCESS, accessor, bufBase + pos, isBigEndian);
+        pos += CHAR_SIZE_IN_BYTES;
+        return c;
+    }
 
-    float readFloat(int position, ByteOrder byteOrder) throws IOException;
+    /**
+     * See the general contract of the <code>readDouble</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next eight bytes of this input stream, interpreted as a
+     * <code>double</code>.
+     * @throws java.io.EOFException if this input stream reaches the end before reading eight
+     *                              bytes.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.DataInputStream#readLong()
+     * @see Double#longBitsToDouble(long)
+     */
+    @Override
+    public double readDouble() throws IOException {
+        return Double.longBitsToDouble(readLong());
+    }
 
-    int readInt(ByteOrder byteOrder) throws IOException;
+    /**
+     * See the general contract of the <code>readFloat</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next four bytes of this input stream, interpreted as a
+     * <code>float</code>.
+     * @throws java.io.EOFException if this input stream reaches the end before reading four
+     *                              bytes.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.DataInputStream#readInt()
+     * @see Float#intBitsToFloat(int)
+     */
+    @Override
+    public float readFloat() throws IOException {
+        return Float.intBitsToFloat(readInt());
+    }
 
-    int readInt(long position, ByteOrder byteOrder) throws IOException;
+    /**
+     * See the general contract of the <code>readInt</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next four bytes of this input stream, interpreted as an
+     * <code>int</code>.
+     * @throws java.io.EOFException if this input stream reaches the end before reading four
+     *                              bytes.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.FilterInputStream#in
+     */
+    @Override
+    public final int readInt() throws IOException {
+        final int i = readInt(pos);
+        pos += INT_SIZE_IN_BYTES;
+        return i;
+    }
 
-    long readLong(ByteOrder byteOrder) throws IOException;
+    public int readInt(long position) throws IOException {
+        checkAvailable(position, INT_SIZE_IN_BYTES);
+        return EndiannessUtil.readInt(CUSTOM_ACCESS, accessor, bufBase + position, isBigEndian);
+    }
 
-    long readLong(long position, ByteOrder byteOrder) throws IOException;
+    @Override
+    @Deprecated
+    public final String readLine() throws IOException {
+        throw new UnsupportedOperationException();
+    }
 
-    short readShort(long position) throws IOException;
+    /**
+     * See the general contract of the <code>readLong</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next eight bytes of this input stream, interpreted as a
+     * <code>long</code>.
+     * @throws java.io.EOFException if this input stream reaches the end before reading eight
+     *                              bytes.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.FilterInputStream#in
+     */
+    @Override
+    public final long readLong() throws IOException {
+        final long l = readLong(pos);
+        pos += LONG_SIZE_IN_BYTES;
+        return l;
+    }
 
-    short readShort(ByteOrder byteOrder) throws IOException;
+    public long readLong(long position) throws IOException {
+        checkAvailable(position, LONG_SIZE_IN_BYTES);
+        return EndiannessUtil.readLong(CUSTOM_ACCESS, accessor, bufBase + position, isBigEndian);
+    }
 
-    short readShort(long position, ByteOrder byteOrder) throws IOException;
+    /**
+     * See the general contract of the <code>readShort</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next two bytes of this input stream, interpreted as a signed
+     * 16-bit number.
+     * @throws java.io.EOFException if this input stream reaches the end before reading two
+     *                              bytes.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.FilterInputStream#in
+     */
+    @Override
+    public final short readShort() throws IOException {
+        checkAvailable(pos, SHORT_SIZE_IN_BYTES);
+        short s = EndiannessUtil.readShort(CUSTOM_ACCESS, accessor, bufBase + pos, isBigEndian);
+        pos += SHORT_SIZE_IN_BYTES;
+        return s;
+    }
 
-    long position();
+    @Override
+    public void readFully(final byte[] b) throws IOException {
+        readFully(b, 0, b.length);
+    }
 
-    void position(long newPos);
+    @Override
+    public void readFully(byte[] b, int off, int len) throws IOException {
+        accessor.copyToByteArray(bufBase + pos, b, off, len);
+        pos += len;
+    }
 
-    long available();
+    @Override
+    public int skipBytes(int n) throws IOException {
+        pos += n;
+        return n;
+    }
 
-    void reset(long pointer, long size);
+    @Override
+    public byte[] readByteArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            byte[] b = new byte[len];
+            readFully(b);
+            return b;
+        }
+        return new byte[0];
+    }
 
-    void setMemoryManager(MemoryManager memoryManager);
+    @Override
+    public boolean[] readBooleanArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            boolean[] values = new boolean[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readBoolean();
+            }
+            return values;
+        }
+        return new boolean[0];
+    }
 
-    void clear();
+    @Override
+    public char[] readCharArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            char[] values = new char[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readChar();
+            }
+            return values;
+        }
+        return new char[0];
+    }
 
-    void close();
+    @Override
+    public int[] readIntArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readInt();
+            }
+            return values;
+        }
+        return new int[0];
+    }
+
+    @Override
+    public long[] readLongArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            long[] values = new long[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readLong();
+            }
+            return values;
+        }
+        return new long[0];
+    }
+
+    @Override
+    public double[] readDoubleArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            double[] values = new double[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readDouble();
+            }
+            return values;
+        }
+        return new double[0];
+    }
+
+    @Override
+    public float[] readFloatArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            float[] values = new float[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readFloat();
+            }
+            return values;
+        }
+        return new float[0];
+    }
+
+    @Override
+    public short[] readShortArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            short[] values = new short[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readShort();
+            }
+            return values;
+        }
+        return new short[0];
+    }
+
+    @Override
+    public String[] readUTFArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            String[] values = new String[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readUTF();
+            }
+            return values;
+        }
+        return new String[0];
+    }
+
+    /**
+     * See the general contract of the <code>readUnsignedByte</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next byte of this input stream, interpreted as an unsigned
+     * 8-bit number.
+     * @throws java.io.EOFException if this input stream has reached the end.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.FilterInputStream#in
+     */
+    @Override
+    public int readUnsignedByte() throws IOException {
+        return Byte.toUnsignedInt(readByte());
+    }
+
+    /**
+     * See the general contract of the <code>readUnsignedShort</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return the next two bytes of this input stream, interpreted as an
+     * unsigned 16-bit integer.
+     * @throws java.io.EOFException if this input stream reaches the end before reading two
+     *                              bytes.
+     * @throws java.io.IOException  if an I/O error occurs.
+     * @see java.io.FilterInputStream#in
+     */
+    @Override
+    public int readUnsignedShort() throws IOException {
+        return Short.toUnsignedInt(readShort());
+    }
+
+    /**
+     * See the general contract of the <code>readUTF</code> method of
+     * <code>DataInput</code>.
+     * <p>
+     * Bytes for this operation are read from the contained input stream.
+     *
+     * @return a Unicode string.
+     * @throws java.io.EOFException           if this input stream reaches the end before reading all
+     *                                        the bytes.
+     * @throws java.io.IOException            if an I/O error occurs.
+     * @throws java.io.UTFDataFormatException if the bytes do not represent a valid modified UTF-8
+     *                                        encoding of a string.
+     * @see java.io.DataInputStream#readUTF(java.io.DataInput)
+     */
+    @Override
+    public final String readUTF() throws IOException {
+        int charCount = readInt();
+        if (charCount == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (charBuffer == null || charCount > charBuffer.length) {
+            charBuffer = new char[charCount];
+        }
+        byte b;
+        for (int i = 0; i < charCount; i++) {
+            b = readByte();
+            charBuffer[i] = b < 0 ? EndiannessUtil.readUtf8Char(this, b) : (char) b;
+        }
+        return new String(charBuffer, 0, charCount);
+    }
+
+    @Override
+    public final <T> T readObject() throws IOException {
+        return service.readObject(this);
+    }
+
+    @Override
+    public final Data readData() throws IOException {
+        byte[] bytes = readByteArray();
+        Data data = bytes == null ? null : new HeapData(bytes);
+        return data;
+    }
+
+    @Override
+    public final ClassLoader getClassLoader() {
+        return service.getClassLoader();
+    }
+
+    @Override
+    public ByteOrder getByteOrder() {
+        return isBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    @Override
+    public String toString() {
+        return "JetByteArrayObjectDataInput{size=" + size + ", pos=" + pos + '}';
+    }
+
+
+
+
+    // Custom methods
+
+
+    public int read() {
+        return pos < size ? Byte.toUnsignedInt(accessor.getByte(bufBase + pos++)) : -1;
+    }
+
+    public final long position() {
+        return pos;
+    }
+
+    public final long available() {
+        return size - pos;
+    }
+
+    public void reset(long address, long size) {
+        this.pos = 0;
+        this.size = size;
+        this.bufBase = address;
+    }
+
+    public void clear() {
+        pos = 0;
+        size = 0;
+        bufBase = 0;
+        if (charBuffer != null && charBuffer.length > INITIAL_UTF8_BUFSIZE) {
+            charBuffer = null;
+        }
+    }
+
+    private void checkAvailable(long pos, long k) throws IOException {
+        if (pos < 0) {
+            throw new IllegalArgumentException("Negative pos! -> " + pos);
+        }
+        if (size - pos < k) {
+            throw new EOFException("Cannot read " + k + " bytes!");
+        }
+    }
 }

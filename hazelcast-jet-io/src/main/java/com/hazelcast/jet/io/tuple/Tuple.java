@@ -28,27 +28,41 @@ public interface Tuple<K, V> extends DataSerializable {
 
     /**
      * Returns the key at the given index. May return {@code null}. Allowed range for the index
-     * is {@code 0 .. (keySize - 1)}.
+     * is {@code 0 .. (keyCount - 1)}.
      */
     K getKey(int index);
 
     /**
      * Returns the value at the given index. May return {@code null}. Allowed range for the index
-     * is {@code 0 .. (valueSize - 1)}.
+     * is {@code 0 .. (valueCount - 1)}.
      */
     V getValue(int index);
 
     /** Returns the size of the key array. */
-    int keySize();
+    int keyCount();
 
     /** Returns the size of the value array. */
-    int valueSize();
+    int valueCount();
 
     /** Puts the given object into the given key slot. */
     void setKey(int index, K key);
 
     /** Puts the given object into the given value slot. */
     void setValue(int index, V value);
+
+    /** Puts the given object into the given key or value slot. */
+    default void set(boolean isKey, int index, Object o) {
+        if (isKey) {
+            setKey(index, (K) o);
+        } else {
+            setValue(index, (V) o);
+        }
+    }
+
+    /** Gets the key or value at the given index */
+    default Object get(boolean isKey, int index) {
+        return isKey ? getKey(index) : getValue(index);
+    }
 
     /** Returns a shallow clone of the key array. */
     K[] cloneKeys();

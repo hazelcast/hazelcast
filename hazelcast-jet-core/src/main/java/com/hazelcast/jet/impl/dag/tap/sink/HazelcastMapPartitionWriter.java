@@ -75,7 +75,7 @@ public class HazelcastMapPartitionWriter extends AbstractHazelcastWriter {
             if (mapConfig.getInMemoryFormat() == InMemoryFormat.BINARY) {
                 dataValue = tuple.getValueData(this.calculationStrategy, getNodeEngine());
             } else {
-                dataValue = tuple.valueSize() == 1 ? tuple.getValue(0) : tuple.cloneValues();
+                dataValue = tuple.valueCount() == 1 ? tuple.getValue(0) : tuple.cloneValues();
             }
 
             this.recordStore.put((Data) dataKey, dataValue, -1);

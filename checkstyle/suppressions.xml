@@ -15,17 +15,22 @@
     <suppress checks="JavadocType" files="/impl"/>
     <suppress checks="JavadocVariable" files="/impl"/>
 
+
+
+
     <!-- Client Protocol (auto-generated) -->
     <suppress checks="VisibilityModifier|HideUtilityClassConstructor|LocalVariableName|WhitespaceAround"
               files="com/hazelcast/client/impl/protocol/codec/"/>
     <suppress checks="UnusedImports|ClassDataAbstractionCoupling|MethodLength|LineLength"
               files="com/hazelcast/client/impl/protocol/JetMessageTaskFactoryProvider"/>
 
+
+    <!-- Hazelcast Jet Memory -->
+    <suppress checks="Javadoc(Package|Method|Variable)" files="/jet/memory/"/>
+    <suppress checks="IllegalImport" files="/jet/memory/memoryblock/UnsafeUtil"/>
+
     <!-- Hazelcast Jet IO -->
-    <suppress checks="JavadocPackage" files="com/hazelcast/jet/io/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/jet/io/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/jet/io/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/jet/io/"/>
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="/jet/io/"/>
 
     <!-- RingBuffer -->
     <suppress checks="OuterTypeNumber" files="com/hazelcast/jet/impl/actor/ringbuffer/RingBufferWithValueStrategy"/>

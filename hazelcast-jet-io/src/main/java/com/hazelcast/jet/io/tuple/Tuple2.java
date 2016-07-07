@@ -36,31 +36,35 @@ public class Tuple2<K, V> implements Tuple<K, V> {
 
     @Override
     public K getKey(int index) {
+        assert index == 0 : "Tuple2.getKey() called with index > 0: " + index;
         return key;
     }
 
     @Override
     public V getValue(int index) {
+        assert index == 0 : "Tuple2.getValue() called with index > 0: " + index;
         return value;
     }
 
     @Override
-    public int keySize() {
+    public int keyCount() {
         return 1;
     }
 
     @Override
-    public int valueSize() {
+    public int valueCount() {
         return 1;
     }
 
     @Override
     public void setKey(int index, K key) {
+        assert index == 0 : "Tuple2.setKey() called with index > 0: " + index;
         this.key = key;
     }
 
     @Override
     public void setValue(int index, V value) {
+        assert index == 0 : "Tuple2.setValue() called with index > 0: " + index;
         this.value = value;
     }
 

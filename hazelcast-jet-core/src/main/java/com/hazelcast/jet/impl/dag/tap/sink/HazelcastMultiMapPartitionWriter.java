@@ -51,7 +51,7 @@ public class HazelcastMultiMapPartitionWriter extends AbstractHazelcastWriter {
                 Collection<MultiMapRecord> coll = this.container.getMultiMapValueOrNull(dataKey).getCollection(false);
                 long recordId = this.container.nextId();
 
-                for (int idx = 0; idx < tuple.valueSize(); idx++) {
+                for (int idx = 0; idx < tuple.valueCount(); idx++) {
                     Data dataValue = getNodeEngine().getSerializationService().toData(tuple.getValue(idx));
                     MultiMapRecord record = new MultiMapRecord(recordId, dataValue);
                     coll.add(record);
