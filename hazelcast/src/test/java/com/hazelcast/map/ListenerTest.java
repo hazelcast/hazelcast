@@ -37,6 +37,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.test.AssertTask;
@@ -405,6 +407,31 @@ public class ListenerTest extends HazelcastTestSupport {
                 assertEquals(0, listener.updateCount.get());
             }
         });
+    }
+
+    @Test
+    public void givenMatchingEntryExist_whenTheEntryIsChangedAndNoLongerMatching_thenNotifyUpdatedListener() {
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
+        IMap<Integer, SampleObjects.Employee> map = instance.getMap(randomString());
+
+
+        SampleObjects.Employee employee = new SampleObjects.Employee(0, "name", "London", 20, true, 10000);
+        map.put(0, employee);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Predicate predicate = new SqlPredicate("city = London");
+        map.addEntryListener(new EntryUpdatedListener<Integer, SampleObjects.Employee>() {
+            @Override
+            public void entryUpdated(EntryEvent<Integer, SampleObjects.Employee> event) {
+                latch.countDown();
+            }
+        }, predicate, true);
+
+        employee = new SampleObjects.Employee(0, "name", "San Francisco", 20, true, 10000);
+        map.put(0, employee);
+
+
+        assertOpenEventually(latch);
     }
 
     /**
