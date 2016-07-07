@@ -16,23 +16,37 @@
 
 package com.hazelcast.jet.impl.executor;
 
+import com.hazelcast.jet.impl.executor.processor.StateMachineExecutorProcessor;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class AbstractLocalTaskExecutorImpl<T extends WorkingProcessor>
-        extends AbstractExecutorImpl<T> implements TaskExecutor {
+public class StateMachineExecutor extends AbstractExecutor<StateMachineExecutorProcessor> {
     private final AtomicInteger taskAmount = new AtomicInteger(0);
     private volatile int lastAddedIdx = -1;
 
-    public AbstractLocalTaskExecutorImpl(String name,
-                                         int threadNum,
-                                         int awaitingTimeOut,
-                                         NodeEngine nodeEngine) {
+    public StateMachineExecutor(String name, int threadNum, int awaitingTimeOut, NodeEngine nodeEngine) {
         super(name, threadNum, awaitingTimeOut, nodeEngine);
+
+        startWorkers();
+        startProcessors();
     }
 
     @Override
+    protected StateMachineExecutorProcessor createWorkingProcessor(int threadNum) {
+        return new StateMachineExecutorProcessor(threadNum, this.logger, this);
+    }
+
+    @Override
+    protected StateMachineExecutorProcessor[] createWorkingProcessors(int threadNum) {
+        return new StateMachineExecutorProcessor[threadNum];
+    }
+
+    /**
+     * Add task to be executed
+     *
+     * @param task task to execute
+     */
     public void addTask(Task task) {
         this.lastAddedIdx = (this.lastAddedIdx + 1) % (this.processors.length);
         this.processors[this.lastAddedIdx].consumeTask(task);

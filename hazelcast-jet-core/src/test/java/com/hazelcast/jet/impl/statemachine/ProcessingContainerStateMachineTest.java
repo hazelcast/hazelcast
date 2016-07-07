@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.container.ContainerRequest;
 import com.hazelcast.jet.impl.container.ProcessingContainer;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerResponse;
 import com.hazelcast.jet.impl.container.processingcontainer.ProcessingContainerState;
-import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.statemachine.container.ProcessingContainerStateMachine;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecuteRequest;
 import com.hazelcast.jet.impl.statemachine.container.requests.ContainerExecutionCompletedRequest;
@@ -57,7 +57,7 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
 
     private StateMachineContext stateMachineContext;
     private ProcessingContainerStateMachine stateMachine;
-    private StateMachineTaskExecutorImpl executor;
+    private StateMachineExecutor executor;
 
     @Before
     public void setUp() throws Exception {
@@ -222,10 +222,10 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
     }
 
     private class StateMachineContext {
-        private StateMachineTaskExecutorImpl executor;
+        private StateMachineExecutor executor;
         private ProcessingContainerStateMachine stateMachine;
 
-        public StateMachineTaskExecutorImpl getExecutor() {
+        public StateMachineExecutor getExecutor() {
             return executor;
         }
 
@@ -251,7 +251,7 @@ public class ProcessingContainerStateMachineTest extends HazelcastTestSupport {
             ExecutorContext executorContext = mock(ExecutorContext.class);
             when(context.getExecutorContext()).thenReturn(executorContext);
             when(context.getNodeEngine()).thenReturn(nodeEngine);
-            executor = new StateMachineTaskExecutorImpl(randomName(), 1, 1, nodeEngine);
+            executor = new StateMachineExecutor(randomName(), 1, 1, nodeEngine);
             when(executorContext.getDataContainerStateMachineExecutor()).thenReturn(executor);
             stateMachine = new ProcessingContainerStateMachine(randomName(), requestProcessor, nodeEngine, context);
             return this;

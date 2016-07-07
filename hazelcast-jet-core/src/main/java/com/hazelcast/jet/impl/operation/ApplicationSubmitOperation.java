@@ -29,14 +29,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 
-public class SubmitApplicationRequestOperation extends AsyncJetOperation {
+public class ApplicationSubmitOperation extends AsyncJetOperation {
     private DAG dag;
 
     @SuppressWarnings("unused")
-    public SubmitApplicationRequestOperation() {
+    public ApplicationSubmitOperation() {
     }
 
-    public SubmitApplicationRequestOperation(String name, DAG dag) {
+    public ApplicationSubmitOperation(String name, DAG dag) {
         super(name);
         this.dag = dag;
     }
@@ -60,7 +60,7 @@ public class SubmitApplicationRequestOperation extends AsyncJetOperation {
             ICompletableFuture<ApplicationMasterResponse> readyFuture
                     = applicationMaster.handleContainerRequest(new ExecutionPlanReadyRequest());
 
-            readyFuture.andThen(new ContainerRequestCallback(SubmitApplicationRequestOperation.this,
+            readyFuture.andThen(new ContainerRequestCallback(ApplicationSubmitOperation.this,
                     "Unable to submit DAG", () -> {
                 applicationMaster.setDag(dag);
                 sendResponse(true);

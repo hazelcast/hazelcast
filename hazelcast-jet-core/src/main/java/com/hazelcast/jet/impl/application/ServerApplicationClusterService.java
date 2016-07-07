@@ -23,12 +23,12 @@ import com.hazelcast.jet.impl.operation.JetOperation;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.operation.AcceptLocalizationOperation;
 import com.hazelcast.jet.impl.operation.ApplicationEventOperation;
-import com.hazelcast.jet.impl.operation.ExecuteApplicationOperation;
+import com.hazelcast.jet.impl.operation.ApplicationExecuteOperation;
 import com.hazelcast.jet.impl.operation.GetAccumulatorsOperation;
-import com.hazelcast.jet.impl.operation.InitApplicationOperation;
-import com.hazelcast.jet.impl.operation.InterruptExecutionOperation;
+import com.hazelcast.jet.impl.operation.ApplicationInitOperation;
+import com.hazelcast.jet.impl.operation.ApplicationInterruptOperation;
 import com.hazelcast.jet.impl.operation.LocalizationChunkOperation;
-import com.hazelcast.jet.impl.operation.SubmitApplicationRequestOperation;
+import com.hazelcast.jet.impl.operation.ApplicationSubmitOperation;
 import com.hazelcast.jet.config.ApplicationConfig;
 import com.hazelcast.jet.counters.Accumulator;
 import com.hazelcast.jet.dag.DAG;
@@ -54,7 +54,7 @@ public class ServerApplicationClusterService extends ApplicationClusterService<J
     }
 
     public JetOperation createInitApplicationInvoker(ApplicationConfig config) {
-        return new InitApplicationOperation(
+        return new ApplicationInitOperation(
                 this.name,
                 config
         );
@@ -62,14 +62,14 @@ public class ServerApplicationClusterService extends ApplicationClusterService<J
 
     @Override
     public JetOperation createInterruptInvoker() {
-        return new InterruptExecutionOperation(
+        return new ApplicationInterruptOperation(
                 this.name
         );
     }
 
     @Override
     public JetOperation createExecutionInvoker() {
-        return new ExecuteApplicationOperation(
+        return new ApplicationExecuteOperation(
                 this.name
         );
     }
@@ -83,7 +83,7 @@ public class ServerApplicationClusterService extends ApplicationClusterService<J
 
     @Override
     public JetOperation createSubmitInvoker(DAG dag) {
-        return new SubmitApplicationRequestOperation(
+        return new ApplicationSubmitOperation(
                 this.name, dag);
     }
 

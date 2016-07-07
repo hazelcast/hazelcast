@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.statemachine;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.application.ApplicationContext;
 import com.hazelcast.jet.impl.application.ExecutorContext;
-import com.hazelcast.jet.impl.executor.StateMachineTaskExecutorImpl;
+import com.hazelcast.jet.impl.executor.StateMachineExecutor;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationEvent;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationResponse;
 import com.hazelcast.jet.impl.statemachine.application.ApplicationState;
@@ -69,7 +69,7 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
 
     private StateMachineContext stateMachineContext;
     private ApplicationStateMachine stateMachine;
-    private StateMachineTaskExecutorImpl executor;
+    private StateMachineExecutor executor;
 
     @Before
     public void setUp() throws Exception {
@@ -618,11 +618,11 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
     }
 
     private class StateMachineContext {
-        private StateMachineTaskExecutorImpl executor;
+        private StateMachineExecutor executor;
         private ApplicationStateMachine stateMachine;
 
 
-        public StateMachineTaskExecutorImpl getExecutor() {
+        public StateMachineExecutor getExecutor() {
             return executor;
         }
 
@@ -648,7 +648,7 @@ public class ApplicationStateMachineTest extends HazelcastTestSupport {
             ExecutorContext executorContext = mock(ExecutorContext.class);
             when(context.getExecutorContext()).thenReturn(executorContext);
             when(context.getNodeEngine()).thenReturn(nodeEngine);
-            executor = new StateMachineTaskExecutorImpl(randomName(), 1, 1, nodeEngine);
+            executor = new StateMachineExecutor(randomName(), 1, 1, nodeEngine);
             when(executorContext.getApplicationStateMachineExecutor()).thenReturn(executor);
             stateMachine = new ApplicationStateMachine(randomName(), requestProcessor, nodeEngine, context);
             return this;

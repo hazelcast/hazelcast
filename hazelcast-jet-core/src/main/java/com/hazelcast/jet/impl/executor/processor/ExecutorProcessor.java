@@ -18,12 +18,11 @@ package com.hazelcast.jet.impl.executor.processor;
 
 import com.hazelcast.jet.impl.actor.SleepingStrategy;
 import com.hazelcast.jet.impl.actor.strategy.AdaptiveSleepingStrategy;
-import com.hazelcast.jet.impl.util.SettableFuture;
+import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
 import com.hazelcast.jet.impl.executor.AbstractExecutor;
 import com.hazelcast.jet.impl.executor.Payload;
 import com.hazelcast.jet.impl.executor.Task;
-import com.hazelcast.jet.impl.executor.WorkingProcessor;
-import com.hazelcast.jet.impl.container.task.DefaultContainerTask;
+import com.hazelcast.jet.impl.util.SettableFuture;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -38,8 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.Preconditions.checkTrue;
 
-public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
-        implements WorkingProcessor {
+public abstract class ExecutorProcessor<E extends AbstractExecutor> implements Runnable {
     protected final ILogger logger;
     protected final SleepingStrategy sleepingStrategy;
     protected final List<Task> tasks = new ArrayList<Task>();
@@ -66,9 +64,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
     protected volatile Thread workingThread;
     protected volatile boolean hasIncoming;
 
-    public AbstractExecutorProcessor(int threadNum,
-                                     ILogger logger,
-                                     E taskExecutor) {
+    public ExecutorProcessor(int threadNum, ILogger logger, E taskExecutor) {
         checkTrue(threadNum >= 0, "threadNum must be positive");
 
         this.logger = logger;
@@ -76,6 +72,11 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
         this.sleepingStrategy = new AdaptiveSleepingStrategy();
     }
 
+    /**
+     * Asynchronously shutdown processor;
+     *
+     * @return - awaiting Future object;
+     */
     public Future<Boolean> shutdown() {
         this.shutdown = true;
 
@@ -92,6 +93,9 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
         this.lockingQueue.take();
     }
 
+    /**
+     * Start processor's execution;
+     */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void start() {
         if (!this.started) {
@@ -103,7 +107,9 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
         }
     }
 
-    @Override
+    /**
+     * Notify processor to wakeUp;
+     */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void wakeUp() {
         this.lockingQueue.offer(true);
@@ -134,7 +140,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
 
             if (logger.isFinestEnabled() && task instanceof DefaultContainerTask) {
                 logger.finest("Incoming=" + task.getClass() + " size=" + this.tasks.size()
-                                + " idx=" + this + " wtc=" + this.workingTaskCount.get()
+                        + " idx=" + this + " wtc=" + this.workingTaskCount.get()
                 );
             }
         } while (true);
@@ -158,10 +164,8 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
                 onTaskDeactivation();
 
                 if (task instanceof DefaultContainerTask) {
-                    logger.fine(
-                            "Task removed " + tasks.size() + " this.workingTaskCount="
-                                    + this.workingTaskCount.get() + " " + this
-                    );
+                    logger.fine("Task removed " + tasks.size() + " this.workingTaskCount="
+                            + this.workingTaskCount.get() + " " + this);
                 }
             } else {
                 idx++;
@@ -195,9 +199,7 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
 
                         if (tasks.size() == 0) {
                             if (this.tasks.size() > 0) {
-                                logger.fine(
-                                        "size=" + this.tasks.size()
-                                );
+                                logger.fine("size=" + this.tasks.size());
                             }
 
                             checkExecutorActivity();
@@ -216,7 +218,11 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
         }
     }
 
-    @Override
+    /**
+     * Consume task
+     *
+     * @param task corresponding taks
+     */
     public void consumeTask(Task task) {
         this.incomingTasks.offer(task);
         this.hasIncoming = true;
@@ -226,7 +232,9 @@ public abstract class AbstractExecutorProcessor<E extends AbstractExecutor>
 
     }
 
-    @Override
+    /**
+     * @return - number of tasks inside container;
+     */
     public int getWorkingTaskCount() {
         return this.workingTaskCount.get();
     }
